@@ -311,20 +311,48 @@ class TestCompareFromArtifacts(unittest.TestCase):
             )
         )
 
-    def test_matching_readback_captures_keep_comparability(self) -> None:
+    def test_native_identity_survives_missing_backend_and_still_blocks_comparison(self) -> None:
+        for source in ("identity", "command"):
+            with self.subTest(source=source):
+                baseline = _make_receipt("doe")
+                comparison = _make_receipt("dawn")
+                for receipt in (baseline, comparison):
+                    for sample in receipt["samples"]:
+                        sample["traceMeta"].pop("executionBackend")
+                        if source == "identity":
+                            sample["command"] = []
+                    if source == "command":
+                        receipt["runtimeIdentity"] = {}
+                restored = receipt_run_view(baseline)
+                self.assertEqual(restored["runtimeIdentity"],
+                                 baseline["runtimeIdentity"])
+                entry = compare_workload_from_artifacts(
+                    baseline=baseline, comparison=comparison,
+                )
+                self.assertFalse(entry["comparability"]["comparable"])
+                self.assertIn("baseline_comparison_result_output_match",
+                              entry["comparability"]["blockingFailedObligations"])
+                self.assertTrue(any("timed command-stream" in reason
+                                    for reason in entry["comparability"]["reasons"]))
+
+    def test_matching_native_prefix_captures_do_not_supply_timed_output_proof(self) -> None:
         baseline = _attach_readback_capture(_make_receipt("doe"), "a" * 64, 47)
         comparison = _attach_readback_capture(_make_receipt("dawn"), "a" * 64, 47)
         entry = compare_workload_from_artifacts(
             baseline=baseline,
             comparison=comparison,
         )
-        self.assertTrue(entry["comparability"]["comparable"])
+        self.assertFalse(entry["comparability"]["comparable"])
         obligations = {
             obligation["id"]: obligation
             for obligation in entry["comparability"]["obligations"]
         }
         self.assertTrue(
             obligations["baseline_comparison_readback_capture_match"]["passes"]
+        )
+
+        self.assertFalse(
+            obligations["baseline_comparison_result_output_match"]["passes"]
         )
 
     def test_readback_shape_without_capture_blocks_comparability(self) -> None:
@@ -662,7 +690,7 @@ class TestCompareFromArtifacts(unittest.TestCase):
             obligation["details"]["comparisonEffectiveReadbackPaths"],
         )
 
-    def test_build_compare_report_and_claim_report(self) -> None:
+    def test_native_without_timed_output_remains_diagnostic_in_compare_and_claim(self) -> None:
         baseline = _make_receipt("doe")
         comparison = _make_receipt("dawn")
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -689,7 +717,7 @@ class TestCompareFromArtifacts(unittest.TestCase):
             )
             self.assertEqual(report["schemaVersion"], COMPARE_REPORT_SCHEMA_VERSION)
             self.assertEqual(report["artifactKind"], COMPARE_REPORT_KIND)
-            self.assertEqual(report["comparisonStatus"], "comparable")
+            self.assertEqual(report["comparisonStatus"], "diagnostic")
             self.assertEqual(
                 report["deltaPercentConvention"],
                 DELTA_PERCENT_CONVENTION,
@@ -697,10 +725,15 @@ class TestCompareFromArtifacts(unittest.TestCase):
             self.assertEqual(report["deltaPercentFormula"], DELTA_PERCENT_FORMULA)
             self.assertEqual(report["comparabilityCoherence"]["status"], "pass")
             self.assertNotIn("claimStatus", report)
-            self.assertAlmostEqual(
+            self.assertEqual(
                 report["overallWorkloadUnitWall"]["baselineStatsMs"]["p50Ms"],
+                0.0,
+            )
+            self.assertAlmostEqual(
+                report["workloads"][0]["workloadUnitWall"]["baselineStatsMs"]["p50Ms"],
                 4.55,
             )
+            self.assertEqual(baseline_loaded["samples"][0]["measuredRawMs"], 8.0)
 
             compare_path = Path(tmpdir) / "sample.compare.json"
             write_compare_report(report, compare_path)
@@ -711,12 +744,24 @@ class TestCompareFromArtifacts(unittest.TestCase):
                 mode="local",
                 min_timed_samples=3,
             )
-            self.assertEqual(claim_report["claimStatus"], "claimable")
-            self.assertTrue(claim_report["pass"])
+            self.assertEqual(claim_report["claimStatus"], "diagnostic")
+            self.assertFalse(claim_report["pass"])
 
     def test_comparability_coherence_demotes_low_sample_claim_rows(self) -> None:
         baseline = _make_receipt("doe")
         comparison = _make_receipt("dawn")
+        # Keep this control about sample density: native rows now fail
+        # earlier for missing timed output, so use the package receipt path.
+        for receipt, backend in ((baseline, "doe_node_webgpu"),
+                                 (comparison, "node_webgpu_package")):
+            receipt["workload"]["api"] = "webgpu"
+            receipt["runtimeIdentity"].update(runtimeHost="node",
+                                               binaryPath="node",
+                                               executionBackend=backend)
+            for sample in receipt["samples"]:
+                sample["command"] = ["node", "fixture.js"]
+                sample["traceMeta"]["executionBackend"] = backend
+                sample["traceMeta"]["shaderSourceReceiptsHash"] = "a" * 64
         entry = compare_workload_from_artifacts(
             baseline=baseline,
             comparison=comparison,

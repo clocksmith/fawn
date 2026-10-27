@@ -27,6 +27,7 @@ from native_compare_modules.compare_assessment_helpers import (
     collect_effective_readback_paths,
     collect_execution_backends,
     collect_execution_shapes,
+    collect_native_runtime_providers,
     collect_result_output_signatures,
     collect_readback_counts,
     collect_resident_buffer_load_shapes,
@@ -298,15 +299,34 @@ def compare_assessment(
         failure_reason="comparison side has no measured samples",
         details={"comparisonSampleCount": len(right_measured_samples)},
     )
+    native_runtime_backends = (
+        doe_runtime_providers.native_execution_backends()
+        | doe_runtime_providers.dawn_execution_backends()
+    )
+    native_timed_output_backends = sorted(
+        (left_execution_backends | right_execution_backends)
+        & native_runtime_backends
+    )
+    native_timed_output_providers = sorted(
+        collect_native_runtime_providers(baseline)
+        | collect_native_runtime_providers(comparison)
+    )
+    native_timed_output_applies = bool(
+        native_timed_output_backends or native_timed_output_providers
+    )
+    # Native schema 1/2/3 oracle receipts describe separate validation work.
+    # Matching digest metadata cannot stand in for unimplemented timed capture.
     result_output_match_applies = (
         comparability_mode == "strict"
         and (
-            bool(left_result_output_signatures)
+            native_timed_output_applies
+            or bool(left_result_output_signatures)
             or bool(right_result_output_signatures)
         )
     )
     result_output_match = (
-        len(left_result_output_signatures) == 1
+        not native_timed_output_applies
+        and len(left_result_output_signatures) == 1
         and len(right_result_output_signatures) == 1
         and left_result_output_signatures == right_result_output_signatures
         and next(iter(left_result_output_signatures))[1] > 0
@@ -319,11 +339,16 @@ def compare_assessment(
         applicable=result_output_match_applies,
         passes=result_output_match,
         failure_reason=(
+            "native timed command-stream output proof is not implemented; "
+            "isolated oracle validation cannot admit a performance comparison"
+            if native_timed_output_applies else
             "baseline/comparison result output is missing, empty, non-deterministic, or unequal: "
             f"{sorted(left_result_output_signatures)} vs "
             f"{sorted(right_result_output_signatures)}"
         ),
         details={
+            "nativeTimedOutputBackends": native_timed_output_backends,
+            "nativeTimedOutputProviders": native_timed_output_providers,
             "baselineResultOutputSignatures": [
                 {"sha256": digest, "byteLength": length}
                 for digest, length in sorted(left_result_output_signatures)

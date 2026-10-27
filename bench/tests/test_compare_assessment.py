@@ -121,6 +121,87 @@ def _provider_result_sample(*, backend: str, digest: str) -> dict:
 
 
 class CompareAssessmentTests(unittest.TestCase):
+    def _output_proof_assessment(self, left: dict, right: dict,
+                                 api: str, mode: str = "strict") -> dict:
+        return compare_assessment(
+            workload_id="output-proof-control", workload_comparable=True,
+            workload_domain="compute", workload_api=api, workload_commands_path="",
+            workload_path_asymmetry=False, workload_path_asymmetry_note="",
+            baseline_command_repeat=1, comparison_command_repeat=1,
+            baseline={"commandSamples": [left]},
+            comparison={"commandSamples": [right]},
+            required_timing_class="operation", allow_baseline_no_execution=False,
+            resource_probe="none", comparability_mode=mode,
+            resource_sample_target_count=0,
+        )
+
+    def test_strict_native_comparison_requires_unimplemented_timed_output_proof(self) -> None:
+        pairs = (
+            ("vulkan", "doe_c_vulkan", "doe_vulkan"),
+            ("metal", "doe_c_metal", "doe_metal"),
+            ("d3d12", "doe_c_d3d12", "doe_d3d12"),
+            ("vulkan", "doe_c_vulkan", "dawn_direct_vulkan"),
+            ("metal", "doe_c_metal", "dawn_c_metal"),
+        )
+        for api, baseline, comparison in pairs:
+            for proof in ("missing", "wrong", "isolated"):
+                with self.subTest(api=api, comparison=comparison, proof=proof):
+                    left = _sample(backend=baseline, command_replay_ns=0)
+                    right = _sample(backend=comparison, command_replay_ns=0)
+                    for sample in (left, right):
+                        meta = sample["traceMeta"]
+                        if proof != "missing":
+                            meta.update({
+                                "outputOracleCount": 1,
+                                "outputOracleMatchedCount": 1,
+                                "outputOracleFailedCount": 0,
+                                "outputOracleKind": "sha256_exact_v1",
+                                "outputOracleReferenceClass": "independent_v1",
+                                "outputOracleExpectedSha256": "a" * 64,
+                                "outputOracleActualSha256":
+                                    ("b" if proof == "wrong" else "a") * 64,
+                            })
+                            # Even matching generic result signatures do not
+                            # establish the missing native timed capture path.
+                            meta["resultSummary"] = {
+                                "generatedTextLength": 5,
+                                "generatedTextSha256": "a" * 64,
+                            }
+                    result = self._output_proof_assessment(left, right, api)
+                    self.assertFalse(result["comparable"])
+                    self.assertIn("baseline_comparison_result_output_match",
+                                  result["blockingFailedObligations"])
+                    self.assertTrue(any("timed command-stream" in reason
+                                        for reason in result["reasons"]))
+
+    def test_native_output_requirement_uses_registry_for_either_provider_role(self) -> None:
+        for backend in ("dawn_direct_vulkan", "dawn_c_metal"):
+            with self.subTest(backend=backend):
+                left = _sample(backend=backend, command_replay_ns=0)
+                right = _sample(backend="node_webgpu_package", command_replay_ns=0)
+                # Reverse order too: a native side never gains admission from
+                # an unrelated host's output or from which arm is baseline.
+                for first, second in ((left, right), (right, left)):
+                    result = self._output_proof_assessment(first, second, "webgpu")
+                    self.assertIn("baseline_comparison_result_output_match",
+                                  result["blockingFailedObligations"])
+
+    def test_timed_native_proof_requirement_leaves_package_and_compiler_paths_alone(self) -> None:
+        for backend in ("doe_node_webgpu", "doe_bun_package", ""):
+            with self.subTest(backend=backend):
+                left = _sample(backend=backend, command_replay_ns=0)
+                right = _sample(backend=backend, command_replay_ns=0)
+                if not backend:
+                    for sample in (left, right):
+                        sample["traceMeta"].pop("executionBackend")
+                        sample["traceMeta"].update(runnerType="compilation",
+                                                   compiler="doe_wgsl")
+                result = self._output_proof_assessment(left, right, "webgpu")
+                self.assertTrue(result["comparable"], result["reasons"])
+                obligation = next(o for o in result["obligations"]
+                                  if o["id"] == "baseline_comparison_result_output_match")
+                self.assertFalse(obligation["applicable"])
+
     def test_submit_scope_does_not_double_count_rollup_and_children(self) -> None:
         from native_compare_modules.comparability import (
             _PHASE_MATERIAL_FLOOR_FRACTION,

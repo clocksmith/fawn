@@ -166,6 +166,7 @@ def receipt_run_view(receipt: dict[str, Any]) -> dict[str, Any]:
         if isinstance(trace_meta, dict):
             last_meta = trace_meta
     return {
+        "runtimeIdentity": receipt.get("runtimeIdentity", {}),
         "commandSamples": command_samples,
         "stats": reporting_mod.format_stats(timings),
         "timingsMs": timings,

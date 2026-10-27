@@ -222,6 +222,33 @@ def collect_execution_backends(samples: list[dict[str, Any]]) -> set[str]:
     }
 
 
+def collect_native_runtime_providers(result: dict[str, Any]) -> set[str]:
+    """Recognize registered CLIs even when trace backend metadata is absent."""
+    providers: set[str] = set()
+    identity = result.get("runtimeIdentity", {})
+    if isinstance(identity, dict):
+        for field, resolve in (
+            ("executionBackend", doe_runtime_providers.provider_for_execution_backend),
+            ("binaryPath", doe_runtime_providers.provider_for_binary),
+        ):
+            value = identity.get(field)
+            provider = resolve(value) if isinstance(value, str) else None
+            if provider is not None:
+                providers.add(provider.provider_id)
+    for sample in result.get("commandSamples", []):
+        if not isinstance(sample, dict):
+            continue
+        command = sample.get("command", [])
+        if not isinstance(command, list) or not all(isinstance(t, str) for t in command):
+            continue
+        index = doe_runtime_providers.runtime_index(command)
+        if index is not None:
+            provider = doe_runtime_providers.provider_for_binary(command[index])
+            if provider is not None:
+                providers.add(provider.provider_id)
+    return providers
+
+
 def collect_trace_meta_values(samples: list[dict[str, Any]], key: str) -> set[Any]:
     return {
         sample.get("traceMeta", {}).get(key)
