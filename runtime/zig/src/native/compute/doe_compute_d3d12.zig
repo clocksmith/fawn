@@ -79,7 +79,9 @@ pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModu
     defer alloc.free(text);
     // Emit the same analyzed module whose proof obligations we retain below.
     const length = try hlsl.emitter.emit(&module, text);
-    const bytecode = try resources.d3d12_compute.compileHlslEntryToBytecode(alloc, text[0..length], entry);
+    const target_entry = try hlsl.emitter.entryPointName(alloc, entry);
+    defer alloc.free(target_entry);
+    const bytecode = try resources.d3d12_compute.compileHlslEntryToBytecode(alloc, text[0..length], target_entry);
     defer alloc.free(bytecode);
     var ranges: [MAX_STORAGE_BINDINGS]bridge.D3D12DescriptorRangeDesc = undefined;
     for (storage[0..count], 0..) |slot, index| ranges[index] = .{

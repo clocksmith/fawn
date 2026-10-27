@@ -144,12 +144,12 @@ test "hlsl type: scalar and vector types map correctly" {
     try testing.expect(contains(hlsl, "float a;"));
     try testing.expect(contains(hlsl, "uint b;"));
     try testing.expect(contains(hlsl, "int c;"));
-    try testing.expect(contains(hlsl, "bool d;"));
+    try testing.expect(contains(hlsl, "bool __doe_hlsl_user_64;"));
     // Vectors
     try testing.expect(contains(hlsl, "float2 e;"));
     try testing.expect(contains(hlsl, "uint3 f;"));
     try testing.expect(contains(hlsl, "int4 g;"));
-    try testing.expect(contains(hlsl, "bool2 h;"));
+    try testing.expect(contains(hlsl, "bool2 __doe_hlsl_user_68;"));
 }
 
 test "hlsl type: matrix and array types map correctly" {
@@ -172,7 +172,7 @@ test "hlsl type: matrix and array types map correctly" {
     try testing.expect(contains(hlsl, "float4x4 a;"));
     try testing.expect(contains(hlsl, "float2x2 b;"));
     try testing.expect(contains(hlsl, "float3x3 c;"));
-    try testing.expect(contains(hlsl, "float d[8]"));
+    try testing.expect(contains(hlsl, "float __doe_hlsl_user_64[8]"));
 }
 
 // ============================================================
