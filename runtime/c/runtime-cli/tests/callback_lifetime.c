@@ -154,6 +154,8 @@ void runtime_release_diagnostics(doe_runtime *runtime) { (void)runtime; }
 void runtime_release_textures(doe_runtime *runtime) { (void)runtime; }
 void runtime_kernel_sources_clear(doe_runtime *runtime) { (void)runtime; }
 void runtime_pipeline_cache_open(doe_runtime *runtime) { (void)runtime; }
+/* This fixture never creates captures; readback.c owns delayed-map controls. */
+bool runtime_retire_readback(doe_runtime *runtime) { assert(!runtime->readback); return true; }
 bool doe_runtime_load_device_policy(const char *name, DoeNativeDevicePolicy *policy, char *message,
     size_t capacity, char hash[65], WGPUBackendType *backend)
 { (void)name; (void)policy; (void)message; (void)capacity; (void)hash; (void)backend; return false; }

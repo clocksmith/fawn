@@ -14,7 +14,7 @@ CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -ffp-contract=off
 include sources.mk
 CORE = $(CLI_CORE) $(BUILD)/quirk_toggles.c
-CORE_HEADERS = ../common/include/doe_sha256.h src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
+CORE_HEADERS = src/oracle.h ../common/include/doe_sha256.h src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/numeric_eval.h src/numeric_annotation.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = $(CLI_RUNTIME) $(SURFACE_HOST)
@@ -213,3 +213,32 @@ $(BUILD)/callback-lifetime-ubsan: tests/callback_lifetime.c src/execute.c $(RUNT
 check-callback-lifetime-ubsan: $(BUILD)/callback-lifetime-ubsan
 	$(PYTHON) -c 'import subprocess,sys; subprocess.run([sys.argv[1]],check=True,timeout=20)' '$(BUILD)/callback-lifetime-ubsan'
 check-host: check-callback-lifetime
+
+$(BUILD)/test_oracle: tests/test_oracle.c $(CORE) $(CORE_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_oracle.c $(CORE) $(LDLIBS) -lm -o $@
+$(BUILD)/test_readback: tests/test_readback.c src/readback.c $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_readback.c src/readback.c -o $@
+.PHONY: check-oracle-host
+check-oracle-host: $(BUILD)/test_oracle $(BUILD)/test_readback
+	$(BUILD)/test_oracle '$(abspath $(BUILD))/oracle-reference.f32le'
+	$(BUILD)/test_readback
+check-host: check-oracle-host
+
+$(BUILD)/test_kernel_aliases: tests/test_kernel_aliases.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_kernel_aliases.c $(CORE) $(RUNTIME) '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm -Wl,--wrap=wgpuDeviceCreateBindGroup -o $@
+.PHONY: check-kernel-aliases
+check-kernel-aliases: $(BUILD)/test_kernel_aliases
+	$(BUILD)/test_kernel_aliases '$(abspath $(BUILD))/kernel-aliases.wgsl'
+check: check-kernel-aliases
+
+$(BUILD)/close-unconfirmed.so: tests/close_unconfirmed.c $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -shared $< -o $@
+
+ifeq ($(SHARED_PLATFORM),Linux)
+.PHONY: check-oracle-graph
+check-oracle-graph: $(BUILD)/doe-c-runtime $(BUILD)/close-unconfirmed.so
+	@work="$$(mktemp -d '$(abspath $(BUILD))/oracle-graph.XXXXXX')"; \
+	  $(PYTHON) tests/test_cli_oracle_graph.py --binary '$(abspath $(BUILD))/doe-c-runtime' --out "$$work/cases" \
+	  --unknown-close-library '$(abspath $(BUILD))/close-unconfirmed.so'
+check: check-oracle-graph
+endif

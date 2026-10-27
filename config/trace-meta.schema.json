@@ -180,6 +180,8 @@
     "semanticReproCount": { "type": "integer", "minimum": 0 },
     "operatorRecordManifestPath": { "type": "string" },
     "operatorRecordManifestHash": { "type": "string" },
+    "runtimeCloseComplete": { "type": ["boolean", "null"] },
+    "gpuCompletionUnknown": { "type": "boolean" },
     "outputOracleCount": { "type": "integer", "minimum": 0 },
     "outputOracleMatchedCount": { "type": "integer", "minimum": 0 },
     "outputOracleFailedCount": { "type": "integer", "minimum": 0 },

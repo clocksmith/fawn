@@ -31,7 +31,7 @@ static void usage(FILE *out)
           "  [--no-pipeline-cache] [--pipeline-cache-dir <explicit directory>]\n"
           "  [--gpu-timestamp-mode off|auto|require] [--adapter auto|physical|software]\n"
           "  [--backend-lane <canonical implemented device/delegate lane>]\n"
-          "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
+          "  [--validate-output-oracles]  (schema 1 isolated; schema 2/3 command-graph output oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
           "  [--numeric-stability-policy <path>] [--numeric-stability-execution-profile <id>]\n"
           "doe-c-runtime --plan <plan.json> --workload <id> --trace-jsonl <path> --trace-meta <path>\n"

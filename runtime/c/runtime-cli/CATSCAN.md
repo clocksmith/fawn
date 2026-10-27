@@ -21,7 +21,9 @@ bundle/binding modes. Native proxy remains default.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the
-command-stream examples and schema 1 output oracles apply.
+command-stream examples and schema 1/2/3 output oracles apply. Schema 1 uses
+isolated buffers; schema 2 replays the command graph with an exact reference;
+schema 3 preserves float32 reference-file tolerance and reference classification.
 
 ## Invariants
 Unknown inputs reject before device work with exit 2.
@@ -29,8 +31,13 @@ Host-only traces create no device and claim no execution. Plan dry runs identify
 every row as `dry_run`, keep device times/submits zero and omit adapter and
 selection results; their retained-compatible row/dispatch counts are nominal.
 Replay mismatches fail before device work.
-No silent ignoring, emulation or false success. Commands preserve the first device error; deferred work drains before successful completion. Oracles run on
-isolated zero-filled buffers; a digest mismatch fails the run. Metadata identifies the actual adapter.
+No silent ignoring, emulation or false success. Commands preserve the first device error; deferred work drains before successful completion. Oracles execute outside measured work with their declared initialization and
+scope. Reference bytes must match their declared size and digest; exact or
+finite float32 tolerance comparisons fail on mismatch. Validation graph adapter
+and compiled source identities must match measured execution. Unknown readback
+completion retains callback storage; unconfirmed close is explicit in final
+metadata and cannot authorize a subsequent GPU workload. Metadata identifies
+the actual adapter.
 
 ## Acceptance
 [Owner checks](Makefile): host parsing, rejection, hash-chain and SHA-256 vectors;

@@ -4,6 +4,7 @@
  * doe-zig-runtime; every argument or value this runtime does not implement is
  * rejected before any device work. */
 #include "execute.h"
+#include "oracle.h"
 #include "cli_options.h"
 #include "cli_inputs.h"
 #include "cli_output.h"
@@ -29,11 +30,9 @@ typedef struct totals {
     uint64_t total_ns, setup_ns, encode_ns, submit_wait_ns, dispatches, submits;
     uint64_t input_read_ns, input_parse_ns, executor_init_ns, kernel_prewarm_ns;
     uint64_t hash, previous;
-    uint64_t oracles, oracles_matched, oracles_failed;
+    doe_oracle_evidence oracle;
     uint64_t matched, blocking, requires_lean, lean_required, skipped;
     bool semantic_tracing;
-    char oracle_expected[65], oracle_actual[65];
-    const char *oracle_reference;
 } totals;
 
 static char *read_file(const char *path, size_t *size)
@@ -148,12 +147,10 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime)
     return ok;
 }
 
-static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
+static bool encode_meta(FILE *out, const options *o, const totals *t, uint64_t command_count,
     const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256,
     const doe_runtime *runtime, const doe_ns_recorder *numeric)
 {
-    FILE *out = doe_host_fopen(path, "wb");
-    if (!out) return false;
     uint64_t seq_max = t->rows ? t->rows - 1 : 0;
     bool ok = fprintf(out, "{\"traceVersion\":1,\"module\":\"" MODULE_NAME "\",\"seqMax\":%" PRIu64 ",\"rowCount\":%" PRIu64
         ",\"commandCount\":%" PRIu64 ",\"matchedCount\":%" PRIu64 ",\"blockingCount\":%" PRIu64 ",\"requiresLeanCount\":%" PRIu64
@@ -174,7 +171,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
         t->kernel_prewarm_ns, t->gpu_timestamp_ns, t->gpu_timestamp_attempted, t->gpu_timestamp_valid, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
         operators ? operators->capture_count : 0, operators ? operators->repro_count : 0,
-        t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
+        t->hash, t->previous, t->oracle.count, t->oracle.matched_count, t->oracle.failed_count) >= 0;
     if (ok && (o->execute || o->dry_run)) ok = fputs(",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\"", out) >= 0;
     if (ok && o->execute) ok = fputs(",\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false", out) >= 0;
     if (ok && o->backend_lane) ok = write_optional(out, "backendLane", o->backend_lane, true);
@@ -196,15 +193,22 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace") >= 0;
     ok = ok && doe_runtime_write_pipeline_cache(out, runtime);
     ok = ok && doe_runtime_write_device_policy(out, runtime);
-    if (ok && t->oracles) {
-        ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
-            write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&
-            write_optional(out, "outputOracleExpectedSha256", t->oracle_expected, true) &&
-            write_optional(out, "outputOracleActualSha256", t->oracle_actual[0] ? t->oracle_actual : NULL, true) &&
-            /* Schema 1 oracles are independent references compared by exact digest. */
-            write_optional(out, "outputOracleReferenceClass", "independent_v1", true) &&
-            fputs(",\"outputOracleComparedValueCount\":0,\"outputOracleMismatchCount\":0,\"outputOracleMaxAbsoluteError\":0,"
-                "\"outputOracleMaxRelativeError\":0,\"outputOracleAbsoluteTolerance\":0,\"outputOracleRelativeTolerance\":0", out) >= 0;
+    if (ok && t->oracle.count) {
+        const doe_oracle_evidence *evidence = &t->oracle;
+        const doe_output_oracle *oracle = &evidence->descriptor;
+        ok = write_optional(out, "outputOracleKind", doe_output_oracle_kind_name(oracle->kind), true) &&
+            write_optional(out, "outputOracleReferenceId", oracle->reference_id, true) &&
+            write_optional(out, "outputOracleExpectedSha256", oracle->expected_sha256, true) &&
+            write_optional(out, "outputOracleActualSha256", evidence->has_actual_sha256 ? evidence->actual_sha256 : NULL, true) &&
+            write_optional(out, "outputOracleReferenceClass", doe_output_oracle_reference_class_name(oracle->reference_class), true) &&
+            fprintf(out, ",\"outputOracleComparedValueCount\":%" PRIu64 ",\"outputOracleMismatchCount\":%" PRIu64
+                ",\"outputOracleMaxAbsoluteError\":%.17g,\"outputOracleMaxRelativeError\":%.17g"
+                ",\"outputOracleAbsoluteTolerance\":%.9g,\"outputOracleRelativeTolerance\":%.9g",
+                evidence->compared_value_count, evidence->mismatch_count, evidence->max_absolute_error,
+                evidence->max_relative_error, (double)oracle->absolute_tolerance, (double)oracle->relative_tolerance) >= 0;
+        if (ok && oracle->kind == DOE_ORACLE_FLOAT32_TOLERANCE)
+            ok = write_optional(out, "outputOracleReferenceSha256", oracle->expected_sha256, true) &&
+                write_optional(out, "outputOracleReferencePath", oracle->reference_path, true);
     }
     if (ok && runtime) ok = write_shader_receipts(out, runtime);
     if (ok && numeric) ok = doe_ns_write_summary(out, numeric);
@@ -225,9 +229,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     } else {
         ok = ok && fputs("null", out) >= 0;
     }
-    ok = ok && fputs("}\n", out) >= 0;
-    if (fclose(out) != 0) ok = false;
-    return ok;
+    return ok; /* Close status is appended after the runtime is actually retired. */
 }
 
 /* Loads the numeric stability policy when doe-zig-runtime would evaluate:
@@ -427,6 +429,12 @@ int main(int argc, char **argv)
             plan_kernel_root = doe_plan_kernel_root(plan.ir_path);
             o.runtime.kernel_root = plan_kernel_root;
         }
+    }
+    char oracle_message[256] = "";
+    if (!doe_oracle_preflight(&stream, o.validate_oracles, oracle_message, sizeof(oracle_message))) {
+        fprintf(stderr, "doe-c-runtime: output_oracle: %s\n", oracle_message);
+        release_input(&stream, &plan, plan_kernel_root);
+        return 2;
     }
     if (stream.count > UINT64_MAX / o.command_repeat) { release_input(&stream, &plan, plan_kernel_root); fputs("doe-c-runtime: --command-repeat overflows\n", stderr); return 2; }
     if (o.emit_normalized) {
@@ -642,34 +650,10 @@ int main(int argc, char **argv)
         }
     }
     if (!emit_pending(&pending, rows, &o, &identity)) status = 1;
-    for (size_t i = 0; runtime && status == 0 && o.validate_oracles && i < stream.count; i++) {
-        const doe_command *command = &stream.commands[i];
-        if (command->kind != DOE_COMMAND_KERNEL_DISPATCH || !command->as.dispatch.oracle) continue;
-        doe_output_oracle oracle;
-        char reason[256];
-        t.oracles++;
-        if (!doe_output_oracle_parse(command->as.dispatch.oracle, &oracle, reason, sizeof(reason))) {
-            fprintf(stderr, "doe-c-runtime: command %zu output_oracle: %s\n", i, reason);
-            t.oracles_failed++;
-            status = 1;
-            continue;
-        }
-        memcpy(t.oracle_expected, oracle.expected_sha256, sizeof(t.oracle_expected));
-        t.oracle_reference = oracle.reference_id;
-        t.oracle_actual[0] = '\0';
-        doe_trace_execution execution;
-        if (!doe_runtime_validate_oracle(runtime, command, &oracle, t.oracle_actual, &execution)) {
-            fprintf(stderr, "doe-c-runtime: command %zu output_oracle: %s: %s\n", i, execution.status_code, execution.message);
-            t.oracles_failed++;
-            status = 1;
-        } else if (strcmp(t.oracle_actual, oracle.expected_sha256)) {
-            fprintf(stderr, "doe-c-runtime: command %zu output_oracle mismatch: expected %s, read back %s\n", i,
-                oracle.expected_sha256, t.oracle_actual);
-            t.oracles_failed++;
-            status = 1;
-        } else {
-            t.oracles_matched++;
-        }
+    if (runtime && status == 0 && o.validate_oracles &&
+        !doe_oracle_validate(runtime, &o.runtime, &stream, &t.oracle, message, sizeof(message))) {
+        fprintf(stderr, "doe-c-runtime: output_oracle: %s\n", message);
+        status = 1;
     }
     for (size_t i = 0; runtime && status == 0 && i < o.readback_count; i++) {
         uint8_t *data = NULL;
@@ -697,8 +681,30 @@ int main(int argc, char **argv)
         status = 1;
     }
     if (runtime) doe_runtime_flush_pipeline_cache(runtime);
-    if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
-            &operators, o.plan ? plan.plan_sha256 : NULL, runtime, ns_enabled ? &ns : NULL)) {
+    /* Encode all borrowed runtime identities before close, but publish no final
+     * metadata until its actual completion state is known. */
+    doe_host_output meta = {0};
+    FILE *meta_out = o.trace_meta ? doe_host_output_open(&meta) : NULL;
+    bool meta_ok = !o.trace_meta || (meta_out && encode_meta(meta_out, &o, &t, command_count,
+        runtime ? doe_runtime_adapter_info(runtime) : NULL, &operators, o.plan ? plan.plan_sha256 : NULL,
+        runtime, ns_enabled ? &ns : NULL));
+    bool had_runtime = runtime != NULL;
+    bool gpu_unknown = doe_runtime_gpu_completion_unknown(runtime);
+    bool closed = doe_runtime_close(runtime);
+    if (!closed) status = 1;
+    if (meta_ok && meta_out) {
+        meta_ok = fprintf(meta_out, ",\"runtimeCloseComplete\":%s,\"gpuCompletionUnknown\":%s}\n",
+            had_runtime ? (closed ? "true" : "false") : "null",
+            gpu_unknown || !closed || t.oracle.completion_unknown ? "true" : "false") >= 0;
+        char *bytes = NULL;
+        size_t length = 0;
+        meta_ok = doe_host_output_close(&meta, &bytes, &length) && meta_ok;
+        FILE *out = meta_ok ? doe_host_fopen(o.trace_meta, "wb") : NULL;
+        meta_ok = meta_ok && out && fwrite(bytes, 1, length, out) == length;
+        if (out && fclose(out) != 0) meta_ok = false;
+        free(bytes);
+    } else if (meta_out) doe_host_output_discard(&meta);
+    if (!meta_ok) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
         status = 1;
     }
@@ -709,7 +715,6 @@ int main(int argc, char **argv)
     }
     if (ns_loaded) doe_ns_policy_free(&ns_policy);
     free(ns_policy_text);
-    if (!doe_runtime_close(runtime)) status = 1;
     doe_quirks_free(&quirks);
     release_input(&stream, &plan, plan_kernel_root);
     return status;

@@ -1,7 +1,7 @@
 """Orchestrate C/Zig catalog coverage through the existing run/compare owners.
 
-Each provider runs separately with the same Doe-side workload parameters. Failed
-rows remain in the ledger and never prevent later rows from being attempted.
+Each provider runs separately with the same Doe-side workload parameters. Ordinary failed
+rows remain in the ledger; unconfirmed GPU completion stops the cohort.
 This tool does not implement timing selection or independent oracles. It refuses
 performance comparison when a provider has no independent output evidence.
 """
@@ -103,7 +103,8 @@ def oracle_failures(receipt: dict[str, Any]) -> list[str]:
         has_actual = isinstance(actual, str) and bool(
             re.fullmatch(r"[0-9a-f]{64}", actual)
         )
-        has_exact = has_actual and actual == expected
+        has_exact = (meta.get("outputOracleKind") == "sha256_exact_v1"
+                     and has_actual and actual == expected)
         has_tolerance = False
         if meta.get("outputOracleKind") == "float32_reference_tolerance_v1":
             reference = meta.get("outputOracleReferencePath")
@@ -122,6 +123,28 @@ def oracle_failures(receipt: dict[str, Any]) -> list[str]:
     if not receipt.get("samples"):
         failures.append("output oracle samples missing")
     return sorted(set(failures))
+
+
+def unconfirmed_gpu_receipts(folder: Path) -> list[dict[str, Any]]:
+    """Read final runtime state even when failed preflight emits no run receipt.
+
+    These raw files belong to this fresh provider directory. A nonzero host exit
+    alone is neither a proof of completion nor a reason to classify a GPU hang.
+    """
+    records = []
+    for path in sorted(folder.rglob("*.meta.json")):
+        try:
+            meta = json.loads(path.read_bytes())
+        except (OSError, json.JSONDecodeError):
+            continue  # Unreadable metadata is not positive completion evidence.
+        if not isinstance(meta, dict):
+            continue
+        if (meta.get("gpuCompletionUnknown") is True
+                or meta.get("runtimeCloseComplete") is False):
+            records.append({"path": str(path), "sha256": digest(path),
+                            "gpuCompletionUnknown": meta.get("gpuCompletionUnknown"),
+                            "runtimeCloseComplete": meta.get("runtimeCloseComplete")})
+    return records
 
 
 def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, index: int) -> dict[str, Any]:
@@ -144,6 +167,13 @@ def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, inde
                    "--warmup", str(args.warmup), "--comparability-mode", "strict", "--require-timing-class", "operation",
                    "--resource-probe", "none", "--resource-sample-ms", "10", "--out", str(folder / product)]
         run = execute(command, folder / f"{product}.log", args.timeout, environment)
+        run["deadlineScope"] = "provider-batch"
+        run["deadlineSeconds"] = args.timeout
+        if run["timedOut"]:
+            run["timeoutInterpretation"] = (
+                "Provider batch deadline expired; interrupted child GPU completion "
+                "is unconfirmed. This does not establish a single-worker GPU hang."
+            )
         artifacts = list((folder / product / "run-artifacts" / product).glob("*.run.json"))
         run["failures"] = []
         if run["exitCode"] != 0 or run["timedOut"] or len(artifacts) != 1:
@@ -161,7 +191,8 @@ def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, inde
                 receipts[product] = path
         result["providers"][product] = run
         result["failures"] += [f"{product}: {failure}" for failure in run["failures"]]
-        if run["timedOut"]:
+        run["unconfirmedGpuReceipts"] = unconfirmed_gpu_receipts(folder / product)
+        if run["timedOut"] or run["unconfirmedGpuReceipts"]:
             # Killing the host does not prove completion of submitted GPU work.
             # Stop this cohort rather than issuing more work on an unknown GPU.
             result["status"] = "gpu-completion-unknown"
@@ -271,7 +302,8 @@ def main() -> int:
     parser.add_argument("--out", required=True)
     parser.add_argument("--iterations", type=int, default=16)
     parser.add_argument("--warmup", type=int, default=1)
-    parser.add_argument("--timeout", type=float, default=600)
+    parser.add_argument("--timeout", type=float, default=600,
+                        help="Bound one complete provider batch, including warmup/preflight and all samples; not one GPU worker")
     parser.add_argument("--workload-id", action="append", default=[])
     parser.add_argument("--input-artifact", action="append", required=True,
                         help="Actual linked native/compiler library path; repeat to bind the whole built provider closure")
