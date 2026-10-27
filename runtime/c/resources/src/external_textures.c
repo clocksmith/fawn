@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include <string.h>
 
 static bool plane_available(const doe_resource_view *view)
 {
@@ -10,7 +11,8 @@ static bool plane_available(const doe_resource_view *view)
 
 bool resource_external_available(const doe_resource_external_texture *texture)
 {
-    if (!texture || texture->expired || !resource_alive(&texture->base)) return false;
+    if (!texture || texture->error_object || !texture->plane_count ||
+        texture->expired || !resource_alive(&texture->base)) return false;
     for (size_t i = 0; i < texture->plane_count; i++)
         if (!plane_available(texture->planes[i])) return false;
     return true;
@@ -31,11 +33,29 @@ doe_resource_status doe_resource_external_texture_create(const doe_resource_conf
     texture->planes[1] = plane1;
     texture->plane_count = plane1 ? 2 : 1;
     texture->expired = false;
+    texture->error_object = false;
     doe_resource_view_retain(plane0);
     doe_resource_view_retain(plane1);
     resource_init(&texture->base, config, (doe_resource_native){0});
     *out = texture;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_external_texture *doe_resource_external_texture_error(const doe_resource_config *config)
+{
+    if (!resource_config_valid(config)) return NULL;
+    doe_resource_external_texture *texture = resource_allocate(config,
+        sizeof(*texture), _Alignof(doe_resource_external_texture));
+    if (!texture) return NULL;
+    memset(texture, 0, sizeof(*texture));
+    texture->error_object = true;
+    resource_init(&texture->base, config, (doe_resource_native){0});
+    return texture;
+}
+
+void *doe_resource_external_texture_device(const doe_resource_external_texture *texture)
+{
+    return texture ? texture->base.config.device.identity : NULL;
 }
 
 void doe_resource_external_texture_retain(doe_resource_external_texture *texture)
@@ -58,7 +78,7 @@ void doe_resource_external_texture_expire(doe_resource_external_texture *texture
 doe_resource_status doe_resource_external_texture_refresh(doe_resource_external_texture *texture)
 {
     if (!texture) return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!resource_alive(&texture->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (texture->error_object || !resource_alive(&texture->base)) return DOE_RESOURCE_UNAVAILABLE;
     for (size_t i = 0; i < texture->plane_count; i++)
         if (!plane_available(texture->planes[i])) return DOE_RESOURCE_UNAVAILABLE;
     texture->expired = false;

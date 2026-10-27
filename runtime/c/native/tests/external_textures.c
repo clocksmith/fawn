@@ -3,6 +3,7 @@
  * at the Metal typed-call boundary. No fabricated platform handles are used. */
 #include "consumer.h"
 #include "doe_native_external_texture.h"
+#include "doe_native_legacy.h"
 
 static WGPUBindGroupLayout external_layout(state *s)
 {
@@ -28,7 +29,49 @@ static WGPUBindGroup bind_external(state *s, WGPUBindGroupLayout layout, WGPUExt
     return wgpuDeviceCreateBindGroup(s->device, &desc);
 }
 
-static void external_sampling(state *s, bool two_planes)
+static void browser_errors(state *s)
+{
+    WGPUTexture input = texture(s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_TextureBinding, 1);
+    WGPUTextureView view = wgpuTextureCreateView(input, NULL);
+    WGPUBindGroupLayout layout = external_layout(s);
+    static const float transfer[7] = {1,1,0,1,0,0,0};
+    static const float gamut[9] = {1,0,0,0,1,0,0,0,1};
+    for (unsigned i = 0; i < 8; ++i) {
+        WGPUExternalTextureDescriptor desc = {.plane0=view,.cropSize={2,2},.apparentSize={2,2},
+            .srcTransferFunctionParameters=transfer,.dstTransferFunctionParameters=transfer,
+            .gamutConversionMatrix=gamut,.rotation=WGPUExternalTextureRotation_Rotate0Degrees};
+        float changed[9];
+        memcpy(changed, gamut, sizeof(changed));
+        switch (i) {
+        case 0: desc.mirrored = WGPU_TRUE; break;
+        case 1: desc.rotation = WGPUExternalTextureRotation_Rotate90Degrees; break;
+        case 2: desc.cropSize.width = 1; break;
+        case 3: desc.apparentSize.height = 4; break;
+        case 4: desc.srcTransferFunctionParameters = NULL; break;
+        case 5: changed[0] = 0.5f; desc.gamutConversionMatrix = changed; break;
+        case 6: desc.plane1 = view; break;
+        case 7: desc.plane0 = NULL; break;
+        }
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        WGPUExternalTexture error = wgpuDeviceCreateExternalTexture(s->device, &desc);
+        assert(error); /* Dawn's browser wrapper requires a real error handle. */
+        expect_validation(s);
+        wgpuExternalTextureSetLabel(error, (WGPUStringView){"browser error",13});
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        assert(!bind_external(s, layout, error));
+        expect_validation(s);
+        wgpuExternalTextureExpire(error);
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        doeNativeExternalTextureRefresh(error);
+        expect_validation(s);
+        wgpuExternalTextureRelease(error);
+    }
+    wgpuBindGroupLayoutRelease(layout);
+    wgpuTextureViewRelease(view);
+    wgpuTextureRelease(input);
+}
+
+static void external_sampling(state *s, bool two_planes, bool conversion_bypassed)
 {
     WGPUTexture input = texture(s, WGPUTextureFormat_RGBA8Unorm,
         WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst, 1);
@@ -36,7 +79,23 @@ static void external_sampling(state *s, bool two_planes)
     WGPUTexture chroma = two_planes ? texture(s,WGPUTextureFormat_RG8Unorm,WGPUTextureUsage_TextureBinding,1) : NULL;
     WGPUTextureView chroma_view = chroma ? wgpuTextureCreateView(chroma,NULL) : NULL;
     DoeExternalTextureDescriptor descriptor = {.plane0=input_view,.plane1=chroma_view};
-    WGPUExternalTexture external = doeNativeDeviceCreateExternalTexture(s->device,&descriptor);
+    static const float transfer[7] = {1,1,0,1,0,0,0};
+    static const float gamut[9] = {1,0,0,0,1,0,0,0,1};
+    WGPUExternalTextureDescriptor browser = {.plane0=input_view,.cropSize={2,2},.apparentSize={2,2},
+        .srcTransferFunctionParameters=transfer,.dstTransferFunctionParameters=transfer,
+        .gamutConversionMatrix=gamut,.rotation=WGPUExternalTextureRotation_Rotate0Degrees};
+    static const float nonidentity_transfer[7] = {2,1,0,1,0,0,0};
+    static const float zero_gamut[9] = {0};
+    if (conversion_bypassed) {
+        /* Blink supplies real forward/inverse spans even when equal source and
+         * destination spaces bypass conversion. These values must be ignored. */
+        browser.doYuvToRgbConversionOnly = WGPU_TRUE;
+        browser.srcTransferFunctionParameters = nonidentity_transfer;
+        browser.dstTransferFunctionParameters = nonidentity_transfer;
+        browser.gamutConversionMatrix = zero_gamut;
+    }
+    WGPUExternalTexture external = two_planes ? doeNativeDeviceCreateExternalTexture(s->device,&descriptor) :
+        wgpuDeviceCreateExternalTexture(s->device,&browser);
     assert(external);
     const unsigned char pixels[] = {255,0,0,255,0,255,0,255,0,0,255,255,255,255,255,255};
     WGPUTexelCopyTextureInfo destination = {.texture=input};
@@ -147,8 +206,10 @@ int main(void)
     wgpuBindGroupLayoutRelease(layout);
     wgpuExternalTextureRelease(NULL);
     doeNativeExternalTextureRefresh(NULL);
-    external_sampling(&s,false);
-    external_sampling(&s,true);
+    external_sampling(&s,false,false);
+    external_sampling(&s,false,true);
+    external_sampling(&s,true,false);
+    browser_errors(&s);
     consumer_finish(&other);
     consumer_finish(&s);
     printf("PASS external textures: lifecycle, labels, chained binding, two-plane retention, device mismatch, no import fallback and exact plane-zero sample %s\n", adapter_class_scope());

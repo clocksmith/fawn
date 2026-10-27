@@ -223,6 +223,16 @@ WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
  * passes native_allocation_bound, the backend's real single-allocation size. */
 WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDescriptor *descriptor,
     uint64_t max_size);
+/* Private factory: no error callback or label publication. The caller holds an
+ * ordinary device/resource lease; a non-NULL buffer transfers one owned ref. */
+typedef struct native_buffer_creation {
+    WGPUBuffer buffer;
+    native_failure failure;
+    doe_resource_status status;
+    const char *message;
+} native_buffer_creation;
+native_buffer_creation native_device_create_buffer_result(native_device *device,
+    const WGPUBufferDescriptor *descriptor, uint64_t max_size);
 uint64_t native_allocation_bound(const native_device *device);
 /* requestDevice limit resolution (limits.c); false rejects the request. */
 bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);

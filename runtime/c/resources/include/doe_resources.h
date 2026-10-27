@@ -501,6 +501,10 @@ doe_resource_status doe_resource_encoder_create(const doe_resource_config *confi
     doe_resource_encoder **out);
 void doe_resource_encoder_retain(doe_resource_encoder *encoder);
 void doe_resource_encoder_release(doe_resource_encoder *encoder);
+/* Allocation-free encoded-write admission. Mapping is checked at submission,
+ * matching other recorded buffer uses; immediate queue writes check it now. */
+doe_resource_status doe_resource_encoder_write_buffer_validate(doe_resource_encoder *encoder,
+    const doe_resource_buffer *buffer, uint64_t offset, uint64_t size);
 doe_resource_status doe_resource_encoder_copy_buffer(doe_resource_encoder *encoder,
     const doe_resource_buffer_copy *copy, doe_resource_alias_policy alias);
 doe_resource_status doe_resource_encoder_clear_buffer(doe_resource_encoder *encoder,

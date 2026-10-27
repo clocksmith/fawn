@@ -7,6 +7,13 @@ also resolves the 22 names that the retained provider exposes only dynamically.
 This is an additive compatibility boundary, not a new feature advertisement or
 production-provider switch.
 
+Browser-facing descriptor layouts match Chromium `4a6fb385` / Dawn `758e5e6a`,
+including independent fence/value counts, buffer initialization and usage/size
+field order. Begin requires equal fence and value spans before reserving access
+or retaining inputs. End publishes both counts; FreeMembers frees each owned
+array independently, including a values-only output. These representation fixes
+do not expand the shared-image policy described below.
+
 ## Implemented path and ownership
 
 - A Metal device imports a retained `MTLSharedEvent` or a single-plane

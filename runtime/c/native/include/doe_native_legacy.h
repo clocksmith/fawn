@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: MIT
- * Retained Doe ABI additions from runtime/zig/src/dropin; not a newer webgpu.h.
+ * Additions outside the retained core webgpu.h. Browser additions match
+ * Chromium 4a6fb385 / Dawn 758e5e6a; private Doe extensions stay separate.
  * In particular the uncaptured callback omits the pinned callback's device arg. */
 #ifndef DOE_NATIVE_LEGACY_H
 #define DOE_NATIVE_LEGACY_H
 #include "webgpu.h"
+#include "doe_native_external_texture.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,9 +26,10 @@ DOE_LEGACY_API void wgpuDeviceSetDeviceLostCallback(WGPUDevice device, WGPUDevic
     void *userdata1, void *userdata2);
 DOE_LEGACY_API void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice device,
     DoeLegacyUncapturedErrorCallback callback, void *userdata1, void *userdata2);
-/* Nonblocking progress; retained ABI returns false, not a completion verdict. */
-DOE_LEGACY_API WGPUBool wgpuDeviceTick(WGPUDevice device);
-DOE_LEGACY_API WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, const void *descriptor);
+/* Nonblocking progress; the selected Dawn ABI returns no completion verdict. */
+DOE_LEGACY_API void wgpuDeviceTick(WGPUDevice device);
+DOE_LEGACY_API WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device,
+    const WGPUExternalTextureDescriptor *descriptor);
 DOE_LEGACY_API void wgpuExternalTextureDestroy(WGPUExternalTexture texture);
 DOE_LEGACY_API void wgpuExternalTextureExpire(WGPUExternalTexture texture);
 DOE_LEGACY_API void wgpuExternalTextureRefresh(WGPUExternalTexture texture);
@@ -47,10 +50,10 @@ DOE_LEGACY_API void wgpuDeviceValidateTextureDescriptor(WGPUDevice device, const
 /* Invalid objects own normal resource identity but never allocate native storage. */
 DOE_LEGACY_API WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice device, const WGPUBufferDescriptor *descriptor);
 DOE_LEGACY_API WGPUTexture wgpuDeviceCreateErrorTexture(WGPUDevice device, const WGPUTextureDescriptor *descriptor);
-/* Historical immediate mapped write, NOT a recorded command. Requires a writable
- * mapped range under the ordinary buffer owner; encoder is not consumed. */
+/* Copies caller bytes into encoder-owned staging, in command order. Caller data
+ * is borrowed only for this call; no destination mutation occurs before submit. */
 DOE_LEGACY_API void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder encoder, WGPUBuffer buffer,
-    uint64_t offset, const uint8_t *data, uint64_t size);
+    uint64_t offset, const void *data, size_t size);
 /* Retained rejecting compatibility: descriptor timestampWrites is the supported
  * pass-boundary route. These invalidate an active parent without recording. */
 DOE_LEGACY_API void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder pass, WGPUQuerySet set, uint32_t index);

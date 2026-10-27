@@ -57,3 +57,8 @@ Retained non-pinned public entrypoints use separately inventoried legacy headers
 They preserve typed callback signatures, retained getter leases, invalid-resource
 identity and truthful rejecting contracts. Browser-copy adapters lower through the
 ordinary command owner; color conversion is not inferred from a successful copy.
+The selected Chromium/Dawn browser additions use its complete descriptor and
+typed procedure signatures, separately from private retained Doe extensions.
+Encoded writes snapshot bytes into ordinary staging and record ordered copies;
+standard external imports reject unimplemented transforms with genuine unusable
+error resources. CPU ABI agreement does not establish browser/GPU semantics.
