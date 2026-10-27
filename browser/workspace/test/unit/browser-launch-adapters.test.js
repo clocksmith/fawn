@@ -39,6 +39,8 @@ if (process.platform === 'win32') {
         assert.ok(observed.args.includes(`--doe-webgpu-library-path=${library}`));
         assert.ok(observed.args.includes('--remote-debugging-pipe'));
         assert.equal(observed.args.some(arg => arg === '--no-sandbox'), false);
+        assert.equal(observed.args.includes('--enable-unsafe-swiftshader'), false);
+        assert.equal(observed.args.includes('--gpu-sandbox-start-early'), process.platform === 'linux');
         assert.throws(() => process.kill(observed.pid, 0), { code: 'ESRCH' }, `${name} must reap failed launch`);
         // A modified image must be rejected before the next spawn, rather than falling back.
         rmSync(record);

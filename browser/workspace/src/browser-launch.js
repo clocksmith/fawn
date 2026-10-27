@@ -72,7 +72,8 @@ function prepareFawnLaunch(browser) {
 
 function playwrightLaunchOptions(browser) {
   const launch = prepareFawnLaunch(browser);
-  if (launch) return { executablePath: launch.executablePath, args: launch.args, chromiumSandbox: true };
+  if (launch) return { executablePath: launch.executablePath, args: launch.args, chromiumSandbox: true,
+    ignoreDefaultArgs: ['--enable-unsafe-swiftshader'] };
   if (!Object.hasOwn(STOCK_CHANNELS, browser.channel)) throw new Error(`unsupported browser channel: ${browser.channel}`);
   return { channel: STOCK_CHANNELS[browser.channel] };
 }

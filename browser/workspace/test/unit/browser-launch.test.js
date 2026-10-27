@@ -30,12 +30,13 @@ try {
   validateServiceConfig(config);
   const launch = prepareFawnLaunch(config.browser);
   assert.deepEqual(playwrightLaunchOptions(config.browser), { executablePath: launch.executablePath,
-    args: launch.args, chromiumSandbox: true });
+    args: launch.args, chromiumSandbox: true, ignoreDefaultArgs: ['--enable-unsafe-swiftshader'] });
   assert.equal(matchesSelectedBuild(config, [config.browser.fawnBuild.executable]), true);
   assert.equal(matchesSelectedBuild(config, [{ sha256: '0'.repeat(64) }]), false);
   assert.equal(matchesSelectedBuild(config, []), false);
   assert.deepEqual(launch.args.filter(value => value !== '--do-not-de-elevate'),
-    ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${config.browser.fawnBuild.runtime.library.path}`]);
+    ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${config.browser.fawnBuild.runtime.library.path}`,
+      ...(process.platform === 'linux' ? ['--gpu-sandbox-start-early'] : [])]);
   assert.equal(launch.identity.fallbackAllowed, false);
   assert.equal(launch.args.some(value => value.includes('no-sandbox')), false);
   for (const mutate of [
@@ -72,7 +73,8 @@ try {
   assert.throws(() => forcedRuntimeArgs('auto'));
   assert.throws(() => forcedRuntimeArgs('doe'));
   assert.deepEqual(forcedRuntimeArgs('doe', '/missing-negative-control'),
-    ['--use-webgpu-runtime=doe', '--doe-webgpu-library-path=/missing-negative-control']);
+    ['--use-webgpu-runtime=doe', '--doe-webgpu-library-path=/missing-negative-control',
+      ...(process.platform === 'linux' ? ['--gpu-sandbox-start-early'] : [])]);
   const old = clone(loadServiceConfig());
   old.schemaVersion = 3;
   validateServiceConfig(old);

@@ -1458,6 +1458,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
       executablePath: args.chromePath,
       headless: args.headless,
       chromiumSandbox: args.sandbox,
+      ignoreDefaultArgs: ['--enable-unsafe-swiftshader'],
       args: launchArgs,
       timeout: 120000,
     });
