@@ -111,6 +111,8 @@ function inspectBrowserProcesses(hostPid, profileRoot) {
     executables: [...new Set(inspection.roots.map((row) => row.executable))].sort()
       .map((path) => ({ ...describeExecutable(path), codeModulesSha256 })),
     processImages: imagePaths.map(describeImage),
+    processes: inspection.rows.map(({ pid, parentPid, executable, startedAt, commandLine }) =>
+      ({ pid, parentPid, executable, startedAt, commandLine })),
     codeModules,
     mappedCodeModules: inspection.mappedCodeModules.sort().map(path => ({ ...describeImage(path),
       processes: inspection.mappedCodeModuleObservations.filter(entry => entry.path === path)

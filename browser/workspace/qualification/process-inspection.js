@@ -222,6 +222,18 @@ function canonicalOwnedRows(hostPid) {
     const helper = fileURLToPath(new URL('./process-paths-macos.py', import.meta.url));
     const paths = JSON.parse(execFileSync('python3', [helper, JSON.stringify(rows.map(row => row.pid))], COMMAND_OPTIONS));
     rows = rows.filter(row => paths[row.pid]).map(row => ({ ...row, executable: paths[row.pid] }));
+    if (rows.length) {
+      const commands = spawnSync('/bin/ps', ['-ww', '-p', rows.map(row => row.pid).join(','), '-o', 'pid=,args='], COMMAND_OPTIONS);
+      if (commands.error) throw commands.error;
+      if (commands.status !== 0 && !(commands.status === 1 && !commands.stderr.trim())) {
+        throw new Error(`owned process arguments unavailable: ${commands.stderr.trim()}`);
+      }
+      const byPid = new Map(commands.stdout.split('\n').flatMap(line => {
+        const match = /^\s*(\d+)\s+(.*)$/.exec(line);
+        return match ? [[Number(match[1]), match[2]]] : [];
+      }));
+      rows = rows.filter(row => byPid.has(row.pid)).map(row => ({ ...row, commandLine: byPid.get(row.pid) }));
+    }
   }
   return rows.map(row => {
     if (!row.executable || !row.startedAt) throw new Error(`process identity unavailable for ${row.pid}`);
@@ -304,14 +316,20 @@ function inspectProcesses(hostPid) {
 }
 
 function processesUsing(path) {
+  let rows;
   if (process.platform === 'darwin') {
-    const commands = execFileSync('/bin/ps', ['-ww', '-axo', 'pid=,args='], COMMAND_OPTIONS);
-    return commands.split('\n').flatMap((line) => {
-      const match = /^\s*(\d+)\s+(.*)$/.exec(line);
-      return match && match[2].includes(path) ? [Number(match[1])] : [];
+    const commands = execFileSync('/bin/ps', ['-ww', '-axo', 'pid=,ppid=,args='], COMMAND_OPTIONS);
+    rows = commands.split('\n').flatMap((line) => {
+      const match = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line);
+      return match ? [{ pid: Number(match[1]), parentPid: Number(match[2]), commandLine: match[3] }] : [];
     });
-  }
-  return processSnapshot().filter((row) => row.commandLine.includes(path)).map((row) => row.pid);
+  } else rows = processSnapshot();
+  // A node -e verifier (and its shell ancestors) may name the profile in its
+  // own command. They are observers, not a surviving browser/profile claimant.
+  const parents = new Map(rows.map(row => [row.pid, row.parentPid]));
+  const observers = new Set();
+  for (let pid = process.pid; pid && !observers.has(pid); pid = parents.get(pid)) observers.add(pid);
+  return rows.filter(row => !observers.has(row.pid) && row.commandLine.includes(path)).map(row => row.pid);
 }
 
 function windowsFileVersion(path) {

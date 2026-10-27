@@ -22,6 +22,10 @@ try {
   assert.equal(listening.processCount, 1);
   assert.equal(listening.executables.length, 1);
   assert.match(listening.executables[0].sha256, /^[a-f0-9]{64}$/);
+  assert.equal(listening.processes[0].pid, ready.pid);
+  assert.equal(listening.processes[0].parentPid, host.pid);
+  assert.ok(listening.processes[0].commandLine.includes('--listener'));
+  assert.ok(listening.processes[0].commandLine.includes(root));
   assert.equal(listening.listeningTcpSockets, 1, 'a real child-owned listener must be detected');
   assert.equal(listening.devToolsActivePortFiles, 1, 'a real nested port file must be detected');
   const closed = once(host, 'message');
