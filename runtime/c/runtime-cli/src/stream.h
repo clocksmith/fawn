@@ -265,12 +265,23 @@ bool doe_stream_parse(const char *text, size_t size, doe_stream *stream, doe_str
 void doe_stream_free(doe_stream *stream);
 /* An isolated-dispatch SHA-256 output oracle (schema version 1): the binding
  * after `dispatch_count` dispatches on zero-filled buffers. */
+typedef enum doe_oracle_scope { DOE_ORACLE_ISOLATED_DISPATCH, DOE_ORACLE_COMMAND_GRAPH } doe_oracle_scope;
+typedef enum doe_oracle_kind { DOE_ORACLE_EXACT_SHA256, DOE_ORACLE_FLOAT32_TOLERANCE } doe_oracle_kind;
+typedef enum doe_oracle_reference_class { DOE_ORACLE_INDEPENDENT, DOE_ORACLE_CONSENSUS } doe_oracle_reference_class;
+
 typedef struct doe_output_oracle {
-    uint32_t group, binding;
+    uint32_t schema_version, group, binding;
+    doe_oracle_scope scope;
+    doe_oracle_kind kind;
+    doe_oracle_reference_class reference_class;
     uint64_t dispatch_count;
-    char expected_sha256[65];
-    const char *reference_id;
+    char expected_sha256[65]; /* Exact output digest or schema-3 reference-file digest. */
+    const char *reference_id, *reference_path; /* Borrowed from the command JSON document. */
+    float absolute_tolerance, relative_tolerance;
 } doe_output_oracle;
+
+const char *doe_output_oracle_kind_name(doe_oracle_kind kind);
+const char *doe_output_oracle_reference_class_name(doe_oracle_reference_class reference_class);
 
 /* Reads a kernel_dispatch output_oracle; false with a reason for every
  * schema, kind, scope or initialization this runtime does not implement. */

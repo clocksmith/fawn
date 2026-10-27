@@ -195,10 +195,22 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   evaluation results fail closed; implicit captures cannot escape declared buffer
   binding extents. Without a trace meta nothing is
   evaluated by either runtime.
-- `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
-  with `--validate-output-oracles` the command runs again on isolated
-  zero-filled buffers and the read-back target's SHA-256 must equal
-  `expected_sha256`; a mismatch exits 1.
+- `output_oracle` schemas 1/2/3 with `--validate-output-oracles` execute
+  validation outside measured work. Schema 1 runs the dispatch on isolated
+  zero-filled buffers and compares `sha256_exact_v1`. Schema 2 replays the
+  command graph from its declared `zero_fill_v1` starting state (including
+  explicit buffer writes) and compares the selected buffer range's digest.
+  Schema 3 preserves `float32_reference_tolerance_v1`: the reference file must
+  have the exact range length and declared SHA-256, both values must be finite,
+  and each absolute difference must be at most `absolute_tolerance +
+  relative_tolerance * abs(reference)`. Schema 2/3 keep their declared
+  `independent_v1` or `cross_runtime_consensus_v1` reference class; consensus
+  never becomes independent proof. A fresh graph selects the same adapter and
+  compiled source snapshots as measured execution. A mismatch exits 1;
+  malformed targets or reference files reject before creating a device.
+  Final metadata records actual output bytes' digest, comparison metrics and
+  `runtimeCloseComplete`/`gpuCompletionUnknown`. Unconfirmed completion retains
+  callback state and stops a campaign before another GPU workload.
 - `async_diagnostics` (`pipeline_async_diagnostics`): async shader compilation and
   render pipeline creation, capability queries, standard object reference
   lifetimes, and `full` combinations. `iterations`/`repeat` repeats the selected

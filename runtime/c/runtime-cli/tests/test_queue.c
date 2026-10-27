@@ -45,6 +45,7 @@ int main(void)
         doe_runtime *runtime = doe_runtime_open(&options, message, sizeof(message));
         if (!runtime) fprintf(stderr, "%s\n", message);
         assert(runtime);
+        assert(!doe_runtime_gpu_completion_unknown(runtime));
         uint32_t word = 0x12345678;
         doe_command write = {.kind = DOE_COMMAND_BUFFER_WRITE, .label = "buffer_write",
             .as.buffer_write = {.handle = 10, .buffer_size = 4, .words = &word, .word_count = 1}};
@@ -67,6 +68,7 @@ int main(void)
         runtime->options.queue_wait_timeout_ns = 1;
         execution = (doe_trace_execution){.ok = true};
         assert(!runtime_wait_queue(runtime, &execution));
+        assert(doe_runtime_gpu_completion_unknown(runtime));
         delay_queue = false;
         if (!reject_future) {
             /* Deliver the real callback after the wait returned: its payload
@@ -78,9 +80,14 @@ int main(void)
             assert(runtime->queue_done && runtime->queue_wait_failed);
         }
         unsigned failed_waits = waits;
+        assert(doe_runtime_gpu_completion_unknown(runtime) == reject_future);
         assert(!strcmp(execution.status_code, "queue_wait_unresolved"));
         execution = (doe_trace_execution){.ok = true};
         assert(!runtime_wait_queue(runtime, &execution) && waits == failed_waits);
+        execution = (doe_trace_execution){.ok = true};
+        assert(!doe_runtime_execute(runtime, &write, &execution));
+        assert(!strcmp(execution.status_code, "runtime_unresolved"));
+        assert(waits == failed_waits);
         const doe_runtime_adapter *adapter = doe_runtime_adapter_info(runtime);
         printf("PASS queue strategy %u: actual callback modes/counts, final bytes, failed-future/late-callback guard: %s (%s)\n",
             strategy, adapter->device, adapter->adapter_type);

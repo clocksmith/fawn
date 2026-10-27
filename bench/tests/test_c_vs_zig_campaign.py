@@ -76,8 +76,21 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("verified output digest or tolerance reference missing",
                       campaign.oracle_failures(receipt))
         meta.update(outputOracleActualSha256="a" * 64,
-                    outputOracleExpectedSha256="a" * 64)
+                    outputOracleExpectedSha256="a" * 64,
+                    outputOracleKind="sha256_exact_v1")
         self.assertEqual(campaign.oracle_failures(receipt), [])
+
+    def test_float_oracle_cannot_use_exact_digest_to_bypass_reference(self) -> None:
+        meta = {
+            "outputOracleCount": 1, "outputOracleMatchedCount": 1,
+            "outputOracleFailedCount": 0,
+            "outputOracleReferenceClass": "independent_v1",
+            "outputOracleKind": "float32_reference_tolerance_v1",
+            "outputOracleActualSha256": "a" * 64,
+            "outputOracleExpectedSha256": "a" * 64,
+        }
+        self.assertIn("verified output digest or tolerance reference missing",
+                      campaign.oracle_failures({"samples": [{"traceMeta": meta}]}))
 
     def test_gpu_timeout_does_not_start_the_other_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -86,6 +99,52 @@ class CampaignTests(unittest.TestCase):
                 result = campaign.row_result({"id": "blocked"}, Path(temporary), args, 0)
             self.assertEqual(run.call_count, 1)
             self.assertEqual(result["status"], "gpu-completion-unknown")
+            provider = result["providers"]["doe-c"]
+            self.assertEqual(provider["deadlineScope"], "provider-batch")
+            self.assertIn("does not establish a single-worker GPU hang",
+                          provider["timeoutInterpretation"])
+
+    def test_inner_runtime_unknown_stops_before_other_provider_without_run_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            args = argparse.Namespace(backend="vulkan", catalog="unused",
+                                      iterations=16, warmup=1, timeout=1)
+
+            def run(command: list[str], *unused: object) -> dict:
+                folder = Path(command[command.index("--out") + 1])
+                folder.mkdir(parents=True)
+                (folder / "failed.preflight.meta.json").write_text(json.dumps({
+                    "runtimeCloseComplete": False, "gpuCompletionUnknown": True,
+                }), encoding="utf-8")
+                return {"exitCode": 1, "timedOut": False}
+
+            with patch.object(campaign, "execute", side_effect=run) as execute:
+                result = campaign.row_result({"id": "unretired"}, output, args, 0)
+            self.assertEqual(execute.call_count, 1)
+            self.assertEqual(result["status"], "gpu-completion-unknown")
+            self.assertFalse(result["comparisons"])
+            evidence = result["providers"]["doe-c"]["unconfirmedGpuReceipts"]
+            self.assertEqual(len(evidence), 1)
+            self.assertEqual(evidence[0]["sha256"], campaign.digest(Path(evidence[0]["path"])))
+
+    def test_known_runtime_rejection_can_continue(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            args = argparse.Namespace(backend="vulkan", catalog="unused",
+                                      iterations=16, warmup=1, timeout=1)
+
+            def run(command: list[str], *unused: object) -> dict:
+                folder = Path(command[command.index("--out") + 1])
+                folder.mkdir(parents=True)
+                (folder / "rejected.meta.json").write_text(json.dumps({
+                    "runtimeCloseComplete": True, "gpuCompletionUnknown": False,
+                }), encoding="utf-8")
+                return {"exitCode": 1, "timedOut": False}
+
+            with patch.object(campaign, "execute", side_effect=run) as execute:
+                result = campaign.row_result({"id": "ordinary-rejection"}, output, args, 0)
+            self.assertEqual(execute.call_count, 2)
+            self.assertEqual(result["status"], "failed")
 
     def test_failed_row_does_not_hide_later_workload(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

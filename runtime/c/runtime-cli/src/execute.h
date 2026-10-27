@@ -66,8 +66,10 @@ bool doe_runtime_validate_oracle(doe_runtime *runtime, const doe_command *comman
  * nothing. False with the reason in `execution`; the command then reports the
  * same failure when it runs. */
 bool doe_runtime_prewarm_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
-/* Reads the whole buffer of a stream handle into a new allocation the caller
- * frees; false when the handle has no buffer or the readback failed. */
+/* Reads an explicit range, or the whole buffer, into a new allocation the caller
+ * frees; false when the handle/range is invalid or the readback failed. */
+bool doe_runtime_read_buffer_range(doe_runtime *runtime, uint64_t handle, uint64_t offset, uint64_t size,
+    uint8_t **data, doe_trace_execution *execution);
 bool doe_runtime_read_buffer(doe_runtime *runtime, uint64_t handle, uint8_t **data, size_t *size,
     doe_trace_execution *execution);
 /* Immutable file-backed source identities actually compiled during this run,
@@ -90,6 +92,8 @@ bool doe_runtime_write_device_policy(FILE *out, const doe_runtime *runtime);
 /* False retains the runtime and its handles because device-loss quiescence was
  * not proved. Commands refuse after closing starts; the owner may retry close
  * after completion is established. A true result consumes the runtime. */
+/* Callback retirement alone does not prove submitted GPU work completed. */
+bool doe_runtime_gpu_completion_unknown(const doe_runtime *runtime);
 bool doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif

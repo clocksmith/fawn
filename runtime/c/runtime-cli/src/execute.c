@@ -369,6 +369,7 @@ bool doe_runtime_close(doe_runtime *runtime)
     runtime->closing = true;
     error_unlock(runtime);
     if (runtime->device && !device_quiesce(runtime, runtime->device)) return false;
+    if (!runtime_retire_readback(runtime)) return false;
     for (size_t i = 0; i < runtime->pipeline_count; i++) {
         pipeline_entry *entry = &runtime->pipelines[i];
         if (entry->pipeline) wgpuComputePipelineRelease(entry->pipeline);
@@ -383,8 +384,7 @@ bool doe_runtime_close(doe_runtime *runtime)
     runtime_release_surfaces(runtime);
     runtime_release_diagnostics(runtime);
     runtime_release_textures(runtime);
-    for (size_t i = 0; i < runtime->buffer_count; i++) wgpuBufferRelease(runtime->buffers[i].buffer);
-    free(runtime->buffers);
+    runtime_buffer_table_clear(&runtime->buffers);
     if (runtime->indirect_args) wgpuBufferRelease(runtime->indirect_args);
     if (runtime->map_buffer) wgpuBufferRelease(runtime->map_buffer);
     if (runtime->queue) wgpuQueueRelease(runtime->queue);
@@ -462,27 +462,39 @@ bool runtime_pop_scopes(doe_runtime *runtime, doe_trace_execution *execution)
     return ok;
 }
 
+buffer_entry *runtime_buffer_table_find(runtime_buffer_table *table, uint64_t handle)
+{
+    for (size_t i = 0; i < table->count; i++) if (table->entries[i].handle == handle) return &table->entries[i];
+    return NULL;
+}
+
 buffer_entry *runtime_find_buffer(doe_runtime *runtime, uint64_t handle)
 {
-    for (size_t i = 0; i < runtime->buffer_count; i++) if (runtime->buffers[i].handle == handle) return &runtime->buffers[i];
-    return NULL;
+    return runtime_buffer_table_find(&runtime->buffers, handle);
+}
+
+void runtime_buffer_table_clear(runtime_buffer_table *table)
+{
+    for (size_t i = 0; i < table->count; i++) wgpuBufferRelease(table->entries[i].buffer);
+    free(table->entries);
+    *table = (runtime_buffer_table){0};
 }
 
 /* Handle buffers serve uploads, uniforms and storage alike. WebGPU zero-fills
  * new buffers, which is the "initialize_buffers_on_create" contents. */
-static buffer_entry *create_buffer_usage(doe_runtime *runtime, uint64_t handle, uint64_t size, WGPUBufferUsage usage,
-    doe_trace_execution *execution)
+static buffer_entry *create_buffer_usage(doe_runtime *runtime, runtime_buffer_table *table, uint64_t handle,
+    uint64_t size, WGPUBufferUsage usage, doe_trace_execution *execution)
 {
     if (size == 0 || size > UINT64_MAX - 3) {
         runtime_fail(execution, "buffer_size_invalid", "buffer %llu needs a nonzero size", (unsigned long long)handle);
         return NULL;
     }
-    if (runtime->buffer_count == runtime->buffer_capacity) {
-        size_t capacity = runtime->buffer_capacity ? runtime->buffer_capacity * 2 : 16;
-        buffer_entry *grown = realloc(runtime->buffers, capacity * sizeof(*grown));
+    if (table->count == table->capacity) {
+        size_t capacity = table->capacity ? table->capacity * 2 : 16;
+        buffer_entry *grown = realloc(table->entries, capacity * sizeof(*grown));
         if (!grown) { runtime_fail(execution, "out_of_memory", "out of memory"); return NULL; }
-        runtime->buffers = grown;
-        runtime->buffer_capacity = capacity;
+        table->entries = grown;
+        table->capacity = capacity;
     }
     WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
     descriptor.size = (size + 3) & ~UINT64_C(3);
@@ -493,15 +505,21 @@ static buffer_entry *create_buffer_usage(doe_runtime *runtime, uint64_t handle, 
             (unsigned long long)handle, (unsigned long long)size);
         return NULL;
     }
-    buffer_entry *entry = &runtime->buffers[runtime->buffer_count++];
+    buffer_entry *entry = &table->entries[table->count++];
     *entry = (buffer_entry){.handle = handle, .buffer = buffer, .size = descriptor.size, .usage = usage};
     return entry;
 }
 
+buffer_entry *runtime_buffer_table_create(doe_runtime *runtime, runtime_buffer_table *table,
+    uint64_t handle, uint64_t size, doe_trace_execution *execution)
+{
+    return create_buffer_usage(runtime, table, handle, size, WGPUBufferUsage_Storage | WGPUBufferUsage_Uniform |
+        WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, execution);
+}
+
 buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution)
 {
-    return create_buffer_usage(runtime, handle, size, WGPUBufferUsage_Storage | WGPUBufferUsage_Uniform |
-        WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, execution);
+    return runtime_buffer_table_create(runtime, &runtime->buffers, handle, size, execution);
 }
 
 buffer_entry *runtime_ensure_buffer_usage(doe_runtime *runtime, uint64_t handle, uint64_t size, WGPUBufferUsage usage,
@@ -509,12 +527,12 @@ buffer_entry *runtime_ensure_buffer_usage(doe_runtime *runtime, uint64_t handle,
 {
     buffer_entry *entry = runtime_find_buffer(runtime, handle);
     if (entry && entry->size >= size && (entry->usage & usage) == usage) return entry;
-    if (!entry) return create_buffer_usage(runtime, handle, size, usage, execution);
+    if (!entry) return create_buffer_usage(runtime, &runtime->buffers, handle, size, usage, execution);
     usage |= entry->usage;
-    size_t position = (size_t)(entry - runtime->buffers);
+    size_t position = (size_t)(entry - runtime->buffers.entries);
     WGPUBuffer previous = entry->buffer;
-    runtime->buffers[position] = runtime->buffers[--runtime->buffer_count];
-    buffer_entry *created = create_buffer_usage(runtime, handle, size, usage, execution);
+    runtime->buffers.entries[position] = runtime->buffers.entries[--runtime->buffers.count];
+    buffer_entry *created = create_buffer_usage(runtime, &runtime->buffers, handle, size, usage, execution);
     wgpuBufferRelease(previous);
     return created;
 }
@@ -527,6 +545,10 @@ buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint6
 
 bool runtime_submit(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution)
 {
+    if (runtime->queue_wait_failed) {
+        if (commands) wgpuCommandBufferRelease(commands);
+        return runtime_fail(execution, "queue_wait_unresolved", "a previous queue wait failed; no new work submitted");
+    }
     if (!commands) return runtime_fail(execution, "encode_failed", "command buffer was not created");
     wgpuQueueSubmit(runtime->queue, 1, &commands);
     wgpuCommandBufferRelease(commands);
@@ -615,7 +637,7 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     error_lock(runtime);
     bool closing = runtime->closing;
     error_unlock(runtime);
-    if (closing || runtime->scope_wait_failed)
+    if (closing || runtime->scope_wait_failed || runtime->readback || runtime->queue_wait_failed)
         return runtime_fail(execution, "runtime_unresolved", "runtime teardown or error scopes remain unresolved");
     uint64_t start = doe_runtime_monotonic_ns();
     bool ok = false;

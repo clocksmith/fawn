@@ -20,6 +20,11 @@ typedef struct buffer_entry {
     WGPUBufferUsage usage;
 } buffer_entry;
 
+typedef struct runtime_buffer_table {
+    buffer_entry *entries;
+    size_t count, capacity;
+} runtime_buffer_table;
+
 /* A stream texture: `declared` is the stream's descriptor; the WebGPU texture
  * also carries CopySrc|CopyDst so copies and writes keep its contents. */
 typedef struct texture_entry {
@@ -77,6 +82,7 @@ bool runtime_timestamp_finish(doe_runtime *runtime, runtime_timestamp *timestamp
 
 void runtime_pipeline_cache_open(doe_runtime *runtime);
 
+struct readback_request;
 struct public_render_state;
 struct doe_runtime {
     doe_runtime_options options;
@@ -93,8 +99,7 @@ struct doe_runtime {
     WGPUDevice device;
     WGPUQueue queue;
     doe_runtime_adapter info;
-    buffer_entry *buffers;
-    size_t buffer_count, buffer_capacity;
+    runtime_buffer_table buffers;
     pipeline_entry *pipelines;
     size_t pipeline_count, pipeline_capacity;
     kernel_source_record *kernel_sources;
@@ -117,6 +122,7 @@ struct doe_runtime {
     doe_command last_kernel;
     WGPUBuffer indirect_args; /* 16 bytes, Indirect | CopyDst */
     /* A reusable MapRead | CopyDst or MapWrite | CopySrc map_async buffer. */
+    struct readback_request *readback; /* Owns an unretired capture callback. */
     WGPUBuffer map_buffer;
     uint64_t map_size;
     bool map_write;
@@ -144,6 +150,11 @@ void runtime_push_scopes(doe_runtime *runtime);
 bool runtime_pop_scopes(doe_runtime *runtime, doe_trace_execution *execution);
 bool runtime_after_submit(doe_runtime *runtime, doe_trace_execution *execution);
 bool runtime_wait_queue(doe_runtime *runtime, doe_trace_execution *execution);
+/* Timing and isolated proof use the same handle table and allocation owner. */
+buffer_entry *runtime_buffer_table_find(runtime_buffer_table *table, uint64_t handle);
+buffer_entry *runtime_buffer_table_create(doe_runtime *runtime, runtime_buffer_table *table,
+    uint64_t handle, uint64_t size, doe_trace_execution *execution);
+void runtime_buffer_table_clear(runtime_buffer_table *table);
 buffer_entry *runtime_find_buffer(doe_runtime *runtime, uint64_t handle);
 buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution);
 /* The handle's buffer when it holds `size` bytes; otherwise a new zero-filled
@@ -163,6 +174,7 @@ WGPURenderPipeline runtime_async_render_pipeline(doe_runtime *runtime, WGPUShade
 /* Submits and releases the command buffer; waits unless deferred sync is selected. */
 bool runtime_submit(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution);
 /* Copies `size` bytes (a multiple of 4) at `offset` of `source` to `out`. */
+bool runtime_retire_readback(doe_runtime *runtime);
 bool runtime_read_back(doe_runtime *runtime, WGPUBuffer source, uint64_t offset, uint64_t size, uint8_t *out,
     doe_trace_execution *execution);
 bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);

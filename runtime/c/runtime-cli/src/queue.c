@@ -62,10 +62,17 @@ bool runtime_after_submit(doe_runtime *runtime, doe_trace_execution *execution)
 bool doe_runtime_flush(doe_runtime *runtime, doe_trace_execution *execution)
 {
     *execution = (doe_trace_execution){.ok = true};
+    if (runtime->readback)
+        return runtime_fail(execution, "readback_wait_unresolved", "a capture map future remains unresolved");
     if (!runtime->queue_pending && !runtime->uploads_since_wait) return true;
     uint64_t start = doe_runtime_monotonic_ns();
     bool ok = runtime_wait_queue(runtime, execution);
     execution->duration_ns = doe_runtime_monotonic_ns() - start;
     execution->submit_wait_ns = execution->duration_ns;
     return ok;
+}
+
+bool doe_runtime_gpu_completion_unknown(const doe_runtime *runtime)
+{
+    return runtime && ((runtime->queue_wait_failed && (!runtime->queue_done || runtime->queue_status != WGPUQueueWorkDoneStatus_Success)) || runtime->readback != NULL);
 }

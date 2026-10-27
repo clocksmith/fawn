@@ -468,6 +468,16 @@ static bool parse_kernel_dispatch(const doe_json_value *object, doe_command *com
                 return stream_reject(error, index, "bindings repeat group %u binding %u", b->group, b->binding);
         }
     }
+    if (command->as.dispatch.oracle && command->as.dispatch.oracle->kind == DOE_JSON_NULL)
+        command->as.dispatch.oracle = NULL;
+    if (command->as.dispatch.oracle) {
+        doe_output_oracle oracle;
+        char reason[256];
+        if (!doe_output_oracle_parse(command->as.dispatch.oracle, &oracle, reason, sizeof(reason)))
+            return stream_reject(error, index, "%s", reason);
+        if (oracle.scope == DOE_ORACLE_COMMAND_GRAPH && oracle.dispatch_count != command->as.dispatch.repeat)
+            return stream_reject(error, index, "command-graph oracle dispatch_count must equal kernel repeat");
+    }
     return true;
 }
 
@@ -601,43 +611,5 @@ bool doe_stream_parse(const char *text, size_t size, doe_stream *stream, doe_str
     }
     parsed.count = list->count;
     *stream = parsed;
-    return true;
-}
-
-bool doe_output_oracle_parse(const doe_json_value *value, doe_output_oracle *out, char *message, size_t message_size)
-{
-    static const char *const allowed[] = {"schema_version", "schemaVersion", "kind", "initialization", "binding_group",
-        "bindingGroup", "binding", "dispatch_count", "dispatchCount", "expected_sha256", "expectedSha256",
-        "reference_id", "referenceId", NULL};
-    doe_stream_error error = {0};
-    *out = (doe_output_oracle){0};
-    bool ok = value && value->kind == DOE_JSON_OBJECT;
-    if (!ok) snprintf(error.message, sizeof(error.message), "output_oracle must be an object");
-    uint64_t schema = 0, group = 0, binding = 0;
-    ok = ok && stream_only_members(value, allowed, 0, "output_oracle", &error);
-    ok = ok && stream_read_u64(value, "schema_version", "schemaVersion", UINT32_MAX, true, 0, &schema, 0, &error);
-    if (ok && schema != 1) ok = stream_reject(&error, 0, "output_oracle schema_version %llu is not implemented (1 only)", (unsigned long long)schema);
-    const char *kind = NULL, *initialization = NULL, *expected = NULL;
-    ok = ok && stream_read_string(value, "kind", NULL, &kind, 0, &error) &&
-        stream_read_string(value, "initialization", NULL, &initialization, 0, &error) &&
-        stream_read_string(value, "expected_sha256", "expectedSha256", &expected, 0, &error) &&
-        stream_read_string(value, "reference_id", "referenceId", &out->reference_id, 0, &error);
-    if (ok && (!kind || strcmp(kind, "sha256_exact_v1"))) ok = stream_reject(&error, 0, "output_oracle kind must be sha256_exact_v1");
-    if (ok && (!initialization || strcmp(initialization, "zero_fill_v1")))
-        ok = stream_reject(&error, 0, "output_oracle initialization must be zero_fill_v1");
-    if (ok && !out->reference_id) ok = stream_reject(&error, 0, "output_oracle needs a reference_id");
-    ok = ok && stream_read_u64(value, "binding_group", "bindingGroup", UINT32_MAX, true, 0, &group, 0, &error) &&
-        stream_read_u64(value, "binding", NULL, UINT32_MAX, true, 0, &binding, 0, &error) &&
-        stream_read_u64(value, "dispatch_count", "dispatchCount", UINT32_MAX, true, 0, &out->dispatch_count, 0, &error);
-    if (ok && out->dispatch_count == 0) ok = stream_reject(&error, 0, "output_oracle dispatch_count must be nonzero");
-    if (ok && (!expected || strlen(expected) != 64 || strspn(expected, "0123456789abcdef") != 64))
-        ok = stream_reject(&error, 0, "output_oracle expected_sha256 must be 64 lowercase hex digits");
-    if (!ok) {
-        snprintf(message, message_size, "%s", error.message);
-        return false;
-    }
-    out->group = (uint32_t)group;
-    out->binding = (uint32_t)binding;
-    memcpy(out->expected_sha256, expected, 65);
     return true;
 }

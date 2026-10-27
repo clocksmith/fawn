@@ -344,8 +344,8 @@ static WGPUTextureView binding_view(doe_runtime *runtime, const doe_kernel_bindi
     return view;
 }
 
-static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, const doe_command *command,
-    WGPUBindGroup *groups, doe_trace_execution *execution)
+static bool create_groups(doe_runtime *runtime, runtime_buffer_table *buffers, const pipeline_entry *pipeline,
+    const doe_command *command, WGPUBindGroup *groups, doe_trace_execution *execution)
 {
     const doe_kernel_binding *bindings = command->as.dispatch.bindings;
     size_t count = command->as.dispatch.binding_count;
@@ -367,7 +367,7 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
                 entries[used++] = entry;
                 continue;
             }
-            buffer_entry *buffer = runtime_find_buffer(runtime, binding->handle);
+            buffer_entry *buffer = runtime_buffer_table_find(buffers, binding->handle);
             if (!buffer) {
                 if (binding->buffer_size == UINT64_MAX) {
                     entries_ok = runtime_fail(execution, "kernel_binding_size", "binding %u.%u names new buffer %llu without buffer_size",
@@ -378,7 +378,7 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
                     entries_ok = runtime_fail(execution, "kernel_binding_size", "binding %u.%u range overflows", g, binding->binding);
                     break;
                 }
-                buffer = runtime_create_buffer(runtime, binding->handle, binding->buffer_offset + binding->buffer_size, execution);
+                buffer = runtime_buffer_table_create(runtime, buffers, binding->handle, binding->buffer_offset + binding->buffer_size, execution);
                 if (!buffer) { entries_ok = false; break; }
             }
             WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
@@ -453,7 +453,7 @@ static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, W
     }
     WGPUBindGroup groups[MAX_GROUPS] = {0};
     runtime_push_scopes(runtime);
-    bool ok = create_groups(runtime, pipeline, command, groups, execution);
+    bool ok = create_groups(runtime, &runtime->buffers, pipeline, command, groups, execution);
     if (ok && command->as.dispatch.warmup) {
         ok = runtime_submit(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
         if (ok && runtime->options.defer_queue_sync) ok = runtime_wait_queue(runtime, execution);
@@ -501,43 +501,23 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
             return runtime_fail(execution, "output_oracle_texture_bindings", "isolated oracles over texture bindings are not implemented");
     if (target->buffer_size == UINT64_MAX || target->buffer_size == 0 || target->buffer_size % 4 != 0)
         return runtime_fail(execution, "output_oracle_buffer_size", "the oracle binding needs an explicit buffer_size multiple of 4");
+    for (size_t i = 0; i < command->as.dispatch.binding_count; i++) {
+        const doe_kernel_binding *binding = &command->as.dispatch.bindings[i];
+        if (binding->buffer_size > UINT64_MAX - 3 || binding->buffer_offset > UINT64_MAX - 3 - binding->buffer_size)
+            return runtime_fail(execution, "output_oracle_buffer_size", "binding %u.%u needs an explicit addressable buffer_size",
+                binding->group, binding->binding);
+    }
     pipeline_entry *pipeline = prepare_pipeline(runtime, command, execution);
     if (!pipeline) return false;
-    WGPUBuffer buffers[MAX_GROUP_BINDINGS] = {0};
-    WGPUBuffer target_buffer = NULL;
+    runtime_buffer_table buffers = {0};
     WGPUBindGroup groups[MAX_GROUPS] = {0};
     uint8_t *bytes = NULL;
     runtime_push_scopes(runtime);
     bool ok = command->as.dispatch.binding_count <= MAX_GROUP_BINDINGS ||
         runtime_fail(execution, "output_oracle_bindings", "more than %d bindings", MAX_GROUP_BINDINGS);
-    WGPUBindGroupEntry entries[MAX_GROUP_BINDINGS];
-    for (uint32_t g = 0; ok && g < pipeline->group_count; g++) {
-        size_t used = 0;
-        for (size_t i = 0; ok && i < command->as.dispatch.binding_count; i++) {
-            const doe_kernel_binding *binding = &command->as.dispatch.bindings[i];
-            if (binding->group != g) continue;
-            if (binding->buffer_size == UINT64_MAX || binding->buffer_offset > UINT64_MAX - 3 - binding->buffer_size) {
-                ok = runtime_fail(execution, "output_oracle_buffer_size", "binding %u.%u needs buffer_size", g, binding->binding);
-                break;
-            }
-            WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
-            descriptor.size = (binding->buffer_offset + binding->buffer_size + 3) & ~UINT64_C(3);
-            descriptor.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_Uniform | WGPUBufferUsage_CopySrc;
-            buffers[i] = wgpuDeviceCreateBuffer(runtime->device, &descriptor);
-            if (binding == target) target_buffer = buffers[i];
-            WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
-            entry.binding = binding->binding;
-            entry.buffer = buffers[i];
-            entry.offset = binding->buffer_offset;
-            entry.size = binding->buffer_size;
-            entries[used++] = entry;
-        }
-        WGPUBindGroupDescriptor descriptor = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-        descriptor.layout = pipeline->groups[g];
-        descriptor.entryCount = used;
-        descriptor.entries = entries;
-        if (ok) groups[g] = wgpuDeviceCreateBindGroup(runtime->device, &descriptor);
-    }
+    if (ok) ok = create_groups(runtime, &buffers, pipeline, command, groups, execution);
+    buffer_entry *captured = runtime_buffer_table_find(&buffers, target->handle);
+    WGPUBuffer target_buffer = captured ? captured->buffer : NULL;
     if (ok) {
         doe_command isolated = *command;
         isolated.as.dispatch.warmup = 0;
@@ -553,7 +533,7 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
     }
     free(bytes);
     for (uint32_t g = 0; g < MAX_GROUPS; g++) if (groups[g]) wgpuBindGroupRelease(groups[g]);
-    for (size_t i = 0; i < MAX_GROUP_BINDINGS; i++) if (buffers[i]) wgpuBufferRelease(buffers[i]);
+    runtime_buffer_table_clear(&buffers);
     bool scopes_ok = runtime_pop_scopes(runtime, execution);
     return ok && scopes_ok;
 }
