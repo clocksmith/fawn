@@ -153,6 +153,10 @@ try {
   result.error = String(error.stack ?? error);
   process.exitCode = 1;
 } finally {
+  if (context && !result.inspection) {
+    try { result.inspection = inspectBrowserProcesses(process.pid, profile); }
+    catch (error) { result.inspectionError = String(error.stack ?? error); }
+  }
   try {
     if (initialized && !finished && result.gpuCompletion === 'completed' && !page.isClosed()) {
       result.failureCleanup = await bounded(page.evaluate(() => window.finish()), 'failed control context cleanup', 5000);
