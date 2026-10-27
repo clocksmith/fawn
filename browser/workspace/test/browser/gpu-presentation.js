@@ -16,12 +16,12 @@ const options = {};
 for (let index = 2; index < process.argv.length; index += 2) {
   const key = process.argv[index];
   if (!['--browser-config', '--out', '--negative-control'].includes(key) || !process.argv[index + 1] || options[key]) {
-    throw new Error('usage: gpu-presentation.js --browser-config PROFILE --out NEW_DIRECTORY [--negative-control omit-draw]');
+    throw new Error('usage: gpu-presentation.js --browser-config PROFILE --out NEW_DIRECTORY [--negative-control omit-draw|swap-red-blue]');
   }
   options[key] = process.argv[index + 1];
 }
 if (!options['--browser-config'] || !options['--out']) throw new Error('explicit image profile and new output required');
-if (options['--negative-control'] && options['--negative-control'] !== 'omit-draw') throw new Error('unknown negative control');
+if (options['--negative-control'] && !['omit-draw', 'swap-red-blue'].includes(options['--negative-control'])) throw new Error('unknown negative control');
 const output = resolve(options['--out']);
 mkdirSync(output, { recursive: false });
 const config = loadServiceConfig(resolve(options['--browser-config']));
@@ -96,11 +96,11 @@ try {
       fragment: { module: device.createShaderModule({ code: shaders.fragment }), entryPoint: 'main', targets: [{ format }] } });
     const setupError = await device.popErrorScope();
     if (setupError) throw new Error(setupError.message);
-    window.present = async draw => {
+    window.present = async ({ draw, clearValue }) => {
       device.pushErrorScope('validation');
       const encoder = device.createCommandEncoder();
       const pass = encoder.beginRenderPass({ colorAttachments: [{ view: context.getCurrentTexture().createView(),
-        loadOp: 'clear', storeOp: 'store', clearValue: { r: 1, g: 0, b: 1, a: 1 } }] });
+        loadOp: 'clear', storeOp: 'store', clearValue }] });
       if (draw) { pass.setPipeline(pipeline); pass.draw(3); }
       pass.end();
       device.queue.submit([encoder.finish()]);
@@ -120,10 +120,14 @@ try {
       device: adapter.info.device, description: adapter.info.description, isFallbackAdapter: adapter.info.isFallbackAdapter ?? null, format };
   }, shaders), 'WebGPU setup');
   initialized = true;
-  for (const [name, draw, rgba] of [['gpu-clear-magenta', false, [255, 0, 255, 255]], ['gpu-triangle-green', true, [0, 255, 0, 255]]]) {
+  for (const [name, draw, rgba] of [['gpu-clear-blue', false, [0, 0, 255, 255]],
+    ['gpu-clear-magenta', false, [255, 0, 255, 255]], ['gpu-triangle-green', true, [0, 255, 0, 255]]]) {
     result.gpuCompletion = 'unknown';
     const selectedDraw = draw && options['--negative-control'] !== 'omit-draw';
-    const work = await bounded(page.evaluate(draw => window.present(draw), selectedDraw), name);
+    const clearValue = name === 'gpu-clear-blue'
+      ? (options['--negative-control'] === 'swap-red-blue' ? { r: 1, g: 0, b: 0, a: 1 } : { r: 0, g: 0, b: 1, a: 1 })
+      : { r: 1, g: 0, b: 1, a: 1 };
+    const work = await bounded(page.evaluate(work => window.present(work), { draw: selectedDraw, clearValue }), name);
     assert.equal(work.queueCompleted, true);
     result.gpuCompletion = 'completed';
     await capture(name, rgba);
