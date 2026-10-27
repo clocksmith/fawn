@@ -24,9 +24,12 @@ Win32 uses InitOnce and a permanent FROM_ADDRESS|PIN loader pin, with no ordinar
 LoadLibrary fallback. This code residency survives to process exit; GPU/resource
 leases settle independently. The pending owner retains
 one device lease and observes completion; do not add a second queue or report
-unknown work as terminal. Vulkan submissions return once the queue accepts
-them; the worker waits for the oldest accepted fence outside the device mutex
-under a command hold and skips refused records, routine settlement polls, and
+unknown work as terminal. Vulkan and Metal submissions return once accepted.
+Metal preserves each resource's single recording owner: discard provisional
+uncommitted BUSY work before settling the specific accepted predecessor and
+recording again; unknown/failure never retries. The worker waits outside the
+device mutex under an actual native handle lease, then observes completion
+under that mutex. Routine settlement polls, and
 running work is never a failure (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Host buffer access waits only for
 submissions using that buffer; work done waits each record's fence. Idle final
 release joins the worker.

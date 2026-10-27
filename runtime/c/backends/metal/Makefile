@@ -5,7 +5,7 @@ BUILD ?= $(DOE_C_TMP)/metal
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-SOURCES = src/shared_memory.c src/objc_shared.c src/external_textures.c src/objc_external.c src/objc_external_loader.c src/timeline.c src/objc_timeline.c src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
+SOURCES = src/progress.c src/shared_memory.c src/objc_shared.c src/external_textures.c src/objc_external.c src/objc_external_loader.c src/timeline.c src/objc_timeline.c src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
           src/objc_pipeline.c src/objc_library_cache.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
@@ -153,3 +153,10 @@ check-external: $(BUILD)/test_external $(BUILD)/test_objc_external
 check: check-external
 $(BUILD)/test_objc_external: tests/test_objc_external.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+
+$(BUILD)/test_progress: tests/test_progress.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_progress.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+.PHONY: check-progress
+check-progress: $(BUILD)/test_progress
+	$(BUILD)/test_progress
+check: check-progress

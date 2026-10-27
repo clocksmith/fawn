@@ -49,6 +49,7 @@ struct doe_mtl_commands {
     doe_mtl_context *context;
     void *native;
     doe_mtl_command_state state;
+    doe_mtl_commands *conflict; /* Borrowed under caller serialization; never retained. */
     uint64_t timeline_value;
     void *shared_signal_event; /* +1 until this recording is discarded or terminal. */
     doe_mtl_error failure;
@@ -63,7 +64,7 @@ struct doe_mtl_commands {
 };
 doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);
-doe_mtl_status doe_mtl_buffer_preflight(const doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable);
 doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer_binding *bindings, size_t count, uint32_t sizes_slot,

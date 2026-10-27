@@ -4,6 +4,7 @@
 #include "../src/internal.h"
 #include "../src/metal_binding_internal.h"
 #include "../../backends/metal/tests/mock_native.h"
+#include "../../backends/metal/src/internal.h"
 #include "consumer.h"
 #include "metal_graphics_cases.h"
 #include "metal_copy_cases.h"
@@ -21,7 +22,8 @@ static doe_mtl_context *contexts[8];
 static doe_mtl_commands *commands[8];
 static unsigned context_count;
 static unsigned physical_identity[2];
-static bool changed_default, hold;
+static bool changed_default;
+static atomic_bool hold;
 static doe_mtl_status buffer_failure = DOE_MTL_OK;
 static unsigned vulkan_format_queries;
 
@@ -41,12 +43,16 @@ doe_mtl_status __real_doe_mtl_commands_create(doe_mtl_context *, doe_mtl_command
 doe_mtl_status __real_doe_mtl_buffer_create(doe_mtl_context *, uint64_t, doe_mtl_memory,
     doe_mtl_buffer **, doe_mtl_error *);
 
+#include "metal_async_driver.h"
+
 doe_mtl_status __wrap_doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error)
 {
     assert(context_count < 8);
     unsigned index = context_count++;
     doe_mtl_native driver = mock_driver(&mocks[index]);
     external_drivers[index] = driver;
+    driver.commit = mock_commit;
+    mocks[index].block_hook = mock_block_completion;
     driver.external_texture = external_import_ledger;
     mocks[index].etc2 = mocks[index].astc = mocks[index].astc_sliced_3d = true;
     doe_mtl_status status = doe_mtl_context_open(driver, out, error);
@@ -76,8 +82,9 @@ doe_mtl_status __wrap_doe_mtl_commands_create(doe_mtl_context *context,
 doe_mtl_status __wrap_doe_mtl_commands_wait(doe_mtl_commands *command, doe_mtl_error *error)
 {
     for (unsigned i = context_count; i != 0; --i) {
-        if (commands[i - 1] != command) continue;
-        mock_result(&mocks[i - 1],hold ? 0 : 4,0);
+        if (contexts[i - 1] != command->context) continue;
+        size_t status = mock_command_status(command->native);
+        if (status != 4 && status != 5) mock_command_result(command->native,atomic_load(&hold) ? 0 : 4,0);
         break;
     }
     return __real_doe_mtl_commands_wait(command,error);

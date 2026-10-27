@@ -1,13 +1,16 @@
 /* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
 
-doe_mtl_status doe_mtl_texture_preflight(const doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_texture_preflight(doe_mtl_commands *commands,
     const doe_mtl_texture *texture, uint32_t usage) {
     if (texture == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (texture->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
     if (texture->presentation_registered) return DOE_MTL_INVALID_STATE;
     if (texture->poisoned) return DOE_MTL_EXECUTION_FAILED;
-    if (texture->owner != NULL && texture->owner != commands) return DOE_MTL_BUSY;
+    if (texture->owner != NULL && texture->owner != commands) {
+        commands->conflict = texture->owner;
+        return DOE_MTL_BUSY;
+    }
     if ((texture->desc.usage & usage) != usage) return DOE_MTL_INVALID_ARGUMENT;
     return DOE_MTL_OK;
 }

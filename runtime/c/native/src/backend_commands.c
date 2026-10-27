@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "backend.h"
 #include "d3d12_frontend.h"
+#include "../../backends/metal/src/progress.h"
 
 native_failure native_command_create(const native_backend *backend, native_command_handle *out)
 {
@@ -54,7 +55,8 @@ native_failure native_command_wait(native_command_handle *commands)
 
 bool native_command_in_flight(const native_command_handle *commands)
 {
-    return commands->kind == WGPUBackendType_Vulkan && doe_vk_commands_in_flight(commands->value.vulkan);
+    return (commands->kind == WGPUBackendType_Vulkan && doe_vk_commands_in_flight(commands->value.vulkan)) ||
+        (commands->kind == WGPUBackendType_Metal && doe_mtl_commands_in_flight(commands->value.metal));
 }
 
 native_failure native_command_poll(native_command_handle *commands)

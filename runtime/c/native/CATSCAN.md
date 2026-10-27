@@ -20,8 +20,8 @@ Pinned ABI, inventoried legacy/browser signatures and
 ## Invariants
 Select without fallback; read only the selected payload. Windows LUID admission
 preserves exact words/software identity; unknown chains and forced fallback reject. Reflection cannot
-replace dispatch analysis. Unknown work retains resources. Vulkan acceptance,
-ordered settlement and texture initialization share the pending owner.
+replace dispatch analysis. Unknown work retains resources. Metal/Vulkan acceptance, conflict settlement
+and initialization share the pending owner.
 Presentation retains frame/backbuffer identity and leases across early release,
 teardown and resize; only actual backend completion retires them. Display
 timestamps never redefine WorkDone. Surface-before-device locking, errors, rollback and retirement ownership persist.

@@ -2,6 +2,9 @@
 """Boundary tests for the mechanical C style rules, including frozen exemptions."""
 import hashlib
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -12,6 +15,48 @@ GUARDED = SPDX + b"#ifndef UNIT_H\n#define UNIT_H\nint unit;\n#endif\n"
 
 
 class StyleTests(unittest.TestCase):
+    def copy_checker(self, root: Path) -> Path:
+        tools = root / "runtime/c/tools"
+        tools.mkdir(parents=True)
+        for name in ("check_style.py", "check_source_size.py"):
+            shutil.copy2(Path(__file__).with_name(name), tools / name)
+        return tools / "check_style.py"
+
+    def test_cli_rejects_snapshot_inside_ignored_parent_repository(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory).resolve()
+            subprocess.run(["git", "init", "-q", str(parent)], check=True)
+            (parent / ".gitignore").write_text("ignored/\n")
+            root = parent / "ignored/snapshot"
+            script = self.copy_checker(root)
+            (root / "runtime/c/unit.c").write_bytes(SPDX + b"int unit;\n")
+            result = subprocess.run([sys.executable, str(script)], cwd=root,
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("does not match source root", result.stderr)
+            self.assertNotIn("0 sources, 0 failures", result.stdout)
+
+    def test_cli_rejects_empty_c_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            script = self.copy_checker(root)
+            result = subprocess.run([sys.executable, str(script)], cwd=root,
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("empty C source inventory", result.stderr)
+
+    def test_cli_accepts_actual_source_root_and_nonempty_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            script = self.copy_checker(root)
+            (root / "runtime/c/unit.c").write_bytes(SPDX + b"int unit;\n")
+            result = subprocess.run([sys.executable, str(script)], cwd=root,
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("1 sources, 0 failures", result.stdout)
+
     def check(self, files: dict[str, bytes]) -> list[str]:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

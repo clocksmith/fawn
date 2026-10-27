@@ -1,16 +1,19 @@
 /* SPDX-License-Identifier: MIT
  * Owned fault/call-boundary control. No shader interpretation or GPU simulation. */
+#include "../../../platform/include/doe_platform.h"
 #include "mock_native.h"
 #include <assert.h>
+#include <limits.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 
 struct mock_object {
-    unsigned kind;
+    unsigned kind, references;
     size_t length;
     unsigned char *bytes;
-    size_t status;
-    int64_t code;
+    atomic_size_t status;
+    atomic_int_fast64_t code;
 };
 
 static doe_mtl_status failure(doe_mtl_error *error) {
@@ -36,6 +39,7 @@ static mock_object *object_create(mock_native *mock, unsigned kind) {
     mock_object *object = calloc(1, sizeof(*object));
     assert(object != NULL);
     object->kind = kind;
+    object->references = 1;
     mock->live++;
     mock->created++;
     return object;
@@ -51,6 +55,8 @@ static void release_object(void *userdata, void *handle) {
     mock_native *mock = userdata;
     mock_object *object = handle;
     assert(object != NULL && object->kind < MOCK_KIND_COUNT && mock->live > 0);
+    assert(object->references != 0);
+    if (--object->references != 0) return;
     if (object->kind == MOCK_KIND_COMMAND)
         assert(object->status != 2 && object->status != 3);
     mock->released++;
@@ -58,6 +64,14 @@ static void release_object(void *userdata, void *handle) {
     mock->live--;
     free(object->bytes);
     free(object);
+}
+
+static void *retain_object(void *userdata, void *handle) {
+    (void)userdata;
+    mock_object *object = handle;
+    assert(object && object->references && object->references != UINT_MAX);
+    ++object->references;
+    return object;
 }
 
 static doe_mtl_status device_create(void *userdata, void **out,
@@ -395,6 +409,18 @@ static size_t observe(void *userdata, void *handle, bool wait, doe_mtl_error *er
     return command->status;
 }
 
+static doe_mtl_status block_command(void *userdata, void *handle, uint64_t timeout_ns) {
+    mock_native *mock = userdata;
+    mock_object *command = handle;
+    assert(command && command->kind == MOCK_KIND_COMMAND);
+    ++mock->blocks;
+    if (mock->block_hook) mock->block_hook(mock,handle,timeout_ns);
+    else if ((command->status == 2 || command->status == 3) && timeout_ns)
+        assert(doe_sleep_for(timeout_ns < UINT64_C(1000000) ? timeout_ns : UINT64_C(1000000)).status == DOE_HOST_OK);
+    return command->status == 4 || command->status == 5 ? DOE_MTL_OK :
+        command->status == 2 || command->status == 3 ? DOE_MTL_PENDING : DOE_MTL_COMPLETION_UNKNOWN;
+}
+
 doe_mtl_native mock_driver(mock_native *mock) {
     doe_mtl_native native = {0};
     memset(mock, 0, sizeof(*mock));
@@ -402,6 +428,8 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.userdata = mock;
     native.close = close_driver;
     native.release = release_object;
+    native.retain = retain_object;
+    native.block = block_command;
     native.device = device_create;
     native.queue = queue_create;
     native.buffer = buffer_create;
@@ -428,6 +456,19 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.commit = commit;
     native.observe = observe;
     return native;
+}
+
+size_t mock_command_status(void *handle) {
+    mock_object *command = handle;
+    assert(command && command->kind == MOCK_KIND_COMMAND);
+    return atomic_load(&command->status);
+}
+
+void mock_command_result(void *handle, size_t status, int64_t code) {
+    mock_object *command = handle;
+    assert(command && command->kind == MOCK_KIND_COMMAND);
+    command->code = code;
+    command->status = status;
 }
 
 void mock_result(mock_native *mock, size_t status, int64_t code) {

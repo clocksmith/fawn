@@ -64,11 +64,14 @@ doe_mtl_status doe_mtl_commands_create(doe_mtl_context *context,
     return doe_mtl_fail(DOE_MTL_OK, "command create", error);
 }
 
-doe_mtl_status doe_mtl_buffer_preflight(const doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable) {
     if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
-    if (buffer->owner != NULL && buffer->owner != commands) return DOE_MTL_BUSY;
+    if (buffer->owner != NULL && buffer->owner != commands) {
+        commands->conflict = buffer->owner;
+        return DOE_MTL_BUSY;
+    }
     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
     if (readable && !doe_mtl_buffer_initialized(commands, buffer))
         return DOE_MTL_UNINITIALIZED;

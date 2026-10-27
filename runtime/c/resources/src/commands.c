@@ -503,6 +503,15 @@ static doe_resource_status validate_submission(const doe_resource_command *comma
 
 static doe_resource_status validate_all(const doe_resource_commands *commands);
 
+doe_resource_status doe_resource_commands_validate_submission(const doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != 1)
+        return DOE_RESOURCE_STATE;
+    return validate_all(commands);
+}
+
 doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands)
 {
     if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;

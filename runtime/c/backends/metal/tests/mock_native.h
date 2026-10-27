@@ -2,6 +2,7 @@
 #ifndef DOE_MTL_MOCK_NATIVE_H
 #define DOE_MTL_MOCK_NATIVE_H
 #include "../src/native.h"
+#include <stdatomic.h>
 
 typedef enum mock_operation {
     MOCK_NONE, MOCK_DEVICE, MOCK_QUEUE, MOCK_BUFFER, MOCK_CONTENTS,
@@ -43,6 +44,8 @@ typedef struct mock_native {
     unsigned commits;
     unsigned polls;
     unsigned waits;
+    atomic_uint blocks;
+    void (*block_hook)(struct mock_native *, void *, uint64_t);
     unsigned releases_by_kind[MOCK_KIND_COUNT];
     size_t pipeline_max_threads;
     bool unknown_commit;
@@ -81,5 +84,7 @@ typedef struct mock_native {
 
 doe_mtl_native mock_driver(mock_native *mock);
 void mock_result(mock_native *mock, size_t status, int64_t code);
+void mock_command_result(void *command, size_t status, int64_t code);
+size_t mock_command_status(void *command);
 void mock_assert_closed(const mock_native *mock);
 #endif

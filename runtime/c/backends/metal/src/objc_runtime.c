@@ -162,6 +162,11 @@ static doe_mtl_status create_buffer(void *userdata, void *device, size_t length,
     return doe_mtl_fail(DOE_MTL_OK, "newBufferWithLength:options:", error);
 }
 
+static void *retain_object(void *userdata, void *object) {
+    doe_mtl_objc *runtime = userdata;
+    return doe_mtl_objc_object(runtime, object, runtime->retain);
+}
+
 static void *buffer_contents(void *userdata, void *buffer) {
     doe_mtl_objc *runtime = userdata;
     return doe_mtl_objc_object(runtime, buffer, runtime->contents);
@@ -313,6 +318,8 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
+    native.retain = retain_object;
+    native.block = doe_mtl_objc_command_block;
     native.external_texture = doe_mtl_objc_external_import;
     native.shared_surface = doe_mtl_objc_shared_surface;
     native.shared_surface_release = doe_mtl_objc_shared_surface_release;

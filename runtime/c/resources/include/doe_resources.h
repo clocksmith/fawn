@@ -568,6 +568,9 @@ const doe_resource_command *doe_resource_commands_borrow(const doe_resource_comm
  * PENDING (timeout/cancel/unknown) does not drop ownership or enable reuse.
  * External future/callback delivery remains in existing owners. */
 doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands);
+/* Non-consuming revalidation of an open submission after the frontend dropped
+ * its serialization for a native dependency wait. No new state or lease. */
+doe_resource_status doe_resource_commands_validate_submission(const doe_resource_commands *commands);
 doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands,
     doe_resource_status terminal_status);
 /* Reusable program ownership for the Doe compute-program extension only; the
