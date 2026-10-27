@@ -12,7 +12,12 @@ typedef enum mock_failure {
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
-    size_t opens;
+    size_t opens, luid_queries;
+    uint32_t query_low;
+    int32_t query_high;
+    doe_dx_status query_status;
+    bool query_software, override_query_identity;
+    doe_dx_adapter_identity query_identity;
     size_t surfaces,presents,surface_transitions,present_execute_count,present_signal_count;
     uint32_t surface_index;
     bool fail_present,surface_acquire_transition;

@@ -116,12 +116,66 @@ static void hardware_class(void) {
     mock_reset();
 }
 
+static void discovered_luid(void) {
+    for (unsigned software = 0; software < 2; ++software) {
+        const uint32_t low = UINT32_C(0xfedcba98);
+        const int32_t high = INT32_MIN + 17;
+        mock.query_software = software != 0;
+        doe_dx_context *context = NULL;
+        assert(doe_dx_context_create_from_luid(low, high, &context, NULL) == DOE_DX_OK);
+        assert(mock.luid_queries == 1 && mock.opens == 1);
+        assert(mock.query_low == low && mock.query_high == high);
+        assert(mock.open_options.adapter_selection == DOE_DX_SELECT_LUID);
+        assert(mock.open_options.adapter_identity.luid_low == low);
+        assert(mock.open_options.adapter_identity.luid_high == high);
+        assert(mock.open_options.adapter_identity.software_adapter == (software != 0));
+        assert(mock.open_options.allow_software_adapter == (software != 0));
+        assert(doe_dx_context_destroy(context) == DOE_DX_OK);
+        mock_reset();
+    }
+    doe_dx_context *sentinel = (doe_dx_context *)(uintptr_t)16;
+    assert(doe_dx_context_create_from_luid(1, -1, NULL, NULL) == DOE_DX_INVALID_ARGUMENT);
+    assert(!mock.luid_queries && !mock.opens);
+    mock.query_status = DOE_DX_UNAVAILABLE;
+    assert(doe_dx_context_create_from_luid(1, -1, &sentinel, NULL) == DOE_DX_UNAVAILABLE);
+    assert(sentinel == (doe_dx_context *)(uintptr_t)16 && mock.luid_queries == 1 && !mock.opens);
+    mock_reset();
+    mock.query_status = DOE_DX_DEVICE_MISMATCH;
+    assert(doe_dx_context_create_from_luid(1, -1, &sentinel, NULL) == DOE_DX_DEVICE_MISMATCH);
+    assert(sentinel == (doe_dx_context *)(uintptr_t)16 && mock.luid_queries == 1 && !mock.opens);
+    mock_reset();
+    mock.override_query_identity = true;
+    mock.query_identity = (doe_dx_adapter_identity){2, -1, false};
+    assert(doe_dx_context_create_from_luid(1, -1, &sentinel, NULL) == DOE_DX_DEVICE_MISMATCH);
+    assert(mock.luid_queries == 1 && !mock.opens);
+    mock_reset();
+    mock.override_caps = true;
+    mock.reported_caps = mock_default_caps();
+    assert(doe_dx_context_create_from_luid(1, -1, &sentinel, NULL) == DOE_DX_DEVICE_MISMATCH);
+    assert(mock.luid_queries == 1 && mock.opens == 1 && !mock.contexts && !mock.allocations);
+    mock_reset();
+    mock.query_software = true;
+    mock.override_caps = true;
+    mock.reported_caps = mock_default_caps();
+    mock.reported_caps.luid_low = 1;
+    mock.reported_caps.luid_high = -1;
+    mock.reported_caps.software_adapter = false;
+    assert(doe_dx_context_create_from_luid(1, -1, &sentinel, NULL) == DOE_DX_DEVICE_MISMATCH);
+    assert(mock.luid_queries == 1 && mock.opens == 1 && !mock.contexts && !mock.allocations);
+    mock_reset();
+    mock.failure = MOCK_OPEN;
+    assert(doe_dx_context_create_from_luid(1, -1, &sentinel, NULL) == DOE_DX_NATIVE_FAILURE);
+    assert(mock.luid_queries == 1 && mock.opens == 1 && !mock.contexts && !mock.allocations);
+    mock_reset();
+}
+
 int main(void) {
     modes();
     preflight();
     failed_open();
     wrong_identity();
     hardware_class();
-    puts("D3D12 adapter selection: 5 host groups passed; no SDK/adapter/driver claim");
+    discovered_luid();
+    puts("D3D12 adapter selection: 6 host groups passed; no SDK/adapter/driver claim");
     return 0;
 }

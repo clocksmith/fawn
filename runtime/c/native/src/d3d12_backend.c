@@ -4,27 +4,32 @@
 #if defined(_WIN32)
 #include <d3d12.h>
 
+static native_result finish_open(native_backend *backend, doe_dx_status status, native_backend *out)
+{
+    native_result result = native_from_d3d12(status);
+    if (result == NATIVE_OK)
+        result = native_from_d3d12(doe_dx_context_caps(backend->value.d3d12.context,
+            &backend->value.d3d12.caps));
+    /* The public compiler target is DXIL Shader Model6.0. Bytecode compilation
+     * cannot qualify a device which did not positively offer that profile. */
+    if (result == NATIVE_OK && backend->value.d3d12.caps.shader_model < D3D_SHADER_MODEL_6_0)
+        result = NATIVE_UNAVAILABLE;
+    if (result == NATIVE_OK && native_d3d12_limits(&backend->value.d3d12.caps,
+        &backend->limits) != WGPUStatus_Success) result = NATIVE_UNAVAILABLE;
+    if (result != NATIVE_OK) {
+        native_d3d12_close(backend);
+        return result;
+    }
+    *out = *backend;
+    return NATIVE_OK;
+}
+
 static native_result open_selected(const doe_dx_options *options, native_backend *out)
 {
     native_backend backend = {.kind = WGPUBackendType_D3D12};
     backend.value.d3d12.options = *options;
-    doe_dx_status status = doe_dx_context_create(options, &backend.value.d3d12.context, NULL);
-    native_result result = native_from_d3d12(status);
-    if (result == NATIVE_OK)
-        result = native_from_d3d12(doe_dx_context_caps(backend.value.d3d12.context,
-            &backend.value.d3d12.caps));
-    /* The public compiler target is DXIL Shader Model6.0. Bytecode compilation
-     * cannot qualify a device which did not positively offer that profile. */
-    if (result == NATIVE_OK && backend.value.d3d12.caps.shader_model < D3D_SHADER_MODEL_6_0)
-        result = NATIVE_UNAVAILABLE;
-    if (result == NATIVE_OK && native_d3d12_limits(&backend.value.d3d12.caps,
-        &backend.limits) != WGPUStatus_Success) result = NATIVE_UNAVAILABLE;
-    if (result != NATIVE_OK) {
-        native_d3d12_close(&backend);
-        return result;
-    }
-    *out = backend;
-    return NATIVE_OK;
+    return finish_open(&backend,
+        doe_dx_context_create(options, &backend.value.d3d12.context, NULL), out);
 }
 #endif
 
@@ -36,6 +41,28 @@ native_result native_d3d12_open(bool fallback, native_backend *out)
     return open_selected(&options, out);
 #else
     (void)fallback;
+    (void)out;
+    return NATIVE_UNAVAILABLE;
+#endif
+}
+
+native_result native_d3d12_open_luid(uint32_t low, int32_t high, native_backend *out)
+{
+#if defined(_WIN32)
+    native_backend backend = {.kind = WGPUBackendType_D3D12};
+    doe_dx_status status = doe_dx_context_create_from_luid(low, high,
+        &backend.value.d3d12.context, NULL);
+    native_result result = finish_open(&backend, status, out);
+    if (result == NATIVE_OK) {
+        const doe_dx_caps *identity = &out->value.d3d12.caps;
+        out->value.d3d12.options = (doe_dx_options){.adapter_selection = DOE_DX_SELECT_LUID,
+            .allow_software_adapter = identity->software_adapter,
+            .adapter_identity = {identity->luid_low,identity->luid_high,identity->software_adapter}};
+    }
+    return result;
+#else
+    (void)low;
+    (void)high;
     (void)out;
     return NATIVE_UNAVAILABLE;
 #endif

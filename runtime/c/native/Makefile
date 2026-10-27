@@ -658,6 +658,23 @@ check-persistent-cache: $(BUILD)/persistent-cache
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/persistent-cache
 PHYSICAL_CLIENTS += persistent-cache
 
+$(BUILD)/adapter-request: tests/backend_selection.c src/adapter_request.c src/adapter_request.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_ADAPTER_REQUEST_UNIT_ONLY tests/backend_selection.c src/adapter_request.c -o $@
+.PHONY: check-adapter-request
+check-adapter-request: $(BUILD)/adapter-request
+	$(BUILD)/adapter-request
+check: check-adapter-request
+
+ifeq ($(SHARED_PLATFORM),Linux)
+$(BUILD)/adapter-request-api: tests/backend_selection.c src/adapter_request.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_ADAPTER_REQUEST_API_CONTROL $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=native_backend_open_luid -o $@
+.PHONY: check-adapter-request-api
+check-adapter-request-api: $(BUILD)/adapter-request-api
+	$(BUILD)/adapter-request-api
+check: check-adapter-request-api
+endif
+
 $(BUILD)/singleton-layout: tests/singleton_layout.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 .PHONY: check-singleton-layout
