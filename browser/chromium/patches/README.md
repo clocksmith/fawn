@@ -34,6 +34,11 @@ texture conversion, which emits ordinary WebGPU usage bits. GL loader callbacks
 remain required when an external GL backend is actually selected. Native Dawn
 forwarding retains its existing behavior.
 
+The outer adapter applies `DawnConsumeAdapterDescriptor` only after successful
+device creation. Its original flag stays unchanged for that owner; the private
+node is absent from the external device request. Remaining unknown chains still
+reach the external provider for admission or rejection.
+
 Browser C devices must implement the private typed operation
 `WGPUStatus doeNativeDeviceDisablePersistentCache(WGPUDevice)`. The bridge requires
 the symbol and applies it immediately after creating an inner device, before
