@@ -65,7 +65,7 @@ export const particles = Object.freeze({
 });
 export const sourceHashes = Object.freeze({
   "fawn-formation.js": "7a731ceb26b4acb569e29bf89abf00cd52b0ea1a70eaa9c4aa2c134d7b0cb988",
-  "fawn-prismatic-fluids.html": "e28973199222f4c3b3962e187c8449f993f9ee499209569b994ff36e4b18a3d0",
-  "fawn-magnetic-fluids.html": "074e6cc3cc71e312bce26077aff3cb109a5b3446d713d4b34f57b1ffd7150edf",
-  "fawn-start.html": "5298be9659e3c3a2cd39a7c6a733287adfe5e61d2f5fba613842bd15bb508552"
+  "fawn-prismatic-fluids.html": "149c2488b1c7ca8344f2f057c907e5c946b4d3c1ffb9f5780fbec81c03379e67",
+  "fawn-magnetic-fluids.html": "6820ac209e3bd1e5c77a64f26a76ec9a3ce367bf915c579ef46cc3be3c87cee1",
+  "fawn-start.html": "7e7ee66a726456836a35a0777bab3fad547b7ebb5d9092a29d19d1016128ff9d"
 });
