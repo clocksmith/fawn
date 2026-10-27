@@ -62,8 +62,7 @@ if [[ "${copied_any}" -eq 0 ]]; then
 fi
 
 if [[ "$(uname -s)" == "Darwin" && -d "${LOCAL_OUT}/${APP_ALIAS}" ]]; then
-  "${SCRIPT_DIR}/patch-chromium-app-doe.sh" --app "${LOCAL_OUT}/${APP_ALIAS}" || \
-    echo "warning: unable to enforce Doe icon/name on local app bundle" >&2
+  "${SCRIPT_DIR}/patch-chromium-app-doe.sh" --app "${LOCAL_OUT}/${APP_ALIAS}"
 fi
 
 if [[ "$(uname -s)" == "Darwin" && -f "${LOCAL_OUT}/${APP_ALIAS}/Contents/Info.plist" ]]; then
