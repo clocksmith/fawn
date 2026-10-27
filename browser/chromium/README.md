@@ -130,3 +130,9 @@ accepts explicit `--use-webgpu-runtime=dawn` rollback. Ambiguous/auto provider
 selection and foreign library overrides are rejected. It adds no sandbox-disabling
 flags. Raw `chrome` remains available for controlled diagnostics; the workspace
 build profile binds that actual image separately from this product entry point.
+Default profiles are private to Fawn and separate for C and Dawn under
+`$XDG_CONFIG_HOME/fawn/{doe-c,dawn}` (or `$HOME/.config/fawn/...`). This prevents
+Chromium's process singleton from forwarding a default launch to an already
+running stock or opposite-provider profile. An explicit absolute
+`--user-data-dir=/path` is preserved; use a fresh isolated profile for build
+verification and close it before changing the selected provider.

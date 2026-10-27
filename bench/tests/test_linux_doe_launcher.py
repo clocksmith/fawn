@@ -79,7 +79,9 @@ class LinuxLauncherTests(unittest.TestCase):
             self.assertEqual(lines[1], str(relocated / "chrome"))
             self.assertEqual(lines[2], "--use-webgpu-runtime=doe")
             self.assertEqual(lines[3], "--doe-webgpu-library-path=" + str(relocated / "lib/doe/libwebgpu_doe_c.so"))
-            self.assertEqual(lines[4:], ["--remote-debugging-pipe", "https://example.test/a b"])
+            self.assertTrue(lines[4].startswith("--user-data-dir=/"))
+            self.assertTrue(lines[4].endswith("/fawn/doe-c"))
+            self.assertEqual(lines[5:], ["--remote-debugging-pipe", "https://example.test/a b"])
             self.assertEqual(os.read(read_fd, 1), b"X")
             self.assertNotIn("--no-sandbox", lines)
         finally:
@@ -96,15 +98,25 @@ class LinuxLauncherTests(unittest.TestCase):
         self.assertEqual(failed.stdout, "")
         dawn = subprocess.run([str(self.package / "chrome-wrapper"), "--use-webgpu-runtime=dawn"], capture_output=True, text=True)
         self.assertEqual(dawn.returncode, 7, dawn.stderr)
-        self.assertEqual(dawn.stdout.splitlines()[2:], ["--use-webgpu-runtime=dawn"])
+        lines = dawn.stdout.splitlines()
+        self.assertEqual(lines[2], "--use-webgpu-runtime=dawn")
+        self.assertTrue(lines[3].endswith("/fawn/dawn"))
 
     def test_ambiguous_or_foreign_library_selection_is_rejected(self) -> None:
         self.install()
         for arguments in (["--use-webgpu-runtime=auto"], ["--use-webgpu-runtime=dawn", "--use-webgpu-runtime=doe"],
-                          ["--doe-webgpu-library-path=/elsewhere.so"]):
+                          ["--doe-webgpu-library-path=/elsewhere.so"], ["--user-data-dir=relative"],
+                          ["--user-data-dir=/one", "--user-data-dir=/two"]):
             failed = subprocess.run([str(self.package / "chrome-wrapper"), *arguments], capture_output=True, text=True)
             self.assertEqual(failed.returncode, 1)
             self.assertEqual(failed.stdout, "")
+
+    def test_explicit_absolute_profile_is_preserved(self) -> None:
+        self.install()
+        profile = "--user-data-dir=" + str(self.root / "explicit ü profile")
+        process = subprocess.run([str(self.package / "chrome-wrapper"), profile], capture_output=True, text=True)
+        self.assertEqual(process.returncode, 7, process.stderr)
+        self.assertEqual(process.stdout.splitlines()[4:], [profile])
 
     def test_active_build_or_changed_c_stage_is_not_modified(self) -> None:
         (self.package / "build.ninja").write_text("active build")
