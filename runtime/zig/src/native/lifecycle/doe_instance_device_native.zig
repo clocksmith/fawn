@@ -20,6 +20,7 @@ const device_caps = @import("../support/doe_device_caps.zig");
 const command_storage = @import("../command/doe_command_storage.zig");
 const build_options = @import("build_options");
 const device_loss = @import("../support/doe_device_loss.zig");
+const instance_capabilities = @import("../support/doe_instance_capabilities.zig");
 const instance_adapter = if (build_options.experimental_c_instance) @import("../support/doe_instance_c_adapter.zig") else struct {};
 const resource_leases = @import("../../contracts/resource_lease.zig");
 const callback_delivery = @import("../support/doe_callback_owner.zig");
@@ -557,7 +558,7 @@ fn instanceRemoveLabel(_: ?*anyopaque, instance: ?*DoeInstance) callconv(.c) voi
 }
 
 pub export fn doeNativeCreateInstance(desc: ?*anyopaque) callconv(.c) ?*anyopaque {
-    _ = desc;
+    if (!instance_capabilities.requirementsSupported(desc)) return null;
     if (comptime build_options.experimental_c_instance) {
         const object_allocator = if (builtin.is_test) instance_adapter.test_object_allocator orelse alloc else alloc;
         const wait_allocator = if (builtin.is_test) instance_adapter.test_wait_allocator orelse std.heap.page_allocator else std.heap.page_allocator;
@@ -905,4 +906,21 @@ pub export fn doeNativeDeviceGetQueue(raw: ?*anyopaque) callconv(.c) ?*anyopaque
     }
     dev.queue = q;
     return toOpaque(q);
+}
+
+test "native instance rejects unsupported descriptor requirements before creating an owner" {
+    const upstream = @import("../../core/abi/generated/webgpu_upstream.zig").c;
+    var unsupported = [_]upstream.WGPUInstanceFeatureName{0x7fff_ffff};
+    var descriptor = std.mem.zeroes(upstream.WGPUInstanceDescriptor);
+    descriptor.requiredFeatureCount = unsupported.len;
+    descriptor.requiredFeatures = &unsupported;
+    const instance = doeNativeCreateInstance(&descriptor);
+    defer if (instance) |created| doeNativeInstanceRelease(created);
+    try std.testing.expect(instance == null);
+    var chain = std.mem.zeroes(upstream.WGPUChainedStruct);
+    descriptor = std.mem.zeroes(upstream.WGPUInstanceDescriptor);
+    descriptor.nextInChain = &chain;
+    const chained = doeNativeCreateInstance(&descriptor);
+    defer if (chained) |created| doeNativeInstanceRelease(created);
+    try std.testing.expect(chained == null);
 }

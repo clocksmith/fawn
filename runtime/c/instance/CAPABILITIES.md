@@ -25,9 +25,13 @@ The public C frontend validates required features and limits before allocation:
 all requested features must appear in the owner's array; a nonempty feature
 list requires storage; unknown descriptor/limit chains and a requested count
 above 64 reject. NULL/default descriptors and limits at or below 64 succeed.
-The retained Zig instance seam still uses its existing descriptor behavior;
-its selected C queries observe this amended capability result. Production
-selection is unchanged.
+The retained Zig instance seam validates descriptors before allocating either
+selected instance owner. Required features use that owner's advertised list
+(repeated supported features are permitted), and required limits cannot exceed
+that owner's result. Unsupported instance and limit chains reject. The default
+retained owner still advertises no optional features and a zero timed-wait
+limit; selecting the C seam observes this amendment's capability values.
+Production selection is unchanged.
 
 ## Focused acceptance
 

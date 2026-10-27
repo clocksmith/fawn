@@ -6,6 +6,7 @@ const upstream = @import("../core/abi/generated/webgpu_upstream.zig");
 // Explicit aliases from core (replaces `usingnamespace core`)
 const std = core.std;
 const types = core.types;
+const instance_capabilities = @import("../native/support/doe_instance_capabilities.zig");
 const p1cap = core.p1cap;
 const p0 = core.p0;
 const p1res = core.p1res;
@@ -318,17 +319,16 @@ pub export fn wgpuExternalTextureAddRef(a0: p2life.WGPUExternalTexture) callconv
 }
 
 pub export fn wgpuGetInstanceFeatures(a0: *p1cap.SupportedInstanceFeatures) callconv(.c) void {
-    a0.* = if (@import("build_options").experimental_c_instance) @import("../native/support/doe_instance_c_adapter.zig").features() else p1cap.initSupportedInstanceFeatures();
+    a0.* = instance_capabilities.features();
 }
 
 pub export fn wgpuGetInstanceLimits(a0: *p1cap.InstanceLimits) callconv(.c) types.WGPUStatus {
-    a0.* = if (@import("build_options").experimental_c_instance) @import("../native/support/doe_instance_c_adapter.zig").limits() else p1cap.initInstanceLimits();
+    a0.* = instance_capabilities.limits();
     return types.WGPUStatus_Success;
 }
 
 pub export fn wgpuHasInstanceFeature(a0: p1cap.WGPUInstanceFeatureName) callconv(.c) types.WGPUBool {
-    if (comptime @import("build_options").experimental_c_instance) return @import("../native/support/doe_instance_c_adapter.zig").hasFeature(a0);
-    return types.WGPU_FALSE;
+    return instance_capabilities.hasFeature(a0);
 }
 
 pub export fn wgpuInstanceAddRef(a0: types.WGPUInstance) callconv(.c) void {

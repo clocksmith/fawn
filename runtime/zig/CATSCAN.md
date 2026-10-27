@@ -33,6 +33,9 @@ Outputs:
 ## Invariants
 
 - Unsupported capabilities fail with original typed causes and no hidden fallback.
+- Instance descriptor admission uses the selected owner's actual feature/limit
+  advertisement before allocation; unsupported chains reject without inventing
+  capabilities or changing provider selection.
 - Backend behavior is real or rejected; fake execution and synthetic state are forbidden.
 - Resource ownership, synchronization, completion, and readback remain explicit.
 - Compiler analysis owns shader meaning; native objects own WebGPU validation
