@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -13,7 +14,7 @@ import sys
 import tempfile
 import unittest
 
-from bench.tools.compare_c_vs_zig_package import cases, environment, pair_failures, sample_failures
+from bench.tools.compare_c_vs_zig_package import cases, configuration_inputs, environment, pair_failures, sample_failures
 from bench.tools.prepare_package_oracle_plans import prepare
 
 
@@ -37,6 +38,24 @@ def valid_meta() -> dict:
 
 
 class PackageComparisonTests(unittest.TestCase):
+    def test_missing_worker_configuration_rejects_before_admission_and_policy_is_hash_bound(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            root = Path(scratch).resolve()
+            names = ("config/package-execution-policy.json", "config/determinism-policy.json",
+                     "config/numeric-stability-policy.json", "packages/doe-gpu/package.json")
+            for name in names:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}")
+            before = {path: hashlib.sha256(path.read_bytes()).hexdigest()
+                      for path in configuration_inputs(root)}
+            policy = root / names[0]
+            policy.write_text('{"readbackMode":"changed"}')
+            self.assertNotEqual(before[policy], hashlib.sha256(policy.read_bytes()).hexdigest())
+            policy.unlink()
+            with self.assertRaises(FileNotFoundError):
+                configuration_inputs(root)
+
     @unittest.skipUnless(os.name == "posix", "POSIX signal/session control")
     def test_parent_sigterm_reaps_current_worker_and_restores_handlers(self) -> None:
         script = """
