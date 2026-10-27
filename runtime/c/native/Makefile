@@ -682,3 +682,12 @@ check-singleton-layout: $(BUILD)/singleton-layout
 	$(BUILD)/singleton-layout
 check: check-singleton-layout
 PHYSICAL_CLIENTS += singleton-layout
+
+ifeq ($(SHARED_PLATFORM),Darwin)
+$(BUILD)/iosurface-metadata: tests/iosurface_metadata.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -framework IOSurface -framework CoreFoundation -o $@
+.PHONY: check-iosurface-metadata
+check-iosurface-metadata: $(BUILD)/iosurface-metadata
+	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/iosurface-metadata
+PHYSICAL_CLIENTS += iosurface-metadata
+endif

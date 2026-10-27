@@ -211,11 +211,19 @@ int main(void)
     initialize(&f);
     void *retained = NULL;
     uint32_t width = 99, height = 98;
-    assert(doe_mtl_objc_shared_surface(&f.runtime,&f.objects[SURFACE],&retained,&width,&height,NULL) == DOE_MTL_UNSUPPORTED);
-    assert(!retained && width == 99 && height == 98 && !f.cf_references);
+    doe_mtl_format shared_format = DOE_MTL_RGBA8_SRGB;
+    assert(doe_mtl_objc_shared_surface(&f.runtime,&f.objects[SURFACE],&retained,&width,&height,&shared_format,NULL) == DOE_MTL_UNSUPPORTED);
+    assert(!retained && width == 99 && height == 98 && shared_format == DOE_MTL_RGBA8_SRGB && !f.cf_references);
     f.count = 0;
-    assert(doe_mtl_objc_shared_surface(&f.runtime,&f.objects[SURFACE],&retained,&width,&height,NULL) == DOE_MTL_OK);
-    assert(retained == &f.objects[SURFACE] && width == 16 && height == 8 && f.cf_references == 1);
+    f.format = 0;
+    assert(doe_mtl_objc_shared_surface(&f.runtime,&f.objects[SURFACE],&retained,&width,&height,&shared_format,NULL) == DOE_MTL_UNSUPPORTED);
+    assert(!retained && width == 99 && height == 98 && shared_format == DOE_MTL_RGBA8_SRGB && !f.cf_references);
+    f.format = 0x34323076; /* NV12 cannot masquerade as a packed surface. */
+    assert(doe_mtl_objc_shared_surface(&f.runtime,&f.objects[SURFACE],&retained,&width,&height,&shared_format,NULL) == DOE_MTL_UNSUPPORTED);
+    assert(!retained && !f.cf_references);
+    f.format = 0x42475241;
+    assert(doe_mtl_objc_shared_surface(&f.runtime,&f.objects[SURFACE],&retained,&width,&height,&shared_format,NULL) == DOE_MTL_OK);
+    assert(retained == &f.objects[SURFACE] && width == 16 && height == 8 && shared_format == DOE_MTL_BGRA8_UNORM && f.cf_references == 1);
     f.expected_usage = 21;
     doe_mtl_texture_desc shared = {.type=DOE_MTL_TEXTURE_2D,.format=DOE_MTL_BGRA8_SRGB,
         .width=16,.height=8,.depth_or_layers=1,.mip_levels=1,.sample_count=1,

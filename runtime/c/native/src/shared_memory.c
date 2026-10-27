@@ -193,8 +193,15 @@ WGPUSharedTextureMemory wgpuDeviceImportSharedTextureMemory(WGPUDevice handle,
     native_failure failure = native_failure_status(native_device_result(device));
     if (failure.status == NATIVE_OK) {
         doe_mtl_error detail = {0};
-        doe_mtl_status status = doe_mtl_shared_surface_open(metal_context(device), source->ioSurface,
-            &memory->surface, &memory->width, &memory->height, &detail);
+        doe_mtl_shared_surface_info info;
+        doe_mtl_status status = doe_mtl_shared_surface_open_info(metal_context(device), source->ioSurface,
+            &memory->surface, &info, &detail);
+        if (status == DOE_MTL_OK) {
+            memory->width = info.width;
+            memory->height = info.height;
+            memory->format = info.format == DOE_MTL_RGBA8_UNORM ?
+                WGPUTextureFormat_RGBA8Unorm : WGPUTextureFormat_BGRA8Unorm;
+        }
         failure = native_failure_metal(status, &detail);
     }
     native_unlock(device);
@@ -257,7 +264,7 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
     bool shape = !descriptor->nextInChain && shared_format(desc.format, &native.format) &&
-        (memory->format == WGPUTextureFormat_Undefined || memory->format == desc.format) &&
+        memory->format == desc.format &&
         desc.dimension == WGPUTextureDimension_2D && desc.width == memory->width && desc.height == memory->height &&
         desc.depth_or_layers == 1 && desc.mip_levels == 1 && desc.samples == 1 && !(desc.usage & ~shared_usage);
     doe_resource_status valid = shape ? doe_resource_texture_validate_with_features(&desc, &limits,
@@ -280,7 +287,6 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
                 (doe_resource_native){payload,NULL,release_shared_texture}, &texture);
         if (texture) {
             payload->identity = texture;
-            memory->format = desc.format;
         }
     }
     native_unlock(device);

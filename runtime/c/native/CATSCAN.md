@@ -10,8 +10,7 @@ Own ABI conversion and adapter/device leases; excludes resource semantics,
 callbacks, compilation, execution and production selection.
 
 ## Scope
-WebGPU/presentation; [coverage](README.md) separates backends.
-Missing paths reject.
+WebGPU/presentation; unsupported paths reject.
 
 ## Contracts
 Pinned ABI, inventoried legacy/browser signatures and
@@ -33,12 +32,12 @@ Persistent-cache opt-out precedes access, serialized with shader/driver storage.
 Memory caches remain; caller-owned and opaque driver caches stay separate.
 Legacy getters retain leases. Encoded writes snapshot staging and
 record ordered copies. External imports reject unimplemented transforms using
-unusable error objects; successful copies cannot imply conversion.
+unusable error objects; successful copies cannot imply conversion. Shared IOSurface
+properties expose physical format before texture creation; compatible views do not change it.
 
 ## Acceptance
 [Owner checks](Makefile) cover rejection, errors, rollback and cleanup.
-- Evidence: [Source-bound records](README.md) distinguish host controls,
-SDK compilation, native/window execution and browser qualification.
+- Evidence: [Records](README.md) distinguish host, SDK, native/window and browser qualification.
 ABI agreement cannot qualify execution.
 
 ## Non-goals

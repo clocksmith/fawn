@@ -5,6 +5,15 @@
 enum { PIXEL_RGBA = 0x52474241, PIXEL_BGRA = 0x42475241,
     PIXEL_420_VIDEO = 0x34323076, PIXEL_420_FULL = 0x34323066 };
 
+/* One mapping for packed IOSurface/CoreVideo metadata and shared imports. */
+bool doe_mtl_objc_packed_format(uint32_t format, doe_mtl_format *out)
+{
+    if (format == PIXEL_RGBA) *out = DOE_MTL_RGBA8_UNORM;
+    else if (format == PIXEL_BGRA) *out = DOE_MTL_BGRA8_UNORM;
+    else return false;
+    return true;
+}
+
 static doe_mtl_status inspect_source(doe_mtl_objc_external *external,
     doe_mtl_external_source source, void *handle, void **surface,
     doe_mtl_native_external *result, doe_mtl_error *error)
@@ -23,6 +32,9 @@ static doe_mtl_status inspect_source(doe_mtl_objc_external *external,
     if ((result->count == 1 && format != PIXEL_RGBA && format != PIXEL_BGRA) ||
         (result->count == 2 && format != PIXEL_420_VIDEO && format != PIXEL_420_FULL))
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "external pixel format", error);
+    doe_mtl_format packed = DOE_MTL_RGBA8_UNORM;
+    if (result->count == 1 && !doe_mtl_objc_packed_format(format, &packed))
+        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "external packed format", error);
     for (uint32_t i = 0; i < result->count; ++i) {
         size_t width, height;
         if (!planes) {
@@ -38,7 +50,7 @@ static doe_mtl_status inspect_source(doe_mtl_objc_external *external,
             width != surface_width || height != surface_height)
             return doe_mtl_fail(DOE_MTL_RANGE, "external plane dimensions", error);
         doe_mtl_format native_format = result->count == 2 ? (i == 0 ? DOE_MTL_R8_UNORM : DOE_MTL_RG8_UNORM) :
-            format == PIXEL_RGBA ? DOE_MTL_RGBA8_UNORM : DOE_MTL_BGRA8_UNORM;
+            packed;
         result->desc[i] = (doe_mtl_texture_desc){.type=DOE_MTL_TEXTURE_2D,
             .format=native_format,.width=(uint32_t)width,.height=(uint32_t)height,
             .depth_or_layers=1,.mip_levels=1,.sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_COPY_SRC};

@@ -19,7 +19,9 @@ doe_mtl_status doe_mtl_objc_external_import(void *, void *, doe_mtl_external_sou
     doe_mtl_native_external *, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_import_plane(struct doe_mtl_objc *, void *, void *, size_t,
     const doe_mtl_texture_desc *, void **, doe_mtl_error *);
-doe_mtl_status doe_mtl_objc_shared_surface(void *, void *, void **, uint32_t *, uint32_t *, doe_mtl_error *);
+bool doe_mtl_objc_packed_format(uint32_t, doe_mtl_format *);
+doe_mtl_status doe_mtl_objc_shared_surface(void *, void *, void **, uint32_t *, uint32_t *,
+    doe_mtl_format *, doe_mtl_error *);
 void doe_mtl_objc_shared_surface_release(void *, void *);
 doe_mtl_status doe_mtl_objc_shared_texture(void *, void *, void *, const doe_mtl_texture_desc *, void **, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_shared_event_retain(void *, void *, void **, doe_mtl_error *);

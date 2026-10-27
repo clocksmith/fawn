@@ -2,14 +2,41 @@
 #include "texture_internal.h"
 #include "doe_metal_shared.h"
 
-doe_mtl_status doe_mtl_shared_surface_open(doe_mtl_context *context, void *surface,
-    void **retained, uint32_t *width, uint32_t *height, doe_mtl_error *error)
+doe_mtl_status doe_mtl_shared_surface_open_info(doe_mtl_context *context, void *surface,
+    void **retained, doe_mtl_shared_surface_info *info, doe_mtl_error *error)
 {
-    if (!context || !surface || !retained || !width || !height)
+    if (!context || !surface || !retained || !info)
         return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "shared IOSurface import", error);
     if (!context->native.shared_surface || !context->native.shared_surface_release)
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "shared IOSurface native boundary", error);
-    return context->native.shared_surface(context->native.userdata, surface, retained, width, height, error);
+    void *reference = NULL;
+    doe_mtl_shared_surface_info result = {0};
+    doe_mtl_status status = context->native.shared_surface(context->native.userdata,
+        surface, &reference, &result.width, &result.height, &result.format, error);
+    if (status != DOE_MTL_OK) return status;
+    if (!reference || !result.width || !result.height ||
+        (result.format != DOE_MTL_RGBA8_UNORM && result.format != DOE_MTL_BGRA8_UNORM)) {
+        if (reference) context->native.shared_surface_release(context->native.userdata,reference);
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "shared IOSurface metadata", error);
+    }
+    *retained = reference;
+    *info = result;
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_shared_surface_open(doe_mtl_context *context, void *surface,
+    void **retained, uint32_t *width, uint32_t *height, doe_mtl_error *error)
+{
+    if (!width || !height || !retained)
+        return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "shared IOSurface import", error);
+    void *reference = NULL;
+    doe_mtl_shared_surface_info info;
+    doe_mtl_status status = doe_mtl_shared_surface_open_info(context,surface,&reference,&info,error);
+    if (status != DOE_MTL_OK) return status;
+    *retained = reference;
+    *width = info.width;
+    *height = info.height;
+    return DOE_MTL_OK;
 }
 
 void doe_mtl_shared_surface_release(doe_mtl_context *context, void *surface)
