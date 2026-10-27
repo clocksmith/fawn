@@ -3,12 +3,14 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -45,26 +47,48 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.module = _load_superset_runner()
 
-    def test_python_superset_runner_prefers_full_webgpu_library(self) -> None:
+    def test_python_superset_uses_c_stage_and_keeps_legacy_selection_explicit(self) -> None:
         old_root = self.module.REPO_ROOT
-        old_env = os.environ.pop("FAWN_DOE_LIB", None)
         try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                root = Path(tmpdir)
-                lib_dir = root / "runtime/zig/zig-out/lib"
-                lib_dir.mkdir(parents=True)
-                preferred_ext = self.module.host_doe_lib_extension()
-                full = lib_dir / f"libwebgpu_doe_full.{preferred_ext}"
-                compute = lib_dir / f"libwebgpu_doe.{preferred_ext}"
-                full.write_text("", encoding="utf-8")
-                compute.write_text("", encoding="utf-8")
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                scripts = root / "browser/chromium/scripts"
+                scripts.mkdir(parents=True)
+                shutil.copyfile(LANE_PATHS, scripts / LANE_PATHS.name)
+                extension = self.module.host_doe_lib_extension()
+                stage = root / "c-stage"
+                library = stage / (
+                    "bin/webgpu_doe_c.dll" if extension == "dll"
+                    else f"lib/libwebgpu_doe_c.{extension}"
+                )
+                library.parent.mkdir(parents=True)
+                legacy = (
+                    root / "runtime/zig/zig-out/lib"
+                    / f"libwebgpu_doe_full.{extension}"
+                )
+                legacy.parent.mkdir(parents=True)
+                legacy.write_text("retained fixture; never loaded")
                 self.module.REPO_ROOT = root
-
-                self.assertEqual(self.module.default_doe_lib(), full)
+                env = {
+                    "DOE_C_STAGE": str(stage), "FAWN_DOE_LIB": "",
+                    "FAWN_CHROMIUM_LANE_DIR": str(scripts.parent),
+                }
+                with patch.dict(os.environ, env):
+                    # A missing C library stays missing; discovery must not pick Zig.
+                    self.assertEqual(self.module.default_doe_lib(), library)
+                    library.write_text("C identity fixture; never loaded")
+                    self.assertEqual(self.module.default_doe_lib(), library)
+                    with patch.dict(
+                        os.environ, {"FAWN_DOE_LIB": str(legacy)}
+                    ):
+                        self.assertEqual(self.module.default_doe_lib(), legacy)
+                    missing = root / "missing-explicit-provider"
+                    with patch.dict(
+                        os.environ, {"FAWN_DOE_LIB": str(missing)}
+                    ):
+                        self.assertEqual(self.module.default_doe_lib(), missing)
         finally:
             self.module.REPO_ROOT = old_root
-            if old_env is not None:
-                os.environ["FAWN_DOE_LIB"] = old_env
 
     def test_python_superset_runner_selects_host_workload_contract(self) -> None:
         metal_workloads, metal_manifest = self.module.host_benchmark_defaults("darwin")
@@ -485,27 +509,86 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
         self.assertIn('FAWN_BACKEND_LANE="metal_doe_app"', lane_defaults)
         self.assertIn('FAWN_BACKEND_LANE="d3d12_doe_app"', lane_defaults)
 
-    def test_shell_lane_candidates_prefer_full_webgpu_library(self) -> None:
-        proc = subprocess.run(
-            [
-                "bash",
-                "-c",
-                f"source {LANE_PATHS}; fawn_default_doe_lib_candidates | head -1",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+    def test_shell_lane_candidates_select_only_the_c_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory) / "C stage with spaces"
+            extension = self.module.host_doe_lib_extension()
+            library = stage / (
+                "bin/webgpu_doe_c.dll" if extension == "dll"
+                else f"lib/libwebgpu_doe_c.{extension}"
+            )
+            env = {**os.environ, "DOE_C_STAGE": str(stage)}
+            result = subprocess.run(
+                ["bash", "-c", 'source "$1"; fawn_default_doe_lib_candidates',
+                 "lane-control", str(LANE_PATHS)], env=env,
+                check=True, capture_output=True, text=True, timeout=10,
+            )
+            self.assertEqual(result.stdout.splitlines(), [str(library)])
 
-        self.assertIn("libwebgpu_doe_full.", proc.stdout.strip())
-
-    def test_app_refresh_rebuilds_the_full_dropin_selected_by_the_lane(self) -> None:
-        refresh_script = (
-            REPO_ROOT / "browser/chromium/scripts/refresh-doe-app.sh"
-        ).read_text(encoding="utf-8")
-
-        self.assertIn("zig build dropin-full", refresh_script)
-        self.assertNotIn('zig build dropin "-Doptimize=', refresh_script)
+    def test_app_refresh_invokes_c_builder_and_passes_its_stage_to_patcher(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            scripts = root / "browser/chromium/scripts"
+            scripts.mkdir(parents=True)
+            for source in (
+                LANE_PATHS,
+                REPO_ROOT / "browser/chromium/scripts/refresh-doe-app.sh",
+            ):
+                shutil.copyfile(source, scripts / source.name)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            uname = fake_bin / "uname"
+            uname.write_text("#!/bin/sh\nprintf 'Darwin\\n'\n")
+            uname.chmod(0o755)
+            builder = root / "builder-control.py"
+            builder.write_text(
+                f"#!{sys.executable}\n"
+                "import json,os,sys\nfrom pathlib import Path\n"
+                "log=Path(os.environ['FAWN_TEST_BUILD_ARGS'])\n"
+                "log.write_text(json.dumps(sys.argv[1:]))\n"
+                "stage=Path(sys.argv[sys.argv.index('--destination')+1])\n"
+                "(stage/'lib').mkdir(parents=True)\n"
+                "library=stage/'lib/libwebgpu_doe_c.dylib'\n"
+                "library.write_text('path fixture; never loaded')\n"
+            )
+            builder.chmod(0o755)
+            patcher = scripts / "patch-chromium-app-doe.sh"
+            patcher.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$@" > "$FAWN_TEST_PATCH_ARGS"\n'
+            )
+            patcher.chmod(0o755)
+            stage = root / "C stage"
+            app = root / "Fawn.app"
+            app.mkdir()
+            temporary = root / "tmp"
+            temporary.mkdir()
+            env = {
+                **os.environ,
+                "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"],
+                "FAWN_CHROMIUM_LANE_DIR": str(scripts.parent),
+                "FAWN_DOE_LIB": "", "DOE_C_STAGE": str(stage),
+                "PYTHON": str(builder), "TMPDIR": str(temporary),
+                "FAWN_TEST_BUILD_ARGS": str(root / "build.json"),
+                "FAWN_TEST_PATCH_ARGS": str(root / "patch.txt"),
+            }
+            result = subprocess.run(
+                ["bash", str(scripts / "refresh-doe-app.sh"),
+                 "--app", str(app)], env=env, capture_output=True,
+                text=True, timeout=10, check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            args = json.loads((root / "build.json").read_text())
+            self.assertEqual(
+                args[0], str(root / "runtime/c/tools/build-native-package.py")
+            )
+            self.assertEqual(args[args.index("--repo") + 1], str(root))
+            self.assertEqual(args[args.index("--ref") + 1], "HEAD")
+            self.assertEqual(args[args.index("--destination") + 1], str(stage))
+            self.assertEqual(
+                (root / "patch.txt").read_text().splitlines(),
+                ["--app", str(app), "--doe-lib",
+                 str(stage / "lib/libwebgpu_doe_c.dylib"), "--force"],
+            )
 
     def test_shell_lane_candidates_prefer_real_app_binary_before_launcher(self) -> None:
         proc = subprocess.run(
@@ -669,12 +752,34 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             if old_env is not None:
                 os.environ["FAWN_CHROME_BIN"] = old_env
 
-    def test_playwright_runners_prefer_full_webgpu_library(self) -> None:
-        for path in JS_RUNNERS:
-            text = path.read_text(encoding="utf-8")
-            full_index = text.index("libwebgpu_doe_full")
-            compute_index = text.index("libwebgpu_doe.")
-            self.assertLess(full_index, compute_index, str(path))
+    def test_playwright_help_reports_the_actual_c_default_or_explicit_legacy(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory) / "C stage with spaces"
+            extension = self.module.host_doe_lib_extension()
+            library = stage / (
+                "bin/webgpu_doe_c.dll" if extension == "dll"
+                else f"lib/libwebgpu_doe_c.{extension}"
+            )
+            library.parent.mkdir(parents=True)
+            library.write_text("C path fixture; never loaded")
+            legacy = Path(directory) / f"libwebgpu_doe_full.{extension}"
+            legacy.write_text("explicit compatibility fixture; never loaded")
+            for runner in JS_RUNNERS:
+                for override in ("", str(legacy)):
+                    with self.subTest(runner=runner.name, override=bool(override)):
+                        result = subprocess.run(
+                            ["node", str(runner), "--help"], cwd=REPO_ROOT,
+                            env={**os.environ, "DOE_C_STAGE": str(stage),
+                                 "FAWN_DOE_LIB": override},
+                            capture_output=True, text=True, timeout=10,
+                            check=False,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        line = next(
+                            x for x in result.stdout.splitlines()
+                            if "--doe-lib PATH" in x
+                        )
+                        self.assertIn(f"default: {override or library}", line)
 
     def test_playwright_runners_prefer_real_app_binary_before_launcher(self) -> None:
         for path in JS_RUNNERS:

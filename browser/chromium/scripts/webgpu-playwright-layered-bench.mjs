@@ -212,7 +212,7 @@ Options:
   --chrome PATH             Chrome binary path
   --dawn-chrome PATH        Browser executable for dawn mode (defaults to --chrome)
   --doe-chrome PATH         Browser executable for doe mode (defaults to --chrome)
-  --doe-lib PATH            libwebgpu_doe_full.{so,dylib,dll} path (for doe mode)
+  --doe-lib PATH            Doe provider path (default: ${DEFAULT_DOE_LIB})
   --runtime-selector-policy PATH
                             Runtime selector policy JSON path (default: config/browser-runtime-selector-policy.json)
   --runtime-selector-profile-id ID
