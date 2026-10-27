@@ -19,6 +19,17 @@ const DEFAULT_ADAPTER_DENYLIST = Object.freeze({
   driverPattern: "",
 });
 
+// Shared by browser diagnostics and workspace launchers after runtime selection.
+// A nonexistent explicit path is allowed here so the real browser's fail-closed
+// loader can be tested; product launch admission verifies artifact bytes first.
+export function forcedRuntimeArgs(mode, libraryPath) {
+  if (mode === 'dawn') return ['--use-webgpu-runtime=dawn'];
+  if (mode !== 'doe' || typeof libraryPath !== 'string' || !libraryPath) {
+    throw new Error('forced runtime requires dawn, or doe with an explicit library path');
+  }
+  return ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${libraryPath}`];
+}
+
 function envFlagEnabled(env, name) {
   const value = env?.[name];
   if (typeof value !== "string") {

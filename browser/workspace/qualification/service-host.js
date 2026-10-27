@@ -75,7 +75,7 @@ let service;
 try {
   service = await WorkspaceService.open({
     stateDir: options.stateDir,
-    config: loadServiceConfig(undefined, { browserChannel: options.browserChannel, headless: options.headless }),
+    config: loadServiceConfig(options.browserConfig ?? undefined, { browserChannel: options.browserChannel, headless: options.headless }),
     createAdapter: await loadAdapter(),
     hooks: serviceHooks(options.crash),
   });

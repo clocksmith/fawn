@@ -50,7 +50,7 @@ The contract's semantic names map to these concrete rules.
   adapter from a factory and never exposes it. Chromium is launched over a
   private pipe, so no debugging port exists for another client. `browser.channel`
   names the build both adapters launch: Playwright's headless shell, Chromium,
-  or installed Google Chrome. Automated
+  installed Google Chrome, or an explicit hash-bound Fawn build. Automated
   mutations are limited to `actionKinds` in the config: `navigate`, `click`,
   `fill`, `select`, `submit` and `download`. A control that submits a form must
   use `submit`. Anything else is `unsupported-action-kind`. Human browser
@@ -243,6 +243,40 @@ through `/proc` on Linux, `ps`/`lsof` plus libproc through Python3 on macOS,
 and CIM/NetTCPIP on Windows. macOS uses kernel executable paths rather than
 mutable/truncated process titles.
 macOS browser roots, helper images and mapped app frameworks have separate hashes.
+
+### Explicit C browser integration
+
+Service configuration schema 4 adds `browser.channel: "fawn"` and a required
+`fawnBuild` containing an absolute browser image path and SHA-256, an explicit
+array of dependency file identities, and `runtime.mode: "doe-c"` with the C
+library identity. Include the compiler and complete private browser/runtime
+closure, including macOS frameworks or Windows `chrome.dll`. Use the actual
+browser image, rather than a shell script, `.cmd` or product launcher: qualification
+compares it with the executable observed by the OS. Both adapters recheck all
+declared files before launch, force Doe with the selected library, keep the
+sandbox enabled and reject missing or changed artifacts. Neither adapter retries
+with another browser or provider. Explicit `runtime.mode: "dawn"` supplies the
+rollback route and accepts no Doe library.
+
+```bash
+node qualification/create-browser-profile.js --executable /absolute/browser/image \
+  --runtime doe-c --library /absolute/libwebgpu_doe_native.so \
+  --dependency /absolute/libdoe_compiler.so --out /absolute/new-c-profile.json
+npm run qualify -- --browser-config /absolute/new-c-profile.json
+```
+
+Repeat `--dependency FILE` for every additional packaged dependency. The generator
+hashes real files and refuses to overwrite its output. Qualification snapshots the
+profile and canonical service configuration; only browser fields may differ.
+It retains the frozen cases, observes both adapters' actual executable images,
+and rejects profile/receipt or executable mismatches. These checks establish
+launch identity. Doe ownership still requires the Chromium lane's actual page
+compute/presentation, lifecycle and missing-C negative controls; a workspace run
+or matching command line alone does not qualify C GPU execution.
+
+Schema 3 stock-browser configurations remain readable. To select a Fawn build,
+start with the schema 4 canonical config; protocol 3 and existing journal records
+are unchanged. Existing stock-browser evidence retains its recorded scope.
 
 The `2026-10-26-behavioral-v3-platform-exits` case freeze retains the same25 cases,
 102 runs, fixtures and semantic expectations. Crash evidence now records the

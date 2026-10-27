@@ -4,9 +4,10 @@
 
 import { readFileSync } from 'node:fs';
 import { REJECTION_CODES, workspaceError } from './errors.js';
+import { validateFawnBuild } from './browser-launch.js';
 
 const DEFAULT_CONFIG_URL = new URL('../../../config/fawn-workspace-service.json', import.meta.url);
-const SUPPORTED_SCHEMA_VERSION = 3;
+const SUPPORTED_SCHEMA_VERSION = 4;
 const SUPPORTED_PROTOCOL_VERSION = 3;
 
 const POSITIVE_INTEGER_FIELDS = Object.freeze([
@@ -20,7 +21,7 @@ const POSITIVE_INTEGER_FIELDS = Object.freeze([
   'dispatch.completionPollMs',
 ]);
 
-const BROWSER_CHANNELS = Object.freeze(['chromium-headless-shell', 'chromium', 'chrome']);
+const BROWSER_CHANNELS = Object.freeze(['chromium-headless-shell', 'chromium', 'chrome', 'fawn']);
 
 const NON_EMPTY_LIST_FIELDS = Object.freeze([
   'actionKinds',
@@ -46,8 +47,8 @@ function invalid(path, expected, received) {
  * Validate a parsed service config; the JSON schema in config/ is the canonical contract.
  * @param {object} config
  */
-function validateServiceConfig(config) {
-  if (config?.schemaVersion !== SUPPORTED_SCHEMA_VERSION) {
+function validateServiceConfig(config, { platform = process.platform } = {}) {
+  if (![3, SUPPORTED_SCHEMA_VERSION].includes(config?.schemaVersion)) {
     throw invalid('schemaVersion', SUPPORTED_SCHEMA_VERSION, config?.schemaVersion);
   }
   if (config.protocolVersion !== SUPPORTED_PROTOCOL_VERSION) {
@@ -67,8 +68,15 @@ function validateServiceConfig(config) {
       throw invalid(field, 'plain file name', value);
     }
   }
+  if (config.browser?.engine !== 'chromium') throw invalid('browser.engine', 'chromium', config.browser?.engine);
+  if (typeof config.browser?.headless !== 'boolean') throw invalid('browser.headless', 'boolean', config.browser?.headless);
   if (config.browser?.transport !== 'pipe') throw invalid('browser.transport', 'pipe', config.browser?.transport);
   if (!BROWSER_CHANNELS.includes(config.browser?.channel)) throw invalid('browser.channel', BROWSER_CHANNELS.join(' | '), config.browser?.channel);
+  if (config.schemaVersion === 3 && (config.browser.channel === 'fawn' || config.browser.fawnBuild !== undefined)) {
+    throw invalid('schemaVersion', '4 for explicit Fawn builds', config.schemaVersion);
+  }
+  try { validateFawnBuild(config.browser, { platform }); }
+  catch (error) { throw invalid('browser.fawnBuild', error.message, config.browser?.fawnBuild); }
   if (config.browser?.persistentProfiles !== true) {
     throw invalid('browser.persistentProfiles', true, config.browser?.persistentProfiles);
   }

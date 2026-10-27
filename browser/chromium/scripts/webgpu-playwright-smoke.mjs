@@ -11,6 +11,7 @@ import { pathWithin } from "./browser-path-containment.mjs";
 import {
   loadRuntimeSelectorPolicy,
   resolveRuntimeSelection,
+  forcedRuntimeArgs,
 } from "./browser-runtime-selector.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -1162,13 +1163,7 @@ function baseLaunchArgs(port, sandbox) {
 }
 
 function runtimeArgs(mode, doeLibPath) {
-  if (mode === "dawn") {
-    return ["--use-webgpu-runtime=dawn"];
-  }
-  return [
-    "--use-webgpu-runtime=doe",
-    `--doe-webgpu-library-path=${doeLibPath}`,
-  ];
+  return forcedRuntimeArgs(mode, doeLibPath);
 }
 
 function runtimeArtifactIdentity(mode, args) {

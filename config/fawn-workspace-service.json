@@ -1,7 +1,7 @@
 {
   "$schema": "fawn-workspace-service.schema.json",
-  "schemaVersion": 3,
-  "configVersion": "2026-10-15-workspace-service-v3.3",
+  "schemaVersion": 4,
+  "configVersion": "2026-10-26-workspace-service-v4.0",
   "protocolVersion": 3,
   "contractPath": "docs/fawn-workspace-contract.md",
   "journal": {

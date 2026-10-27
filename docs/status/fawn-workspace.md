@@ -25,6 +25,13 @@ show no material advantage over competent stock automation.
 
 ## Service
 
+Service configuration schema 4 adds explicit hash-bound Fawn browser builds to
+both private-pipe adapters, with forced C or explicit Dawn selection. Schema 3
+stock-browser inputs remain readable; protocol 3 and journal replay are unchanged.
+The qualification harness freezes optional build profiles and checks OS-observed
+browser images. This is launch integration; previously admitted stock-browser
+results do not qualify C page execution or a newly built browser.
+
 The shared service is implemented in
 [`browser/workspace`](../../browser/workspace/README.md) (protocol 3). It
 contains:

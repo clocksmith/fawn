@@ -40,6 +40,9 @@ Outputs:
   acknowledgment never authorizes another external submission.
 - Research, form-submission and export adapters behave consistently.
 - Workspace acceptance is separate from browser/GPU recovery and artwork receipts.
+- Explicit Fawn build selection binds the browser image and private runtime
+  closure before launch; both adapters force the selected C or Dawn provider
+  without fallback. Launch identity does not establish GPU ownership.
 
 ## Acceptance
 
