@@ -2,7 +2,6 @@
 // Sharded from doe_render_native.zig for file-size compliance.
 
 const std = @import("std");
-const device_cache = @import("../cache/doe_device_cache_native.zig");
 const resource_ops = @import("../../backend/dropin_resource_ops.zig");
 const model_render_types = @import("../../contracts/model/model_render_types.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
@@ -357,7 +356,6 @@ fn vertexAttributesFailure(dev: *const DoeDevice, d: *const RenderPipelineDesc) 
 fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
-    device_cache.beginUse(dev);
     const d = @as(*const RenderPipelineDesc, @ptrCast(@alignCast(desc_raw orelse return null)));
     const shader_handles = [_]?*anyopaque{ d.vertex.module, if (d.fragment) |fragment| fragment.module else null };
     for (shader_handles) |handle| {

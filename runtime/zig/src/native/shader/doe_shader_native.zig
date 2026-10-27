@@ -239,7 +239,6 @@ fn doeNativeDeviceCreateShaderModuleOwned(dev_raw: ?*anyopaque, desc: ?*const ab
     diagnostic.clear_last_error();
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
-    device_cache.beginUse(dev);
     const d = desc orelse return null;
     const result = if (d.nextInChain == null) blk: {
         diagnostic.set_last_error_stage_name("native_shader_create");
@@ -350,7 +349,8 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
     var source_transferred = false;
     defer if (!source_transferred) alloc.free(source);
 
-    var cached_translation: ?shader_translation_cache.CachedTranslation = if (device_cache.persistenceAllowed(dev)) shader_translation_cache.lookupComputeTranslation(alloc, wgsl) else null;
+    const persistent = device_cache.reservePersistence(dev);
+    var cached_translation: ?shader_translation_cache.CachedTranslation = if (persistent) shader_translation_cache.lookupComputeTranslation(alloc, wgsl) else null;
     var msl_buf: [msl_translation.MAX_OUTPUT]u8 = undefined;
     var translation_info = wgsl_runtime_compile.TranslationInfo{};
     var msl_source: []const u8 = undefined;
@@ -376,7 +376,7 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
             std.log.warn("doe: createShaderModule failed: {s}", .{diagnostic.last_error_buf[0..diagnostic.last_error_len]});
             return null;
         };
-        if (device_cache.persistenceAllowed(dev)) shader_translation_cache.storeComputeTranslation(
+        if (persistent) shader_translation_cache.storeComputeTranslation(
             alloc,
             wgsl,
             msl_buf[0..translation.len],
@@ -441,7 +441,7 @@ fn createFromWGSLVulkanOwned(dev: *DoeDevice, wgsl: []const u8, diagnostic: *Sha
         };
     } else {
         const vk_compute = @import("../vulkan/vulkan_compute_native.zig");
-        vk_compute.vulkan_create_shader_moduleWithDiagnostic(sm, wgsl, &diagnostic.compiler, device_cache.persistenceAllowed(dev)) catch |err| {
+        vk_compute.vulkan_create_shader_moduleWithDiagnostic(sm, wgsl, &diagnostic.compiler, device_cache.reservePersistence(dev)) catch |err| {
             diagnostic.capture_compile_error(err, "native_shader_create", "Vulkan WGSL→SPIR-V compilation failed");
             return null;
         };
@@ -788,7 +788,6 @@ fn doeNativeDeviceCreateComputePipelineOwned(dev_raw: ?*anyopaque, desc: ?*const
     diagnostic.clear_last_error();
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
-    device_cache.beginUse(dev);
     const d = desc orelse return null;
     const sm = cast(DoeShaderModule, d.compute.module) orelse {
         diagnostic.set_last_error_stage_name("native_compile");

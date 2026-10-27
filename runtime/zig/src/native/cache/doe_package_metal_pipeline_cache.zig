@@ -20,12 +20,11 @@ var registry: ?*Entry = null;
 fn get(dev: *DoeDevice) ?*Entry {
     if (builtin.os.tag != .macos or dev.backend != .metal) return null;
     const mtl_device = dev.mtl_device orelse return null;
-    device_cache.beginUse(dev);
-    const persistent = device_cache.persistenceAllowed(dev);
     registry_mutex.lock();
     defer registry_mutex.unlock();
     if (dev.metal_pipeline_cache) |raw| return @ptrCast(@alignCast(raw));
     const entry = alloc.create(Entry) catch return null;
+    const persistent = device_cache.reservePersistence(dev);
     const cache = (if (persistent) metal_package_pipeline_cache.init(alloc, mtl_device, "") else metal_package_pipeline_cache.MetalPipelineCache.initMemoryOnly(alloc, mtl_device)) catch {
         alloc.destroy(entry);
         return null;

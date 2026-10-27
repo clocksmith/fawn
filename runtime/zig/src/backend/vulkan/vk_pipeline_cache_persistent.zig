@@ -42,6 +42,8 @@ pub const VulkanPipelineCache = struct {
     enabled: bool = true,
     persistent: bool = true,
     deferred: bool = false,
+    policy: ?*@import("../../contracts/persistent_cache_policy.zig").Policy = null,
+    activation_mutex: std.Thread.Mutex = .{},
     handle: c.VkPipelineCache = c.VK_NULL_U64,
     state: VulkanPipelineCacheState = .disabled,
     device: c.VkDevice = null,
@@ -94,8 +96,22 @@ pub const VulkanPipelineCache = struct {
         self.setDirectory(value);
     }
 
+    fn reserveConfiguredStorage(self: *VulkanPipelineCache) void {
+        if (self.cachePath() == null) return;
+        if (self.policy) |policy| self.persistent = policy.reserve();
+    }
+
     pub fn create(self: *VulkanPipelineCache, device: c.VkDevice) !void {
-        if (self.deferred) return;
+        self.activation_mutex.lock();
+        defer self.activation_mutex.unlock();
+        return self.createLocked(device);
+    }
+
+    fn createLocked(self: *VulkanPipelineCache, device: c.VkDevice) !void {
+        if (self.deferred) {
+            self.device = device;
+            return;
+        }
         if (!self.enabled) {
             self.state = .disabled;
             return;
@@ -104,7 +120,9 @@ pub const VulkanPipelineCache = struct {
         if (device == null) return error.InvalidArgument;
 
         const start_ns = std.time.nanoTimestamp();
+        if (self.policy) |policy| self.persistent = policy.persistenceAllowed();
         self.configureDirectoryFromEnvironment();
+        self.reserveConfiguredStorage();
 
         var blob_bytes: ?[]u8 = null;
         defer if (blob_bytes) |bytes| self.allocator.free(bytes);
@@ -173,6 +191,7 @@ pub const VulkanPipelineCache = struct {
     pub fn flush(self: *VulkanPipelineCache, device: c.VkDevice) void {
         if (self.handle == c.VK_NULL_U64 or device == null or self.device != device) return;
         if (self.cachePath()) |path| {
+            if (self.policy) |policy| if (!policy.reserve()) return;
             self.tryWriteCacheBlob(device, self.handle, path) catch {};
         }
     }
@@ -231,7 +250,13 @@ pub const VulkanPipelineCache = struct {
         keep_temporary_file = true;
     }
 
-    pub fn handleForPipelineCreation(self: *const VulkanPipelineCache) c.VkPipelineCache {
+    pub fn handleForPipelineCreation(self: *VulkanPipelineCache) c.VkPipelineCache {
+        self.activation_mutex.lock();
+        defer self.activation_mutex.unlock();
+        if (self.deferred) {
+            self.deferred = false;
+            self.createLocked(self.device) catch {};
+        }
         if (!self.enabled) return c.VK_NULL_U64;
         return self.handle;
     }
@@ -246,13 +271,13 @@ pub const VulkanPipelineCache = struct {
 };
 
 test "disabled flag suppresses cache creation" {
-    const cache = VulkanPipelineCache.init(std.testing.allocator, .{ .enabled = false });
+    var cache = VulkanPipelineCache.init(std.testing.allocator, .{ .enabled = false });
     try std.testing.expectEqual(@as(c.VkPipelineCache, c.VK_NULL_U64), cache.handleForPipelineCreation());
     try std.testing.expect(!cache.active());
 }
 
 test "default state is disabled handle" {
-    const cache = VulkanPipelineCache.init(std.testing.allocator, .{});
+    var cache = VulkanPipelineCache.init(std.testing.allocator, .{});
     try std.testing.expectEqual(@as(c.VkPipelineCache, c.VK_NULL_U64), cache.handleForPipelineCreation());
     try std.testing.expect(!cache.active());
 }
@@ -300,4 +325,26 @@ test "device persistent cache policy defers native Vulkan disk access before fir
     try std.testing.expect(!cache.persistent);
     const ordinary = VulkanPipelineCache.init(std.testing.allocator, .{});
     try std.testing.expect(ordinary.persistent and !ordinary.deferred);
+}
+
+test "device persistent cache policy reserves Vulkan storage only for a configured disk operation" {
+    const Policy = @import("../../contracts/persistent_cache_policy.zig").Policy;
+    var policy = Policy{};
+    var cache = VulkanPipelineCache.initDeferred(std.testing.allocator);
+    cache.policy = &policy;
+    // Inspect resolved storage directly, without ambient environment or GPU API.
+    cache.reserveConfiguredStorage();
+    try std.testing.expectEqual(Policy.State.fresh, policy.state);
+    cache.setDirectory("cache/disk-operation");
+    cache.reserveConfiguredStorage();
+    try std.testing.expectEqual(Policy.State.used, policy.state);
+    try std.testing.expect(!policy.disable());
+
+    var disabled = Policy{};
+    try std.testing.expect(disabled.disable());
+    cache.policy = &disabled;
+    cache.reserveConfiguredStorage();
+    try std.testing.expect(!cache.persistent);
+    try std.testing.expect(cache.cachePath() == null);
+    try std.testing.expectEqual(Policy.State.disabled, disabled.state);
 }

@@ -1370,8 +1370,8 @@
       },
       "src/backend/vulkan/vk_pipeline_cache_persistent.zig": {
         "decision": "Keep",
-        "moduleSha256": "d085475f3c74f9b71c6f61d3ef0bc700a18c5e7321867030692c076879418fbd",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "be7c6ac270cf3749a1f4db31204440aa91125f81f857d524f941eb1a9654be32",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/vulkan/vk_render.zig": {
@@ -3512,8 +3512,8 @@
       },
       "src/native/cache/doe_package_metal_pipeline_cache.zig": {
         "decision": "Keep",
-        "moduleSha256": "459ac700b65380a0926df596ac5b6b546a3f779f98899d2d6f7d9ec1884330f5",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "7469875eac769a963dede41c2d47d1f69e59e29817bba93c185e2ce7a546f514",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/command/doe_encoder_native.zig": {
@@ -3584,9 +3584,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "63e3ba678a950bcacafd132fb9a8fb12e9bcd0448da7463e0a4421a90fc246f7",
-        "reason": "Keep: instance feature advertisement and descriptor requirement admission share the selected capability owner; unsupported required features and limits reject before allocation without inventing support.",
-        "reviewer": "codex-windows-instance-requirements/2026-10-27"
+        "moduleSha256": "11f33c3ff8390b5bb2494a10a7c6ccf84fe4414d1fd153dfb511b775390c2a1e",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -3662,8 +3662,8 @@
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "bc04c8224dc1b242ed99fc0e81ee4ad59922f02574e5857d707b44ffbc8e62c5",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "f3b0781ae52d5c6e2e40b58efca9cfad859af610ba501218559421e58a4eb72b",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/render/doe_render_state_native.zig": {
@@ -3728,8 +3728,8 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "296b3114d387fe0896d5e0bd2e69f0916d1df82d59d50c51bc4536a54e12708e",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "eeb9547e2c8ac234bb50c2327dc5d7fb6d2e49b940d0bd4a79b738b802fb643b",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
@@ -3800,8 +3800,8 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "8430cc6239ab9e63e34b2ad46ddd63dec2e65ad604575950d7fa04465822606f",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "e47e1083f673b199d6a39745549a98f04af125ffaf8e557c2aba02d8a694c510",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
@@ -4466,8 +4466,8 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "8654588a664b4a7a164d72f03f2e59bdb85520da71cd7033dcd29d900e01efd6",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "6e9afcd8a6fc25509dffde595d109237e59776a8b22cce8eca098aec59847d2e",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
@@ -4574,14 +4574,20 @@
       },
       "src/native/cache/doe_device_cache_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a6b71c8e7d09be81262ed60c2872954837c7e7ea3a6cb4aab5e8b34af126c09c",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "moduleSha256": "ea4ea31f604d4dee119c44a51413822a774b92adc483f6d4568866f520ca473c",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/d3d12/d3d12_dxc_memory.zig": {
         "decision": "Keep",
         "moduleSha256": "5496f2a75997b57f922a301b9c62436dee930cb50d67dcac9a29fa60f4d45ec2",
-        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
+      },
+      "src/contracts/persistent_cache_policy.zig": {
+        "decision": "Keep",
+        "moduleSha256": "b53192a310d4148b0522f4eb97a0db99bd6957784fb734e52a405f4c7ae94a33",
+        "reason": "Keep: actual disk-cache owners reserve one-way per-device persistence before I/O; failed descriptors and memory-only work preserve opt-out while backend caches serialize persistent access with disable.",
         "reviewer": "codex-native-cache-policy/2026-10-27"
       }
     },
