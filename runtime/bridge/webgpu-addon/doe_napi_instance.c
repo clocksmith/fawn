@@ -30,6 +30,33 @@ napi_value doe_instance_release(napi_env env, napi_callback_info info) {
 #define WGPU_POWER_PREFERENCE_HIGH_PERFORMANCE 2
 #define WGPU_FEATURE_LEVEL_COMPATIBILITY 1
 #define WGPU_FEATURE_LEVEL_CORE          2
+/* Pinned WGPUBackendType values; ordinary requestAdapter must retain selection. */
+static uint32_t adapter_backend_type_from_name(const char* name) {
+    if (strcmp(name, "metal") == 0) return 0x00000005u;
+    if (strcmp(name, "vulkan") == 0) return 0x00000006u;
+    if (strcmp(name, "d3d12") == 0) return 0x00000004u;
+    return 0;
+}
+
+static bool parse_adapter_backend(napi_env env, napi_value options, uint32_t* backend) {
+    napi_value value;
+    napi_valuetype type = napi_undefined;
+    if (napi_get_named_property(env, options, "backend", &value) != napi_ok) return false;
+    if (napi_typeof(env, value, &type) != napi_ok) return false;
+    if (type == napi_undefined) return true;
+    if (type != napi_string) return false;
+    char name[32];
+    size_t length = 0, written = 0;
+    if (napi_get_value_string_utf8(env, value, NULL, 0, &length) != napi_ok
+        || length >= sizeof(name)
+        || napi_get_value_string_utf8(env, value, name, sizeof(name), &written) != napi_ok
+        || written != length || strlen(name) != length) return false;
+    const uint32_t parsed = adapter_backend_type_from_name(name);
+    if (!parsed) return false;
+    *backend = parsed;
+    return true;
+}
+
 napi_value doe_request_adapter(napi_env env, napi_callback_info info) {
     /* Accept 1 or 2 args: (instance[, options]) */
     size_t actual_argc = 2;
@@ -48,6 +75,8 @@ napi_value doe_request_adapter(napi_env env, napi_callback_info info) {
         napi_valuetype vt = napi_undefined;
         napi_typeof(env, args[1], &vt);
         if (vt == napi_object) {
+            if (!parse_adapter_backend(env, args[1], &opts.backendType))
+                NAPI_THROW(env, "Unsupported or invalid requestAdapter backend");
             /* featureLevel */
             napi_valuetype feature_level_type = napi_undefined;
             napi_value feature_level_val;

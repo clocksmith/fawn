@@ -10,6 +10,7 @@ const HEADER = new URL('../../../../runtime/zig/vendor/webgpu-headers/webgpu.h',
 // Converter-name fragment -> webgpu.h enum. A new numeric table must be listed.
 const FAMILIES = [
   ['texture_format', 'WGPUTextureFormat'],
+  ['adapter_backend_type', 'WGPUBackendType'],
   ['primitive_topology', 'WGPUPrimitiveTopology'],
   ['front_face', 'WGPUFrontFace'],
   ['cull_mode', 'WGPUCullMode'],

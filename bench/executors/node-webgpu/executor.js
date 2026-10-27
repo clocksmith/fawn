@@ -19,6 +19,8 @@ import {
   describeUnusableAdapterInfo,
 } from '../adapter_health.js';
 
+import { loadPinnedDawn, providerBackendContract, observedBackendSelection } from './provider-contract.js';
+
 const REPO_ROOT = resolve(fileURLToPath(new URL('../../..', import.meta.url)));
 const FALLBACK_WEBGPU_PATH = join(
   REPO_ROOT,
@@ -138,6 +140,7 @@ const PACKAGE_READBACK_RESULT_NATIVE = 'map-read-copy-unmap';
 const TRACE_REPLAY_SEED = '0x9e3779b97f4a7c15';
 const PACKAGE_TRACE_MODULE = 'package-webgpu-executor';
 const ADAPTER_INFO_FIELDS = Object.freeze([
+  'backendType',
   'vendor',
   'architecture',
   'device',
@@ -1030,11 +1033,12 @@ async function maybeYieldBeforeQueueWait(runtime) {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-function createQueueWaitFence(device, queue, globals) {
+function createQueueWaitFence(device, queue, globals, completion) {
   const signal = device.createBuffer({
     size: QUEUE_WAIT_FENCE_SIZE_BYTES,
     usage: globals.GPUBufferUsage.COPY_SRC | globals.GPUBufferUsage.COPY_DST,
   });
+  if (completion) completion.value = 'unknown';
   queue.writeBuffer(signal, 0, new Uint32Array(1));
   const readback = device.createBuffer({
     size: QUEUE_WAIT_FENCE_SIZE_BYTES,
@@ -1073,6 +1077,7 @@ async function waitForQueuedWrites(runtime) {
   if (runtime.queueWaitFence) {
     const encoder = runtime.device.createCommandEncoder();
     appendQueueWaitFenceCopy(runtime, encoder);
+    if (runtime.completion) runtime.completion.value = 'unknown';
     runtime.queue.submit([encoder.finish()]);
     return await awaitQueueCompletion(runtime);
   }
@@ -2232,7 +2237,11 @@ function resolveDenoWebGpuModule() {
   };
 }
 
-async function resolveProviderModule(spec) {
+async function resolveProviderModule(spec, requireVendoredDawn = false) {
+  if (requireVendoredDawn) {
+    if (spec.loader !== 'node-dawn') throw new Error('pinned Dawn requires canonical Node Dawn provider');
+    return loadPinnedDawn(REPO_ROOT);
+  }
   switch (spec.loader) {
     case 'node-doe':
       return await import(pathToFileURL(DOE_PACKAGE_PATH).href);
@@ -2309,9 +2318,10 @@ function classifyProviderModuleFailure(error) {
 
 export async function resolveProviderModuleAvailability(spec, {
   runtimeHost = '',
+  requireVendoredDawn = false,
 } = {}) {
   try {
-    const module = await resolveProviderModule(spec);
+    const module = await resolveProviderModule(spec, requireVendoredDawn);
     return providerAvailabilityOk({
       provider: spec.provider,
       providerName: spec.providerName,
@@ -2407,6 +2417,8 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
   debugLog,
   runtimeHost,
   prewarmDispatchBindings = false,
+  backend = '',
+  completion = { value: 'not_dispatched' },
 }) {
   const { create, globals } = webgpu;
   debugLog('runtime.create.start', {
@@ -2415,7 +2427,8 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
     executionShape: normalizedPlan.executionShape,
   });
   const executorInitStartedAt = performance.now();
-  const gpu = create(providerCreateOptions(spec));
+  const backendContract = providerBackendContract(backend, spec.provider);
+  const gpu = create(backendContract?.createOptions ?? providerCreateOptions(spec));
   const preferredPower = normalizedPlan.adapter?.powerPreference ?? 'high-performance';
   const adapterRequests = [];
   if (preferredPower) {
@@ -2433,7 +2446,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
       request,
     });
     try {
-      adapter = await gpu.requestAdapter(request);
+      adapter = await gpu.requestAdapter({ ...request, ...backendContract?.adapterOptions });
     } catch (error) {
       const unsupported = classifyBringupUnsupported('requestAdapter', error);
       if (!unsupported) {
@@ -2553,6 +2566,11 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
     });
   }
   const adapterInfo = snapshotAdapterInfo(device?.adapterInfo ?? selectedAdapterInfo);
+  if (backendContract && adapterInfo && adapterInfo.isFallbackAdapter === undefined
+      && typeof adapter.isFallbackAdapter === 'boolean') {
+    adapterInfo.isFallbackAdapter = adapter.isFallbackAdapter;
+  }
+  const packageBackendSelection = observedBackendSelection(backendContract, adapterInfo);
   const hostExecutorInitTotalNs = nsDelta(executorInitStartedAt);
   const queue = device.queue;
   const queueWaitMode = queueWaitModeForRuntimeHost(runtimeHost);
@@ -2594,6 +2612,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
       const writeStartedAt = performance.now();
       const materialized = materializeBufferData(bufferDef.data);
       if (materialized) {
+        completion.value = 'unknown';
         queue.writeBuffer(buffer, 0, materialized);
       }
       setupBreakdownNs.initialDataWriteTotalNs += nsDelta(writeStartedAt);
@@ -2736,6 +2755,8 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
     // the native Instance reachable from this JS object.
     providerModule: webgpu,
     providerRoot: gpu,
+    packageBackendSelection,
+    completion,
     adapter,
     adapterInfo,
     device,
@@ -2743,7 +2764,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
     queueWaitMode,
     queueWaitFence: queueWaitMode === NODE_PACKAGE_QUEUE_WAIT_MODE &&
       NODE_PACKAGE_QUEUE_WAIT_MODE !== PACKAGE_QUEUE_WAIT_MODE
-      ? createQueueWaitFence(device, queue, globals)
+      ? createQueueWaitFence(device, queue, globals, completion)
       : null,
     globals,
     providerSpec: spec,
@@ -2784,6 +2805,7 @@ async function preloadResidentBufferLoads(
     );
     const materializeNs = nsDelta(materializeStartedAt);
     const writeStartedAt = performance.now();
+    if (runtime.completion) runtime.completion.value = 'unknown';
     runtime.queue.writeBuffer(buffer, step.offset ?? 0, materialized);
     const queueWriteNs = nsDelta(writeStartedAt);
     residentBufferLoadBreakdown.count += 1;
@@ -2881,6 +2903,7 @@ async function executeSample(
         const commandBuffer = syncEncoder.finish();
         const finishNs = nsDelta(finishStartedAt);
         const queueSubmitStartedAt = performance.now();
+        if (runtime.completion) runtime.completion.value = 'unknown';
         runtime.queue.submit([commandBuffer]);
         const queueSubmitNs = nsDelta(queueSubmitStartedAt);
         const queueWaitStartedAt = performance.now();
@@ -2891,6 +2914,7 @@ async function executeSample(
         const queueWaitNs = nsDelta(queueWaitStartedAt);
         const submitNs = nsFromMs(performance.now() - submitStartedAt);
         queueCompletionKnown = true;
+        if (runtime.completion) runtime.completion.value = 'completed';
         stepBreakdownNs.submitCommandEncoderFinishTotalNs += finishNs;
         stepBreakdownNs.submitQueueSubmitTotalNs += queueSubmitNs;
         stepBreakdownNs.submitQueueWaitTotalNs += queueWaitNs;
@@ -2966,6 +2990,7 @@ async function executeSample(
         dispatchesEncoded: dispatchStateIndex,
       });
     }
+    if (runtime.completion) runtime.completion.value = 'unknown';
     runtime.queue.submit([commandBuffer]);
     const queueSubmitNs = nsDelta(queueSubmitStartedAt);
     queueCompletionKnown = false;
@@ -3001,6 +3026,7 @@ async function executeSample(
       }
       queueWaitNs = nsDelta(queueWaitStartedAt);
       queueCompletionKnown = true;
+      if (runtime.completion) runtime.completion.value = 'completed';
       debugLog('execution.submit.queueWait.done', {
         submitIndex: submitCount,
         queueWaitNs,
@@ -3136,6 +3162,7 @@ async function executeSample(
             materializeTotalNs += nsDelta(compactStartedAt);
           }
           const writeStartedAt = performance.now();
+          if (runtime.completion) runtime.completion.value = 'unknown';
           queueWriteBufferBatch(runtime.queue, writeBatchMethod, batchEntries, preparedCompact);
           const queueWriteNs = nsDelta(writeStartedAt);
           recordPackageBatchedWrites(writeBreakdown, batchedSteps.length, writeBatchMethod);
@@ -3192,6 +3219,7 @@ async function executeSample(
           );
           const materializeNs = nsDelta(materializeStartedAt);
           const writeStartedAt = performance.now();
+          if (runtime.completion) runtime.completion.value = 'unknown';
           runtime.queue.writeBuffer(buffer, step.offset ?? 0, materialized);
           const queueWriteNs = nsDelta(writeStartedAt);
           recordPackageWriteBreakdown(writeBreakdown, step, materialized.byteLength);
@@ -3337,6 +3365,7 @@ async function executeSample(
       });
       packageEffectiveReadbackPaths.add(effectivePackageReadbackPath(readback.path));
       readbackPathCounts.set(readback.path, (readbackPathCounts.get(readback.path) ?? 0) + 1);
+      if (readbackMapCompletesSubmit && runtime.completion) runtime.completion.value = 'completed';
       const validationStartedAt = performance.now();
       const validation = validatePreparedSampleExpectation(
         readback.bytes,
@@ -3366,6 +3395,7 @@ async function executeSample(
       readback.breakdownNs.readbackCaptureTotalNs += nsDelta(captureStartedAt);
       if (readbackMapCompletesSubmit) {
         queueCompletionKnown = true;
+        if (runtime.completion) runtime.completion.value = 'completed';
       }
       const stepNs = nsDelta(readStartedAt);
       stepBreakdownNs.readbackTotalNs += stepNs;
@@ -3545,6 +3575,8 @@ async function executeSample(
     packageReadbackActualPaths,
     packageReadbackPathCounts,
     packageProviderIdentity,
+    ...(runtime.packageBackendSelection ? { packageBackendSelection: runtime.packageBackendSelection } : {}),
+    gpuCompletion: runtime.completion?.value ?? 'completed',
     ...(packageNativeFastPaths ? { packageNativeFastPaths } : {}),
     ...(packageNativeQueueSyncInfo ? { packageNativeQueueSyncInfo } : {}),
     ...(pipelineCache ? { pipelineCache } : {}),
@@ -3583,7 +3615,10 @@ export async function executePlanFile({
   stepLimit = 0,
   commandRepeat = 1,
   residentBufferLoads = false,
+  backend = '',
+  requireVendoredDawn = false,
 }) {
+  if ((backend || requireVendoredDawn) && runtimeHost !== 'node') throw new Error('explicit baseline selection requires Node');
   const normalizedCommandRepeat = normalizePositiveInt(commandRepeat, 'commandRepeat');
   if (residentBufferLoads && !preparedSession) {
     throw new Error('--resident-buffer-loads requires --prepared-session');
@@ -3779,6 +3814,7 @@ export async function executePlanFile({
     return unsupportedResult;
   }
   let runtime = null;
+  const completion = { value: 'not_dispatched' };
   let providerModuleResolveTotalNs = 0;
   try {
     const webgpuResolveStartedAt = performance.now();
@@ -3787,6 +3823,7 @@ export async function executePlanFile({
     });
     const providerAvailability = await resolveProviderModuleAvailability(spec, {
       runtimeHost,
+      requireVendoredDawn,
     });
     providerModuleResolveTotalNs = nsDelta(webgpuResolveStartedAt);
     if (!providerAvailability.ok) {
@@ -3808,6 +3845,8 @@ export async function executePlanFile({
       debugLog,
       runtimeHost,
       prewarmDispatchBindings,
+      backend,
+      completion,
     });
     runtime.hostExecutorInitTotalNs += providerModuleResolveTotalNs;
     const executionStartedAt = preparedSession ? performance.now() : timedEnvelopeStartedAt;
@@ -3890,6 +3929,7 @@ export async function executePlanFile({
         queueWaitSubmitCadence,
         residentBufferLoads,
       });
+      unsupportedResult.meta.gpuCompletion = completion.value;
       const artifactFinalizeStartedAt = performance.now();
       await writeExecutorArtifacts(traceMetaPath, traceJsonlPath, unsupportedResult.meta, unsupportedResult.rows);
       unsupportedResult.meta.hostArtifactFinalizeTotalNs = nsDelta(artifactFinalizeStartedAt);
@@ -3917,6 +3957,7 @@ export async function executePlanFile({
       queueWaitSubmitCadence,
       residentBufferLoads,
     });
+    errorResult.meta.gpuCompletion = completion.value;
     const artifactFinalizeStartedAt = performance.now();
     await writeExecutorArtifacts(traceMetaPath, traceJsonlPath, errorResult.meta, errorResult.rows);
     errorResult.meta.hostArtifactFinalizeTotalNs = nsDelta(artifactFinalizeStartedAt);

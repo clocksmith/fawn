@@ -347,7 +347,7 @@ typedef struct {
     uint32_t featureLevel;       /* WGPU_FEATURE_LEVEL_* */
     uint32_t powerPreference;
     WGPUBool forceFallbackAdapter;
-    uint32_t backendType;        /* ignored by Doe; 0 = undefined */
+    uint32_t backendType;        /* WGPUBackendType; 0 = undefined */
     void* compatibleSurface;     /* NULL for headless */
 } WGPURequestAdapterOptions;
 

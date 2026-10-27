@@ -11,6 +11,7 @@ import argparse
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
+from itertools import combinations
 import json
 import math
 import os
@@ -68,15 +69,35 @@ def environment(values: dict[str, str]) -> Iterator[None]:
 
 
 def sample_failures(meta: dict[str, Any], library: Path, arm: str,
-                    prepared: bool, size: int, expected_sha: str | None) -> list[str]:
+                    prepared: bool, size: int, expected_sha: str | None, *,
+                    dawn_inputs: dict[str, str] | None = None, backend: str = "") -> list[str]:
     failures = []
     identity = meta.get("packageProviderIdentity")
     identity = identity if isinstance(identity, dict) else {}
-    selected = identity.get("doeLibraryPath")
-    if (identity.get("loaded") is not True or identity.get("doeNative") is not True
-            or identity.get("libraryFlavor") != ("doe-c" if arm == "c" else "doe-dropin")
-            or not isinstance(selected, str) or Path(selected).resolve() != library.resolve()):
-        failures.append("actual provider identity absent or different")
+    if arm == "dawn":
+        if (identity.get("loaded") is not True or identity.get("provider") != "dawn-node-webgpu"
+                or identity.get("version") != "0.4.0" or identity.get("importFallback") is not False
+                or identity.get("loadedAddon") is not True or not dawn_inputs
+                or identity.get("inputHashes") != dawn_inputs):
+            failures.append("actual pinned Dawn addon identity absent or different")
+    else:
+        selected = identity.get("doeLibraryPath")
+        if (identity.get("loaded") is not True or identity.get("doeNative") is not True
+                or identity.get("libraryFlavor") != ("doe-c" if arm == "c" else "doe-dropin")
+                or not isinstance(selected, str) or Path(selected).resolve() != library.resolve()):
+            failures.append("actual provider identity absent or different")
+    if backend:
+        selection = meta.get("packageBackendSelection") or {}
+        if (selection.get("requested") != backend or selection.get("enforced") is not True
+                or selection.get("mechanism") != ("dawn-create-backend-filter" if arm == "dawn"
+                                                  else "native-adapter-backend-type")):
+            failures.append("explicit backend selection absent or different")
+        observed = selection.get("observedBackendType")
+        expected = {"metal": 5, "vulkan": 6, "d3d12": 4}[backend]
+        if (arm != "dawn" and observed != expected) or (observed is not None and observed != expected):
+            failures.append("actual observed backend differs or is missing")
+        if meta.get("gpuCompletion") != "completed":
+            failures.append("actual worker completion is not established")
     for field in ("executionErrorCount", "executionUnsupportedCount", "executionSkippedCount"):
         if type(meta.get(field)) is not int or meta[field] != 0:
             failures.append(field + " absent or nonzero")
@@ -101,16 +122,62 @@ def sample_failures(meta: dict[str, Any], library: Path, arm: str,
     return failures
 
 
-def pair_failures(left: dict[str, Any], right: dict[str, Any]) -> list[str]:
+def pair_failures(left: dict[str, Any], right: dict[str, Any], *,
+                  application_replacement: bool = False) -> list[str]:
     fields = ("planHash", "executionShape", "executionDispatchCount", "executionSubmitCount",
               "packagePreparedSession", "packageSetupIncludedInSelectedTiming",
               "packageEffectiveReadbackPaths", "packageReadbackActualPaths", "queueWaitMode")
+    if application_replacement:
+        fields = tuple(field for field in fields if field not in (
+            "packageEffectiveReadbackPaths", "packageReadbackActualPaths"))
     failures = [field + " missing or differs" for field in fields
                 if field not in left or field not in right or left[field] != right[field]]
     if not (left.get("adapterInfo") or {}).get("device") or (
             left.get("adapterInfo", {}).get("device") != right.get("adapterInfo", {}).get("device")):
         failures.append("physical adapter identity differs")
     return failures
+
+
+def provider_order(case_index: int, sample_index: int, include_dawn: bool,
+                   warmup: int = 0) -> tuple[str, ...]:
+    """Rotate three-arm order without changing the historical two-arm schedule."""
+    if not include_dawn:
+        return ("c", "zig") if (case_index + sample_index) % 2 == 0 else ("zig", "c")
+    rotations = ((0, 1, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0), (1, 0, 2), (0, 2, 1))
+    labels = ("c", "zig", "dawn")
+    return tuple(labels[(value + case_index) % 3]
+                 for value in rotations[(sample_index - warmup) % 6])
+
+
+def dawn_input_paths(root: Path = ROOT) -> set[Path]:
+    """Bind the exact runtime files imported by vendored webgpu0.4.0."""
+    base = root / "bench/vendor/node-webgpu-package"
+    if json.loads((base / "package.json").read_text()).get("version") != "0.4.0":
+        raise ValueError("three-arm baseline requires pinned vendored webgpu0.4.0")
+    host = {"Darwin": "darwin-universal", "Linux": "linux-x64", "Windows": "win32-x64"}.get(platform.system())
+    if host is None or platform.machine().lower() not in ("arm64", "aarch64", "x86_64", "amd64"):
+        raise ValueError("unsupported vendored Dawn host")
+    if platform.system() == "Windows" and platform.machine().lower() not in ("x86_64", "amd64"):
+        raise ValueError("pinned Windows Dawn baseline requires x64")
+    if platform.system() == "Linux" and platform.machine().lower() in ("arm64", "aarch64"):
+        host = "linux-arm64"
+    paths = {base / "index.js", base / "package.json", base / "dist" / (host + ".dawn.node")}
+    if platform.system() == "Windows":
+        paths.add(base / "dist/d3dcompiler_47.dll")
+    return {path.resolve(strict=True) for path in paths}
+
+
+def checkpoint(path: Path, report: dict[str, Any]) -> None:
+    """Persist unknown-before-dispatch state before any new worker can submit."""
+    write_json(path, report)
+    with path.open("rb") as stream:
+        os.fsync(stream.fileno())
+    if os.name == "posix":
+        fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
 
 
 class OwnedWorkers:
@@ -199,14 +266,22 @@ def configuration_inputs(root: Path) -> set[Path]:
 def run(args: argparse.Namespace) -> int:
     if args.iterations < 1 or args.warmup < 0:
         raise ValueError("iterations must be positive and warmup nonnegative")
+    include_dawn = getattr(args, "include_dawn", False)
+    backend = getattr(args, "backend", None) or {"Darwin": "metal", "Linux": "vulkan", "Windows": "d3d12"}.get(platform.system())
+    if include_dawn and (not backend or any(profile not in ("node-package", "node-package-prepared")
+                                           for profile in args.profiles)):
+        raise ValueError("--include-dawn requires canonical Node package profiles and a supported backend")
     selected = cases(args.oracle_plans.resolve(), args.profiles)
     libraries = {"c": args.c_library.resolve(), "zig": args.zig_library.resolve()}
+    dawn_inputs = {str(path): digest(path) for path in dawn_input_paths()} if include_dawn else {}
+    arms = ("c", "zig", "dawn") if include_dawn else ("c", "zig")
     build = json.loads(args.build_inputs.read_text())
     paths = {args.build_inputs.resolve(), Path(__file__).resolve(),
              ROOT / "bench/tools/compare_c_vs_zig_compilation.py", ROOT / "bench/lib/child_usage.py",
              ROOT / "bench/tools/prepare_package_oracle_plans.py", ROOT / "bench/lib/synthetic_assets.py",
              args.oracle_plans.resolve() / "oracle-manifest.json"}
     paths.update(configuration_inputs(ROOT))
+    paths.update(Path(path) for path in dawn_inputs)
     manifest = json.loads((args.oracle_plans / "oracle-manifest.json").read_text())
     if manifest["generatorSha256"] != digest(ROOT / "bench/tools/prepare_package_oracle_plans.py"):
         raise ValueError("CPU reference generator differs from its receipt")
@@ -222,7 +297,7 @@ def run(args: argparse.Namespace) -> int:
             raise ValueError("explicit library must appear in the actual build-input receipt")
     for subtree in ("bench/executors", "packages/doe-gpu/src", "runtime/bridge/webgpu-addon"):
         paths.update(path for path in (ROOT / subtree).rglob("*")
-                     if path.is_file() and path.suffix in (".js", ".c", ".h"))
+                     if path.is_file() and path.suffix in (".js", ".mjs", ".c", ".h"))
     paths.update(path for path in (ROOT / "bench/kernels").rglob("*.wgsl"))
     for row in selected:
         paths.update((Path(row["plan"]), Path(row["catalog"])))
@@ -236,7 +311,11 @@ def run(args: argparse.Namespace) -> int:
             paths.update((path, Path(asset["manifestPath"])))
     inputs = {str(path): digest(path) for path in sorted(paths)}
     args.out.mkdir(parents=True, exist_ok=False)
-    report = {"schemaVersion": 1, "scope": "same public package work, fixed N-API backend, independent full output references",
+    report = {"schemaVersion": 1, "scope": ("public-API application replacement, Dawn own addon, independent full output references" if include_dawn
+                                                else "same public package work, fixed N-API backend, independent full output references"),
+              "comparisonClass": "public-api-application-replacement" if include_dawn else "historical-fixed-package-path",
+              "providers": list(arms), "backend": backend if include_dawn else None,
+              "dawnInputHashes": dawn_inputs, "gpuCompletion": "not_dispatched",
               "claimEligible": False, "sourceCommit": subprocess.check_output(
                   ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
               "sourceStatus": subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).splitlines(),
@@ -244,7 +323,7 @@ def run(args: argparse.Namespace) -> int:
               "host": {"platform": platform.platform(), "machine": platform.machine(),
                        "nodeBunExecutables": {key: str(value) for key, value in hosts.items()}},
               "sampling": {"iterations": args.iterations, "warmup": args.warmup,
-                           "order": "alternate provider order per paired sample and case",
+                           "order": "balanced three-arm rotations" if include_dawn else "alternate provider order per paired sample and case",
                            "operation": "canonical worker timingMs; prepared scope preserved",
                            "process": "fresh worker process through exit; no supervisor or subtraction",
                            "memory": "1ms RSS observations are lower bounds, not peaks or VRAM"},
@@ -252,7 +331,7 @@ def run(args: argparse.Namespace) -> int:
                                  "DOE_WEBGPU_LIB": {arm: str(lib) for arm, lib in libraries.items()},
                                  "DOE_NODE_WEBGPU_CHILD": "1", "DOE_BUN_WEBGPU_CHILD": "1"},
               "rows": [], "status": "running"}
-    write_json(args.out / "report.json", report)
+    checkpoint(args.out / "report.json", report)
     workers = OwnedWorkers(report)
     cancellation = workers.signals
     stopped = False
@@ -261,26 +340,34 @@ def run(args: argparse.Namespace) -> int:
             if cancellation:
                 break
             print(f"[{index+1}/{len(selected)}] {case['profile']} {case['id']}", flush=True)
-            row = {**case, "providers": {arm: {"samples": [], "warmup": []} for arm in libraries}, "failures": []}
+            row = {**case, "providers": {arm: {"samples": [], "warmup": []} for arm in arms}, "failures": [], "status": "running"}
+            report["rows"].append(row)
             for sample_index in range(args.warmup + args.iterations):
                 paired = {}
-                order = ("c", "zig") if (index + sample_index) % 2 == 0 else ("zig", "c")
+                order = provider_order(index, sample_index, include_dawn, args.warmup)
                 for arm in order:
                     folder = args.out / "samples" / f"{index:03d}" / f"{sample_index:03d}-{arm}"
                     command = [str(hosts[case["host"]]),
                                str(ROOT / f"bench/executors/run-{case['host']}-webgpu-plan.js"),
-                               "--provider", case["provider"], "--plan", case["plan"], "--workload", case["id"],
+                               "--provider", "node-webgpu" if arm == "dawn" else case["provider"], "--plan", case["plan"], "--workload", case["id"],
                                "--trace-meta", str(folder / "meta.json"), "--trace-jsonl", str(folder / "trace.jsonl")]
                     if case["prepared"]:
                         command.append("--prepared-session")
-                    with environment({"DOE_WEBGPU_LIB": str(libraries[arm]), "DOE_BUN_WEBGPU_BACKEND": "full",
+                    if include_dawn:
+                        command += ["--backend", backend]
+                        if arm == "dawn":
+                            command.append("--require-vendored-dawn")
+                    report["gpuCompletion"] = "unknown"
+                    report["activeWorker"] = {"arm": arm, "case": index, "sample": sample_index, "command": command}
+                    checkpoint(args.out / "report.json", report)
+                    with environment({"DOE_WEBGPU_LIB": str(libraries.get(arm, "")), "DOE_BUN_WEBGPU_BACKEND": "full",
                                       "DOE_NODE_WEBGPU_CHILD": "1", "DOE_BUN_WEBGPU_CHILD": "1",
                                       "DOE_MTL_ALLOW_HARDWARE": "1"}):
                         try:
                             sample = process_sample(command, folder, args.timeout, child_started=workers.started)
                         except OSError as error:
                             sample = {"command": command, "exitCode": None, "timedOut": False,
-                                      "error": str(error), "wallNs": 0}
+                                      "error": str(error), "wallNs": 0, "launchFailed": True}
                         finally:
                             workers.child = None
                     meta_path = folder / "meta.json"
@@ -288,6 +375,8 @@ def run(args: argparse.Namespace) -> int:
                         meta = json.loads(meta_path.read_text())
                     except (OSError, ValueError):
                         meta = {}
+                    if sample.get("launchFailed"):
+                        meta["gpuCompletion"] = "not_dispatched"
                     sample["traceMeta"] = str(meta_path)
                     sample["traceMetaSha256"] = digest(meta_path) if meta_path.is_file() else None
                     trace_path = folder / "trace.jsonl"
@@ -295,22 +384,31 @@ def run(args: argparse.Namespace) -> int:
                     sample["providerOrder"] = list(order)
                     sample["sampleIndex"] = sample_index
                     sample["operationMs"] = meta.get("timingMs")
-                    failures = sample_failures(meta, libraries[arm], arm, case["prepared"], case["fullOutputBytes"], case["expectedSha256"])
+                    failures = sample_failures(meta, libraries.get(arm, Path()), arm, case["prepared"], case["fullOutputBytes"], case["expectedSha256"],
+                                               dawn_inputs=dawn_inputs, backend=backend if include_dawn else "")
                     if sample["exitCode"] != 0 or sample["timedOut"]:
                         failures.append("failed or timed-out process")
                     sample["failures"] = failures
                     row["failures"].extend(arm + ": " + failure for failure in failures)
                     row["providers"][arm]["warmup" if sample_index < args.warmup else "samples"].append(sample)
                     paired[arm] = meta
-                    if sample["timedOut"]:
+                    completion_unknown = (report.get("cancelledGpuCompletionUnknown", False) or sample["timedOut"]
+                                          or (sample["exitCode"] is None and not sample.get("launchFailed"))
+                                          or (include_dawn and meta.get("gpuCompletion") not in ("completed", "not_dispatched")))
+                    report["gpuCompletion"] = "unknown" if completion_unknown else meta.get("gpuCompletion", "completed")
+                    report.pop("activeWorker", None)
+                    checkpoint(args.out / "report.json", report)
+                    if completion_unknown:
                         stopped = True
-                        row["failures"].append("GPU completion unknown after owned process timeout; later work stopped")
+                        row["failures"].append("GPU completion unknown after worker exit, missing receipt or timeout; later work stopped")
                         break
                     if cancellation:
                         row["failures"].append("owned worker cancelled; no later GPU work")
                         break
-                if len(paired) == 2:
-                    row["failures"].extend(pair_failures(paired["c"], paired["zig"]))
+                if len(paired) == len(arms):
+                    for left, right in combinations(arms, 2):
+                        row["failures"].extend(f"{left}/{right}: " + failure for failure in pair_failures(
+                            paired[left], paired[right], application_replacement=include_dawn))
                 if stopped or cancellation:
                     break
             for group in row["providers"].values():
@@ -327,11 +425,15 @@ def run(args: argparse.Namespace) -> int:
                 row["zigOverCOperationMedianRatio"] = (
                     row["providers"]["zig"]["operationStatistics"]["p50Ns"] /
                     row["providers"]["c"]["operationStatistics"]["p50Ns"])
-            report["rows"].append(row)
+                if include_dawn:
+                    row["pairwiseOperationMedianRatios"] = {
+                        f"{right}Over{left}": row["providers"][right]["operationStatistics"]["p50Ns"] /
+                        row["providers"][left]["operationStatistics"]["p50Ns"]
+                        for left, right in combinations(arms, 2)}
             report["status"] = "stopped_gpu_completion_unknown" if stopped else "running"
             report["drift"] = [path for path, sha in inputs.items()
                                if not Path(path).is_file() or digest(Path(path)) != sha]
-            write_json(args.out / "report.json", report)
+            checkpoint(args.out / "report.json", report)
             if stopped or cancellation or report["drift"]:
                 break
     report["drift"] = [path for path, sha in inputs.items() if not Path(path).is_file() or digest(Path(path)) != sha]
@@ -340,18 +442,21 @@ def run(args: argparse.Namespace) -> int:
             row["status"] = "incomparable"
             row["failures"].append("input drift invalidates this campaign")
             row.pop("zigOverCOperationMedianRatio", None)
+            row.pop("pairwiseOperationMedianRatios", None)
     if cancellation:
         report["status"] = ("cancelled_gpu_completion_unknown" if report.get("cancelledGpuCompletionUnknown") else "cancelled")
         report["cancellationSignals"] = cancellation
     elif not stopped:
         report["status"] = "compared_with_gaps" if report["drift"] or any(r["failures"] for r in report["rows"]) else "compared"
     report["endedAt"] = datetime.now(timezone.utc).isoformat()
-    write_json(args.out / "report.json", report)
+    checkpoint(args.out / "report.json", report)
     return int(report["status"] != "compared")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--include-dawn", action="store_true", help="Add pinned Dawn0.4.0; only canonical Node package profiles.")
+    parser.add_argument("--backend", choices=("metal", "vulkan", "d3d12"), help="Explicit three-arm backend; defaults to host-native backend.")
     parser.add_argument("--c-library", required=True, type=Path, help="Exact built C native provider.")
     parser.add_argument("--zig-library", required=True, type=Path, help="Exact fresh Zig full native provider.")
     parser.add_argument("--build-inputs", required=True, type=Path, help="Hash-bound actual library/dependency/addon build receipt.")

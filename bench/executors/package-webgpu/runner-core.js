@@ -18,6 +18,8 @@ function parseCliArgs(defaultProvider) {
   return parseArgs({
     options: {
       provider: { type: 'string', default: defaultProvider },
+      backend: { type: 'string', default: '' },
+      'require-vendored-dawn': { type: 'boolean', default: false },
       plan: { type: 'string', default: '' },
       'trace-meta': { type: 'string', default: '' },
       'trace-jsonl': { type: 'string', default: '' },
@@ -34,11 +36,14 @@ function parseCliArgs(defaultProvider) {
 }
 
 function validateArgs(args, { usageCommand, providerUsage }) {
+  if (args.backend && !['metal', 'vulkan', 'd3d12'].includes(args.backend)) throw new Error('unsupported --backend');
+  if (args['require-vendored-dawn'] && args.provider !== 'node-webgpu') throw new Error('--require-vendored-dawn requires node-webgpu');
   if (!args.plan || !args['trace-meta'] || !args['trace-jsonl'] || !args.workload) {
     throw new Error(
       `usage: ${usageCommand} --provider <${providerUsage}> --plan <path> `
       + '--trace-meta <path> --trace-jsonl <path> --workload <id> '
-      + '[--prepared-session] [--skip-dispatch-prewarm] [--resident-buffer-loads]',
+      + '[--prepared-session] [--skip-dispatch-prewarm] [--resident-buffer-loads] '
+      + '[--backend metal|vulkan|d3d12] [--require-vendored-dawn]',
     );
   }
 }
@@ -143,6 +148,8 @@ function childArgv(args, cliPath, overrides = {}) {
     debugBoundaries: overrides.debugBoundaries ?? Boolean(args['debug-boundaries']),
     stepLimit: overrides.stepLimit ?? args['step-limit'],
     commandRepeat: overrides.commandRepeat ?? args['command-repeat'],
+    backend: args.backend,
+    requireVendoredDawn: Boolean(args['require-vendored-dawn']),
   };
   const argv = [
     cliPath,
@@ -152,6 +159,8 @@ function childArgv(args, cliPath, overrides = {}) {
     '--trace-jsonl', resolved.traceJsonl,
     '--workload', resolved.workload,
   ];
+  if (resolved.backend) argv.push('--backend', resolved.backend);
+  if (resolved.requireVendoredDawn) argv.push('--require-vendored-dawn');
   if (resolved.dryRun) {
     argv.push('--dry-run');
   }
@@ -273,6 +282,8 @@ async function runWorker(args, { runtimeHost }) {
     debugBoundaries: Boolean(args['debug-boundaries']),
     stepLimit: args['step-limit'] ? Number(args['step-limit']) : 0,
     commandRepeat: parseCommandRepeat(args['command-repeat']),
+    backend: args.backend,
+    requireVendoredDawn: Boolean(args['require-vendored-dawn']),
   });
 }
 
