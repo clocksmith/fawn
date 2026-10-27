@@ -1,0 +1,24 @@
+{
+  "scope": "Changed-source retained Zig oracle and frozen C TSIR differential development proof; not GPU/browser/performance qualification",
+  "initial": {
+    "bootstrapManifestSkips": 7,
+    "preservedArchiveSha256": "0c711aacf3d916bfcde0395670d632bd8234e469fe7f8aae3075c1d10947cca8"
+  },
+  "firstDifferential": "FAILED only final numeric probe compile: retained combineF32 error union not handled; full diagnostic preserved",
+  "final": "PASS",
+  "counts": {
+    "manifestTests": 8,
+    "manifestSkips": 0,
+    "bootstrapOracleChecks": 67,
+    "targetIdentities": 7,
+    "targetSourceErrorChecks": 11,
+    "semanticCases": 30,
+    "exactF64DecimalCases": 4152,
+    "numericRuntimeInputs": 471,
+    "numericOperandPairs": 49,
+    "numericComparisons": 3395,
+    "equalZeroTiesCheckedNumerically": 8
+  },
+  "driverRepair": "Six try expressions propagate retained errors; command failures expose status/stdout/stderr. No numerical cases, oracle, threshold or expected output changed. Final numeric driver rerun and status7/both-stream negative control passed.",
+  "sourceVerification": "All242 incoming paths rehashed; unchanged except one explicitly retained driver repair; five removals remain absent"
+}

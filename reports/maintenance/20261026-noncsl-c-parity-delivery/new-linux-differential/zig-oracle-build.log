@@ -1,0 +1,11 @@
+
+Build Summary: 7/7 steps succeeded
+tsir-bootstrap-oracle success
++- install doe-tsir-bootstrap-oracle success
+   +- compile exe doe-tsir-bootstrap-oracle ReleaseFast native success 7s MaxRSS:270M
+      +- options success
+tsir-bootstrap-manifest-inputs success
++- install doe-tsir-bootstrap-manifest-inputs success
+   +- compile exe doe-tsir-bootstrap-manifest-inputs ReleaseFast native success 11s MaxRSS:355M
+      +- options (reused)
+

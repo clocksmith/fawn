@@ -1,0 +1,2 @@
+TSIR numeric parity: 471 runtime inputs, 49 operand pairs, 3395 comparisons passed (8 equal-zero ties checked numerically)
+Negative diagnostic control: child status7 and both captured streams retained; failure propagated.
