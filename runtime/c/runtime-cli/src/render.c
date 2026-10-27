@@ -1,13 +1,14 @@
 /* SPDX-License-Identifier: MIT
  * render_draw / render_pass and samplers over the public WebGPU C ABI, with
- * the semantics of doe-zig-runtime's native Vulkan lane (vk_render.zig): the
- * default proxy pipeline (bench kernels draw_call_proxy_vertex/fragment.wgsl,
- * no bind groups) draws `draw_count` times inline in one render pass that
- * clears the color target to (0, 0, 0, 1) and stores it, then one submission
+ * backend-specific native proxy semantics: Metal uses the retained zero-area
+ * proxy and transparent clear; other backends keep the fullscreen colored
+ * Vulkan proxy. Both draw `draw_count` times inline in one render pass that
+ * clears and stores the target, then one submission
  * is waited to completion. The target is a scratch texture for the command
  * unless the command names an existing texture. As in that lane, the
- * pipeline, bind-group and encode modes and dynamic offsets are validated but
- * do not change the recorded work. draw_indirect and draw_indexed_indirect
+ * bind-group and encode modes and dynamic offsets are validated but do not
+ * change the recorded work. Metal's redundant pipeline mode rebinds per draw;
+ * other backends keep their single pipeline bind. draw_indirect and draw_indexed_indirect
  * write the command's draw arguments `draw_count` times into one Indirect
  * buffer, as doe-zig-runtime's WebGPU path does for multi-draw, and record one
  * indirect draw per record; doe-zig-runtime's native lane draws those
@@ -15,6 +16,11 @@
 #include "runtime_internal.h"
 #include <stdlib.h>
 #include <string.h>
+
+static bool metal_proxy(const doe_runtime *runtime)
+{
+    return runtime->info.backend && !strcmp(runtime->info.backend, "metal");
+}
 
 static WGPUShaderModule shader_module(doe_runtime *runtime, const char *name, doe_trace_execution *execution)
 {
@@ -53,8 +59,11 @@ static WGPURenderPipeline render_pipeline(doe_runtime *runtime, doe_texture_form
         runtime->render_pipelines = grown;
         runtime->render_pipeline_capacity = capacity;
     }
-    WGPUShaderModule vertex = shader_module(runtime, "draw_call_proxy_vertex.wgsl", execution);
-    WGPUShaderModule fragment = vertex ? shader_module(runtime, "draw_call_proxy_fragment.wgsl", execution) : NULL;
+    const bool metal = metal_proxy(runtime);
+    WGPUShaderModule vertex = shader_module(runtime,
+        metal ? "draw_call_metal_proxy_vertex.wgsl" : "draw_call_proxy_vertex.wgsl", execution);
+    WGPUShaderModule fragment = vertex ? shader_module(runtime,
+        metal ? "draw_call_metal_proxy_fragment.wgsl" : "draw_call_proxy_fragment.wgsl", execution) : NULL;
     WGPURenderPipeline pipeline = NULL;
     if (vertex && fragment) {
         WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
@@ -176,6 +185,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
 {
     if (runtime->options.public_webgpu_renderer) return runtime_execute_public_render(runtime, command, execution);
     const doe_render_draw *draw = &command->as.render;
+    const bool metal = metal_proxy(runtime);
     uint64_t start = doe_runtime_monotonic_ns();
     runtime_push_scopes(runtime);
     WGPURenderPipeline pipeline = render_pipeline(runtime, draw->target_format, execution);
@@ -225,7 +235,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         color.view = view;
         color.loadOp = WGPULoadOp_Clear;
         color.storeOp = WGPUStoreOp_Store;
-        color.clearValue = (WGPUColor){0, 0, 0, 1};
+        color.clearValue = (WGPUColor){0, 0, 0, metal ? 0 : 1};
         WGPURenderPassDescriptor pass_descriptor = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
         if (timestamp.query) pass_descriptor.timestampWrites = &timestamp.writes;
         pass_descriptor.colorAttachmentCount = 1;
@@ -250,6 +260,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
                 0, index_size);
         }
         for (uint32_t i = 0; i < draw->draw_count; i++) {
+            if (metal && draw->redundant_pipeline) wgpuRenderPassEncoderSetPipeline(pass, pipeline);
             if (arguments) {
                 uint64_t offset = (uint64_t)i * stride;
                 if (indices) wgpuRenderPassEncoderDrawIndexedIndirect(pass, arguments, offset);

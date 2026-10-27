@@ -115,16 +115,20 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   the texture side's. Textures also carry CopySrc|CopyDst so writes and copies
   keep their contents. WebGPU validates layouts: a row pitch that is not a
   multiple of 256 fails the copy with exit 1.
-- `render_draw` (`draw`, `draw_call`, `draw_indexed`) and `render_pass`, as
-  doe-zig-runtime's native Vulkan lane records them: `drawCount` draws of the
-  default proxy pipeline (`draw_call_proxy_vertex.wgsl` and
-  `draw_call_proxy_fragment.wgsl` from the kernel root, no bind groups) inline in
-  one render pass that clears the color target to (0, 0, 0, 1), with the
+- `render_draw` (`draw`, `draw_call`, `draw_indexed`) and `render_pass` issue
+  `drawCount` draws of a backend-specific native proxy, without bind groups.
+  The actual Metal adapter selects `draw_call_metal_proxy_vertex.wgsl` and
+  `draw_call_metal_proxy_fragment.wgsl`: the retained zero-area triangle and
+  transparent clear. Other adapters retain the fullscreen colored
+  `draw_call_proxy_vertex.wgsl` / `draw_call_proxy_fragment.wgsl` program and
+  (0, 0, 0, 1) clear. Draws are inline in one render pass with the
   command's viewport, scissor, blend constant, stencil reference and index data.
   The target is a scratch texture unless `targetHandle` names an existing
-  texture with RenderAttachment usage. `pipelineMode`, `bindGroupMode`,
-  `encodeMode` and `bindGroupDynamicOffsets` are validated but, as in that lane,
-  do not change the recorded work. `draw_indirect` and `draw_indexed_indirect`
+  texture with RenderAttachment usage. Metal's redundant `pipelineMode`
+  rebinds the pipeline per draw; other adapters retain one bind. `bindGroupMode`,
+  `encodeMode` and `bindGroupDynamicOffsets` remain validated without changing
+  the proxy work. This does not qualify render-bundle or dynamic-binding work.
+  `draw_indirect` and `draw_indexed_indirect`
   take the same fields; their argument record is written `drawCount` times into
   one Indirect buffer (as doe-zig-runtime's WebGPU multi-draw path does) and
   drawn with one indirect draw per record, while doe-zig-runtime's native lane
