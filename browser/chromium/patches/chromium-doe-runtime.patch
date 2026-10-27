@@ -56,6 +56,39 @@ index 2e53794fa3..d99d37ca19 100644
    sandbox::policy::SandboxLinux::GetInstance()->StartBrokerProcess(
        CommandSetForGPU(options), FilePermissionsForGpu(options), options);
  
+diff --git a/content/gpu/gpu_main.cc b/content/gpu/gpu_main.cc
+index 543e347e14..433a283871 100644
+--- a/content/gpu/gpu_main.cc
++++ b/content/gpu/gpu_main.cc
+@@ -85,6 +85,10 @@
+ #include "ui/gl/gl_switches.h"
+ #include "ui/gl/init/gl_factory.h"
+ 
++#if BUILDFLAG(IS_OZONE)
++#include "ui/ozone/public/ozone_platform.h"
++#endif
++
+ #if BUILDFLAG(IS_WIN)
+ #include <windows.h>
+ 
+@@ -197,6 +201,17 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
+     webnn::PreSandboxWebNNInitialization(/*is_gpu_process=*/true);
+ #endif
+ 
++#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE)
++    // Both GPU startup paths use this resource-preparation hook. Ozone's X11
++    // connections must exist before an early sandbox seals socket/connect;
++    // GL initialization remains after the sandbox. The later call is idempotent.
++    ui::OzonePlatform::InitParams params;
++    params.single_process = false;
++    params.enable_native_gpu_memory_buffers =
++        gpu_prefs.enable_native_gpu_memory_buffers;
++    ui::OzonePlatform::InitializeForGPU(params);
++#endif
++
+     // On Linux, reading system memory doesn't work through the GPU sandbox.
+     // This value is cached, so access it here to populate the cache.
+     base::SysInfo::AmountOfTotalPhysicalMemory();
 diff --git a/gpu/command_buffer/service/dawn_instance.cc b/gpu/command_buffer/service/dawn_instance.cc
 index 1b77642ce9..c5bcd0ebdb 100644
 --- a/gpu/command_buffer/service/dawn_instance.cc
@@ -281,3 +314,69 @@ index c4aa207273..bf1bb60efb 100644
  GPU_CONFIG_EXPORT extern const char kGpuRecentCrashCount[];
  GPU_CONFIG_EXPORT extern const char kDisableGpuRasterization[];
  GPU_CONFIG_EXPORT extern const char kDisableMipmapGeneration[];
+diff --git a/ui/ozone/platform/x11/ozone_platform_x11.cc b/ui/ozone/platform/x11/ozone_platform_x11.cc
+index 33d4a4a084..3b4e757bf0 100644
+--- a/ui/ozone/platform/x11/ozone_platform_x11.cc
++++ b/ui/ozone/platform/x11/ozone_platform_x11.cc
+@@ -292,15 +292,22 @@ class OzonePlatformX11 : public OzonePlatform,
+   void InitializeGPU(const InitParams& params) override {
+     InitializeCommon(params);
+     if (params.enable_native_gpu_memory_buffers) {
+-      base::ThreadPool::PostTask(FROM_HERE, base::BindOnce([]() {
+-                                   ui::GBMSupportX11::GetInstance();
+-                                 }));
++      if (params.single_process) {
++        ScheduleNativeBufferWarmup();
++      } else {
++        // Resource preparation may run before an early, single-thread sandbox.
++        native_buffer_warmup_after_sandbox_ = true;
++      }
+     }
+     // In single process mode either the UI thread will create an event source
+     // or it's a test and an event source isn't desired.
+     if (!params.single_process)
+       CreatePlatformEventSource();
+ 
++    // The EGL native display uses a separate, lazy Xlib connection. Open it
++    // alongside XCB while socket/connect and Xauthority access are still allowed.
++    x11::Connection::Get()->GetXlibDisplay();
++
+     // Set up the X11 connection before the sandbox gets set up.  This cannot be
+     // done later since opening the connection requires socket() and connect().
+     auto connection = x11::Connection::Get()->Clone();
+@@ -309,6 +316,14 @@ class OzonePlatformX11 : public OzonePlatform,
+         std::make_unique<X11SurfaceFactory>(std::move(connection));
+   }
+ 
++  void AfterSandboxEntry() override {
++    OzonePlatform::AfterSandboxEntry();
++    if (native_buffer_warmup_after_sandbox_) {
++      native_buffer_warmup_after_sandbox_ = false;
++      ScheduleNativeBufferWarmup();
++    }
++  }
++
+   void PostCreateMainMessageLoop(
+       base::OnceCallback<void()> shutdown_cb,
+       scoped_refptr<base::SingleThreadTaskRunner>) override {
+@@ -325,6 +340,12 @@ class OzonePlatformX11 : public OzonePlatform,
+   }
+ 
+  private:
++  static void ScheduleNativeBufferWarmup() {
++    base::ThreadPool::PostTask(FROM_HERE, base::BindOnce([]() {
++                                 ui::GBMSupportX11::GetInstance();
++                               }));
++  }
++
+   // Performs initialization steps need by both UI and GPU.
+   void InitializeCommon(const InitParams& params) {
+     if (common_initialized_)
+@@ -343,6 +364,7 @@ class OzonePlatformX11 : public OzonePlatform,
+   }
+ 
+   bool common_initialized_ = false;
++  bool native_buffer_warmup_after_sandbox_ = false;
+ 
+   // Objects in the UI process.
+   std::unique_ptr<KeyboardLayoutEngine> keyboard_layout_engine_;
