@@ -426,3 +426,95 @@ fn make_render_key(pixel_fmt: u32, vert_hash: u64, frag_hash: u64, samples: u32,
         .color_attachment_count = color_count,
     };
 }
+
+const native_cache = @import("../../src/native/cache/doe_device_cache_native.zig");
+const native = @import("../../src/native/mod.zig");
+const native_types = @import("../../src/native/support/doe_native_object_types.zig");
+const abi = @import("../../src/core/abi/wgpu_core_base_types.zig");
+const shader_abi = @import("../../src/core/abi/wgpu_pipeline_descriptor_types.zig");
+
+test "device persistent cache policy rejects invalid destroyed and used devices" {
+    comptime {
+        _ = @as(*const fn (?*anyopaque) callconv(.c) abi.WGPUStatus, &native.doeNativeDeviceDisablePersistentCache);
+    }
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(null));
+    var dev = native_types.DoeDevice{ .backend = .d3d12 };
+    dev.magic = 0;
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&dev)));
+    dev.magic = native_types.DoeDevice.TYPE_MAGIC;
+    dev.destroyed = true;
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&dev)));
+    dev.destroyed = false;
+    native_cache.beginUse(&dev);
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&dev)));
+    try std.testing.expect(native_cache.persistenceAllowed(&dev));
+}
+
+test "device persistent cache policy is one way and isolated per device" {
+    var disabled = native_types.DoeDevice{ .backend = .d3d12 };
+    var ordinary = native_types.DoeDevice{ .backend = .d3d12 };
+    try std.testing.expectEqual(abi.WGPUStatus_Success, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&disabled)));
+    try std.testing.expectEqual(abi.WGPUStatus_Success, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&disabled)));
+    try std.testing.expect(!native_cache.persistenceAllowed(&disabled));
+    try std.testing.expect(native_cache.persistenceAllowed(&ordinary));
+    native_cache.beginUse(&disabled);
+    native_cache.beginUse(&ordinary);
+    try std.testing.expectEqual(abi.WGPUStatus_Success, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&disabled)));
+    try std.testing.expect(!native_cache.persistenceAllowed(&disabled));
+    try std.testing.expect(native_cache.persistenceAllowed(&ordinary));
+}
+
+test "device persistent cache policy freezes at shader and both pipeline admissions" {
+    var shader_dev = native_types.DoeDevice{ .backend = .d3d12 };
+    var shader_desc = shader_abi.WGPUShaderModuleDescriptor{ .nextInChain = null, .label = .{ .data = null, .length = 0 } };
+    const shader = native.doeNativeDeviceCreateShaderModule(@ptrCast(&shader_dev), &shader_desc);
+    if (shader) |module| native.doeNativeShaderModuleRelease(module);
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&shader_dev)));
+    var compute_dev = native_types.DoeDevice{ .backend = .d3d12 };
+    try std.testing.expect(native.doeNativeDeviceCreateComputePipeline(@ptrCast(&compute_dev), null) == null);
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&compute_dev)));
+    var render_dev = native_types.DoeDevice{ .backend = .d3d12 };
+    try std.testing.expect(native.doeNativeDeviceCreateRenderPipeline(@ptrCast(&render_dev), null) == null);
+    try std.testing.expectEqual(abi.WGPUStatus_Error, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&render_dev)));
+}
+
+const CachePolicyRace = struct {
+    dev: *native_types.DoeDevice,
+    status: abi.WGPUStatus = abi.WGPUStatus_Error,
+    fn disable(self: *CachePolicyRace) void {
+        self.status = native.doeNativeDeviceDisablePersistentCache(@ptrCast(self.dev));
+    }
+    fn use(dev: *native_types.DoeDevice) void {
+        native_cache.beginUse(dev);
+    }
+};
+
+test "device persistent cache policy serializes first use against disable" {
+    for (0..32) |_| {
+        var dev = native_types.DoeDevice{ .backend = .d3d12 };
+        var race = CachePolicyRace{ .dev = &dev };
+        const disable = try std.Thread.spawn(.{}, CachePolicyRace.disable, .{&race});
+        const use = try std.Thread.spawn(.{}, CachePolicyRace.use, .{&dev});
+        disable.join();
+        use.join();
+        try std.testing.expect(dev.shader_cache_started);
+        try std.testing.expectEqual(race.status == abi.WGPUStatus_Error, native_cache.persistenceAllowed(&dev));
+        try std.testing.expectEqual(race.status, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&dev)));
+    }
+}
+
+test "device persistent cache policy remains disabled after CPU-only SPIRV shader creation" {
+    // The Vulkan shader owner translates WGSL to CPU bytes here; no backend
+    // runtime or physical device is present and no native API is invoked.
+    var dev = native_types.DoeDevice{ .backend = .vulkan };
+    try std.testing.expectEqual(abi.WGPUStatus_Success, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&dev)));
+    const source = "@compute @workgroup_size(1) fn main() {}";
+    const raw = native.doeNativeDeviceCreateShaderModuleWgsl(@ptrCast(&dev), source.ptr, source.len) orelse return error.TestUnexpectedResult;
+    defer native.doeNativeShaderModuleRelease(raw);
+    const shader: *native_types.DoeShaderModule = @ptrCast(@alignCast(raw));
+    try std.testing.expect(shader.compilation_message_kind != .@"error");
+    try std.testing.expect(shader.spirv_data != null);
+    try std.testing.expect(dev.shader_cache_started);
+    try std.testing.expectEqual(abi.WGPUStatus_Success, native.doeNativeDeviceDisablePersistentCache(@ptrCast(&dev)));
+    try std.testing.expect(!native_cache.persistenceAllowed(&dev));
+}

@@ -82,6 +82,7 @@ pub const doeNativeDeviceAddRef = m0.doeNativeDeviceAddRef;
 pub const doeNativeDeviceRelease = m0.doeNativeDeviceRelease;
 pub const doeNativeDeviceGetAdapter = m0.doeNativeDeviceGetAdapter;
 pub const doeNativeDeviceGetQueue = m0.doeNativeDeviceGetQueue;
+pub const doeNativeDeviceDisablePersistentCache = m0.doeNativeDeviceDisablePersistentCache;
 pub const doeNativeDeviceCreateBufferFlat = m0.doeNativeDeviceCreateBufferFlat;
 pub const doeNativeDeviceCreateShaderModule = m0.doeNativeDeviceCreateShaderModule;
 pub const doeNativeDeviceCreateShaderModuleWgsl = m0.doeNativeDeviceCreateShaderModuleWgsl;

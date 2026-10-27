@@ -902,9 +902,9 @@
       },
       "src/backend/d3d12/d3d12_runtime_compute.zig": {
         "decision": "Keep",
-        "moduleSha256": "131f0cc4ba3263f3b5a57f57a0de48adab212bff48cd7acad3eae2f9dcd07478",
-        "reason": "Keep: native D3D12 sparse group-zero storage slots retain exact descriptor/register identity, shader extent/access validation and rejected-layout recovery.",
-        "reviewer": "codex-d3d12-sparse/2026-10-21"
+        "moduleSha256": "ed3e1ad063c40abe7cbee6057c12086146428ccce92b58338e7d9dd8da05fbef",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/d3d12/d3d12_runtime_upload.zig": {
         "decision": "Keep",
@@ -1082,9 +1082,9 @@
       },
       "src/backend/metal/metal_pipeline_cache.zig": {
         "decision": "Keep",
-        "moduleSha256": "6f3b9ab4460671905f16ae9bf2dac02debb2891e7fba84491575bb32d5a770a3",
-        "reason": "Keep: reachable backend implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-architecture-refactor/2026-08-23"
+        "moduleSha256": "e114eb7b364fef6e8597ebeb82535113782425577e0d5f77b3448a3000c9593c",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/metal/metal_render_state_bridge_decls.zig": {
         "decision": "Keep",
@@ -1256,9 +1256,9 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "93a6cd4cebca5b517b0fb65c9a72f6c125863d446bd37fd5e5da8ef13b36aabb",
-        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Carries the CPU-only (fallback adapter) selection flag. Owns the indirect-dispatch guard scratch handle. Texture destroy frees the image and memory; new textures are zero-initialized before first use.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-25"
+        "moduleSha256": "038ad34ba738b351b71219d4f441f72295910e527cc2073ce9c044df8a1fc792",
+        "reason": "Keep: native adapter devices defer Vulkan disk cache activation until per-device policy is frozen; independent CLI runtime constructors retain configured cache behavior.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
         "decision": "Keep",
@@ -1370,9 +1370,9 @@
       },
       "src/backend/vulkan/vk_pipeline_cache_persistent.zig": {
         "decision": "Keep",
-        "moduleSha256": "fe8aa0d9271fc876e857714c7d5835f3ab3008f8e143d71419c480ffc5264401",
-        "reason": "Keep: reachable backend implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-architecture-refactor/2026-08-23"
+        "moduleSha256": "d085475f3c74f9b71c6f61d3ef0bc700a18c5e7321867030692c076879418fbd",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/vulkan/vk_render.zig": {
         "decision": "Keep",
@@ -3260,9 +3260,9 @@
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
-        "moduleSha256": "a041ce3fb45803c9e802e20637388e9bfd559c6760313e8185649e3fc7fb8464",
-        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
-        "reviewer": "codex-procedure-identity/2026-10-27"
+        "moduleSha256": "9cc26ed44aff03d40f49d2e561a9306ab35eeaeb4bfa6ea7521949160c1a8527",
+        "reason": "Keep: private provider cache-policy seam stays outside standard public WebGPU procedure lookup; existing canonical ABI identities remain unchanged.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/evidence/mod.zig": {
         "decision": "Keep",
@@ -3488,9 +3488,9 @@
       },
       "src/native/api/doe_native_api_core_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "ff166b8ef8474bf83e6422cffca2e574968e4791423117cb00b8d2b5ddc47088",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Exports doeNativePipelineAdoptAutoBindGroupLayout.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "b0691b2d3cb07bf878afaa1a5e8f182ea441a751abc89c847bbb5087156bd42d",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/api/doe_native_api_misc_exports.zig": {
         "decision": "Keep",
@@ -3512,9 +3512,9 @@
       },
       "src/native/cache/doe_package_metal_pipeline_cache.zig": {
         "decision": "Keep",
-        "moduleSha256": "ecdb3924e92799f7dba1621728560296462a434aaf724be4bdd33ca9ef45c3a7",
-        "reason": "Keep: individual logical devices own Metal archives and serialize their own compilation; the legacy flush registry only enumerates live owners.",
-        "reviewer": "codex-shader-ownership/2026-09-06"
+        "moduleSha256": "459ac700b65380a0926df596ac5b6b546a3f779f98899d2d6f7d9ec1884330f5",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/command/doe_encoder_native.zig": {
         "decision": "Keep",
@@ -3590,9 +3590,9 @@
       },
       "src/native/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "8e5ac64649cc07c05a85bf9bd5bf0a19dac8e3188c008abdad2b80d4e83cd1f5",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Exports doeNativePipelineAdoptAutoBindGroupLayout.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "1aecf112f576158f85c75fe5f12827d2a8095a8d5c67e2b64c372248aadf2bd4",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/queue/doe_queue_copy_native.zig": {
         "decision": "Keep",
@@ -3662,9 +3662,9 @@
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "f3b0781ae52d5c6e2e40b58efca9cfad859af610ba501218559421e58a4eb72b",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error. Render pipelines reject color targets over maxColorAttachmentBytesPerSample. encoderLayoutAdmits checks a pipeline against a pass or bundle layout and read-only aspects. createRenderPipeline validates fragment targets (renderable format, writeMask, blend and min/max factors), depth-stencil format and stencil use without a stencil aspect, and vertex attribute offset alignment. Vertex state is checked against the device's maxVertexBuffers, maxVertexAttributes and maxVertexBufferArrayStride.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "bc04c8224dc1b242ed99fc0e81ee4ad59922f02574e5857d707b44ffbc8e62c5",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/render/doe_render_state_native.zig": {
         "decision": "Keep",
@@ -3728,9 +3728,9 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a472184a4260ace64550a50d1e82a5a2e09e8868cafc708725c72d1d506eaefb",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only. Compute pipeline creation rejects explicit layouts that lack a binding the entry point uses. Compute layout check passes buffer types and compute visibility. Compute pipelines reject entry points that use a binding at or above maxBindingsPerBindGroup. Compute pipelines record every used binding for layout checks. Compute pipeline creation checks workgroup storage and automatic-layout binding slots against the device limits. Compute pipeline creation passes its explicit layout to the stage IR checks.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "296b3114d387fe0896d5e0bd2e69f0916d1df82d59d50c51bc4536a54e12708e",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
         "decision": "Keep",
@@ -3800,9 +3800,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "5bc9d683f531e6f2c56229bc7b4d7db249be3bc2db736553b3db8ffba2903002",
-        "reason": "Keep: The private buffer object retains the active mapping access alongside mapping state and lifetime.",
-        "reviewer": "codex-buffer-map-access/2026-10-27"
+        "moduleSha256": "8430cc6239ab9e63e34b2ad46ddd63dec2e65ad604575950d7fa04465822606f",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3830,9 +3830,9 @@
       },
       "src/native/vulkan/vulkan_compute_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "3b278843a3c21b725f714ce96a82fe9b471db8a9bdfa6d54b904ff4f31e99930",
-        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash. Indirect dispatch replay guards its arguments before preparing the application dispatch. Pipeline creation records required binding kinds from entry-point bindings. Uses the shared requiredLayoutKind from shader binding reflection. Vulkan compute rejects bindings above its 32-slot execution table at finish instead of skipping them.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "823578becc8a4c61e85cb14c71b19d74a911ec0257788db3fade1e5f9237a324",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/native/vulkan/vulkan_feature_cache.zig": {
         "decision": "Keep",
@@ -4466,9 +4466,9 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "31696581413ddb13023584f843a75bacaa09a53e844c5ad334e69fad8012bc9c",
-        "reason": "Keep: select one existing compute entry and its reachable resources through compiler IR; preserve HLSL entry identity, view guards and validated effective binding offsets.",
-        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
+        "moduleSha256": "8654588a664b4a7a164d72f03f2e59bdb85520da71cd7033dcd29d900e01efd6",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",
@@ -4571,6 +4571,18 @@
         "moduleSha256": "f0b5a0a64b48e9f262c1c1f585bf835b9f4a0eea5e1bcfdbd9552f8d633375c1",
         "reason": "Keep: instance feature advertisement and descriptor requirement admission share the selected capability owner; unsupported required features and limits reject before allocation without inventing support.",
         "reviewer": "codex-windows-instance-requirements/2026-10-27"
+      },
+      "src/native/cache/doe_device_cache_native.zig": {
+        "decision": "Keep",
+        "moduleSha256": "a6b71c8e7d09be81262ed60c2872954837c7e7ea3a6cb4aab5e8b34af126c09c",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
+      },
+      "src/backend/d3d12/d3d12_dxc_memory.zig": {
+        "decision": "Keep",
+        "moduleSha256": "5496f2a75997b57f922a301b9c62436dee930cb50d67dcac9a29fa60f4d45ec2",
+        "reason": "Keep: per-device one-way persistent-cache admission precedes native shader/pipeline use; disk translation and backend archive operations respect that immutable policy while memory caches remain available.",
+        "reviewer": "codex-native-cache-policy/2026-10-27"
       }
     },
     "linePolicy": {

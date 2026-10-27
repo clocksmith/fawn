@@ -177,6 +177,18 @@ pub const MetalPipelineCache = struct {
         return self;
     }
 
+    /// A nil URL creates an in-memory MTLBinaryArchive. No path resolution,
+    /// fingerprint, directory, archive read or warmup manifest is performed.
+    pub fn initMemoryOnly(allocator: std.mem.Allocator, device: ?*anyopaque) !*MetalPipelineCache {
+        const self = try allocator.create(MetalPipelineCache);
+        self.* = .{ .allocator = allocator, .device = device, .archive = null, .archive_path = null };
+        if (builtin.os.tag == .macos) {
+            var err_buf: [BRIDGE_ERROR_CAP]u8 = undefined;
+            self.archive = bridge.metal_bridge_binary_archive_create(device, null, &err_buf, BRIDGE_ERROR_CAP);
+        }
+        return self;
+    }
+
     pub fn deinit(self: *MetalPipelineCache) void {
         const allocator = self.allocator;
         if (self.dirty) self.flush_archive();
@@ -328,6 +340,7 @@ pub const MetalPipelineCache = struct {
     /// ABI flush.  The manifest sidecar lists all pipeline keys compiled this
     /// session so the next startup can warm them.
     pub fn flush_archive(self: *MetalPipelineCache) void {
+        if (self.archive_path == null) return;
         const archive = self.archive orelse return;
         if (!self.dirty) return;
         var err_buf: [BRIDGE_ERROR_CAP]u8 = undefined;

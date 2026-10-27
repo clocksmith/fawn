@@ -88,6 +88,7 @@ pub const doeNativeDeviceAddRef = instance_device.doeNativeDeviceAddRef;
 pub const doeNativeDeviceRelease = instance_device.doeNativeDeviceRelease;
 pub const doeNativeDeviceGetAdapter = instance_device.doeNativeDeviceGetAdapter;
 pub const doeNativeDeviceGetQueue = instance_device.doeNativeDeviceGetQueue;
+pub const doeNativeDeviceDisablePersistentCache = @import("../cache/doe_device_cache_native.zig").doeNativeDeviceDisablePersistentCache;
 
 const shader = @import("../shader/doe_shader_native.zig");
 pub const doeNativeDeviceCreateShaderModule = shader.doeNativeDeviceCreateShaderModule;

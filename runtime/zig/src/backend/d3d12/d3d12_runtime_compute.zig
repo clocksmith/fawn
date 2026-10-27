@@ -402,6 +402,8 @@ pub fn stripExtension(name: []const u8) []const u8 {
     return name;
 }
 
+pub const compileHlslEntryToBytecodeMemory = @import("d3d12_dxc_memory.zig").compile;
+
 pub fn compileHlslToBytecode(alloc: std.mem.Allocator, hlsl_source: []const u8) ![]u8 {
     return compileHlslEntryToBytecode(alloc, hlsl_source, DXC_ENTRYPOINT);
 }
