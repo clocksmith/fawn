@@ -12,29 +12,123 @@ index 3b12d481a..6863031f7 100644
      BackendValidationLevel backendValidationLevel = BackendValidationLevel::Disabled;
      bool beginCaptureOnStartup = false;
 diff --git a/src/dawn/native/BUILD.gn b/src/dawn/native/BUILD.gn
-index df48386e6..33db73f3f 100644
 --- a/src/dawn/native/BUILD.gn
 +++ b/src/dawn/native/BUILD.gn
-@@ -784,6 +784,7 @@ source_set("sources") {
+@@ -784,6 +784,9 @@
        "webgpu/ExternalTextureWGPU.cpp",
        "webgpu/ExternalTextureWGPU.h",
        "webgpu/Forward.h",
 +      "webgpu/InnerRuntimeDescriptor.h",
++      "webgpu/InnerRuntimeError.h",
++      "webgpu/InnerRuntimeCallbackRegistry.h",
        "webgpu/ObjectWGPU.h",
        "webgpu/PhysicalDeviceWGPU.cpp",
        "webgpu/PhysicalDeviceWGPU.h",
 diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
-index ff24f89e0..7b2f0df11 100644
 --- a/src/dawn/native/CMakeLists.txt
 +++ b/src/dawn/native/CMakeLists.txt
-@@ -612,6 +612,7 @@ if (DAWN_ENABLE_WEBGPU_ON_WEBGPU)
+@@ -612,6 +612,9 @@
          "webgpu/DeviceWGPU.h"
          "webgpu/ExternalTextureWGPU.h"
          "webgpu/Forward.h"
 +        "webgpu/InnerRuntimeDescriptor.h"
++        "webgpu/InnerRuntimeError.h"
++        "webgpu/InnerRuntimeCallbackRegistry.h"
          "webgpu/ObjectWGPU.h"
          "webgpu/PhysicalDeviceWGPU.h"
          "webgpu/PipelineLayoutWGPU.h"
+diff --git a/src/dawn/native/Device.cpp b/src/dawn/native/Device.cpp
+--- a/src/dawn/native/Device.cpp
++++ b/src/dawn/native/Device.cpp
+@@ -146,6 +146,13 @@
+
+ namespace {
+
++InternalErrorType ExternalRuntimeAllowedErrors(InstanceBase* instance) {
++    return instance->IsWebGPUExternalRuntimeRequired()
++        ? InternalErrorType::OutOfMemory | InternalErrorType::PipelineUncategorized
++        : InternalErrorType::None;
++}
++
++
+ void TrimErrorScopeStacks(
+     absl::flat_hash_map<ThreadUniqueId, std::unique_ptr<ErrorScopeStack>>& errorScopeStacks) {
+     for (auto it = errorScopeStacks.begin(); it != errorScopeStacks.end();) {
+@@ -391,6 +398,12 @@
+     Sha3_224::Output hash = Sha3_224::Hash({cacheKey});
+     // Dawn Version needs to be in plain because it's used for ValidateCacheKey()
+     StreamIn(&mDeviceCacheKey, kDawnVersion, hash);
++
++    // Provider callbacks can arrive before backend initialization. External
++    // devices use this same recursive guard throughout their entire lifetime.
++    if (GetInstance()->IsWebGPUExternalRuntimeRequired()) {
++        mMutex = AcquireRef(new DeviceMutex(GetPlatform()));
++    }
+ }
+
+ DeviceBase::~DeviceBase() {
+@@ -441,10 +454,12 @@
+                         CreateShaderModule(&shaderDesc, /* internalExtensions */ {}));
+     }
+
+-    if (HasFeature(Feature::ImplicitDeviceSynchronization)) {
+-        mMutex = AcquireRef(new DeviceMutex(GetPlatform()));
+-    } else {
+-        mMutex = nullptr;
++    if (!GetInstance()->IsWebGPUExternalRuntimeRequired()) {
++        if (HasFeature(Feature::ImplicitDeviceSynchronization)) {
++            mMutex = AcquireRef(new DeviceMutex(GetPlatform()));
++        } else {
++            mMutex = nullptr;
++        }
+     }
+
+     GetInstance()->AddDevice(this);
+@@ -1197,7 +1212,7 @@
+ BindGroupBase* DeviceBase::APICreateBindGroup(const BindGroupDescriptor* descriptor) {
+     auto deviceGuard = UseGuardForCreateBindGroup();
+     Ref<BindGroupBase> result;
+-    if (ConsumedError(CreateBindGroup(descriptor), &result, "calling %s.CreateBindGroup(%s).", this,
++    if (ConsumedError(CreateBindGroup(descriptor), &result, ExternalRuntimeAllowedErrors(GetInstance()), "calling %s.CreateBindGroup(%s).", this,
+                       descriptor)) {
+         return ReturnToAPI(BindGroupBase::MakeError(this, descriptor->label));
+     }
+@@ -1207,7 +1222,7 @@
+     const BindGroupLayoutDescriptor* descriptor) {
+     auto deviceGuard = UseGuardForCreateBindGroupLayout();
+     Ref<BindGroupLayoutBase> result;
+-    if (ConsumedError(CreateBindGroupLayout(descriptor), &result,
++    if (ConsumedError(CreateBindGroupLayout(descriptor), &result, ExternalRuntimeAllowedErrors(GetInstance()),
+                       "calling %s.CreateBindGroupLayout(%s).", this, descriptor)) {
+         return ReturnToAPI(
+             BindGroupLayoutBase::MakeError(this, descriptor ? descriptor->label : nullptr));
+@@ -1303,7 +1318,7 @@
+     }
+
+     Ref<ComputePipelineBase> result;
+-    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized,
++    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized | ExternalRuntimeAllowedErrors(GetInstance()),
+                       "calling %s.CreateComputePipeline(%s).", this, descriptor)) {
+         result = ComputePipelineBase::MakeError(this, descriptor ? descriptor->label : nullptr);
+     }
+@@ -1357,7 +1372,7 @@
+ PipelineLayoutBase* DeviceBase::APICreatePipelineLayout(
+     const PipelineLayoutDescriptor* descriptor) {
+     Ref<PipelineLayoutBase> result;
+-    if (ConsumedError(CreatePipelineLayout(descriptor), &result,
++    if (ConsumedError(CreatePipelineLayout(descriptor), &result, ExternalRuntimeAllowedErrors(GetInstance()),
+                       "calling %s.CreatePipelineLayout(%s).", this, descriptor)) {
+         result = PipelineLayoutBase::MakeError(this, descriptor ? descriptor->label : nullptr);
+     }
+@@ -1452,7 +1467,7 @@
+     }
+
+     Ref<RenderPipelineBase> result;
+-    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized,
++    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized | ExternalRuntimeAllowedErrors(GetInstance()),
+                       "calling %s.CreateRenderPipeline(%s).", this, descriptor)) {
+         result = RenderPipelineBase::MakeError(this, descriptor ? descriptor->label : nullptr);
+     }
 diff --git a/src/dawn/native/Instance.cpp b/src/dawn/native/Instance.cpp
 index 54520ef46..2eb4ec165 100644
 --- a/src/dawn/native/Instance.cpp
@@ -733,19 +827,114 @@ index 399d42a2e..720a518cb 100644
      // The dawn proc table used as the underlying backend. It can be specified when creating the
      // backend. This is different from the static global gProcTable.
      DawnProcTable mDawnProcs;
+diff --git a/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp b/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp
+--- a/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp
++++ b/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp
+@@ -57,7 +57,10 @@
+ ResultOrError<Ref<BindGroupLayout>> BindGroupLayout::Create(
+     Device* device,
+     const UnpackedPtr<BindGroupLayoutDescriptor>& descriptor) {
+-    return AcquireRef(new BindGroupLayout(device, descriptor));
++    Device::ExternalErrorScope errors(device);
++    Ref<BindGroupLayout> layout = AcquireRef(new BindGroupLayout(device, descriptor));
++    DAWN_TRY(errors.Check(layout->GetInnerHandle() != nullptr, "CreateBindGroupLayout"));
++    return layout;
+ }
+
+ BindGroupLayout::BindGroupLayout(Device* device,
+@@ -104,7 +107,7 @@
+     desc.entries = entries.data();
+
+     mInnerHandle = device->wgpu->deviceCreateBindGroupLayout(device->GetInnerHandle(), &desc);
+-    DAWN_ASSERT(mInnerHandle);
++
+ }
+
+ Ref<BindGroup> BindGroupLayout::AllocateBindGroup(
+diff --git a/src/dawn/native/webgpu/BindGroupWGPU.cpp b/src/dawn/native/webgpu/BindGroupWGPU.cpp
+--- a/src/dawn/native/webgpu/BindGroupWGPU.cpp
++++ b/src/dawn/native/webgpu/BindGroupWGPU.cpp
+@@ -114,9 +114,11 @@
+ ResultOrError<Ref<BindGroup>> BindGroup::Create(
+     Device* device,
+     const UnpackedPtr<BindGroupDescriptor>& descriptor) {
++    Device::ExternalErrorScope errors(device);
+     Ref<BindGroup> bindGroup =
+         ToBackend(descriptor->layout->GetInternalBindGroupLayout())->AllocateBindGroup(descriptor);
+     DAWN_TRY(bindGroup->Initialize(descriptor));
++    DAWN_TRY(errors.Check(bindGroup->GetInnerHandle() != nullptr, "CreateBindGroup"));
+     return bindGroup;
+ }
+
+@@ -128,7 +130,7 @@
+     mInnerHandle =
+         ToBackend(GetDevice())
+             ->wgpu->deviceCreateBindGroup(ToBackend(GetDevice())->GetInnerHandle(), desc.Get());
+-    DAWN_ASSERT(mInnerHandle);
++
+ }
+
+ MaybeError BindGroup::InitializeImpl() {
+diff --git a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp b/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
+--- a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
++++ b/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
+@@ -76,8 +76,9 @@
+     desc.compute.constantCount = constants.size();
+
+     auto device = ToBackend(GetDevice());
++    Device::ExternalErrorScope errors(device);
+     mInnerHandle = device->wgpu->deviceCreateComputePipeline(device->GetInnerHandle(), &desc);
+-    DAWN_ASSERT(mInnerHandle);
++    DAWN_TRY(errors.Check(mInnerHandle != nullptr, "CreateComputePipeline"));
+
+     // Shader reflection after the application of overrides is required by the frontend for the
+     // workgroup size.
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
-index 8af48f595..63f6e368e 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.cpp
 +++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
-@@ -54,6 +54,7 @@
+@@ -54,6 +54,9 @@
  #include "src/dawn/native/webgpu/CommandBufferWGPU.h"
  #include "src/dawn/native/webgpu/ComputePipelineWGPU.h"
  #include "src/dawn/native/webgpu/ExternalTextureWGPU.h"
 +#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
++#include "src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h"
++#include "absl/base/no_destructor.h"
  #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
  #include "src/dawn/native/webgpu/PipelineLayoutWGPU.h"
  #include "src/dawn/native/webgpu/QuerySetWGPU.h"
-@@ -146,6 +147,7 @@ Device::Device(AdapterBase* adapter,
+@@ -72,6 +75,15 @@
+ #include "tint/tint.h"
+
+ namespace dawn::native::webgpu {
++namespace {
++InnerRuntimeCallbackRegistry<Device>& ExternalCallbacks() {
++    // Like Dawn's ThreadLocal registry, remain callable by termination-racing
++    // threads. Device entries are retired, not kept for process lifetime.
++    static absl::NoDestructor<InnerRuntimeCallbackRegistry<Device>> registry;
++    return *registry;
++}
++}  // namespace
++
+
+ namespace {
+
+@@ -130,7 +142,14 @@
+     Ref<Device> device =
+         AcquireRef(new Device(adapter, innerAdapter, descriptor, outerDeviceToggles, deviceToggles,
+                               std::move(lostEvent)));
+-    DAWN_TRY(device->Initialize(descriptor));
++    MaybeError initialized = device->Initialize(descriptor);
++    if (initialized.IsError() && device->IsExternalRuntime()) {
++        // Failed creation has no API reference whose final release could retire
++        // the callback token. Break the registry reference before returning.
++        auto guard = device->GetGuard();
++        device->Destroy(DestroyReason::EarlyDestroy);
++    }
++    DAWN_TRY(std::move(initialized));
+     return device;
+ }
+
+@@ -146,6 +165,7 @@
      DAWN_ASSERT(adapter->GetPhysicalDevice()->GetBackendType() == wgpu::BackendType::WebGPU);
  
      WGPUDeviceDescriptor apiDesc = *(ToAPI(*descriptor));
@@ -753,11 +942,25 @@ index 8af48f595..63f6e368e 100644
      std::string label = "Inner Device on " + adapter->GetPhysicalDevice()->GetName();
      apiDesc.label = ToOutputStringView(label);
  
-@@ -162,7 +164,16 @@ Device::Device(AdapterBase* adapter,
+@@ -162,43 +182,95 @@
      apiToggleDescriptor.disabledToggleCount = disabledTogglesName.size();
      apiToggleDescriptor.disabledToggles = disabledTogglesName.data();
  
 -    apiDesc.nextInChain = &apiToggleDescriptor.chain;
+-
+-    // Acquire a Ref to the outer webgpu::Device to avoid possible dangling pointer in the callback.
+-    Ref<Device>* outerDeviceRef = new Ref<Device>(this);
+-    apiDesc.deviceLostCallbackInfo = {
+-        nullptr, WGPUCallbackMode_AllowProcessEvents,
+-        [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*,
+-           void* outerDeviceRef) {
+-            Ref<Device>* deviceWGPURef = reinterpret_cast<Ref<Device>*>(outerDeviceRef);
+-            Device* deviceWGPU = deviceWGPURef->Get();
+-            if (reason == WGPUDeviceLostReason_Unknown) {
+-                // Internal crash of the implementation device, call device lost callback of the
+-                // upper DeviceWGPU
+-                if (!deviceWGPU->IsLost()) {
+-                    deviceWGPU->APIForceLoss(FromAPI(reason), message);
 +    apiDesc.nextInChain = InnerRuntimeDescriptorChain(
 +        &apiToggleDescriptor, outerRequiredChain,
 +        adapter->GetInstance()->IsWebGPUExternalRuntimeRequired());
@@ -768,10 +971,86 @@ index 8af48f595..63f6e368e 100644
 +        adapter->GetInstance()->IsWebGPUExternalRuntimeRequired(), innerFeatureStorage);
 +    apiDesc.requiredFeatures = innerFeatures.data();
 +    apiDesc.requiredFeatureCount = innerFeatures.size();
++
++    if (IsExternalRuntime()) {
++        mExternalCallbackToken = ExternalCallbacks().Insert(this);
++        if (mExternalCallbackToken == 0) {
++            dawn::ErrorLog() << "runtime_callback_token_exhausted";
++            return;
++        }
++        void* token = reinterpret_cast<void*>(mExternalCallbackToken);
++        apiDesc.deviceLostCallbackInfo = {
++            nullptr, WGPUCallbackMode_AllowProcessEvents,
++            [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message,
++               void* token, void*) {
++                Ref<Device> device = ExternalCallbacks().Remove(reinterpret_cast<uintptr_t>(token));
++                if (!device) {
++                    return;
+                 }
+-            }
+-            delete deviceWGPURef;
+-        },
+-        nullptr, reinterpret_cast<void*>(outerDeviceRef)};
+-    // TODO(crbug.com/413053623): revisit for error scope.
+-    apiDesc.uncapturedErrorCallbackInfo = {
+-        nullptr,
+-        [](WGPUDevice const*, WGPUErrorType errorType, WGPUStringView message, void*,
+-           void* outerDeviceRef) {
+-            Ref<Device>* deviceWGPURef = reinterpret_cast<Ref<Device>*>(outerDeviceRef);
+-            Device* deviceWGPU = deviceWGPURef->Get();
+-            if (!deviceWGPU || deviceWGPU->IsLost()) {
+-                return;
+-            }
+-            deviceWGPU->EmitLog(wgpu::LoggingType::Error, ToString(message));
+-        },
+-        nullptr, reinterpret_cast<void*>(outerDeviceRef)};
++                device->HandleInnerRuntimeLoss(reason, message);
++            },
++            token, nullptr};
++        apiDesc.uncapturedErrorCallbackInfo = {
++            nullptr,
++            [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message,
++               void* token, void*) {
++                Ref<Device> device = ExternalCallbacks().Lookup(reinterpret_cast<uintptr_t>(token));
++                if (device) {
++                    device->HandleInnerRuntimeError(type, message);
++                }
++            },
++            token, nullptr};
++    } else {
++        // Acquire a Ref to the outer webgpu::Device to avoid possible dangling pointer in the callback.
++        Ref<Device>* outerDeviceRef = new Ref<Device>(this);
++        apiDesc.deviceLostCallbackInfo = {
++            nullptr, WGPUCallbackMode_AllowProcessEvents,
++            [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*,
++               void* outerDeviceRef) {
++                Ref<Device>* deviceWGPURef = reinterpret_cast<Ref<Device>*>(outerDeviceRef);
++                Device* deviceWGPU = deviceWGPURef->Get();
++                if (reason == WGPUDeviceLostReason_Unknown) {
++                    // Internal crash of the implementation device, call device lost callback of the
++                    // upper DeviceWGPU
++                    if (!deviceWGPU->IsLost()) {
++                        deviceWGPU->APIForceLoss(FromAPI(reason), message);
++                    }
++                }
++                delete deviceWGPURef;
++            },
++            nullptr, reinterpret_cast<void*>(outerDeviceRef)};
++        // TODO(crbug.com/413053623): revisit for error scope.
++        apiDesc.uncapturedErrorCallbackInfo = {
++            nullptr,
++            [](WGPUDevice const*, WGPUErrorType errorType, WGPUStringView message, void*,
++               void* outerDeviceRef) {
++                Ref<Device>* deviceWGPURef = reinterpret_cast<Ref<Device>*>(outerDeviceRef);
++                Device* deviceWGPU = deviceWGPURef->Get();
++                if (!deviceWGPU || deviceWGPU->IsLost()) {
++                    return;
++                }
++                deviceWGPU->EmitLog(wgpu::LoggingType::Error, ToString(message));
++            },
++            nullptr, reinterpret_cast<void*>(outerDeviceRef)};
++    }
  
-     // Acquire a Ref to the outer webgpu::Device to avoid possible dangling pointer in the callback.
-     Ref<Device>* outerDeviceRef = new Ref<Device>(this);
-@@ -199,6 +210,17 @@ Device::Device(AdapterBase* adapter,
      // TODO(crbug.com/413053623): use adapterRequestDevice instead as dawn_wire doesn't support
      // adapterCreateDevice.
      mInnerHandle = wgpu->adapterCreateDevice(innerAdapter, &apiDesc);
@@ -784,23 +1063,111 @@ index 8af48f595..63f6e368e 100644
 +            dawn::ErrorLog() << (innerDeviceCreated
 +                ? "runtime_cache_policy_failed: unpublished external device rejected"
 +                : "runtime_device_creation_failed: adapterCreateDevice returned null");
++            Ref<Device> retired = ExternalCallbacks().Remove(mExternalCallbackToken);
++            mExternalCallbackToken = 0;
 +        }
 +    }
  }
  
  Device::~Device() {
-@@ -210,6 +232,10 @@ WGPUInstance Device::GetInnerInstance() const {
+@@ -209,10 +281,95 @@
+     return ToBackend(GetPhysicalDevice())->GetBackend()->GetInnerInstance();
  }
  
++bool Device::IsExternalRuntime() const {
++    return GetInstance()->IsWebGPUExternalRuntimeRequired();
++}
++
++Device::ExternalErrorScope::ExternalErrorScope(Device* device)
++    : mDevice(device->IsExternalRuntime() ? device : nullptr) {
++    if (mDevice) {
++        mGuard.emplace(mDevice->GetGuard());
++        mIndex = mDevice->mExternalErrorCaptures.size();
++        mDevice->mExternalErrorCaptures.emplace_back();
++    }
++}
++
++Device::ExternalErrorScope::~ExternalErrorScope() {
++    if (mDevice) {
++        DAWN_ASSERT(mDevice->mExternalErrorCaptures.size() == mIndex + 1);
++        mDevice->mExternalErrorCaptures.pop_back();
++    }
++}
++
++MaybeError Device::ExternalErrorScope::Check(bool handlePresent, const char* operation) {
++    if (!mDevice) {
++        DAWN_ASSERT(handlePresent);
++        return {};
++    }
++    return mDevice->mExternalErrorCaptures[mIndex].Check(handlePresent, operation);
++}
++
++void Device::HandleInnerRuntimeError(WGPUErrorType type, WGPUStringView message) {
++    auto guard = GetGuard();
++    if (type == WGPUErrorType_NoError) {
++        return;
++    }
++    if (!mExternalErrorCaptures.empty()) {
++        mExternalErrorCaptures.back().Record(type, message);
++        return;
++    }
++    if (!mExternalPublication.IsReady()) {
++        // IsLost() is invalid while the base device is BeingCreated.
++        if (GetState() == State::BeingCreated || GetState() == State::Alive) {
++            mExternalInitializationError.Record(type, message);
++        }
++        return;
++    }
++    if (IsLost()) {
++        return;
++    }
++    ConsumeError(MakeInnerRuntimeError(type, ToString(message)),
++                 InternalErrorType::OutOfMemory | InternalErrorType::PipelineUncategorized);
++}
++
++void Device::HandleInnerRuntimeLoss(WGPUDeviceLostReason reason, WGPUStringView message) {
++    const bool wasPublished = mExternalPublication.MarkLost();
++    auto guard = GetGuard();
++    if (!wasPublished) {
++        mExternalInitializationError.Record(WGPUErrorType_Unknown, message);
++        return;
++    }
++    if (reason == WGPUDeviceLostReason_Unknown && !IsLost()) {
++        APIForceLoss(FromAPI(reason), message);
++    }
++}
++
  MaybeError Device::Initialize(const UnpackedPtr<DeviceDescriptor>& descriptor) {
 +    if (!mInnerHandle) {
 +        return DAWN_UNRECOVERABLE_ERROR(
 +            "Inner WebGPU device creation or mandatory browser cache policy failed.");
 +    }
++    // Native Dawn retains its original initialization/locking behavior.
++    std::optional<DeviceGuard> externalGuard;
++    if (IsExternalRuntime()) {
++        externalGuard.emplace(GetGuard());
++        DAWN_TRY(mExternalInitializationError.Check(true, "device construction"));
++    }
      Ref<Queue> queue;
      DAWN_TRY_ASSIGN(queue, Queue::Create(this, &descriptor->defaultQueue));
-     return DeviceBase::Initialize(descriptor, std::move(queue));
-@@ -380,7 +406,7 @@ void Device::DestroyImpl(DestroyReason reason) {
+-    return DeviceBase::Initialize(descriptor, std::move(queue));
++    DAWN_TRY(DeviceBase::Initialize(descriptor, std::move(queue)));
++    if (IsExternalRuntime()) {
++        MaybeError lateError = mExternalInitializationError.Check(true, "device initialization");
++        if (lateError.IsError()) {
++            GetInstance()->RemoveDevice(this);
++        }
++        DAWN_TRY(std::move(lateError));
++        if (!mExternalPublication.Publish()) {
++            GetInstance()->RemoveDevice(this);
++            return DAWN_UNRECOVERABLE_ERROR("External provider device lost before publication.");
++        }
++    }
++    return {};
+ }
+
+ ResultOrError<Ref<BindGroupBase>> Device::CreateBindGroupImpl(
+@@ -380,10 +537,18 @@
      //   is implicitly destroyed. This case is thread-safe because there are no
      //   other threads using the device since there are no other live refs.
  
@@ -809,7 +1176,18 @@ index 8af48f595..63f6e368e 100644
          EndCapture();
      }
  
-@@ -433,6 +459,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
++    Ref<Device> retired;
++    if (IsExternalRuntime()) {
++        mExternalPublication.Retire();
++    }
++    if (mExternalCallbackToken != 0) {
++        retired = ExternalCallbacks().Remove(mExternalCallbackToken);
++        mExternalCallbackToken = 0;
++    }
+     if (mInnerHandle) {
+         wgpu->deviceDestroy(mInnerHandle);
+     }
+@@ -433,6 +598,7 @@
  }
  
  MaybeError Device::TickImpl() {
@@ -817,6 +1195,165 @@ index 8af48f595..63f6e368e 100644
      wgpu->deviceTick(mInnerHandle);
      return {};
  }
+diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/DeviceWGPU.h
+--- a/src/dawn/native/webgpu/DeviceWGPU.h
++++ b/src/dawn/native/webgpu/DeviceWGPU.h
+@@ -29,15 +29,19 @@
+ #define SRC_DAWN_NATIVE_WEBGPU_DEVICEWGPU_H_
+
+ #include <memory>
++#include <optional>
+ #include <string>
+ #include <vector>
+
+ #include "dawn/native/WebGPUBackend.h"
+ #include "partition_alloc/pointers/raw_ptr.h"
++#include "src/dawn/common/StackAllocated.h"
+ #include "src/dawn/native/Device.h"
+ #include "src/dawn/native/ToBackend.h"
+ #include "src/dawn/native/webgpu/CaptureContext.h"
+ #include "src/dawn/native/webgpu/Forward.h"
++#include "src/dawn/native/webgpu/InnerRuntimeError.h"
++#include "src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h"
+ #include "src/dawn/native/webgpu/ObjectWGPU.h"
+ #include "src/dawn/native/webgpu/QueueWGPU.h"
+
+@@ -53,6 +57,19 @@
+     ~Device() override;
+
+     MaybeError Initialize(const UnpackedPtr<DeviceDescriptor>& descriptor);
++
++    class ExternalErrorScope : public StackAllocated {
++      public:
++        explicit ExternalErrorScope(Device* device);
++        ~ExternalErrorScope();
++        MaybeError Check(bool handlePresent, const char* operation);
++      private:
++        Ref<Device> mDevice;
++        std::optional<DeviceGuard> mGuard;
++        size_t mIndex = 0;
++    };
++    bool IsExternalRuntime() const;
++
+
+     uint32_t GetOptimalBytesPerRowAlignment() const override;
+     uint64_t GetOptimalBufferToTextureCopyOffsetAlignment() const override;
+@@ -80,6 +97,13 @@
+     const raw_ref<const DawnProcTable> wgpu;
+
+   private:
++    void HandleInnerRuntimeError(WGPUErrorType type, WGPUStringView message);
++    void HandleInnerRuntimeLoss(WGPUDeviceLostReason reason, WGPUStringView message);
++    InnerRuntimePublication mExternalPublication;
++    InnerRuntimeErrorCapture mExternalInitializationError;
++    std::vector<InnerRuntimeErrorCapture> mExternalErrorCaptures;
++    uintptr_t mExternalCallbackToken = 0;
++
+     Device(AdapterBase* adapter,
+            WGPUAdapter innerAdapter,
+            const UnpackedPtr<DeviceDescriptor>& descriptor,
+diff --git a/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h b/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h
+new file mode 100644
+--- /dev/null
++++ b/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h
+@@ -0,0 +1,97 @@
++// Copyright 2026 The Doe Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++#ifndef SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMECALLBACKREGISTRY_H_
++#define SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMECALLBACKREGISTRY_H_
++
++#include <atomic>
++#include <cstdint>
++#include <limits>
++#include <utility>
++
++#include "absl/container/flat_hash_map.h"
++#include "src/dawn/common/MutexProtected.h"
++#include "src/dawn/common/Ref.h"
++
++namespace dawn::native::webgpu {
++
++// Zero is invalid. Unsigned wrap permanently exhausts the sequence, rather
++// than reusing an identity that a delayed provider callback can still carry.
++inline uintptr_t NextInnerRuntimeCallbackToken(uintptr_t& next) {
++    uintptr_t token = next;
++    if (token != 0) {
++        next = token == std::numeric_limits<uintptr_t>::max() ? 0 : token + 1;
++    }
++    return token;
++}
++
++// Loss must be marked before taking DeviceGuard: a foreign callback can be
++// waiting behind initialization while publication is being decided. No message
++// or device state is accessed without the existing recursive DeviceMutex.
++class InnerRuntimePublication {
++  public:
++    bool MarkLost() { return (mState.fetch_or(kLost) & kReady) != 0; }
++    bool Publish() {
++        unsigned pending = 0;
++        return mState.compare_exchange_strong(pending, kReady);
++    }
++    bool IsReady() const { return mState.load() == kReady; }
++    void Retire() { mState.fetch_or(kRetired); }
++  private:
++    static constexpr unsigned kReady = 1;
++    static constexpr unsigned kLost = 2;
++    static constexpr unsigned kRetired = 4;
++    std::atomic<unsigned> mState{0};
++};
++
++template <typename T>
++class InnerRuntimeCallbackRegistry {
++  public:
++    uintptr_t Insert(T* owner) {
++        return mState.Use([&](auto state) {
++            uintptr_t token = NextInnerRuntimeCallbackToken(state->next);
++            if (token != 0) {
++                state->owners.emplace(token, Ref<T>(owner));
++            }
++            return token;
++        });
++    }
++
++    Ref<T> Lookup(uintptr_t token) {
++        return mState.Use([&](auto state) -> Ref<T> {
++            auto found = state->owners.find(token);
++            if (found == state->owners.end()) {
++                return nullptr;
++            }
++            return found->second;
++        });
++    }
++
++    Ref<T> Remove(uintptr_t token) {
++        Ref<T> owner;
++        absl::flat_hash_map<uintptr_t, Ref<T>> retiredBuckets;
++        mState.Use([&](auto state) {
++            auto found = state->owners.find(token);
++            if (found != state->owners.end()) {
++                owner = std::move(found->second);
++                state->owners.erase(found);
++                if (state->owners.empty()) {
++                    state->owners.swap(retiredBuckets);
++                }
++            }
++        });
++        // Both the owner reference and the last bucket allocation are released
++        // outside the registry mutex. Device destruction can reenter callbacks.
++        return owner;
++    }
++
++  private:
++    struct State {
++        uintptr_t next = 1;
++        absl::flat_hash_map<uintptr_t, Ref<T>> owners;
++    };
++    MutexProtected<State> mState;
++};
++
++}  // namespace dawn::native::webgpu
++#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMECALLBACKREGISTRY_H_
 diff --git a/src/dawn/native/webgpu/InnerRuntimeDescriptor.h b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
 new file mode 100644
 index 000000000..7112953b5
@@ -918,3 +1455,112 @@ index 000000000..7112953b5
 +}  // namespace dawn::native::webgpu
 +
 +#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
+diff --git a/src/dawn/native/webgpu/InnerRuntimeError.h b/src/dawn/native/webgpu/InnerRuntimeError.h
+new file mode 100644
+--- /dev/null
++++ b/src/dawn/native/webgpu/InnerRuntimeError.h
+@@ -0,0 +1,64 @@
++// Copyright 2026 The Doe Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++#ifndef SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEERROR_H_
++#define SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEERROR_H_
++
++#include <memory>
++#include <optional>
++#include <string>
++
++#include "dawn/webgpu.h"
++#include "src/dawn/common/StringViewUtils.h"
++#include "src/dawn/native/Error.h"
++#include "src/dawn/native/ErrorData.h"
++
++namespace dawn::native::webgpu {
++
++inline InternalErrorType InnerRuntimeErrorType(WGPUErrorType type) {
++    switch (type) {
++        case WGPUErrorType_Validation:
++            return InternalErrorType::Validation;
++        case WGPUErrorType_OutOfMemory:
++            return InternalErrorType::OutOfMemory;
++        case WGPUErrorType_Internal:
++            return InternalErrorType::PipelineUncategorized;
++        default:
++            return InternalErrorType::Unrecoverable;
++    }
++}
++
++// Unlike an error detected by a native Dawn backend after frontend validation,
++// a separate provider can reject the request with a public validation error.
++// Preserve its runtime type through the backend ResultOrError envelope.
++inline std::unique_ptr<UnrecoverableError> MakeInnerRuntimeError(
++    WGPUErrorType type, std::string message) {
++    return UnrecoverableError::Create(
++        DAWN_MAKE_ERROR_DATA(InnerRuntimeErrorType(type), std::move(message)));
++}
++
++class InnerRuntimeErrorCapture {
++  public:
++    void Record(WGPUErrorType type, WGPUStringView message) {
++        if (type != WGPUErrorType_NoError && !mError) {
++            mError = MakeInnerRuntimeError(type, ToString(message));
++        }
++    }
++
++    MaybeError Check(bool handlePresent, const char* operation) {
++        if (mError) {
++            return std::move(mError);
++        }
++        if (!handlePresent) {
++            return DAWN_UNRECOVERABLE_ERROR(
++                "External provider returned null from %s without an error.", operation);
++        }
++        return {};
++    }
++
++  private:
++    std::unique_ptr<UnrecoverableError> mError;
++};
++
++}  // namespace dawn::native::webgpu
++#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEERROR_H_
+diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp b/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
+--- a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
++++ b/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
+@@ -40,10 +40,13 @@
+ namespace dawn::native::webgpu {
+
+ // static
+-Ref<PipelineLayout> PipelineLayout::Create(
++ResultOrError<Ref<PipelineLayout>> PipelineLayout::Create(
+     Device* device,
+     const UnpackedPtr<PipelineLayoutDescriptor>& descriptor) {
+-    return AcquireRef(new PipelineLayout(device, descriptor));
++    Device::ExternalErrorScope errors(device);
++    Ref<PipelineLayout> layout = AcquireRef(new PipelineLayout(device, descriptor));
++    DAWN_TRY(errors.Check(layout->GetInnerHandle() != nullptr, "CreatePipelineLayout"));
++    return layout;
+ }
+
+ PipelineLayout::PipelineLayout(Device* device,
+@@ -71,7 +74,7 @@
+     desc.immediateSize = GetImmediateDataRangeByteSize();
+
+     mInnerHandle = device->wgpu->deviceCreatePipelineLayout(device->GetInnerHandle(), &desc);
+-    DAWN_ASSERT(mInnerHandle);
++
+ }
+
+ void PipelineLayout::SetLabelImpl() {
+diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.h b/src/dawn/native/webgpu/PipelineLayoutWGPU.h
+--- a/src/dawn/native/webgpu/PipelineLayoutWGPU.h
++++ b/src/dawn/native/webgpu/PipelineLayoutWGPU.h
+@@ -40,7 +40,7 @@
+                        public RecordableObject,
+                        public ObjectWGPU<WGPUPipelineLayout> {
+   public:
+-    static Ref<PipelineLayout> Create(Device* device,
++    static ResultOrError<Ref<PipelineLayout>> Create(Device* device,
+                                       const UnpackedPtr<PipelineLayoutDescriptor>& descriptor);
+
+     MaybeError AddReferenced(CaptureContext& captureContext) override;
