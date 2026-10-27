@@ -4,6 +4,7 @@ import json
 import subprocess
 import time
 import os
+import sys
 import tempfile
 import shlex
 import shutil
@@ -14,7 +15,7 @@ from typing import Any
 from bench.lib import doe_runtime_providers
 from bench.lib import synthetic_assets as synthetic_assets_mod
 from bench.lib.hash_utils import file_sha256
-from bench.lib.child_usage import child_cpu_snapshot, completed_child_cpu_ms, windows_child_usage
+from bench.lib.child_usage import child_cpu_snapshot, completed_child_cpu_ms, mac_resident_kib, windows_child_usage
 from native_compare_modules import compilation_runner as compilation_runner_mod
 from native_compare_modules.normalization import (
     derive_counter_derived_divisor,
@@ -151,6 +152,8 @@ def normalize_timing_metrics_ms(
     return normalized
 
 def read_process_rss_kb(pid: int) -> int:
+    if sys.platform == "darwin":
+        return mac_resident_kib(pid)
     status_path = Path("/proc") / str(pid) / "status"
     try:
         lines = status_path.read_text(encoding="utf-8").splitlines()

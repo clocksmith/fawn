@@ -7,10 +7,21 @@ import subprocess
 import sys
 import unittest
 
-from bench.lib.child_usage import child_cpu_snapshot, completed_child_cpu_ms, windows_child_usage
+from bench.lib.child_usage import child_cpu_snapshot, completed_child_cpu_ms, mac_resident_kib, windows_child_usage
 
 
 class ChildUsageTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "darwin", "Darwin libproc control")
+    def test_mac_resident_observation_is_real(self) -> None:
+        script = "import time; data=bytearray(32*1024*1024); print('ready',flush=True); time.sleep(10)"
+        with subprocess.Popen([sys.executable, "-c", script], stdout=subprocess.PIPE, text=True) as process:
+            try:
+                self.assertEqual(process.stdout.readline().strip(), "ready")
+                self.assertGreater(mac_resident_kib(process.pid), 32 * 1024)
+            finally:
+                process.kill()
+                process.wait(timeout=15)
+
     def test_observes_owned_cpu_child_after_wait(self) -> None:
         before = child_cpu_snapshot()
         script = (
