@@ -25,7 +25,7 @@ if (!options['--executable'] || !options['--out'] || !['doe-c', 'dawn'].includes
 if ((options['--runtime'] === 'doe-c') !== Boolean(options['--library'])) {
   throw new Error('only doe-c requires --library');
 }
-const artifact = path => ({ path: realpathSync(resolve(path)),
+const artifact = path => ({ path: realpathSync.native(resolve(path)),
   sha256: createHash('sha256').update(readFileSync(path)).digest('hex') });
 const config = structuredClone(loadServiceConfig());
 config.browser = { ...config.browser, channel: 'fawn', fawnBuild: {

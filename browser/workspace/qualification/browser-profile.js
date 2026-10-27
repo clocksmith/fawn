@@ -11,6 +11,11 @@ import { evidencePath } from './evidence-input.js';
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const withoutBrowser = ({ browser, ...rest }) => rest;
 
+function matchesSelectedBuild(config, observed) {
+  const expected = config?.browser.fawnBuild?.executable.sha256;
+  return !expected || (observed.length > 0 && observed.every(value => value.sha256 === expected));
+}
+
 function stageBrowserProfile(source, output) {
   if (!source) return null;
   const bytes = readFileSync(source);
@@ -41,7 +46,7 @@ function profileFailures(resultDir, result) {
     if (config.browser.channel !== 'fawn') return [];
     const roots = result.runs.flatMap(run => run.inspections ?? []).flatMap(value => value.executables ?? []);
     if (!roots.length) return ['no observed browser executable for Fawn build'];
-    if (roots.some(value => value.sha256 !== config.browser.fawnBuild.executable.sha256)) {
+    if (!matchesSelectedBuild(config, roots)) {
       return ['observed browser executable differs from selected Fawn build'];
     }
     return [];
@@ -50,4 +55,4 @@ function profileFailures(resultDir, result) {
   }
 }
 
-export { stageBrowserProfile, profileFailures };
+export { stageBrowserProfile, profileFailures, matchesSelectedBuild };

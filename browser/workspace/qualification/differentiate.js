@@ -19,6 +19,8 @@ import { fileURLToPath } from 'node:url';
 import { AGENT_RESTART_DELAY_MS, Arm, HUMAN_HOLD_FACTOR, median, sleep } from './arms.js';
 import { SUITES } from './differentiation-suites.js';
 import { REPO_ROOT, executableIdentityKey, resultIdentity } from './identity.js';
+import { stageBrowserProfile, matchesSelectedBuild } from './browser-profile.js';
+import { loadServiceConfig } from '../src/config.js';
 
 const POLICY_PATH = 'config/browser-product-comparison-policy.json';
 const DEFAULT_OUT_ROOT = 'bench/out/fawn-workspace-differentiation';
@@ -47,16 +49,17 @@ function parseArgs(argv) {
     suite: options.suite ?? 'differentiation',
     mode: options.mode ?? null,
     browserChannel: options['browser-channel'] ?? null,
+    browserConfig: options['browser-config'] ?? null,
     priorSuites: options['prior-suites'] ? options['prior-suites'].split(',') : [],
   };
 }
 
-async function runArm(name, scenario, repetition, suite, definition, browserChannel) {
+async function runArm(name, scenario, repetition, suite, definition, browserChannel, browserConfig) {
   const site = await definition.startSite();
   const application = definition.applications[scenario.application ?? definition.defaultApplication];
   const flags = { ...application, churn: scenario.area === 'incremental-observation' };
   await fetch(`${site.origin}/control/setup?${new URLSearchParams(Object.entries(flags).map(([key, value]) => [key, value ? '1' : '0']))}`);
-  const arm = new Arm({ name, site, scenario, definition, browserChannel });
+  const arm = new Arm({ name, site, scenario, definition, browserChannel, browserConfig });
   await arm.start();
   const id = `${scenario.id}-${name}-${repetition}`;
   const task = { id, intent: definition.intent, origin: site.origin, ...definition.task(site, id) };
@@ -183,6 +186,7 @@ function scenarioSummary(rows, scenario, duplicateField) {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.suite === 'modelDrivenDifferentiation') {
+    if (options.browserConfig || options.browserChannel) throw new Error('model-driven suite retains its frozen browser selection');
     const { runModelDriven } = await import('./model-agent/model-driven.js');
     await runModelDriven(options);
     process.exit(process.exitCode ?? 0);
@@ -194,6 +198,12 @@ async function main() {
   const stamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
   const outDir = options.out ?? join(REPO_ROOT, DEFAULT_OUT_ROOT, `${stamp}Z`);
   mkdirSync(outDir, { recursive: true });
+  if (options.browserConfig && options.browserChannel) throw new Error('choose browser config or channel');
+  const profile = stageBrowserProfile(options.browserConfig, outDir);
+  if (profile && !profile.config.browser.headless) throw new Error('profile must preserve frozen differentiation headless mode');
+  loadServiceConfig(profile?.path ?? undefined, { browserChannel: options.browserChannel });
+  const identity = resultIdentity();
+  if (profile) identity.browserLaunchConfig = profile.identity;
   const scenarios = suite.scenarios.filter((scenario) => !options.scenarios || options.scenarios.includes(scenario.id));
   const rows = [];
   const inspections = { treatment: [], control: [] };
@@ -202,7 +212,7 @@ async function main() {
     const repetitions = options.repetitions ?? scenario.repetitions;
     for (let repetition = 1; repetition <= repetitions; repetition += 1) {
       for (const name of repetition % 2 ? ARMS : [...ARMS].reverse()) {
-        const run = await runArm(name, scenario, repetition, suite, definition, options.browserChannel);
+        const run = await runArm(name, scenario, repetition, suite, definition, options.browserChannel, profile?.path);
         rows.push(run.row);
         inspections[name].push(...run.inspections);
         evidence.push({ scenarioId: scenario.id, arm: name, repetition, ...run.evidence });
@@ -242,16 +252,21 @@ async function main() {
   };
   const executables = Object.fromEntries(ARMS.map((name) => [name, [...new Map(inspections[name].flatMap((inspection) => inspection.executables)
     .map((executable) => [executableIdentityKey(executable), executable])).values()]]));
+  const sameBrowserBinary = executables.treatment.length === 1 && executables.control.length === 1
+    && executableIdentityKey(executables.treatment[0]) === executableIdentityKey(executables.control[0])
+    && matchesSelectedBuild(profile?.config, executables.treatment);
+  const debuggingEndpoints = [...inspections.treatment, ...inspections.control]
+    .reduce((total, inspection) => total + inspection.listeningTcpSockets + inspection.devToolsActivePortFiles, 0);
+  productAdvantage.established &&= sameBrowserBinary && debuggingEndpoints === 0;
   const result = {
     schemaVersion: DIFFERENTIATION_SCHEMA_VERSION,
     suiteVersion: suite.suiteVersion,
     scope: isFull ? 'full' : 'subset',
-    identity: resultIdentity(),
+    identity,
+    browserChannel: profile?.config.browser.channel ?? options.browserChannel ?? loadServiceConfig().browser.channel,
     browsers: executables,
-    sameBrowserBinary: executables.treatment.length === 1 && executables.control.length === 1
-      && executableIdentityKey(executables.treatment[0]) === executableIdentityKey(executables.control[0]),
-    debuggingEndpoints: [...inspections.treatment, ...inspections.control]
-      .reduce((total, inspection) => total + inspection.listeningTcpSockets + inspection.devToolsActivePortFiles, 0),
+    sameBrowserBinary,
+    debuggingEndpoints,
     harnessLines: Object.fromEntries(Object.entries(HARNESS_FILES).map(([arm, files]) => [arm,
       Object.fromEntries(files.map((file) => [file, codeLines(file)]))])),
     perturbationTiming: { thinkTimeMs: suite.thinkTimeMs, humanHoldMs: suite.thinkTimeMs * HUMAN_HOLD_FACTOR, agentRestartDelayMs: AGENT_RESTART_DELAY_MS },

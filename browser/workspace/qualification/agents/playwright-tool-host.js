@@ -11,9 +11,10 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { chromium } from 'playwright-core';
 import { loadServiceConfig } from '../../src/config.js';
+import { playwrightLaunchOptions } from '../../src/browser-launch.js';
 
 const options = JSON.parse(process.argv[2]);
-const browserConfig = loadServiceConfig(undefined, { browserChannel: options.browserChannel }).browser;
+const browserConfig = loadServiceConfig(options.browserConfig ?? undefined, { browserChannel: options.browserChannel }).browser;
 const SNAPSHOT_TRACK = 'agent';
 // The harness keeps its own snapshot baseline, taken with each model observation, so that
 // revalidation sees what changed since the model last looked without disturbing the model's track.
@@ -31,7 +32,7 @@ async function page() {
   if (!context) {
     context = await chromium.launchPersistentContext(join(options.stateDir, 'profile'), {
       headless: options.headless,
-      channel: browserConfig.channel === 'chromium-headless-shell' ? undefined : browserConfig.channel,
+      ...playwrightLaunchOptions(browserConfig),
       acceptDownloads: true,
       timeout: options.actionTimeoutMs,
     });
