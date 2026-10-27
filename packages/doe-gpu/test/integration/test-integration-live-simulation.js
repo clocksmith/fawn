@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
+import { nativeTestBackend } from './native-device-test-helper.js';
 import { PassThrough } from 'node:stream';
 import { createLiveSimulation } from '../../examples/live-simulation/session.js';
 import { runLiveTerminal } from '../../examples/live-simulation/terminal.js';
 import { POLICY, DEFAULT_SHADER, STATE_FORMAT } from '../../examples/live-simulation/program.js';
 
-const backend = process.platform === 'darwin' ? 'metal' : 'vulkan';
+const backend = nativeTestBackend();
 const execution = process.env.DOE_LIVE_EXECUTION ?? (backend === 'vulkan' ? 'gpu-recorded' : 'native-recorded');
 const PROLONGED_FRAMES = 4096;
 const SAMPLE_WINDOW_FRAMES = 256;
