@@ -278,6 +278,25 @@ Schema 3 stock-browser configurations remain readable. To select a Fawn build,
 start with the schema 4 canonical config; protocol 3 and existing journal records
 are unchanged. Existing stock-browser evidence retains its recorded scope.
 
+For the focused dispatcher-to-GPU development control, run:
+
+```bash
+node test/browser/gpu-composition.js --browser-config /absolute/new-c-profile.json \
+  --out /absolute/new-evidence-directory
+```
+
+This uses both real adapters: an authorized click starts ordinary page WGSL
+compute and a canvas triangle; the host independently checks all eight numeric
+outputs and all 64 RGBA pixels. It requires a reported physical adapter, completed
+queue work, canvas frames, cleanup, and a durable completed action after service
+restart without resubmission. It binds the fixture, runner, oracle, selected files
+and OS-observed browser images; C mode additionally requires the selected runtime
+to be observed mapped in the browser process tree. Failed runs stop the sequence
+and retain their errors. This is a small composition control, separate from the
+frozen behavioral qualification, Chromium missing-C/lifetime gates and application
+performance campaigns. It does not establish general browser compatibility or a
+product advantage.
+
 The `2026-10-26-behavioral-v3-platform-exits` case freeze retains the same25 cases,
 102 runs, fixtures and semantic expectations. Crash evidence now records the
 acknowledged controller kill or synchronously received self-kill request separately
