@@ -60,7 +60,18 @@ The checker separately audits the actual C resolver and error-object/IOSurface/
 shared-buffer owners, exercises CPU-only unsupported buffer rejection, and creates
 and releases an instance. These prerequisites do not establish descriptor ABI,
 GPU output, presentation, lifetime, security or browser milestone acceptance.
-Those independent checks remain required. In particular, a name/address pass does
+Those independent checks remain required.
+The separate descriptor gate is `python3 -m bench.tools.check_chromium_c_abi
+--header <the selected build's generated dawn/webgpu.h> --out <fresh directory>`.
+It freezes the C public headers and actual Dawn header, then compiles independent
+host probes for every same-named public struct, including shared-memory and
+external-texture descriptors. Complete field order, size, alignment, member size
+and offsets must agree; constants and the selector-required declared signatures
+are checked separately. It retains all inputs and raw probe/compiler output and
+rejects source drift. Passing it is a CPU ABI prerequisite, not GPU or browser
+acceptance. The final candidate must use a runtime rebuilt from the repaired
+headers and must still pass actual page, presentation and lifetime controls.
+In particular, a name/address pass does
 not convert an incompatible descriptor or reachable optional call into support.
 The [version 1 Zig config](../../../config/doe-chromium-proc-surface.json) and its
 [schema](../../../config/doe-chromium-proc-surface.schema.json) retain their original
