@@ -1,4 +1,4 @@
-# Doe documentation index
+# Fawn and Doe documentation index
 
 Use this page to find the owner of a subject. Live measurements and mutable
 state belong in artifacts, schemas, and status front doors—not copied prose.

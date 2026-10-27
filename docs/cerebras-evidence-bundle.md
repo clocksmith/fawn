@@ -724,7 +724,7 @@ Clone the source checkout. For a repo-published bundle, the archive is already
 in the checkout and the wrapper verifies it before running:
 
 ```bash
-git clone https://github.com/doerun/doe.git
+git clone https://github.com/clocksmith/fawn.git doe
 cd doe
 git checkout <bundle-commit>
 

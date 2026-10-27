@@ -1,22 +1,44 @@
-# Doe
+# Fawn
 
-Doe builds the environment where agents work. Fawn provides durable browser
-workspaces; DoeRuntime supplies independently useful GPU execution; DoeLab tests
-improvements; DoeProof records evidence.
+Fawn provides durable browser workspaces for agents. This repository also contains
+**Doe**, its independently usable WebGPU runtime and WGSL compiler. DoeLab tests
+improvements, and DoeProof records execution and qualification evidence.
 
-What installs today is DoeRuntime, a native WebGPU runtime for existing GPU
-applications, with an independently usable WGSL compiler. Fawn's shared
+The canonical repository for Fawn and Doe is
+**[clocksmith/fawn](https://github.com/clocksmith/fawn)**. Doe is a component here,
+not a separate current repository. The JavaScript package remains `doe-gpu`.
+
+| Surface | What it does | Start here |
+| --- | --- | --- |
+| Fawn | Browser observation, authorized actions, handoff and recovery | [Workspace service](browser/workspace/README.md) |
+| Doe | Native WebGPU execution and WGSL compilation | [Runtime](runtime/c/README.md) · [Compiler](runtime/c/compiler/README.md) · [Package API](packages/doe-gpu/README.md) |
+| GPU demos | Artwork rendered by the active browser backend | [Canvas demos](https://canvascontext.com/) · [Source](browser/chromium/resources/) |
+
+Fawn's shared
 workspace service is implemented and behaviorally qualified on a frozen case set,
 not release-qualified ([status](docs/status/fawn-workspace.md)).
+Native runtime tests and hosted GPU demos do not establish a release-qualified
+Fawn browser or prove that a webpage is running on Doe.
 [Three proofs](docs/thesis.md#three-proofs) select current technical work.
 
 **[Package API](packages/doe-gpu/README.md)** · [Evaluate ONNX on Vulkan](docs/onnx-vulkan-installation.md) · [Goals](GOALS.md) · [Documentation](docs/INDEX.md)
 
+## Fawn workspaces
+
+The [workspace service](browser/workspace/README.md) runs above stock Chromium
+through Playwright and CDP adapters. It preserves ownership, observations and
+completed, failed or uncertain action outcomes across interruption. Start there
+for the protocol, source layout and developer commands. The
+[workspace contract](docs/fawn-workspace-contract.md) owns its acceptance rules.
+
+The optional [Chromium integration](browser/chromium/README.md) has separate build,
+GPU ownership and release gates. It is not required to use the workspace service.
+
+## Doe: WebGPU runtime and WGSL compiler
+
 ![Doe brings compiled WGSL and bound resources together through its selected native backend.](assets/readme/execution.svg)
 
-## Get started
-
-Install the package and run a compute kernel:
+Doe can be used without Fawn. Install its package and run a compute kernel:
 
 ```sh
 npm install doe-gpu
@@ -28,7 +50,7 @@ driver requirements. For the pinned ONNX integration, download the existing
 [evaluation archive](docs/onnx-vulkan-installation.md#download-the-evaluation)
 and follow its installation, verification, and execution guide.
 
-## Technical architecture
+## Doe architecture
 
 ### Compiler and runtime ownership
 
@@ -48,7 +70,7 @@ to make them understandable, and executable enforcement to make them dependable.
 C is the selected means; a better Doe is the result that must still be earned.**
 
 C is the chosen migration direction, not an ongoing language contest or a claim
-that C is universally safer or faster. The current package, compiler build and
+that C is universally safer or faster. The current source package, compiler build and
 runtime CLI routes select C by default; retained Zig requires explicit legacy
 selection, without silent cross-provider fallback. That routing choice is not a
 full-parity or hardware-qualification certificate. The

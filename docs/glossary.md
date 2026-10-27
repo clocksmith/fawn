@@ -1,16 +1,20 @@
-# Doe glossary
+# Fawn and Doe glossary
 
 - `Doe`
-  - the repository and program that builds the environment where agents work
+  - the independently usable WebGPU runtime and WGSL compiler developed within
+    the [Fawn repository](https://github.com/clocksmith/fawn); `doe-gpu` is its
+    JavaScript package
 - `Fawn`
+  - the project and canonical repository containing the workspace service and Doe
   - durable browser workspaces: one shared observation, action, and recovery
     service above stock Chromium, defined by the
     [workspace contract](fawn-workspace-contract.md)
   - use the name alone only for this product; the retained uses below are
     qualified
 - `DoeRuntime`
-  - independently useful GPU execution: the Zig-native WebGPU engine and its
-    shared-library artifacts
+  - independently useful GPU execution: the native WebGPU engine and its
+    shared-library artifacts, with the selected C implementation and retained Zig
+    implementation admitted separately
 - `DoeLab`
   - the offline loop that tests improvements before promotion
 - `DoeProof`
