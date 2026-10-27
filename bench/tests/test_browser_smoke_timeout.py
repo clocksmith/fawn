@@ -71,7 +71,11 @@ const successfulSuite={gpuCompletion:'completed',webgpuAvailable:true,adapterAva
   smoke:Object.fromEntries(['computeIncrement','renderTriangle','renderBundle','renderIndirect','timestampQuery',
     'requestAdapterXrCompatible','copyExternalImageToTexture','importExternalTexture'].map(x=>[x,pass])),
   webgpuCanvasApi:{webgpuContextAvailable:true},benches:{writeBuffer64kbUsPerOp:1,computeDispatchUsPerOp:1}};
-export const chromium={async launch(){log('launch');let contexts=0;return {
+export const chromium={async launch(options){
+  if(!options.ignoreDefaultArgs?.includes('--enable-unsafe-swiftshader'))throw Error('unsafe fallback default was not excluded');
+  const external=options.args.includes('--use-webgpu-runtime=doe');
+  if(options.args.includes('--gpu-sandbox-start-early')!==(process.platform==='linux'&&external))throw Error('external early-sandbox ordering mismatch');
+  log('launch-policy-checked');log('launch');let contexts=0;return {
   version(){return 'CPU-only-control';},
   async newContext(){log('context');const lifecycle=++contexts>1;return {async addInitScript(){},async newPage(){return {
     async goto(){},on(){},async setViewportSize(){},async evaluate(callback,args){
@@ -99,7 +103,9 @@ export const chromium={async launch(){log('launch');let contexts=0;return {
                 "--suite-timeout-ms", "1000", "--upload-iters", "1", "--dispatch-iters", "1", "--out", str(report),
             ], cwd=ROOT, capture_output=True, text=True, timeout=10, check=False)
             self.assertEqual(process.returncode, 1, process.stdout + process.stderr)
-            return json.loads(report.read_text(encoding="utf-8")), json.loads(calls.read_text())
+            observed = json.loads(calls.read_text())
+            self.assertIn("launch-policy-checked", observed)
+            return json.loads(report.read_text(encoding="utf-8")), observed
 
     def assert_unknown_stops_every_layer(self, report: dict, calls: list[str]) -> dict:
         self.assertEqual(len(report["modeResults"]), 1, "a later provider must never launch")
