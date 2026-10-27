@@ -141,11 +141,15 @@ int main(int argc, char **argv) {
         }
         forwarded[count++] = profile_argument;
     }
+    /* Mesa may create threads during GL initialization. Start Chromium's
+     * existing GPU sandbox before GL, while it can still seal one thread. */
+    if (!dawn) forwarded[count++] = "--gpu-sandbox-start-early";
     positional = 0;
     for (int index = 1; index < argc; ++index) {
         ArgumentView view = argument_view(argv[index]);
         ArgumentView value = {NULL, 0};
         if (!positional && protected_switch(view, "use-webgpu-runtime", &value)) continue;
+        if (!dawn && !positional && protected_switch(view, "gpu-sandbox-start-early", &value)) continue;
         if (view_equal(view, "--")) positional = 1;
         forwarded[count++] = argv[index];
     }

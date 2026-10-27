@@ -86,10 +86,10 @@ index 7d5e1972c..50fe30140 100644
      bool mBeginCaptureOnStartup = false;
      BackendValidationLevel mBackendValidationLevel = BackendValidationLevel::Disabled;
 diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
-index 665dea721..dd5466c52 100644
+index 665dea721..ca4167c58 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.cpp
 +++ b/src/dawn/native/webgpu/BackendWGPU.cpp
-@@ -27,21 +27,33 @@
+@@ -27,21 +27,34 @@
  
  #include "src/dawn/native/webgpu/BackendWGPU.h"
  
@@ -97,6 +97,7 @@ index 665dea721..dd5466c52 100644
 +#include <type_traits>
 +
  #include "dawn/dawn_proc_table.h"
++#include "src/dawn/common/StringViewUtils.h"
 +#include "src/utils/log.h"
  #include "src/dawn/native/Instance.h"
 +#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
@@ -125,7 +126,7 @@ index 665dea721..dd5466c52 100644
  
      auto toggles = instance->GetTogglesState();
      auto enabledTogglesName = toggles.GetEnabledToggleNames();
-@@ -61,10 +73,487 @@ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
+@@ -61,10 +74,492 @@ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
      instanceDesc.requiredLimits = &limits;
  
      mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
@@ -133,6 +134,11 @@ index 665dea721..dd5466c52 100644
 +        dawn::ErrorLog() << "runtime_initialization_failed: wgpuCreateInstance returned null";
 +    }
  
++    if (instance->IsWebGPUExternalRuntimeRequired()) {
++        dawn::InfoLog() << "runtime_instance_result: created=" << (mInnerInstance != nullptr)
++                        << " required_feature_count=" << instanceDesc.requiredFeatureCount
++                        << " timed_wait_max_count=" << limits.timedWaitAnyMaxCount;
++    }
      mDawnProcs.supportedInstanceFeaturesFreeMembers(features);
  }
  
@@ -613,7 +619,7 @@ index 665dea721..dd5466c52 100644
  Backend::~Backend() {
      if (mInnerInstance) {
          mDawnProcs.instanceRelease(mInnerInstance);
-@@ -74,24 +563,31 @@ Backend::~Backend() {
+@@ -74,42 +569,72 @@ Backend::~Backend() {
  
  std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
      const UnpackedPtr<RequestAdapterOptions>& options) {
@@ -644,9 +650,52 @@ index 665dea721..dd5466c52 100644
 +    innerAdapterOption.nextInChain = InnerRuntimeDescriptorChain(
 +        nativeToggles, outerRequiredChain, GetInstance()->IsWebGPUExternalRuntimeRequired());
  
++    if (GetInstance()->IsWebGPUExternalRuntimeRequired()) {
++        dawn::InfoLog() << "runtime_adapter_request: backend_type="
++                        << static_cast<uint32_t>(innerAdapterOption.backendType)
++                        << " feature_level=" << static_cast<uint32_t>(innerAdapterOption.featureLevel)
++                        << " power_preference="
++                        << static_cast<uint32_t>(innerAdapterOption.powerPreference)
++                        << " force_fallback=" << innerAdapterOption.forceFallbackAdapter
++                        << " compatible_surface=" << (innerAdapterOption.compatibleSurface != nullptr);
++        for (const auto* chain = innerAdapterOption.nextInChain; chain; chain = chain->next) {
++            dawn::InfoLog() << "runtime_adapter_required_chain: s_type="
++                            << static_cast<uint32_t>(chain->sType);
++        }
++    }
      WGPUAdapter innerAdapter = nullptr;
  
-@@ -126,6 +622,10 @@ WGPUInstance Backend::GetInnerInstance() const {
+     WGPURequestAdapterCallbackInfo callbackInfo = {};
+     callbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
+     callbackInfo.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter,
+                                WGPUStringView message, void* userdata1, void* userdata2) {
++        if (userdata1 != nullptr) {
++            dawn::InfoLog() << "runtime_adapter_result: status=" << static_cast<uint32_t>(status)
++                            << " adapter=" << (adapter != nullptr)
++                            << " message=" << ToString(message);
++        }
+         if (status == WGPURequestAdapterStatus_Success) {
+             *static_cast<WGPUAdapter*>(userdata2) = adapter;
+         }
+     };
+-    callbackInfo.userdata1 = nullptr;
++    callbackInfo.userdata1 = GetInstance()->IsWebGPUExternalRuntimeRequired() ? this : nullptr;
+     callbackInfo.userdata2 = static_cast<void*>(&innerAdapter);
+ 
+     WGPUFutureWaitInfo waitInfo = {};
+     waitInfo.future =
+         mDawnProcs.instanceRequestAdapter(mInnerInstance, &innerAdapterOption, callbackInfo);
+-    mDawnProcs.instanceWaitAny(mInnerInstance, 1, &waitInfo, UINT64_MAX);
++    const WGPUWaitStatus waitStatus =
++        mDawnProcs.instanceWaitAny(mInnerInstance, 1, &waitInfo, UINT64_MAX);
++    if (GetInstance()->IsWebGPUExternalRuntimeRequired()) {
++        dawn::InfoLog() << "runtime_adapter_wait: status=" << static_cast<uint32_t>(waitStatus)
++                        << " completed=" << waitInfo.completed;
++    }
+ 
+     if (innerAdapter == nullptr) {
+         return {};
+@@ -126,6 +651,10 @@ WGPUInstance Backend::GetInnerInstance() const {
      return mInnerInstance;
  }
  
