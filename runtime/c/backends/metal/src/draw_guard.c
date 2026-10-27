@@ -117,6 +117,30 @@ static doe_mtl_status scan_window(doe_mtl_commands *commands,const doe_mtl_rende
     return status;
 }
 
+/* Only within one pass's consecutive preparation phase: no caller buffers are
+ * written between these guards, and all guards precede the native render pass.
+ * The same immutable pipeline and vertex spans imply the same fetch capacities.
+ * Compare fields explicitly; descriptor padding and raster state are irrelevant. */
+bool doe_mtl_draw_guard_same_inputs(const doe_mtl_render_draw *left,const doe_mtl_render_draw *right)
+{
+    const doe_mtl_guarded_draw *a=left->guarded,*b=right->guarded;
+    if (!a || !b || a->guard!=b->guard || a->arguments!=b->arguments ||
+        a->argument_offset!=b->argument_offset || a->index_size!=b->index_size ||
+        a->first_index!=b->first_index || a->first_instance_allowed!=b->first_instance_allowed ||
+        left->pipeline!=right->pipeline || left->index_buffer!=right->index_buffer ||
+        left->index_offset!=right->index_offset || left->index_type!=right->index_type ||
+        left->topology!=right->topology || left->count!=right->count ||
+        left->instance_count!=right->instance_count || left->first_vertex!=right->first_vertex ||
+        left->base_vertex!=right->base_vertex || left->first_instance!=right->first_instance ||
+        left->vertex.buffer_count!=right->vertex.buffer_count) return false;
+    for (size_t i=0;i<left->vertex.buffer_count;++i) {
+        const doe_mtl_buffer_binding *x=&left->vertex.buffers[i],*y=&right->vertex.buffers[i];
+        if (x->slot!=y->slot || x->buffer!=y->buffer || x->offset!=y->offset || x->size!=y->size)
+            return false;
+    }
+    return true;
+}
+
 doe_mtl_status doe_mtl_draw_guard_prepare(doe_mtl_commands *commands,const doe_mtl_render_draw *draw,
     doe_mtl_native_render_draw *native,doe_mtl_error *error)
 {

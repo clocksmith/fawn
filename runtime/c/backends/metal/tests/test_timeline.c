@@ -10,7 +10,7 @@ static void (*ordinary_release)(void *, void *);
 static doe_mtl_status create(void *u, void *device, void **out, doe_mtl_error *e) {
     (void)u; assert(device); *out=&event; return doe_mtl_fail(DOE_MTL_OK,"event",e);
 }
-static doe_mtl_status signal(void *u, void *command, void *handle, uint64_t value, doe_mtl_error *e) {
+static doe_mtl_status signal_event(void *u, void *command, void *handle, uint64_t value, doe_mtl_error *e) {
     (void)u;assert(command&&handle==&event&&value>signaled);signaled=value;++signals;
     return doe_mtl_fail(DOE_MTL_OK,"signal",e);
 }
@@ -21,7 +21,7 @@ static void release(void *u, void *handle) {
 int main(void) {
     mock_native mock={0};doe_mtl_native native=mock_driver(&mock);
     ordinary_release=native.release;native.release=release;
-    native.timeline_create=create;native.timeline_signal=signal;native.timeline_value=value;
+    native.timeline_create=create;native.timeline_signal=signal_event;native.timeline_value=value;
     doe_mtl_context *context=NULL;doe_mtl_error error={0};
     assert(doe_mtl_context_open(native,&context,&error)==DOE_MTL_OK);
     assert(doe_mtl_context_prefer_timeline(context,&error)==DOE_MTL_OK);
