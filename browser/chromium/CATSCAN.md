@@ -8,7 +8,7 @@ Own Fawn page WebGPU; require correctness, benefit and maintainability.
 
 ## Authority
 
-- Owns Chromium contracts, runtime selection, packaging, lifecycle probes, release evidence and scoped Linux GPU policy.
+- Owns Chromium contracts, runtime selection, packaging, lifecycle probes, release evidence and scoped Linux GPU policy, including denied-target scheduling.
 - Wider integration needs traced paths, measured selection and separate acceptance; excludes unrelated policy and inherited evidence.
 
 ## Scope
