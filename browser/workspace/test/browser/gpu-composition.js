@@ -97,6 +97,9 @@ try {
           failedWhen: [{ kind: 'element-present', selector: '#failed' }] } });
       if (reports.length === 1 && reports[0].queueCompleted === true) run.gpuCompletion = 'completed';
       evidence.checkpoint('gpu-action-returned', name);
+      try { run.postActionObservation = await session.observe(); }
+      catch (error) { run.postActionObservationError = String(error.stack ?? error); }
+      evidence.checkpoint('post-action-dom-observed', name);
       assert.equal(run.action.outcome, 'completed', JSON.stringify({ action: run.action, reports }));
       assert.equal(reports.length, 1);
       assertGpuReport(reports[0]);
