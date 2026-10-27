@@ -445,12 +445,14 @@ index 543e347e14..f1ed29a326 100644
    if (watchdog_thread) {
      watchdog_thread->Start();
 diff --git a/gpu/command_buffer/service/BUILD.gn b/gpu/command_buffer/service/BUILD.gn
+index d686d2d81a..67e171d528 100644
 --- a/gpu/command_buffer/service/BUILD.gn
 +++ b/gpu/command_buffer/service/BUILD.gn
-@@ -349,6 +349,7 @@
+@@ -349,6 +349,8 @@ target(link_target_type, "gles2_sources") {
        "shared_image/dawn_image_backing_factory.h",
        "webgpu_decoder_impl.cc",
        "webgpu_decoder_impl.h",
++      "webgpu_linux_backend_policy.h",
 +      "webgpu_skia_fallback.h",
      ]
    }
@@ -490,6 +492,7 @@ index 1b77642ce9..c5bcd0ebdb 100644
    std::string_view dawn_search_path_view = dawn_search_path;
    if (!dawn_search_path.empty()) {
 diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
+index 6030a9f57c..fcfe5a5b15 100644
 --- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
 +++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
 @@ -13,6 +13,7 @@
@@ -500,10 +503,11 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
  #include "base/compiler_specific.h"
  #include "base/feature_list.h"
  #include "base/logging.h"
-@@ -50,9 +51,11 @@
+@@ -50,9 +51,12 @@
  #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"
  #include "gpu/command_buffer/service/skia_utils.h"
  #include "gpu/command_buffer/service/webgpu_decoder.h"
++#include "gpu/command_buffer/service/webgpu_linux_backend_policy.h"
 +#include "gpu/command_buffer/service/webgpu_skia_fallback.h"
  #include "gpu/config/gpu_feature_info.h"
  #include "gpu/config/gpu_finch_features.h"
@@ -512,7 +516,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
  #include "gpu/config/webgpu_blocklist_impl.h"
  #include "gpu/webgpu/callback.h"
  #include "third_party/blink/public/common/tokens/tokens.h"
-@@ -233,6 +236,11 @@
+@@ -233,6 +237,11 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        return;
      }
 
@@ -524,7 +528,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
      has_polling_work_ =
          dawn::native::InstanceProcessEvents(dawn_instance_->Get());
 
-@@ -435,6 +443,9 @@
+@@ -435,6 +444,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
    std::unique_ptr<DawnServiceMemoryTransferService> memory_transfer_service_;
 
    webgpu::SafetyLevel safety_level_ = webgpu::SafetyLevel::kSafe;
@@ -534,7 +538,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    WebGPUAdapterName use_webgpu_adapter_ = WebGPUAdapterName::kDefault;
    WebGPUPowerPreference use_webgpu_power_preference_ =
        WebGPUPowerPreference::kNone;
-@@ -514,10 +525,7 @@
+@@ -514,10 +526,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        // Include list of formats this is tested to work with.
        // See gpu/command_buffer/tests/webgpu_mailbox_unittest.cc
        if (format != viz::SinglePlaneFormat::kBGRA_8888 &&
@@ -545,7 +549,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
            format != viz::SinglePlaneFormat::kRGBA_F16) {
          return nullptr;
        }
-@@ -687,12 +695,18 @@
+@@ -687,12 +696,18 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
          success = false;
        }
 
@@ -565,7 +569,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
                                    bytes_per_row, 0, 0)) {
            DLOG(ERROR) << "Failed to read from SkImage";
            success = false;
-@@ -703,7 +717,7 @@
+@@ -703,7 +718,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
          if (success && !GraphiteReadPixelsSync(
                             shared_context_state_->graphite_shared_context(),
                             shared_context_state_->gpu_main_graphite_recorder(),
@@ -574,7 +578,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
                             bytes_per_row, 0, 0)) {
            DLOG(ERROR) << "Failed to read from SkImage";
            success = false;
-@@ -867,7 +881,9 @@
+@@ -867,7 +882,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        }
 
        WaitForSemaphores(std::move(begin_semaphores));
@@ -585,7 +589,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
                             /*x*/ 0, /*y*/ 0);
 
        // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
-@@ -1666,10 +1682,15 @@
+@@ -1666,10 +1683,15 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      bool force_fallback,
      wgpu::FeatureLevel feature_level,
      bool webgpu_on_vk_gl_interop) const {
@@ -602,7 +606,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    if (force_fallback && !allow_fallback_adapter) {
      return nullptr;
    }
-@@ -1732,6 +1753,10 @@
+@@ -1732,6 +1754,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
    dawn_adapter_toggles.disabledToggleCount =
        require_adapter_disabled_toggles.size();
    ChainStruct(adapter_options, &dawn_adapter_toggles);
@@ -613,7 +617,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
 
  #if BUILDFLAG(IS_WIN)
    // On Windows, query the LUID of ANGLE's adapter.
-@@ -1772,7 +1797,6 @@
+@@ -1772,7 +1798,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      adapter_options_get_gl_proc.display = EGL_NO_DISPLAY;
    }
 
@@ -621,7 +625,24 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
  #endif
 
    // Build a list of backend types we will search for, in order of preference.
-@@ -1808,6 +1832,16 @@
+@@ -1793,9 +1818,13 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+ #elif BUILDFLAG(IS_APPLE)
+       backend_types = {wgpu::BackendType::Metal};
+ #elif BUILDFLAG(IS_LINUX)
+-      if (shared_context_state_->GrContextIsVulkan() ||
+-          webgpu_on_vk_gl_interop_ ||
+-          shared_context_state_->IsGraphiteDawnVulkan()) {
++      const auto route = use_doe_runtime_
++                             ? webgpu::LinuxWebGPURuntimeRoute::kForcedExternalDoe
++                             : webgpu::LinuxWebGPURuntimeRoute::kNativeDawn;
++      if (webgpu::SelectsLinuxDefaultVulkan(
++              route, shared_context_state_->GrContextIsVulkan(),
++              webgpu_on_vk_gl_interop_,
++              shared_context_state_->IsGraphiteDawnVulkan())) {
+         backend_types = {wgpu::BackendType::Vulkan};
+       } else {
+         // Deliberately disable compat on linux.
+@@ -1808,6 +1837,16 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      }
    }
 
@@ -638,7 +659,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    // `CanUseAdapter` is a helper to determine if an adapter is not blocklisted,
    // supports all required features, and matches the requested adapter options
    // (some of which may be set by command-line flags).
-@@ -1817,7 +1851,17 @@
+@@ -1817,7 +1856,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      wgpu::AdapterInfo adapter_info = {};
      adapter.GetInfo(&adapter_info);
 
@@ -657,7 +678,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
        return false;
      }
 
-@@ -1859,7 +1903,7 @@
+@@ -1859,7 +1908,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      // SharedTextureMemory.
      supports_external_textures = native_adapter.SupportsExternalImages();
  #endif
@@ -666,7 +687,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
        return false;
      }
 
-@@ -1881,6 +1925,17 @@
+@@ -1881,6 +1930,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
    // Enumerate adapters in order of the preferred backend type.
    for (wgpu::BackendType backend_type : backend_types) {
      adapter_options.backendType = backend_type;
@@ -684,7 +705,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
      for (dawn::native::Adapter& native_adapter :
           dawn_instance_->EnumerateAdapters(&adapter_options)) {
        native_adapter.SetUseTieredLimits(tiered_adapter_limits_);
-@@ -2164,6 +2219,14 @@
+@@ -2164,6 +2224,14 @@ WebGPUDecoderImpl::AssociateMailboxUsingSkiaFallback(
        shared_image_representation_factory_->ProduceSkia(
            mailbox, shared_context_state_.get());
 
@@ -699,7 +720,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    if (!ValidateAssociateMailboxAndSetSharedImageClearState(
            shared_image.get(), flags, usage, internal_usage)) {
      return nullptr;
-@@ -2246,7 +2309,7 @@
+@@ -2246,7 +2314,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
    std::unique_ptr<SharedImageRepresentationAndAccess> representation_and_access;
    auto it = known_device_metadata_.find(device);
    CHECK(it != known_device_metadata_.end());
@@ -708,7 +729,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
      representation_and_access = AssociateMailboxUsingSkiaFallback(
          mailbox, flags, device, usage, internal_usage, std::move(view_formats));
    } else {
-@@ -2348,6 +2411,10 @@
+@@ -2348,6 +2416,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
                                                const wgpu::Device& device,
                                                wgpu::BackendType backendType,
                                                wgpu::BufferUsage usage) {
@@ -719,6 +740,42 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    std::unique_ptr<DawnBufferRepresentation> shared_buffer =
        shared_image_representation_factory_->ProduceDawnBuffer(
            mailbox, device, backendType, shared_context_state_);
+diff --git a/gpu/command_buffer/service/webgpu_linux_backend_policy.h b/gpu/command_buffer/service/webgpu_linux_backend_policy.h
+new file mode 100644
+index 0000000000..e2dc24cbe6
+--- /dev/null
++++ b/gpu/command_buffer/service/webgpu_linux_backend_policy.h
+@@ -0,0 +1,30 @@
++// Copyright 2026 The Doe Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef GPU_COMMAND_BUFFER_SERVICE_WEBGPU_LINUX_BACKEND_POLICY_H_
++#define GPU_COMMAND_BUFFER_SERVICE_WEBGPU_LINUX_BACKEND_POLICY_H_
++
++namespace gpu::webgpu {
++
++enum class LinuxWebGPURuntimeRoute {
++  kNativeDawn,
++  kForcedExternalDoe,
++};
++
++// This chooses a default backend, not adapter admission. External Doe transfers
++// shared images through the Skia staging owner, so it does not require a
++// Chromium-owned Vulkan compositor or Vulkan/GL interop context. Native Dawn
++// retains its existing context requirements. Explicit requests bypass this rule.
++constexpr bool SelectsLinuxDefaultVulkan(
++    LinuxWebGPURuntimeRoute route,
++    bool compositor_uses_vulkan,
++    bool vulkan_gl_interop,
++    bool graphite_uses_vulkan) {
++  return route == LinuxWebGPURuntimeRoute::kForcedExternalDoe ||
++         compositor_uses_vulkan || vulkan_gl_interop || graphite_uses_vulkan;
++}
++
++}  // namespace gpu::webgpu
++
++#endif  // GPU_COMMAND_BUFFER_SERVICE_WEBGPU_LINUX_BACKEND_POLICY_H_
 diff --git a/gpu/command_buffer/service/webgpu_skia_fallback.h b/gpu/command_buffer/service/webgpu_skia_fallback.h
 new file mode 100644
 --- /dev/null

@@ -177,6 +177,25 @@ worker-priority request to fail without terminating the GPU process. The denied
 worker keeps its inherited scheduler, which must be accounted for in any later
 provider performance comparison.
 
+Forced Doe's default Linux WebGPU backend uses the provider's Vulkan adapter
+independently of Chromium's compositor API. Shared images travel through the
+Skia staging owner, including its synchronization, format conversion and access
+lifetimes. Chromium keeps its existing compositor; adapter blocklists and device
+requirements still apply. Native Dawn retains its Vulkan-context/interop gate,
+and explicit backend requests keep their existing selection.
+
+The focused default-selector check compiles the complete decoder for the pinned
+Linux and arm64 Mac configurations and executes the policy's CPU controls:
+
+```bash
+python3 browser/chromium/tests/test_linux_webgpu_backend_policy.py \
+  --chromium-source /absolute/patched-chromium/src \
+  --out /absolute/new-default-backend-cpu-results
+```
+
+These controls verify default selection, separately from physical adapter
+availability, page WebGPU, presentation and release acceptance.
+
 The CPU scheduler check compiles the real GPU policy, its factory and header
 consumers, then installs that policy in owned fixture processes:
 
