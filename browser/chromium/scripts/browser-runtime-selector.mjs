@@ -27,7 +27,8 @@ export function forcedRuntimeArgs(mode, libraryPath) {
   if (mode !== 'doe' || typeof libraryPath !== 'string' || !libraryPath) {
     throw new Error('forced runtime requires dawn, or doe with an explicit library path');
   }
-  return ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${libraryPath}`];
+  return ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${libraryPath}`,
+    ...(process.platform === 'linux' ? ['--gpu-sandbox-start-early'] : [])];
 }
 
 function envFlagEnabled(env, name) {
