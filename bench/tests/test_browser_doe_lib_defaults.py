@@ -614,6 +614,37 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             self.assertEqual(bundled.read_bytes(), b"selected runtime")
             self.assertEqual(arguments[-1], "--extra-argument=with spaces")
             self.assertTrue((moved / "Contents/Resources/fawn-formation.js").is_file())
+            default_profile = next(value for value in arguments if value.startswith("--user-data-dir="))
+            self.assertEqual(default_profile, f"--user-data-dir={env['HOME']}/Library/Application Support/Fawn/doe-c")
+            launcher = str(moved / "Contents/MacOS/Chromium")
+            dawn = subprocess.run([launcher, " -use-webgpu-runtime=dawn ", "--ordinary=keep"],
+                                  env=env, check=True, capture_output=True, text=True).stdout.splitlines()
+            self.assertIn("--use-webgpu-runtime=dawn", dawn)
+            self.assertNotIn("--use-webgpu-runtime=doe", dawn)
+            self.assertFalse(any(value.startswith("--doe-webgpu-library-path=") for value in dawn))
+            self.assertIn(f"--user-data-dir={env['HOME']}/Library/Application Support/Fawn/dawn", dawn)
+            explicit = subprocess.run([launcher, f"--user-data-dir={root}/explicit profile"],
+                                      env=env, check=True, capture_output=True, text=True).stdout.splitlines()
+            self.assertEqual(sum(value.startswith("--user-data-dir=") for value in explicit), 1)
+            for rejected in [
+                ["--use-webgpu-runtime=auto"],
+                ["--use-webgpu-runtime=dawn", " -use-webgpu-runtime=doe "],
+                [" -doe-webgpu-library-path=/foreign "],
+                ["--user-data-dir"], ["--user-data-dir=relative"],
+                ["--user-data-dir=/one", " -user-data-dir=/two "],
+            ]:
+                result = subprocess.run([launcher, *rejected], env=env, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0, rejected)
+                self.assertEqual(result.stdout, "", rejected)
+            positional = subprocess.run([launcher, "--", "--use-webgpu-runtime=dawn"],
+                                        env=env, check=True, capture_output=True, text=True).stdout.splitlines()
+            self.assertEqual(positional[-2:], ["--", "--use-webgpu-runtime=dawn"])
+            bundled.unlink()
+            missing = subprocess.run([launcher], env=env, capture_output=True, text=True)
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("no fallback", missing.stderr)
+            subprocess.run([launcher, "--use-webgpu-runtime=dawn"],
+                           env=env, check=True, capture_output=True, text=True)
 
     def test_python_superset_runner_prefers_real_app_binary_before_launcher(self) -> None:
         old_root = self.module.REPO_ROOT

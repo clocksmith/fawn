@@ -252,20 +252,75 @@ if [[ ! -x "${REAL_BINARY}" ]]; then
   exit 1
 fi
 
-if [[ -z "${DOE_LIB}" || ! -f "${DOE_LIB}" ]]; then
-  echo "missing libwebgpu_doe runtime: ${DOE_LIB}" >&2
-  exit 1
-fi
+# Chromium trims ASCII whitespace and accepts one or two leading dashes on
+# POSIX. Protect the selected provider against those equivalent spellings.
+RUNTIME=doe
+MODE_SEEN=0
+PROFILE_SEEN=0
+POSITIONAL=0
+FORWARDED=(--no-first-run)
+for ARGUMENT in "$@"; do
+  VIEW="${ARGUMENT#"${ARGUMENT%%[!$' \t\r\n\v\f']*}"}"
+  VIEW="${VIEW%"${VIEW##*[!$' \t\r\n\v\f']}"}"
+  if [[ "${POSITIONAL}" -eq 0 && "${VIEW}" == -- ]]; then
+    POSITIONAL=1
+  elif [[ "${POSITIONAL}" -eq 0 && "${VIEW}" == -* ]]; then
+    KEY="${VIEW#-}"
+    KEY="${KEY#-}"
+    VALUE=""
+    if [[ "${KEY}" == *=* ]]; then VALUE="${KEY#*=}"; fi
+    KEY="${KEY%%=*}"
+    case "${KEY}" in
+      use-webgpu-runtime)
+        if [[ "${MODE_SEEN}" -ne 0 || ( "${VALUE}" != doe && "${VALUE}" != dawn ) ]]; then
+          echo "Fawn: select exactly one explicit doe or dawn runtime" >&2
+          exit 1
+        fi
+        RUNTIME="${VALUE}"
+        MODE_SEEN=1
+        continue
+        ;;
+      doe-webgpu-library-path)
+        echo "Fawn: the product launcher selects its bundled runtime; use the raw image for diagnostics" >&2
+        exit 1
+        ;;
+      user-data-dir)
+        if [[ "${PROFILE_SEEN}" -ne 0 || "${VALUE}" != /* ]]; then
+          echo "Fawn: select one absolute user-data-dir" >&2
+          exit 1
+        fi
+        PROFILE_SEEN=1
+        ;;
+    esac
+  fi
+  FORWARDED+=("${ARGUMENT}")
+done
 
+SELECTED=(--use-webgpu-runtime=doe)
+if [[ "${RUNTIME}" == dawn ]]; then
+  SELECTED=(--use-webgpu-runtime=dawn)
+else
+  if [[ -z "${DOE_LIB}" || ! -f "${DOE_LIB}" ]]; then
+    echo "missing libwebgpu_doe runtime: ${DOE_LIB}; no fallback" >&2
+    exit 1
+  fi
+  SELECTED+=(--doe-webgpu-library-path="${DOE_LIB}")
+fi
+if [[ "${PROFILE_SEEN}" -eq 0 ]]; then
+  if [[ "${HOME:-}" != /* ]]; then
+    echo "Fawn: cannot resolve a private profile; select an absolute user-data-dir" >&2
+    exit 1
+  fi
+  PROFILE=doe-c
+  if [[ "${RUNTIME}" == dawn ]]; then PROFILE=dawn; fi
+  SELECTED+=(--user-data-dir="${HOME}/Library/Application Support/Fawn/${PROFILE}")
+fi
 FAWN_START="${SCRIPT_DIR}/../Resources/fawn-start.html"
 
-exec -a fawn-doe "${REAL_BINARY}" \
-  --use-webgpu-runtime=doe \
-  --doe-webgpu-library-path="${DOE_LIB}" \
-  --no-first-run \
+exec -a fawn-doe "${REAL_BINARY}" "${SELECTED[@]}" \
   --homepage="file://${FAWN_START}" \
   --new-window "file://${FAWN_START}" \
-  "$@"
+  "${FORWARDED[@]}"
 EOF
   chmod 0755 "${MACOS_BIN}"
 fi
