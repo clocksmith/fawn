@@ -13,6 +13,8 @@ from typing import Any
 
 import jsonschema
 
+from bench.lib.c_package_identity import c_manifest_failures
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = Path("config/doe-gpu-native-release-candidate.schema.json")
@@ -29,6 +31,7 @@ PLATFORM_PACKAGES = {
     ("linux", "x64"): ("doe-gpu-linux-x64", "libwebgpu_doe.so"),
     ("darwin", "arm64"): ("doe-gpu-darwin-arm64", "libwebgpu_doe.dylib"),
 }
+C_LIBRARY_NAMES = {("linux", "x64"): "libwebgpu_doe_c.so", ("darwin", "arm64"): "libwebgpu_doe_c.dylib"}
 RELIABILITY_DECISIONS = (
     "boundedCleanProcessReliability",
     "boundedSameProcessLifecycle",
@@ -349,18 +352,24 @@ def _validate_reliability(
                 or trial.get("outputLimitExceeded") is not False
                 or trial_receipt.get("runtimeHost") != runtime
                 or trial_receipt.get("providerModule") != "doe-gpu"
-                or trial_receipt.get("libraryFlavor") != "doe-dropin"
-                or trial_receipt.get("buildMetadataSource") != "prebuild"
+                or trial_receipt.get("libraryFlavor") != report["receipt"]["provider"].get("libraryFlavor")
+                or trial_receipt.get("buildMetadataSource") != report["receipt"]["provider"].get("buildMetadataSource")
                 or trial_receipt.get("outputSha256")
                 != EXPECTED_RELIABILITY_CONTRACT["expectedOutputSha256"]
             ):
                 failures.append(
                     f"{label}: bounded process trial failed: {trial.get('id')}"
                 )
+            if report["receipt"]["provider"].get("libraryFlavor") == "doe-c" and (
+                    trial_receipt.get("buildIdentity") != report["receipt"]["provider"].get("buildIdentity")):
+                failures.append(f"{label}: bounded C process trial native identity mismatch")
     lifecycle = reliability.get("sameProcessLifecycle")
     if not isinstance(lifecycle, dict):
         failures.append(f"{label}: same-process lifecycle evidence is missing")
     else:
+        if report["receipt"]["provider"].get("libraryFlavor") == "doe-c" and (
+                lifecycle.get("providerIdentity") != report["receipt"]["provider"].get("buildIdentity")):
+            failures.append(f"{label}: C lifecycle native identity mismatch")
         lifecycle_failed = (
             lifecycle.get("exitCode") != 0
             or lifecycle.get("signal") is not None
@@ -434,10 +443,16 @@ def _validate_candidate(
     if report["receipt"].get("result", {}).get("output") != EXPECTED_OUTPUT:
         failures.append(f"{label}: first-kernel output mismatch")
     provider = report["receipt"].get("provider", {})
+    if provider.get("libraryFlavor") not in ("doe-c", "doe-dropin"):
+        failures.append(f"{label}: first-kernel provider flavor is unknown")
+    is_c = provider.get("libraryFlavor") == "doe-c"
+    metadata_name = "doe-c-manifest.json" if is_c else "doe-build-metadata.json"
+    if is_c:
+        library_name = C_LIBRARY_NAMES[platform_key]
     if provider.get("loaded") is not True or provider.get("doeNative") is not True:
         failures.append(f"{label}: first-kernel provider is not Doe native")
-    if provider.get("buildMetadataSource") != "prebuild":
-        failures.append(f"{label}: first-kernel provider did not load a prebuild")
+    if provider.get("buildMetadataSource") != ("c-package" if is_c else "prebuild"):
+        failures.append(f"{label}: first-kernel provider metadata source differs")
     if f"/node_modules/{platform_package_name}/" not in provider.get(
         "doeLibraryPath", ""
     ):
@@ -477,7 +492,7 @@ def _validate_candidate(
         "platformManifest": f"packages/{platform_package_name}/package.json",
         "stagedAddon": f"packages/{platform_package_name}/bin/doe_napi.node",
         "stagedBuildMetadata": (
-            f"packages/{platform_package_name}/bin/doe-build-metadata.json"
+            f"packages/{platform_package_name}/bin/{metadata_name}"
         ),
     }
     for reference_name, expected_path in expected_paths.items():
@@ -520,7 +535,7 @@ def _validate_candidate(
         platform_members = {
             "platformManifest": "package/package.json",
             "stagedAddon": "package/bin/doe_napi.node",
-            "stagedBuildMetadata": "package/bin/doe-build-metadata.json",
+            "stagedBuildMetadata": f"package/bin/{metadata_name}",
         }
         for reference_name, member_name in platform_members.items():
             payload = tarballs.member(
@@ -547,6 +562,25 @@ def _validate_candidate(
             f"{label}: packed native library",
             failures,
         )
+        if is_c:
+            metadata = tarballs.member(platform_tarball, f"package/bin/{metadata_name}", label, failures)
+            try:
+                manifest = json.loads(metadata) if metadata else None
+            except (ValueError, UnicodeError):
+                manifest = None
+            if not isinstance(manifest, dict):
+                failures.append(f"{label}: invalid packed C manifest")
+            else:
+                def tree_for_commit(native_commit: str) -> str | None:
+                    result = subprocess.run(["git", "rev-parse", "--verify", native_commit + "^{tree}"],
+                                            cwd=source.root, capture_output=True, text=True)
+                    return result.stdout.strip() if result.returncode == 0 else None
+
+                errors = c_manifest_failures(
+                    manifest, provider, library_name,
+                    lambda name: tarballs.member(platform_tarball, "package/bin/" + name, label, failures),
+                    lambda name: source.blob(commit, name, label, failures), tree_for_commit)
+                failures.extend(f"{label}: {error}" for error in errors)
 
     _validate_governed_replay(report, label, failures)
     if report["governedReplay"]["adapterInfo"].get("isFallbackAdapter") is True:

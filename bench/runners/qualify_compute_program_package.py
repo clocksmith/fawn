@@ -46,6 +46,8 @@ def main() -> int:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     shutil.copyfile(Path(__file__), output / 'qualifier.py')
+    identity_helper = output / 'installed-native-provider.js'
+    shutil.copyfile(ROOT / 'packages/doe-gpu/test/lib/installed-native-provider.js', identity_helper)
     report = {'schemaVersion': 2, 'kind': 'compute_program_package_qualification',
               'status': 'running', 'error': None, 'packages': [], 'hosts': [], 'artifacts': [],
               'lifecycleCycles': args.lifecycle_cycles, 'timeoutMs': args.timeout_ms,
@@ -169,8 +171,14 @@ def main() -> int:
                         library = Path(provider['doeLibraryPath'])
                         if not library.is_relative_to(scratch / 'node_modules' / args.platform_package):
                             raise ValueError(f'{host}: native library escaped clean install')
-                        if not provider['doeNative'] or provider['buildMetadataSource'] != 'prebuild':
-                            raise ValueError(f'{host}: native provider identity not established')
+                        identity_script = (
+                            f"import {{assertInstalledNativeProvider}} from {json.dumps(identity_helper.as_uri())};"
+                            "console.log(JSON.stringify(assertInstalledNativeProvider(JSON.parse(process.argv[1]),process.argv[2])));"
+                        )
+                        run([str(Path(shutil.which(args.node) or args.node).resolve()), '--input-type=module',
+                             '-e', identity_script, json.dumps(provider),
+                             str(scratch / 'node_modules' / args.platform_package)],
+                            scratch, f'{host}-installed-identity')
                         if digest(library) != first_library_hash:
                             raise ValueError(f'{host}: example and lifecycle loaded different native libraries')
                 report['hosts'].append({'host': host, 'executable': str(executable), 'executableHash': digest(executable),
