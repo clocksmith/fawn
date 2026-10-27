@@ -15,7 +15,7 @@ typedef struct fixture {
     shared_event events[12];
     unsigned event_count, event_releases, surface_references, signals, producer_waits;
     uint64_t waited_value;
-    bool hold, fail_signal, fail_import, fail_surface;
+    bool hold, fail_signal, fail_import, fail_surface, invalid_surface_format;
     atomic_bool wait_entered, wait_release;
     bool blocking_wait;
     void *last_signal;
@@ -90,7 +90,7 @@ static doe_mtl_status event_wait(void *userdata, void *handle, uint64_t value, d
     return doe_mtl_fail(DOE_MTL_OK, "producer wait call ledger", error);
 }
 static doe_mtl_status surface_open(void *userdata, void *surface, void **out,
-    uint32_t *width, uint32_t *height, doe_mtl_error *error)
+    uint32_t *width, uint32_t *height, doe_mtl_format *format, doe_mtl_error *error)
 {
     fixture *f = driver_fixture(userdata);
     assert(surface == f);
@@ -99,6 +99,7 @@ static doe_mtl_status surface_open(void *userdata, void *surface, void **out,
     *out = surface;
     *width = 4;
     *height = 2;
+    *format = f->invalid_surface_format ? DOE_MTL_R8_UNORM : DOE_MTL_BGRA8_UNORM;
     return doe_mtl_fail(DOE_MTL_OK, "surface retain ledger", error);
 }
 static void surface_release(void *userdata, void *surface)
@@ -168,9 +169,11 @@ static WGPUSharedTextureMemory import_memory(state *s, fixture *f)
 }
 static WGPUTexture make_texture(WGPUSharedTextureMemory memory, WGPUTextureFormat format)
 {
+    WGPUTextureFormat srgb_view = WGPUTextureFormat_BGRA8UnormSrgb;
     WGPUTextureDescriptor desc = {.dimension=WGPUTextureDimension_2D,.format=format,
         .size={4,2,1},.mipLevelCount=1,.sampleCount=1,.usage=WGPUTextureUsage_CopySrc |
-        WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_RenderAttachment};
+        WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_RenderAttachment,
+        .viewFormatCount=1,.viewFormats=&srgb_view};
     return wgpuSharedTextureMemoryCreateTexture(memory,&desc);
 }
 static WGPUSharedFence import_fence(state *s, fixture *f)
@@ -209,7 +212,7 @@ static void producer_concurrency(state *s, fixture *f, WGPUSharedTextureMemory m
     assert(fence);
     shared_event *native = export_event(fence);
     uint64_t value = 73;
-    WGPUTexture waiting_texture = make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb);
+    WGPUTexture waiting_texture = make_texture(memory,WGPUTextureFormat_BGRA8Unorm);
     assert(waiting_texture);
     begin_call call = {.memory=memory,.texture=waiting_texture,
         .descriptor={.fenceCount=1,.fences=&fence,.signaledValueCount=1,.signaledValues=&value}};
@@ -231,7 +234,7 @@ static void producer_concurrency(state *s, fixture *f, WGPUSharedTextureMemory m
     /* Failed unrelated texture creation must not clear the reserved Begin state. */
     f->fail_import = true;
     unsigned errors = s->errors;
-    assert(!make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb) && s->errors == errors + 1);
+    assert(!make_texture(memory,WGPUTextureFormat_BGRA8Unorm) && s->errors == errors + 1);
     f->fail_import = false;
     assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Error);
     unsigned released = f->mock.releases_by_kind[MOCK_KIND_TEXTURE];
@@ -318,20 +321,34 @@ int main(void)
     s.queue = wgpuDeviceGetQueue(s.device);
     fixture *f = &fixtures[1];
     unsupported_buffer_contract();
+    f->invalid_surface_format = true;
+    unsigned metadata_errors = s.errors;
+    assert(!import_memory(&s,f) && s.errors == metadata_errors + 1);
+    assert(!f->surface_references); /* Malformed native success rolls back its lease. */
+    f->invalid_surface_format = false;
     WGPUSharedTextureMemory memory = import_memory(&s,f);
     WGPUSharedTextureMemory other = import_memory(&s,f);
     assert(memory && other && f->surface_references == 2);
     WGPUSharedTextureMemoryProperties properties = {0};
     assert(wgpuSharedTextureMemoryGetProperties(memory,&properties) == WGPUStatus_Success);
-    assert(properties.format == WGPUTextureFormat_Undefined && properties.size.width == 4 && properties.size.height == 2);
-    WGPUTexture texture = make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb);
-    assert(texture && f->mock.texture_desc.format == DOE_MTL_BGRA8_SRGB && !f->mock.uploads && !f->mock.renders);
+    assert(properties.format == WGPUTextureFormat_BGRA8Unorm && properties.size.width == 4 && properties.size.height == 2);
+    WGPUTexture texture = make_texture(memory,WGPUTextureFormat_BGRA8Unorm);
+    assert(texture && f->mock.texture_desc.format == DOE_MTL_BGRA8_UNORM && !f->mock.uploads && !f->mock.renders);
     assert(wgpuSharedTextureMemoryGetProperties(memory,&properties) == WGPUStatus_Success &&
-        properties.format == WGPUTextureFormat_BGRA8UnormSrgb);
+        properties.format == WGPUTextureFormat_BGRA8Unorm);
+    WGPUTextureViewDescriptor srgb_descriptor = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+    srgb_descriptor.format = WGPUTextureFormat_BGRA8UnormSrgb;
+    WGPUTextureView srgb_view = wgpuTextureCreateView(texture,&srgb_descriptor);
+    assert(srgb_view && f->mock.view_desc.format == DOE_MTL_BGRA8_SRGB);
+    wgpuTextureViewRelease(srgb_view);
     unsigned errors = s.errors;
     assert(!make_texture(memory,WGPUTextureFormat_RGBA8Unorm) && s.errors == errors + 1);
+    errors = s.errors;
+    assert(!make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb) && s.errors == errors + 1);
+    assert(wgpuSharedTextureMemoryGetProperties(memory,&properties) == WGPUStatus_Success &&
+        properties.format == WGPUTextureFormat_BGRA8Unorm);
     assert(wgpuSharedTextureMemoryBeginAccess(other,texture,NULL) == WGPUStatus_Error);
-    WGPUTexture second = make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb);
+    WGPUTexture second = make_texture(memory,WGPUTextureFormat_BGRA8Unorm);
     fence_span_contract(&s, f, memory, texture);
     assert(second && wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Success);
     assert(wgpuSharedTextureMemoryEndAccess(memory,second,NULL) == WGPUStatus_Error);
@@ -373,7 +390,7 @@ int main(void)
     assert(!((shared_event *)f->last_signal)->references);
     native_unlock(device);
     assert(wgpuSharedTextureMemoryEndAccess(memory,texture,NULL) == WGPUStatus_Success);
-    WGPUTexture active = make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb);
+    WGPUTexture active = make_texture(memory,WGPUTextureFormat_BGRA8Unorm);
     assert(active && wgpuSharedTextureMemoryBeginAccess(memory,active,NULL) == WGPUStatus_Success);
     wgpuTextureRelease(active);
     assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Success);

@@ -9,6 +9,17 @@ extern "C" {
  * caller holds its context and serializes mutations. Import/create returns +1;
  * paired release is required before the context is released. Outputs remain
  * untouched on failure. Shared surfaces support one packed RGBA/BGRA plane. */
+typedef struct doe_mtl_shared_surface_info {
+    uint32_t width, height;
+    doe_mtl_format format; /* Actual packed pixel format, never chosen by a later texture. */
+} doe_mtl_shared_surface_info;
+/* Packed physical format and dimensions are available at import, before any
+ * texture exists. On failure retained/info stay untouched. Success transfers
+ * one native surface lease, released through doe_mtl_shared_surface_release. */
+/* Retains the same actual surface and publishes its dimensions/format together.
+ * Every output stays untouched on failure; unknown or multiplane formats reject. */
+doe_mtl_status doe_mtl_shared_surface_open_info(doe_mtl_context *context, void *surface,
+    void **retained, doe_mtl_shared_surface_info *info, doe_mtl_error *error);
 doe_mtl_status doe_mtl_shared_surface_open(doe_mtl_context *context, void *surface,
     void **retained, uint32_t *width, uint32_t *height, doe_mtl_error *error);
 void doe_mtl_shared_surface_release(doe_mtl_context *context, void *surface);

@@ -1,13 +1,14 @@
 /* SPDX-License-Identifier: MIT */
 #define _POSIX_C_SOURCE 200809L
 #include "objc_abi.h"
+#include "texture_internal.h"
 #if !defined(_WIN32)
 #include <errno.h>
 #include <time.h>
 #endif
 
 static doe_mtl_status inspect_shared(doe_mtl_objc *runtime, void *surface,
-    uint32_t *width, uint32_t *height, doe_mtl_error *error)
+    uint32_t *width, uint32_t *height, doe_mtl_format *format, doe_mtl_error *error)
 {
     doe_mtl_objc_external *external = &runtime->external;
     if (!external->texture_call || !external->cf_retain || !external->cf_release)
@@ -16,25 +17,31 @@ static doe_mtl_status inspect_shared(doe_mtl_objc *runtime, void *surface,
     if (planes > 1) return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "shared IOSurface plane count", error);
     size_t w = planes ? external->surface_plane_width(surface, 0) : external->surface_width(surface);
     size_t h = planes ? external->surface_plane_height(surface, 0) : external->surface_height(surface);
+    doe_mtl_format packed;
+    if (!external->surface_format || !doe_mtl_objc_packed_format(external->surface_format(surface), &packed))
+        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "shared IOSurface packed format", error);
     if (!w || !h || w > UINT32_MAX || h > UINT32_MAX)
         return doe_mtl_fail(DOE_MTL_RANGE, "shared IOSurface dimensions", error);
     *width = (uint32_t)w;
     *height = (uint32_t)h;
+    *format = packed;
     return DOE_MTL_OK;
 }
 
 doe_mtl_status doe_mtl_objc_shared_surface(void *userdata, void *surface,
-    void **retained, uint32_t *width, uint32_t *height, doe_mtl_error *error)
+    void **retained, uint32_t *width, uint32_t *height, doe_mtl_format *format, doe_mtl_error *error)
 {
     doe_mtl_objc *runtime = userdata;
     uint32_t w, h;
-    doe_mtl_status status = inspect_shared(runtime, surface, &w, &h, error);
+    doe_mtl_format packed;
+    doe_mtl_status status = inspect_shared(runtime, surface, &w, &h, &packed, error);
     if (status != DOE_MTL_OK) return status;
     const void *reference = runtime->external.cf_retain(surface);
     if (!reference) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "CFRetain IOSurface", error);
     *retained = (void *)reference;
     *width = w;
     *height = h;
+    *format = packed;
     return doe_mtl_fail(DOE_MTL_OK, "shared IOSurface import", error);
 }
 
@@ -49,9 +56,11 @@ doe_mtl_status doe_mtl_objc_shared_texture(void *userdata, void *device,
 {
     doe_mtl_objc *runtime = userdata;
     uint32_t width, height;
-    doe_mtl_status status = inspect_shared(runtime, surface, &width, &height, error);
+    doe_mtl_format packed;
+    doe_mtl_status status = inspect_shared(runtime, surface, &width, &height, &packed, error);
     if (status != DOE_MTL_OK) return status;
-    if (desc->type != DOE_MTL_TEXTURE_2D || desc->width != width || desc->height != height ||
+    if (!doe_mtl_format_compatible(packed, desc->format) ||
+        desc->type != DOE_MTL_TEXTURE_2D || desc->width != width || desc->height != height ||
         desc->depth_or_layers != 1 || desc->mip_levels != 1 || desc->sample_count != 1 ||
         !desc->usage || (desc->usage & ~(uint32_t)(DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST |
             DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_SAMPLED)))

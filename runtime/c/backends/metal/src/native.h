@@ -77,7 +77,7 @@ typedef struct doe_mtl_native {
     /* Transactional: failure releases partial imports and leaves out untouched. */
     doe_mtl_status (*external_texture)(void *, void *, doe_mtl_external_source, void *,
         doe_mtl_native_external *, doe_mtl_error *);
-    doe_mtl_status (*shared_surface)(void *, void *, void **, uint32_t *, uint32_t *, doe_mtl_error *);
+    doe_mtl_status (*shared_surface)(void *, void *, void **, uint32_t *, uint32_t *, doe_mtl_format *, doe_mtl_error *);
     void (*shared_surface_release)(void *, void *);
     doe_mtl_status (*shared_texture)(void *, void *, void *, const doe_mtl_texture_desc *, void **, doe_mtl_error *);
     doe_mtl_status (*shared_event_retain)(void *, void *, void **, doe_mtl_error *);

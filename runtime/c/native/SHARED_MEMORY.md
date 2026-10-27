@@ -19,8 +19,12 @@ do not expand the shared-image policy described below.
 - A Metal device imports a retained `MTLSharedEvent` or a single-plane
   `IOSurface`. Import failures leave no published object. The original native
   handle, channel order and device identity are preserved.
-- Shared texture creation accepts the retained RGBA8/BGRA8 unorm/sRGB formats,
-  exact 2D surface dimensions, one mip, one layer and one sample. The existing
+- Import inspects the IOSurface's physical packed RGBA8/BGRA8 unorm format and
+  dimensions. `GetProperties` publishes them before any texture exists;
+  unsupported pixel layouts fail import without retaining the surface.
+- Shared texture creation requires that physical format, exact 2D surface
+  dimensions, one mip, one layer and one sample. Compatible sRGB formats are
+  declared as view formats and do not change the shared memory's properties. The existing
   resource owner validates descriptors and owns ordinary textures, views and
   command references. The Metal external-plane adopter preserves producer
   contents instead of clearing the imported allocation.
@@ -73,14 +77,18 @@ the same native plane identity. This does not imply YUV or color conversion.
   exclusion, early public fence/texture release, failure during a blocked Begin,
   fresh completion signals, first-error detail, unknown-work retention and
   final cleanup. No GPU results are synthesized.
+- `make -C runtime/c/native check-iosurface-metadata` on Darwin: actual BGRA/RGBA
+  IOSurface import, properties before texture creation, exact-format rejection,
+  compatible sRGB views and early native/public releases. This selects physical
+  Metal but submits no GPU work.
 - `make -C runtime/c/backends/metal check`: existing ownership/native-call tests;
   external typed-call controls include CF retain/release, single-plane admission,
   shared format/usage arguments and event-value reads.
 - `make -C runtime/c/backends/metal abi-compile`: host typed-call compilation for
   the arm64/x86_64 branches, not Apple SDK verification.
 - `make -C runtime/c/backends/metal sdk-abi`: actual Apple SDK comparison, including
-  CFTypeRef/event calls; unavailable on the Linux host used for this change.
+  CFTypeRef/event calls; requires an installed Apple SDK.
 
-Actual macOS IOSurface import, event synchronization and GPU execution remain
-unqualified here. Host controls, symbol resolution and compilation are not
-physical Metal or Fawn browser acceptance.
+The metadata consumer passes on Apple M3. Native event synchronization, GPU
+execution of imported contents and Fawn browser external-image acceptance remain
+separate gates. Metadata, symbol resolution and compilation do not qualify them.
