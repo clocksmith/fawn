@@ -7,6 +7,7 @@ const samples = [
   ['iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8z8DwnwEPYMInOXwUAAASWwIOH0pJXQAAAABJRU5ErkJggg==', [255, 0, 0, 255]],
   ['iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGP8z/D/PwMewIRPcvgoAAAWZQMNpyQ17QAAAABJRU5ErkJggg==', [255, 0, 255, 255]],
   ['iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGNk+M/wnwEPYMInOXwUAAARXAIO3AvTcAAAAABJRU5ErkJggg==', [0, 255, 0, 255]],
+  ['iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGNkYPj/nwEPYMInOXwUAAAQXQIOZWZ6QQAAAABJRU5ErkJggg==', [0, 0, 255, 255]],
 ];
 for (const [encoded, expected] of samples) {
   const png = Buffer.from(encoded, 'base64');
@@ -17,6 +18,8 @@ for (const [encoded, expected] of samples) {
   assert.throws(() => decodePng(corrupt), /CRC/);
   assert.throws(() => decodePng(png.subarray(0, png.length - 1)), /truncated/);
 }
+assert.throws(() => assertSolidPixels(Buffer.from(samples[3][0], 'base64'), [255, 0, 0, 255]), /compositor pixel 0/,
+  'a blue GPU endpoint must reject a red/blue channel swap');
 const fixture = readFileSync(new URL('../fixtures/gpu-composition.html', import.meta.url), 'utf8');
 const shaders = extractRenderShaders(fixture);
 assert.match(shaders.vertex, /@vertex/);
