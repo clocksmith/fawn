@@ -3,7 +3,7 @@ CXX = g++
 include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
 BUILD ?= $(DOE_C_TMP)/native
 include platform.mk
-NATIVE_LIBRARY ?= $(BUILD)/libwebgpu_doe_c.$(SHARED_SUFFIX)
+NATIVE_LIBRARY ?= $(BUILD)/$(NATIVE_LIBRARY_BASENAME)
 COMPILER_LIBRARY ?= $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX)
 SANITIZE ?=
 # One owner list drives source, public include and private header dependencies.
