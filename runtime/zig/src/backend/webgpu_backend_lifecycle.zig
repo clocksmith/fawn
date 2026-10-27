@@ -29,8 +29,9 @@ pub fn backendTypeName(backend_type: abi_callback.WGPUBackendType) []const u8 {
     };
 }
 
-pub fn deinit(self: anytype) void {
-    const procs = self.core.procs orelse return;
+pub fn deinit(self: anytype) bool {
+    if (!@import("../core/queue/wgpu_ffi_capture.zig").retirePending(self)) return false;
+    const procs = self.core.procs orelse return true;
     const p0_procs = p0_procs_mod.loadP0Procs(self.core.dyn_lib);
 
     if (self.full.render_uniform_bind_group) |bind_group| {
@@ -170,6 +171,7 @@ pub fn deinit(self: anytype) void {
     self.core.capability_procs = null;
     self.core.resource_table_procs = null;
     self.core.lifecycle_procs = null;
+    return true;
 }
 
 pub fn captureAdapterLimits(self: anytype) !void {

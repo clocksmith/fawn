@@ -950,9 +950,9 @@
       },
       "src/backend/dawn_delegate_backend.zig": {
         "decision": "Keep",
-        "moduleSha256": "4dbee9fdc1d0b072e2faaed612a4bf0b16edeb7f292165c3742dda7444f37f91",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-architecture-refactor/2026-08-23"
+        "moduleSha256": "a2f5dde6d309da9a9a2011b8fa3a3991d66035812b5d871a0aaa086dabfb0ec0",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/backend/dropin_capabilities.zig": {
         "decision": "Keep",
@@ -1472,15 +1472,15 @@
       },
       "src/backend/webgpu_backend.zig": {
         "decision": "Keep",
-        "moduleSha256": "c4dfb504ef636d8f4fb412b544f73a5ed7c6c43324d218d4fb3d339684731938",
-        "reason": "Keep: compatibility backend adapter whose lifecycle, operations, support, and state already have named sibling owners; only composition and backend-local code may consume it.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "7d382df0d84da81135dba6d61081ca0e308268ec68a8050ce874b8106c6bcd22",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/backend/webgpu_backend_lifecycle.zig": {
         "decision": "Keep",
-        "moduleSha256": "76b1a5b1605074049d3d53600c2081b5fd382e41f45fcefc5c8b57df408cee36",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "035278bff75ace29f219753a88ee8f16d6c9b5d9e281508b22d78e82648bca6a",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/backend/webgpu_backend_ops.zig": {
         "decision": "Keep",
@@ -1496,9 +1496,9 @@
       },
       "src/backend/webgpu_backend_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "b3d7d79e62d1f41f99413cacb5e87c23407e9effe59991a6efa583540dfb2fa9",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "9cbf2641cc5e27413b045af7ad919adcf3cce0eb79b2fb0a19010e01b47a20c6",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/cli/doe_plan_executor_cli.zig": {
         "decision": "Keep",
@@ -1586,9 +1586,9 @@
       },
       "src/cli/runtime_cli.zig": {
         "decision": "Keep",
-        "moduleSha256": "a40748e5e46ee2dc03ffce44d11ac35b1e73e4778d62b6b702abc5bb833f5d78",
-        "reason": "Keep: reachable cli implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "ef9405710c120a51fc44fe8dacddba9a3eef09037ec3730291826305791adace",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/cli/runtime_cli_args.zig": {
         "decision": "Keep",
@@ -2648,15 +2648,15 @@
       },
       "src/composition/backend_factory.zig": {
         "decision": "Keep",
-        "moduleSha256": "56f5ed63106befa07024d0b98a4ee49e7f09b45df1a73770e027aeb8d667abee",
-        "reason": "Keep: reachable composition implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-architecture-refactor/2026-08-23"
+        "moduleSha256": "5f7de24a1671e500563902202a8cf096ea8be2ddce03ec763f748f66a0687ca5",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/composition/execution_session.zig": {
         "decision": "Keep",
-        "moduleSha256": "ac8556d60b9549ddbe32bf80ba7dd31ccefb05cd455e6c61e9ea425ce49733c3",
-        "reason": "Keep: reachable composition implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-architecture-refactor/2026-08-23"
+        "moduleSha256": "98ce2f90aa3a128da9f11c8eba98b8ef15c683f40a2af8332f15fa20ad959e48",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/composition/mod.zig": {
         "decision": "Keep",
@@ -3122,9 +3122,9 @@
       },
       "src/core/queue/wgpu_ffi_capture.zig": {
         "decision": "Keep",
-        "moduleSha256": "30e02ebb4dcf626508aa767ea0f08dfc03b825d898ac964710b4790071858179",
-        "reason": "Keep: reachable core implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "0c37b8620f22e6cc9c07ef18df6870c583166545b8cf3a2972fe55c68c49adf6",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/core/queue/wgpu_ffi_sync.zig": {
         "decision": "Keep",
@@ -3896,9 +3896,9 @@
       },
       "src/plan/doe_plan_executor.zig": {
         "decision": "Keep",
-        "moduleSha256": "5c279830116f0e19f46f4f644600cd859355ecac02abd2a8c32925b55ed10c69",
-        "reason": "Keep: reachable plan implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "196e722bd39fde631c4919b710d9c05790b9abb08116281f52f2eaddfba85086",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/plan/mod.zig": {
         "decision": "Keep",
@@ -4100,9 +4100,9 @@
       },
       "src/runtime/output_oracle.zig": {
         "decision": "Keep",
-        "moduleSha256": "39ccc3f03cdc23a9079d9b3d449afaddf568f100307f50382a293eac9770941d",
-        "reason": "Keep: reachable runtime implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-hexagonal-migration/2026-08-22"
+        "moduleSha256": "781da5d64bb11930284791f4080082ca1dd6b81dd38f2f14a7feebdd57338dd7",
+        "reason": "Keep: preserve the capture callback/resource lease through private session retirement and persist first failure before cleanup; no provider or WebGPU ABI change.",
+        "reviewer": "codex-capture-lifetime/2026-10-27"
       },
       "src/runtime/pipeline_singleflight.zig": {
         "decision": "Keep",

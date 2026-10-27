@@ -688,3 +688,208 @@ test "constant values: core texture format range" {
     try std.testing.expectEqual(@as(u32, 0x00000030), types.WGPUTextureFormat_Depth32Float);
     try std.testing.expectEqual(@as(u32, 0x00000031), types.WGPUTextureFormat_Depth32FloatStencil8);
 }
+
+const CaptureProbe = struct {
+    const records = @import("../../src/backend/webgpu_backend_types.zig");
+    const proc_aliases = @import("../../src/core/abi/wgpu_type_proc_aliases.zig");
+    var queue_callback: types.WGPUQueueWorkDoneCallbackInfo = undefined;
+    var map_callback: types.WGPUBufferMapCallbackInfo = undefined;
+    var queue_ready = true;
+    var map_ready = true;
+    var map_success = true;
+    var queue_success = true;
+    var released_buffers: u32 = 0;
+    var released_commands: u32 = 0;
+    var released_devices: u32 = 0;
+    var map_calls: u32 = 0;
+    var submits: u32 = 0;
+    var bytes = [_]u8{ 11, 22, 33, 44 };
+
+    fn reset() void {
+        queue_ready = true;
+        map_ready = true;
+        map_success = true;
+        queue_success = true;
+        released_buffers = 0;
+        released_commands = 0;
+        released_devices = 0;
+        map_calls = 0;
+        submits = 0;
+    }
+    fn handle(comptime T: type, address: usize) T {
+        return @ptrFromInt(address);
+    }
+    fn createBuffer(_: types.WGPUDevice, _: ?*const types.WGPUBufferDescriptor) callconv(.c) types.WGPUBuffer {
+        return handle(types.WGPUBuffer, 0x2000);
+    }
+    fn createEncoder(_: types.WGPUDevice, _: ?*const types.WGPUCommandEncoderDescriptor) callconv(.c) types.WGPUCommandEncoder {
+        return handle(types.WGPUCommandEncoder, 0x3000);
+    }
+    fn copy(_: types.WGPUCommandEncoder, _: types.WGPUBuffer, _: u64, _: types.WGPUBuffer, _: u64, _: u64) callconv(.c) void {}
+    fn finish(_: types.WGPUCommandEncoder, _: ?*const types.WGPUCommandBufferDescriptor) callconv(.c) types.WGPUCommandBuffer {
+        return handle(types.WGPUCommandBuffer, 0x4000);
+    }
+    fn releaseEncoder(_: types.WGPUCommandEncoder) callconv(.c) void {}
+    fn releaseCommands(_: types.WGPUCommandBuffer) callconv(.c) void {
+        released_commands += 1;
+    }
+    fn releaseBuffer(_: types.WGPUBuffer) callconv(.c) void {
+        released_buffers += 1;
+    }
+    fn releaseDevice(_: types.WGPUDevice) callconv(.c) void {
+        released_devices += 1;
+    }
+    fn releaseQueue(_: types.WGPUQueue) callconv(.c) void {}
+    fn releaseAdapter(_: types.WGPUAdapter) callconv(.c) void {}
+    fn releaseInstance(_: types.WGPUInstance) callconv(.c) void {}
+    fn unmap(_: types.WGPUBuffer) callconv(.c) void {}
+    fn submit(_: types.WGPUQueue, _: usize, _: [*c]types.WGPUCommandBuffer) callconv(.c) void {
+        submits += 1;
+    }
+    fn queueDone(_: types.WGPUQueue, callback: types.WGPUQueueWorkDoneCallbackInfo) callconv(.c) types.WGPUFuture {
+        queue_callback = callback;
+        return .{ .id = 1 };
+    }
+    fn map(_: types.WGPUBuffer, _: types.WGPUMapMode, _: usize, _: usize, callback: types.WGPUBufferMapCallbackInfo) callconv(.c) types.WGPUFuture {
+        map_calls += 1;
+        map_callback = callback;
+        return .{ .id = 2 };
+    }
+    fn mapped(_: types.WGPUBuffer, _: usize, _: usize) callconv(.c) ?*const anyopaque {
+        return &bytes;
+    }
+    fn wait(_: types.WGPUInstance, _: usize, infos: [*]types.WGPUFutureWaitInfo, timeout: u64) callconv(.c) types.WGPUWaitStatus {
+        std.debug.assert(timeout == 0);
+        if (infos[0].future.id == 1) {
+            if (!queue_ready) return .timedOut;
+            queue_callback.callback.?(if (queue_success) .success else .@"error", .{ .data = null, .length = 0 }, queue_callback.userdata1, null);
+        } else {
+            if (!map_ready) return .timedOut;
+            map_callback.callback.?(if (map_success) types.WGPUMapAsyncStatus_Success else 2, .{ .data = null, .length = 0 }, map_callback.userdata1, null);
+        }
+        infos[0].completed = types.WGPU_TRUE;
+        return .success;
+    }
+    fn backend() !ffi.WebGPUBackend {
+        reset();
+        const a = std.testing.allocator;
+        var procs: proc_aliases.Procs = undefined;
+        procs.wgpuDeviceCreateBuffer = createBuffer;
+        procs.wgpuDeviceCreateCommandEncoder = createEncoder;
+        procs.wgpuCommandEncoderCopyBufferToBuffer = copy;
+        procs.wgpuCommandEncoderFinish = finish;
+        procs.wgpuCommandEncoderRelease = releaseEncoder;
+        procs.wgpuCommandBufferRelease = releaseCommands;
+        procs.wgpuBufferRelease = releaseBuffer;
+        procs.wgpuBufferUnmap = unmap;
+        procs.wgpuQueueSubmit = submit;
+        procs.wgpuQueueOnSubmittedWorkDone = queueDone;
+        procs.wgpuBufferMapAsync = map;
+        procs.wgpuBufferGetConstMappedRange = mapped;
+        procs.wgpuInstanceWaitAny = wait;
+        procs.wgpuDeviceRelease = releaseDevice;
+        procs.wgpuQueueRelease = releaseQueue;
+        procs.wgpuAdapterRelease = releaseAdapter;
+        procs.wgpuInstanceRelease = releaseInstance;
+        var result = ffi.WebGPUBackend{
+            .core = .{
+                .allocator = a,
+                .webgpu_ffi_queue_wait_timeout_ns = 0,
+                .procs = procs,
+                .device = handle(types.WGPUDevice, 0x5000),
+                .queue = handle(types.WGPUQueue, 0x6000),
+                .instance = handle(types.WGPUInstance, 0x7000),
+                .buffers = std.AutoHashMap(u64, records.BufferRecord).init(a),
+                .textures = std.AutoHashMap(u64, records.TextureRecord).init(a),
+                .pipeline_cache = std.AutoHashMap(u64, records.PipelineCacheEntry).init(a),
+            },
+            .full = .{
+                .render_pipeline_cache = std.AutoHashMap(u32, records.RenderPipelineCacheEntry).init(a),
+                .render_target_view_cache = std.AutoHashMap(u64, records.RenderTextureViewCacheEntry).init(a),
+                .render_depth_view_cache = std.AutoHashMap(u64, records.RenderTextureViewCacheEntry).init(a),
+                .samplers = std.AutoHashMap(u64, types.WGPUSampler).init(a),
+                .surfaces = std.AutoHashMap(u64, ffi.ManagedSurface).init(a),
+            },
+        };
+        try result.core.buffers.put(1, .{
+            .buffer = handle(types.WGPUBuffer, 0x1000),
+            .size = 4,
+            .usage = types.WGPUBufferUsage_CopySrc,
+        });
+        return result;
+    }
+};
+
+test "Dawn capture lease: successful bytes and exact terminal release" {
+    var backend = try CaptureProbe.backend();
+    const output = try backend.captureBuffer(std.testing.allocator, 1, 0, 4);
+    defer std.testing.allocator.free(output);
+    try std.testing.expectEqualSlices(u8, &.{ 11, 22, 33, 44 }, output);
+    try std.testing.expect(backend.core.pending_capture == null);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_buffers);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_commands);
+    try std.testing.expect(backend.deinit());
+    try std.testing.expectEqual(@as(u32, 2), CaptureProbe.released_buffers);
+}
+
+test "Dawn capture lease: queue timeout retains resources and blocks new work" {
+    var backend = try CaptureProbe.backend();
+    CaptureProbe.queue_ready = false;
+    try std.testing.expectError(error.WaitTimedOut, backend.captureBuffer(std.testing.allocator, 1, 0, 4));
+    try std.testing.expectEqual(@as(u32, 0), CaptureProbe.map_calls);
+    try std.testing.expectEqual(@as(u32, 0), CaptureProbe.released_buffers);
+    try std.testing.expectEqual(@as(u32, 0), CaptureProbe.released_commands);
+    try std.testing.expectError(error.WaitTimedOut, backend.captureBuffer(std.testing.allocator, 1, 0, 4));
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.submits);
+    try std.testing.expectError(error.WaitTimedOut, backend.flushQueue());
+    try std.testing.expectError(error.WaitTimedOut, backend.executeBufferWriteBytes(1, 0, 4, &.{ 1, 2, 3, 4 }));
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.submits);
+    try std.testing.expect(!backend.deinit());
+    try std.testing.expectEqual(@as(u32, 0), CaptureProbe.released_devices);
+    CaptureProbe.queue_ready = true;
+    try std.testing.expect(backend.deinit());
+    try std.testing.expect(backend.core.pending_capture == null);
+    try std.testing.expectEqual(@as(u32, 2), CaptureProbe.released_buffers);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_commands);
+    try std.testing.expect(backend.deinit());
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_devices);
+}
+
+test "Dawn capture lease: late map callback survives failed early teardown" {
+    var backend = try CaptureProbe.backend();
+    CaptureProbe.map_ready = false;
+    try std.testing.expectError(error.WaitTimedOut, backend.captureBuffer(std.testing.allocator, 1, 0, 4));
+    try std.testing.expect(!backend.deinit());
+    try std.testing.expectEqual(@as(u32, 0), CaptureProbe.released_buffers);
+    // Deliver through the saved heap userdata after captureBuffer returned.
+    CaptureProbe.map_ready = true;
+    try std.testing.expect(backend.deinit());
+    try std.testing.expectEqual(@as(u32, 2), CaptureProbe.released_buffers);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_commands);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_devices);
+    try std.testing.expectEqual(error.WaitTimedOut, backend.core.capture_error.?);
+}
+
+test "Dawn capture lease: terminal failed map retires without returning output" {
+    var backend = try CaptureProbe.backend();
+    CaptureProbe.map_success = false;
+    try std.testing.expectError(error.BufferMapFailed, backend.captureBuffer(std.testing.allocator, 1, 0, 4));
+    try std.testing.expect(backend.core.pending_capture == null);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_buffers);
+    try std.testing.expect(backend.deinit());
+}
+
+test "Dawn capture lease: delegate allocation survives unknown teardown" {
+    const dawn = @import("../../src/backend/dawn_delegate_backend.zig");
+    const owner = try std.testing.allocator.create(dawn.DawnDelegateBackend);
+    owner.* = .{ .allocator = std.testing.allocator, .inner = try CaptureProbe.backend(), .effective_id = .dawn_delegate };
+    CaptureProbe.map_ready = false;
+    try std.testing.expectError(error.WaitTimedOut, owner.inner.captureBuffer(std.testing.allocator, 1, 0, 4));
+    try std.testing.expect(!dawn.destroyContext(owner));
+    try std.testing.expect(owner.inner.core.pending_capture != null);
+    try std.testing.expectEqual(@as(u32, 0), CaptureProbe.released_devices);
+    CaptureProbe.map_ready = true;
+    try std.testing.expect(dawn.destroyContext(owner));
+    try std.testing.expectEqual(@as(u32, 2), CaptureProbe.released_buffers);
+    try std.testing.expectEqual(@as(u32, 1), CaptureProbe.released_devices);
+}

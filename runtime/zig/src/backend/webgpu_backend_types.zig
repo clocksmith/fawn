@@ -33,6 +33,8 @@ pub const ManagedSurface = struct {
 
 pub const CoreWebGPUBackend = struct {
     allocator: std.mem.Allocator,
+    pending_capture: ?*@import("../core/queue/wgpu_ffi_capture.zig").PendingCapture = null,
+    capture_error: ?anyerror = null,
     dyn_lib: ?std.DynLib = null,
     procs: ?abi_proc_aliases.Procs = null,
     capability_procs: ?p1_capability_procs_mod.CapabilityProcs = null,

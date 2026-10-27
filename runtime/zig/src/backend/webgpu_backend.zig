@@ -9,6 +9,7 @@ const abi_handle = @import("../core/abi/wgpu_handle_types.zig");
 const backend_types = @import("webgpu_backend_types.zig");
 const lifecycle = @import("webgpu_backend_lifecycle.zig");
 const ops = @import("webgpu_backend_ops.zig");
+const capture = @import("../core/queue/wgpu_ffi_capture.zig");
 const support = @import("webgpu_backend_support.zig");
 const runtime_types = @import("../contracts/runtime_types.zig");
 const loader = @import("../core/abi/wgpu_loader.zig");
@@ -64,7 +65,7 @@ pub const WebGPUBackend = struct {
                 .surfaces = std.AutoHashMap(u64, ManagedSurface).init(allocator),
             },
         };
-        errdefer self.deinit();
+        errdefer _ = self.deinit();
         self.core.timestamp_debug = env_flags.enabled(allocator, "DOE_WGPU_TIMESTAMP_DEBUG");
         self.core.dyn_lib = try loader.openLibrary();
         self.core.procs = try loader.loadProcs(self.core.dyn_lib.?);
@@ -121,7 +122,8 @@ pub const WebGPUBackend = struct {
         return self;
     }
 
-    pub fn deinit(self: *Self) void {
+    /// False retains all resources; the owner must keep this allocation alive.
+    pub fn deinit(self: *Self) bool {
         return lifecycle.deinit(self);
     }
 
@@ -130,6 +132,7 @@ pub const WebGPUBackend = struct {
     }
 
     pub fn executeCommand(self: *Self, command: model.Command) !NativeExecutionResult {
+        try capture.requireReady(self);
         return commands.executeCommand(self, command);
     }
 
@@ -140,6 +143,7 @@ pub const WebGPUBackend = struct {
         buffer_size: u64,
         data: []const u8,
     ) !NativeExecutionResult {
+        try capture.requireReady(self);
         if (!self.backendAvailable()) {
             return .{
                 .status = .@"error",
@@ -239,7 +243,10 @@ pub const WebGPUBackend = struct {
     pub const submitEmpty = ops.submitEmpty;
     pub const submitCommandBuffers = ops.submitCommandBuffers;
     pub const submitInternal = ops.submitInternal;
-    pub const flushQueue = ops.flushQueue;
+    pub fn flushQueue(self: *Self) !u64 {
+        try capture.requireReady(self);
+        return ops.flushQueue(self);
+    }
     pub const captureBuffer = ops.captureBuffer;
     pub const waitForQueue = ops.waitForQueue;
     pub const waitForQueueOnce = ops.waitForQueueOnce;
@@ -259,6 +266,7 @@ pub const WebGPUBackend = struct {
     pub const unconfigureSurface = ops.unconfigureSurface;
     pub const releaseSurface = ops.releaseSurface;
     pub fn prewarmUploadPath(self: *Self, max_upload_bytes: u64) !void {
+        try capture.requireReady(self);
         return ops.prewarmUploadPath(self, max_upload_bytes);
     }
 

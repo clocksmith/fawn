@@ -365,6 +365,15 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
     var host_executor_init_total_ns: u64 = 0;
     var execute_wall_ns: u64 = 0;
     var execution_session: ?composition.ExecutionSession = null;
+    var session_failure: ?anyerror = null;
+    defer if (execution_session) |*session| session.retireForExit(.{
+        .path = options.trace_meta_path,
+        .tag = "plan",
+        .first_error = session_failure,
+    });
+    errdefer |err| {
+        if (session_failure == null) session_failure = err;
+    }
     var execution_context: ?*execution.ExecutionContext = null;
     if (!options.dry_run) {
         const executor_init_start_ns = nowNs();
@@ -392,7 +401,6 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
             }
         }
     }
-    defer if (execution_session) |*session| session.deinit();
     trace_summary.host_executor_init_total_ns = host_executor_init_total_ns;
 
     const execute_start_ns = nowNs();
@@ -534,5 +542,13 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
     trace_summary.host_artifact_trace_jsonl_serialize_total_ns = trace_jsonl_timing.serialize_ns;
     trace_summary.host_artifact_trace_jsonl_write_total_ns = trace_jsonl_timing.write_ns;
     trace_summary.host_artifact_finalize_total_ns = elapsedSince(artifact_finalize_start_ns);
-    try trace.writeTraceMeta(options.trace_meta_path, trace_summary);
+    const draft = try std.fmt.allocPrint(allocator, "{s}.before-retirement.json", .{options.trace_meta_path});
+    defer allocator.free(draft);
+    try trace.writeTraceMeta(draft, trace_summary);
+    if (execution_session) |*session| session.retireForExit(.{
+        .path = options.trace_meta_path,
+        .tag = "plan",
+        .first_error = session_failure,
+    });
+    try std.fs.cwd().rename(draft, options.trace_meta_path);
 }
