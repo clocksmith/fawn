@@ -12,6 +12,7 @@ typedef struct native_d3d12_buffer {
 } native_d3d12_buffer;
 
 native_result native_d3d12_open(bool fallback, native_backend *out);
+native_result native_d3d12_open_luid(uint32_t low, int32_t high, native_backend *out);
 native_result native_d3d12_reopen(const native_backend *adapter, native_backend *out);
 void native_d3d12_close(native_backend *backend);
 native_result native_d3d12_status(const native_backend *backend);

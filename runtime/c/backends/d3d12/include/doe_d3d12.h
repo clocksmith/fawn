@@ -98,6 +98,11 @@ typedef struct doe_dx_caps {
 
 doe_dx_status doe_dx_context_create(const doe_dx_options *options,
     doe_dx_context **out, doe_dx_error *error);
+/* Exact LUID discovery reads the actual DXGI software flag, then opens and
+ * verifies that identity through the ordinary context owner. Never enumerates
+ * another adapter or retries after a failed query/device construction. */
+doe_dx_status doe_dx_context_create_from_luid(uint32_t low, int32_t high,
+    doe_dx_context **out, doe_dx_error *error);
 doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *out);
 /* Nonmutating; no polling, error consumption or completion settlement. */
 doe_dx_status doe_dx_context_status(const doe_dx_context *context);

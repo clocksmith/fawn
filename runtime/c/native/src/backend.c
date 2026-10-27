@@ -7,12 +7,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+static bool d3d12_surface_supported(uint32_t platforms)
+{
+    return !platforms || platforms == NATIVE_SURFACE_WINDOWS_HWND;
+}
+
+native_result native_backend_open_luid(uint32_t low, int32_t high,
+    uint32_t surface_platforms, native_backend *out)
+{
+    return d3d12_surface_supported(surface_platforms) ?
+        native_d3d12_open_luid(low, high, out) : NATIVE_UNSUPPORTED;
+}
+
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
     native_backend *out)
 {
     if (kind == WGPUBackendType_D3D12)
-        return surface_platforms && surface_platforms != NATIVE_SURFACE_WINDOWS_HWND ?
-            NATIVE_UNSUPPORTED : native_d3d12_open(fallback, out);
+        return d3d12_surface_supported(surface_platforms) ?
+            native_d3d12_open(fallback, out) : NATIVE_UNSUPPORTED;
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {

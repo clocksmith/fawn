@@ -72,6 +72,17 @@ doe_dx_caps mock_default_caps(void) {
     return caps;
 }
 
+doe_dx_status doe_dx_native_query_luid(uint32_t low, int32_t high,
+    doe_dx_adapter_identity *out, doe_dx_error *error) {
+    mock.luid_queries++;
+    mock.query_low = low;
+    mock.query_high = high;
+    if (mock.query_status != DOE_DX_OK) return doe_dx_fail(mock.query_status, 0, "mock.query_luid", error);
+    *out = mock.override_query_identity ? mock.query_identity :
+        (doe_dx_adapter_identity){low, high, mock.query_software};
+    return doe_dx_fail(DOE_DX_OK, 0, "mock.query_luid", error);
+}
+
 doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     doe_dx_native_context **out, doe_dx_caps *caps, doe_dx_error *error) {
     mock.opens++;

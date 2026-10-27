@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
 #include "d3d12_queries.h"
+#include "adapter_request.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,7 +83,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
         .callback = callback, .status = WGPURequestAdapterStatus_Unavailable,
         .message = "requested C backend unavailable"
     };
-    bool valid = !options || !options->nextInChain;
+    native_adapter_selection selection = {0};
     /* A compatibleSurface enables exactly its platform's WSI chain on this
      * adapter and its devices; absence of that chain is unavailable, not fallback. */
     WGPUSurface compatible = options ? options->compatibleSurface : NULL;
@@ -96,6 +97,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
         kind = WGPUBackendType_Vulkan;
 #endif
     }
+    const bool valid = native_adapter_request_decode(kind, options, &selection);
     if (valid) {
         native_backend backend = {0};
         const bool force_fallback = options && options->forceFallbackAdapter;
@@ -108,8 +110,10 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
          * the CPU fallback with it. */
         const uint32_t required = native_surface_platform(compatible);
         const bool discover = !compatible && kind == WGPUBackendType_Vulkan && native_surface_default_platforms();
-        native_result status = native_backend_open(kind, force_fallback,
-            discover ? native_surface_default_platforms() : required, &backend);
+        native_result status = selection.has_luid ?
+            native_backend_open_luid(selection.luid_low, selection.luid_high, required, &backend) :
+            native_backend_open(kind, force_fallback,
+                discover ? native_surface_default_platforms() : required, &backend);
         if (discover && status == NATIVE_UNSUPPORTED)
             status = native_backend_open(kind, force_fallback, 0, &backend);
         /* WebGPU may answer a default request with the fallback adapter; on

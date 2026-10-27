@@ -71,6 +71,22 @@ doe_dx_status doe_dx_context_create(const doe_dx_options *options,
     return doe_dx_fail(DOE_DX_OK, 0, "context.create", error);
 }
 
+doe_dx_status doe_dx_context_create_from_luid(uint32_t low, int32_t high,
+    doe_dx_context **out, doe_dx_error *error) {
+    if (!out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.luid_output", error);
+    doe_dx_adapter_identity identity = {0};
+    doe_dx_status status = doe_dx_native_query_luid(low, high, &identity, error);
+    if (status != DOE_DX_OK) return status;
+    if (identity.luid_low != low || identity.luid_high != high)
+        return doe_dx_fail(DOE_DX_DEVICE_MISMATCH, 0, "adapter.query_luid_identity", error);
+    const doe_dx_options options = {
+        .adapter_selection = DOE_DX_SELECT_LUID,
+        .allow_software_adapter = identity.software_adapter,
+        .adapter_identity = identity
+    };
+    return doe_dx_context_create(&options, out, error);
+}
+
 doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *out) {
     if (!context || !out) return DOE_DX_INVALID_ARGUMENT;
     *out = context->caps;
