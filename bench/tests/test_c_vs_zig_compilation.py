@@ -17,6 +17,22 @@ from bench.tools import compare_c_vs_zig_compilation as compiler
 
 
 class CompilerProcessTests(unittest.TestCase):
+    def test_callback_failure_reaps_its_owned_process(self) -> None:
+        children = []
+
+        def fail_after_start(child: subprocess.Popen) -> None:
+            children.append(child)
+            raise RuntimeError("caller cancellation control")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(RuntimeError, "caller cancellation control"):
+                compiler.process_sample([sys.executable, "-c", "import time; time.sleep(30)"],
+                                        Path(temporary) / "sample", 5,
+                                        child_started=fail_after_start)
+        self.assertEqual(len(children), 1)
+        self.assertIsNotNone(children[0].returncode)
+        self.assertIsNotNone(children[0].poll())
+
     def test_retains_exact_output_stderr_and_exit_code(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             sample = compiler.process_sample([

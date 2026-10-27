@@ -25,7 +25,7 @@ import sys
 import tempfile
 import threading
 import time
-from typing import Any
+from typing import Any, Callable
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -146,7 +146,8 @@ def check_entries(data: bytes, target: str, entries: list[dict[str, Any]]) -> No
                 raise ValueError(f"HLSL lacks declared entry {name}")
 
 
-def process_sample(command: list[str], folder: Path, timeout: float) -> dict[str, Any]:
+def process_sample(command: list[str], folder: Path, timeout: float, *,
+                   child_started: Callable[[subprocess.Popen], None] | None = None) -> dict[str, Any]:
     from bench.lib.child_usage import (
         child_cpu_snapshot, completed_child_cpu_ms, mac_resident_kib,
         windows_child_usage,
@@ -197,14 +198,24 @@ def process_sample(command: list[str], folder: Path, timeout: float) -> dict[str
 
         watchdog = threading.Timer(timeout, terminate)
         watcher = threading.Thread(target=sample_memory, daemon=True)
-        watchdog.start()
-        watcher.start()
-        code = child.wait()
-        end = time.perf_counter_ns()
-        stop.set()
-        watchdog.cancel()
-        watcher.join()
-        watchdog.join()
+        try:
+            watchdog.start()
+            watcher.start()
+            if child_started:
+                child_started(child)
+            code = child.wait()
+            end = time.perf_counter_ns()
+        finally:
+            # A caller exception or cancellation cannot orphan this session.
+            if child.poll() is None:
+                terminate()
+                child.wait()
+            stop.set()
+            watchdog.cancel()
+            if watcher.ident is not None:
+                watcher.join()
+            if watchdog.ident is not None:
+                watchdog.join()
         cpu = completed_child_cpu_ms(child, before)
         peak = windows_child_usage(child)[1] if os.name == "nt" else None
     return {"command": command, "exitCode": code, "timedOut": timed_out.is_set(),

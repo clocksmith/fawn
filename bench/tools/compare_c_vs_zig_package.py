@@ -18,6 +18,7 @@ from pathlib import Path
 import platform
 import re
 import shutil
+import signal
 import statistics
 import struct
 import subprocess
@@ -112,6 +113,46 @@ def pair_failures(left: dict[str, Any], right: dict[str, Any]) -> list[str]:
     return failures
 
 
+class OwnedWorkers:
+    """Stop only this driver's current session and restore signal ownership."""
+
+    def __init__(self, report: dict[str, Any]) -> None:
+        self.child: subprocess.Popen | None = None
+        self.signals: list[int] = []
+        self.previous: dict[int, Any] = {}
+        self.report = report
+
+    def cancel(self, signum: int, _frame: Any) -> None:
+        if not self.signals:
+            self.signals.append(signum)
+        if self.child is not None and self.child.poll() is None:
+            self.report["cancelledGpuCompletionUnknown"] = True
+            if os.name == "nt":
+                self.child.kill()
+            else:
+                try:
+                    os.killpg(self.child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+
+    def started(self, child: subprocess.Popen) -> None:
+        self.child = child
+        if self.signals:
+            self.cancel(self.signals[0], None)
+
+    def __enter__(self) -> OwnedWorkers:
+        for signum in (signal.SIGTERM, signal.SIGINT):
+            self.previous[signum] = signal.signal(signum, self.cancel)
+        return self
+
+    def __exit__(self, *_exception: Any) -> None:
+        if self.child is not None and self.child.poll() is None:
+            self.cancel(signal.SIGTERM, None)
+            self.child.wait()
+        for signum, handler in self.previous.items():
+            signal.signal(signum, handler)
+
+
 def cases(oracle_plans: Path, profiles: list[str]) -> list[dict[str, Any]]:
     manifest = json.loads((oracle_plans / "oracle-manifest.json").read_text())
     prospective = {row["workloadId"]: row for row in manifest["plans"]}
@@ -204,84 +245,97 @@ def run(args: argparse.Namespace) -> int:
                                  "DOE_NODE_WEBGPU_CHILD": "1", "DOE_BUN_WEBGPU_CHILD": "1"},
               "rows": [], "status": "running"}
     write_json(args.out / "report.json", report)
+    workers = OwnedWorkers(report)
+    cancellation = workers.signals
     stopped = False
-    for index, case in enumerate(selected):
-        print(f"[{index+1}/{len(selected)}] {case['profile']} {case['id']}", flush=True)
-        row = {**case, "providers": {arm: {"samples": [], "warmup": []} for arm in libraries}, "failures": []}
-        for sample_index in range(args.warmup + args.iterations):
-            paired = {}
-            order = ("c", "zig") if (index + sample_index) % 2 == 0 else ("zig", "c")
-            for arm in order:
-                folder = args.out / "samples" / f"{index:03d}" / f"{sample_index:03d}-{arm}"
-                command = [str(hosts[case["host"]]),
-                           str(ROOT / f"bench/executors/run-{case['host']}-webgpu-plan.js"),
-                           "--provider", case["provider"], "--plan", case["plan"], "--workload", case["id"],
-                           "--trace-meta", str(folder / "meta.json"), "--trace-jsonl", str(folder / "trace.jsonl")]
-                if case["prepared"]:
-                    command.append("--prepared-session")
-                with environment({"DOE_WEBGPU_LIB": str(libraries[arm]), "DOE_BUN_WEBGPU_BACKEND": "full",
-                                  "DOE_NODE_WEBGPU_CHILD": "1", "DOE_BUN_WEBGPU_CHILD": "1",
-                                  "DOE_MTL_ALLOW_HARDWARE": "1"}):
-                    try:
-                        sample = process_sample(command, folder, args.timeout)
-                    except OSError as error:
-                        sample = {"command": command, "exitCode": None, "timedOut": False,
-                                  "error": str(error), "wallNs": 0}
-                meta_path = folder / "meta.json"
-                try:
-                    meta = json.loads(meta_path.read_text())
-                except (OSError, ValueError):
-                    meta = {}
-                sample["traceMeta"] = str(meta_path)
-                sample["traceMetaSha256"] = digest(meta_path) if meta_path.is_file() else None
-                trace_path = folder / "trace.jsonl"
-                sample["traceJsonlSha256"] = digest(trace_path) if trace_path.is_file() else None
-                sample["providerOrder"] = list(order)
-                sample["sampleIndex"] = sample_index
-                sample["operationMs"] = meta.get("timingMs")
-                failures = sample_failures(meta, libraries[arm], arm, case["prepared"], case["fullOutputBytes"], case["expectedSha256"])
-                if sample["exitCode"] != 0 or sample["timedOut"]:
-                    failures.append("failed or timed-out process")
-                sample["failures"] = failures
-                row["failures"].extend(arm + ": " + failure for failure in failures)
-                row["providers"][arm]["warmup" if sample_index < args.warmup else "samples"].append(sample)
-                paired[arm] = meta
-                if sample["timedOut"]:
-                    stopped = True
-                    row["failures"].append("GPU completion unknown after owned process timeout; later work stopped")
-                    break
-            if len(paired) == 2:
-                row["failures"].extend(pair_failures(paired["c"], paired["zig"]))
-            if stopped:
+    with workers:
+        for index, case in enumerate(selected):
+            if cancellation:
                 break
-        for group in row["providers"].values():
-            group["processStatistics"] = stats(group["samples"])
-            values = [s["operationMs"] for s in group["samples"] if not s["failures"]]
-            group["operationStatistics"] = stats([
-                {"wallNs": round(value * 1000000), "exitCode": 0, "timedOut": False} for value in values])
-            for field in ("cpuMs", "sampledResidentLowerBoundKiB"):
-                observed = [sample[field] for sample in group["samples"] if sample.get(field) is not None]
-                group[field + "Median"] = statistics.median(observed) if observed else None
-        row["failures"] = sorted(set(row["failures"]))
-        row["status"] = "incomparable" if row["failures"] else "comparable_public_api_work"
-        if not row["failures"]:
-            row["zigOverCOperationMedianRatio"] = (
-                row["providers"]["zig"]["operationStatistics"]["p50Ns"] /
-                row["providers"]["c"]["operationStatistics"]["p50Ns"])
-        report["rows"].append(row)
-        report["status"] = "stopped_gpu_completion_unknown" if stopped else "running"
-        report["drift"] = [path for path, sha in inputs.items()
-                           if not Path(path).is_file() or digest(Path(path)) != sha]
-        write_json(args.out / "report.json", report)
-        if stopped or report["drift"]:
-            break
+            print(f"[{index+1}/{len(selected)}] {case['profile']} {case['id']}", flush=True)
+            row = {**case, "providers": {arm: {"samples": [], "warmup": []} for arm in libraries}, "failures": []}
+            for sample_index in range(args.warmup + args.iterations):
+                paired = {}
+                order = ("c", "zig") if (index + sample_index) % 2 == 0 else ("zig", "c")
+                for arm in order:
+                    folder = args.out / "samples" / f"{index:03d}" / f"{sample_index:03d}-{arm}"
+                    command = [str(hosts[case["host"]]),
+                               str(ROOT / f"bench/executors/run-{case['host']}-webgpu-plan.js"),
+                               "--provider", case["provider"], "--plan", case["plan"], "--workload", case["id"],
+                               "--trace-meta", str(folder / "meta.json"), "--trace-jsonl", str(folder / "trace.jsonl")]
+                    if case["prepared"]:
+                        command.append("--prepared-session")
+                    with environment({"DOE_WEBGPU_LIB": str(libraries[arm]), "DOE_BUN_WEBGPU_BACKEND": "full",
+                                      "DOE_NODE_WEBGPU_CHILD": "1", "DOE_BUN_WEBGPU_CHILD": "1",
+                                      "DOE_MTL_ALLOW_HARDWARE": "1"}):
+                        try:
+                            sample = process_sample(command, folder, args.timeout, child_started=workers.started)
+                        except OSError as error:
+                            sample = {"command": command, "exitCode": None, "timedOut": False,
+                                      "error": str(error), "wallNs": 0}
+                        finally:
+                            workers.child = None
+                    meta_path = folder / "meta.json"
+                    try:
+                        meta = json.loads(meta_path.read_text())
+                    except (OSError, ValueError):
+                        meta = {}
+                    sample["traceMeta"] = str(meta_path)
+                    sample["traceMetaSha256"] = digest(meta_path) if meta_path.is_file() else None
+                    trace_path = folder / "trace.jsonl"
+                    sample["traceJsonlSha256"] = digest(trace_path) if trace_path.is_file() else None
+                    sample["providerOrder"] = list(order)
+                    sample["sampleIndex"] = sample_index
+                    sample["operationMs"] = meta.get("timingMs")
+                    failures = sample_failures(meta, libraries[arm], arm, case["prepared"], case["fullOutputBytes"], case["expectedSha256"])
+                    if sample["exitCode"] != 0 or sample["timedOut"]:
+                        failures.append("failed or timed-out process")
+                    sample["failures"] = failures
+                    row["failures"].extend(arm + ": " + failure for failure in failures)
+                    row["providers"][arm]["warmup" if sample_index < args.warmup else "samples"].append(sample)
+                    paired[arm] = meta
+                    if sample["timedOut"]:
+                        stopped = True
+                        row["failures"].append("GPU completion unknown after owned process timeout; later work stopped")
+                        break
+                    if cancellation:
+                        row["failures"].append("owned worker cancelled; no later GPU work")
+                        break
+                if len(paired) == 2:
+                    row["failures"].extend(pair_failures(paired["c"], paired["zig"]))
+                if stopped or cancellation:
+                    break
+            for group in row["providers"].values():
+                group["processStatistics"] = stats(group["samples"])
+                values = [s["operationMs"] for s in group["samples"] if not s["failures"]]
+                group["operationStatistics"] = stats([
+                    {"wallNs": round(value * 1000000), "exitCode": 0, "timedOut": False} for value in values])
+                for field in ("cpuMs", "sampledResidentLowerBoundKiB"):
+                    observed = [sample[field] for sample in group["samples"] if sample.get(field) is not None]
+                    group[field + "Median"] = statistics.median(observed) if observed else None
+            row["failures"] = sorted(set(row["failures"]))
+            row["status"] = "incomparable" if row["failures"] else "comparable_public_api_work"
+            if not row["failures"]:
+                row["zigOverCOperationMedianRatio"] = (
+                    row["providers"]["zig"]["operationStatistics"]["p50Ns"] /
+                    row["providers"]["c"]["operationStatistics"]["p50Ns"])
+            report["rows"].append(row)
+            report["status"] = "stopped_gpu_completion_unknown" if stopped else "running"
+            report["drift"] = [path for path, sha in inputs.items()
+                               if not Path(path).is_file() or digest(Path(path)) != sha]
+            write_json(args.out / "report.json", report)
+            if stopped or cancellation or report["drift"]:
+                break
     report["drift"] = [path for path, sha in inputs.items() if not Path(path).is_file() or digest(Path(path)) != sha]
     if report["drift"]:
         for row in report["rows"]:
             row["status"] = "incomparable"
             row["failures"].append("input drift invalidates this campaign")
             row.pop("zigOverCOperationMedianRatio", None)
-    if not stopped:
+    if cancellation:
+        report["status"] = ("cancelled_gpu_completion_unknown" if report.get("cancelledGpuCompletionUnknown") else "cancelled")
+        report["cancellationSignals"] = cancellation
+    elif not stopped:
         report["status"] = "compared_with_gaps" if report["drift"] or any(r["failures"] for r in report["rows"]) else "compared"
     report["endedAt"] = datetime.now(timezone.utc).isoformat()
     write_json(args.out / "report.json", report)

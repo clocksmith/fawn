@@ -6,6 +6,10 @@ import copy
 import json
 import os
 from pathlib import Path
+import select
+import signal
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -33,6 +37,51 @@ def valid_meta() -> dict:
 
 
 class PackageComparisonTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "POSIX signal/session control")
+    def test_parent_sigterm_reaps_current_worker_and_restores_handlers(self) -> None:
+        script = """
+import json,signal,sys,tempfile
+from pathlib import Path
+from bench.tools.compare_c_vs_zig_compilation import process_sample
+from bench.tools.compare_c_vs_zig_package import OwnedWorkers
+report={};old=signal.getsignal(signal.SIGTERM)
+with tempfile.TemporaryDirectory() as out:
+ with OwnedWorkers(report) as workers:
+  def started(child):
+   workers.started(child)
+   print(child.pid,flush=True)
+  sample=process_sample([sys.executable,'-c','import time;time.sleep(60)','doe-owned-cancel-fixture'],Path(out)/'sample',10,child_started=started)
+  workers.child=None
+  signals=list(workers.signals)
+print(json.dumps({'signals':signals,'exitCode':sample['exitCode'],'unknown':report.get('cancelledGpuCompletionUnknown'),'restored':signal.getsignal(signal.SIGTERM)==old}),flush=True)
+"""
+        worker_pid = None
+        child = subprocess.Popen([sys.executable, "-c", script], cwd=Path(__file__).resolve().parents[2],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+        try:
+            ready, _, _ = select.select([child.stdout], [], [], 5)
+            self.assertTrue(ready, "fixture did not publish its owned worker")
+            worker_pid = int(child.stdout.readline())
+            os.kill(child.pid, signal.SIGTERM)
+            stdout, stderr = child.communicate(timeout=5)
+            self.assertEqual(child.returncode, 0, stderr)
+            result = json.loads(stdout)
+            self.assertEqual(result["signals"], [signal.SIGTERM])
+            self.assertLess(result["exitCode"], 0)
+            self.assertTrue(result["unknown"])
+            self.assertTrue(result["restored"])
+            with self.assertRaises(ProcessLookupError):
+                os.kill(worker_pid, 0)
+        finally:
+            if child.poll() is None:
+                os.killpg(child.pid, signal.SIGKILL)
+                child.communicate(timeout=5)
+            if worker_pid is not None:
+                observed = subprocess.run(["ps", "-p", str(worker_pid), "-o", "args="],
+                                          capture_output=True, text=True, timeout=5)
+                if "doe-owned-cancel-fixture" in observed.stdout:
+                    os.killpg(worker_pid, signal.SIGKILL)
+
     def test_missing_work_or_provider_evidence_cannot_pass(self) -> None:
         good = valid_meta()
         self.assertEqual(sample_failures(good, LIBRARY, "c", False, 4, "1" * 64), [])
