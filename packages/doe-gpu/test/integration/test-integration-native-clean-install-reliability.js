@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
+import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -217,7 +218,6 @@ function runTrial(runtime, examplePath, id, mode) {
           || (runtimeHost === 'electron' && receipt.runtimeVersion !== runtime.version)
           || receipt.provider?.loaded !== true
           || receipt.provider?.doeNative !== true
-          || receipt.provider?.buildMetadataSource !== 'prebuild'
           || !providerPath.includes(`/node_modules/${platformPackageName}/`)
           || JSON.stringify(receipt.result?.output) !== JSON.stringify(expectedOutput)
           || receipt.result?.outputSha256 !== expectedOutputSha256
@@ -228,6 +228,7 @@ function runTrial(runtime, examplePath, id, mode) {
           ))) {
           throw new Error(`receipt failed the frozen runtime/output contract: ${stdoutText}`);
         }
+        assertInstalledNativeProvider(receipt.provider, resolve(scratch, `node_modules/${platformPackageName}`));
         resolveTrial({
           id,
           mode,
@@ -315,7 +316,6 @@ function runLifecycleTrial(runtime, fixturePath) {
           || sample.contract?.expectedOutputSha256 !== expectedOutputSha256
           || sample.provider?.loaded !== true
           || sample.provider?.doeNative !== true
-          || sample.provider?.buildMetadataSource !== 'prebuild'
           || sample.samples?.length !== lifecycleCycles
           || sample.samples.some((entry) => entry.deviceDestroyed !== true
             || entry.lostReason !== 'destroyed'
@@ -324,6 +324,7 @@ function runLifecycleTrial(runtime, fixturePath) {
             || entry.outputSha256 !== expectedOutputSha256)) {
           throw new Error(`same-process lifecycle failed the frozen contract: ${stdoutText}`);
         }
+        assertInstalledNativeProvider(sample.provider, resolve(scratch, `node_modules/${platformPackageName}`));
         const measuredSamples = sample.samples.slice(lifecycleWarmupCycles);
         const measuredRss = measuredSamples.map((entry) => entry.rssAfterDestroyBytes);
         const minRssBytes = Math.min(...measuredRss);
