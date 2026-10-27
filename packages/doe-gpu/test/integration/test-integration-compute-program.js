@@ -1,4 +1,5 @@
 // Physical-device regressions for command ordering, reset, and program lifetime.
+import { nativeTestBackend } from './native-device-test-helper.js';
 import assert from 'node:assert/strict';
 import { requestAdapter } from '../../src/native.js';
 import { prepareComputeProgram } from '../../src/compute-program.js';
@@ -24,7 +25,7 @@ const descriptor = {
 };
 
 const timed = process.argv.includes('--timestamps');
-const adapter = await requestAdapter({ backend: process.platform === 'darwin' ? 'metal' : 'vulkan' });
+const adapter = await requestAdapter({ backend: nativeTestBackend() });
 const device = await adapter.requestDevice({ requiredFeatures: timed ? ['timestamp-query'] : [] });
 const timingOptions = { gpuTiming: timed ? 'timestamp-query' : 'off' };
 const createBuffer = device.createBuffer.bind(device);
@@ -42,7 +43,7 @@ device.createBuffer = (declaration) => {
   return buffer;
 };
 try {
-  const backend = process.platform === 'darwin' ? 'metal' : 'vulkan';
+  const backend = nativeTestBackend();
   const firstDevice = await (await requestAdapter({ backend })).requestDevice();
   const secondDevice = await (await requestAdapter({ backend })).requestDevice();
   const code = descriptor.shaders[0].code;
@@ -544,7 +545,7 @@ try {
   }
   console.log('ok: destroyed device invalidates prepared program');
   for (const execution of modes) {
-    const ownedAdapter = await requestAdapter({ backend: process.platform === 'darwin' ? 'metal' : 'vulkan' });
+    const ownedAdapter = await requestAdapter({ backend: nativeTestBackend() });
     const ownedDevice = await ownedAdapter.requestDevice({ requiredFeatures: timed ? ['timestamp-query'] : [] });
     const program = await prepareComputeProgram(ownedDevice, descriptor, { execution, ...timingOptions });
     await program.run({ input: new Uint32Array([1, 2, 3, 4]) });

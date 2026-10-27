@@ -6,12 +6,12 @@
 
 import assert from 'node:assert/strict';
 import { setupGlobals } from '../../src/index.js';
-import { isSkippableNativeAvailabilityError } from './native-device-test-helper.js';
+import { isSkippableNativeAvailabilityError, nativeTestBackend } from './native-device-test-helper.js';
 
 let adapter;
 try {
   setupGlobals();
-  adapter = await navigator.gpu.requestAdapter();
+  adapter = await navigator.gpu.requestAdapter({ backend: nativeTestBackend() });
 } catch (error) {
   if (isSkippableNativeAvailabilityError(error)) {
     console.log('render bind groups: skipped (native add-on unavailable)');
