@@ -17,10 +17,10 @@ const BREAKDOWN_MAP_INDEX: usize = 3;
 const BREAKDOWN_COPY_INDEX: usize = 4;
 const BREAKDOWN_UNMAP_INDEX: usize = 5;
 
-extern fn wgpuGetProcAddress(name: abi_base.WGPUStringView) callconv(.c) ?*const fn () callconv(.c) void;
+extern fn doeWgpuDropinGetNativeProc(name: abi_base.WGPUStringView) callconv(.c) ?*const fn () callconv(.c) void;
 
 fn loadRequiredProc(comptime FnType: type, comptime symbol_name: [:0]const u8) FnType {
-    const proc = wgpuGetProcAddress(.{
+    const proc = doeWgpuDropinGetNativeProc(.{
         .data = symbol_name.ptr,
         .length = abi_base.WGPU_STRLEN,
     }) orelse std.debug.panic("missing required WebGPU symbol: {s}", .{symbol_name});
