@@ -98,6 +98,27 @@ def oracle_failures(receipt: dict[str, Any]) -> list[str]:
             failures.append("positive successful output oracle missing")
         if meta.get("outputOracleReferenceClass") != "independent_v1":
             failures.append("independent output reference missing")
+        actual = meta.get("outputOracleActualSha256", "")
+        expected = meta.get("outputOracleExpectedSha256", "")
+        has_actual = isinstance(actual, str) and bool(
+            re.fullmatch(r"[0-9a-f]{64}", actual)
+        )
+        has_exact = has_actual and actual == expected
+        has_tolerance = False
+        if meta.get("outputOracleKind") == "float32_reference_tolerance_v1":
+            reference = meta.get("outputOracleReferencePath")
+            reference_sha = meta.get("outputOracleReferenceSha256")
+            values = meta.get("outputOracleComparedValueCount", 0)
+            if isinstance(reference, str) and reference:
+                path = (ROOT / reference).resolve()
+                has_tolerance = (
+                    has_actual and path.is_relative_to(ROOT.resolve())
+                    and path.is_file() and digest(path) == reference_sha
+                    and type(values) is int and values > 0
+                    and meta.get("outputOracleMismatchCount") == 0
+                )
+        if not (has_exact or has_tolerance):
+            failures.append("verified output digest or tolerance reference missing")
     if not receipt.get("samples"):
         failures.append("output oracle samples missing")
     return sorted(set(failures))

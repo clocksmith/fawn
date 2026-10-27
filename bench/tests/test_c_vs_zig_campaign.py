@@ -66,6 +66,19 @@ class CampaignTests(unittest.TestCase):
             with self.subTest(count=count, matched=matched):
                 self.assertTrue(campaign.oracle_failures(receipt))
 
+    def test_oracle_counters_without_actual_output_are_rejected(self) -> None:
+        meta = {
+            "outputOracleCount": 1, "outputOracleMatchedCount": 1,
+            "outputOracleFailedCount": 0,
+            "outputOracleReferenceClass": "independent_v1",
+        }
+        receipt = {"samples": [{"traceMeta": meta}]}
+        self.assertIn("verified output digest or tolerance reference missing",
+                      campaign.oracle_failures(receipt))
+        meta.update(outputOracleActualSha256="a" * 64,
+                    outputOracleExpectedSha256="a" * 64)
+        self.assertEqual(campaign.oracle_failures(receipt), [])
+
     def test_gpu_timeout_does_not_start_the_other_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             args = argparse.Namespace(backend="metal", catalog="unused", iterations=16, warmup=1, timeout=1)
