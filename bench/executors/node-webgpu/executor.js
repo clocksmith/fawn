@@ -3454,6 +3454,9 @@ async function executeSample(
     snapshotPackageFastPathStats(runtime.providerModule),
   );
   const packageNativeFastPaths = snapshotPackageNativeFastPaths(runtime.providerModule);
+  const packageProviderIdentity = typeof runtime.providerModule?.providerInfo === 'function'
+    ? runtime.providerModule.providerInfo()
+    : null;
   const packageNativeQueueSyncInfo = snapshotPackageNativeQueueSyncInfo(
     runtime.providerModule,
     runtime.queue,
@@ -3541,6 +3544,7 @@ async function executeSample(
     packageEffectiveReadbackPaths: Array.from(packageEffectiveReadbackPaths).sort(),
     packageReadbackActualPaths,
     packageReadbackPathCounts,
+    packageProviderIdentity,
     ...(packageNativeFastPaths ? { packageNativeFastPaths } : {}),
     ...(packageNativeQueueSyncInfo ? { packageNativeQueueSyncInfo } : {}),
     ...(pipelineCache ? { pipelineCache } : {}),
