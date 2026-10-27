@@ -134,9 +134,11 @@ def copy_runtime(native: Path, out: Path) -> list[dict[str, str]]:
     for file in files:
         if not file.is_file():
             raise ValueError(f'missing built provider dependency: {file}')
+    destination = out / "lib" / "doe"
+    destination.mkdir(parents=True, exist_ok=True)
     records = []
     for file in files:
-        target = out / file.name
+        target = destination / file.name
         shutil.copy2(file, target)
         records.append({'path': str(target), 'sha256': digest(target)})
     return records

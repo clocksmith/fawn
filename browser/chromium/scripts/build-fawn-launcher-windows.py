@@ -43,6 +43,8 @@ def build(clang: Path, vs: Path, output: Path) -> dict:
         (snapshots / file.name).write_bytes(file.read_bytes())
     receipt = {'kind': 'windows-fawn-launcher-build', 'schemaVersion': 1,
                'scope': 'launcher binary only; no Chromium/provider/browser qualification',
+               'privateRuntimeRelativeDirectory': 'lib/doe',
+               'childWorkingDirectory': 'inherited from caller',
                'inputs': {str(file): digest(file) for file in inputs},
                'compilerVersion': subprocess.check_output([str(clang), '--version'], text=True),
                'windowsSdkVersion': version, 'vcToolsVersion': env['VCToolsVersion'],
