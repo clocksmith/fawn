@@ -59,13 +59,56 @@ int main(void)
     assert(doe_mtl_commands_create(context,&commands,NULL)==DOE_MTL_OK);
     assert(doe_mtl_commands_fill(commands,indices,0,indices->size,0,NULL)==DOE_MTL_OK);
     unsigned dispatches=mock.dispatches,queries=mock.content_queries;
-    assert(doe_mtl_commands_render(commands,&pass,&draw,1,NULL)==DOE_MTL_OK);
-    assert(mock.dispatches==dispatches+3 && mock.renders==1);
+    doe_mtl_render_draw repeated[2]={draw,draw};
+    assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
+    if (mock.dispatches!=dispatches+3) {
+        fprintf(stderr,"identical draw guards: expected3 dispatches, observed%u for2 native draws\n",
+            mock.dispatches-dispatches);
+        return 1;
+    }
+    assert(mock.renders==1 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments);
     assert(mock.copy_sequence<mock.dispatch_sequence && mock.dispatch_sequence<mock.render_sequence);
     assert(mock.last_length==20 && mock.last_source_offset==4);
     assert(mock.bindings[4].offset==UINT64_C(0xfffffffc) && mock.bindings[4].size==12);
     assert(mock.content_queries==queries+6); /* Scratch/2params only, never PRIVATE indices. */
     assert(mock.render_draws[0].indirect_arguments && mock.render_draws[0].index_buffer==doe_mtl_buffer_native(indices));
+    void *first_scratch=mock.render_draws[0].indirect_arguments;
+    dispatches=mock.dispatches;
+    assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
+    assert(mock.dispatches==dispatches+3 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments!=first_scratch); /* Never reuse across passes. */
+    doe_mtl_guarded_draw other=proof;
+    other.argument_offset=0;
+    repeated[1].guarded=&other;
+    dispatches=mock.dispatches;
+    assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
+    assert(mock.dispatches==dispatches+6 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments!=mock.render_draws[1].indirect_arguments);
+    repeated[1]=draw;
+    doe_mtl_buffer_binding shorter=vertex;
+    shorter.size=8; /* The same PSO now has a smaller safe vertex-fetch capacity. */
+    repeated[1].vertex.buffers=&shorter;
+    dispatches=mock.dispatches;
+    assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
+    assert(mock.dispatches==dispatches+6 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments!=mock.render_draws[1].indirect_arguments);
+    other=proof;
+    other.index_size=16; /* One scan window rather than the original two. */
+    repeated[1]=draw;
+    repeated[1].guarded=&other;
+    dispatches=mock.dispatches;
+    assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
+    assert(mock.dispatches==dispatches+5 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments!=mock.render_draws[1].indirect_arguments);
+    doe_mtl_guarded_draw direct=proof;
+    direct.arguments=NULL; direct.argument_offset=0; direct.index_size=16;
+    repeated[0]=draw; repeated[0].guarded=&direct;
+    repeated[1]=repeated[0];
+    dispatches=mock.dispatches;
+    assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
+    assert(mock.dispatches==dispatches+2 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments);
     assert(doe_mtl_commands_submit(commands,NULL)==DOE_MTL_OK);
     mock_result(&mock,0,0);
     assert(doe_mtl_commands_poll(commands,NULL)==DOE_MTL_COMPLETION_UNKNOWN);
@@ -77,5 +120,5 @@ int main(void)
     assert(doe_mtl_commands_poll(commands,NULL)==DOE_MTL_OK);
     assert(doe_mtl_commands_release(commands)==DOE_MTL_OK);
     mock_assert_closed(&mock);
-    puts("PASS Metal draw guard host:64-bit index windows, no index mapping, GPU copy/normalize/scan/pass order, rollback and unknown leases; no GPU/large allocation claim");
+    puts("PASS Metal draw guard host:64-bit windows, exact pass-local guard reuse with original draws, changed argument/vertex/index spans, no index mapping, rollback and unknown leases; no GPU/large allocation claim");
 }

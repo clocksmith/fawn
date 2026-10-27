@@ -75,8 +75,14 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
         free(native_draws);
         return doe_mtl_poison(commands, status, "render validation/lease", error);
     }
-    for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
-        status = doe_mtl_draw_guard_prepare(commands, &draws[i], &native_draws[i], &detail);
+    for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i) {
+        if (i && native_draws[i-1].indirect_arguments &&
+            doe_mtl_draw_guard_same_inputs(&draws[i-1], &draws[i])) {
+            /* The existing command lease owns this immutable scratch. Reuse
+             * only here; every original draw still reaches the native pass. */
+            native_draws[i].indirect_arguments = native_draws[i-1].indirect_arguments;
+        } else status = doe_mtl_draw_guard_prepare(commands, &draws[i], &native_draws[i], &detail);
+    }
     if (status != DOE_MTL_OK) {
         free(native_draws);
         return doe_mtl_native_record_result(commands, status, &detail, error);

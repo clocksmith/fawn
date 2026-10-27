@@ -614,6 +614,14 @@ check-browser-procedures: $(NATIVE_LIBRARY)
 check: check-legacy-api check-browser-procedures
 PHYSICAL_CLIENTS += legacy-api
 
+$(BUILD)/indexed-guard-reuse: tests/indexed_guard_reuse.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-indexed-guard-reuse
+check-indexed-guard-reuse: $(BUILD)/indexed-guard-reuse
+	$(BUILD)/indexed-guard-reuse
+check: check-indexed-guard-reuse
+PHYSICAL_CLIENTS += indexed-guard-reuse
+
 $(BUILD)/shared-memory: tests/shared_memory.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shared_memory.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -o $@
