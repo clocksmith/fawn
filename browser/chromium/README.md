@@ -150,6 +150,13 @@ files/devices remain denied. GLX capabilities and driver helper threads start
 after the sandbox seals. Native Dawn, Wayland, explicit ANGLE Vulkan/software
 and late-sandbox policies keep their existing behavior.
 
+That same route queries Vulkan's instance-extension metadata before sealing,
+while the existing SONAME preloads keep ICDs resident. This lets the loader
+register its own manifest paths on hosts where `/usr/lib` and `/lib` name the
+same library. It adds no file permissions or manifest parser and creates no
+Vulkan instance, device or queue. Query failure preserves the actual result and
+count; successful discovery does not establish adapter admission.
+
 For a Mesa host with a real X11 session and an already-built patched Chromium
 checkout, the focused resource check compiles the actual owning translation
 units and uses the real broker and GPU sandbox:
@@ -165,7 +172,9 @@ python3 browser/chromium/tests/test_linux_glx_resources.py run \
 ```
 
 The check binds the actual DRM sysfs identity and compares unrestricted and
-sandboxed accelerated GLX metadata. It creates no GL context or GPU work;
+sandboxed accelerated GLX and Vulkan instance-extension metadata, including
+failed-query transport and unchanged launch-route controls. It creates no GL
+context, Vulkan instance, device or queue;
 page WebGPU, native pixels, compositor output and browser acceptance require
 their separate physical controls.
 

@@ -13,13 +13,13 @@ index 1b29f20028..431f92682f 100644
      switches::kSkiaGraphiteDawnBackend,
  #if BUILDFLAG(IS_ANDROID)
 diff --git a/content/common/BUILD.gn b/content/common/BUILD.gn
-index e41489d4c9..5b1578e860 100644
+index e41489d4c9..ebce50ab41 100644
 --- a/content/common/BUILD.gn
 +++ b/content/common/BUILD.gn
 @@ -369,6 +369,10 @@ source_set("common") {
      sources -= [ "cursors/webcursor_aura.cc" ]
    }
- 
+
 +  if (use_ozone) {
 +    deps += [ "//ui/ozone" ]
 +  }
@@ -27,8 +27,16 @@ index e41489d4c9..5b1578e860 100644
    if (is_linux || is_chromeos) {
      sources += [
        "gpu_pre_sandbox_hook_linux.cc",
+@@ -382,6 +386,7 @@ source_set("common") {
+       "//sandbox/linux:seccomp_bpf",
+       "//sandbox/policy:chromecast_sandbox_allowlist_buildflags",
+       "//third_party/fontconfig",
++      "//third_party/vulkan-headers/src:vulkan_headers",
+     ]
+     if (use_v4l2_codec) {
+       deps += [ "//media/gpu/v4l2" ]
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
-index 2e53794fa3..365d63a014 100644
+index 2e53794fa3..0be0a6cb7d 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
 @@ -8,6 +8,7 @@
@@ -61,10 +69,11 @@ index 2e53794fa3..365d63a014 100644
  #include "media/gpu/buildflags.h"
  #include "sandbox/linux/bpf_dsl/policy.h"
  #include "sandbox/linux/syscall_broker/broker_command.h"
-@@ -36,6 +42,10 @@
+@@ -36,6 +42,11 @@
  #include "sandbox/policy/linux/bpf_cros_arm_gpu_policy_linux.h"
  #include "sandbox/policy/linux/bpf_gpu_policy_linux.h"
  #include "sandbox/policy/linux/sandbox_linux.h"
++#include "third_party/vulkan-headers/src/include/vulkan/vulkan_core.h"
 +#include "ui/gl/gl_implementation.h"
 +#if BUILDFLAG(IS_OZONE)
 +#include "ui/ozone/public/ozone_platform.h"
@@ -72,7 +81,7 @@ index 2e53794fa3..365d63a014 100644
 
  #if BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
-@@ -46,6 +56,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
+@@ -46,6 +57,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
  using sandbox::syscall_broker::BrokerProcess;
 
  namespace content {
@@ -108,7 +117,7 @@ index 2e53794fa3..365d63a014 100644
  namespace {
 
  inline bool IsChromeOS() {
-@@ -224,11 +263,109 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+@@ -224,11 +264,109 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
    permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
  }
 
@@ -221,7 +230,7 @@ index 2e53794fa3..365d63a014 100644
      permissions->push_back(BrokerFilePermission::ReadWrite(path));
 
      uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
-@@ -240,13 +377,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+@@ -240,13 +378,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
    }
  }
 
@@ -242,7 +251,45 @@ index 2e53794fa3..365d63a014 100644
    }
  }
 
-@@ -604,23 +744,26 @@ void LoadChromecastV4L2Libraries() {
+@@ -592,6 +733,37 @@ void LoadVulkanLibraries() {
+   dlopen("libvulkan_freedreno.so", dlopen_flag);
+ }
+
++// Register the loader's own ICD manifest spellings while its existing retained
++// SONAME handles keep drivers resident. On usr-merged hosts the JSON may name
++// /usr/lib while dlopen(SONAME) mapped /lib; a post-seal lookup cannot reopen
++// that alias. This metadata query creates no instance, device or queue.
++bool PreloadVulkanICDMetadata() {
++  void* library = dlopen("libvulkan.so.1", dlopen_flag);
++  if (!library) {
++    LOG(ERROR) << "runtime_vulkan_metadata_failed: operation=dlopen error="
++               << dlerror();
++    return false;
++  }
++  auto enumerate = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
++      dlsym(library, "vkEnumerateInstanceExtensionProperties"));
++  if (!enumerate) {
++    LOG(ERROR) << "runtime_vulkan_metadata_failed: operation=dlsym error="
++               << dlerror();
++    dlclose(library);
++    return false;
++  }
++  uint32_t count = 0;
++  const VkResult result = enumerate(nullptr, &count, nullptr);
++  dlclose(library);
++  if (result != VK_SUCCESS) {
++    LOG(ERROR) << "runtime_vulkan_metadata_failed: result=" << result
++               << " count=" << count;
++    return false;
++  }
++  // Query success is not evidence that a compatible adapter is available.
++  return true;
++}
++
+ void LoadChromecastV4L2Libraries() {
+   for (const char* path : kAllowedChromecastPaths) {
+     const std::string library_path(std::string(path) +
+@@ -604,23 +776,26 @@ void LoadChromecastV4L2Libraries() {
  }  // namespace
 
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
@@ -276,7 +323,7 @@ index 2e53794fa3..365d63a014 100644
    // All GPU process policies need this file brokered out.
    static const char kDriRcPath[] = "/etc/drirc";
    std::vector<BrokerFilePermission> permissions = {
-@@ -669,11 +812,31 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+@@ -669,12 +844,36 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
    }
 
    AddStandardGpuPermissions(&permissions);
@@ -307,9 +354,14 @@ index 2e53794fa3..365d63a014 100644
 +    }
 +  }
    LoadVulkanLibraries();
++  if (UsesEarlyExternalGlxResources(early_sandbox) &&
++      !PreloadVulkanICDMetadata()) {
++    return false;
++  }
    if (IsArchitectureArm()) {
      LoadArmGpuLibraries();
-@@ -696,11 +859,36 @@ bool LoadLibrariesForGpu(
+   }
+@@ -696,11 +895,36 @@ bool LoadLibrariesForGpu(
  }
 
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
