@@ -26,6 +26,7 @@ import subprocess
 from typing import Any, Iterator
 
 from bench.lib import synthetic_assets
+from bench.tools import physical_adapter_inventory
 from bench.tools.compare_c_vs_zig_compilation import process_sample, stats, write_json
 
 
@@ -123,7 +124,8 @@ def sample_failures(meta: dict[str, Any], library: Path, arm: str,
 
 
 def pair_failures(left: dict[str, Any], right: dict[str, Any], *,
-                  application_replacement: bool = False) -> list[str]:
+                  application_replacement: bool = False,
+                  single_adapter_inventory: dict[str, Any] | None = None) -> list[str]:
     fields = ("planHash", "executionShape", "executionDispatchCount", "executionSubmitCount",
               "packagePreparedSession", "packageSetupIncludedInSelectedTiming",
               "packageEffectiveReadbackPaths", "packageReadbackActualPaths", "queueWaitMode")
@@ -134,7 +136,9 @@ def pair_failures(left: dict[str, Any], right: dict[str, Any], *,
                 if field not in left or field not in right or left[field] != right[field]]
     if not (left.get("adapterInfo") or {}).get("device") or (
             left.get("adapterInfo", {}).get("device") != right.get("adapterInfo", {}).get("device")):
-        failures.append("physical adapter identity differs")
+        if not single_adapter_inventory or not physical_adapter_inventory.pair_is_bound(
+                left, right, single_adapter_inventory):
+            failures.append("physical adapter identity differs")
     return failures
 
 
@@ -267,10 +271,13 @@ def run(args: argparse.Namespace) -> int:
     if args.iterations < 1 or args.warmup < 0:
         raise ValueError("iterations must be positive and warmup nonnegative")
     include_dawn = getattr(args, "include_dawn", False)
+    single_adapter = getattr(args, "single_native_adapter", False)
     backend = getattr(args, "backend", None) or {"Darwin": "metal", "Linux": "vulkan", "Windows": "d3d12"}.get(platform.system())
     if include_dawn and (not backend or any(profile not in ("node-package", "node-package-prepared")
                                            for profile in args.profiles)):
         raise ValueError("--include-dawn requires canonical Node package profiles and a supported backend")
+    if single_adapter and (not include_dawn or backend not in ("metal", "vulkan")):
+        raise ValueError("--single-native-adapter requires three-arm native Metal or Vulkan")
     selected = cases(args.oracle_plans.resolve(), args.profiles)
     libraries = {"c": args.c_library.resolve(), "zig": args.zig_library.resolve()}
     dawn_inputs = {str(path): digest(path) for path in dawn_input_paths()} if include_dawn else {}
@@ -281,6 +288,8 @@ def run(args: argparse.Namespace) -> int:
              ROOT / "bench/tools/prepare_package_oracle_plans.py", ROOT / "bench/lib/synthetic_assets.py",
              args.oracle_plans.resolve() / "oracle-manifest.json"}
     paths.update(configuration_inputs(ROOT))
+    if single_adapter:
+        paths.add(Path(physical_adapter_inventory.__file__).resolve())
     paths.update(Path(path) for path in dawn_inputs)
     manifest = json.loads((args.oracle_plans / "oracle-manifest.json").read_text())
     if manifest["generatorSha256"] != digest(ROOT / "bench/tools/prepare_package_oracle_plans.py"):
@@ -332,6 +341,15 @@ def run(args: argparse.Namespace) -> int:
                                  "DOE_NODE_WEBGPU_CHILD": "1", "DOE_BUN_WEBGPU_CHILD": "1"},
               "rows": [], "status": "running"}
     checkpoint(args.out / "report.json", report)
+    if single_adapter:
+        try:
+            report["singleAdapterInventoryBefore"] = physical_adapter_inventory.probe(backend)
+        except Exception as error:
+            report.update(status="blocked_native_adapter_inventory", inventoryError=str(error))
+            checkpoint(args.out / "report.json", report)
+            return 1
+        report["sampling"]["adapterBinding"] = "enforced non-fallback backend with one native hardware adapter; stable identity before/after"
+        checkpoint(args.out / "report.json", report)
     workers = OwnedWorkers(report)
     cancellation = workers.signals
     stopped = False
@@ -408,7 +426,8 @@ def run(args: argparse.Namespace) -> int:
                 if len(paired) == len(arms):
                     for left, right in combinations(arms, 2):
                         row["failures"].extend(f"{left}/{right}: " + failure for failure in pair_failures(
-                            paired[left], paired[right], application_replacement=include_dawn))
+                            paired[left], paired[right], application_replacement=include_dawn,
+                            single_adapter_inventory=report.get("singleAdapterInventoryBefore")))
                 if stopped or cancellation:
                     break
             for group in row["providers"].values():
@@ -437,6 +456,14 @@ def run(args: argparse.Namespace) -> int:
             if stopped or cancellation or report["drift"]:
                 break
     report["drift"] = [path for path, sha in inputs.items() if not Path(path).is_file() or digest(Path(path)) != sha]
+    if single_adapter and not stopped and not cancellation and not report["drift"]:
+        try:
+            report["singleAdapterInventoryAfter"] = physical_adapter_inventory.probe(backend)
+            if physical_adapter_inventory.single_identity(report["singleAdapterInventoryBefore"]) != physical_adapter_inventory.single_identity(report["singleAdapterInventoryAfter"]):
+                report["drift"].append("native physical adapter or driver identity changed")
+        except Exception as error:
+            report["inventoryError"] = str(error)
+            report["drift"].append("native physical adapter identity not re-established")
     if report["drift"]:
         for row in report["rows"]:
             row["status"] = "incomparable"
@@ -456,6 +483,7 @@ def run(args: argparse.Namespace) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--include-dawn", action="store_true", help="Add pinned Dawn0.4.0; only canonical Node package profiles.")
+    parser.add_argument("--single-native-adapter", action="store_true", help="Require one actual native Metal/Vulkan hardware adapter, with stable before/after identity.")
     parser.add_argument("--backend", choices=("metal", "vulkan", "d3d12"), help="Explicit three-arm backend; defaults to host-native backend.")
     parser.add_argument("--c-library", required=True, type=Path, help="Exact built C native provider.")
     parser.add_argument("--zig-library", required=True, type=Path, help="Exact fresh Zig full native provider.")

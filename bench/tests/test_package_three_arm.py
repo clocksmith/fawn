@@ -64,7 +64,7 @@ class ThreeArmTests(unittest.TestCase):
                            ('adapterInfo', {'device': 'different GPU'})]:
             self.assertTrue(owner.pair_failures(left, {**right, key: value}, application_replacement=True))
 
-    def campaign(self, root: Path, mode: str):
+    def campaign(self, root: Path, mode: str, single: bool = False):
         root = root.resolve()
         c = root/'c.dylib';z = root/'zig.dylib';d = root/'dawn.node'
         for path in [c,z,d]:path.write_bytes(path.name.encode())
@@ -76,7 +76,7 @@ class ThreeArmTests(unittest.TestCase):
         cases = [{'id': 'fixture'+str(i), 'profile': 'node-package', 'host': 'node', 'provider': 'doe',
                   'prepared': False, 'plan': str(plan), 'catalog': str(plan), 'fullOutputBytes': 4,
                   'expectedSha256': '1'*64} for i in range(2)]
-        args = argparse.Namespace(iterations=1, warmup=0, timeout=1, include_dawn=True, backend='metal',
+        args = argparse.Namespace(iterations=1, warmup=0, timeout=1, include_dawn=True, backend='metal', single_native_adapter=single,
             profiles=['node-package'], c_library=c, zig_library=z, build_inputs=build, oracle_plans=oracle, out=root/'out')
         calls=[]
         def sample(command, folder, timeout, **kwargs):
