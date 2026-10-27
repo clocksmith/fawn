@@ -1,0 +1,8 @@
+﻿{
+    "BaseCommit":  "e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7",
+    "BaseArchiveSHA256":  "ffba9044b3991b3a3f043fe1dbeb41db947a16eed52e78f55aa95786530eb088",
+    "ToolOnlyOverlay":  "runtime/c/compiler/tools/build_host_windows.py",
+    "OldSHA256":  "8EB36FC6F3B432D7FA7AA5A10E377F94DA7F3A1D7BD0C510D5C291B009ED9CED",
+    "NewSHA256":  "F43041604A39ED97F0B9E579C72A8082249BC0F126B97A2C46BCC93DCCC62FF6",
+    "Intent":  "Separatecompileandlinkforcontrols; requiredDXILinclude; noCsourceABIexpectationchanges"
+}

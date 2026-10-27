@@ -1,0 +1,70 @@
+{
+  "source": {
+    "sourceCommit": "e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7",
+    "archive": "C:/Users/clocksmith/deco/doe/bench/out/fawn-windows-build/doe-e5d8ffc6a.tar",
+    "archiveBytes": 751636480,
+    "archiveSha256": "ffba9044b3991b3a3f043fe1dbeb41db947a16eed52e78f55aa95786530eb088",
+    "source": "C:/Users/clocksmith/deco/doe/bench/out/fawn-windows-build/doe-e5d8ffc6a",
+    "patches": {
+      "browser/chromium/patches/chromium-doe-runtime.patch": "a81879ec7c0c84b161de753889053031bbcbcf923d48d5012169695da9e2f807",
+      "browser/chromium/patches/dawn-doe-runtime.patch": "602ff9c5ce364f6e5b4e86ca00d8bf3ed412d20654303ece8dc6518b958a4ba9"
+    },
+    "checkoutBefore": {
+      "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+      "status": "?? packages/doe-gpu/bench/\n"
+    },
+    "checkoutAfter": {
+      "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+      "status": "?? packages/doe-gpu/bench/\n"
+    },
+    "scope": "Pinned code archive only; active checkout not advanced, no runtime build or timing"
+  },
+  "clang": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\chromium\\src\\third_party\\llvm-build\\Release+Asserts\\bin\\clang-cl.exe",
+  "clangVersion": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\chromium\\src\\third_party\\llvm-build\\Release+Asserts\\bin\nBuild config: +alloc:rpmalloc\n",
+  "sdk": "10.0.28000.0\\",
+  "vc": "14.51.36231",
+  "stages": [
+    {
+      "name": "native",
+      "command": [
+        "C:\\Users\\clocksmith\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\doe-e5d8ffc6a\\runtime\\c\\native\\tools\\build_windows.py",
+        "--out",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\native-e5",
+        "--clang-cl",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\chromium\\src\\third_party\\llvm-build\\Release+Asserts\\bin\\clang-cl.exe",
+        "--dxc-root",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc"
+      ],
+      "state": "completed",
+      "startedAt": 1793059368.591091,
+      "builderSha256": "a4678a077dded388715ef06416d4002b512ec19dca67aedd5364a0818dd2dd8b",
+      "exitCode": 0,
+      "log": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\native-e5-native.log",
+      "logSha256": "04f17e732218b3ec28cddb523404c4a35ebceaa9e8e3e85b7f8e7aa3a67a4c9b",
+      "endedAt": 1793059516.27998
+    },
+    {
+      "name": "compiler-host",
+      "command": [
+        "C:\\Users\\clocksmith\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\doe-e5d8ffc6a\\runtime\\c\\compiler\\tools\\build_host_windows.py",
+        "--out",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\compiler-host-e5",
+        "--clang-cl",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\chromium\\src\\third_party\\llvm-build\\Release+Asserts\\bin\\clang-cl.exe",
+        "--dxc",
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe"
+      ],
+      "state": "failed",
+      "startedAt": 1793059516.27998,
+      "builderSha256": "8eb36fc6f3b432d7fa7aa5a10e377f94da7f3a1d7bd0c510d5c291b009ed9ced",
+      "exitCode": 1,
+      "log": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\native-e5-compiler-host.log",
+      "logSha256": "39dca8d3d3da5a4e26c8bdf810705ac31c080d84a497632895653b2d49802319",
+      "endedAt": 1793059535.129545
+    }
+  ],
+  "completed": false,
+  "scope": "Windows actualSDK builds and core/host/module CPU plus actualDXC controls only; no GPU or performance qualification"
+}
