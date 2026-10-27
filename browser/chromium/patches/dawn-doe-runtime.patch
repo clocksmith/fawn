@@ -180,13 +180,12 @@ index 7d5e1972c..50fe30140 100644
      bool mBeginCaptureOnStartup = false;
      BackendValidationLevel mBackendValidationLevel = BackendValidationLevel::Disabled;
 diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
-index 665dea721..ca4167c58 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.cpp
 +++ b/src/dawn/native/webgpu/BackendWGPU.cpp
 @@ -27,21 +27,34 @@
- 
+
  #include "src/dawn/native/webgpu/BackendWGPU.h"
- 
+
 +#include <cstring>
 +#include <type_traits>
 +
@@ -196,9 +195,9 @@ index 665dea721..ca4167c58 100644
  #include "src/dawn/native/Instance.h"
 +#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
  #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
- 
+
  namespace dawn::native::webgpu {
- 
+
  Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
      : BackendConnection(instance, backendType) {
 -    mDawnProcs = dawn::native::GetProcs();
@@ -209,33 +208,34 @@ index 665dea721..ca4167c58 100644
 +    } else {
 +        mDawnProcs = dawn::native::GetProcs();
 +    }
- 
+
      // Enable all instance features and limits.
      WGPUInstanceDescriptor instanceDesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
- 
+
      WGPUDawnTogglesDescriptor toggleDescriptor = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
 -    instanceDesc.nextInChain = &toggleDescriptor.chain;
 +    instanceDesc.nextInChain = InnerRuntimeDescriptorChain(
 +        &toggleDescriptor, &toggleDescriptor.chain, instance->IsWebGPUExternalRuntimeRequired());
- 
+
      auto toggles = instance->GetTogglesState();
      auto enabledTogglesName = toggles.GetEnabledToggleNames();
-@@ -61,10 +74,492 @@ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
+@@ -61,8 +74,490 @@
      instanceDesc.requiredLimits = &limits;
- 
+
      mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
+-
 +    if (!mInnerInstance) {
 +        dawn::ErrorLog() << "runtime_initialization_failed: wgpuCreateInstance returned null";
 +    }
- 
++
 +    if (instance->IsWebGPUExternalRuntimeRequired()) {
 +        dawn::InfoLog() << "runtime_instance_result: created=" << (mInnerInstance != nullptr)
 +                        << " required_feature_count=" << instanceDesc.requiredFeatureCount
 +                        << " timed_wait_max_count=" << limits.timedWaitAnyMaxCount;
 +    }
      mDawnProcs.supportedInstanceFeaturesFreeMembers(features);
- }
- 
++}
++
 +bool Backend::LoadDoeWireProcTable() {
 +    const auto& path = GetInstance()->GetWebGPUExternalRuntimeLibraryPath();
 +    std::string error;
@@ -708,13 +708,11 @@ index 665dea721..ca4167c58 100644
 +        return false;
 +    }
 +    return true;
-+}
-+
+ }
+
  Backend::~Backend() {
-     if (mInnerInstance) {
-         mDawnProcs.instanceRelease(mInnerInstance);
-@@ -74,42 +569,72 @@ Backend::~Backend() {
- 
+@@ -74,42 +569,94 @@
+
  std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
      const UnpackedPtr<RequestAdapterOptions>& options) {
 +    if (!mInnerInstance) {
@@ -722,7 +720,7 @@ index 665dea721..ca4167c58 100644
 +    }
      // TODO(crbug.com/413053623): Expose Instance::EnumerateAdapters in DawnProcTable
      // So that we can discover multiple WebGPU physical devices.
- 
+
      // Pass through all of the core options. Note if backendType=WebGPU,
      // RequestAdapter will return null since it's not enabled by default.
      WGPURequestAdapterOptions innerAdapterOption = *ToAPI(*options);
@@ -730,7 +728,7 @@ index 665dea721..ca4167c58 100644
      // Get rid of the request adapter WebGPU backend options extension.
      // TODO(crbug.com/462137660): Implement for various extensions.
      innerAdapterOption.nextInChain = nullptr;
- 
+
      // Keep DawnTogglesDescriptor.
      WGPUDawnTogglesDescriptor innerToggles = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
 +    WGPUDawnTogglesDescriptor* nativeToggles = nullptr;
@@ -739,11 +737,20 @@ index 665dea721..ca4167c58 100644
          // Unchain any other extensions if exist.
          innerToggles.chain.next = nullptr;
 -        innerAdapterOption.nextInChain = &(innerToggles.chain);
+-    }
+-
 +        nativeToggles = &innerToggles;
-     }
++    }
++#if defined(_WIN32)
++    InnerRuntimeWindowsAdapterLuid luidStorage;
++    innerAdapterOption.nextInChain = InnerRuntimeWindowsAdapterChain(
++        nativeToggles, outerRequiredChain, options.Get<d3d::RequestAdapterOptionsLUID>(),
++        GetInstance()->IsWebGPUExternalRuntimeRequired(), luidStorage);
++#else
 +    innerAdapterOption.nextInChain = InnerRuntimeDescriptorChain(
 +        nativeToggles, outerRequiredChain, GetInstance()->IsWebGPUExternalRuntimeRequired());
- 
++#endif
++
 +    if (GetInstance()->IsWebGPUExternalRuntimeRequired()) {
 +        dawn::InfoLog() << "runtime_adapter_request: backend_type="
 +                        << static_cast<uint32_t>(innerAdapterOption.backendType)
@@ -752,13 +759,28 @@ index 665dea721..ca4167c58 100644
 +                        << static_cast<uint32_t>(innerAdapterOption.powerPreference)
 +                        << " force_fallback=" << innerAdapterOption.forceFallbackAdapter
 +                        << " compatible_surface=" << (innerAdapterOption.compatibleSurface != nullptr);
++#if defined(_WIN32)
++        size_t chainDiagnosticBudget = 32;
++#endif
 +        for (const auto* chain = innerAdapterOption.nextInChain; chain; chain = chain->next) {
++#if defined(_WIN32)
++            if (chainDiagnosticBudget-- == 0) {
++                dawn::InfoLog() << "runtime_adapter_required_chain: diagnostic limit; requirement retained";
++                break;
++            }
++#endif
 +            dawn::InfoLog() << "runtime_adapter_required_chain: s_type="
 +                            << static_cast<uint32_t>(chain->sType);
++#if defined(_WIN32)
++            if (!InnerRuntimeConsumedDescriptor(chain) &&
++                chain->sType != WGPUSType_RequestAdapterOptionsLUID) {
++                break;  // C19 rejects this requirement without reading its tail.
++            }
++#endif
 +        }
 +    }
      WGPUAdapter innerAdapter = nullptr;
- 
+
      WGPURequestAdapterCallbackInfo callbackInfo = {};
      callbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
      callbackInfo.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter,
@@ -775,7 +797,7 @@ index 665dea721..ca4167c58 100644
 -    callbackInfo.userdata1 = nullptr;
 +    callbackInfo.userdata1 = GetInstance()->IsWebGPUExternalRuntimeRequired() ? this : nullptr;
      callbackInfo.userdata2 = static_cast<void*>(&innerAdapter);
- 
+
      WGPUFutureWaitInfo waitInfo = {};
      waitInfo.future =
          mDawnProcs.instanceRequestAdapter(mInnerInstance, &innerAdapterOption, callbackInfo);
@@ -786,13 +808,13 @@ index 665dea721..ca4167c58 100644
 +        dawn::InfoLog() << "runtime_adapter_wait: status=" << static_cast<uint32_t>(waitStatus)
 +                        << " completed=" << waitInfo.completed;
 +    }
- 
+
      if (innerAdapter == nullptr) {
          return {};
-@@ -126,6 +651,10 @@ WGPUInstance Backend::GetInnerInstance() const {
+@@ -126,6 +673,10 @@
      return mInnerInstance;
  }
- 
+
 +DisablePersistentCacheProc Backend::GetExternalCacheDisableProc() const {
 +    return mExternalCacheDisableProc;
 +}
@@ -1356,10 +1378,9 @@ new file mode 100644
 +#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMECALLBACKREGISTRY_H_
 diff --git a/src/dawn/native/webgpu/InnerRuntimeDescriptor.h b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
 new file mode 100644
-index 000000000..7112953b5
 --- /dev/null
 +++ b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,153 @@
 +// Copyright 2026 The Doe Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -1367,10 +1388,15 @@ index 000000000..7112953b5
 +#ifndef SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
 +#define SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
 +
++#include <cstddef>
 +#include <span>
++#include <type_traits>
 +#include <vector>
 +
 +#include "dawn/webgpu.h"
++#if defined(_WIN32)
++#include "dawn/native/D3DBackend.h"
++#endif
 +
 +namespace dawn::native::webgpu {
 +
@@ -1383,6 +1409,13 @@ index 000000000..7112953b5
 +// Leave the first other
 +// requirement and its complete tail borrowed and unchanged, including unknown
 +// chains: the external provider must admit them or reject the request.
++inline bool InnerRuntimeConsumedDescriptor(const WGPUChainedStruct* chain) {
++    return chain && (chain->sType == WGPUSType_DawnTogglesDescriptor ||
++                     chain->sType == WGPUSType_DawnCacheDeviceDescriptor ||
++                     chain->sType == WGPUSType_DawnConsumeAdapterDescriptor ||
++                     chain->sType == WGPUSType_RequestAdapterWebGPUBackendOptions);
++}
++
 +inline WGPUChainedStruct* InnerRuntimeDescriptorChain(
 +    WGPUDawnTogglesDescriptor* nativeToggles,
 +    WGPUChainedStruct* outerChain,
@@ -1390,15 +1423,61 @@ index 000000000..7112953b5
 +    if (!externalRuntime) {
 +        return nativeToggles ? &nativeToggles->chain : nullptr;
 +    }
-+    while (outerChain &&
-+           (outerChain->sType == WGPUSType_DawnTogglesDescriptor ||
-+            outerChain->sType == WGPUSType_DawnCacheDeviceDescriptor ||
-+            outerChain->sType == WGPUSType_DawnConsumeAdapterDescriptor ||
-+            outerChain->sType == WGPUSType_RequestAdapterWebGPUBackendOptions)) {
++    while (InnerRuntimeConsumedDescriptor(outerChain)) {
 +        outerChain = outerChain->next;
 +    }
 +    return outerChain;
 +}
++
++#if defined(_WIN32)
++// Use a standard-layout API record, not C++ inherited tail padding. The input
++// is the actual native type returned by UnpackedPtr::Get; only typed member
++// access reads its payload. The caller owns this storage through WaitAny.
++struct InnerRuntimeWindowsAdapterLuid {
++    WGPUChainedStruct chain{};
++    ::LUID adapterLUID{};
++};
++static_assert(std::is_standard_layout_v<InnerRuntimeWindowsAdapterLuid>);
++static_assert(offsetof(InnerRuntimeWindowsAdapterLuid, adapterLUID) == 16);
++static_assert(sizeof(InnerRuntimeWindowsAdapterLuid) == 24);
++static_assert(alignof(InnerRuntimeWindowsAdapterLuid) == 8);
++
++inline WGPUChainedStruct* InnerRuntimeWindowsPrivatePrefix(WGPUChainedStruct* first) {
++    // Stop at the first required node. In particular, never inspect an unknown
++    // requirement's tail merely to decide whether its prefix is consumable.
++    const auto advance = [](WGPUChainedStruct* chain) {
++        return InnerRuntimeConsumedDescriptor(chain) ? chain->next : nullptr;
++    };
++    auto* slow = first;
++    auto* fast = first;
++    do {
++        slow = advance(slow);
++        fast = advance(advance(fast));
++        if (slow && slow == fast) return first;  // A malformed cycle stays required.
++    } while (fast);
++    return InnerRuntimeDescriptorChain(nullptr, first, true);
++}
++
++inline WGPUChainedStruct* InnerRuntimeWindowsAdapterChain(
++    WGPUDawnTogglesDescriptor* nativeToggles,
++    WGPUChainedStruct* outerChain,
++    const d3d::RequestAdapterOptionsLUID* nativeLuid,
++    bool externalRuntime,
++    InnerRuntimeWindowsAdapterLuid& storage) {
++    if (!externalRuntime) {
++        return InnerRuntimeDescriptorChain(nativeToggles, outerChain, false);
++    }
++    auto* first = InnerRuntimeWindowsPrivatePrefix(outerChain);
++    if (!nativeLuid || !first || first->sType != WGPUSType_RequestAdapterOptionsLUID ||
++        static_cast<const void*>(first) != static_cast<const void*>(nativeLuid)) {
++        return first;
++    }
++    storage.chain.sType = WGPUSType_RequestAdapterOptionsLUID;
++    storage.chain.next = InnerRuntimeWindowsPrivatePrefix(first->next);
++    storage.adapterLUID = nativeLuid->adapterLUID;
++    return &storage.chain;
++}
++#endif  // defined(_WIN32)
 +
 +// TextureWGPU resolves outer Dawn internal usages into ordinary texture usage
 +// bits. Preserve the exact public/unknown feature order and native-Dawn span;
