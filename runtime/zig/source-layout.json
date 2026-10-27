@@ -3236,9 +3236,9 @@
       },
       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "c4e559d85d61a2251fbe8d4020dfa5198a1ed42e2552a2b43f46e60bfb8a9cea",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "365261d72c503ef948cd189dc4f9fa10d75d2d4c2fd0406caa6a054ae825edf3",
+        "reason": "Keep: instance feature advertisement and descriptor requirement admission share the selected capability owner; unsupported required features and limits reject before allocation without inventing support.",
+        "reviewer": "codex-windows-instance-requirements/2026-10-27"
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
@@ -3584,9 +3584,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "8dbf541f49ac562bb022b3b34cda96e7cddd57971beecacbb4d684a4d9aadddd",
-        "reason": "Keep: honor explicit D3D12 fallback selection, preserve the selected device ownership and publish its actual adapter classification.",
-        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
+        "moduleSha256": "63e3ba678a950bcacafd132fb9a8fb12e9bcd0448da7463e0a4421a90fc246f7",
+        "reason": "Keep: instance feature advertisement and descriptor requirement admission share the selected capability owner; unsupported required features and limits reject before allocation without inventing support.",
+        "reviewer": "codex-windows-instance-requirements/2026-10-27"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -4565,6 +4565,12 @@
         "moduleSha256": "37f27d6e9460a2952a613be5e093c96192d3213f97885ea39a89fb7ec27a18a8",
         "reason": "Keep: one compiler-owned target identifier policy encodes reserved names injectively, protects generated namespaces and helper resource references, and supplies matching DXC entry names through bounded output and explicit allocation ownership.",
         "reviewer": "codex-hlsl-target-names/2026-10-27"
+      },
+      "src/native/support/doe_instance_capabilities.zig": {
+        "decision": "Keep",
+        "moduleSha256": "f0b5a0a64b48e9f262c1c1f585bf835b9f4a0eea5e1bcfdbd9552f8d633375c1",
+        "reason": "Keep: instance feature advertisement and descriptor requirement admission share the selected capability owner; unsupported required features and limits reject before allocation without inventing support.",
+        "reviewer": "codex-windows-instance-requirements/2026-10-27"
       }
     },
     "linePolicy": {
