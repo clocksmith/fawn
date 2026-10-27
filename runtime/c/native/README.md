@@ -1702,3 +1702,10 @@ policy cleanup. Linux `check-persistent-cache-disk` additionally wraps and
 forwards the actual disk lookup/store boundary: a disabled device performs
 neither operation, while the default device is a positive disk-access control.
 These development controls do not qualify an entire Chromium browser or release.
+
+Pinned bind-group layout entries accept `bindingArraySize` zero (default) or one
+(normalized scalar). Both produce one canonical resource entry, so explicit
+layouts and groups remain structurally compatible. Counts above one still
+reject; this does not add binding-array shader semantics. `singleton-layout`
+checks all four ordinary binding kinds, larger-count failures, explicit storage
+pipeline execution and readback with an ended pass retained across submission.

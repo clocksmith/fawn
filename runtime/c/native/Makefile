@@ -657,3 +657,11 @@ endif
 check-persistent-cache: $(BUILD)/persistent-cache
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/persistent-cache
 PHYSICAL_CLIENTS += persistent-cache
+
+$(BUILD)/singleton-layout: tests/singleton_layout.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-singleton-layout
+check-singleton-layout: $(BUILD)/singleton-layout
+	$(BUILD)/singleton-layout
+check: check-singleton-layout
+PHYSICAL_CLIENTS += singleton-layout
