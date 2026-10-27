@@ -195,7 +195,7 @@ Options:
   --out PATH                JSON report output path (default: browser/chromium/artifacts/<timestamp>/${DEFAULT_OUT_FILE})
   --allow-bench-out         Allow writing this diagnostic report under bench/out
   --headless true|false     Launch headless (default: true)
-  --sandbox true|false      Keep Chromium sandbox enabled (default: false)
+  --sandbox true|false      Keep Chromium sandbox enabled (default: true)
   --api-surface SURFACE     Browser API surface: native|package-browser (default: ${DEFAULT_API_SURFACE})
   --chrome-arg ARG          Extra Chromium arg (repeatable)
   --upload-iters N          queue.writeBuffer timed iterations (default: 500)
@@ -461,7 +461,7 @@ function parseArgs(argv) {
     outPath: defaultOutPath(),
     allowBenchOut: false,
     headless: true,
-    sandbox: false,
+    sandbox: true,
     apiSurface: DEFAULT_API_SURFACE,
     chromeArgs: [],
     uploadIters: DEFAULT_UPLOAD_ITERS,
@@ -1148,18 +1148,11 @@ function startLocalServer() {
   });
 }
 
-function baseLaunchArgs(port, sandbox) {
-  const args = [
+function baseLaunchArgs(sandbox) {
+  return [
     ...(sandbox ? [] : ["--no-sandbox", "--disable-setuid-sandbox"]),
     "--disable-dev-shm-usage",
-    "--ignore-gpu-blocklist",
-    "--enable-unsafe-webgpu",
-    `--unsafely-treat-insecure-origin-as-secure=http://127.0.0.1:${port}`,
   ];
-  if (process.platform === "linux") {
-    args.push("--use-angle=vulkan");
-  }
-  return args;
 }
 
 function runtimeArgs(mode, doeLibPath) {
@@ -1438,7 +1431,7 @@ async function runFawnPrismaticLifecycleProbe(browser, localUrl, timeoutMs) {
 async function runMode(chromium, mode, args, localUrl, localPort) {
   const selection = runtimeSelectionResolution(mode, args);
   const launchArgs = [
-    ...baseLaunchArgs(localPort, args.sandbox),
+    ...baseLaunchArgs(args.sandbox),
     ...args.chromeArgs,
     ...runtimeArgs(selection.selectedRuntime, args.doeLibPath),
   ];

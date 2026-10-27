@@ -70,10 +70,12 @@ Use the scripts and commands named by the milestone manifest and acceptance
 contract. The manifest owns which checks are required for each milestone; this
 README intentionally does not copy the changing command inventory.
 
-Use `scripts/run-smoke.sh --sandbox true` for sandboxed runtime diagnostics.
-The smoke runner retains its sandbox-disabled legacy default for historical
-comparisons; those runs cannot establish sandboxed browser ownership. Explicit
-sandbox mode rejects conflicting sandbox-disabling `--chrome-arg` values.
+`scripts/run-smoke.sh` enables Chromium's sandbox by default. It adds no unsafe
+WebGPU, blocklist bypass, insecure-origin or forced ANGLE switches, and removes
+Playwright's implicit unsafe SwiftShader switch. Explicit `--sandbox false` is a
+diagnostic mode; it cannot establish sandboxed browser ownership. Enabled sandbox
+mode rejects conflicting sandbox-disabling `--chrome-arg` values. Actual process
+arguments, provider identity and execution still require their own evidence.
 
 ## Current boundary
 
