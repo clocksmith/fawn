@@ -17,3 +17,6 @@ COMPILER_NAME_LINK = -l:$(notdir $(COMPILER_LIBRARY))
 else
 $(error Unsupported native build platform $(SHARED_PLATFORM))
 endif
+# Shared artifact identity is consumed directly by native, CLI and staging.
+# A parse-time recursive make query can capture GNU Make's directory banners.
+NATIVE_LIBRARY_BASENAME = libwebgpu_doe_c.$(SHARED_SUFFIX)

@@ -4,9 +4,10 @@ CC = gcc
 .DEFAULT_GOAL := all
 PYTHON ?= python3
 include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+include ../native/platform.mk
 BUILD ?= $(DOE_C_TMP)/runtime-cli
 NATIVE_BUILD ?= $(BUILD)/native
-NATIVE_LIBRARY_NAME := $(shell $(MAKE) --no-print-directory -s -C ../native native-library-name)
+NATIVE_LIBRARY_NAME = $(NATIVE_LIBRARY_BASENAME)
 NATIVE_LIBRARY = $(NATIVE_BUILD)/$(NATIVE_LIBRARY_NAME)
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I../native/include
 CFLAGS ?= -O2 -g

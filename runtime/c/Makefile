@@ -5,6 +5,7 @@ CC = gcc
 CXX = g++
 REVISION ?= HEAD
 include build-root.mk
+include native/platform.mk
 BUILD ?= $(DOE_C_TMP)/package-build
 STAGE ?= $(DOE_C_TMP)/package
 # Every owner with a library build, in dependency order. A changed public header
@@ -32,8 +33,8 @@ check-build:
 # The compiler owner builds into its gitignored compiler/build regardless of BUILD.
 check-globals: check-build
 	$(PYTHON) tools/check_globals.py '$(BUILD)' compiler/build
-# Ask the native build owner for the current platform artifact name.
-STAGED_NATIVE_LIBRARY = $(abspath $(STAGE))/lib/$(shell $(MAKE) --no-print-directory -s -C native native-library-name)
+# Consume the native owner's platform artifact fact without a subprocess query.
+STAGED_NATIVE_LIBRARY = $(abspath $(STAGE))/lib/$(NATIVE_LIBRARY_BASENAME)
 # Unchanged doe-gpu JavaScript consumer on a staged package (make package first).
 # Rebuilds the gitignored N-API addon and runs the first-kernel integration test
 # with DOE_WEBGPU_LIB on the staged C library. Needs Node headers and a physical
