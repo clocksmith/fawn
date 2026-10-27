@@ -403,13 +403,19 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     native_device *device = (native_device *)handle;
     doe_resource_buffer *buffer = (doe_resource_buffer *)buffer_handle;
     if (!device) return;
+    native_device_retain(device);
+    doe_resource_buffer_retain(buffer);
     native_lock(device);
     doe_resource_status status = doe_resource_buffer_write_validate(buffer, device, offset, size);
     native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
         native_buffer *payload = doe_resource_buffer_native(buffer);
         failure = native_settle_for_buffer(device, payload);
-        if (failure.status == NATIVE_OK) {
+        /* A Metal resource wait drops the mutex. A concurrent map/destroy must
+         * be admitted by the same resource owner before any CPU write. */
+        if (failure.status == NATIVE_OK)
+            status = doe_resource_buffer_write_validate(buffer, device, offset, size);
+        if (failure.status == NATIVE_OK && status == DOE_RESOURCE_OK) {
             if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Vulkan)
                 failure = staged_queue_write(payload, offset, bytes, size);
             else if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Metal)
@@ -424,4 +430,6 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
         native_error(device, status != DOE_RESOURCE_OK ? native_resource_error(status) : native_result_error(failure.status),
             message);
     }
+    doe_resource_buffer_release(buffer);
+    native_device_release(device);
 }

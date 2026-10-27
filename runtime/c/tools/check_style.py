@@ -51,10 +51,19 @@ SCOPED = (
 
 
 def tracked(root: Path) -> list[str]:
+    declared = root.resolve()
+    toplevel = Path(subprocess.check_output(
+        ["git", "rev-parse", "--show-toplevel"], cwd=root, text=True,
+        stderr=subprocess.PIPE).strip()).resolve()
+    if toplevel != declared:
+        raise ValueError(f"Git toplevel {toplevel} does not match source root {declared}")
     output = subprocess.check_output(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z",
          "--", "runtime/c"], cwd=root)
-    return sorted({p.decode() for p in output.split(b"\0") if p})
+    paths = sorted({p.decode() for p in output.split(b"\0") if p})
+    if not any(Path(path).suffix in SOURCE_SUFFIXES for path in paths):
+        raise ValueError("empty C source inventory; no style acceptance established")
+    return paths
 
 
 def sealed_files(root: Path, paths: list[str]) -> set[str]:
@@ -141,7 +150,12 @@ def run(root: Path, paths: list[str]) -> tuple[int, list[str]]:
 
 
 def main() -> int:
-    count, failures = run(ROOT, tracked(ROOT))
+    try:
+        paths = tracked(ROOT)
+    except (OSError, subprocess.CalledProcessError, ValueError) as error:
+        print(f"inventory: {error}", file=sys.stderr)
+        return 1
+    count, failures = run(ROOT, paths)
     for failure in failures:
         print(failure, file=sys.stderr)
     print(f"C style check: {count} sources, {len(failures)} failures; line limit {MAX_LINES}")

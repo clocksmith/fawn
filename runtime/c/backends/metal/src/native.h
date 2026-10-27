@@ -74,6 +74,9 @@ typedef struct doe_mtl_native {
     void *userdata;
     void (*close)(void *userdata);
     void (*release)(void *userdata, void *object);
+    void *(*retain)(void *userdata, void *object);
+    /* Read-only native wait. It never retires command/resource ownership. */
+    doe_mtl_status (*block)(void *userdata, void *command, uint64_t timeout_ns);
     /* Transactional: failure releases partial imports and leaves out untouched. */
     doe_mtl_status (*external_texture)(void *, void *, doe_mtl_external_source, void *,
         doe_mtl_native_external *, doe_mtl_error *);

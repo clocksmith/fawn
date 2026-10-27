@@ -139,8 +139,47 @@ static void render(unsigned role, bool bundled, enum submission_case scenario)
     submit_case(&f, encoder, buffer, &token, scenario);
     assert(pipeline_token.releases == 1 && view_tokens[0].releases == 1 && view_tokens[1].releases == 1);
 }
+static void revalidate_open_submission(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    native_token source_token = {0}, target_token = {0};
+    doe_resource_buffer *source = buffer(&f,&source_token,64,WGPUBufferUsage_CopySrc);
+    doe_resource_buffer *target = buffer(&f,&target_token,64,WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead);
+    doe_resource_encoder *encoder = NULL;
+    doe_resource_commands *commands = NULL;
+    assert(doe_resource_encoder_create(&c,&encoder) == DOE_RESOURCE_OK);
+    const doe_resource_buffer_copy copy = {source,target,0,0,64};
+    assert(doe_resource_encoder_copy_buffer(encoder,&copy,DOE_RESOURCE_DISJOINT_RANGES) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_finish(encoder,&commands) == DOE_RESOURCE_OK);
+    doe_resource_encoder_release(encoder);
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_STATE);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+    const unsigned references = f.device_references;
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_OK);
+    uint64_t generation = 0;
+    assert(doe_resource_buffer_map_begin(target,WGPUMapMode_Read,0,64,&generation) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_STATE);
+    assert(doe_resource_buffer_map_complete(target,generation,false,NULL) == DOE_RESOURCE_EXECUTION_FAILED);
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_OK);
+    f.alive = false;
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_UNAVAILABLE);
+    f.alive = true;
+    doe_resource_buffer_destroy(target);
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_UNAVAILABLE);
+    assert(f.device_references == references);
+    assert(doe_resource_commands_settle(commands,DOE_RESOURCE_EXECUTION_FAILED) == DOE_RESOURCE_EXECUTION_FAILED);
+    assert(doe_resource_commands_validate_submission(commands) == DOE_RESOURCE_STATE);
+    doe_resource_commands_release(commands);
+    doe_resource_buffer_release(source); doe_resource_buffer_release(target);
+    assert(source_token.releases == 1 && target_token.releases == 1);
+    empty(&f);
+}
+
 int main(void)
 {
+    revalidate_open_submission();
     for (enum submission_case scenario = UNMAPPED; scenario <= PENDING; scenario++) {
         compute(false, scenario);
         compute(true, scenario);

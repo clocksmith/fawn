@@ -90,7 +90,7 @@ $(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt LEGACY_SYMBO
 	mv $@.tmp $@
 $(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_import_cases.h tests/metal_external_cases.h tests/metal_copy_cases.h tests/metal_view_cases.h tests/metal_f16_cases.h tests/sampling_pair_cases.h tests/pipeline_cache_cases.h tests/shader_fixture.h tests/metal_storage_cases.h tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_vertex_span_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_async_driver.h tests/metal_import_cases.h tests/metal_external_cases.h tests/metal_copy_cases.h tests/metal_view_cases.h tests/metal_f16_cases.h tests/sampling_pair_cases.h tests/pipeline_cache_cases.h tests/shader_fixture.h tests/metal_storage_cases.h tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_vertex_span_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_bridge.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_create \
 	  -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_buffer_create \
@@ -713,4 +713,28 @@ $(BUILD)/iosurface-shared: tests/iosurface_shared.c tests/iosurface_fixture.h te
 check-iosurface-shared: $(BUILD)/iosurface-shared
 	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/iosurface-shared
 PHYSICAL_CLIENTS += iosurface-shared
+endif
+
+# CPU call-ledger boundary; no hardware adapter or Metal GPU execution.
+$(BUILD)/metal-async-submit: tests/metal_async_submit.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_async_submit.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=native_record_resource_commands -o $@
+.PHONY: check-metal-async-submit
+check-metal-async-submit: $(BUILD)/metal-async-submit
+	$(BUILD)/metal-async-submit
+
+# Explicit physical Metal developer gate; never part of ordinary check.
+ifeq ($(SHARED_PLATFORM),Darwin)
+$(BUILD)/metal-async-physical: tests/metal_async_physical.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-metal-async-physical
+check-metal-async-physical: $(BUILD)/metal-async-physical
+	@test "$(SHARED_PLATFORM)" = Darwin || { echo 'physical Metal gate requires macOS' >&2; exit 2; }
+	@test "$(DOE_MTL_ALLOW_HARDWARE)" = 1 || { echo 'explicit DOE_MTL_ALLOW_HARDWARE=1 authorization required' >&2; exit 2; }
+	@test -f '$(PHYSICAL_SOURCE_INPUTS)' && test -n '$(PHYSICAL_OUT)' || { echo 'set frozen PHYSICAL_SOURCE_INPUTS and fresh PHYSICAL_OUT' >&2; exit 2; }
+	python3 tools/check_metal_async_physical.py --run --binary '$(BUILD)/metal-async-physical' --native '$(NATIVE_LIBRARY)' --compiler '$(COMPILER_LIBRARY)' --source-inputs '$(PHYSICAL_SOURCE_INPUTS)' --out '$(PHYSICAL_OUT)'
+else
+.PHONY: check-metal-async-physical
+check-metal-async-physical:
+	@echo 'physical Metal gate requires macOS' >&2
+	@exit 2
 endif

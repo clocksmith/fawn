@@ -17,7 +17,7 @@ typedef struct doe_mtl_timestamp_use {
     uint64_t resolve_value;
     struct doe_mtl_timestamp_use *next;
 } doe_mtl_timestamp_use;
-doe_mtl_status doe_mtl_timestamps_preflight(const doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_timestamps_preflight(doe_mtl_commands *commands,
     const doe_mtl_timestamps *timestamps, uint32_t index, bool write);
 doe_mtl_status doe_mtl_use_timestamps(doe_mtl_commands *commands,
     doe_mtl_timestamps *timestamps, doe_mtl_timestamp_use **out);

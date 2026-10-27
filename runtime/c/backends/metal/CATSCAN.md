@@ -6,8 +6,8 @@ Parent: [C migration](../../CATSCAN.md)
 Execute Metal with resource/completion obligations.
 
 ## Authority
-Own native loading, device/queue/resource/pipeline lifetimes, compute/render,
-resolves, visibility/timestamps, drawables, transfers and retirement. Exclude WGSL,
+Own loading, device/queue/resource/pipeline lifetimes, compute/render,
+queries, drawables, transfers and retirement. Exclude WGSL,
 public validation, provider selection and qualification.
 
 ## Scope
@@ -27,8 +27,8 @@ Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the GPU normalizer/
 
 ## Invariants
 Timestamp resolves require native sample publication.
-Pending/unknown work retains resources; failed work never permits successful readback. No interpreter, backend substitution, Zig delegation or
-production-selection change. Host, SDK and physical evidence remain distinct. Callers serialize borrowed handles.
+Pending/unknown work retains resources; failure forbids successful readback. No interpreter, backend substitution, Zig delegation or
+production-selection change. Host/SDK/physical evidence stays distinct. Serialized single resource owners survive asynchronous acceptance; unlocked waits require native leases.
 Stencil initialization uses parent-format attachments and the speculative aspect
 owner, preserving companions. Aspect transfers use those bits and native
 component-copy options, published after completion. Per-draw depth clip/clamp

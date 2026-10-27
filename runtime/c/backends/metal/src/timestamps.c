@@ -57,12 +57,15 @@ void doe_mtl_timestamps_release(doe_mtl_timestamps *timestamps) {
     doe_mtl_context_release(context);
 }
 
-doe_mtl_status doe_mtl_timestamps_preflight(const doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_timestamps_preflight(doe_mtl_commands *commands,
     const doe_mtl_timestamps *timestamps, uint32_t index, bool write) {
     const doe_mtl_timestamp_use *use;
     if (timestamps == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (timestamps->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
-    if (timestamps->owner != NULL && timestamps->owner != commands) return DOE_MTL_BUSY;
+    if (timestamps->owner != NULL && timestamps->owner != commands) {
+        commands->conflict = timestamps->owner;
+        return DOE_MTL_BUSY;
+    }
     if (timestamps->poisoned) return DOE_MTL_EXECUTION_FAILED;
     if (index >= timestamps->count) return DOE_MTL_RANGE;
     for (use = commands->timestamps; use != NULL; use = use->next) {

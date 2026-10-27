@@ -3,6 +3,7 @@
 #include "metal_frontend.h"
 #include "d3d12_frontend.h"
 #include "doe_native_queue.h"
+#include "../../backends/metal/src/progress.h"
 #include <stdlib.h>
 
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
@@ -228,14 +229,25 @@ native_queue_settlement native_poll_pending(native_device *device)
 
 native_queue_settlement native_settle_routine(native_device *device)
 {
-    return consume_settlement(device, device->backend.kind == WGPUBackendType_Vulkan);
+    return consume_settlement(device, device->backend.kind == WGPUBackendType_Vulkan ||
+        device->backend.kind == WGPUBackendType_Metal);
 }
 
-/* Host access to one buffer (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review): on Vulkan, wait oldest first only
- * while a submission still uses the buffer; other running work is polled,
- * not waited for. The first failure observed is returned once. */
+/* Host access waits only while this buffer has an accepted native owner.
+ * Vulkan visits older fences; Metal waits the exact conflicting native handle.
+ * Unrelated running work is polled, never waited for. Errors are consumed once. */
 native_failure native_settle_for_buffer(native_device *device, const native_buffer *buffer)
 {
+    if (device->backend.kind == WGPUBackendType_Metal) {
+        native_failure failure = native_poll_pending(device).failure;
+        doe_mtl_commands *owner = doe_mtl_buffer_owner(buffer->handle.metal);
+        if (failure.status != NATIVE_OK || !owner) return failure;
+        struct timespec now, deadline;
+        if (doe_monotonic_now(&now).status != DOE_HOST_OK ||
+            doe_time_add(&now,UINT64_C(5000000000),&deadline).status != DOE_HOST_OK)
+            return native_failure_status(NATIVE_FAILURE);
+        return native_metal_wait_owner(device,owner,&deadline);
+    }
     if (device->backend.kind != WGPUBackendType_Vulkan) return native_settle_pending(device).failure;
     native_failure first = native_poll_pending(device).failure;
     while (doe_vk_buffer_busy(buffer->handle.vulkan)) {
@@ -321,16 +333,16 @@ native_pending *native_surface_retirement_take(native_device *device, native_pen
     return NULL;
 }
 
-/* Vulkan submissions return once the queue accepts them (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review):
+/* Vulkan and Metal submissions return once the queue accepts them:
  * the record keeps its native and resource leases on the pending list until
  * the progress worker or a later public call observes it terminal. wait keeps
- * the synchronous fence wait (Metal, D3D12, programs, private initialization).
+ * the explicit synchronous wait (D3D12, programs, private initialization).
  * A refused submission recovers before returning, as before. */
 static native_failure submit_pending(native_device *device, native_pending *pending, bool wait)
 {
     link_pending(device, pending);
     native_failure failure = native_command_submit(&pending->native);
-    wait = wait || pending->native.kind != WGPUBackendType_Vulkan;
+    wait = wait || (pending->native.kind != WGPUBackendType_Vulkan && pending->native.kind != WGPUBackendType_Metal);
     if (failure.status == NATIVE_OK && wait) failure = native_command_wait(&pending->native);
     if (failure.status != NATIVE_OK) {
         device->queue_failed = true;
@@ -502,9 +514,13 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         else ++pending->count;
     }
     if (failure.status == NATIVE_OK) failure = native_flush_initialization(device);
-    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
-    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
-        failure = native_record_resource_commands(&pending->native, pending->resources[i]);
+    if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
+        failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
+    else {
+        if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
+        for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+            failure = native_record_resource_commands(&pending->native, pending->resources[i]);
+    }
     if (failure.status == NATIVE_OK) {
         /* Recovery preserves the original submission failure; successful release
          * is the backend's proof of terminal or never-dispatched ownership. */
