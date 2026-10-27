@@ -101,7 +101,7 @@ export const chromium={async launch(options){
             process = subprocess.run([
                 "node", "--experimental-loader", str(loader), str(RUNNER),
                 "--chrome", str(image), "--doe-lib", str(image), "--mode", "both",
-                "--strict", "--sandbox", "true", "--op-timeout-ms", "10",
+                "--strict", "--op-timeout-ms", "10",
                 "--suite-timeout-ms", "1000", "--upload-iters", "1", "--dispatch-iters", "1", "--out", str(report),
             ], cwd=ROOT, capture_output=True, text=True, timeout=10, check=False)
             self.assertEqual(process.returncode, 1, process.stdout + process.stderr)
