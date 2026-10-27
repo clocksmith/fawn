@@ -8,13 +8,13 @@
 // namespace's runtime helpers use the factory the package surface passes.
 
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDoeRuntime, resolveDoeBinaryPath, resolveDoeModuleRunnerPath } from '../../src/vendor/webgpu/runtime-cli.js';
 import { createDoeNamespace } from '../../src/vendor/doe-namespace.js';
 
-const directory = mkdtempSync(join(tmpdir(), 'doe-runtime-selection-'));
+const directory = realpathSync(mkdtempSync(join(tmpdir(), 'doe-runtime-selection-')));
 const saved = { DOE_BIN: process.env.DOE_BIN, FAWN_DOE_BIN: process.env.FAWN_DOE_BIN,
   DOE_WEBGPU_LIB: process.env.DOE_WEBGPU_LIB, DOE_LIB: process.env.DOE_LIB, DOE_MODULE_RUNNER: process.env.DOE_MODULE_RUNNER };
 function fakeCli(name) {

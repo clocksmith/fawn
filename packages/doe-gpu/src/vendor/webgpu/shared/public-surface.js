@@ -72,9 +72,14 @@ function buildProviderInfo({
 
 function libraryFlavor(libraryPath) {
   if (!libraryPath) return 'missing';
-  if (/libwebgpu_doe\.(so|dylib|dll)$/.test(libraryPath)) return 'doe-dropin';
-  // Experimental C provider (runtime/c package); distinct attribution, never the Zig drop-in.
-  if (/libwebgpu_doe_c\.(so|dylib|dll)$/.test(libraryPath)) return 'doe-c';
+  const basename = libraryPath.split(/[\\/]/u).pop();
+  // Exact artifact names emitted by dropin, dropin-full and dropin-compute.
+  const zigUnix = /^libwebgpu_doe(?:_(?:full|compute))?\.(?:so|dylib)$/u;
+  const zigWindows = /^(?:lib)?webgpu_doe(?:_(?:full|compute))?\.dll$/u;
+  if (zigUnix.test(basename) || zigWindows.test(basename)) return 'doe-dropin';
+  const cUnix = /^libwebgpu_doe_c\.(?:so|dylib)$/u;
+  const cWindows = /^(?:lib)?webgpu_doe_c\.dll$/u;
+  if (cUnix.test(basename) || cWindows.test(basename)) return 'doe-c';
   if (/lib(webgpu|webgpu_dawn|wgpu_native)\.(so|dylib|dll)/.test(libraryPath)) return 'delegate';
   return 'unknown';
 }
