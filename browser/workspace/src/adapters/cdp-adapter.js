@@ -41,6 +41,7 @@ class CdpConnection {
     this._nextId = 1;
     this._pending = new Map();
     this._listeners = new Set();
+    this._eventWaiters = new Set();
     this._buffer = '';
     this._stderr = '';
     this._failure = null;
@@ -53,14 +54,18 @@ class CdpConnection {
     child.stdio[2].on('data', (chunk) => {
       this._stderr = (this._stderr + chunk.toString('utf8')).slice(-STDERR_TAIL_CHARS);
     });
-    for (const fd of [COMMAND_FD, EVENT_FD]) child.stdio[fd].on('error', () => {});
+    for (const fd of [COMMAND_FD, EVENT_FD]) child.stdio[fd].on('error', error => this._fail(error));
+    child.stdio[EVENT_FD].once('end', () => this._fail(new Error('CDP event pipe closed')));
     child.stdio[EVENT_FD].on('data', (chunk) => this._receive(chunk));
     this._closed.then(({ code, signal, error }) => {
       const reason = error?.message ?? `exit ${signal ?? code}`;
-      this._failure = new Error(`Chromium ended (${reason}): ${this._stderr.trim().split('\n').slice(-3).join(' | ')}`);
-      for (const waiter of this._pending.values()) waiter.reject(this._failure);
-      this._pending.clear();
+      this._fail(new Error(`Chromium ended (${reason}): ${this._stderr.trim().split('\n').slice(-3).join(' | ')}`));
     });
+  }
+
+  _fail(error) {
+    this._failure ??= error;
+    for (const waiter of [...this._pending.values(), ...this._eventWaiters]) waiter.reject(this._failure);
   }
 
   _receive(chunk) {
@@ -80,38 +85,79 @@ class CdpConnection {
     }
   }
 
-  send(method, params = {}, sessionId = undefined) {
+  send(method, params = {}, sessionId = undefined, signal = undefined) {
     if (this._failure) return Promise.reject(this._failure);
+    if (signal?.aborted) return Promise.reject(signal.reason);
     const id = this._nextId++;
     const message = { id, method, params, ...(sessionId ? { sessionId } : {}) };
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this._pending.delete(id);
-        reject(new Error(`CDP ${method} timed out`));
-      }, this._timeoutMs);
-      this._pending.set(id, {
-        resolve: (value) => { clearTimeout(timer); resolve(value); },
-        reject: (error) => { clearTimeout(timer); reject(error); },
-      });
+      let timer;
+      const cleanup = () => { clearTimeout(timer); this._pending.delete(id); signal?.removeEventListener('abort', aborted); };
+      const waiter = { resolve: value => { cleanup(); resolve(value); }, reject: error => { cleanup(); reject(error); } };
+      const aborted = () => waiter.reject(signal.reason);
+      timer = setTimeout(() => waiter.reject(new Error(`CDP ${method} timed out`)), this._timeoutMs);
+      this._pending.set(id, waiter);
+      signal?.addEventListener('abort', aborted, { once: true });
       this._child.stdio[COMMAND_FD].write(`${JSON.stringify(message)}${MESSAGE_TERMINATOR}`);
     });
   }
 
-  /** Resolve with the first event matching method and predicate. */
-  waitForEvent(method, predicate = () => true) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this._listeners.delete(listener);
-        reject(new Error(`CDP event ${method} not received`));
-      }, this._timeoutMs);
-      const listener = (message) => {
-        if (message.method !== method || !predicate(message.params, message.sessionId)) return;
+  _waitForEvent({ method, predicate = () => true, observed = () => {} }, signal) {
+    const promise = new Promise((resolve, reject) => {
+      let timer;
+      let done = false;
+      const cleanup = () => {
         clearTimeout(timer);
         this._listeners.delete(listener);
-        resolve(message.params);
+        this._eventWaiters.delete(waiter);
+        signal.removeEventListener('abort', aborted);
       };
+      const finish = (error, value) => {
+        if (done) return;
+        done = true;
+        cleanup();
+        if (error) reject(error); else resolve(value);
+      };
+      const waiter = { reject: error => finish(error) };
+      const aborted = () => finish(signal.reason);
+      const listener = (message) => {
+        try {
+          if (message.method !== method || !predicate(message.params, message.sessionId)) return;
+          observed(message.params);
+          finish(null, message.params);
+        } catch (error) { finish(error); }
+      };
+      if (this._failure || signal.aborted) { finish(this._failure ?? signal.reason); return; }
       this._listeners.add(listener);
+      this._eventWaiters.add(waiter);
+      signal.addEventListener('abort', aborted, { once: true });
+      timer = setTimeout(() => finish(new Error(`CDP event ${method} not received`)), this._timeoutMs);
     });
+    // The event can fail before its command is awaited. Retain that failure
+    // for the owner, without producing a detached unhandled rejection.
+    promise.catch(() => {});
+    return promise;
+  }
+
+  waitForEvents(specifications) {
+    const controller = new AbortController();
+    const events = Promise.all(specifications.map(specification =>
+      this._waitForEvent(specification, controller.signal).then(value => [specification.name, value])))
+      .then(entries => Object.fromEntries(entries));
+    events.catch(error => controller.abort(error));
+    return {
+      run: async command => {
+        try {
+          const [result, observed] = await Promise.all([
+            Promise.resolve().then(() => command(controller.signal)), events,
+          ]);
+          return { result, events: observed };
+        } catch (error) {
+          controller.abort(error);
+          throw error;
+        } finally { controller.abort(new Error('CDP event group finished')); }
+      },
+    };
   }
 
   async close() {
@@ -169,9 +215,9 @@ class CdpWorkspaceAdapter {
     return entry;
   }
 
-  async _evaluate(workspaceId, expression) {
+  async _evaluate(workspaceId, expression, signal = undefined) {
     const { cdp, sessionId } = this._entry(workspaceId);
-    const response = await cdp.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId);
+    const response = await cdp.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId, signal);
     if (response.exceptionDetails) {
       throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
     }
@@ -198,24 +244,24 @@ class CdpWorkspaceAdapter {
   }
 
   /** Centre of the single element matching selector, scrolled into view; fails on 0 or >1. */
-  async _point(workspaceId, selector) {
+  async _point(workspaceId, selector, signal = undefined) {
     const point = await this._evaluate(workspaceId, `(() => {
       const nodes = document.querySelectorAll(${JSON.stringify(selector)});
       if (nodes.length !== 1) return { count: nodes.length };
       nodes[0].scrollIntoView({ block: 'center', inline: 'center' });
       const box = nodes[0].getBoundingClientRect();
       return { count: 1, x: box.left + box.width / 2, y: box.top + box.height / 2 };
-    })()`);
+    })()`, signal);
     if (point.count !== 1) throw new Error(`selector ${selector} matched ${point.count} elements`);
     return point;
   }
 
-  async _click(workspaceId, selector) {
+  async _click(workspaceId, selector, signal = undefined) {
     const { cdp, sessionId } = this._entry(workspaceId);
-    const { x, y } = await this._point(workspaceId, selector);
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }, sessionId);
+    const { x, y } = await this._point(workspaceId, selector, signal);
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }, sessionId, signal);
     for (const type of ['mousePressed', 'mouseReleased']) {
-      await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: LEFT_BUTTON, clickCount: SINGLE_CLICK }, sessionId);
+      await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: LEFT_BUTTON, clickCount: SINGLE_CLICK }, sessionId, signal);
     }
   }
 
@@ -238,10 +284,13 @@ class CdpWorkspaceAdapter {
 const EFFECTS = Object.freeze({
   async navigate(workspaceId, request) {
     const { cdp, sessionId } = this._entry(workspaceId);
-    const loaded = cdp.waitForEvent('Page.loadEventFired', (_, eventSession) => eventSession === sessionId);
-    const navigation = await cdp.send('Page.navigate', { url: request.target.url }, sessionId);
-    if (navigation.errorText) throw new Error(`navigation failed: ${navigation.errorText}`);
-    await loaded;
+    const loaded = cdp.waitForEvents([{ name: 'loaded', method: 'Page.loadEventFired',
+      predicate: (_, eventSession) => eventSession === sessionId }]);
+    await loaded.run(async signal => {
+      const navigation = await cdp.send('Page.navigate', { url: request.target.url }, sessionId, signal);
+      if (navigation.errorText) throw new Error(`navigation failed: ${navigation.errorText}`);
+      return navigation;
+    });
     return { status: null, finalUrl: await this.probeUrl(workspaceId) };
   },
   async click(workspaceId, request) {
@@ -276,11 +325,13 @@ const EFFECTS = Object.freeze({
   },
   async download(workspaceId, request) {
     const { cdp, downloadDir } = this._entry(workspaceId);
-    const begun = cdp.waitForEvent('Browser.downloadWillBegin');
-    await this._click(workspaceId, request.target.selector);
-    const { guid, suggestedFilename } = await begun;
-    const progress = await cdp.waitForEvent('Browser.downloadProgress',
-      (params) => params.guid === guid && params.state !== 'inProgress');
+    let guid;
+    const download = cdp.waitForEvents([
+      { name: 'begun', method: 'Browser.downloadWillBegin', observed: params => { guid = params.guid; } },
+      { name: 'progress', method: 'Browser.downloadProgress', predicate: params => params.guid === guid && params.state !== 'inProgress' },
+    ]);
+    const { events: { begun: { suggestedFilename }, progress } } = await download.run(signal =>
+      this._click(workspaceId, request.target.selector, signal));
     if (progress.state !== 'completed') throw new Error(`download ${guid} ${progress.state}`);
     const safeName = suggestedFilename.replace(UNSAFE_FILENAME_CHARS, '_');
     const artifactPath = join(downloadDir, '..', `${request.actionId.replace(UNSAFE_FILENAME_CHARS, '_')}-${safeName}`);
