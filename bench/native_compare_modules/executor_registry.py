@@ -7,11 +7,16 @@ compatibility for the existing compare stack.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 
 
+_NATIVE_ENV_PREFIX = ("" if os.name == "nt" else
+                      "env DYLD_LIBRARY_PATH=bench/vendor/dawn/out/Release:$DYLD_LIBRARY_PATH ")
+_NATIVE_EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 _DOE_RUNTIME_PREFIX = (
-    "env DYLD_LIBRARY_PATH=bench/vendor/dawn/out/Release:$DYLD_LIBRARY_PATH "
-    "runtime/zig/zig-out/bin/doe-zig-runtime --commands {commands} --quirks {quirks} "
+    _NATIVE_ENV_PREFIX
+    + "runtime/zig/zig-out/bin/doe-zig-runtime" + _NATIVE_EXE_SUFFIX
+    + " --commands {commands} --quirks {quirks} "
     "--vendor {vendor} --api {api} --family {family} --driver {driver} "
     "--backend native --execute --trace --queue-sync-mode {queue_sync_mode} "
     "--upload-buffer-usage {upload_buffer_usage} --upload-submit-every {upload_submit_every} "
@@ -20,8 +25,8 @@ _DOE_RUNTIME_PREFIX = (
 )
 
 _DOE_PLAN_PREFIX = (
-    "env DYLD_LIBRARY_PATH=bench/vendor/dawn/out/Release:$DYLD_LIBRARY_PATH "
-    "runtime/zig/zig-out/bin/doe-plan-executor --plan {plan} "
+    _NATIVE_ENV_PREFIX
+    + "runtime/zig/zig-out/bin/doe-plan-executor" + _NATIVE_EXE_SUFFIX + " --plan {plan} "
     "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --workload {workload} "
     "--vendor {vendor} --api {api} --family {family} --driver {driver} "
     "--queue-sync-mode {queue_sync_mode} --upload-buffer-usage {upload_buffer_usage} "

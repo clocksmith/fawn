@@ -25,6 +25,10 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_COMMANDS = {
+    "c-vs-zig": (
+        [sys.executable, "-m", "bench.tools.run_c_vs_zig_campaign"],
+        "Run native C and Zig catalog rows independently and retain strict comparisons and failures",
+    ),
     "graphics": (
         ["node", "bench/external-projects/d4da-world/run.mjs"],
         "Observe the existing D4DA Three.js page and validate its terrain pixels",

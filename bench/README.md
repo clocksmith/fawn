@@ -13,6 +13,7 @@ python3 bench/cli.py compare --help
 python3 bench/cli.py claim --help
 python3 bench/cli.py external --help
 python3 bench/cli.py program --help
+python3 bench/cli.py c-vs-zig --help
 ```
 
 Use [`docs/operator-runbook.md`](../docs/operator-runbook.md) for platform
@@ -132,6 +133,26 @@ The required order is:
 6. publish only reviewed, claim-eligible artifacts.
 
 Timing from an invalid or unequal execution is diagnostic.
+
+## C versus retained Zig
+
+`c-vs-zig --backend metal|vulkan|d3d12 --out <fresh-directory>` attempts every
+runtime row of the selected catalog through the existing independent `run` and
+post-hoc `compare` owners. Supply each actual linked provider/compiler library
+with repeated `--input-artifact <path>` arguments, using the build's resolved
+dependency receipt. C and Zig receive the same Doe-side normalization and work.
+Both use fresh processes; persistent C translation artifacts are disabled, the
+filesystem is warm, and driver caches are not purged. Provider blocks alternate
+by row. Original workload oracles and comparability rules remain unchanged.
+
+Every failure stays in the coverage ledger; later rows still run after an ordinary
+rejection. A timeout stops the cohort because killing the host does not establish
+GPU completion. Source, binary, library and harness hashes must remain unchanged.
+Run on an admitted idle host without simultaneous builds or other GPU work.
+Compiler-only rows are enumerated separately and use
+[`compare_c_vs_zig_compilation.py`](tools/compare_c_vs_zig_compilation.py), which
+measures fresh translation processes and validates each target artifact outside
+timing. Neither tool grants release admission or turns unsupported rows into wins.
 
 ## Core contracts
 
