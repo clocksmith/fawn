@@ -34,6 +34,7 @@ Outputs:
 - Correctness and structural equivalence precede performance interpretation.
 - Missing work, asymmetric timing, hidden fallback, or failed oracles cannot become wins.
 - Diagnostic evidence cannot be relabeled to promote a claim.
+- Optional three-provider package baselines bind actual loaded addons, enforced backend selection, physical adapter identity and per-worker completion before comparing full output-validated public API operations.
 - Output proof belongs to its actual execution. Separate preflight or replay
   evidence cannot be assigned to timed samples or admit their comparison.
 

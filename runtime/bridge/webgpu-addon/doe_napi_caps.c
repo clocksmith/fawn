@@ -447,10 +447,23 @@ napi_value doe_adapter_get_info(napi_env env, napi_callback_info info) {
     return create_adapter_info_object(env, unwrap_ptr(env, _args[0]));
 }
 
+/* Report only the standard provider's observed value, including the private-info path. */
+static void set_observed_adapter_backend(napi_env env, napi_value object, void* adapter) {
+    WGPUAdapterInfo standard_info;
+    memset(&standard_info, 0, sizeof(standard_info));
+    if (!pfn_wgpuAdapterGetInfo
+        || pfn_wgpuAdapterGetInfo(adapter, &standard_info) != WGPU_STATUS_SUCCESS) return;
+    napi_value backend;
+    napi_create_uint32(env, standard_info.backendType, &backend);
+    napi_set_named_property(env, object, "backendType", backend);
+    if (pfn_wgpuAdapterInfoFreeMembers) pfn_wgpuAdapterInfoFreeMembers(standard_info);
+}
+
 napi_value create_adapter_info_object(napi_env env, void* adapter) {
     if (!adapter) NAPI_THROW(env, "Invalid adapter");
     napi_value obj;
     napi_create_object(env, &obj);
+    set_observed_adapter_backend(env, obj, adapter);
 
     napi_value v_vendor, v_arch, v_device, v_desc, v_is_fallback, v_sg_min, v_sg_max;
     napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_vendor);
