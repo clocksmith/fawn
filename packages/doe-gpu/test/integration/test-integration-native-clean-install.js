@@ -5,6 +5,7 @@ import { release, tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
+import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -333,9 +334,9 @@ try {
   )) {
     throw new Error(`Electron mapped-range probe failed: ${executed.stdout}`);
   }
-  if (receipt.provider?.buildMetadataSource !== 'prebuild') {
-    throw new Error(`native runtime did not resolve from platform package: ${executed.stdout}`);
-  }
+  assertInstalledNativeProvider(receipt.provider, resolve(scratch, `node_modules/${platformPackageName}`));
+  const metadataFilename = receipt.provider.buildMetadataSource === 'c-package'
+    ? 'doe-c-manifest.json' : 'doe-build-metadata.json';
   if (!receipt.provider?.doeLibraryPath?.includes(`/node_modules/${platformPackageName}/`)) {
     throw new Error(`native library escaped the clean install: ${executed.stdout}`);
   }
@@ -471,11 +472,11 @@ try {
           sha256: await sha256File(resolve(platformPackageRoot, 'bin', 'doe_napi.node')),
         },
         stagedBuildMetadata: {
-          path: `packages/${platformPackageName}/bin/doe-build-metadata.json`,
+          path: `packages/${platformPackageName}/bin/${metadataFilename}`,
           sha256: await sha256File(resolve(
             platformPackageRoot,
             'bin',
-            'doe-build-metadata.json',
+            metadataFilename,
           )),
         },
       },

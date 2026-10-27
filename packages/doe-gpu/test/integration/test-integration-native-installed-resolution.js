@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
+import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -100,11 +101,7 @@ try {
   ]);
   requireSuccess(permissionProbe, 'installed native Node permission probe');
   const provider = JSON.parse(permissionProbe.stdout);
-  if (provider.loaded !== true
-      || provider.doeNative !== true
-      || provider.buildMetadataSource !== 'prebuild') {
-    throw new Error(`permission probe did not load the platform package: ${permissionProbe.stdout}`);
-  }
+  assertInstalledNativeProvider(provider, installedPlatformRoot);
   if (!provider.doeLibraryPath?.startsWith(`${installedPlatformRoot}/`)) {
     throw new Error(`permission probe escaped the installed platform package: ${permissionProbe.stdout}`);
   }
