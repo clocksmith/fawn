@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -14,7 +15,9 @@ WRAPPER = ROOT / "browser/chromium/scripts/run-smoke.sh"
 class BrowserSmokeSandboxTests(unittest.TestCase):
     def run_args(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [str(WRAPPER), *args], cwd=ROOT, capture_output=True,
+            # These requests must fail during admission. Real executable/file
+            # identities keep the test independent of a HEAD-keyed GPU stage.
+            [str(WRAPPER), "--chrome", sys.executable, "--doe-lib", sys.executable, *args], cwd=ROOT, capture_output=True,
             text=True, timeout=10, check=False,
         )
 

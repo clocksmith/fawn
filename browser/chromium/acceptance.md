@@ -96,6 +96,14 @@ hardware, never a synthetic `Doe` GPU vendor.
 - Require independent output oracles for promoted compute and render rows.
 - Match upload, command, submit, completion, and readback work against Dawn.
 - Cover crash, hang, device loss, recovery, concurrency, teardown, and memory.
+- A smoke timeout retains completed steps and the first unknown operation, then
+  stops later GPU cases, artwork/lifecycle probes and providers. Successful
+  browser cleanup cannot turn unknown completion into accepted execution.
+- Rejected completion after submitted work is also unknown. The versioned smoke
+  queue ledger requires bounded successful `onSubmittedWorkDone` for every used
+  owned queue before recording completion; a successful map or event-loop turn
+  cannot substitute for that queue evidence. Benchmark batches are marked
+  outside their timed loops.
 - Preserve typed errors through C, Zig, browser, and JavaScript boundaries.
 - Keep cache, synchronization, fallback, and hardware shortcuts explicit.
 - Produce backend-specific Metal, Vulkan, and D3D12 evidence before broadening
