@@ -140,10 +140,16 @@ Timing from an invalid or unequal execution is diagnostic.
 runtime row of the selected catalog through the existing independent `run` and
 post-hoc `compare` owners. Supply each actual linked provider/compiler library
 with repeated `--input-artifact <path>` arguments, using the build's resolved
-dependency receipt. C and Zig receive the same Doe-side normalization and work.
+dependency receipt. C and Zig receive the same requested command parameters and
+Doe-side normalization; this alone does not establish equivalent executed work.
 Both use fresh processes; persistent C translation artifacts are disabled, the
 filesystem is warm, and driver caches are not purged. Provider blocks alternate
 by row. Original workload oracles and comparability rules remain unchanged.
+An independent successful output oracle is required in every timed sample before
+the tool requests a performance comparison. Rows without that evidence retain
+their raw timing receipts as diagnostics. The coverage ledger is never a speed
+claim. In particular, native render proxies may implement different shaders or
+command semantics despite matching reported draw counts.
 
 Every failure stays in the coverage ledger; later rows still run after an ordinary
 rejection. A timeout stops the cohort because killing the host does not establish
