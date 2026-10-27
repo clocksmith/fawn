@@ -36,10 +36,26 @@ extern compiler_entry __imp_doe_compiler_compile;
 
 enum { IMAGE_LIMIT = 512 * 1024 * 1024 };
 typedef struct image_hash {
+    uintptr_t owner; /* Loader identity, never serialized into the digest. */
     uint8_t digest[32];
     size_t bytes;
     size_t spans;
 } image_hash;
+
+/* Reuse only a completed hash of the same loader-owned image in this call.
+ * Native and shader owners are commonly linked into one image; their separate
+ * slots in the final identity still bind the exact same immutable bytes. */
+static bool reuse_image(uintptr_t owner, const image_hash *prior, size_t count,
+    image_hash *out)
+{
+    for (size_t i = 0; i < count; ++i) {
+        if (prior[i].spans && prior[i].owner == owner) {
+            *out = prior[i];
+            return true;
+        }
+    }
+    return false;
+}
 
 static void little64(uint8_t out[8], uint64_t value)
 {
@@ -111,6 +127,8 @@ static bool elf_build_id(const struct dl_phdr_info *info, image_hash *hash)
 typedef struct elf_search {
     uintptr_t anchor;
     image_hash hash;
+    const image_hash *prior;
+    size_t count;
     bool found;
     bool valid;
 } elf_search;
@@ -128,6 +146,11 @@ static int elf_image(struct dl_phdr_info *info, size_t size, void *opaque)
             search->found = true;
     }
     if (!search->found) return 0;
+    if (reuse_image(base, search->prior, search->count, &search->hash)) {
+        search->valid = true;
+        return 1;
+    }
+    search->hash.owner = base;
     if (!elf_build_id(info, &search->hash)) return 1;
     search->valid = true;
     for (size_t i = 0; i < info->dlpi_phnum; ++i) {
@@ -152,20 +175,25 @@ static int elf_image(struct dl_phdr_info *info, size_t size, void *opaque)
     return 1;
 }
 
-static bool loaded_image(uintptr_t anchor, image_hash *hash)
+static bool loaded_image(uintptr_t anchor, const image_hash *prior, size_t count, image_hash *hash)
 {
-    elf_search search = {.anchor = anchor};
+    elf_search search = {.anchor=anchor,.prior=prior,.count=count};
     (void)dl_iterate_phdr(elf_image, &search);
     if (!search.found || !search.valid || !search.hash.spans) return false;
     *hash = search.hash;
     return true;
 }
 #elif defined(_WIN32)
-static bool loaded_image(uintptr_t anchor, image_hash *hash)
+static bool loaded_image(uintptr_t anchor, const image_hash *prior, size_t count, image_hash *hash)
 {
     HMODULE module = NULL;
     if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
             (LPCWSTR)anchor, &module)) return false;
+    if (reuse_image((uintptr_t)module, prior, count, hash)) {
+        (void)FreeLibrary(module);
+        return true;
+    }
+    hash->owner = (uintptr_t)module;
     const uint8_t *image = (const uint8_t *)module;
     const IMAGE_DOS_HEADER *dos = (const IMAGE_DOS_HEADER *)image;
     bool valid = false;
@@ -197,7 +225,7 @@ done:
     return valid;
 }
 #elif defined(__APPLE__)
-static bool loaded_image(uintptr_t anchor, image_hash *hash)
+static bool loaded_image(uintptr_t anchor, const image_hash *prior, size_t count, image_hash *hash)
 {
     Dl_info owner;
     if (!dladdr((const void *)anchor, &owner) || !owner.dli_fbase) return false;
@@ -214,6 +242,8 @@ static bool loaded_image(uintptr_t anchor, image_hash *hash)
         }
     }
     if (!found) return false;
+    if (reuse_image((uintptr_t)header, prior, count, hash)) return true;
+    hash->owner = (uintptr_t)header;
     const uint8_t *commands = (const uint8_t *)(header + 1);
     size_t offset = 0;
     bool uuid_found = false;
@@ -266,9 +296,11 @@ static bool loaded_image(uintptr_t anchor, image_hash *hash)
     return uuid_found && hash->spans != 0;
 }
 #else
-static bool loaded_image(uintptr_t anchor, image_hash *hash)
+static bool loaded_image(uintptr_t anchor, const image_hash *prior, size_t count, image_hash *hash)
 {
     (void)anchor;
+    (void)prior;
+    (void)count;
     (void)hash;
     return false;
 }
@@ -299,17 +331,15 @@ bool native_shader_cache_identity(uint8_t digest[32])
     if (!compiler_function) return false;
     memcpy(&compiler_address, &compiler_function, sizeof(compiler_address));
     memcpy(&shader_address, &shader_function, sizeof(shader_address));
-    image_hash native = {0};
-    image_hash compiler = {0};
-    image_hash shader = {0};
-    if (!loaded_image(native_address, &native) || !loaded_image(compiler_address, &compiler) ||
-        !loaded_image(shader_address, &shader))
-        return false;
+    image_hash owners[3] = {0};
+    if (!loaded_image(native_address, NULL, 0, &owners[0]) ||
+        !loaded_image(compiler_address, owners, 1, &owners[1]) ||
+        !loaded_image(shader_address, owners, 2, &owners[2])) return false;
     uint8_t combined[120] = {0};
     memcpy(combined, "DOE-LOADED-OWNERS-v2", 20);
-    memcpy(combined + 24, native.digest, 32);
-    memcpy(combined + 56, compiler.digest, 32);
-    memcpy(combined + 88, shader.digest, 32);
+    memcpy(combined + 24, owners[0].digest, 32);
+    memcpy(combined + 56, owners[1].digest, 32);
+    memcpy(combined + 88, owners[2].digest, 32);
     doe_common_sha256(combined, sizeof(combined), digest);
     return true;
 }
