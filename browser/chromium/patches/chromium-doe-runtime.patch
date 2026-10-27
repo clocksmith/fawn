@@ -444,6 +444,17 @@ index 543e347e14..f1ed29a326 100644
 
    if (watchdog_thread) {
      watchdog_thread->Start();
+diff --git a/gpu/command_buffer/service/BUILD.gn b/gpu/command_buffer/service/BUILD.gn
+--- a/gpu/command_buffer/service/BUILD.gn
++++ b/gpu/command_buffer/service/BUILD.gn
+@@ -349,6 +349,7 @@
+       "shared_image/dawn_image_backing_factory.h",
+       "webgpu_decoder_impl.cc",
+       "webgpu_decoder_impl.h",
++      "webgpu_skia_fallback.h",
+     ]
+   }
+
 diff --git a/gpu/command_buffer/service/dawn_instance.cc b/gpu/command_buffer/service/dawn_instance.cc
 index 1b77642ce9..c5bcd0ebdb 100644
 --- a/gpu/command_buffer/service/dawn_instance.cc
@@ -489,7 +500,11 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
  #include "base/compiler_specific.h"
  #include "base/feature_list.h"
  #include "base/logging.h"
-@@ -53,6 +54,7 @@
+@@ -50,9 +51,11 @@
+ #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"
+ #include "gpu/command_buffer/service/skia_utils.h"
+ #include "gpu/command_buffer/service/webgpu_decoder.h"
++#include "gpu/command_buffer/service/webgpu_skia_fallback.h"
  #include "gpu/config/gpu_feature_info.h"
  #include "gpu/config/gpu_finch_features.h"
  #include "gpu/config/gpu_preferences.h"
@@ -497,7 +512,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
  #include "gpu/config/webgpu_blocklist_impl.h"
  #include "gpu/webgpu/callback.h"
  #include "third_party/blink/public/common/tokens/tokens.h"
-@@ -233,6 +235,11 @@
+@@ -233,6 +236,11 @@
        return;
      }
 
@@ -509,7 +524,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
      has_polling_work_ =
          dawn::native::InstanceProcessEvents(dawn_instance_->Get());
 
-@@ -435,6 +442,9 @@
+@@ -435,6 +443,9 @@
    std::unique_ptr<DawnServiceMemoryTransferService> memory_transfer_service_;
 
    webgpu::SafetyLevel safety_level_ = webgpu::SafetyLevel::kSafe;
@@ -519,7 +534,58 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    WebGPUAdapterName use_webgpu_adapter_ = WebGPUAdapterName::kDefault;
    WebGPUPowerPreference use_webgpu_power_preference_ =
        WebGPUPowerPreference::kNone;
-@@ -1666,10 +1676,15 @@
+@@ -514,10 +525,7 @@
+       // Include list of formats this is tested to work with.
+       // See gpu/command_buffer/tests/webgpu_mailbox_unittest.cc
+       if (format != viz::SinglePlaneFormat::kBGRA_8888 &&
+-// TODO(crbug.com/40823053): Support "rgba8unorm" canvas context format on Apple
+-#if !BUILDFLAG(IS_APPLE)
+           format != viz::SinglePlaneFormat::kRGBA_8888 &&
+-#endif
+           format != viz::SinglePlaneFormat::kRGBA_F16) {
+         return nullptr;
+       }
+@@ -687,12 +695,18 @@
+         success = false;
+       }
+
++      // Staging memory uses the Dawn texture's declared format, which can
++      // differ from the backing SkImage's native channel order.
++      const SkImageInfo staging_info =
++          sk_image ? MakeWebGPUFallbackStagingInfo(
++                         sk_image->imageInfo(), representation_->format())
++                   : SkImageInfo();
+       // Read back the Skia image contents into the staging buffer.
+       DCHECK(dst_pointer);
+       if (shared_context_state_->gr_context()) {
+         if (success &&
+             !sk_image->readPixels(shared_context_state_->gr_context(),
+-                                  sk_image->imageInfo(), dst_pointer,
++                                  staging_info, dst_pointer,
+                                   bytes_per_row, 0, 0)) {
+           DLOG(ERROR) << "Failed to read from SkImage";
+           success = false;
+@@ -703,7 +717,7 @@
+         if (success && !GraphiteReadPixelsSync(
+                            shared_context_state_->graphite_shared_context(),
+                            shared_context_state_->gpu_main_graphite_recorder(),
+-                           sk_image.get(), sk_image->imageInfo(), dst_pointer,
++                           sk_image.get(), staging_info, dst_pointer,
+                            bytes_per_row, 0, 0)) {
+           DLOG(ERROR) << "Failed to read from SkImage";
+           success = false;
+@@ -867,7 +881,9 @@
+       }
+
+       WaitForSemaphores(std::move(begin_semaphores));
+-      surface->writePixels(SkPixmap(surface->imageInfo(), data, bytes_per_row),
++      const SkImageInfo staging_info = MakeWebGPUFallbackStagingInfo(
++          surface->imageInfo(), representation_->format());
++      surface->writePixels(SkPixmap(staging_info, data, bytes_per_row),
+                            /*x*/ 0, /*y*/ 0);
+
+       // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
+@@ -1666,10 +1682,15 @@
      bool force_fallback,
      wgpu::FeatureLevel feature_level,
      bool webgpu_on_vk_gl_interop) const {
@@ -536,7 +602,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    if (force_fallback && !allow_fallback_adapter) {
      return nullptr;
    }
-@@ -1732,6 +1747,10 @@
+@@ -1732,6 +1753,10 @@
    dawn_adapter_toggles.disabledToggleCount =
        require_adapter_disabled_toggles.size();
    ChainStruct(adapter_options, &dawn_adapter_toggles);
@@ -547,7 +613,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
 
  #if BUILDFLAG(IS_WIN)
    // On Windows, query the LUID of ANGLE's adapter.
-@@ -1772,7 +1791,6 @@
+@@ -1772,7 +1797,6 @@
      adapter_options_get_gl_proc.display = EGL_NO_DISPLAY;
    }
 
@@ -555,7 +621,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
  #endif
 
    // Build a list of backend types we will search for, in order of preference.
-@@ -1808,6 +1826,16 @@
+@@ -1808,6 +1832,16 @@
      }
    }
 
@@ -572,7 +638,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    // `CanUseAdapter` is a helper to determine if an adapter is not blocklisted,
    // supports all required features, and matches the requested adapter options
    // (some of which may be set by command-line flags).
-@@ -1817,7 +1845,17 @@
+@@ -1817,7 +1851,17 @@
      wgpu::AdapterInfo adapter_info = {};
      adapter.GetInfo(&adapter_info);
 
@@ -591,7 +657,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
        return false;
      }
 
-@@ -1859,7 +1897,7 @@
+@@ -1859,7 +1903,7 @@
      // SharedTextureMemory.
      supports_external_textures = native_adapter.SupportsExternalImages();
  #endif
@@ -600,7 +666,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
        return false;
      }
 
-@@ -1881,6 +1919,17 @@
+@@ -1881,6 +1925,17 @@
    // Enumerate adapters in order of the preferred backend type.
    for (wgpu::BackendType backend_type : backend_types) {
      adapter_options.backendType = backend_type;
@@ -618,7 +684,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
      for (dawn::native::Adapter& native_adapter :
           dawn_instance_->EnumerateAdapters(&adapter_options)) {
        native_adapter.SetUseTieredLimits(tiered_adapter_limits_);
-@@ -2164,6 +2213,14 @@
+@@ -2164,6 +2219,14 @@
        shared_image_representation_factory_->ProduceSkia(
            mailbox, shared_context_state_.get());
 
@@ -633,7 +699,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    if (!ValidateAssociateMailboxAndSetSharedImageClearState(
            shared_image.get(), flags, usage, internal_usage)) {
      return nullptr;
-@@ -2246,7 +2303,7 @@
+@@ -2246,7 +2309,7 @@
    std::unique_ptr<SharedImageRepresentationAndAccess> representation_and_access;
    auto it = known_device_metadata_.find(device);
    CHECK(it != known_device_metadata_.end());
@@ -642,7 +708,7 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
      representation_and_access = AssociateMailboxUsingSkiaFallback(
          mailbox, flags, device, usage, internal_usage, std::move(view_formats));
    } else {
-@@ -2348,6 +2405,10 @@
+@@ -2348,6 +2411,10 @@
                                                const wgpu::Device& device,
                                                wgpu::BackendType backendType,
                                                wgpu::BufferUsage usage) {
@@ -653,6 +719,35 @@ diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buf
    std::unique_ptr<DawnBufferRepresentation> shared_buffer =
        shared_image_representation_factory_->ProduceDawnBuffer(
            mailbox, device, backendType, shared_context_state_);
+diff --git a/gpu/command_buffer/service/webgpu_skia_fallback.h b/gpu/command_buffer/service/webgpu_skia_fallback.h
+new file mode 100644
+--- /dev/null
++++ b/gpu/command_buffer/service/webgpu_skia_fallback.h
+@@ -0,0 +1,24 @@
++// Copyright 2026 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef GPU_COMMAND_BUFFER_SERVICE_WEBGPU_SKIA_FALLBACK_H_
++#define GPU_COMMAND_BUFFER_SERVICE_WEBGPU_SKIA_FALLBACK_H_
++
++#include "components/viz/common/resources/shared_image_format_utils.h"
++#include "third_party/skia/include/core/SkImageInfo.h"
++
++namespace gpu::webgpu {
++
++// The fallback's permitted RGBA/BGRA/F16 formats map exactly to their Dawn
++// texture formats. CPU staging follows that declared layout, even when a Skia
++// backing uses another channel order. Retain dimensions, alpha and color space.
++inline SkImageInfo MakeWebGPUFallbackStagingInfo(
++    const SkImageInfo& backing_info,
++    viz::SharedImageFormat format) {
++  return backing_info.makeColorType(viz::ToClosestSkColorType(format));
++}
++
++}  // namespace gpu::webgpu
++
++#endif  // GPU_COMMAND_BUFFER_SERVICE_WEBGPU_SKIA_FALLBACK_H_
 diff --git a/gpu/config/gpu_switches.cc b/gpu/config/gpu_switches.cc
 index 018cc8be85..e263a3b6df 100644
 --- a/gpu/config/gpu_switches.cc

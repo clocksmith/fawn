@@ -88,6 +88,25 @@ These host controls exercise typed errors, null rejection, callback reference
 races, reentrant retirement, late callbacks and initialization publication under
 the real device mutex. They do not qualify a browser or GPU execution.
 
+The selected Skia mailbox fallback transfers pixels through CPU staging memory.
+Its byte layout follows the declared SharedImage/Dawn format, even if the backing
+SkImage or surface uses another channel order. The shared conversion preserves
+image dimensions, alpha type and color space. The existing RGBA8, BGRA8 and
+RGBA-F16 allowlist applies on Apple as well as the other platforms.
+
+The real Skia raster CPU control exercises both transfer directions, opposite
+backing/declaration channel orders, F16/HDR, alpha, color-space and row-stride
+cases. It also executes the old interpretation and verifies its channel mismatch:
+
+```bash
+python3 browser/chromium/tests/test_skia_fallback_pixels.py \
+  --chromium-source CHROMIUM/src --build-dir out/fawn_release \
+  --mac-build-dir out/fawn_macos_arm64 --out bench/out/skia-fallback-pixels
+```
+
+The optional Mac target is a compile check; raster execution is on the Linux
+host. Browser pixels and physical GPU behavior require their separate gates.
+
 The patches retain upstream copyright and license notices. A rebase requires
 updating the pins, reviewing every source change, rebuilding, and repeating
 provider attribution and application correctness checks; changing a revision
