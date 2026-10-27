@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
 import http from "node:http";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, openSync, fsyncSync, closeSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import process from "node:process";
 import { cWorkspaceLibraryCandidates } from "../../../packages/doe-gpu/src/vendor/webgpu/platform-package.js";
@@ -10,6 +10,7 @@ import { pathWithin } from "./browser-path-containment.mjs";
 import {
   loadRuntimeSelectorPolicy,
   resolveRuntimeSelection,
+  forcedRuntimeArgs,
 } from "./browser-runtime-selector.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -224,6 +225,7 @@ Options:
   --out PATH                Output report JSON path (default: browser/chromium/artifacts/<timestamp>/${DEFAULT_OUT_FILE})
   --allow-bench-out         Allow writing this diagnostic report under bench/out/scratch
   --allow-data-url-fallback Allow data: URL fallback if local server bind fails
+  --sandbox true|false      Chromium sandbox (default: true)
   --headless true|false     Launch headless (default: true)
   --api-surface SURFACE     Browser API surface: native|package-browser (default: ${DEFAULT_API_SURFACE})
   --power-preference VALUE  requestAdapter powerPreference: default|high-performance|low-power (default: ${DEFAULT_POWER_PREFERENCE})
@@ -475,6 +477,7 @@ function parseArgs(argv) {
     allowBenchOut: false,
     allowDataUrlFallback: false,
     headless: true,
+    sandbox: true,
     apiSurface: DEFAULT_API_SURFACE,
     powerPreference: DEFAULT_POWER_PREFERENCE,
     chromeArgs: [],
@@ -550,6 +553,9 @@ function parseArgs(argv) {
       i += 1;
     } else if (token === "--out") {
       args.outPath = readOptionValue(argv, i, "--out");
+      i += 1;
+    } else if (token === "--sandbox") {
+      args.sandbox = parseBool(readOptionValue(argv, i, "--sandbox"), "--sandbox");
       i += 1;
     } else if (token === "--headless") {
       args.headless = parseBool(readOptionValue(argv, i, "--headless"), "--headless");
@@ -651,6 +657,10 @@ function parseArgs(argv) {
     }
   }
 
+  if (args.sandbox && args.chromeArgs.some((arg) =>
+    /^--(?:no-sandbox|disable-(?:gpu|setuid|namespace|seccomp-filter)-sandbox|single-process)(?:=|$)/.test(arg))) {
+    throw new Error("--sandbox true conflicts with sandbox-disabling --chrome-arg");
+  }
   if (!["dawn", "doe", "auto", "both"].includes(args.mode)) {
     throw new Error("--mode must be one of dawn, doe, auto, both");
   }
@@ -1446,31 +1456,15 @@ async function resolvePageTarget(allowDataUrlFallback, apiSurface) {
   }
 }
 
-function baseLaunchArgs(port) {
-  const args = [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
+function baseLaunchArgs(sandbox) {
+  return [
+    ...(sandbox ? [] : ["--no-sandbox", "--disable-setuid-sandbox"]),
     "--disable-dev-shm-usage",
-    "--ignore-gpu-blocklist",
-    "--enable-unsafe-webgpu",
   ];
-  if (Number.isInteger(port)) {
-    args.push(`--unsafely-treat-insecure-origin-as-secure=http://127.0.0.1:${port}`);
-  }
-  if (process.platform === "linux") {
-    args.push("--use-angle=vulkan");
-  }
-  return args;
 }
 
 function runtimeArgs(mode, doeLibPath) {
-  if (mode === "dawn") {
-    return ["--use-webgpu-runtime=dawn"];
-  }
-  return [
-    "--use-webgpu-runtime=doe",
-    `--doe-webgpu-library-path=${doeLibPath}`,
-  ];
+  return forcedRuntimeArgs(mode, doeLibPath);
 }
 
 function runtimeArtifactIdentity(mode, args, chromePath) {
@@ -1745,6 +1739,9 @@ async function runScenario(
       const getCanvasContext = (canvas) =>
         browserRuntime ? browserRuntime.createCanvasContext(canvas) : canvas.getContext("webgpu");
 
+      let ownedDevice = null;
+      let firstCompletionFailure = null;
+      let completionWaitPending = false;
       async function initDevice() {
         reportScenarioStage("adapter_request_started");
         if (typeof gpu === "undefined") {
@@ -1762,6 +1759,7 @@ async function runScenario(
         const deviceStart = nowMs();
         reportScenarioStage("device_request_started");
         const device = await adapter.requestDevice();
+        ownedDevice = device;
         const deviceEnd = nowMs();
         reportScenarioStage("device_request_completed");
         return {
@@ -1841,12 +1839,16 @@ async function runScenario(
         for (let i = 0; i < 20; i += 1) {
           device.queue.writeBuffer(buffer, 0, payload);
         }
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const t0 = nowMs();
         for (let i = 0; i < iterations; i += 1) {
           device.queue.writeBuffer(buffer, 0, payload);
         }
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const t1 = nowMs();
         result.metrics.iterations = iterations;
         result.metrics.requestedIterations = requestedIterations;
@@ -1886,7 +1888,9 @@ async function runScenario(
             return { ...binding, buffer };
           });
           reportScenarioStage("buffer_initialization_submitted");
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           reportScenarioStage("buffer_initialization_completed");
           result.metrics.bufferInitMs = nowMs() - t0;
 
@@ -1992,7 +1996,9 @@ async function runScenario(
             for (const binding of buffers) {
               device.queue.writeBuffer(binding.buffer, 0, new Uint8Array(binding.bufferSize));
             }
+            completionWaitPending = true;
             await device.queue.onSubmittedWorkDone();
+            completionWaitPending = false;
             reportScenarioStage(stage);
             return nowMs() - resetStartMs;
           }
@@ -2000,13 +2006,17 @@ async function runScenario(
           if (warmupDispatchCount > 0) {
             encodeDispatches(warmupDispatchCount);
             reportScenarioStage("warmup_submitted");
+            completionWaitPending = true;
             await device.queue.onSubmittedWorkDone();
+            completionWaitPending = false;
             reportScenarioStage("warmup_completed");
           }
 
           for (let sampleIndex = 0; sampleIndex < sourceKernelWarmupSamples; sampleIndex += 1) {
             encodeSampleDispatches();
+            completionWaitPending = true;
             await device.queue.onSubmittedWorkDone();
+            completionWaitPending = false;
           }
 
           const outputOracle = computeConfig.outputOracle;
@@ -2025,7 +2035,9 @@ async function runScenario(
             t0 = nowMs();
             encodeDispatches(outputOracle.dispatchCount);
             reportScenarioStage("oracle_dispatch_submitted");
+            completionWaitPending = true;
             await device.queue.onSubmittedWorkDone();
+            completionWaitPending = false;
             reportScenarioStage("oracle_dispatch_completed");
             result.metrics.outputOracleDispatchMs = nowMs() - t0;
 
@@ -2043,7 +2055,9 @@ async function runScenario(
               oracleBinding.bufferSize,
             );
             device.queue.submit([oracleEncoder.finish()]);
+            completionWaitPending = true;
             await device.queue.onSubmittedWorkDone();
+            completionWaitPending = false;
             await oracleReadback.mapAsync(GPUMapMode.READ);
             reportScenarioStage("oracle_readback_mapped");
             const oracleData = new Uint8Array(oracleReadback.getMappedRange());
@@ -2083,7 +2097,9 @@ async function runScenario(
             reportScenarioStage(`sample_${sampleIndex + 1}_submitted`);
             const encodeSubmitMs = nowMs() - encodeSubmitStartMs;
             const waitStartMs = nowMs();
+            completionWaitPending = true;
             await device.queue.onSubmittedWorkDone();
+            completionWaitPending = false;
             reportScenarioStage(`sample_${sampleIndex + 1}_completed`);
             const waitMs = nowMs() - waitStartMs;
             const elapsedMs = nowMs() - sampleStartMs;
@@ -2122,7 +2138,9 @@ async function runScenario(
           result.metrics.submitReadbackMs = nowMs() - t0;
 
           t0 = nowMs();
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           await readback.mapAsync(GPUMapMode.READ);
           reportScenarioStage("readback_mapped");
           const readbackData = new Uint8Array(readback.getMappedRange());
@@ -2244,7 +2262,9 @@ async function runScenario(
           for (let i = 0; i < genericComputeWarmupSubmits; i += 1) {
             encodeDirectDispatches();
           }
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           const t0 = nowMs();
           const encodeSubmitStart = nowMs();
           for (let i = 0; i < dispatchIters; i += 1) {
@@ -2252,7 +2272,9 @@ async function runScenario(
           }
           const encodeSubmitMs = nowMs() - encodeSubmitStart;
           const waitStart = nowMs();
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           const waitMs = nowMs() - waitStart;
           const t1 = nowMs();
           const dispatchElapsedMs = t1 - t0;
@@ -2328,7 +2350,9 @@ async function runScenario(
           for (let i = 0; i < genericComputeWarmupSubmits; i += 1) {
             encodeIndirectDispatches();
           }
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           const t0 = nowMs();
           const encodeSubmitStart = nowMs();
           for (let i = 0; i < dispatchIters; i += 1) {
@@ -2336,7 +2360,9 @@ async function runScenario(
           }
           const encodeSubmitMs = nowMs() - encodeSubmitStart;
           const waitStart = nowMs();
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           const waitMs = nowMs() - waitStart;
           const t1 = nowMs();
           const dispatchElapsedMs = t1 - t0;
@@ -2383,7 +2409,9 @@ async function runScenario(
           device.queue.submit([encoder.finish()]);
         }
         reportScenarioStage("generic_warmup_submitted");
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         reportScenarioStage("generic_warmup_completed");
         const t0 = nowMs();
         const encodeSubmitStart = nowMs();
@@ -2398,7 +2426,9 @@ async function runScenario(
         reportScenarioStage("generic_sample_submitted");
         const encodeSubmitMs = nowMs() - encodeSubmitStart;
         const waitStart = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         reportScenarioStage("generic_sample_completed");
         const waitMs = nowMs() - waitStart;
         const t1 = nowMs();
@@ -2514,7 +2544,9 @@ async function runScenario(
         result.metrics.submitReadbackMs = nowMs() - t0;
 
         t0 = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         await readback.mapAsync(GPUMapMode.READ);
         const actual = new Uint8Array(new Uint8Array(readback.getMappedRange()));
         readback.unmap();
@@ -2644,7 +2676,9 @@ async function runScenario(
           pass.end();
           device.queue.submit([encoder.finish()]);
         }
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
 
         const t0 = nowMs();
         for (let i = 0; i < iterations; i += 1) {
@@ -2664,7 +2698,9 @@ async function runScenario(
           pass.end();
           device.queue.submit([encoder.finish()]);
         }
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const t1 = nowMs();
         result.metrics.iterations = iterations;
         result.metrics.usPerOp = ((t1 - t0) * 1000) / iterations;
@@ -2896,7 +2932,9 @@ async function runScenario(
           sample.writeTextureMs = nowMs() - t0;
 
           t0 = nowMs();
+          completionWaitPending = true;
           await device.queue.onSubmittedWorkDone();
+          completionWaitPending = false;
           sample.waitMs = nowMs() - t0;
 
           t0 = nowMs();
@@ -3005,7 +3043,9 @@ async function runScenario(
           device.queue.submit([encoder.finish()]);
         }
         const submitEnd = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const t1 = nowMs();
         result.metrics.iterations = iterations;
         result.metrics.encodeSubmitMs = submitEnd - t0;
@@ -3047,7 +3087,9 @@ async function runScenario(
           pass.end();
           device.queue.submit([encoder.finish()]);
         }
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const t1 = nowMs();
         result.metrics.resizeCount = sizes.length;
         result.metrics.totalMs = t1 - t0;
@@ -3067,7 +3109,9 @@ async function runScenario(
           device.queue.submit([device.createCommandEncoder().finish()]);
         }
         const coldEmptySubmitEnd = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const coldEmptyEnd = nowMs();
 
         const pipelineCreateStart = nowMs();
@@ -3082,7 +3126,9 @@ async function runScenario(
           compute: { module, entryPoint: "main" },
         });
         const pipelineCreateCallEnd = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const pipelineReadyEnd = nowMs();
 
         const createCommandBuffer = () => {
@@ -3099,7 +3145,9 @@ async function runScenario(
           device.queue.submit([createCommandBuffer()]);
         }
         const warmupSubmitEnd = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const warmupEnd = nowMs();
         const warmupMs = warmupEnd - warmupStart;
 
@@ -3108,7 +3156,9 @@ async function runScenario(
           device.queue.submit([createCommandBuffer()]);
         }
         const submitEnd = nowMs();
+        completionWaitPending = true;
         await device.queue.onSubmittedWorkDone();
+        completionWaitPending = false;
         const t1 = nowMs();
         result.metrics.coldEmptySubmitCount = coldEmptySubmitCount;
         result.metrics.coldEmptyMs = coldEmptyEnd - coldEmptyStart;
@@ -3248,13 +3298,13 @@ async function runScenario(
           result.statusCode = "scenario_template_unknown";
           result.error = `unknown scenario template: ${scenarioTemplate}`;
           result.metrics.elapsedMs = nowMs() - scenarioStart;
-          return result;
         }
 
-        result.status = "ok";
-        result.statusCode = "ok";
+        if (result.statusCode !== "scenario_template_unknown") result.status = "ok";
+        if (result.statusCode !== "scenario_template_unknown") result.statusCode = "ok";
       } catch (error) {
         const errorText = String(error);
+        if (completionWaitPending) firstCompletionFailure ??= errorText;
         if (
           errorText.includes("navigator.gpu unavailable") ||
           errorText.includes("requestAdapter returned null") ||
@@ -3277,6 +3327,28 @@ async function runScenario(
       }
 
       result.metrics.elapsedMs = nowMs() - scenarioStart;
+      const settlementStart = nowMs();
+      // A validation failure is terminal only after the actual owned queue settles.
+      // This wait is outside the scenario's measured timing fields.
+      try {
+        if (scenarioTemplate === "fawn_visual_resource") {
+          if (typeof globalThis.__fawnDiagnosticStopAndDrain !== "function") {
+            throw new Error("visual resource lacks its owned stop-and-drain hook");
+          }
+          const drained = await globalThis.__fawnDiagnosticStopAndDrain();
+          if (drained?.gpuCompletion !== "completed") throw new Error("visual drain did not prove completion");
+        } else if (ownedDevice) {
+          await ownedDevice.queue.onSubmittedWorkDone();
+        }
+        if (firstCompletionFailure !== null) throw new Error(firstCompletionFailure);
+        result.gpuCompletion = "completed";
+      } catch (error) {
+        result.gpuCompletion = "unknown";
+        result.status = "fail";
+        result.statusCode = "gpu_completion_unknown";
+        result.error = [result.error, `final queue settlement: ${String(error)}`].filter(Boolean).join(" | ");
+      }
+      result.metrics.finalSettlementMs = nowMs() - settlementStart;
       return result;
     },
     {
@@ -3303,6 +3375,7 @@ async function runScenario(
             apiSurface: browserSurfaceArgs.apiSurface,
             status: "fail",
             statusCode: "scenario_controller_timeout",
+            gpuCompletion: "unknown",
             error: `scenario ${template} exceeded the controller deadline`,
             metrics: {
               scenarioTemplate: template,
@@ -3319,13 +3392,14 @@ async function runScenario(
   }
 }
 
-function makeModeRowResult(status, statusCode, error = null, metrics = {}) {
+function makeModeRowResult(status, statusCode, error = null, metrics = {}, gpuCompletion = "not_dispatched") {
   return {
     status,
     statusCode,
     error,
     metrics,
     measuredAt: new Date().toISOString(),
+    gpuCompletion,
   };
 }
 
@@ -3387,6 +3461,7 @@ function classifyModeFailure(error, stage) {
 
 function applyModeWideFailure(l1Rows, l2Rows, rowResultsById, workflowResultsById, failure) {
   for (const row of l1Rows) {
+    if (rowResultsById.has(row.sourceWorkloadId)) continue;
     if (row.layerTarget === "l0_only") {
       rowResultsById.set(row.sourceWorkloadId, makeModeRowResult("l0_only", "l0_only"));
       continue;
@@ -3397,6 +3472,7 @@ function applyModeWideFailure(l1Rows, l2Rows, rowResultsById, workflowResultsByI
     );
   }
   for (const workflow of l2Rows) {
+    if (workflowResultsById.has(workflow.id)) continue;
     workflowResultsById.set(
       workflow.id,
       makeModeRowResult(failure.status, failure.statusCode, failure.error),
@@ -3545,6 +3621,7 @@ async function runMode(
   chromePath,
   scheduledSourceKernelSamples,
   traceRunId,
+  checkpoint = () => {},
 ) {
   const selection = runtimeSelectionResolution(mode, args);
   const nativeMetalTrace = prepareNativeMetalTrace(
@@ -3553,7 +3630,7 @@ async function runMode(
     traceRunId,
   );
   const launchArgs = [
-    ...baseLaunchArgs(pageTarget.port),
+    ...baseLaunchArgs(args.sandbox),
     ...args.chromeArgs,
     ...runtimeArgs(selection.selectedRuntime, args.doeLibPath),
   ];
@@ -3573,6 +3650,12 @@ async function runMode(
     failureStatusCode: null,
     activeRuntimeProof: null,
     nativeMetalTrace,
+    completionPolicy: "owned-queue-final-settlement-and-visual-stop-drain-v1",
+    gpuCompletion: "not_dispatched",
+    activeOperation: null,
+    cohortStopped: false,
+    firstUnknownOperation: null,
+    browserClose: { status: "not_started" },
   };
   let runtimeProbe = {
     webgpuAvailable: false,
@@ -3583,17 +3666,51 @@ async function runMode(
     errors: [],
   };
   let browser;
+  let completedRun;
+  let modeFailure = null;
+  let expectedClose = false;
+  const stop = (operation, error, unknown = true) => {
+    runtimeEvidence.cohortStopped = true;
+    if (unknown) {
+      runtimeEvidence.gpuCompletion = "unknown";
+      runtimeEvidence.firstUnknownOperation ??= operation;
+    }
+    modeFailure ??= { stage: operation, status: "fail",
+      statusCode: unknown ? "gpu_completion_unknown" : "browser_close_failed", error: String(error) };
+  };
+  const snapshot = (event) => {
+    try {
+      checkpoint({ event, mode, chromePath, launchArgs, runtimeEvidence, modeFailure,
+        rows: [...rowResultsById], workflows: [...workflowResultsById] });
+    } catch (error) {
+      stop("checkpoint_write", error, false);
+      runtimeEvidence.checkpointError = String(error);
+      console.error(`checkpoint write failed; cohort stopped: ${String(error)}`);
+    }
+  };
+  const bounded = async (operation, promise, deadline = args.scenarioControllerDeadlineMs) => {
+    let timer;
+    try { return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${operation} exceeded controller deadline`)), deadline);
+    })]); } finally { clearTimeout(timer); }
+  };
+  snapshot("before_browser_launch");
 
   try {
+    if (runtimeEvidence.cohortStopped) throw new Error(runtimeEvidence.checkpointError);
     browser = await chromium.launch({
       executablePath: chromePath,
       headless: args.headless,
+      chromiumSandbox: args.sandbox,
+      ignoreDefaultArgs: ["--enable-unsafe-swiftshader"],
       args: launchArgs,
       timeout: 120000,
       env: nativeMetalTraceLaunchEnvironment(nativeMetalTrace),
     });
   } catch (error) {
     const failure = classifyModeFailure(error, "launch");
+    stop("browser_launch", error);
+    snapshot("browser_launch_failed");
     runtimeEvidence.failureStage = failure.stage;
     runtimeEvidence.failureStatusCode = failure.statusCode;
     runtimeEvidence.nativeMetalTrace = finalizeNativeMetalTrace(nativeMetalTrace);
@@ -3613,14 +3730,15 @@ async function runMode(
   }
 
   try {
-    const context = await browser.newContext();
-    let page = await context.newPage();
-    async function recycleTimedOutPage(scenarioResult, scenarioLabel) {
-      if (scenarioResult.statusCode !== "scenario_controller_timeout") return;
-      console.log(`[mode=${mode} scenario=${scenarioLabel}] recycling timed-out page`);
-      await page.close({ runBeforeUnload: false });
-      page = await context.newPage();
-    }
+    browser.on("disconnected", () => {
+      if (!expectedClose) { stop("browser_disconnected", "browser disconnected before owned cleanup"); snapshot("browser_disconnected"); }
+    });
+    const context = await bounded("new_context", browser.newContext());
+    const page = await bounded("new_page", context.newPage());
+    page.on("crash", () => { stop("page_crash", "page crashed"); snapshot("page_crash"); });
+    runtimeEvidence.gpuCompletion = "unknown";
+    runtimeEvidence.activeOperation = "initial_navigation_and_probe";
+    snapshot("before_runtime_probe");
     await page.goto(pageTarget.url, { waitUntil: "domcontentloaded", timeout: 120000 });
     const browserSurfaceArgs = {
       apiSurface: args.apiSurface,
@@ -3629,7 +3747,12 @@ async function runMode(
     };
     runtimeEvidence.browserVersion = browser.version();
     runtimeEvidence.userAgent = await page.evaluate(() => navigator.userAgent);
-    runtimeProbe = await probeRuntime(page, browserSurfaceArgs);
+    runtimeProbe = await bounded("runtime_probe", probeRuntime(page, browserSurfaceArgs));
+    if (!runtimeEvidence.cohortStopped) {
+      runtimeEvidence.gpuCompletion = "completed";
+      runtimeEvidence.activeOperation = null;
+    }
+    snapshot("runtime_probe_result");
     runtimeProbe.adapterIdentity = adapterIdentityFromProbe(runtimeProbe);
     runtimeEvidence.activeRuntimeProof = activeRuntimeProof(
       runtimeEvidence.runtimeSelection,
@@ -3644,10 +3767,14 @@ async function runMode(
     }
 
     for (const row of l1Rows) {
+      if (runtimeEvidence.cohortStopped) break;
       if (row.layerTarget === "l0_only") {
         rowResultsById.set(row.sourceWorkloadId, makeModeRowResult("l0_only", "l0_only"));
         continue;
       }
+      runtimeEvidence.gpuCompletion = "unknown";
+      runtimeEvidence.activeOperation = `l1:${row.sourceWorkloadId}`;
+      snapshot("before_scenario_dispatch");
       await page.goto(pageTarget.url, { waitUntil: "load", timeout: 120000 });
       console.log(
         `[mode=${mode} l1=${row.sourceWorkloadId}] started template=${row.scenarioTemplate}`,
@@ -3663,6 +3790,15 @@ async function runMode(
         args.sourceKernelSubmitPolicy,
         args.scenarioControllerDeadlineMs,
       );
+      if (runtimeEvidence.cohortStopped) {
+        scenarioResult.gpuCompletion = "unknown";
+        scenarioResult.status = "fail";
+        scenarioResult.statusCode = "gpu_completion_unknown";
+        scenarioResult.error ??= modeFailure?.error;
+      } else if (scenarioResult.gpuCompletion === "completed") {
+        runtimeEvidence.gpuCompletion = "completed";
+        runtimeEvidence.activeOperation = null;
+      }
       console.log(
         `[mode=${mode} l1=${row.sourceWorkloadId}] completed status=${scenarioResult.status} code=${scenarioResult.statusCode}`,
       );
@@ -3673,12 +3809,17 @@ async function runMode(
           scenarioResult.statusCode,
           scenarioResult.error,
           scenarioResult.metrics,
+          scenarioResult.gpuCompletion,
         ),
       );
-      await recycleTimedOutPage(scenarioResult, `l1:${row.sourceWorkloadId}`);
+      if (scenarioResult.gpuCompletion !== "completed") {
+        stop(`l1:${row.sourceWorkloadId}`, scenarioResult.error ?? "scenario did not prove GPU completion");
+      }
+      snapshot("scenario_result");
     }
 
     for (const workflow of l2Rows) {
+      if (runtimeEvidence.cohortStopped) break;
       if (workflow.resourcePath && pageTarget.kind !== "server") {
         workflowResultsById.set(
           workflow.id,
@@ -3693,6 +3834,9 @@ async function runMode(
       const workflowUrl = workflow.resourcePath
         ? resourceUrl(pageTarget.url, workflow.resourcePath)
         : pageTarget.url;
+      runtimeEvidence.gpuCompletion = "unknown";
+      runtimeEvidence.activeOperation = `l2:${workflow.id}`;
+      snapshot("before_scenario_dispatch");
       await page.goto(workflowUrl, { waitUntil: "load", timeout: 120000 });
       console.log(
         `[mode=${mode} l2=${workflow.id}] started template=${workflow.scenarioTemplate}`,
@@ -3708,6 +3852,15 @@ async function runMode(
         args.sourceKernelSubmitPolicy,
         args.scenarioControllerDeadlineMs,
       );
+      if (runtimeEvidence.cohortStopped) {
+        scenarioResult.gpuCompletion = "unknown";
+        scenarioResult.status = "fail";
+        scenarioResult.statusCode = "gpu_completion_unknown";
+        scenarioResult.error ??= modeFailure?.error;
+      } else if (scenarioResult.gpuCompletion === "completed") {
+        runtimeEvidence.gpuCompletion = "completed";
+        runtimeEvidence.activeOperation = null;
+      }
       console.log(
         `[mode=${mode} l2=${workflow.id}] completed status=${scenarioResult.status} code=${scenarioResult.statusCode}`,
       );
@@ -3718,12 +3871,16 @@ async function runMode(
           scenarioResult.statusCode,
           scenarioResult.error,
           scenarioResult.metrics,
+          scenarioResult.gpuCompletion,
         ),
       );
-      await recycleTimedOutPage(scenarioResult, `l2:${workflow.id}`);
+      if (scenarioResult.gpuCompletion !== "completed") {
+        stop(`l2:${workflow.id}`, scenarioResult.error ?? "scenario did not prove GPU completion");
+      }
+      snapshot("scenario_result");
     }
 
-    return {
+    completedRun = {
       mode,
       chromePath,
       launchArgs,
@@ -3731,18 +3888,19 @@ async function runMode(
       shaderCompilerIdentity: shaderCompilerIdentity(mode, args, chromePath),
       runtimeProbe,
       runtimeEvidence,
-      modeFailure: null,
+      modeFailure,
       rowResultsById,
       workflowResultsById,
     };
   } catch (error) {
     const failure = classifyModeFailure(error, "setup");
+    stop("mode_setup_or_evaluation", error);
     runtimeEvidence.failureStage = failure.stage;
     runtimeEvidence.failureStatusCode = failure.statusCode;
-    applyModeWideFailure(l1Rows, l2Rows, rowResultsById, workflowResultsById, failure);
+    applyModeWideFailure(l1Rows, l2Rows, rowResultsById, workflowResultsById, modeFailure);
     runtimeProbe.errors = [...runtimeProbe.errors, failure.error];
     runtimeProbe.adapterIdentity = adapterIdentityFromProbe(runtimeProbe);
-    return {
+    completedRun = {
       mode,
       chromePath,
       launchArgs,
@@ -3755,12 +3913,25 @@ async function runMode(
       workflowResultsById,
     };
   } finally {
+    if (runtimeEvidence.cohortStopped) {
+      applyModeWideFailure(l1Rows, l2Rows, rowResultsById, workflowResultsById,
+        { status: "fail", statusCode: "cohort_stopped_before_dispatch", error: modeFailure?.error });
+    }
+    snapshot("before_browser_close");
+    expectedClose = true;
     try {
-      await browser.close();
+      await bounded("browser_close", browser.close());
+      runtimeEvidence.browserClose = { status: "completed" };
+    } catch (error) {
+      runtimeEvidence.browserClose = { status: "failed", error: String(error) };
+      stop("browser_close", error, false);
     } finally {
       runtimeEvidence.nativeMetalTrace = finalizeNativeMetalTrace(nativeMetalTrace);
+      snapshot("after_browser_close");
     }
   }
+  completedRun.modeFailure = modeFailure;
+  return completedRun;
 }
 
 function summarizeStatusForRows(rows, modes, kind) {
@@ -4145,6 +4316,8 @@ function combineModeRowResult(existing, next) {
   }
   const sameStatus = existing.status === next.status && existing.statusCode === next.statusCode;
   return {
+    gpuCompletion: existing.gpuCompletion === "unknown" || next.gpuCompletion === "unknown"
+      ? "unknown" : next.gpuCompletion,
     status: sameStatus ? next.status : "fail",
     statusCode: sameStatus ? next.statusCode : "scenario_runtime_error",
     error: sameStatus
@@ -4181,6 +4354,22 @@ async function main() {
     args.sourceKernelScheduleSliceMinDispatchRepeat,
   );
   const modeRunDetails = [];
+  const runIdentity = { startedAt: new Date().toISOString(), invocation: process.argv.slice(2),
+    runnerSha256: fileHashHex(fileURLToPath(import.meta.url)),
+    projectionManifestSha256: fileHashHex(args.manifestPath), workflowManifestSha256: fileHashHex(args.workflowsPath),
+    modeChromePaths: args.modeChromePaths, doeLibPath: args.doeLibPath,
+    visualResourceSha256: Object.fromEntries(l2Rows.filter((row) => row.resourcePath)
+      .map((row) => [row.resourcePath, row.resourceSha256])) };
+  mkdirSync(dirname(args.outPath), { recursive: true });
+  const checkpoint = (snapshot) => {
+    const fd = openSync(`${args.outPath}.checkpoints.jsonl`, "a");
+    try {
+      writeFileSync(fd, `${JSON.stringify({ runIdentity, at: new Date().toISOString(), completedModeRuns: modeRunDetails, ...snapshot })}\n`);
+      fsyncSync(fd);
+    } finally { closeSync(fd); }
+  };
+  checkpoint({ event: "cohort_started" });
+  let cohortStopped = false;
 
   const pageTarget = await resolvePageTarget(args.allowDataUrlFallback, args.apiSurface);
   if (pageTarget.warning) {
@@ -4188,6 +4377,7 @@ async function main() {
   }
   try {
     for (const [scheduleIndex, scheduleEntry] of modeScheduleEntries.entries()) {
+      if (cohortStopped) break;
       const mode = scheduleEntry.mode;
       const modeSelection = runtimeSelectionResolution(mode, args);
       const chromePathForMode =
@@ -4291,7 +4481,9 @@ async function main() {
         chromePathForMode,
         scheduleEntry.sourceKernelSamples ?? args.sourceKernelSamples,
         `${String(scheduleIndex + 1).padStart(4, "0")}-${mode}-${scheduleEntry.scheduleLayer}-${scheduleEntry.scheduleUnit}`,
+        checkpoint,
       );
+      cohortStopped ||= modeRun.runtimeEvidence.cohortStopped;
       modeRunDetails.push({
         mode: modeRun.mode,
         scheduleUnit: scheduleEntry.scheduleUnit,
@@ -4351,6 +4543,8 @@ async function main() {
 
   const report = {
     schemaVersion: 6,
+    runIdentity,
+    cohortStopped,
     reportKind: "browser-layered-diagnostic",
     benchmarkClass: "directional",
     comparisonStatus: "diagnostic",
@@ -4391,6 +4585,7 @@ async function main() {
     modeSchedule: args.modeSchedule,
     modeScheduleRepetitions: args.modeScheduleRepetitions,
     headless: args.headless,
+    sandbox: args.sandbox,
     chromeArgs: args.chromeArgs,
     powerPreference: args.powerPreference,
     manifestPath: args.manifestPath,
@@ -4452,6 +4647,9 @@ async function main() {
           "mode_setup_failed",
           "mode_execution_failed",
           "scenario_controller_timeout",
+          "gpu_completion_unknown",
+          "cohort_stopped_before_dispatch",
+          "browser_close_failed",
           "scenario_runtime_error",
         ],
         l0_only: ["l0_only"],
@@ -4483,7 +4681,7 @@ async function main() {
   console.log(`report written: ${args.outPath}`);
   console.log(`overall required failures: ${report.summary.overallRequiredFailures}`);
 
-  if (args.strict && hasRequiredFailures(report.summary)) {
+  if (cohortStopped || (args.strict && hasRequiredFailures(report.summary))) {
     process.exit(1);
   }
 }

@@ -162,8 +162,9 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
         self.assertIn("scenarioControllerDeadlineMs", text)
         self.assertIn("latestScenarioStage", text)
         self.assertIn("sample_${sampleIndex + 1}_submitted", text)
-        self.assertIn("recycleTimedOutPage", text)
-        self.assertIn("page.close({ runBeforeUnload: false })", text)
+        self.assertNotIn("recycleTimedOutPage", text)
+        # Timeout recovery must stop the cohort, exercised by the fake-driver
+        # controls in test_browser_layered_completion (close is not a GPU fence).
         self.assertIn("const sourceOperationIterations = 1", text)
         self.assertIn("const dispatchesPerSample = computeConfig.dispatchRepeat", text)
         self.assertNotIn(

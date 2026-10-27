@@ -858,6 +858,24 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
     }
   }
 
+  let firstFrameCompletionFailure = null;
+  let diagnosticDrain = null;
+  globalThis.__fawnDiagnosticStopAndDrain = () => {
+    if (diagnosticDrain) return diagnosticDrain;
+    running = false;
+    cancelAnimationFrame(raf);
+    raf = 0;
+    diagnosticDrain = (async () => {
+      if (!device) throw new Error('visual device unavailable at diagnostic drain');
+      await device.queue.onSubmittedWorkDone();
+      // Join existing frame finalizers too: a later fence cannot erase their failure.
+      while (pendingFrames !== 0) await new Promise(resolve => setTimeout(resolve, 0));
+      if (firstFrameCompletionFailure !== null) throw new Error(firstFrameCompletionFailure);
+      return { gpuCompletion: 'completed' };
+    })();
+    return diagnosticDrain;
+  };
+
   async function frame(now) {
     raf = 0;
     if (!running || document.hidden || (paused && !redrawRequested)) return;
@@ -885,6 +903,7 @@ fn fs(in: VSOut) -> @location(0) vec4<f32> {
         }
       }
     } catch (error) {
+      firstFrameCompletionFailure ??= String(error);
       if (running) fail(error);
     } finally {
       pendingFrames -= 1;
