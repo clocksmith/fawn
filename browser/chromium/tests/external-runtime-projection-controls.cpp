@@ -141,6 +141,27 @@ int main(int argc, char** argv) {
     cache.chain.next = &toggles.chain;
     assert(InnerRuntimeDescriptorChain(&toggles, &cache.chain, true) == &unknown);
     assert(cache.chain.next == &toggles.chain && cache.isolationKey.length == 16);
+    WGPUDawnConsumeAdapterDescriptor consume = WGPU_DAWN_CONSUME_ADAPTER_DESCRIPTOR_INIT;
+    for (WGPUBool value : {WGPU_FALSE, WGPU_TRUE}) {
+        consume.consumeAdapter = value;
+        consume.chain.next = &unknown;
+        toggles.chain.next = &consume.chain;
+        assert(InnerRuntimeDescriptorChain(&toggles, &cache.chain, true) == &unknown);
+        assert(cache.chain.next == &toggles.chain && toggles.chain.next == &consume.chain);
+        assert(consume.consumeAdapter == value && consume.chain.next == &unknown);
+        assert(InnerRuntimeDescriptorChain(&toggles, &consume.chain, false) == &toggles.chain);
+        assert(toggles.chain.next == &consume.chain && consume.consumeAdapter == value);
+        unknown.next = &consume.chain;
+        consume.chain.next = nullptr;
+        assert(InnerRuntimeDescriptorChain(&toggles, &unknown, true) == &unknown);
+        assert(unknown.next == &consume.chain && consume.consumeAdapter == value);
+        unknown.next = nullptr;
+        assert(InnerRuntimeDescriptorChain(&toggles, &consume.chain, true) == nullptr);
+        instance.nextInChain = &consume.chain;
+        assert(!create(&instance));  // Raw C still rejects this private chain.
+        assert(consume.consumeAdapter == value);
+    }
+    toggles.chain.next = &unknown;
     instance.nextInChain = nullptr;
     ++limits.timedWaitAnyMaxCount;
     assert(!create(&instance));  // The advertised limit was not dropped.
