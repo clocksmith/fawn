@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   readdirSync,
   rmSync,
   statSync,
@@ -242,6 +243,6 @@ function main() {
 
 // Only run main() when invoked directly; imports from tests should not
 // trigger staging.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
   main();
 }

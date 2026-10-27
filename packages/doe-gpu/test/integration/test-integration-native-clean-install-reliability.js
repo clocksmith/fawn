@@ -7,6 +7,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
+import { nativeInstallPlatform } from '../lib/native-install-platform.js';
+import { npmInvocation } from '../lib/npm-invocation.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -32,14 +34,9 @@ if (outputIndex !== -1 && !process.argv[outputIndex + 1]) {
   throw new Error('--out requires a path');
 }
 const outputPath = outputIndex === -1 ? null : resolve(process.argv[outputIndex + 1]);
-const platformPackageName = new Map([
-  ['linux-x64', 'doe-gpu-linux-x64'],
-  ['darwin-arm64', 'doe-gpu-darwin-arm64'],
-]).get(`${process.platform}-${process.arch}`);
-const platformLibraryName = new Map([
-  ['linux-x64', 'libwebgpu_doe_c.so'],
-  ['darwin-arm64', 'libwebgpu_doe_c.dylib'],
-]).get(`${process.platform}-${process.arch}`);
+const platform = nativeInstallPlatform();
+const platformPackageName = platform?.packageName;
+const platformLibraryName = platform?.libraryName;
 if (!platformPackageName && requireNative) {
   throw new Error(`no native reliability contract for ${process.platform}-${process.arch}`);
 }
@@ -60,7 +57,7 @@ if (!existsSync(stagedPlatformLibrary)) {
 assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: dirname(packagesRoot), libraryFilename: platformLibraryName });
 
 const scratch = await mkdtemp(join(tmpdir(), 'doe-gpu-native-reliability-'));
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npm = npmInvocation();
 const sequentialTrials = 3;
 const concurrentTrials = 2;
 const timeoutMs = 120_000;
@@ -89,7 +86,8 @@ function requireSuccess(result, label) {
 }
 
 function pack(directory, label) {
-  const result = execute(npm, [
+  const result = execute(npm.executable, [
+    ...npm.prefixArgs,
     'pack',
     '--ignore-scripts',
     '--pack-destination',
@@ -213,12 +211,10 @@ function runTrial(runtime, examplePath, id, mode) {
       }
       try {
         const receipt = JSON.parse(stdoutText);
-        const providerPath = receipt.provider?.doeLibraryPath ?? '';
         if (receipt.runtimeHost !== runtimeHost
           || (runtimeHost === 'electron' && receipt.runtimeVersion !== runtime.version)
           || receipt.provider?.loaded !== true
           || receipt.provider?.doeNative !== true
-          || !providerPath.includes(`/node_modules/${platformPackageName}/`)
           || JSON.stringify(receipt.result?.output) !== JSON.stringify(expectedOutput)
           || receipt.result?.outputSha256 !== expectedOutputSha256
           || (runtimeHost === 'electron' && (
@@ -243,6 +239,7 @@ function runTrial(runtime, examplePath, id, mode) {
             providerModule: receipt.provider.module,
             libraryFlavor: receipt.provider.libraryFlavor,
             buildMetadataSource: receipt.provider.buildMetadataSource,
+            buildIdentity: receipt.provider.buildIdentity,
             outputSha256: receipt.result.outputSha256,
           },
         });
@@ -343,6 +340,7 @@ function runLifecycleTrial(runtime, fixturePath) {
           outputLimitExceeded,
           stdoutSha256: createHash('sha256').update(stdoutText).digest('hex'),
           cycleCount: sample.samples.length,
+          providerIdentity: sample.provider.buildIdentity,
           warmupCycles: lifecycleWarmupCycles,
           rssBeforeBytes: sample.rssBeforeBytes,
           minPostWarmupRssBytes: minRssBytes,
@@ -372,7 +370,8 @@ try {
   }
   const fixtureManifestPath = resolve(scratch, 'package.json');
   await writeFile(fixtureManifestPath, `${JSON.stringify(fixtureManifest, null, 2)}\n`);
-  const installed = execute(npm, [
+  const installed = execute(npm.executable, [
+    ...npm.prefixArgs,
     'install',
     '--ignore-scripts',
     '--omit=optional',

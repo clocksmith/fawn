@@ -20,9 +20,9 @@ function assertInstalledNativeProvider(provider, platformRoot) {
       || typeof provider.doeLibraryPath !== 'string') {
     throw new Error('installed provider is not a loaded native runtime');
   }
-  const root = realpathSync(platformRoot);
-  const library = realpathSync(provider.doeLibraryPath);
-  if (!inside(root, library)) throw new Error('native library escaped the installed platform package');
+  const root = realpathSync.native(platformRoot);
+  const library = realpathSync.native(provider.doeLibraryPath);
+  if (!inside(root, library)) throw new Error(`native library escaped the installed platform package: root=${root} library=${library}`);
   const filename = basename(library);
   if (!/^(?:lib)?webgpu_doe_c\.(?:so|dylib|dll)$/u.test(filename)) {
     if (provider.buildMetadataSource !== 'prebuild') throw new Error('installed Zig provider lacks prebuild metadata');
@@ -32,7 +32,7 @@ function assertInstalledNativeProvider(provider, platformRoot) {
     throw new Error('installed C provider requires its C package manifest identity');
   }
   if (typeof provider.buildMetadataPath !== 'string') throw new Error('C package manifest path is missing');
-  const manifestPath = realpathSync(provider.buildMetadataPath);
+  const manifestPath = realpathSync.native(provider.buildMetadataPath);
   if (!inside(root, manifestPath) || manifestPath !== resolve(dirname(library), 'doe-c-manifest.json')) {
     throw new Error('C manifest escaped or differs from the installed library sibling');
   }
@@ -65,7 +65,7 @@ function assertInstalledNativeProvider(provider, platformRoot) {
   }
   for (const [name, hash] of dependencies) {
     if (name.split('/').length !== 2 || !SHA256.test(hash)) throw new Error('invalid C runtime artifact entry');
-    const dependency = realpathSync(resolve(dirname(library), basename(name)));
+    const dependency = realpathSync.native(resolve(dirname(library), basename(name)));
     if (!inside(root, dependency) || sha256(dependency) !== hash) {
       throw new Error('installed C dependency hash differs from its manifest');
     }

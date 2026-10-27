@@ -6,6 +6,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
+import { nativeInstallPlatform } from '../lib/native-install-platform.js';
+import { npmInvocation } from '../lib/npm-invocation.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -17,10 +19,8 @@ if (process.env.DOE_WEBGPU_LIB) {
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(here, '../..');
 const packagesRoot = dirname(packageRoot);
-const platformPackageName = new Map([
-  ['linux-x64', 'doe-gpu-linux-x64'],
-  ['darwin-arm64', 'doe-gpu-darwin-arm64'],
-]).get(`${process.platform}-${process.arch}`);
+const platform = nativeInstallPlatform();
+const platformPackageName = platform?.packageName;
 
 if (!platformPackageName) {
   console.log(`installed native resolution: skipped ${process.platform}-${process.arch}`);
@@ -28,9 +28,7 @@ if (!platformPackageName) {
 }
 
 const platformPackageRoot = resolve(packagesRoot, platformPackageName);
-const platformLibraryName = process.platform === 'darwin'
-  ? 'libwebgpu_doe_c.dylib'
-  : 'libwebgpu_doe_c.so';
+const platformLibraryName = platform.libraryName;
 if (!existsSync(resolve(platformPackageRoot, 'bin', platformLibraryName))) {
   console.log(`installed native resolution: skipped unstaged ${platformPackageName}`);
   process.exit(0);
@@ -39,7 +37,7 @@ assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: dir
 
 const scratchAlias = await mkdtemp(join(tmpdir(), 'doe-gpu-installed-resolution-'));
 const scratch = realpathSync.native(scratchAlias);
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npm = npmInvocation();
 
 function execute(command, args, cwd = scratch) {
   return spawnSync(command, args, {
@@ -56,7 +54,8 @@ function requireSuccess(result, label) {
 }
 
 function pack(directory, label) {
-  const result = execute(npm, [
+  const result = execute(npm.executable, [
+    ...npm.prefixArgs,
     'pack',
     '--ignore-scripts',
     '--pack-destination',
@@ -75,7 +74,8 @@ try {
     private: true,
     type: 'module',
   }, null, 2)}\n`);
-  const installed = execute(npm, [
+  const installed = execute(npm.executable, [
+    ...npm.prefixArgs,
     'install',
     '--ignore-scripts',
     '--omit=optional',
@@ -102,9 +102,6 @@ try {
   requireSuccess(permissionProbe, 'installed native Node permission probe');
   const provider = JSON.parse(permissionProbe.stdout);
   assertInstalledNativeProvider(provider, installedPlatformRoot);
-  if (!provider.doeLibraryPath?.startsWith(`${installedPlatformRoot}/`)) {
-    throw new Error(`permission probe escaped the installed platform package: ${permissionProbe.stdout}`);
-  }
   console.log(`installed native resolution: ok ${process.platform}-${process.arch}`);
 } finally {
   await rm(scratchAlias, { recursive: true, force: true });
