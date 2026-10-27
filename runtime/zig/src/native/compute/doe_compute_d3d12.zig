@@ -83,7 +83,7 @@ pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModu
     const length = try hlsl.emitter.emit(&module, text);
     const target_entry = try hlsl.emitter.entryPointName(alloc, entry);
     defer alloc.free(target_entry);
-    const bytecode = if (@import("../cache/doe_device_cache_native.zig").persistenceAllowed(device))
+    const bytecode = if (@import("../cache/doe_device_cache_native.zig").reservePersistence(device))
         try resources.d3d12_compute.compileHlslEntryToBytecode(alloc, text[0..length], target_entry)
     else
         try resources.d3d12_compute.compileHlslEntryToBytecodeMemory(alloc, text[0..length], target_entry);

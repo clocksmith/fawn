@@ -421,6 +421,7 @@ fn create_device_object(
                 .enabled_features = enabled_features,
                 .command_storage = command_storage.Pool.init(alloc, build_options.native_command_storage_max_retained_bytes),
             };
+            rt.pipeline_cache.policy = &dev.cache_policy;
             const feature_caps: vk_feature_caps.VulkanFeatureCaps = blk: {
                 if (vulkan_feature_cache.get_adapter(adapter_raw)) |cached| break :blk cached;
                 const queried = vk_feature_caps.query(rt.physical_device).caps;
