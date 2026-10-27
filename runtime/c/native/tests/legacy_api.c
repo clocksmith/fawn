@@ -3,6 +3,15 @@
 #include "doe_native_legacy.h"
 #include "doe_native_external_texture.h"
 
+static WGPUExternalTextureDescriptor external_descriptor(WGPUTextureView view)
+{
+    static const float transfer[7] = {1,1,0,1,0,0,0};
+    static const float gamut[9] = {1,0,0,0,1,0,0,0,1};
+    return (WGPUExternalTextureDescriptor){.plane0=view,.cropSize={2,2},.apparentSize={2,2},
+        .srcTransferFunctionParameters=transfer,.dstTransferFunctionParameters=transfer,
+        .gamutConversionMatrix=gamut,.rotation=WGPUExternalTextureRotation_Rotate0Degrees};
+}
+
 static void legacy_error(uint32_t type, WGPUStringView message, void *one, void *two)
 {
     assert(type == WGPUErrorType_Validation && message.length && one == two);
@@ -13,6 +22,90 @@ static void lost(WGPUDevice const *device, WGPUDeviceLostReason reason,
 {
     assert(device && *device && reason == WGPUDeviceLostReason_Destroyed && message.length && one == two);
     ++*(unsigned *)one;
+}
+
+static void read_words(state *s, WGPUBuffer readback, const uint32_t *expected, size_t count)
+{
+    unsigned before = s->mapped;
+    WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=mapped,.userdata1=s};
+    size_t bytes = count * sizeof(*expected);
+    assert(wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, bytes, callback).id);
+    assert(s->mapped == before + 1);
+    const void *actual = wgpuBufferGetConstMappedRange(readback, 0, bytes);
+    assert(actual && !memcmp(actual, expected, bytes));
+    wgpuBufferUnmap(readback);
+}
+
+static void recorded_writes(state *s)
+{
+    WGPUBuffer destination = buffer(s, 16, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    WGPUBuffer before = buffer(s, 16, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUBuffer readback = buffer(s, 48, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    uint32_t initial[4] = {23, 24, 25, 26};
+    wgpuQueueWriteBuffer(s->queue, destination, 0, initial, sizeof(initial));
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    wgpuCommandEncoderClearBuffer(encoder, destination, 0, 16);
+    uint32_t first = 42;
+    wgpuCommandEncoderWriteBuffer(encoder, destination, 0, &first, sizeof(first));
+    first = 99; /* Caller data must already have been snapshotted. */
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, destination, 0, readback, 0, 16);
+    uint32_t second[4] = {7, 8, 9, 10};
+    wgpuCommandEncoderWriteBuffer(encoder, destination, 0, second, sizeof(second));
+    memset(second, 0, sizeof(second));
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, destination, 0, readback, 16, 16);
+    wgpuCommandEncoderClearBuffer(encoder, destination, 0, 16);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, destination, 0, readback, 32, 16);
+    WGPUCommandEncoder inspect = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    wgpuCommandEncoderCopyBufferToBuffer(inspect, destination, 0, before, 0, 16);
+    submit(s, inspect);
+    read_words(s, before, initial, 4); /* No eager mutation of destination. */
+    wgpuBufferRelease(destination); /* Recorded copies keep all ordinary leases. */
+    submit(s, encoder);
+    const uint32_t expected[12] = {42, 0, 0, 0, 7, 8, 9, 10, 0, 0, 0, 0};
+    read_words(s, readback, expected, 12);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(before);
+
+    destination = buffer(s, 16, WGPUBufferUsage_CopyDst);
+    for (unsigned invalid = 0; invalid < 4; ++invalid) {
+        encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+        uint64_t offset = invalid == 0 ? 1 : invalid == 1 ? 16 : 0;
+        size_t size = invalid == 2 ? 3 : sizeof(first);
+        const void *data = invalid == 3 ? NULL : &first;
+        wgpuCommandEncoderWriteBuffer(encoder, destination, offset, data, size);
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        finish_invalid(encoder);
+        expect_validation(s);
+        wgpuCommandEncoderRelease(encoder);
+    }
+    encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    wgpuCommandEncoderWriteBuffer(encoder, destination, 16, NULL, 0);
+    submit(s, encoder);
+    wgpuBufferRelease(destination);
+}
+static void mapped_recorded_write(state *s)
+{
+    WGPUBufferDescriptor desc = {.size=16,.usage=WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc,
+        .mappedAtCreation=WGPU_TRUE};
+    WGPUBuffer destination = wgpuDeviceCreateBuffer(s->device, &desc);
+    assert(destination);
+    uint32_t *mapped_words = wgpuBufferGetMappedRange(destination, 0, 16);
+    assert(mapped_words);
+    uint32_t initial[4] = {11,12,13,14};
+    memcpy(mapped_words, initial, sizeof(initial));
+    WGPUBuffer readback = buffer(s, 16, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    uint32_t written[4] = {31,32,33,34};
+    wgpuCommandEncoderWriteBuffer(encoder, destination, 0, written, sizeof(written));
+    assert(!memcmp(mapped_words, initial, sizeof(initial)));
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, destination, 0, readback, 0, 16);
+    /* Mapping is a submission restriction, not an encoding restriction. */
+    wgpuBufferUnmap(destination);
+    submit(s, encoder);
+    read_words(s, readback, written, 4);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(destination);
 }
 static void rejected_timestamps(state *s)
 {
@@ -56,7 +149,7 @@ static void copies(state *s)
     WGPUExtent3D size={2,2,1};
     wgpuQueueWriteTexture(s->queue,&src,pixels,sizeof(pixels),&layout,&size);
     WGPUTextureView view=wgpuTextureCreateView(source,NULL);
-    DoeExternalTextureDescriptor descriptor={.plane0=view};
+    WGPUExternalTextureDescriptor descriptor=external_descriptor(view);
     WGPUExternalTexture external=wgpuDeviceCreateExternalTexture(s->device,&descriptor);
     assert(external);
     DoeLegacyImageCopyExternalTexture from={.externalTexture=external};
@@ -103,7 +196,7 @@ static void external_view_bounds(state *s)
     WGPUTextureViewDescriptor desc=WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
     desc.dimension=WGPUTextureViewDimension_2D; desc.arrayLayerCount=1;
     WGPUTextureView view=wgpuTextureCreateView(source,&desc);
-    DoeExternalTextureDescriptor ext_desc={.plane0=view};
+    WGPUExternalTextureDescriptor ext_desc=external_descriptor(view);
     WGPUExternalTexture external=wgpuDeviceCreateExternalTexture(s->device,&ext_desc);
     assert(external);
     DoeLegacyImageCopyExternalTexture from={.externalTexture=external};
@@ -138,7 +231,7 @@ int main(void)
     wgpuDeviceValidateTextureDescriptor(device,NULL);
     assert(errors==1);
     wgpuDeviceSetDeviceLostCallback(device,lost,&lost_calls,&lost_calls);
-    assert(!wgpuDeviceTick(device));
+    wgpuDeviceTick(device);
     wgpuDeviceDestroy(device);
     wgpuDeviceSetDeviceLostCallback(device,lost,&wrong,&wrong);
     wgpuInstanceProcessEvents(s.instance);
@@ -159,8 +252,11 @@ int main(void)
     WGPUBuffer mapped_buffer=wgpuDeviceCreateBuffer(s.device,&mapping);
     uint32_t word=0xdeadbeef;
     wgpuCommandEncoderWriteBuffer(NULL,mapped_buffer,0,(const uint8_t *)&word,sizeof(word));
-    assert(!memcmp(wgpuBufferGetConstMappedRange(mapped_buffer,0,8),&word,sizeof(word)));
+    const uint32_t untouched[2] = {0, 0};
+    assert(!memcmp(wgpuBufferGetConstMappedRange(mapped_buffer,0,8),untouched,sizeof(untouched)));
     wgpuBufferUnmap(mapped_buffer); wgpuBufferRelease(mapped_buffer);
+    recorded_writes(&s);
+    mapped_recorded_write(&s);
     rejected_timestamps(&s); copies(&s); external_view_bounds(&s);
     consumer_finish(&s);
     printf("PASS legacy ABI identity, callbacks, invalid objects, rejection and exact browser flip copy (%s)\n",adapter_class_scope());

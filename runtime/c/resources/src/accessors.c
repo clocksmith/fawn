@@ -48,17 +48,23 @@ WGPUBufferMapState doe_resource_buffer_map_state(const doe_resource_buffer *buff
     return buffer->mapped ? WGPUBufferMapState_Mapped : WGPUBufferMapState_Unmapped;
 }
 
-doe_resource_status doe_resource_buffer_write_validate(const doe_resource_buffer *buffer,
-    const void *device, uint64_t offset, uint64_t size)
+doe_resource_status resource_buffer_write_validate(const doe_resource_buffer *buffer,
+    const void *device, uint64_t offset, uint64_t size, bool allow_mapped)
 {
     if (!device || !buffer) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!resource_buffer_available(buffer)) return DOE_RESOURCE_UNAVAILABLE;
     if (buffer->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
-    if (buffer->mapped || buffer->map_pending) return DOE_RESOURCE_STATE;
+    if (!allow_mapped && (buffer->mapped || buffer->map_pending)) return DOE_RESOURCE_STATE;
     if (!(buffer->desc.usage & WGPUBufferUsage_CopyDst)) return DOE_RESOURCE_USAGE;
     if (offset % 4 || size % 4) return DOE_RESOURCE_ALIGNMENT;
     if (offset > buffer->desc.size || size > buffer->desc.size - offset) return DOE_RESOURCE_RANGE;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_buffer_write_validate(const doe_resource_buffer *buffer,
+    const void *device, uint64_t offset, uint64_t size)
+{
+    return resource_buffer_write_validate(buffer, device, offset, size, false);
 }
 
 size_t doe_resource_pipeline_layout_count(const doe_resource_pipeline_layout *layout)

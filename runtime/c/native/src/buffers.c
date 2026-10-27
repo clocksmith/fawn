@@ -36,20 +36,28 @@ uint64_t native_allocation_bound(const native_device *device)
     return UINT64_MAX;
 }
 
-WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDescriptor *descriptor,
+native_buffer_creation native_device_create_buffer_result(native_device *device, const WGPUBufferDescriptor *descriptor,
     uint64_t max_size)
 {
+    native_buffer_creation result = {.failure=native_failure_status(NATIVE_OK),
+        .status=DOE_RESOURCE_OK,.message="buffer creation failed or unsupported usage"};
     if (!descriptor || descriptor->nextInChain || descriptor->size > SIZE_MAX || descriptor->size > max_size) {
-        native_error(device, WGPUErrorType_Validation, "buffer descriptor unsupported or exceeds limit");
-        return NULL;
+        result.status = DOE_RESOURCE_INVALID_ARGUMENT;
+        result.message = "buffer descriptor unsupported or exceeds limit";
+        return result;
     }
     doe_resource_buffer_desc desc = {descriptor->size, descriptor->usage, descriptor->mappedAtCreation != 0};
-    if (doe_resource_buffer_validate(&desc) != DOE_RESOURCE_OK) {
-        native_error(device, WGPUErrorType_Validation, "buffer descriptor validation failed");
-        return NULL;
+    result.status = doe_resource_buffer_validate(&desc);
+    if (result.status != DOE_RESOURCE_OK) {
+        result.message = "buffer descriptor validation failed";
+        return result;
     }
     native_buffer *payload = calloc(1, sizeof(*payload));
-    if (!payload) { native_error(device, WGPUErrorType_OutOfMemory, "buffer allocation failed"); return NULL; }
+    if (!payload) {
+        result.failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+        result.message = "buffer allocation failed";
+        return result;
+    }
     payload->device = device;
     uint32_t usage = 0;
     if (descriptor->usage & (WGPUBufferUsage_CopySrc | WGPUBufferUsage_MapWrite)) usage |= DOE_VK_BUFFER_COPY_SRC;
@@ -85,16 +93,28 @@ WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDe
         } else if (created != DOE_RESOURCE_OK) buffer = NULL;
     }
     native_unlock(device);
-    if (!buffer) {
-        if (payload) native_buffer_release(NULL, payload);
+    if (!buffer && payload) native_buffer_release(NULL, payload);
+    result.buffer = (WGPUBuffer)buffer;
+    result.failure = failure;
+    result.status = created;
+    return result;
+}
+
+WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDescriptor *descriptor,
+    uint64_t max_size)
+{
+    native_device_retain(device); /* Protect error/label callback reentry through return. */
+    native_buffer_creation result = native_device_create_buffer_result(device, descriptor, max_size);
+    if (!result.buffer) {
         char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
-        if (failure.status == NATIVE_OK) failure = native_failure_status(NATIVE_INVALID_STATE);
-        native_failure_format(&failure, "buffer creation failed or unsupported usage", message);
-        native_error(device, created != DOE_RESOURCE_OK ? native_resource_error(created) :
-            native_result_error(failure.status), message);
+        if (result.failure.status == NATIVE_OK) result.failure = native_failure_status(NATIVE_INVALID_STATE);
+        native_failure_format(&result.failure, result.message, message);
+        native_error(device, result.status != DOE_RESOURCE_OK ? native_resource_error(result.status) :
+            native_result_error(result.failure.status), message);
     }
-    if (buffer) native_label(device, buffer, descriptor->label);
-    return (WGPUBuffer)buffer;
+    if (result.buffer) native_label(device, result.buffer, descriptor->label);
+    native_device_release(device);
+    return result.buffer;
 }
 
 void wgpuBufferAddRef(WGPUBuffer buffer) { doe_resource_buffer_retain((doe_resource_buffer *)buffer); }

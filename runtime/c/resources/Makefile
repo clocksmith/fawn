@@ -10,6 +10,12 @@ OBJECTS = $(patsubst src/%.c,$(BUILD)/%.o,$(SOURCES))
 LABEL_SOURCES = $(wildcard ../labels/src/*.c)
 .PHONY: all check
 all: $(BUILD)/libdoe_resources.a
+$(BUILD)/test_encoded_write: tests/test_encoded_write.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+.PHONY: check-encoded-write
+check-encoded-write: $(BUILD)/test_encoded_write
+	$(BUILD)/test_encoded_write
+check: check-encoded-write
 $(BUILD):
 	mkdir -p $@
 $(BUILD)/%.o: src/%.c src/internal.h include/doe_resources.h include/doe_resources_extended.h ../common/include/doe_copy_footprint.h | $(BUILD)

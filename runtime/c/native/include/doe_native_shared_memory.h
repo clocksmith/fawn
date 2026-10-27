@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT
- * Retained ABI: runtime/zig/src/dropin/dropin_browser_shared_memory.zig. */
+ * Browser ABI: pinned Dawn webgpu.h (Chromium 4a6fb385 / Dawn 758e5e6a).
+ * The explicitly scoped implementation below is not every Dawn import mode. */
 #ifndef DOE_NATIVE_SHARED_MEMORY_H
 #define DOE_NATIVE_SHARED_MEMORY_H
 #include "doe_native_legacy.h"
@@ -41,10 +42,11 @@ typedef struct WGPUSharedTextureMemoryIOSurfaceDescriptor {
     WGPUBool allowStorageBinding;
 } WGPUSharedTextureMemoryIOSurfaceDescriptor;
 typedef struct WGPUSharedTextureMemoryBeginAccessDescriptor {
-    const WGPUChainedStruct *nextInChain;
+    WGPUChainedStruct *nextInChain;
     WGPUBool concurrentRead, initialized;
     size_t fenceCount;
     const WGPUSharedFence *fences;
+    size_t signaledValueCount;
     const uint64_t *signaledValues;
 } WGPUSharedTextureMemoryBeginAccessDescriptor;
 typedef struct WGPUSharedTextureMemoryEndAccessState {
@@ -52,6 +54,7 @@ typedef struct WGPUSharedTextureMemoryEndAccessState {
     WGPUBool initialized;
     size_t fenceCount;
     const WGPUSharedFence *fences;
+    size_t signaledValueCount;
     const uint64_t *signaledValues;
 } WGPUSharedTextureMemoryEndAccessState;
 typedef struct WGPUSharedTextureMemoryProperties {
@@ -65,16 +68,18 @@ typedef struct WGPUSharedBufferMemoryDescriptor {
     WGPUStringView label;
 } WGPUSharedBufferMemoryDescriptor;
 typedef struct WGPUSharedBufferMemoryBeginAccessDescriptor {
-    const WGPUChainedStruct *nextInChain;
+    WGPUChainedStruct *nextInChain;
+    WGPUBool initialized;
     size_t fenceCount;
     const WGPUSharedFence *fences;
+    size_t signaledValueCount;
     const uint64_t *signaledValues;
 } WGPUSharedBufferMemoryBeginAccessDescriptor;
 typedef WGPUSharedTextureMemoryEndAccessState WGPUSharedBufferMemoryEndAccessState;
 typedef struct WGPUSharedBufferMemoryProperties {
     WGPUChainedStruct *nextInChain;
-    uint64_t size;
     WGPUBufferUsage usage;
+    uint64_t size;
 } WGPUSharedBufferMemoryProperties;
 /* Imports borrow input native handles and return +1 objects. Fence export
  * borrows its unchanged MTLSharedEvent identity until the fence is released.
@@ -82,7 +87,7 @@ typedef struct WGPUSharedBufferMemoryProperties {
  * each imported texture retains its shared-memory provenance.
  * Compatibility is the retained Doe subset, not all Dawn shared-image policy:
  * Begin ignores concurrentRead/initialized/nextInChain and serializes one access;
- * producer synchronization comes from its fence/value pairs. End(NULL) merely
+ * producer synchronization comes from equal-length fence/value spans. End(NULL) merely
  * closes access, while End(state) emits a fresh native signal and initialized=true.
  * No undefined-content initialization or concurrent-read guarantee is implied.
  * allowStorageBinding is retained ABI only; storage usage is not admitted. */

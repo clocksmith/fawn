@@ -1437,6 +1437,17 @@ This explicitly preserves the retained plane-zero compatibility behavior. It is
 **not YUV conversion or complete WebGPU external-color semantics**, and no
 video-correctness or native physical-import qualification follows.
 
+The standard `wgpuDeviceCreateExternalTexture` browser descriptor is a separate,
+complete 112-byte ABI matching Chromium `4a6fb385` / Dawn `758e5e6a`. It admits
+full-view, single-plane, four-component float sampling with identity conversion
+or `doYuvToRgbConversionOnly`. Required conversion spans remain required. Crop,
+scale, rotation, mirroring and nonidentity color conversion reject through a
+real error external-texture resource; label/release are safe, but binding and
+refresh fail. The private `DoeExternalTextureDescriptor` retains its 40-byte
+prefix contract. Neither interface silently promises conversion from plane-zero
+sampling. The CPU ABI audit checks the full browser descriptor and signatures;
+browser execution and color semantics require their own output checks.
+
 `make check-external-textures` covers public expiry/refresh/destroy, label and
 reference lifecycle, chained binding, cross-device rejection, import failure,
 early release, and exact plane-zero sample readback on the selected adapter.
@@ -1560,10 +1571,13 @@ Doe entrypoints, separately from the pinned WebGPU header. The procedure table,
 platform exports and export audit use the explicit inventory; no fallback provider
 resolves these names. The legacy uncaptured callback takes **no device argument**,
 unlike the pinned descriptor callback. Getters return retained handles. DeviceTick
-performs nonblocking progress and returns false, not a completion verdict.
+performs nonblocking progress and returns `void`, matching the selected Dawn ABI.
 
-`wgpuCommandEncoderWriteBuffer` preserves the retained immediate **mapped** write;
-it does not record a queue command. Both legacy pass WriteTimestamp entrypoints
+`wgpuCommandEncoderWriteBuffer` snapshots caller bytes into an ordinary owned
+staging buffer and records a copy at that exact command position. Recording does
+not modify the destination. Command and pending owners preserve staging lifetime
+through submission and uncertain native completion. Its pointer/size signature
+matches the selected Dawn ABI. Both legacy pass WriteTimestamp entrypoints
 preserve the retained locked-parent rejection. Actual pass timestamps use descriptor
 `timestampWrites`; exposing the rejecting aliases does not advertise arbitrary
 in-pass timestamp support. The unadvertised Dawn format-capability query rejects

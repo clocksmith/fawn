@@ -212,7 +212,7 @@ static void producer_concurrency(state *s, fixture *f, WGPUSharedTextureMemory m
     WGPUTexture waiting_texture = make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb);
     assert(waiting_texture);
     begin_call call = {.memory=memory,.texture=waiting_texture,
-        .descriptor={.fenceCount=1,.fences=&fence,.signaledValues=&value}};
+        .descriptor={.fenceCount=1,.fences=&fence,.signaledValueCount=1,.signaledValues=&value}};
     doe_thread thread = {0};
     f->blocking_wait = true;
     assert(doe_thread_create(&thread,begin_thread,&call).status == DOE_HOST_OK);
@@ -251,14 +251,57 @@ static void producer_concurrency(state *s, fixture *f, WGPUSharedTextureMemory m
 static void unsupported_buffer_contract(void)
 {
     WGPUSharedBufferMemoryProperties properties = {.size=99,.usage=99};
-    WGPUSharedBufferMemoryEndAccessState end = {.initialized=WGPU_TRUE,.fenceCount=99};
+    WGPUSharedBufferMemoryEndAccessState end = {.initialized=WGPU_TRUE,.fenceCount=99,
+        .signaledValueCount=123};
     assert(!wgpuDeviceImportSharedBufferMemory(NULL,NULL));
     assert(!wgpuSharedBufferMemoryCreateBuffer(NULL,NULL));
     assert(wgpuSharedBufferMemoryBeginAccess(NULL,NULL,NULL) == WGPUStatus_Error);
     assert(wgpuSharedBufferMemoryGetProperties(NULL,&properties) == WGPUStatus_Error && !properties.size && !properties.usage);
-    assert(wgpuSharedBufferMemoryEndAccess(NULL,NULL,&end) == WGPUStatus_Error && !end.initialized && !end.fenceCount);
+    assert(wgpuSharedBufferMemoryEndAccess(NULL,NULL,&end) == WGPUStatus_Error && !end.initialized && !end.fenceCount && !end.signaledValueCount);
     assert(wgpuSharedBufferMemoryIsDeviceLost(NULL));
     wgpuSharedBufferMemoryEndAccessStateFreeMembers(end);
+}
+
+static void fence_span_contract(state *s, fixture *f,
+    WGPUSharedTextureMemory memory, WGPUTexture texture)
+{
+    WGPUSharedFence fence = import_fence(s, f);
+    assert(fence);
+    shared_event *event = export_event(fence);
+    unsigned references = event->references;
+    uint64_t value = 37;
+    WGPUSharedTextureMemoryBeginAccessDescriptor descriptor = {
+        .fenceCount = 1, .fences = &fence, .signaledValues = &value};
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, &descriptor) == WGPUStatus_Error);
+    descriptor.fenceCount = 0;
+    descriptor.signaledValueCount = 1;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, &descriptor) == WGPUStatus_Error);
+    descriptor.fenceCount = 1;
+    descriptor.signaledValueCount = 2;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, &descriptor) == WGPUStatus_Error);
+    descriptor.signaledValueCount = 1;
+    descriptor.signaledValues = NULL;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, &descriptor) == WGPUStatus_Error);
+    descriptor.signaledValues = &value;
+    descriptor.fences = NULL;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, &descriptor) == WGPUStatus_Error);
+    descriptor.fences = &fence;
+    descriptor.fenceCount = SIZE_MAX;
+    descriptor.signaledValueCount = SIZE_MAX;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, &descriptor) == WGPUStatus_Error);
+    assert(event->references == references);
+    /* Rejected spans must not reserve access or consume the producer's fence. */
+    assert(wgpuSharedTextureMemoryBeginAccess(memory, texture, NULL) == WGPUStatus_Success);
+    assert(wgpuSharedTextureMemoryEndAccess(memory, texture, NULL) == WGPUStatus_Success);
+    wgpuSharedFenceRelease(fence);
+
+    /* The two output arrays have independent ownership/counts. LSan catches a
+     * values allocation skipped merely because no fences were returned. */
+    uint64_t *owned_values = calloc(1, sizeof(*owned_values));
+    assert(owned_values);
+    WGPUSharedTextureMemoryEndAccessState only_values = {
+        .signaledValueCount = 1, .signaledValues = owned_values};
+    wgpuSharedTextureMemoryEndAccessStateFreeMembers(only_values);
 }
 int main(void)
 {
@@ -289,11 +332,12 @@ int main(void)
     assert(!make_texture(memory,WGPUTextureFormat_RGBA8Unorm) && s.errors == errors + 1);
     assert(wgpuSharedTextureMemoryBeginAccess(other,texture,NULL) == WGPUStatus_Error);
     WGPUTexture second = make_texture(memory,WGPUTextureFormat_BGRA8UnormSrgb);
+    fence_span_contract(&s, f, memory, texture);
     assert(second && wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Success);
     assert(wgpuSharedTextureMemoryEndAccess(memory,second,NULL) == WGPUStatus_Error);
     WGPUSharedTextureMemoryEndAccessState end = {0};
     assert(wgpuSharedTextureMemoryEndAccess(memory,texture,&end) == WGPUStatus_Success);
-    assert(end.initialized && end.fenceCount == 1 && end.signaledValues[0] == 1);
+    assert(end.initialized && end.fenceCount == 1 && end.signaledValueCount == 1 && end.signaledValues[0] == 1);
     void *first_event = export_event(end.fences[0]);
     assert(first_event == f->last_signal && ((shared_event *)first_event)->references == 1);
     wgpuSharedTextureMemoryEndAccessStateFreeMembers(end);

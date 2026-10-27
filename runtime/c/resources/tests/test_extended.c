@@ -100,6 +100,19 @@ static void test_external_texture(void)
 {
     fixture f = fresh();
     doe_resource_config c = config(&f);
+    doe_resource_external_texture *invalid = doe_resource_external_texture_error(&c);
+    assert(invalid && doe_resource_external_texture_device(invalid) == &f);
+    assert(!doe_resource_external_texture_available(invalid));
+    assert(!doe_resource_external_texture_plane(invalid, 0));
+    assert(doe_resource_external_texture_refresh(invalid) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_external_texture_expire(invalid);
+    assert(doe_resource_external_texture_refresh(invalid) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_external_texture_retain(invalid);
+    doe_resource_external_texture_release(invalid);
+    doe_resource_external_texture_release(invalid);
+    f.fail_at = f.allocations;
+    assert(!doe_resource_external_texture_error(&c));
+    f.fail_at = SIZE_MAX;
     native_token texture_token = {0}, view_token = {0};
     doe_resource_texture_desc desc = texture_desc();
     doe_resource_texture_limits limits = texture_limits();
@@ -118,6 +131,12 @@ static void test_external_texture(void)
     doe_resource_binding binding = {.binding = 3, .kind = DOE_BIND_EXTERNAL_TEXTURE, .resource.external_texture = external};
     doe_resource_binding_limits binding_limits = {16, 16, 1024, 1024};
     doe_resource_bind_group *group;
+    invalid = doe_resource_external_texture_error(&c);
+    assert(invalid);
+    binding.resource.external_texture = invalid;
+    assert(doe_resource_bind_group_create(layout, &binding, 1, &binding_limits, &group) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_external_texture_release(invalid);
+    binding.resource.external_texture = external;
     doe_resource_external_texture_expire(external);
     assert(doe_resource_bind_group_create(layout, &binding, 1, &binding_limits, &group) == DOE_RESOURCE_UNAVAILABLE);
     assert(doe_resource_external_texture_refresh(external) == DOE_RESOURCE_OK);

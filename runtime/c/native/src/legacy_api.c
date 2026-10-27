@@ -31,22 +31,17 @@ void wgpuDeviceSetUncapturedErrorCallback(WGPUDevice handle,
     native_unlock(device);
 }
 
-WGPUBool wgpuDeviceTick(WGPUDevice handle)
+void wgpuDeviceTick(WGPUDevice handle)
 {
     native_device *device = (native_device *)handle;
-    if (!device) return WGPU_FALSE;
+    if (!device) return;
     native_device_retain(device);
     native_lock(device);
     native_progress_pending(device);
     native_unlock(device);
     native_device_release(device);
-    return WGPU_FALSE;
 }
 
-WGPUExternalTexture wgpuDeviceCreateExternalTexture(WGPUDevice device, const void *descriptor)
-{
-    return doeNativeDeviceCreateExternalTexture(device, descriptor);
-}
 void wgpuExternalTextureDestroy(WGPUExternalTexture texture) { doeNativeExternalTextureDestroy(texture); }
 void wgpuExternalTextureExpire(WGPUExternalTexture texture) { doeNativeExternalTextureExpire(texture); }
 void wgpuExternalTextureRefresh(WGPUExternalTexture texture) { doeNativeExternalTextureRefresh(texture); }
@@ -65,14 +60,6 @@ WGPUStatus wgpuAdapterGetFormatCapabilities(WGPUAdapter adapter, WGPUTextureForm
 void wgpuAdapterPropertiesMemoryHeapsFreeMembers(DoeLegacyCapabilityArray properties) { free((void *)properties.members); }
 void wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers(DoeLegacyCapabilityArray properties) { free((void *)properties.members); }
 void wgpuDawnDrmFormatCapabilitiesFreeMembers(DoeLegacyCapabilityArray properties) { free((void *)properties.members); }
-
-void wgpuCommandEncoderWriteBuffer(WGPUCommandEncoder encoder, WGPUBuffer buffer,
-    uint64_t offset, const uint8_t *data, uint64_t size)
-{
-    (void)encoder;
-    if (offset > SIZE_MAX || size > SIZE_MAX || (!data && size)) return;
-    (void)wgpuBufferWriteMappedRange(buffer, (size_t)offset, data, (size_t)size);
-}
 
 void wgpuComputePassEncoderWriteTimestamp(WGPUComputePassEncoder handle, WGPUQuerySet set, uint32_t index)
 {

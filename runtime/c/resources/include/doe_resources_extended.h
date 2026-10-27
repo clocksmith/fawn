@@ -48,6 +48,10 @@ doe_resource_status doe_resource_encoder_resolve_queries(doe_resource_encoder *e
  * the originating device/instance chain. Plane contents are never CPU emulated. */
 doe_resource_status doe_resource_external_texture_create(const doe_resource_config *config,
     doe_resource_view *plane0, doe_resource_view *plane1, doe_resource_external_texture **out);
+/* Genuine invalid identity, with an ordinary device lease and no native planes.
+ * It is never available and Refresh cannot turn it into a usable texture. */
+doe_resource_external_texture *doe_resource_external_texture_error(const doe_resource_config *config);
+void *doe_resource_external_texture_device(const doe_resource_external_texture *texture);
 void doe_resource_external_texture_retain(doe_resource_external_texture *texture);
 void doe_resource_external_texture_release(doe_resource_external_texture *texture);
 void doe_resource_external_texture_expire(doe_resource_external_texture *texture);

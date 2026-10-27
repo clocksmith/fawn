@@ -120,6 +120,7 @@ struct doe_resource_external_texture {
     doe_resource_view *planes[2];
     size_t plane_count;
     bool expired;
+    bool error_object;
 };
 
 /* Write-only and read-write storage textures are distinct usages: one
@@ -260,6 +261,8 @@ void resource_retain(resource_base *base);
 bool resource_last_reference(resource_base *base);
 void resource_finalize(resource_base *base, size_t size, size_t alignment);
 bool resource_buffer_available(const doe_resource_buffer *buffer);
+doe_resource_status resource_buffer_write_validate(const doe_resource_buffer *buffer,
+    const void *device, uint64_t offset, uint64_t size, bool allow_mapped);
 bool resource_texture_available(const doe_resource_texture *texture);
 /* A texture still referenced, destroyed or not: WebGPU admits a destroyed
  * texture when encoding and rejects it at submit (resource_texture_available). */

@@ -16,7 +16,7 @@ _Static_assert(offsetof(DoeExternalTextureNativeDescriptor, handle) == 24, "reta
 
 static native_device *external_device(doe_resource_external_texture *texture)
 {
-    return doe_resource_view_device(doe_resource_external_texture_plane(texture, 0));
+    return doe_resource_external_texture_device(texture);
 }
 
 static doe_resource_status adopt_plane(native_device *device, doe_mtl_texture **imported,

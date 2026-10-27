@@ -168,6 +168,16 @@ void doe_resource_encoder_release(doe_resource_encoder *encoder)
     resource_finalize(&encoder->base, sizeof(*encoder), _Alignof(doe_resource_encoder));
 }
 
+doe_resource_status doe_resource_encoder_write_buffer_validate(doe_resource_encoder *encoder,
+    const doe_resource_buffer *buffer, uint64_t offset, uint64_t size)
+{
+    doe_resource_status status = resource_encoder_open(encoder);
+    if (status != DOE_RESOURCE_OK) return status;
+    status = resource_buffer_write_validate(buffer, encoder->base.config.device.identity,
+        offset, size, true);
+    return status == DOE_RESOURCE_OK ? status : resource_encoder_fail(encoder, status);
+}
+
 doe_resource_status doe_resource_encoder_copy_buffer(doe_resource_encoder *encoder,
     const doe_resource_buffer_copy *copy, doe_resource_alias_policy alias)
 {

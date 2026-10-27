@@ -42,7 +42,12 @@ _Static_assert(offsetof(WGPUSharedTextureMemoryBeginAccessDescriptor, fenceCount
 _Static_assert(offsetof(WGPUSharedTextureMemoryIOSurfaceDescriptor, ioSurface) == 16, "retained IOSurface ABI");
 _Static_assert(offsetof(WGPUSharedFenceMTLSharedEventDescriptor, sharedEvent) == 16, "retained fence ABI");
 _Static_assert(offsetof(WGPUSharedTextureMemoryProperties, size) == 16, "retained properties ABI");
-_Static_assert(sizeof(WGPUSharedTextureMemoryEndAccessState) == 40, "retained end ABI");
+_Static_assert(sizeof(WGPUSharedTextureMemoryBeginAccessDescriptor) == 48, "pinned begin ABI");
+_Static_assert(offsetof(WGPUSharedTextureMemoryBeginAccessDescriptor, signaledValueCount) == 32, "pinned begin count ABI");
+_Static_assert(offsetof(WGPUSharedTextureMemoryBeginAccessDescriptor, signaledValues) == 40, "pinned begin values ABI");
+_Static_assert(sizeof(WGPUSharedTextureMemoryEndAccessState) == 48, "pinned end ABI");
+_Static_assert(offsetof(WGPUSharedTextureMemoryEndAccessState, signaledValueCount) == 32, "pinned end count ABI");
+_Static_assert(offsetof(WGPUSharedTextureMemoryEndAccessState, signaledValues) == 40, "pinned end values ABI");
 #endif
 
 static bool valid_memory(WGPUSharedTextureMemory memory)
@@ -300,6 +305,7 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
 {
     if (!valid_memory(memory) || !handle) return WGPUStatus_Error;
     size_t count = descriptor ? descriptor->fenceCount : 0;
+    if (descriptor && count != descriptor->signaledValueCount) return WGPUStatus_Error;
     if (count && (!descriptor->fences || !descriptor->signaledValues || count > SIZE_MAX / sizeof(shared_wait)))
         return WGPUStatus_Error;
     shared_wait *waits = count ? calloc(count, sizeof(*waits)) : NULL;
@@ -392,6 +398,7 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
             state->initialized = WGPU_TRUE;
             state->fenceCount = 1;
             state->fences = fences;
+            state->signaledValueCount = 1;
             state->signaledValues = values;
         }
         memory->access = SHARED_IDLE;
@@ -431,7 +438,6 @@ WGPUBool wgpuSharedTextureMemoryIsDeviceLost(WGPUSharedTextureMemory memory)
 }
 void wgpuSharedTextureMemoryEndAccessStateFreeMembers(WGPUSharedTextureMemoryEndAccessState state)
 {
-    if (!state.fenceCount) return;
     if (state.fences) {
         for (size_t i = 0; i < state.fenceCount; ++i) wgpuSharedFenceRelease(state.fences[i]);
         free((void *)state.fences);
