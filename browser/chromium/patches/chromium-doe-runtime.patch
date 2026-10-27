@@ -91,7 +91,7 @@ index 1b77642ce9..c5bcd0ebdb 100644
    std::string_view dawn_search_path_view = dawn_search_path;
    if (!dawn_search_path.empty()) {
 diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
-index 6030a9f57c..20eab4e962 100644
+index 6030a9f57c..7be94f5488 100644
 --- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
 +++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
 @@ -13,6 +13,7 @@
@@ -213,7 +213,25 @@ index 6030a9f57c..20eab4e962 100644
        return false;
      }
  
-@@ -2246,7 +2284,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
+@@ -1881,6 +1919,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+   // Enumerate adapters in order of the preferred backend type.
+   for (wgpu::BackendType backend_type : backend_types) {
+     adapter_options.backendType = backend_type;
++    if (use_doe_runtime_) {
++      LOG(INFO) << "runtime_outer_adapter_request: backend_type="
++                << static_cast<uint32_t>(backend_type)
++                << " feature_level=" << static_cast<uint32_t>(adapter_options.featureLevel)
++                << " power_preference=" << static_cast<uint32_t>(adapter_options.powerPreference)
++                << " force_fallback=" << adapter_options.forceFallbackAdapter
++                << " vulkan_context=" << (shared_context_state_->vk_context_provider() != nullptr)
++                << " gr_context_vulkan=" << shared_context_state_->GrContextIsVulkan()
++                << " vk_gl_interop=" << webgpu_on_vk_gl_interop_
++                << " graphite_vulkan=" << shared_context_state_->IsGraphiteDawnVulkan();
++    }
+     for (dawn::native::Adapter& native_adapter :
+          dawn_instance_->EnumerateAdapters(&adapter_options)) {
+       native_adapter.SetUseTieredLimits(tiered_adapter_limits_);
+@@ -2246,7 +2295,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
    std::unique_ptr<SharedImageRepresentationAndAccess> representation_and_access;
    auto it = known_device_metadata_.find(device);
    CHECK(it != known_device_metadata_.end());
@@ -222,7 +240,7 @@ index 6030a9f57c..20eab4e962 100644
      representation_and_access = AssociateMailboxUsingSkiaFallback(
          mailbox, flags, device, usage, internal_usage, std::move(view_formats));
    } else {
-@@ -2348,6 +2386,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
+@@ -2348,6 +2397,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
                                                const wgpu::Device& device,
                                                wgpu::BackendType backendType,
                                                wgpu::BufferUsage usage) {
