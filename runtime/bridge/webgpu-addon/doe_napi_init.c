@@ -8,6 +8,23 @@
 
 #include "doe_napi_internal.h"
 
+#if defined(_WIN32) && defined(DOE_NAPI_EXPLICIT_HOST_HOOK)
+#include <windows.h>
+#include <delayimp.h>
+#include <string.h>
+
+/* The custom builder uses the same main-executable handoff as node-gyp.
+ * Resolve N-API in the running host (Node or Bun), never a second node.exe.
+ * node-gyp supplies its own hook, so this definition is custom-builder-only. */
+static FARPROC WINAPI resolve_javascript_host(unsigned notification, PDelayLoadInfo info)
+{
+    if (notification != dliNotePreLoadLibrary || _stricmp(info->szDll, "node.exe") != 0)
+        return NULL;
+    return (FARPROC)GetModuleHandleW(NULL);
+}
+const PfnDliHook __pfnDliNotifyHook2 = resolve_javascript_host;
+#endif
+
 /* ================================================================
  * Forward declarations — napi callbacks defined in sibling .c files
  * ================================================================ */

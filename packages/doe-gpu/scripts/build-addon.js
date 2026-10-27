@@ -78,9 +78,12 @@ function compilerCommand(includeDir, {
       args: [
         ...prefixArgs,
         '-shared',
+        '-DDOE_NAPI_EXPLICIT_HOST_HOOK=1',
         ...baseArgs,
         ...sourceFiles,
         resolveNodeImportLibrary(includeDir, arch, environment),
+        '-Wl,/DELAYLOAD:node.exe',
+        '-Wl,delayimp.lib',
         '-o',
         OUTPUT_PATH,
         `-Wl,/IMPLIB:${resolve(OUTPUT_DIR, 'doe_napi.lib')}`,
