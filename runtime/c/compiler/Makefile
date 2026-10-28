@@ -628,7 +628,7 @@ build/test_cli_capacity: tests/test_cli_capacity.c include/doe_compiler_pool_gro
 .PHONY: test-cli-growth
 test-cli-growth: build/doe-compiler-c build/test_cli_faults build/test_cli_capacity
 	build/test_cli_capacity
-	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" DOE_COMPILER_FAULT_CLI="$(CURDIR)/build/test_cli_faults" python3 tests/test_cli_growth.py
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" DOE_COMPILER_FAULT_CLI="$(CURDIR)/build/test_cli_faults" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_cli_growth.py
 
 build/test_long_names: tests/test_long_names.c build/libdoe_compiler.so $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $< -Lbuild -ldoe_compiler -Wl,-rpath,$(abspath build) -o $@

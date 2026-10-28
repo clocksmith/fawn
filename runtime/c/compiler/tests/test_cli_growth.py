@@ -50,6 +50,20 @@ class Growth(unittest.TestCase):
         result = self.invoke(source, extra=('--mode', 'vulkan-compute-runtime', '--overrides', 'size=2'))
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_spirv_output_larger_than_initial_word_pool(self):
+        with tempfile.TemporaryDirectory(prefix='doe-cli-large-output-') as directory:
+            root = Path(directory)
+            shader, output = root / 'input.wgsl', root / 'output.spv'
+            shader.write_text(updates(6000))
+            result = subprocess.run([CLI, '--shader-path', str(shader), '--out', str(output)],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertGreater(output.stat().st_size, 65536 * 4)
+            checked = subprocess.run([os.environ.get('SPIRV_VAL', 'spirv-val'),
+                                      '--target-env', 'vulkan1.1', str(output)],
+                                     capture_output=True, text=True, timeout=30)
+            self.assertEqual(checked.returncode, 0, checked.stderr)
+
     def test_semantic_error_after_growth_never_publishes(self):
         source = updates().replace('}', 'missing=1u;}')
         for target in ('spirv', 'msl', 'hlsl'):
