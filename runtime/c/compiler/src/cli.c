@@ -27,6 +27,24 @@ static int write_all(int fd, const unsigned char *bytes, size_t length) {
     }
     return 0;
 }
+static DoeCompilerStatus compile_binary(const DoeCompilerStageCapacities *stages,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerEntrySelectionV5 *selection, uint32_t *words, size_t word_capacity,
+    DoeCompilerStageResult *result) {
+    const DoeCompilerStageOutputs spans = {.resources = {.module = {
+        .words = words, .word_capacity = word_capacity,
+        .type_record_size = sizeof(DoeCompilerTypeV4),
+        .member_record_size = sizeof(DoeCompilerMemberV4),
+        .resource_record_size = sizeof(DoeCompilerResourceV4),
+        .workgroup_record_size = sizeof(DoeCompilerWorkgroupV5),
+        .entry_record_size = sizeof(DoeCompilerEntryV5)}, .handle_record_size = sizeof(DoeCompilerHandleV6)},
+        .interface_record_size = sizeof(DoeCompilerStageInterfaceV7)
+    };
+    return doe_compiler_compile_stages(DOE_COMPILER_STAGES_ABI_VERSION,
+        stages, sizeof(*stages), workspace, workspace_size, source, length,
+        selection, sizeof(*selection), DOE_COMPILER_TYPED_WORDS,
+        &spans, sizeof(spans), result, sizeof(*result));
+}
 static int temporary(const char *path, char output[PATH_CAPACITY]) {
     const size_t length = strlen(path);
     if (length > PATH_CAPACITY - sizeof(".tmp.XXXXXX")) { errno = ENAMETOOLONG; return -1; }
@@ -189,6 +207,7 @@ int main(int argc, char **argv) {
     const bool binary_only = reflection == NULL;
     word_capacity = legacy ? DOE_COMPILER_MAX_WORDS : job.words;
     DoeCompilerStageResult stage_result;
+    DoeCompilerStatus binary_compiled = DOE_COMPILER_INPUT_ERROR;
     DoeCompilerWorkspaceRequirements requirements = {0};
     if (!legacy) {
         for (;;) {
@@ -203,19 +222,23 @@ int main(int argc, char **argv) {
             workspace = malloc(requirements.size_bytes);
             if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
             if (!binary_only) break;
-            const DoeCompilerStatus measured = doe_compiler_compile_stages(
-                DOE_COMPILER_STAGES_ABI_VERSION, &stages, sizeof(stages), workspace,
-                requirements.size_bytes, source, length, &selection, sizeof(selection),
-                DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_TYPED_MEASURE,
-                NULL, 0u, &stage_result, sizeof(stage_result));
-            if (measured == DOE_COMPILER_OK) {
-                word_capacity = stage_result.resources.module.required.words;
-                break;
+            /* The caller already owns a bounded word pool. Publish into it on
+             * the first attempt; replay only when a reported pool must grow. */
+            word_capacity = stages.module.typed.words;
+            if (word_capacity > SIZE_MAX / sizeof(*words)) {
+                fprintf(stderr, "word capacity exceeds byte range\n"); goto cleanup;
             }
-            if (doe_compiler_grow_stage_pool(&stages, measured, stage_result.resources.module.exhausted_pool,
+            words = malloc(word_capacity * sizeof(*words));
+            if (words == NULL) { fprintf(stderr, "word allocation failed\n"); goto cleanup; }
+            binary_compiled = compile_binary(&stages, workspace, requirements.size_bytes,
+                source, length, &selection, words, word_capacity, &stage_result);
+            if (binary_compiled == DOE_COMPILER_OK) break;
+            if (doe_compiler_grow_stage_pool(&stages, binary_compiled, stage_result.resources.module.exhausted_pool,
                     stage_result.resources.module.minimum_pool_capacity)) {
                 free(workspace);
                 workspace = NULL;
+                free(words);
+                words = NULL;
                 continue;
             }
             const DoeCompilerDiagnostic *d = &stage_result.resources.module.diagnostic;
@@ -228,11 +251,13 @@ int main(int argc, char **argv) {
             if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
         }
     }
-    if (word_capacity > SIZE_MAX / sizeof(*words)) {
-        fprintf(stderr, "word capacity exceeds byte range\n"); goto cleanup;
+    if (legacy || !binary_only) {
+        if (word_capacity > SIZE_MAX / sizeof(*words)) {
+            fprintf(stderr, "word capacity exceeds byte range\n"); goto cleanup;
+        }
+        words = malloc(word_capacity * sizeof(*words));
+        if (words == NULL) { fprintf(stderr, "word allocation failed\n"); goto cleanup; }
     }
-    words = malloc(word_capacity * sizeof(*words));
-    if (words == NULL) { fprintf(stderr, "word allocation failed\n"); goto cleanup; }
     DoeCompilerResult result;
     DoeCompilerStatus compiled;
     DoeCompilerDiagnostic *diagnostic;
@@ -242,18 +267,7 @@ int main(int argc, char **argv) {
         diagnostic = &result.diagnostic;
         word_count = result.word_count;
     } else if (binary_only) {
-        const DoeCompilerStageOutputs spans = {.resources = {.module = {
-            .words = words, .word_capacity = word_capacity,
-            .type_record_size = sizeof(DoeCompilerTypeV4),
-            .member_record_size = sizeof(DoeCompilerMemberV4),
-            .resource_record_size = sizeof(DoeCompilerResourceV4),
-            .workgroup_record_size = sizeof(DoeCompilerWorkgroupV5),
-            .entry_record_size = sizeof(DoeCompilerEntryV5)}, .handle_record_size = sizeof(DoeCompilerHandleV6)},
-            .interface_record_size = sizeof(DoeCompilerStageInterfaceV7)
-        };
-        compiled = doe_compiler_compile_stages(DOE_COMPILER_STAGES_ABI_VERSION,
-            &stages, sizeof(stages), workspace, requirements.size_bytes, source, length, &selection, sizeof(selection),
-            DOE_COMPILER_TYPED_WORDS, &spans, sizeof(spans), &stage_result, sizeof(stage_result));
+        compiled = binary_compiled;
         diagnostic = &stage_result.resources.module.diagnostic;
         word_count = stage_result.resources.module.published.words;
     } else {
