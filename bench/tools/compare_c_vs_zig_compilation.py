@@ -240,11 +240,15 @@ def stats(samples: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def measure(args: argparse.Namespace) -> int:
+    if args.iterations < 1 or args.warmup < 0:
+        raise ValueError("iterations must be positive and warmup nonnegative")
     output = args.out.resolve()
     output.mkdir(parents=True, exist_ok=False)
     catalog = args.workloads.resolve()
     rows = [row for row in json.loads(catalog.read_text())["workloads"]
             if row.get("runnerType") == "compilation"]
+    if not rows:
+        raise ValueError("compiler corpus contains no compilation workloads")
     binaries = {target: {"c": args.c_bin_dir.resolve() / f"doe-emit-{target}-c",
                          "zig": args.zig_bin_dir.resolve() / f"doe-emit-{target}"}
                 for target in args.targets}
@@ -429,6 +433,8 @@ def validate(args: argparse.Namespace) -> int:
 
 def finalize(report_path: Path, receipts: list[Path]) -> int:
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not report.get("rows"):
+        raise ValueError("no measured compiler rows to compare")
     manifest_hash = digest(report_path.parent / "validation-manifest.json")
     script_hash = report["inputs"][str(Path(__file__).resolve())]
     accepted: dict[tuple[str, str, str], dict[str, Any]] = {}
