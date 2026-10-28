@@ -17,6 +17,37 @@ from bench.tools import compare_c_vs_zig_compilation as compiler
 
 
 class CompilerProcessTests(unittest.TestCase):
+    def test_execution_catalog_cannot_produce_an_empty_compiler_success(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            catalog = root / "catalog.json"
+            catalog.write_text(json.dumps({"workloads": [
+                {"id": "runtime-only", "runnerType": "execution"},
+            ]}))
+            args = argparse.Namespace(out=root / "result", workloads=catalog,
+                                      iterations=16, warmup=1)
+            with patch.object(compiler, "process_sample") as sample:
+                with self.assertRaisesRegex(ValueError, "no compilation workloads"):
+                    compiler.measure(args)
+                sample.assert_not_called()
+            self.assertFalse((args.out / "report.json").exists())
+
+    def test_empty_historical_report_is_not_finalized_as_a_comparison(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            report = Path(temporary) / "report.json"
+            original = b'{"rows":[],"status":"translated_pending_validation"}\n'
+            report.write_bytes(original)
+            with self.assertRaisesRegex(ValueError, "no measured compiler rows"):
+                compiler.finalize(report, [])
+            self.assertEqual(report.read_bytes(), original)
+
+    def test_measure_requires_measured_calls_and_nonnegative_warmups(self) -> None:
+        for iterations, warmup in ((0, 1), (-1, 0), (1, -1)):
+            with self.subTest(iterations=iterations, warmup=warmup):
+                with self.assertRaisesRegex(ValueError, "iterations must be positive"):
+                    compiler.measure(argparse.Namespace(iterations=iterations,
+                                                        warmup=warmup))
+
     def test_callback_failure_reaps_its_owned_process(self) -> None:
         children = []
 
