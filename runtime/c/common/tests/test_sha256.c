@@ -45,6 +45,14 @@ static const struct vector { size_t size; const char *sha256; } vectors[] = {
 };
 int main(void)
 {
+#if defined(DOE_SHA256_X86)
+    assert(!doe_sha256_x86_features(0,0));
+    assert(!doe_sha256_x86_features(bit_SSSE3 | bit_SSE4_1,0));
+    assert(!doe_sha256_x86_features(bit_SSSE3,bit_SHA));
+    assert(!doe_sha256_x86_features(bit_SSE4_1,bit_SHA));
+    assert(doe_sha256_x86_features(bit_SSSE3 | bit_SSE4_1,bit_SHA));
+    assert(doe_sha256_x86_features(~0u,~0u));
+#endif
     unsigned char *storage = malloc(1048576u+64u);
     assert(storage);
     unsigned checks = 0;
@@ -57,6 +65,17 @@ int main(void)
             doe_common_sha256_hex(digest,hex);
             assert(!strcmp(hex,vectors[v].sha256));
             ++checks;
+            /* Exercise the software fallback on accelerated hosts too. */
+            doe_sha256_bytes(bytes,vectors[v].size,digest,doe_sha256_block);
+            doe_common_sha256_hex(digest,hex);
+            assert(!strcmp(hex,vectors[v].sha256));
+#if defined(DOE_SHA256_X86)
+            if (doe_sha256_x86_available()) {
+                doe_sha256_bytes(bytes,vectors[v].size,digest,doe_sha256_block_x86);
+                doe_common_sha256_hex(digest,hex);
+                assert(!strcmp(hex,vectors[v].sha256));
+            }
+#endif
             /* Input/output may overlap: final digest must follow all reads. */
             doe_common_sha256(bytes,vectors[v].size,bytes+1);
             doe_common_sha256_hex(bytes+1,hex);
