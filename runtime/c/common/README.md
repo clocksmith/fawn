@@ -25,3 +25,10 @@ without algorithm changes from the runtime CLI. CLI trace/output digests retain
 the same public wrappers and independent tests. Vulkan cache files use this leaf
 to reject corrupted opaque driver payloads before loading; it is not a new shader
 cache, authenticity mechanism, or device ownership layer.
+
+The SHA-256 leaf uses runtime-gated SHA/SSSE3/SSE4.1 instructions on supported
+Linux x86 compilers and Windows x86 Clang. Missing CPU leaves or required features
+retain the scalar path; platform selection never changes digest bytes.
+`make -C runtime/c/common check-sha256` checks independent frozen vectors across
+padding boundaries, misalignment and input/output aliasing, with the scalar path
+forced even on accelerated hosts. The test reports actual CPU availability.
