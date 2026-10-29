@@ -24,10 +24,15 @@ Win32 uses InitOnce and a permanent FROM_ADDRESS|PIN loader pin, with no ordinar
 LoadLibrary fallback. This code residency survives to process exit; GPU/resource
 leases settle independently. The pending owner retains
 one device lease and observes completion; do not add a second queue or report
-unknown work as terminal. Vulkan and Metal submissions return once accepted.
+unknown work as terminal. Vulkan, Metal and D3D12 submissions return once accepted.
 Metal preserves each resource's single recording owner: discard provisional
 uncommitted BUSY work before settling the specific accepted predecessor and
-recording again; unknown/failure never retries. The worker waits outside the
+recording again; unknown/failure never retries. D3D12 likewise discards every
+provisional native record before waiting on a conflict matched to its accepted
+common pending owner. Distinct writes/submissions need no device-wide drain;
+read/map/reuse waits only for its resource's accepted owner. A context-owned event
+lease permits unlocked observation without retaining a command shell or creating
+another submission owner. Revalidate after every unlocked wait. The worker waits outside the
 device mutex under an actual native handle lease, then observes completion
 under that mutex. Routine settlement polls, and
 running work is never a failure (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Host buffer access waits only for

@@ -14,6 +14,8 @@ doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error
 
 doe_dx_status doe_dx_native_close(doe_dx_native_context *context) {
     if (!context) return DOE_DX_OK;
+    doe_dx_status progress = doe_dx_native_progress_close(context);
+    if (progress != DOE_DX_OK) return progress;
     /* The common owner permits destruction only after completion or terminal
      * device loss. Drain the corresponding event notification before closing
      * its handle; timed-out waits keep both registration and context alive. */

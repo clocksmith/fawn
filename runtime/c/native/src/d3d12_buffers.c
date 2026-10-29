@@ -7,7 +7,7 @@
  * before submission. The same pending owner keeps the device alive if a wait
  * cannot prove completion; releasing the call's staging lease never frees it. */
 static native_failure copy_now(native_device *device, doe_dx_buffer *source, uint64_t from,
-    doe_dx_buffer *destination, uint64_t to, uint64_t size)
+    doe_dx_buffer *destination, uint64_t to, uint64_t size, bool wait)
 {
     native_command_handle command = {0};
     native_failure failure = native_command_create(&device->backend, &command);
@@ -20,7 +20,8 @@ static native_failure copy_now(native_device *device, doe_dx_buffer *source, uin
         if (native_command_release(&command) != NATIVE_OK) abort();
         return failure;
     }
-    return native_submit_backend_commands(device, command);
+    return wait ? native_submit_backend_commands(device, command) :
+        native_submit_backend_commands_async(device, command);
 }
 
 static native_failure upload(native_buffer *buffer, uint64_t offset,
@@ -37,7 +38,7 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
         failure = native_failure_d3d12(status, &error);
     }
     if (failure.status == NATIVE_OK)
-        failure = copy_now(device, staging, 0, buffer->handle.d3d12->allocation, offset, size);
+        failure = copy_now(device, staging, 0, buffer->handle.d3d12->allocation, offset, size, initialize);
     doe_dx_buffer_release(staging);
     return failure;
 }
@@ -114,7 +115,7 @@ native_failure native_d3d12_buffer_read(native_buffer *buffer, uint64_t offset, 
         size, DOE_DX_READBACK, &staging, &error);
     native_failure failure = native_failure_d3d12(status, &error);
     if (failure.status == NATIVE_OK)
-        failure = copy_now(buffer->device, buffer->handle.d3d12->allocation, offset, staging, 0, size);
+        failure = copy_now(buffer->device, buffer->handle.d3d12->allocation, offset, staging, 0, size, true);
     if (failure.status == NATIVE_OK) {
         status = doe_dx_buffer_read(staging, 0, bytes, size, &error);
         failure = native_failure_d3d12(status, &error);

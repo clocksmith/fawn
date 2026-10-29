@@ -5,8 +5,8 @@ BUILD ?= $(DOE_C_TMP)/d3d12
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-OWNER = src/surfaces.c src/pipeline_cache.c src/texture_subresources.c src/texture_views.c src/command_storage.c src/context.c src/resources.c src/commands.c src/compute.c src/pipeline.c src/textures.c src/texture_initialize.c src/texture_transfer.c src/texture_regions.c src/samplers.c src/render_pipeline.c src/render_commands.c src/render_vertices.c src/bindings.c src/graphics.c src/timestamps.c src/vertex_layout.c src/geometry.c
-WINDOWS = src/windows_surface.c src/windows_storage_sizes.c src/windows_cache.c src/windows_cache_key.c src/windows_texture_subresources.c src/windows_texture_views.c src/windows_context.c src/windows_caps.c src/windows_adapter.c src/windows_resources.c src/windows_commands.c src/windows_pipeline.c src/windows_bindings.c src/windows_texture_initialize.c src/windows_textures.c src/windows_texture_regions.c src/windows_samplers.c src/windows_transitions.c src/windows_render_pipeline.c src/windows_render_commands.c src/windows_graphics.c src/windows_timestamps.c src/windows_geometry.c
+OWNER = src/progress.c src/surfaces.c src/pipeline_cache.c src/texture_subresources.c src/texture_views.c src/command_storage.c src/context.c src/resources.c src/commands.c src/compute.c src/pipeline.c src/textures.c src/texture_initialize.c src/texture_transfer.c src/texture_regions.c src/samplers.c src/render_pipeline.c src/render_commands.c src/render_vertices.c src/bindings.c src/graphics.c src/timestamps.c src/vertex_layout.c src/geometry.c
+WINDOWS = src/windows_progress.c src/windows_surface.c src/windows_storage_sizes.c src/windows_cache.c src/windows_cache_key.c src/windows_texture_subresources.c src/windows_texture_views.c src/windows_context.c src/windows_caps.c src/windows_adapter.c src/windows_resources.c src/windows_commands.c src/windows_pipeline.c src/windows_bindings.c src/windows_texture_initialize.c src/windows_textures.c src/windows_texture_regions.c src/windows_samplers.c src/windows_transitions.c src/windows_render_pipeline.c src/windows_render_commands.c src/windows_graphics.c src/windows_timestamps.c src/windows_geometry.c
 HOST_OBJECTS = $(OWNER:src/%.c=$(BUILD)/host/%.o)
 WINDOWS_OBJECTS = $(OWNER:src/%.c=$(BUILD)/windows/%.o) $(WINDOWS:src/%.c=$(BUILD)/windows/%.o)
 HEADERS = include/doe_d3d12_surface.h src/surface_native.h include/doe_d3d12_cache.h src/windows_cache.h ../../common/include/doe_sha256.h include/doe_d3d12_formats.inc include/doe_d3d12_render.h include/doe_d3d12_dynamic.h include/doe_d3d12_texture_regions.h include/doe_d3d12_mesh.h include/doe_d3d12_graphics.h include/doe_d3d12_texture.h ../../common/include/doe_copy_footprint.h include/doe_d3d12.h src/internal.h src/native.h src/windows_internal.h
@@ -106,3 +106,14 @@ $(BUILD)/test_surface: tests/test_surface.c tests/mock_native.c tests/mock_surfa
 $(BUILD)/test_windows_wait.exe: tests/test_windows_wait.c src/windows_context.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
 sdk-control: $(BUILD)/test_windows_wait.exe
+
+$(BUILD)/test_progress: tests/test_progress.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_progress.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
+.PHONY: check-progress
+check-progress: $(BUILD)/test_progress
+	$(BUILD)/test_progress
+check: check-progress
+
+$(BUILD)/test_windows_progress.exe: tests/test_windows_progress.c src/windows_context.c src/windows_progress.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
+sdk-control: $(BUILD)/test_windows_progress.exe

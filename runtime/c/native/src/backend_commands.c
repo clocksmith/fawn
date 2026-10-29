@@ -55,6 +55,7 @@ native_failure native_command_wait(native_command_handle *commands)
 
 bool native_command_in_flight(const native_command_handle *commands)
 {
+    if (commands->kind == WGPUBackendType_D3D12) return native_d3d12_command_in_flight(commands);
     return (commands->kind == WGPUBackendType_Vulkan && doe_vk_commands_in_flight(commands->value.vulkan)) ||
         (commands->kind == WGPUBackendType_Metal && doe_mtl_commands_in_flight(commands->value.metal));
 }

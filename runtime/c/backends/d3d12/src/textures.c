@@ -175,7 +175,10 @@ doe_dx_status doe_dx_texture_preflight(doe_dx_commands *commands,
     if (!texture) return DOE_DX_INVALID_ARGUMENT;
     if (!doe_dx_surface_texture_recordable(texture)) return DOE_DX_INVALID_STATE;
     if (texture->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
-    if (texture->owner && texture->owner != commands) return DOE_DX_BUSY;
+    if (texture->owner && texture->owner != commands) {
+        commands->conflict = texture->owner;
+        return DOE_DX_BUSY;
+    }
     if ((texture->desc.usage & usage) != usage) return DOE_DX_UNSUPPORTED;
     doe_dx_texture_use *use = doe_dx_find_texture(commands, texture);
     if (!use && texture->references == UINT32_MAX) return DOE_DX_RANGE;

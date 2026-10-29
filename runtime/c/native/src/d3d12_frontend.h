@@ -21,6 +21,9 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out);
 native_failure native_d3d12_command_create(const native_backend *backend, native_command_handle *out);
 native_failure native_d3d12_command_progress(native_command_handle *commands, uint32_t wait_ms);
 native_failure native_d3d12_command_submit(native_command_handle *commands);
+bool native_d3d12_command_in_flight(const native_command_handle *commands);
+native_failure native_d3d12_wait_owner(native_device *, doe_dx_commands *, const struct timespec *);
+native_failure native_d3d12_record_batch(native_device *, native_command_handle *, doe_resource_commands **, size_t);
 native_result native_d3d12_command_release(native_command_handle *commands);
 native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
     bool direct_readback);

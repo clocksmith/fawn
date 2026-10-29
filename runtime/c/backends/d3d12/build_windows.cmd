@@ -6,7 +6,7 @@ if "%OUT%"=="" set "OUT=%TEMP%\doe-c-d3d12"
 if not exist "%OUT%" mkdir "%OUT%"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
-    src\surfaces.c src\windows_surface.c src\windows_storage_sizes.c ^
+    src\progress.c src\windows_progress.c src\surfaces.c src\windows_surface.c src\windows_storage_sizes.c ^
     src\pipeline_cache.c src\texture_initialize.c src\texture_subresources.c src\texture_views.c src\windows_cache.c src\windows_cache_key.c src\windows_texture_initialize.c src\windows_texture_subresources.c src\windows_texture_views.c ^
     src\command_storage.c src\context.c src\resources.c src\commands.c ^
     src\compute.c src\pipeline.c src\textures.c ^
@@ -18,7 +18,7 @@ cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     /Fo"%OUT%\\"
 if not "%errorlevel%"=="0" exit /b 1
 lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
-    "%OUT%\surfaces.obj" "%OUT%\windows_surface.obj" "%OUT%\windows_storage_sizes.obj" ^
+    "%OUT%\progress.obj" "%OUT%\windows_progress.obj" "%OUT%\surfaces.obj" "%OUT%\windows_surface.obj" "%OUT%\windows_storage_sizes.obj" ^
     "%OUT%\pipeline_cache.obj" "%OUT%\texture_initialize.obj" "%OUT%\texture_subresources.obj" "%OUT%\texture_views.obj" "%OUT%\windows_cache.obj" "%OUT%\windows_cache_key.obj" "%OUT%\windows_texture_initialize.obj" "%OUT%\windows_texture_subresources.obj" "%OUT%\windows_texture_views.obj" ^
     "%OUT%\command_storage.obj" "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
     "%OUT%\compute.obj" "%OUT%\pipeline.obj" "%OUT%\textures.obj" ^
@@ -73,5 +73,10 @@ rem Official SDK fence/event call composition, injected outcomes, no device.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^
     tests\test_windows_wait.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\test_windows_wait.obj" /Fe"%OUT%\test_windows_wait.exe"
+if not "%errorlevel%"=="0" exit /b 1
+rem Typed event-lease failure/lifetime controls, no adapter or GPU.
+cl /nologo /std:c11 /W4 /WX /Iinclude ^
+    tests\test_windows_progress.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
+    /Fo"%OUT%\test_windows_progress.obj" /Fe"%OUT%\test_windows_progress.exe"
 if not "%errorlevel%"=="0" exit /b 1
 exit /b 0

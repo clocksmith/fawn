@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
 #include "provider_pin.h"
+#include "d3d12_frontend.h"
 #include "../../backends/metal/src/progress.h"
 #include <stdlib.h>
 
@@ -102,6 +103,26 @@ static void pending_progress(void *identity)
                 continue;
             }
         }
+#if defined(_WIN32)
+        if (oldest && oldest->kind == WGPUBackendType_D3D12 &&
+                (uintptr_t)oldest->value.d3d12.commands != signalled) {
+            const uintptr_t command_identity = (uintptr_t)oldest->value.d3d12.commands;
+            doe_dx_wait_lease lease = {0};
+            doe_dx_status held = doe_dx_commands_hold(oldest->value.d3d12.commands, &lease, NULL);
+            if (held == DOE_DX_OK) {
+                native_unlock(device);
+                doe_dx_status waited = doe_dx_commands_block(&lease, 100, NULL);
+                native_lock(device);
+                signalled = waited == DOE_DX_PENDING ? 0 : command_identity;
+                /* The ordinary worker device lease prevents final context
+                 * destruction while this event obligation is transferred. */
+                doe_dx_status released = doe_dx_commands_unhold(&lease, NULL);
+                if (released != DOE_DX_OK && device->retired_failure.status == NATIVE_OK)
+                    device->retired_failure = native_failure_d3d12(released, NULL);
+                continue;
+            }
+        }
+#endif
         if (!oldest) signalled = 0;
         if (device->pending) {
             struct timespec now, deadline;

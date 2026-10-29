@@ -70,7 +70,10 @@ static doe_dx_timestamp_use *find_timestamps(doe_dx_commands *commands, doe_dx_t
 static doe_dx_status preflight(doe_dx_commands *commands, doe_dx_timestamps *timestamps) {
     if (!timestamps) return DOE_DX_INVALID_ARGUMENT;
     if (timestamps->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
-    if (timestamps->owner && timestamps->owner != commands) return DOE_DX_BUSY;
+    if (timestamps->owner && timestamps->owner != commands) {
+        commands->conflict = timestamps->owner;
+        return DOE_DX_BUSY;
+    }
     if (!find_timestamps(commands, timestamps) && timestamps->references == UINT32_MAX) return DOE_DX_RANGE;
     return DOE_DX_OK;
 }

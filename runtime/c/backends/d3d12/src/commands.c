@@ -107,7 +107,10 @@ doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
     doe_dx_buffer *buffer, bool readable) {
     if (!buffer) return DOE_DX_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
-    if (buffer->owner && buffer->owner != commands) return DOE_DX_BUSY;
+    if (buffer->owner && buffer->owner != commands) {
+        commands->conflict = buffer->owner;
+        return DOE_DX_BUSY;
+    }
     doe_dx_buffer_use *use = doe_dx_find_buffer(commands, buffer);
     if (!use && buffer->references == UINT32_MAX) return DOE_DX_RANGE;
     if (readable && !(use ? use->initialized : buffer->initialized)) return DOE_DX_UNINITIALIZED;
