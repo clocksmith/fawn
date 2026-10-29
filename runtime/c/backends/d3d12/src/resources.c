@@ -26,6 +26,36 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     return doe_dx_fail(DOE_DX_OK, 0, "buffer.create", error);
 }
 
+doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error) {
+    if (!context || !out || !size)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "zero_upload.acquire", error);
+    if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "zero_upload.acquire", error);
+    enum { CACHE_BYTES = 1024 * 1024 };
+    if (size <= CACHE_BYTES && context->zero_upload && context->zero_upload->size >= size) {
+        doe_dx_status status = doe_dx_buffer_retain(context->zero_upload);
+        if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "zero_upload.retain", error);
+        *out = context->zero_upload;
+        return doe_dx_fail(DOE_DX_OK, 0, "zero_upload.reuse", error);
+    }
+    doe_dx_buffer *prepared = NULL;
+    doe_dx_status status = doe_dx_buffer_create(context, size, DOE_DX_UPLOAD, &prepared, error);
+    if (status != DOE_DX_OK) return status;
+    prepared->immutable_zero = true; /* Native construction completed the whole CPU zero fill. */
+    if (size <= CACHE_BYTES) {
+        status = doe_dx_buffer_retain(prepared);
+        if (status != DOE_DX_OK) {
+            doe_dx_buffer_release(prepared);
+            return doe_dx_fail(status, 0, "zero_upload.retain", error);
+        }
+        doe_dx_buffer *previous = context->zero_upload;
+        context->zero_upload = prepared; /* Creation lease belongs to this context. */
+        doe_dx_buffer_release(previous); /* Existing caller/command leases survive growth. */
+    }
+    *out = prepared;
+    return doe_dx_fail(DOE_DX_OK, 0, "zero_upload.acquire", error);
+}
+
 doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer) {
     if (!buffer) return DOE_DX_INVALID_ARGUMENT;
     if (buffer->references == UINT32_MAX) return DOE_DX_RANGE;
@@ -52,6 +82,7 @@ static doe_dx_status host_access(doe_dx_buffer *buffer, uint64_t offset,
     if (buffer->context->lost) return DOE_DX_DEVICE_LOST;
     if (buffer->memory != (write ? DOE_DX_UPLOAD : DOE_DX_READBACK)) return DOE_DX_UNSUPPORTED;
     if (!doe_dx_range(buffer->size, offset, size)) return DOE_DX_RANGE;
+    if (write && buffer->immutable_zero) return DOE_DX_UNSUPPORTED;
     if (buffer->owner || buffer->pending) return DOE_DX_BUSY;
     if (!write && !buffer->initialized) return DOE_DX_UNINITIALIZED;
     return DOE_DX_OK;

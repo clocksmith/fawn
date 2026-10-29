@@ -129,6 +129,14 @@ typedef enum doe_dx_memory {
  * Default buffers support structured SRV/UAVs; upload/readback are transfer-only. */
 doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     doe_dx_memory memory, doe_dx_buffer **out, doe_dx_error *error);
+/* Retained, immutable zero-filled UPLOAD storage, at least size bytes. Context
+ * serialization is required. Up to one MiB is reused/grown on the existing
+ * context; larger requests remain uncached. CPU writes reject this buffer.
+ * Caller releases its own lease; commands keep their ordinary resource leases.
+ * Context destruction drops its cache lease before checking outstanding use. */
+doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error);
+
 doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer);
 void doe_dx_buffer_release(doe_dx_buffer *buffer);
 uint64_t doe_dx_buffer_size(const doe_dx_buffer *buffer);
