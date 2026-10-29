@@ -654,6 +654,29 @@ test-diagnostics: build/test_diagnostics build/test_diagnostics_abi
 # but remain separate from the no-allocator production compiler ABI. Historical
 # target names stay available; a passing subset is not universal parity.
 PARTIAL_CFLAGS = $(CFLAGS) $(EXTRA_CFLAGS)
+# CSL remains a standalone allocating developer owner. Exercise its retained
+# emit, spatial and TSIR consumers without adding it to the production ABI.
+CSL_TEST_HEADERS = $(wildcard src/csl/*.h)
+CSL_EMIT_TEST_SOURCES = src/csl/csl_text.c src/csl/csl_spec.c src/csl/csl_maps.c \
+	src/csl/csl_kernel.c src/csl/csl_emit_common.c src/csl/csl_layout.c \
+	src/csl/csl_kernels_a.c src/csl/csl_kernels_b.c src/csl/csl_semantic.c \
+	src/csl/csl_emit_core.c src/csl/csl_compile_sections.c src/csl/csl_validate.c
+CSL_SPATIAL_TEST_SOURCES = src/csl/csl_text.c $(wildcard src/csl/csl_spatial_*.c)
+CSL_TSIR_TEST_SOURCES = src/csl/csl_text.c $(wildcard src/csl/tsir_csl_*.c)
+CSL_TEST_BINS = build/csl_emit_smoke build/csl_spatial_tests build/tsir_csl_tests
+build/csl_emit_smoke: src/csl/tests/csl_emit_smoke.c $(CSL_EMIT_TEST_SOURCES) $(CSL_TEST_HEADERS) Makefile | build/.ready
+	$(CC) $(PARTIAL_CFLAGS) -Isrc/csl $< $(CSL_EMIT_TEST_SOURCES) -lm -o $@
+build/csl_spatial_tests: src/csl/tests/csl_spatial_tests.c $(CSL_SPATIAL_TEST_SOURCES) $(CSL_TEST_HEADERS) Makefile | build/.ready
+	$(CC) $(PARTIAL_CFLAGS) -Isrc/csl $< $(CSL_SPATIAL_TEST_SOURCES) -lm -o $@
+build/tsir_csl_tests: src/csl/tests/tsir_csl_tests.c $(CSL_TSIR_TEST_SOURCES) $(CSL_TEST_HEADERS) Makefile | build/.ready
+	$(CC) $(PARTIAL_CFLAGS) -Isrc/csl $< $(CSL_TSIR_TEST_SOURCES) -lm -o $@
+.PHONY: test-csl
+test-csl: $(CSL_TEST_BINS)
+	build/csl_emit_smoke
+	build/csl_spatial_tests
+	build/tsir_csl_tests
+test: test-csl
+
 DXIL_PARTIAL_SOURCES = $(wildcard src/dxil/*.c)
 TSIR_PARTIAL_SOURCES = $(filter-out src/tsir/tsir_source%.c src/tsir/tsir_bootstrap_manifest.c,$(wildcard src/tsir/*.c))
 DXIL_PARTIAL_TESTS = test_dxil_md5 test_dxil_bitcode test_dxil_container test_dxil_validate test_dxil_builder_serialize test_dxil_mapping_toolchain test_dxil_ir_native test_dxil_hlsl test_dxil_emit test_dxil_analyze_translate test_dxil_source test_dxil_io test_dxil_native_projection_expr test_dxil_native_projection test_dxil_hlsl_texture test_dxil_hlsl_numeric test_dxil_hlsl_complete test_dxil_hlsl_access test_dxil_native_opt

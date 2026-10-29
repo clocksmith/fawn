@@ -110,6 +110,16 @@ CslErr csl_pe_kernels_b_emit(CslBuf *out, const CslKernelDesc *d) {
         case CSL_PATTERN_KV_READ: return csl_pe_kv_read(out, d);
         case CSL_PATTERN_ATTENTION_LINEAR: return csl_pe_linear_attention(out, d);
         case CSL_PATTERN_REDUCTION: return d->distributed ? csl_pe_reduce_dist(out, d) : CSL_ERR_UNSUPPORTED;
+        case CSL_PATTERN_ELEMENT_WISE:
+        case CSL_PATTERN_TILED_MATMUL:
+        case CSL_PATTERN_TILED_MATMUL_Q4K:
+        case CSL_PATTERN_GATHER:
+        case CSL_PATTERN_ROPE:
+        case CSL_PATTERN_DEQUANT:
+        case CSL_PATTERN_SAMPLE:
+        case CSL_PATTERN_DENSE_GEMV:
+        case CSL_PATTERN_SEMANTIC:
+        case CSL_PATTERN_UNSUPPORTED: return CSL_ERR_UNSUPPORTED;
         default: return CSL_ERR_UNSUPPORTED;
     }
 }

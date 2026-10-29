@@ -69,6 +69,7 @@ int csl_pattern_contract_valid(const CslKernelDesc *d) {
             return d->in_dim_per_pe > 0 && d->out_dim_per_pe > 0;
         case CSL_PATTERN_SEMANTIC:
             return d->input_count > 0 && d->output_count > 0;
+        case CSL_PATTERN_UNSUPPORTED: return 0;
         default: return 0;
     }
 }
