@@ -7,9 +7,14 @@
 #if defined(__APPLE__)
 #include <CommonCrypto/CommonDigest.h>
 #endif
-#if defined(__linux__) && (defined(__x86_64__) || defined(__i386__)) && \
+#if (defined(__linux__) || (defined(_WIN32) && defined(__clang__))) && \
+    (defined(__x86_64__) || defined(__i386__)) && \
     (defined(__GNUC__) || defined(__clang__))
+#if defined(_WIN32)
+#include <intrin.h>
+#else
 #include <cpuid.h>
+#endif
 #include <immintrin.h>
 #define DOE_SHA256_X86 1
 #endif
@@ -107,8 +112,8 @@ static void doe_sha256_block_x86(uint32_t state[8], const uint8_t chunk[64])
 
 static inline int doe_sha256_x86_features(unsigned basic_ecx, unsigned structured_ebx)
 {
-    const unsigned required = bit_SSSE3 | bit_SSE4_1;
-    return (basic_ecx & required) == required && (structured_ebx & bit_SHA) != 0;
+    const unsigned required = (1u << 9) | (1u << 19); /* SSSE3 and SSE4.1, leaf 1 ECX. */
+    return (basic_ecx & required) == required && (structured_ebx & (1u << 29)) != 0;
 }
 
 static inline int doe_sha256_x86_available(void)
@@ -116,11 +121,21 @@ static inline int doe_sha256_x86_available(void)
     /* The compiler's cached CPU dispatcher introduces mutable process globals.
      * Read the bounded architectural leaves directly; no cache/once owner is
      * needed for a one-shot hash, and missing leaves retain the software path. */
+#if defined(_WIN32)
+    int leaf[4];
+    __cpuidex(leaf,0,0);
+    if ((unsigned)leaf[0] < 7u) return 0;
+    __cpuidex(leaf,1,0);
+    const unsigned basic_ecx=(unsigned)leaf[2];
+    __cpuidex(leaf,7,0);
+    return doe_sha256_x86_features(basic_ecx,(unsigned)leaf[1]);
+#else
     unsigned eax, ebx, ecx, edx;
     if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx)) return 0;
     const unsigned basic_ecx=ecx;
     if (!__get_cpuid_count(7,0,&eax,&ebx,&ecx,&edx)) return 0;
     return doe_sha256_x86_features(basic_ecx,ebx);
+#endif
 }
 #endif
 

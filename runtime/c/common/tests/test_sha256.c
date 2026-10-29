@@ -18,7 +18,27 @@ static unsigned char *traced_sha256(const void *data, CC_LONG size, unsigned cha
 }
 #define CC_SHA256 traced_sha256
 #endif
+#if defined(_WIN32) && defined(__clang__) && \
+    (defined(__x86_64__) || defined(__i386__))
+#include <intrin.h>
+static unsigned cpu_query_mode;
+static void traced_cpuid(int leaf[4], int function, int subleaf)
+{
+    __cpuidex(leaf,function,subleaf);
+    if (function == 0 && cpu_query_mode == 1) leaf[0] = 0;
+    if (function == 0 && cpu_query_mode == 2) leaf[0] = 1;
+    if (function == 1 && cpu_query_mode == 3) leaf[2] &= ~(1 << 9);
+    if (function == 1 && cpu_query_mode == 4) leaf[2] &= ~(1 << 19);
+    if (function == 7 && cpu_query_mode == 5) leaf[1] &= ~(1 << 29);
+}
+#define __cpuidex traced_cpuid
+#endif
 #include "doe_sha256.h"
+#if defined(_WIN32) && defined(DOE_SHA256_X86)
+#undef __cpuidex
+/* The Windows CRT may include intrin.h after this leaf. Keep that order valid. */
+#include <wchar.h>
+#endif
 #if defined(__APPLE__)
 #undef CC_SHA256
 #endif
@@ -46,12 +66,26 @@ static const struct vector { size_t size; const char *sha256; } vectors[] = {
 int main(void)
 {
 #if defined(DOE_SHA256_X86)
+    printf("SHA-256: runtime SHA/SSSE3/SSE4.1 available=%d; scalar path also checked\n",
+        doe_sha256_x86_available());
     assert(!doe_sha256_x86_features(0,0));
-    assert(!doe_sha256_x86_features(bit_SSSE3 | bit_SSE4_1,0));
-    assert(!doe_sha256_x86_features(bit_SSSE3,bit_SHA));
-    assert(!doe_sha256_x86_features(bit_SSE4_1,bit_SHA));
-    assert(doe_sha256_x86_features(bit_SSSE3 | bit_SSE4_1,bit_SHA));
+    assert(!doe_sha256_x86_features((1u << 9) | (1u << 19),0));
+    assert(!doe_sha256_x86_features((1u << 9),(1u << 29)));
+    assert(!doe_sha256_x86_features((1u << 19),(1u << 29)));
+    assert(doe_sha256_x86_features((1u << 9) | (1u << 19),(1u << 29)));
     assert(doe_sha256_x86_features(~0u,~0u));
+#endif
+#if defined(_WIN32) && defined(DOE_SHA256_X86)
+    for (unsigned mode=1;mode<=5;++mode) {
+        cpu_query_mode = mode;
+        assert(!doe_sha256_x86_available());
+        unsigned char digest[32];
+        char hex[65];
+        doe_common_sha256("abc",3,digest);
+        doe_common_sha256_hex(digest,hex);
+        assert(!strcmp(hex,"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+    }
+    cpu_query_mode = 0;
 #endif
     unsigned char *storage = malloc(1048576u+64u);
     assert(storage);
