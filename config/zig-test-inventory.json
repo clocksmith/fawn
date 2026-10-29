@@ -519,6 +519,18 @@
         {
           "path": "src/composition/execution_session.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/plan/dawn_plan_types.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "src/runtime/output_oracle.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "src/command/command_parse_dispatch.zig",
+          "kind": "inline"
         }
       ]
     },
@@ -1565,10 +1577,6 @@
       "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
     },
     {
-      "path": "src/plan/dawn_plan_types.zig",
-      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
-    },
-    {
       "path": "src/plan/plan_validation.zig",
       "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
     },
@@ -1582,10 +1590,6 @@
     },
     {
       "path": "src/runtime/numeric_stability/service/numeric_stability.zig",
-      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
-    },
-    {
-      "path": "src/runtime/output_oracle.zig",
       "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
     },
     {

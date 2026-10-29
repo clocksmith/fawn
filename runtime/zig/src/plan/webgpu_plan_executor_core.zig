@@ -2,6 +2,8 @@ const std = @import("std");
 const synthetic_assets = @import("synthetic_assets.zig");
 const dawn_plan_types = @import("dawn_plan_types.zig");
 const support = @import("webgpu_plan_executor_support.zig");
+const output_oracle = @import("../runtime/output_oracle.zig");
+const plan_output_proof = @import("plan_output_proof.zig");
 
 const Allocator = std.mem.Allocator;
 const c = support.c;
@@ -9,6 +11,9 @@ const c = support.c;
 const DEFAULT_SEMANTIC_STAGE = "webgpu_plan";
 
 pub const LiveExecution = struct {
+    oracle: output_oracle.Evidence,
+    proof_json: []u8,
+    oracle_wall_ns: u64,
     results: []support.StepResult,
     identity: support.BackendIdentity,
     host_executor_init_total_ns: u64,
@@ -27,6 +32,9 @@ const Executor = struct {
     buffers: std.AutoHashMap(u64, support.BufferRecord),
     pipeline_cache: std.AutoHashMap(u64, support.CachedPipeline),
     buffer_specs: std.AutoHashMap(u64, support.BufferSpec),
+    map_states: std.ArrayList(*support.MapState) = .empty,
+    oracle: output_oracle.Evidence = .{},
+    oracle_wall_ns: u64 = 0,
 
     fn init(allocator: Allocator, buffer_specs: *const std.AutoHashMap(u64, support.BufferSpec), backend_id_override: ?[]const u8) !Executor {
         var lib = try support.openDirectWebGpuLibrary();
@@ -95,6 +103,8 @@ const Executor = struct {
         }
         if (self.adapter != null) self.procs.adapter_release(self.adapter);
         if (self.instance != null) self.procs.instance_release(self.instance);
+        for (self.map_states.items) |state| self.allocator.destroy(state);
+        self.map_states.deinit(self.allocator);
         self.lib.close();
     }
 
@@ -311,7 +321,7 @@ const Executor = struct {
             .encode_ns = encode_ns,
             .submit_wait_ns = 0,
             .dispatch_count = 0,
-            .submit_count = 0,
+            .submit_count = 1, // One logical write/load command, not physical queue submits.
             .execution_backend = self.identity.execution_backend,
             .backend_id = self.identity.backend_id,
             .backend_lane = self.identity.backend_lane,
@@ -352,7 +362,7 @@ const Executor = struct {
             .encode_ns = encode_ns,
             .submit_wait_ns = 0,
             .dispatch_count = 0,
-            .submit_count = 0,
+            .submit_count = 1, // One logical write/load command, not physical queue submits.
             .execution_backend = self.identity.execution_backend,
             .backend_id = self.identity.backend_id,
             .backend_lane = self.identity.backend_lane,
@@ -467,7 +477,59 @@ const Executor = struct {
         if (state.status != c.WGPUQueueWorkDoneStatus_Success) return error.QueueWaitFailed;
     }
 
-    fn execute(self: *Executor, plan: dawn_plan_types.Plan, plan_hash: []const u8, kernel_root: []const u8) ![]support.StepResult {
+    fn captureBuffer(self: *Executor, handle: u64, size: u64) ![]u8 {
+        if (size == 0 or size % 4 != 0) return error.OutputOracleBufferSizeInvalid;
+        const length = std.math.cast(usize, size) orelse return error.OutputOracleBufferSizeInvalid;
+        const source = try self.ensureBuffer(handle);
+        const record = self.buffers.get(handle) orelse return error.OutputOracleBindingMissing;
+        if (size > record.size or (record.usage & c.WGPUBufferUsage_CopySrc) == 0)
+            return error.OutputOracleBufferSizeInvalid;
+        const staging = self.procs.device_create_buffer(self.device, &.{
+            .usage = c.WGPUBufferUsage_MapRead | c.WGPUBufferUsage_CopyDst,
+            .size = size,
+        }) orelse return error.BufferCreateFailed;
+        defer self.procs.buffer_release(staging);
+        const encoder = self.procs.device_create_command_encoder(self.device, &.{}) orelse return error.CommandEncoderCreateFailed;
+        defer self.procs.command_encoder_release(encoder);
+        self.procs.command_encoder_copy_buffer_to_buffer(encoder, source, 0, staging, 0, size);
+        const commands = self.procs.command_encoder_finish(encoder, &.{}) orelse return error.CommandBufferFinishFailed;
+        defer self.procs.command_buffer_release(commands);
+        var command_buffers = [_]c.WGPUCommandBuffer{commands};
+        self.procs.queue_submit(self.queue, command_buffers.len, &command_buffers);
+        const state = blk: {
+            const owned = try self.allocator.create(support.MapState);
+            errdefer self.allocator.destroy(owned);
+            owned.* = .{};
+            try self.map_states.append(self.allocator, owned);
+            break :blk owned;
+        };
+        // Ownership moved to map_states before handing userdata to WebGPU.
+        const future = self.procs.buffer_map_async(staging, c.WGPUMapMode_Read, 0, length, .{
+            .mode = c.WGPUCallbackMode_AllowProcessEvents,
+            .callback = support.bufferMapCallback,
+            .userdata1 = state,
+        });
+        if (future.id == 0) return error.OutputOracleMapFailed;
+        try support.waitForFlag(self.instance, self.procs.instance_process_events, &state.done, support.ASYNC_TIMEOUT_NS);
+        if (state.status != c.WGPUMapAsyncStatus_Success) return error.OutputOracleMapFailed;
+        defer self.procs.buffer_unmap(staging);
+        const mapped = self.procs.buffer_get_const_mapped_range(staging, 0, length) orelse return error.OutputOracleMapFailed;
+        const bytes: [*]const u8 = @ptrCast(mapped);
+        return try self.allocator.dupe(u8, bytes[0..length]);
+    }
+
+    fn observeOutput(self: *Executor, command: dawn_plan_types.KernelDispatchCommand) !output_oracle.Evidence {
+        const oracle = command.output_oracle orelse return error.OutputOracleMissing;
+        const binding = for (command.bindings) |candidate| {
+            if (candidate.group == oracle.binding_group and candidate.binding == oracle.binding)
+                break candidate;
+        } else return error.OutputOracleBindingMissing;
+        const bytes = try self.captureBuffer(binding.resource_handle, binding.buffer_size);
+        defer self.allocator.free(bytes);
+        return try output_oracle.compareBytes(self.allocator, oracle, bytes);
+    }
+
+    fn execute(self: *Executor, plan: dawn_plan_types.Plan, plan_hash: []const u8, kernel_root: []const u8, proof: *plan_output_proof.Proof) ![]support.StepResult {
         const results = try self.allocator.alloc(support.StepResult, plan.commands.len);
         errdefer self.allocator.free(results);
         for (plan.commands, 0..) |command, idx| {
@@ -475,7 +537,27 @@ const Executor = struct {
             results[idx] = switch (command) {
                 .buffer_write => |bw| try self.executeBufferWrite(seq, plan_hash, bw),
                 .buffer_load => |bl| try self.executeBufferLoad(seq, plan_hash, bl),
-                .kernel_dispatch => |kd| try self.executeKernelDispatch(seq, plan_hash, kernel_root, kd),
+                .kernel_dispatch => |kd| blk: {
+                    var result = try self.executeKernelDispatch(seq, plan_hash, kernel_root, kd);
+                    if (kd.output_oracle != null) {
+                        const start = support.nowNs();
+                        const observed = self.observeOutput(kd) catch |err| failed: {
+                            result.status = "error";
+                            result.status_code = @errorName(err);
+                            result.status_message = "same-execution output validation failed";
+                            break :failed output_oracle.Evidence{ .count = 1, .failed_count = 1 };
+                        };
+                        self.oracle_wall_ns += support.elapsedSince(start);
+                        output_oracle.mergeEvidence(&self.oracle, observed);
+                        try proof.observe(idx, kd, observed);
+                        if (observed.failed_count > 0 and std.mem.eql(u8, result.status, "ok")) {
+                            result.status = "error";
+                            result.status_code = "OutputOracleMismatch";
+                            result.status_message = "same-execution output mismatched frozen reference";
+                        }
+                    }
+                    break :blk result;
+                },
             };
         }
         return results;
@@ -488,17 +570,24 @@ pub fn executeLivePlan(
     backend_id_override: ?[]const u8,
     plan: dawn_plan_types.Plan,
     kernel_root: []const u8,
+    plan_bytes: []const u8,
 ) !LiveExecution {
     const executor_init_start_ns = support.nowNs();
     var executor = try Executor.init(allocator, buffer_specs, backend_id_override);
     const host_executor_init_total_ns = support.elapsedSince(executor_init_start_ns);
     defer executor.deinit();
 
+    var proof = plan_output_proof.Proof.init(allocator, plan_bytes);
+    defer proof.deinit();
     const execute_start_ns = support.nowNs();
-    const results = try executor.execute(plan, plan.plan_sha256, kernel_root);
+    const results = try executor.execute(plan, plan.plan_sha256, kernel_root, &proof);
+    errdefer allocator.free(results);
     const execute_wall_ns = support.elapsedSince(execute_start_ns);
 
     return .{
+        .proof_json = try proof.serialize(plan.plan_sha256),
+        .oracle = executor.oracle,
+        .oracle_wall_ns = executor.oracle_wall_ns,
         .results = results,
         .identity = executor.identity,
         .host_executor_init_total_ns = host_executor_init_total_ns,

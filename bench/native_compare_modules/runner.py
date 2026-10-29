@@ -694,8 +694,9 @@ def run_workload(
         if arg == "--queue-sync-mode" and i + 1 < len(workload.extra_args):
             queue_sync_mode = workload.extra_args[i + 1]
 
-    # The oracle preflight runs a Doe runtime CLI on its command stream; plan
-    # templates (doe-plan-executor, doe-c-runtime --plan) validate no oracles.
+    # This separate command-stream preflight never qualifies a timed sample.
+    # Plan executors own any same-execution proof they implement; the presence
+    # of a plan template alone establishes no output validation.
     strict_runtime_preflight = (
         (not emit_shell)
         and comparability_mode == "strict"

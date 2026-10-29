@@ -75,32 +75,7 @@ pub const RawNumericStability = struct {
     candidates: ?[]RawNumericStabilityCandidate = null,
 };
 
-pub const RawKernelDispatchOutputOracle = struct {
-    schema_version: ?u32 = null,
-    schemaVersion: ?u32 = null,
-    scope: ?[]const u8 = null,
-    reference_class: ?[]const u8 = null,
-    referenceClass: ?[]const u8 = null,
-    kind: ?[]const u8 = null,
-    initialization: ?[]const u8 = null,
-    binding_group: ?u32 = null,
-    bindingGroup: ?u32 = null,
-    binding: ?u32 = null,
-    dispatch_count: ?u32 = null,
-    dispatchCount: ?u32 = null,
-    expected_sha256: ?[]const u8 = null,
-    expectedSha256: ?[]const u8 = null,
-    reference_sha256: ?[]const u8 = null,
-    referenceSha256: ?[]const u8 = null,
-    reference_id: ?[]const u8 = null,
-    referenceId: ?[]const u8 = null,
-    reference_path: ?[]const u8 = null,
-    referencePath: ?[]const u8 = null,
-    absolute_tolerance: ?f32 = null,
-    absoluteTolerance: ?f32 = null,
-    relative_tolerance: ?f32 = null,
-    relativeTolerance: ?f32 = null,
-};
+pub const RawKernelDispatchOutputOracle = @import("../contracts/model/output_oracle.zig").Raw;
 
 pub const RawCommand = struct {
     kind: ?[]const u8 = null,

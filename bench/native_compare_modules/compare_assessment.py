@@ -6,6 +6,7 @@ import statistics
 from typing import Any
 
 from bench.lib import doe_runtime_providers
+from bench.native_compare_modules.plan_output_proof import assess_plan_output_proof
 from native_compare_modules.comparability import (
     NATIVE_EXECUTION_OPERATION_TIMING_SOURCES,
     OBLIGATION_SCHEMA_VERSION,
@@ -314,8 +315,12 @@ def compare_assessment(
     native_timed_output_applies = bool(
         native_timed_output_backends or native_timed_output_providers
     )
-    # Native schema 1/2/3 oracle receipts describe separate validation work.
-    # Matching digest metadata cannot stand in for unimplemented timed capture.
+    # Old schema 1/2/3 count-only receipts describe separate validation work.
+    # Direct plans now emit explicit same-execution command/binding proof; only
+    # complete measured proof on both arms can satisfy this native obligation.
+    native_plan_output_match, native_plan_output_details = assess_plan_output_proof(
+        left_measured_samples, right_measured_samples,
+    ) if native_timed_output_applies else (False, {})
     result_output_match_applies = (
         comparability_mode == "strict"
         and (
@@ -324,9 +329,8 @@ def compare_assessment(
             or bool(right_result_output_signatures)
         )
     )
-    result_output_match = (
-        not native_timed_output_applies
-        and len(left_result_output_signatures) == 1
+    result_output_match = native_plan_output_match if native_timed_output_applies else (
+        len(left_result_output_signatures) == 1
         and len(right_result_output_signatures) == 1
         and left_result_output_signatures == right_result_output_signatures
         and next(iter(left_result_output_signatures))[1] > 0
@@ -339,7 +343,7 @@ def compare_assessment(
         applicable=result_output_match_applies,
         passes=result_output_match,
         failure_reason=(
-            "native timed command-stream output proof is not implemented; "
+            "native timed command-stream output proof is missing, invalid, or not bound to both measured executions; "
             "isolated oracle validation cannot admit a performance comparison"
             if native_timed_output_applies else
             "baseline/comparison result output is missing, empty, non-deterministic, or unequal: "
@@ -347,6 +351,7 @@ def compare_assessment(
             f"{sorted(right_result_output_signatures)}"
         ),
         details={
+            **native_plan_output_details,
             "nativeTimedOutputBackends": native_timed_output_backends,
             "nativeTimedOutputProviders": native_timed_output_providers,
             "baselineResultOutputSignatures": [

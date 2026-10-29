@@ -51,6 +51,57 @@ pub fn writeTraceMeta(
         summary.final_hash,
         summary.previous_hash,
     });
+    if (summary.timed_output_proof) |proof| {
+        try writer.writeAll("\"timedOutputProof\":");
+        try writer.writeAll(proof);
+        try writer.writeAll(",");
+    }
+    const oracle = summary.oracle;
+    try writer.print("\"outputOracleCount\":{},\"outputOracleMatchedCount\":{},\"outputOracleFailedCount\":{},", .{
+        oracle.count, oracle.matched_count, oracle.failed_count,
+    });
+    if (oracle.expected_sha256) |value| {
+        try writer.writeAll("\"outputOracleExpectedSha256\":");
+        try support.writeJsonString(&writer, value);
+        try writer.writeAll(",");
+    }
+    if (oracle.reference_id) |value| {
+        try writer.writeAll("\"outputOracleReferenceId\":");
+        try support.writeJsonString(&writer, value);
+        try writer.writeAll(",");
+    }
+    if (oracle.kind) |value| {
+        try writer.writeAll("\"outputOracleKind\":");
+        try support.writeJsonString(&writer, value);
+        try writer.writeAll(",");
+    }
+    if (oracle.reference_class) |value| {
+        try writer.writeAll("\"outputOracleReferenceClass\":");
+        try support.writeJsonString(&writer, value);
+        try writer.writeAll(",");
+    }
+    if (oracle.reference_sha256) |value| {
+        try writer.writeAll("\"outputOracleReferenceSha256\":");
+        try support.writeJsonString(&writer, value);
+        try writer.writeAll(",");
+    }
+    if (oracle.reference_path) |value| {
+        try writer.writeAll("\"outputOracleReferencePath\":");
+        try support.writeJsonString(&writer, value);
+        try writer.writeAll(",");
+    }
+    if (oracle.has_actual_sha256) {
+        try writer.writeAll("\"outputOracleActualSha256\":");
+        try support.writeJsonString(&writer, &oracle.actual_sha256);
+        try writer.writeAll(",");
+    }
+    if (oracle.kind != null) {
+        try writer.print("\"outputOracleComparedValueCount\":{},\"outputOracleMismatchCount\":{},\"outputOracleMaxAbsoluteError\":{d},\"outputOracleMaxRelativeError\":{d},\"outputOracleAbsoluteTolerance\":{d},\"outputOracleRelativeTolerance\":{d},", .{
+            oracle.compared_value_count, oracle.mismatch_count,
+            oracle.max_absolute_error,   oracle.max_relative_error,
+            oracle.absolute_tolerance,   oracle.relative_tolerance,
+        });
+    }
     try writer.writeAll("\"executionBackend\":");
     try support.writeJsonString(&writer, identity.execution_backend);
     try writer.writeAll(",\"backendId\":");

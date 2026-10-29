@@ -15,6 +15,8 @@ const trace = @import("../runtime/trace/trace.zig");
 const trace_jsonl_emit = @import("../runtime/trace/trace_jsonl_emit.zig");
 const dawn_plan_types = @import("dawn_plan_types.zig");
 const plan_validation = @import("plan_validation.zig");
+const output_oracle = @import("../runtime/output_oracle.zig");
+const plan_output_proof = @import("plan_output_proof.zig");
 
 const model = struct {
     pub const Command = model_commands.Command;
@@ -161,6 +163,7 @@ fn lowerPlanCommands(allocator: Allocator, plan: dawn_plan_types.Plan) ![]Execut
                                 .z = kd.z,
                                 .initialize_buffers_on_create = kd.initialize_buffers_on_create,
                                 .bindings = bindings,
+                                .output_oracle = kd.output_oracle,
                             },
                         },
                     },
@@ -261,7 +264,7 @@ fn prewarmNativeExecutionBootstrap(ctx: *execution.ExecutionContext) !u64 {
     return elapsedSince(prewarm_start_ns);
 }
 
-pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
+pub fn runPlan(allocator: Allocator, options: RunOptions) anyerror!void {
     const plan_read_start_ns = nowNs();
     const plan_bytes = try dawn_plan_types.readPlanBytes(allocator, options.plan_path);
     const host_input_read_total_ns = elapsedSince(plan_read_start_ns);
@@ -403,6 +406,11 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
     }
     trace_summary.host_executor_init_total_ns = host_executor_init_total_ns;
 
+    var output_proof = plan_output_proof.Proof.init(allocator, plan_bytes);
+    defer output_proof.deinit();
+    var oracle_evidence = output_oracle.Evidence{};
+    var oracle_wall_ns: u64 = 0;
+    var oracle_failure: ?anyerror = null;
     const execute_start_ns = nowNs();
     var op_id_storage = try allocator.alloc([32]u8, executable_commands.len);
     defer allocator.free(op_id_storage);
@@ -417,7 +425,7 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
             .buffer_load => null,
         };
         const timestamp_ns = nowNs();
-        const execution_result = if (execution_context) |ctx| switch (item.payload) {
+        var execution_result = if (execution_context) |ctx| switch (item.payload) {
             .runtime => |command| try ctx.execute_with_semantic(command, semantic),
             .buffer_load => |command| try executeBufferLoadWithSemantic(allocator, ctx, command, semantic),
         } else switch (item.payload) {
@@ -432,6 +440,34 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
             ),
             .buffer_load => makeDryRunExecutionResult(0, backend_lane, options.plan_path, loaded.plan.plan_sha256),
         };
+
+        if (execution_context) |ctx| {
+            const oracle_start_ns = nowNs();
+            const prior_duration_ns = execution_result.duration_ns;
+            const observed = observeCommandOutput(allocator, ctx, item, &execution_result) catch |err| blk: {
+                oracle_failure = oracle_failure orelse err;
+                if (execution_result.status == .ok) {
+                    execution_result.status = .@"error";
+                    execution_result.status_code = @errorName(err);
+                }
+                break :blk output_oracle.Evidence{ .count = 1, .failed_count = 1 };
+            };
+            oracle_wall_ns += elapsedSince(oracle_start_ns) -| (execution_result.duration_ns - prior_duration_ns);
+            if (observed) |evidence| {
+                output_oracle.mergeEvidence(&oracle_evidence, evidence);
+                switch (loaded.plan.commands[idx]) {
+                    .kernel_dispatch => |dispatch| try output_proof.observe(idx, dispatch, evidence),
+                    .buffer_write, .buffer_load => {},
+                }
+                if (evidence.failed_count > 0) {
+                    oracle_failure = oracle_failure orelse error.OutputOracleMismatch;
+                    if (execution_result.status == .ok) {
+                        execution_result.status = .@"error";
+                        execution_result.status_code = @errorName(oracle_failure.?);
+                    }
+                }
+            }
+        }
 
         trace_summary.execution_row_count += 1;
         trace_summary.execution_total_ns += execution_result.duration_ns;
@@ -507,7 +543,7 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
         trace_summary.final_hash = row_hash;
         trace_state.previous_hash = row_hash;
     }
-    execute_wall_ns = elapsedSince(execute_start_ns);
+    execute_wall_ns = elapsedSince(execute_start_ns) -| oracle_wall_ns;
     if (execute_wall_ns > trace_summary.execution_total_ns) {
         trace_summary.host_command_orchestration_total_ns = execute_wall_ns - trace_summary.execution_total_ns;
     }
@@ -530,6 +566,27 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
         }
     }
 
+    trace_summary.output_oracle_count = oracle_evidence.count;
+    trace_summary.output_oracle_matched_count = oracle_evidence.matched_count;
+    trace_summary.output_oracle_failed_count = oracle_evidence.failed_count;
+    trace_summary.output_oracle_expected_sha256 = oracle_evidence.expected_sha256;
+    trace_summary.output_oracle_reference_id = oracle_evidence.reference_id;
+    trace_summary.output_oracle_kind = oracle_evidence.kind;
+    trace_summary.output_oracle_reference_class = oracle_evidence.reference_class;
+    trace_summary.output_oracle_reference_sha256 = oracle_evidence.reference_sha256;
+    trace_summary.output_oracle_reference_path = oracle_evidence.reference_path;
+    trace_summary.output_oracle_compared_value_count = oracle_evidence.compared_value_count;
+    trace_summary.output_oracle_mismatch_count = oracle_evidence.mismatch_count;
+    trace_summary.output_oracle_max_absolute_error = oracle_evidence.max_absolute_error;
+    trace_summary.output_oracle_max_relative_error = oracle_evidence.max_relative_error;
+    trace_summary.output_oracle_absolute_tolerance = oracle_evidence.absolute_tolerance;
+    trace_summary.output_oracle_relative_tolerance = oracle_evidence.relative_tolerance;
+    if (oracle_evidence.has_actual_sha256) trace_summary.output_oracle_actual_sha256 = &oracle_evidence.actual_sha256;
+
+    if (oracle_failure) |err| session_failure = session_failure orelse err;
+    const proof_json = if (!options.dry_run) try output_proof.serialize(loaded.plan.plan_sha256) else null;
+    defer if (proof_json) |bytes| allocator.free(bytes);
+    trace_summary.timed_output_proof = proof_json;
     const artifact_finalize_start_ns = nowNs();
     try ensureParentDir(options.trace_meta_path);
     try ensureParentDir(options.trace_jsonl_path);
@@ -551,4 +608,35 @@ pub fn runPlan(allocator: Allocator, options: RunOptions) !void {
         .first_error = session_failure,
     });
     try std.fs.cwd().rename(draft, options.trace_meta_path);
+    if (oracle_failure) |err| return @as(anyerror!void, err);
+}
+
+fn observeCommandOutput(
+    allocator: Allocator,
+    context: *execution.ExecutionContext,
+    command: ExecutableCommand,
+    result: *execution.ExecutionResult,
+) !?output_oracle.Evidence {
+    const dispatch = switch (command.payload) {
+        .runtime => |runtime| switch (runtime) {
+            .kernel_dispatch => |value| value,
+            else => return null,
+        },
+        .buffer_load => return null,
+    };
+    const oracle = dispatch.output_oracle orelse return null;
+    if (result.status != .ok) return error.OutputOracleExecutionFailed;
+    const bindings = dispatch.bindings orelse return error.OutputOracleBindingMissing;
+    const binding = for (bindings) |candidate| {
+        if (candidate.group == oracle.binding_group and candidate.binding == oracle.binding)
+            break candidate;
+    } else return error.OutputOracleBindingMissing;
+    // Attribute outstanding dispatch completion to execution, but the staging
+    // copy/readback and comparison themselves are outside operation timing.
+    const flush_ns = try context.flushQueue();
+    result.duration_ns += flush_ns;
+    result.submit_wait_ns += flush_ns;
+    const bytes = try context.captureBuffer(allocator, binding.resource_handle, binding.buffer_offset, binding.buffer_size);
+    defer allocator.free(bytes);
+    return try output_oracle.compareBytes(allocator, oracle, bytes);
 }

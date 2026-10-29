@@ -60,6 +60,7 @@ pub const TraceRunSummary = struct {
     host_artifact_trace_jsonl_serialize_total_ns: u64 = 0,
     host_artifact_trace_jsonl_write_total_ns: u64 = 0,
     host_artifact_operator_manifest_finalize_total_ns: u64 = 0,
+    timed_output_proof: ?[]const u8 = null,
     output_oracle_count: u64 = 0,
     output_oracle_matched_count: u64 = 0,
     output_oracle_failed_count: u64 = 0,
@@ -661,6 +662,11 @@ pub fn writeTraceMeta(path: []const u8, summary: TraceRunSummary) !void {
         summary.final_hash,
         summary.final_previous_hash,
     });
+    if (summary.timed_output_proof) |proof| {
+        try writer.writeAll("\"timedOutputProof\":");
+        try writer.writeAll(proof);
+        try writer.writeAll(",");
+    }
     try writef(writer, "\"outputOracleCount\":{},\"outputOracleMatchedCount\":{},\"outputOracleFailedCount\":{},", .{
         summary.output_oracle_count,
         summary.output_oracle_matched_count,
