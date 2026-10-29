@@ -124,6 +124,9 @@ const test_src_native_support_doe_device_loss_zig_09817a3f = @import("src/native
 const test_src_native_vulkan_vulkan_render_attachments_zig_980103b4 = @import("src/native/vulkan/vulkan_render_attachments.zig");
 const test_src_native_render_doe_render_pipeline_native_zig_3fcdde95 = @import("src/native/render/doe_render_pipeline_native.zig");
 const test_src_composition_execution_session_zig_db781eb5 = @import("src/composition/execution_session.zig");
+const test_src_plan_dawn_plan_types_zig_c7f364f8 = @import("src/plan/dawn_plan_types.zig");
+const test_src_runtime_output_oracle_zig_2ab70a8e = @import("src/runtime/output_oracle.zig");
+const test_src_command_command_parse_dispatch_zig_b488ee9c = @import("src/command/command_parse_dispatch.zig");
 
 comptime {
     _ = test_tests_metal_metal_render_state_test_zig_a5cdfde6;
@@ -249,4 +252,7 @@ comptime {
     _ = test_src_native_vulkan_vulkan_render_attachments_zig_980103b4;
     _ = test_src_native_render_doe_render_pipeline_native_zig_3fcdde95;
     _ = test_src_composition_execution_session_zig_db781eb5;
+    _ = test_src_plan_dawn_plan_types_zig_c7f364f8;
+    _ = test_src_runtime_output_oracle_zig_2ab70a8e;
+    _ = test_src_command_command_parse_dispatch_zig_b488ee9c;
 }

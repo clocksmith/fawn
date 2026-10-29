@@ -182,6 +182,152 @@
     "operatorRecordManifestHash": { "type": "string" },
     "runtimeCloseComplete": { "type": ["boolean", "null"] },
     "gpuCompletionUnknown": { "type": "boolean" },
+    "timedOutputProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "executionScope",
+        "planSha256",
+        "planFileSha256",
+        "observations"
+      ],
+      "properties": {
+        "schema": {
+          "const": "doe.plan-output-proof/v1"
+        },
+        "executionScope": {
+          "const": "same-execution"
+        },
+        "planSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "planFileSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "commandSeq",
+              "kernel",
+              "entryPoint",
+              "bindingGroup",
+              "binding",
+              "resourceHandle",
+              "byteLength",
+              "dispatchCount",
+              "oracle",
+              "actualSha256",
+              "matched",
+              "comparedValueCount",
+              "mismatchCount"
+            ],
+            "properties": {
+              "commandSeq": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "kernel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "entryPoint": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bindingGroup": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "binding": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "resourceHandle": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "byteLength": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "dispatchCount": {
+                "const": 1
+              },
+              "oracle": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "referenceClass",
+                  "expectedSha256",
+                  "referenceId",
+                  "referencePath",
+                  "absoluteTolerance",
+                  "relativeTolerance"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "sha256_exact_v1",
+                      "float32_reference_tolerance_v1"
+                    ]
+                  },
+                  "referenceClass": {
+                    "enum": [
+                      "independent_v1",
+                      "cross_runtime_consensus_v1"
+                    ]
+                  },
+                  "expectedSha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "referenceId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "referencePath": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "absoluteTolerance": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "relativeTolerance": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              },
+              "actualSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "matched": {
+                "type": "boolean"
+              },
+              "comparedValueCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "mismatchCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
     "outputOracleCount": { "type": "integer", "minimum": 0 },
     "outputOracleMatchedCount": { "type": "integer", "minimum": 0 },
     "outputOracleFailedCount": { "type": "integer", "minimum": 0 },

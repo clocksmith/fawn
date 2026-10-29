@@ -5,6 +5,7 @@ const plan_core = @import("webgpu_plan_executor_core.zig");
 const plan_emit = @import("webgpu_plan_executor_emit.zig");
 const support = @import("webgpu_plan_executor_support.zig");
 const plan_validation = @import("plan_validation.zig");
+const output_oracle = @import("../runtime/output_oracle.zig");
 
 const Allocator = std.mem.Allocator;
 
@@ -49,6 +50,9 @@ pub fn runPlan(allocator: Allocator, options: plan_config.RunOptions) !void {
 
     var host_executor_init_total_ns: u64 = 0;
     var execute_wall_ns: u64 = 0;
+    var oracle_evidence = output_oracle.Evidence{};
+    var proof_json: ?[]u8 = null;
+    defer if (proof_json) |bytes| allocator.free(bytes);
     var resolved_identity: support.BackendIdentity = support.DAWN_IDENTITY;
     const results = if (options.dry_run) blk: {
         // For dry-run, resolve identity from override only (no library to probe)
@@ -65,15 +69,20 @@ pub fn runPlan(allocator: Allocator, options: plan_config.RunOptions) !void {
             options.backend_id_override,
             loaded.plan,
             kernel_root,
+            plan_bytes,
         );
         host_executor_init_total_ns = executed.host_executor_init_total_ns;
-        execute_wall_ns = executed.execute_wall_ns;
+        execute_wall_ns = executed.execute_wall_ns -| executed.oracle_wall_ns;
+        oracle_evidence = executed.oracle;
+        proof_json = executed.proof_json;
         resolved_identity = executed.identity;
         break :blk executed.results;
     };
     defer allocator.free(results);
 
     var summary = summarize(results);
+    summary.oracle = oracle_evidence;
+    summary.timed_output_proof = proof_json;
     summary.host_input_read_total_ns = host_input_read_total_ns;
     summary.host_input_parse_total_ns = host_input_parse_total_ns;
     summary.host_workload_prepare_total_ns = host_workload_prepare_total_ns;
@@ -96,6 +105,7 @@ pub fn runPlan(allocator: Allocator, options: plan_config.RunOptions) !void {
         resolved_identity,
         TRACE_EMIT_DEFAULTS,
     );
+    if (oracle_evidence.failed_count > 0) return error.OutputOracleMismatch;
 }
 
 fn makeDryRunResults(allocator: Allocator, plan: dawn_plan_types.Plan, identity: support.BackendIdentity) ![]support.StepResult {

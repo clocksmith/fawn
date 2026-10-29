@@ -1,5 +1,6 @@
 const std = @import("std");
 const dawn_plan_types = @import("dawn_plan_types.zig");
+const output_oracle = @import("../runtime/output_oracle.zig");
 
 pub const c = @cImport({
     @cInclude("webgpu.h");
@@ -67,6 +68,10 @@ pub const FnQueueRelease = *const fn (c.WGPUQueue) callconv(.c) void;
 pub const FnQueueSubmit = *const fn (c.WGPUQueue, usize, [*]const c.WGPUCommandBuffer) callconv(.c) void;
 pub const FnQueueWriteBuffer = *const fn (c.WGPUQueue, c.WGPUBuffer, u64, ?*const anyopaque, usize) callconv(.c) void;
 pub const FnQueueOnSubmittedWorkDone = *const fn (c.WGPUQueue, c.WGPUQueueWorkDoneCallbackInfo) callconv(.c) c.WGPUFuture;
+pub const FnCommandEncoderCopyBufferToBuffer = *const fn (c.WGPUCommandEncoder, c.WGPUBuffer, u64, c.WGPUBuffer, u64, u64) callconv(.c) void;
+pub const FnBufferMapAsync = *const fn (c.WGPUBuffer, c.WGPUMapMode, usize, usize, c.WGPUBufferMapCallbackInfo) callconv(.c) c.WGPUFuture;
+pub const FnBufferGetConstMappedRange = *const fn (c.WGPUBuffer, usize, usize) callconv(.c) ?*const anyopaque;
+pub const FnBufferUnmap = *const fn (c.WGPUBuffer) callconv(.c) void;
 pub const FnBufferRelease = *const fn (c.WGPUBuffer) callconv(.c) void;
 pub const FnDeviceCreateBuffer = *const fn (c.WGPUDevice, *const c.WGPUBufferDescriptor) callconv(.c) c.WGPUBuffer;
 pub const FnDeviceCreateShaderModule = *const fn (c.WGPUDevice, *const c.WGPUShaderModuleDescriptor) callconv(.c) c.WGPUShaderModule;
@@ -114,6 +119,8 @@ pub const StepResult = struct {
 };
 
 pub const RunSummary = struct {
+    oracle: output_oracle.Evidence = .{},
+    timed_output_proof: ?[]const u8 = null,
     row_count: u64 = 0,
     success_count: u64 = 0,
     error_count: u64 = 0,
@@ -189,6 +196,10 @@ pub const WebGpuProcs = struct {
     queue_write_buffer: FnQueueWriteBuffer,
     queue_on_submitted_work_done: FnQueueOnSubmittedWorkDone,
     buffer_release: FnBufferRelease,
+    command_encoder_copy_buffer_to_buffer: FnCommandEncoderCopyBufferToBuffer,
+    buffer_map_async: FnBufferMapAsync,
+    buffer_get_const_mapped_range: FnBufferGetConstMappedRange,
+    buffer_unmap: FnBufferUnmap,
     device_create_buffer: FnDeviceCreateBuffer,
     device_create_shader_module: FnDeviceCreateShaderModule,
     shader_module_release: FnShaderModuleRelease,
@@ -267,6 +278,10 @@ pub fn loadWebGpuProcs(lib: std.DynLib) !WebGpuProcs {
         .queue_write_buffer = try loadProc(lib, FnQueueWriteBuffer, "wgpuQueueWriteBuffer"),
         .queue_on_submitted_work_done = try loadProc(lib, FnQueueOnSubmittedWorkDone, "wgpuQueueOnSubmittedWorkDone"),
         .buffer_release = try loadProc(lib, FnBufferRelease, "wgpuBufferRelease"),
+        .command_encoder_copy_buffer_to_buffer = try loadProc(lib, FnCommandEncoderCopyBufferToBuffer, "wgpuCommandEncoderCopyBufferToBuffer"),
+        .buffer_map_async = try loadProc(lib, FnBufferMapAsync, "wgpuBufferMapAsync"),
+        .buffer_get_const_mapped_range = try loadProc(lib, FnBufferGetConstMappedRange, "wgpuBufferGetConstMappedRange"),
+        .buffer_unmap = try loadProc(lib, FnBufferUnmap, "wgpuBufferUnmap"),
         .device_create_buffer = try loadProc(lib, FnDeviceCreateBuffer, "wgpuDeviceCreateBuffer"),
         .device_create_shader_module = try loadProc(lib, FnDeviceCreateShaderModule, "wgpuDeviceCreateShaderModule"),
         .shader_module_release = try loadProc(lib, FnShaderModuleRelease, "wgpuShaderModuleRelease"),
@@ -313,7 +328,7 @@ pub fn bufferBindingTypeFor(buffer_type: dawn_plan_types.BufferBindingType) c.WG
 pub fn bufferUsageForBinding(buffer_type: dawn_plan_types.BufferBindingType) c.WGPUBufferUsage {
     return switch (buffer_type) {
         .uniform => c.WGPUBufferUsage_Uniform | c.WGPUBufferUsage_CopyDst,
-        .storage, .read_only_storage => c.WGPUBufferUsage_Storage | c.WGPUBufferUsage_CopyDst,
+        .storage, .read_only_storage => c.WGPUBufferUsage_Storage | c.WGPUBufferUsage_CopyDst | c.WGPUBufferUsage_CopySrc,
     };
 }
 
@@ -534,4 +549,17 @@ pub fn queueDoneCallback(
     const state = @as(*WaitState, @ptrCast(@alignCast(userdata1.?)));
     state.done = true;
     state.status = status;
+}
+
+// Heap-owned until instance teardown: a timeout cannot invalidate userdata
+// still retained by an asynchronous map callback.
+pub const MapState = struct {
+    done: bool = false,
+    status: c.WGPUMapAsyncStatus = c.WGPUMapAsyncStatus_Error,
+};
+
+pub fn bufferMapCallback(status: c.WGPUMapAsyncStatus, _: c.WGPUStringView, userdata: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+    const state: *MapState = @ptrCast(@alignCast(userdata.?));
+    state.status = status;
+    state.done = true;
 }

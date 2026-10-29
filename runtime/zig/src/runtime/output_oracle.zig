@@ -91,6 +91,68 @@ fn compareFloat32Reference(
     return result;
 }
 
+/// Compare bytes captured from the executing context, never a replay. Reference
+/// hashes and tolerances retain the frozen dispatch declaration unchanged.
+pub fn compareBytes(
+    allocator: std.mem.Allocator,
+    oracle: model_compute_types.KernelDispatchOutputOracle,
+    bytes: []const u8,
+) !Evidence {
+    var evidence = Evidence{
+        .count = 1,
+        .expected_sha256 = oracle.expected_sha256,
+        .reference_id = oracle.reference_id,
+        .kind = oracle.kind,
+        .reference_class = referenceClassName(oracle.reference_class),
+        .reference_path = oracle.reference_path,
+        .absolute_tolerance = oracle.absolute_tolerance,
+        .relative_tolerance = oracle.relative_tolerance,
+    };
+    var digest: [32]u8 = undefined;
+    std.crypto.hash.sha2.Sha256.hash(bytes, &digest, .{});
+    evidence.actual_sha256 = std.fmt.bytesToHex(digest, .lower);
+    evidence.has_actual_sha256 = true;
+    const matches = if (std.mem.eql(u8, oracle.kind, "sha256_exact_v1"))
+        std.mem.eql(u8, oracle.expected_sha256, &evidence.actual_sha256)
+    else if (std.mem.eql(u8, oracle.kind, "float32_reference_tolerance_v1")) blk: {
+        const path = oracle.reference_path orelse return error.OutputOracleReferencePathMissing;
+        const reference = try std.fs.cwd().readFileAlloc(allocator, path, bytes.len);
+        defer allocator.free(reference);
+        var reference_digest: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(reference, &reference_digest, .{});
+        const reference_sha256 = std.fmt.bytesToHex(reference_digest, .lower);
+        if (!std.mem.eql(u8, oracle.expected_sha256, &reference_sha256))
+            return error.OutputOracleReferenceHashMismatch;
+        evidence.reference_sha256 = oracle.expected_sha256;
+        const comparison = try compareFloat32Reference(bytes, reference, oracle.absolute_tolerance, oracle.relative_tolerance);
+        evidence.compared_value_count = comparison.compared_value_count;
+        evidence.mismatch_count = comparison.mismatch_count;
+        evidence.max_absolute_error = comparison.max_absolute_error;
+        evidence.max_relative_error = comparison.max_relative_error;
+        break :blk comparison.mismatch_count == 0;
+    } else return error.OutputOracleKindUnsupported;
+    if (matches) evidence.matched_count = 1 else evidence.failed_count = 1;
+    return evidence;
+}
+
+pub fn mergeEvidence(total: *Evidence, observed: Evidence) void {
+    const count = total.count + observed.count;
+    const matched_count = total.matched_count + observed.matched_count;
+    const failed_count = total.failed_count + observed.failed_count;
+    const compared = total.compared_value_count + observed.compared_value_count;
+    const mismatches = total.mismatch_count + observed.mismatch_count;
+    const absolute_error = @max(total.max_absolute_error, observed.max_absolute_error);
+    const relative_error = @max(total.max_relative_error, observed.max_relative_error);
+    total.* = observed;
+    total.count = count;
+    total.matched_count = matched_count;
+    total.failed_count = failed_count;
+    total.compared_value_count = compared;
+    total.mismatch_count = mismatches;
+    total.max_absolute_error = absolute_error;
+    total.max_relative_error = relative_error;
+}
+
 fn prewarmKernelDispatches(
     context: *execution.ExecutionContext,
     commands: []const model_commands.Command,
@@ -184,7 +246,6 @@ pub fn validate(
         if (oracle.scope == .command_graph and oracle.dispatch_count != original.repeat) {
             return error.OutputOracleDispatchCountMismatch;
         }
-        evidence.count += 1;
         evidence.expected_sha256 = oracle.expected_sha256;
         evidence.reference_id = oracle.reference_id;
         evidence.kind = oracle.kind;
@@ -265,44 +326,9 @@ pub fn validate(
             binding.buffer_size,
         );
         defer allocator.free(bytes);
-        var digest: [32]u8 = undefined;
-        std.crypto.hash.sha2.Sha256.hash(bytes, &digest, .{});
-        evidence.actual_sha256 = std.fmt.bytesToHex(digest, .lower);
-        evidence.has_actual_sha256 = true;
-        const oracle_matches = if (std.mem.eql(u8, oracle.kind, "sha256_exact_v1"))
-            std.mem.eql(u8, oracle.expected_sha256, evidence.actual_sha256[0..])
-        else blk: {
-            const reference_path = oracle.reference_path orelse
-                return error.OutputOracleReferencePathMissing;
-            const reference = try std.fs.cwd().readFileAlloc(
-                allocator,
-                reference_path,
-                @intCast(binding.buffer_size),
-            );
-            defer allocator.free(reference);
-            var reference_digest: [32]u8 = undefined;
-            std.crypto.hash.sha2.Sha256.hash(reference, &reference_digest, .{});
-            const reference_sha256 = std.fmt.bytesToHex(reference_digest, .lower);
-            if (!std.mem.eql(u8, oracle.expected_sha256, reference_sha256[0..])) {
-                return error.OutputOracleReferenceHashMismatch;
-            }
-            evidence.reference_sha256 = oracle.expected_sha256;
-            const comparison = try compareFloat32Reference(
-                bytes,
-                reference,
-                oracle.absolute_tolerance,
-                oracle.relative_tolerance,
-            );
-            evidence.compared_value_count = comparison.compared_value_count;
-            evidence.mismatch_count = comparison.mismatch_count;
-            evidence.max_absolute_error = comparison.max_absolute_error;
-            evidence.max_relative_error = comparison.max_relative_error;
-            break :blk comparison.mismatch_count == 0;
-        };
-        if (oracle_matches) {
-            evidence.matched_count += 1;
-        } else {
-            evidence.failed_count += 1;
+        const observed = try compareBytes(allocator, oracle, bytes);
+        mergeEvidence(&evidence, observed);
+        if (observed.failed_count > 0) {
             isolated_failure = error.OutputOracleMismatch;
             if (graph_failure == null) graph_failure = error.OutputOracleMismatch;
         }
@@ -333,4 +359,33 @@ test "float32 reference comparison rejects non-finite and out-of-range values" {
     const actual = std.mem.sliceAsBytes(actual_values[0..]);
     const result = try compareFloat32Reference(actual, reference, 0.000001, 0.00001);
     try std.testing.expectEqual(@as(u64, 2), result.mismatch_count);
+}
+
+test "output oracle exact bytes reject a changed result and aggregate failures" {
+    const expected = [_]u8{ 1, 2, 3, 4 };
+    var digest: [32]u8 = undefined;
+    std.crypto.hash.sha2.Sha256.hash(&expected, &digest, .{});
+    const hash = std.fmt.bytesToHex(digest, .lower);
+    const declaration = model_compute_types.KernelDispatchOutputOracle{
+        .schema_version = 2,
+        .scope = .command_graph,
+        .reference_class = .independent,
+        .kind = "sha256_exact_v1",
+        .initialization = "zero_fill_v1",
+        .binding_group = 0,
+        .binding = 0,
+        .dispatch_count = 1,
+        .expected_sha256 = &hash,
+        .reference_id = "exact-test",
+    };
+    const good = try compareBytes(std.testing.allocator, declaration, &expected);
+    const bad = try compareBytes(std.testing.allocator, declaration, &.{ 1, 2, 3, 5 });
+    try std.testing.expectEqual(@as(u64, 1), good.matched_count);
+    try std.testing.expectEqual(@as(u64, 1), bad.failed_count);
+    var aggregate = Evidence{};
+    mergeEvidence(&aggregate, good);
+    mergeEvidence(&aggregate, bad);
+    try std.testing.expectEqual(@as(u64, 2), aggregate.count);
+    try std.testing.expectEqual(@as(u64, 1), aggregate.failed_count);
+    try std.testing.expectEqual(@as(u64, 1), aggregate.matched_count);
 }

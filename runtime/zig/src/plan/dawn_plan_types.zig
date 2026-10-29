@@ -1,4 +1,6 @@
 const std = @import("std");
+const output_oracle = @import("../contracts/model/output_oracle.zig");
+const model_compute_types = @import("../contracts/model/model_compute_types.zig");
 
 const Allocator = std.mem.Allocator;
 const Json = std.json;
@@ -53,6 +55,7 @@ pub const KernelDispatchCommand = struct {
     z: u32,
     initialize_buffers_on_create: bool,
     bindings: []KernelBinding,
+    output_oracle: ?model_compute_types.KernelDispatchOutputOracle = null,
 };
 
 pub const Command = union(enum) {
@@ -318,6 +321,19 @@ fn parseKernelDispatch(allocator: Allocator, object: Json.ObjectMap) PlanLoadErr
         bindings[idx] = try parseKernelBinding(binding_value);
     }
 
+    const oracle = if (fieldValue(object, &.{ "output_oracle", "outputOracle" })) |value| blk: {
+        const raw = std.json.parseFromValue(output_oracle.Raw, allocator, value, .{}) catch |err|
+            return if (err == error.OutOfMemory) error.OutOfMemory else error.InvalidField;
+        defer raw.deinit();
+        const parsed = output_oracle.parse(allocator, raw.value) catch |err|
+            return if (err == error.OutOfMemory) error.OutOfMemory else error.InvalidField;
+        // A plan dispatch executes once in its current graph. An isolated replay
+        // would validate a different execution and cannot qualify this sample.
+        if (parsed.scope != .command_graph or parsed.dispatch_count != 1)
+            return error.UnsupportedCommand;
+        break :blk parsed;
+    } else null;
+
     return .{
         .kernel = kernel,
         .entry_point = entry_point,
@@ -326,6 +342,7 @@ fn parseKernelDispatch(allocator: Allocator, object: Json.ObjectMap) PlanLoadErr
         .z = z,
         .initialize_buffers_on_create = initialize_buffers_on_create,
         .bindings = bindings,
+        .output_oracle = oracle,
     };
 }
 
@@ -414,11 +431,58 @@ pub fn loadPlanFromPath(allocator: Allocator, path: []const u8) !LoadedPlan {
 
 test "loadPlanFromPath parses a generated Gemma plan" {
     const allocator = std.testing.allocator;
-    var loaded = try loadPlanFromPath(allocator, "bench/plans/generated/inference_gemma3_270m_prefill_32tok.plan.json");
+    var loaded = try loadPlanFromPath(allocator, "../../bench/plans/generated/inference_gemma3_270m_prefill_32tok.plan.json");
     defer loaded.deinit();
     try std.testing.expectEqual(@as(u32, 1), loaded.plan.schema_version);
     try std.testing.expectEqualStrings("inference_gemma3_270m_prefill_32tok", loaded.plan.workload_id);
     try std.testing.expectEqual(@as(u32, 10), loaded.plan.buffer_load_count);
     try std.testing.expectEqual(@as(usize, 35), loaded.plan.commands.len);
-    try std.testing.expectEqualStrings("510bf6c94457473704e9829a97bf8b7114985f0884542aa1f5cc908ca640467a", loaded.plan.plan_sha256);
+    try std.testing.expectEqualStrings("0d3316fab695566c11da52e44bdfcbaa366d082c8d9449802f32dd423a23b981", loaded.plan.plan_sha256);
+}
+
+fn testDispatchOracle(allocator: Allocator, oracle_json: []const u8) !KernelDispatchCommand {
+    const bytes = try std.fmt.allocPrint(allocator, "{{\"kernel\":\"scale\",\"bindings\":[],\"x\":1,\"y\":1,\"z\":1,\"output_oracle\":{s}}}", .{oracle_json});
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, bytes, .{});
+    return try parseKernelDispatch(allocator, parsed.value.object);
+}
+
+test "plan output oracle retains frozen command graph reference" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const dispatch = try testDispatchOracle(arena.allocator(),
+        \\{"schema_version":3,"scope":"command_graph","reference_class":"independent_v1","kind":"float32_reference_tolerance_v1","initialization":"zero_fill_v1","binding_group":0,"binding":2,"dispatch_count":1,"reference_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","reference_id":"independent-reference","reference_path":"reference.f32le.bin","absolute_tolerance":0.000001,"relative_tolerance":0.00001}
+    );
+    const oracle = dispatch.output_oracle.?;
+    try std.testing.expectEqual(@as(u32, 3), oracle.schema_version);
+    try std.testing.expectEqualStrings("reference.f32le.bin", oracle.reference_path.?);
+    try std.testing.expectEqual(@as(f32, 0.000001), oracle.absolute_tolerance);
+    try std.testing.expectEqual(@as(f32, 0.00001), oracle.relative_tolerance);
+}
+
+test "plan output oracle rejects malformed declarations instead of dropping them" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try std.testing.expectError(error.InvalidField, testDispatchOracle(arena.allocator(),
+        \\{"schema_version":3,"scope":"command_graph"}
+    ));
+}
+
+test "plan output oracle rejects isolated replay as same execution evidence" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try std.testing.expectError(error.UnsupportedCommand, testDispatchOracle(arena.allocator(),
+        \\{"schema_version":1,"kind":"sha256_exact_v1","initialization":"zero_fill_v1","binding_group":0,"binding":0,"dispatch_count":1,"expected_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","reference_id":"isolated"}
+    ));
+}
+
+fn testOutputOracleAllocationFailure(allocator: Allocator) !void {
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    _ = try testDispatchOracle(arena.allocator(),
+        \\{"schema_version":2,"scope":"command_graph","reference_class":"independent_v1","kind":"sha256_exact_v1","initialization":"zero_fill_v1","binding_group":0,"binding":0,"dispatch_count":1,"expected_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","reference_id":"allocation-test"}
+    );
+}
+
+test "plan output oracle preserves allocation failures" {
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, testOutputOracleAllocationFailure, .{});
 }
