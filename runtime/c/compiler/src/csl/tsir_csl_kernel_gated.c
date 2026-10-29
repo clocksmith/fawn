@@ -44,6 +44,13 @@ CslErr tsir_csl_emit_gated(const TsirCslKernelDesc *desc,
         case TSIR_CSL_OP_SIGMOID_GATED:
             fn_name = "sigmoid";
             break;
+        case TSIR_CSL_OP_ATTENTION_SCORES:
+        case TSIR_CSL_OP_CONV1D_DEPTHWISE:
+        case TSIR_CSL_OP_KV_WRITE:
+        case TSIR_CSL_OP_KV_READ:
+        case TSIR_CSL_OP_L2_NORMALIZE:
+        case TSIR_CSL_OP_LINEAR_ATTENTION:
+        case TSIR_CSL_OP_UNKNOWN:
         default:
             return CSL_ERR_UNSUPPORTED;
     }

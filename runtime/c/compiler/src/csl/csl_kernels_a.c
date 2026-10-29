@@ -122,6 +122,16 @@ CslErr csl_pe_emit(CslBuf *out, const CslKernelDesc *d) {
         case CSL_PATTERN_ROPE: return csl_pe_rope(out, d);
         case CSL_PATTERN_SAMPLE: return csl_pe_sample(out, d);
         case CSL_PATTERN_DENSE_GEMV: return csl_pe_dense_gemv(out, d);
+        case CSL_PATTERN_ATTENTION_STREAMING:
+        case CSL_PATTERN_ATTENTION_DECODE:
+        case CSL_PATTERN_ATTENTION_TILED:
+        case CSL_PATTERN_FUSED_GEMV_DEQUANT:
+        case CSL_PATTERN_ATTENTION_LINEAR:
+        case CSL_PATTERN_KV_WRITE:
+        case CSL_PATTERN_KV_READ:
+        case CSL_PATTERN_FUSED_FFN:
+        case CSL_PATTERN_SEMANTIC:
+        case CSL_PATTERN_UNSUPPORTED: return CSL_ERR_UNSUPPORTED;
         default: return CSL_ERR_UNSUPPORTED;
     }
 }

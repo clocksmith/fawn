@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-/* UNRUN. This test driver has NOT been executed; see tsir-tests.md.
- * It is delivered as test code only, with no pass claim. Do not
- * report it as passing until it is actually run. */
+/* Host developer checks for emitted TSIR/CSL text. These checks do not
+ * execute CSL on a device or establish target parity. */
 #include <stdio.h>
 #include <string.h>
 

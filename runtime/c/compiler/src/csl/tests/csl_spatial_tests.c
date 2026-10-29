@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
-// UNRUN: this test file has NOT been executed. It is a draft for the
-// coordinator to run later; a passing claim must not be made from it.
-// Tests for the csl_spatial_* port. Compile (not run) with gcc
-// -std=c11 -Wall -Wextra -Wpedantic -Werror -I ../src, listing
-// csl_spatial_tests.c plus ../src/csl_spatial_*.c and csl_text.c.
+// Host developer checks for the csl_spatial_* port, built and run by
+// the compiler owner's test-csl target. This does not execute CSL.
 // Note: csl_spatial_bundle_translate_wgsl and the other UNSUPPORTED
 // entry points are intentionally not exercised as successes.
 #include <stdio.h>
@@ -194,6 +191,7 @@ int main(void) {
         CslSpatialKernelSpec kernels[2];
         CslSpatialHostPlan plan;
         CslSpatialCompileTarget targets[CSL_SPATIAL_TOOL_MAX_COMPILE_TARGETS];
+        char long_name[CSL_SPATIAL_TOOL_NAME_LEN + 1];
         size_t count = 0;
         kernels[0].name = "rmsnorm";
         kernels[0].pattern = "element_wise";
@@ -204,13 +202,33 @@ int main(void) {
         plan.pe_grid_height = 1;
         plan.kernels = kernels;
         plan.kernel_count = 2;
+        memset(targets, 0xa5, sizeof(targets));
         CHECK_ERR(csl_spatial_tool_build_targets(
             &plan, NULL, CSL_SPATIAL_SCALAR_F32, 256, targets,
             CSL_SPATIAL_TOOL_MAX_COMPILE_TARGETS, &count));
         CHECK(count == 4);
+        CHECK(strcmp(targets[0].kernel_name, "rmsnorm") == 0);
+        CHECK(!targets[0].has_phase && !targets[0].has_base_kernel);
+        CHECK(targets[0].phase[0] == '\0' && targets[0].base_kernel[0] == '\0');
         CHECK(strcmp(targets[1].kernel_name, "rmsnorm_prefill") == 0);
         CHECK(strcmp(targets[1].layout_path, "rmsnorm/layout.csl") == 0);
+        CHECK(strcmp(targets[1].pe_program_path, "rmsnorm/pe_program.csl") == 0);
+        CHECK(targets[1].has_phase && strcmp(targets[1].phase, "prefill") == 0);
+        CHECK(targets[1].has_base_kernel && strcmp(targets[1].base_kernel, "rmsnorm") == 0);
+        CHECK(targets[2].has_phase && strcmp(targets[2].phase, "decode") == 0);
         CHECK(strcmp(targets[3].kernel_name, "sample") == 0);
+        CHECK(!targets[3].has_phase && !targets[3].has_base_kernel);
+        memset(long_name, 'x', sizeof(long_name));
+        long_name[CSL_SPATIAL_TOOL_NAME_LEN] = '\0';
+        kernels[0].name = long_name;
+        count = 99;
+        CHECK(csl_spatial_tool_build_targets(&plan, NULL, CSL_SPATIAL_SCALAR_F32,
+                  750, targets, CSL_SPATIAL_TOOL_MAX_COMPILE_TARGETS, &count) == CSL_ERR_TOO_LARGE);
+        CHECK(count == 0);
+        long_name[CSL_SPATIAL_TOOL_NAME_LEN - 1] = '\0';
+        CHECK(csl_spatial_tool_build_targets(&plan, NULL, CSL_SPATIAL_SCALAR_F32,
+                  750, targets, CSL_SPATIAL_TOOL_MAX_COMPILE_TARGETS, &count) == CSL_ERR_TOO_LARGE);
+        CHECK(count == 0);
     }
     /* Materialize stale directory decision. */
     {

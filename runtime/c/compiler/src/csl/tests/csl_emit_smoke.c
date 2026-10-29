@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-// UNRUN: this test file has NOT been executed or compiled as part of
-// the emit-port delivery. It is a smoke sketch for the coordinator:
-// spec constants, maps, pattern contract, and a dense_gemv core emit
-// through descriptors, checked against the validator markers.
+// Host developer smoke: spec constants, maps, pattern contract and a
+// descriptor-based dense_gemv emit checked against validator markers.
+// This does not execute CSL on a device or establish target parity.
 #include <assert.h>
 #include <string.h>
 #include "csl_spec.h"

@@ -194,10 +194,27 @@ static CslErr init_target_shell(CslSpatialCompileTarget *target,
                                 const char *phase,
                                 const char *base_kernel) {
     CslErr err;
-    err = init_target_shell(target, kernel_name, source_name, phase,
-                              base_kernel);
-    if (err) {
-        return err;
+    if (!target) {
+        return CSL_ERR_INVALID;
+    }
+    memset(target, 0, sizeof(*target));
+    err = copy_str(target->kernel_name, sizeof(target->kernel_name), kernel_name);
+    if (err) return err;
+    err = join_slash(target->layout_path, sizeof(target->layout_path),
+                     source_name, "layout.csl");
+    if (err) return err;
+    err = join_slash(target->pe_program_path, sizeof(target->pe_program_path),
+                     source_name, "pe_program.csl");
+    if (err) return err;
+    if (base_kernel) {
+        err = copy_str(target->base_kernel, sizeof(target->base_kernel), base_kernel);
+        if (err) return err;
+        target->has_base_kernel = 1;
+    }
+    if (phase) {
+        err = copy_str(target->phase, sizeof(target->phase), phase);
+        if (err) return err;
+        target->has_phase = 1;
     }
     return CSL_OK;
 }
@@ -422,6 +439,7 @@ CslErr csl_spatial_tool_build_state_buffers(
             case CSL_SPATIAL_MEM_OUTPUT_LOGITS:
                 kind = CSL_SPATIAL_STATE_SCRATCH;
                 break;
+            case CSL_SPATIAL_MEM_OTHER:
             default:
                 skip = 1;
                 break;

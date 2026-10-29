@@ -145,6 +145,8 @@ CslErr csl_layout_emit(CslBuf *out, const CslKernelDesc *d) {
         case CSL_PATTERN_KV_READ: return csl_layout_kv_read(out, d);
         case CSL_PATTERN_FUSED_FFN: return csl_layout_fused_ffn(out, d);
         case CSL_PATTERN_DENSE_GEMV: return csl_layout_dense_gemv(out, d);
+        case CSL_PATTERN_SEMANTIC:
+        case CSL_PATTERN_UNSUPPORTED: return CSL_ERR_UNSUPPORTED;
         default: return CSL_ERR_UNSUPPORTED;
     }
 }
