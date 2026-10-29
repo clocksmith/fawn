@@ -31,6 +31,15 @@ actual Windows SDK DLL build and four unchanged C consumers to one source, with
 the same binaries passing on CPU WARP and the named Miles GPU. It covers compute,
 uniforms, binding aliases and command retention. Missing APIs, later source,
 Node/browser integration and broader qualification retain their own gates.
+Current D3D12 direct compute pipelines compile only their application shader.
+The first admitted indirect dispatch prepares one immutable guard on its device.
+Concurrent first users may duplicate temporary compilation, but serialized
+publication creates one native helper pipeline. Cancellation, device loss and
+failed preparation leave no partial helper published; later valid use may retry.
+The existing command owner retains the helper until recorded work retires.
+`make check-d3d12-guard-prepare` exercises this orchestration without a GPU;
+physical indirect readback remains a separate check.
+
 The later indirect path copies GPU arguments to private scratch, executes the
 shared compiled bounds guard, and copies sanitized dispatch metadata without
 altering caller arguments. The [later public backend receipt](DEVELOPER_RECEIPT_ATOMICS_INDIRECT_TRANSFERS.json)

@@ -2,6 +2,7 @@
 #include "internal.h"
 #include "metal_draw_guard.h"
 #include "metal_indirect.h"
+#include "d3d12_indirect.h"
 #include <string.h>
 
 /* The backend owns guard meaning, private scratch and GPU ordering. Compile its
@@ -70,6 +71,7 @@ void native_indirect_guards_release(native_device *device)
     doe_vk_draw_validator_release(device->draw_validator);
     device->dispatch_validator = NULL;
     device->draw_validator = NULL;
+    native_d3d12_guard_reset(device);
 }
 
 void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder handle,
@@ -90,6 +92,8 @@ void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder han
     native_unlock(device);
     native_failure failure = native_failure_status(NATIVE_OK);
     if (metal && status == DOE_RESOURCE_OK) failure = native_metal_guard_initialize(device);
+    if (device->backend.kind == WGPUBackendType_D3D12 && status == DOE_RESOURCE_OK)
+        failure = native_d3d12_guard_initialize(device);
     if (failure.status != NATIVE_OK) {
         native_lock(device);
         doe_resource_status rejection = failure.status == NATIVE_OUT_OF_MEMORY ? DOE_RESOURCE_OUT_OF_MEMORY :
@@ -98,7 +102,7 @@ void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder han
         (void)doe_resource_compute_pass_invalidate(pass,rejection);
         native_unlock(device);
         char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
-        native_failure_format(&failure,"Metal indirect guard preparation failed",message);
+        native_failure_format(&failure,"indirect guard preparation failed",message);
         native_error(device,native_result_error(failure.status),message);
     } else native_encoding_error(device, ended, status, "indirect dispatch admission failed or selected backend unsupported");
     native_lock(device);

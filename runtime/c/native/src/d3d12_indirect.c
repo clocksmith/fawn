@@ -77,6 +77,14 @@ native_failure native_d3d12_guard_pipeline(native_device *device,
 #endif
 }
 
+void native_d3d12_guard_reset(native_device *device)
+{
+#if defined(_WIN32)
+    doe_dx_pipeline_release(device->d3d12_dispatch_guard);
+#endif
+    device->d3d12_dispatch_guard = NULL;
+}
+
 #if defined(_WIN32)
 static native_failure copy_metadata(native_command_handle *commands, doe_dx_buffer *scratch,
     doe_dx_buffer **out)
@@ -106,7 +114,8 @@ native_failure native_d3d12_dispatch_indirect(native_command_handle *commands,
     native_d3d12_snapshot bindings;
     native_failure failure = native_d3d12_binding_snapshot(record,&bindings);
     if (failure.status != NATIVE_OK) return failure;
-    if (!bindings.guard || (bindings.metadata_index != UINT32_MAX &&
+    doe_dx_pipeline *guard = pipeline->device->d3d12_dispatch_guard;
+    if (!guard || (bindings.metadata_index != UINT32_MAX &&
         bindings.metadata_index >= bindings.values.resources.buffer_count))
         return native_failure_status(NATIVE_INVALID_STATE);
     native_buffer *arguments = doe_resource_buffer_native(record->value.dispatch.indirect);
@@ -122,7 +131,7 @@ native_failure native_d3d12_dispatch_indirect(native_command_handle *commands,
             arguments->handle.d3d12->allocation,offset,scratch,0,12,&error);
     const doe_dx_buffer_binding scratch_binding = {scratch,0,12};
     if (status == DOE_DX_OK)
-        status = doe_dx_commands_dispatch(commands->value.d3d12.commands,bindings.guard,&scratch_binding,1,1,1,1,&error);
+        status = doe_dx_commands_dispatch(commands->value.d3d12.commands,guard,&scratch_binding,1,1,1,1,&error);
     failure = native_failure_d3d12(status,&error);
     if (failure.status == NATIVE_OK && bindings.metadata_index != UINT32_MAX) {
         failure = copy_metadata(commands,scratch,&metadata);

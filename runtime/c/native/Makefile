@@ -738,3 +738,10 @@ check-metal-async-physical:
 	@echo 'physical Metal gate requires macOS' >&2
 	@exit 2
 endif
+
+$(BUILD)/d3d12-guard-prepare: tests/d3d12_guard_prepare.c src/d3d12_indirect_prepare.c $(HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_guard_prepare.c src/d3d12_indirect_prepare.c -o $@
+.PHONY: check-d3d12-guard-prepare
+check-d3d12-guard-prepare: $(BUILD)/d3d12-guard-prepare
+	$(BUILD)/d3d12-guard-prepare
+check: check-d3d12-guard-prepare
