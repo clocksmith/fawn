@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
-from build_windows_dawn import DAWN_REVISION, abi_probe, artifact_query, stage_artifacts, deterministic_git_checkout, verify_header_bytes  # noqa: E402
+from build_windows_dawn import DAWN_REVISION, abi_probe, artifact_query, stage_artifacts, stage_sdk_fxc, deterministic_git_checkout, verify_header_bytes  # noqa: E402
 
 
 class ProducerContract(unittest.TestCase):
@@ -85,6 +85,55 @@ class ProducerContract(unittest.TestCase):
                 manifest.write_text(invalid)
                 with self.assertRaises(ValueError):
                     stage_artifacts(build, products)
+
+    def test_fxc_uses_selected_sdk_and_preserves_explicit_dependency_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sdk, products = root / 'sdk', root / 'products'
+            products.mkdir()
+            source = sdk / 'bin/10.0.28000.0/x64/d3dcompiler_47.dll'
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b'selected SDK x64 FXC')
+            headers, exports = '8664 machine (x64)', 'D3DCompile\nD3DDisassemble'
+            with patch('build_windows_dawn.capture', side_effect=[headers, exports]):
+                evidence = stage_sdk_fxc(products, sdk, '10.0.28000.0\\')
+            self.assertEqual((products / source.name).read_bytes(), source.read_bytes())
+            self.assertEqual(evidence, {'source_path': str(source), 'windows_sdk_version': '10.0.28000.0',
+                                       'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                                       'architecture': 'x64',
+                                       'headers_sha256': hashlib.sha256(headers.encode()).hexdigest(),
+                                       'exports_sha256': hashlib.sha256(exports.encode()).hexdigest()})
+            with self.assertRaisesRegex(ValueError, 'already exists'):
+                stage_sdk_fxc(products, sdk, '10.0.28000.0')
+
+    def test_missing_fxc_never_searches_other_sdk_or_system_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            products = root / 'products'
+            products.mkdir()
+            for sdk, version in [(root / 'sdk', ''), (Path('relative'), '10.0.28000.0'),
+                                 (root / 'sdk', '../10.0.28000.0')]:
+                with self.assertRaisesRegex(ValueError, 'selected Windows SDK root and version'):
+                    stage_sdk_fxc(products, sdk, version)
+            with self.assertRaisesRegex(ValueError, 'FXC runtime missing'):
+                stage_sdk_fxc(products, root / 'sdk', '10.0.28000.0')
+            self.assertEqual(list(products.iterdir()), [])
+
+    def test_wrong_architecture_or_compiler_exports_do_not_stage_fxc(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sdk, products = root / 'sdk', root / 'products'
+            products.mkdir()
+            source = sdk / 'bin/10.0.28000.0/x64/d3dcompiler_47.dll'
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b'wrong dependency')
+            for headers, exports, error in [
+                    ('14C machine (x86)', 'D3DCompile\nD3DDisassemble', 'must be x64'),
+                    ('8664 machine (x64)', 'D3DCompile', 'required compiler exports')]:
+                with patch('build_windows_dawn.capture', side_effect=[headers, exports]):
+                    with self.assertRaisesRegex(ValueError, error):
+                        stage_sdk_fxc(products, sdk, '10.0.28000.0')
+                self.assertEqual(list(products.iterdir()), [])
 
     @unittest.skipUnless(shutil.which('cmake'), 'requires host CMake for generated target-path fixture')
     def test_cmake_query_tracks_target_override(self):

@@ -137,6 +137,34 @@ def stage_artifacts(build: Path, products: Path) -> dict[str, dict[str, str]]:
     return evidence
 
 
+def stage_sdk_fxc(products: Path, sdk_root: Path, sdk_version: str) -> dict[str, str]:
+    """Package Dawn's FXC dependency from the selected x64 Windows SDK only."""
+    version = sdk_version.rstrip('\\/')
+    if not sdk_root.is_absolute() or not re.fullmatch(r'\d+\.\d+\.\d+\.\d+', version):
+        raise ValueError('explicit selected Windows SDK root and version required for FXC')
+    source = sdk_root / 'bin' / version / 'x64/d3dcompiler_47.dll'
+    if not source.is_file():
+        raise ValueError(f'selected Windows SDK FXC runtime missing: {source}')
+    destination = products / source.name
+    if destination.exists():
+        raise ValueError('FXC destination already exists; preserve its producer separately')
+    headers = capture(['dumpbin', '/nologo', '/headers', str(source)], products)
+    exports = capture(['dumpbin', '/nologo', '/exports', str(source)], products)
+    if not re.search(r'^\s*8664 machine \(x64\)\s*$', headers, re.M):
+        raise ValueError('selected Windows SDK FXC runtime must be x64')
+    if any(not re.search(r'\b' + name + r'\s*$', exports, re.M)
+           for name in ['D3DCompile', 'D3DDisassemble']):
+        raise ValueError('selected Windows SDK FXC runtime lacks required compiler exports')
+    shutil.copy2(source, destination)
+    source_hash = digest(source)
+    if digest(destination) != source_hash:
+        raise ValueError('staged Windows SDK FXC runtime hash mismatch')
+    return {'source_path': str(source), 'windows_sdk_version': version, 'sha256': source_hash,
+            'architecture': 'x64',
+            'headers_sha256': hashlib.sha256(headers.encode()).hexdigest(),
+            'exports_sha256': hashlib.sha256(exports.encode()).hexdigest()}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -194,6 +222,10 @@ def main() -> int:
     if results[0] != results[1]:
         raise ValueError('generated Dawn ABI differs from pinned enum/record layout')
     artifacts = stage_artifacts(build, products)
+    # Dawn searches its explicit runtime/module directories for FXC. The DLL's
+    # presence in System32 does not complete this relocatable provider bundle.
+    fxc = stage_sdk_fxc(products, Path(os.environ.get('WindowsSdkDir', '')),
+                        os.environ.get('WindowsSDKVersion', ''))
     dll, imports = products / 'webgpu_dawn.dll', products / 'webgpu_dawn.lib'
     for relative in dependencies:
         owner = source if relative == '.' else source / relative
@@ -221,6 +253,7 @@ def main() -> int:
         'deps_sha256': digest(source / 'DEPS'), 'header_sha256': digest(header),
         'generated_header_sha256': digest(build / 'gen/include/dawn/webgpu.h'),
         'target_artifacts': artifacts,
+        'fxc_runtime': fxc,
         'target_manifest_sha256': digest(build / 'doe-dawn-artifacts.txt'),
         'configuration': configure, 'cache_sha256': digest(build / 'CMakeCache.txt'),
         'toolchain': capture(['clang-cl', '--version'], out),
