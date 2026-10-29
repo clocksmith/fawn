@@ -19,6 +19,8 @@
 _Static_assert(__builtin_types_compatible_p(size_t, NSUInteger), "NSUInteger call ABI");
 _Static_assert(__builtin_types_compatible_p(intptr_t, NSInteger), "NSInteger call ABI");
 _Static_assert(__builtin_types_compatible_p(doe_objc_bool, BOOL), "BOOL call ABI");
+_Static_assert(__builtin_types_compatible_p(doe_objc_event_wait_call,
+    BOOL (*)(void *, void *, uint64_t, uint64_t)), "shared event wait call ABI");
 SAME_LAYOUT(doe_mtl_size, MTLSize);
 SAME_FIELD(doe_mtl_size, MTLSize, width);
 SAME_FIELD(doe_mtl_size, MTLSize, height);
@@ -165,6 +167,8 @@ void doe_mtl_sdk_timestamp_ordering(id<MTLDevice> device, id<MTLCommandBuffer> c
     id<MTLSharedEvent> event = [device newSharedEvent];
     [command encodeSignalEvent:event value:(uint64_t)1];
     [command encodeWaitForEvent:event value:(uint64_t)1];
+    BOOL signaled = [event waitUntilSignaledValue:(uint64_t)1 timeoutMS:(uint64_t)2];
+    (void)signaled;
     [event release];
 }
 

@@ -7,6 +7,7 @@ typedef void (*doe_objc_sample_counter_call)(void *, void *, void *, size_t, doe
 typedef void (*doe_objc_resolve_counter_call)(void *, void *, void *, doe_mtl_range_abi, void *, size_t);
 typedef void (*doe_objc_event_call)(void *, void *, void *, uint64_t);
 typedef uint64_t (*doe_objc_event_value_call)(void *, void *);
+typedef doe_objc_bool (*doe_objc_event_wait_call)(void *, void *, uint64_t, uint64_t);
 typedef void (*doe_objc_clock_call)(void *, void *, uint64_t *, uint64_t *);
 typedef struct doe_mtl_objc_queries {
     doe_objc_equal_string_call equal_string;
@@ -15,6 +16,8 @@ typedef struct doe_mtl_objc_queries {
     doe_objc_event_call event;
     doe_objc_event_value_call event_value;
     void *signaled_value;
+    doe_objc_event_wait_call event_wait;
+    void *wait_until_value;
     doe_objc_clock_call clocks;
     void *sample_clocks, *blit_pass_class, *blit_encoder;
     void *device, *new_event, *signal_event, *wait_event;

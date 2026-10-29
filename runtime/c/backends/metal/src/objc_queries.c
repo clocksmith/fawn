@@ -19,6 +19,8 @@ void doe_mtl_objc_load_queries(doe_mtl_objc *r, doe_objc_message message) {
     q->event = (doe_objc_event_call)message;
     q->event_value = (doe_objc_event_value_call)message;
     q->signaled_value = r->selector("signaledValue");
+    q->event_wait = (doe_objc_event_wait_call)message;
+    q->wait_until_value = r->selector("waitUntilSignaledValue:timeoutMS:");
     q->clocks = (doe_objc_clock_call)message;
     q->sample_clocks = r->selector("sampleTimestamps:gpuTimestamp:");
     q->blit_pass_class = r->get_class("MTLBlitPassDescriptor");

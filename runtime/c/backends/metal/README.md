@@ -479,3 +479,17 @@ staging of multisampled textures reject before encoding. `test_multisample`
 checks those boundaries and publication after completion; the unchanged public
 `native/tests/msaa_sampling.c` fixture independently reads every sample of the
 copied texture. Host call ledgers alone do not establish those pixel values.
+
+### Bounded host completion wakeup
+
+An unlocked command wait snapshots its submitted timeline value and borrows the
+context-owned shared event through its existing context lease. The command has
+a separate native retain. Metal's `waitUntilSignaledValue:timeoutMS:` wakes the
+ordinary observer; only command status and the first copied NSError authorize
+completion, output publication or retirement. A signal alone cannot hide failure.
+Timeouts round down to whole milliseconds, and smaller budgets return pending
+without blocking. Missing event/selector support returns unsupported explicitly;
+there is no polling sleep or unbounded wait fallback in this wakeup path.
+
+`check-progress`, `check-timeline` and `sdk-abi` cover the typed call, timeout,
+terminal-error authority and lease lifetime separately from physical execution.

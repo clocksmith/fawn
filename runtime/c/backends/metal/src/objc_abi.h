@@ -12,7 +12,7 @@
 doe_mtl_status doe_mtl_objc_timeline_create(void *, void *, void **, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_timeline_signal(void *, void *, void *, uint64_t, doe_mtl_error *);
 uint64_t doe_mtl_objc_timeline_value(void *, void *);
-doe_mtl_status doe_mtl_objc_command_block(void *, void *, uint64_t);
+doe_mtl_status doe_mtl_objc_command_block(void *, void *, void *, uint64_t, uint64_t);
 struct doe_mtl_objc;
 void doe_mtl_objc_load_external(struct doe_mtl_objc *runtime, void (*message)(void));
 void doe_mtl_objc_close_external(struct doe_mtl_objc *runtime);

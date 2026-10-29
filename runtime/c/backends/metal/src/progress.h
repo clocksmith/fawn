@@ -8,6 +8,8 @@
 typedef struct doe_mtl_wait_lease {
     doe_mtl_context *context;
     void *command;
+    void *event; /* Borrowed through the retained context. */
+    uint64_t value;
 } doe_mtl_wait_lease;
 bool doe_mtl_commands_in_flight(const doe_mtl_commands *commands);
 doe_mtl_commands *doe_mtl_commands_conflict(const doe_mtl_commands *commands);

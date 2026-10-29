@@ -31,7 +31,7 @@ doe_mtl_status doe_mtl_commands_hold(doe_mtl_commands *commands, doe_mtl_wait_le
     if (status != DOE_MTL_OK) return status;
     void *native = context->native.retain(context->native.userdata, commands->native);
     if (!native) { doe_mtl_context_release(context); return DOE_MTL_NATIVE_FAILURE; }
-    *out = (doe_mtl_wait_lease){context,native};
+    *out = (doe_mtl_wait_lease){context,native,context->timeline,commands->timeline_value};
     return DOE_MTL_OK;
 }
 
@@ -39,7 +39,7 @@ doe_mtl_status doe_mtl_commands_block(const doe_mtl_wait_lease *lease, uint64_t 
 {
     if (!lease || !lease->context || !lease->command) return DOE_MTL_INVALID_ARGUMENT;
     const doe_mtl_native *native = &lease->context->native;
-    return native->block(native->userdata,lease->command,timeout_ns);
+    return native->block(native->userdata,lease->command,lease->event,lease->value,timeout_ns);
 }
 
 void doe_mtl_commands_unhold(doe_mtl_wait_lease *lease)
