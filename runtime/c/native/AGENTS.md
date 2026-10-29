@@ -66,6 +66,12 @@ shared source leaf for that backend before publishing an enabled feature. Never 
 or raw tick success. Distinguish terminal failure from unknown completion while
 preserving typed error status and all pending leases.
 
+D3D12 indirect dispatch prepares its shared device-owned guard only after a real
+indirect command passes resource admission. WGSL/DXC compilation and release run
+outside the mutex under an existing device lease. Serialize native PSO publication,
+recheck device state after compilation, and retain the guard through command
+retirement. Direct compute pipeline construction does not prepare this helper.
+
 D3D12 graphics projects each selected compiler entry into the canonical binding
 union, preserving module-local identity and stage visibility. Pack VS/PS resources
 into one resource heap and one sampler heap per draw; never bind competing heaps

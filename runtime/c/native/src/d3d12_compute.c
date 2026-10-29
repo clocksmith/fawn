@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: MIT */
-#include "d3d12_indirect.h"
 #include "d3d12_graphics_internal.h"
 #include <stdlib.h>
 #include <string.h>
 
 native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const native_stage *stage,
-    const doe_dx_shader *shader, const native_d3d12_guard_code *guard)
+    const doe_dx_shader *shader)
 {
 #if defined(_WIN32)
     native_d3d12_compute *map = calloc(1, sizeof(*map));
@@ -27,24 +26,17 @@ native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const nat
         .texture_contracts=layout.contracts,.samplers=layout.samplers,.sampler_count=map->sampler_count,
         .immediate_bytes=pipeline->immediate_bytes,.immediate_required_bytes=pipeline->immediate_required_bytes,
         .logical_size_count=map->logical_size_count,.logical_size_indices=map->logical_size_indices};
-    native_failure failure = native_d3d12_guard_pipeline(pipeline->device,guard,&map->guard);
-    if (failure.status == NATIVE_OK) {
-        doe_dx_error error = {0};
-        doe_dx_status status = doe_dx_pipeline_create_dynamic(pipeline->device->backend.value.d3d12.context,
-            &descriptor, &pipeline->handle.d3d12, &error);
-        failure = native_failure_d3d12(status,&error);
-    }
+    doe_dx_error error = {0};
+    doe_dx_status status = doe_dx_pipeline_create_dynamic(pipeline->device->backend.value.d3d12.context,
+        &descriptor, &pipeline->handle.d3d12, &error);
+    native_failure failure = native_failure_d3d12(status,&error);
     if (failure.status == NATIVE_OK) pipeline->d3d12_compute = map;
-    else {
-        doe_dx_pipeline_release(map->guard);
-        free(map);
-    }
+    else free(map);
     return failure;
 #else
     (void)pipeline;
     (void)stage;
     (void)shader;
-    (void)guard;
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
 }
@@ -53,8 +45,6 @@ void native_d3d12_pipeline_close(native_pipeline *pipeline)
 {
 #if defined(_WIN32)
     doe_dx_pipeline_release(pipeline->handle.d3d12);
-    native_d3d12_compute *map = pipeline->d3d12_compute;
-    if (map) doe_dx_pipeline_release(map->guard);
     if (pipeline->d3d12_graphics) {
         doe_dx_pipeline_release(pipeline->d3d12_graphics->draw_normalize);
         doe_dx_pipeline_release(pipeline->d3d12_graphics->index_scan);

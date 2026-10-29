@@ -11,7 +11,6 @@ typedef struct native_d3d12_compute {
     uint32_t logical_size_indices[DOE_DX_MAX_BINDINGS],logical_size_count,entry_flags;
     size_t buffer_count, texture_count, sampler_count;
     uint32_t dispatch_index;
-    doe_dx_pipeline *guard;
 } native_d3d12_compute;
 typedef struct native_d3d12_layout {
     doe_dx_binding_layout buffers[DOE_DX_MAX_BINDINGS];
@@ -26,7 +25,6 @@ typedef struct native_d3d12_snapshot {
     doe_dx_sampler_desc samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     doe_dx_dynamic_resources values; /* Borrows the arrays in this record. */
     uint32_t metadata_index;
-    doe_dx_pipeline *guard; /* Borrowed existing pipeline-owned guard. */
 } native_d3d12_snapshot;
 /* Typed selected-entry conversion; outputs untouched on failed row/span checks.
  * No shader parsing, source interpretation, native calls or ownership changes. */

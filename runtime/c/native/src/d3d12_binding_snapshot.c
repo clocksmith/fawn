@@ -11,7 +11,6 @@ native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
     out->values = (doe_dx_dynamic_resources){.texture_views=out->texture_views,.resources={.buffers=out->buffers,.buffer_count=map->buffer_count,
         .textures=out->textures,.texture_count=map->texture_count},.samplers=out->samplers,.sampler_count=map->sampler_count};
     out->metadata_index = map->dispatch_index;
-    out->guard = map->guard;
     for (size_t i = 0; i < map->buffer_count; ++i) {
         if (i == map->dispatch_index) continue;
         size_t index = map->buffer_indices[i];

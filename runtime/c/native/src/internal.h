@@ -65,6 +65,7 @@ typedef struct native_device {
     uint32_t metal_timestamp_slot;
     doe_vk_dispatch_validator *dispatch_validator;
     doe_mtl_dispatch_guard *metal_dispatch_guard;
+    doe_dx_pipeline *d3d12_dispatch_guard;
     doe_mtl_draw_guard *metal_draw_guard;
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;

@@ -56,7 +56,7 @@ bool native_d3d12_graphics_maps_count(const native_pipeline *pipeline,const nati
         native_d3d12_compute *map=&result.stages[stage];
         if (!native_d3d12_stage_bindings_for(&selected,&stages[stage],
             stage==0 ? DOE_COMPILER_STAGE_VERTEX : DOE_COMPILER_STAGE_FRAGMENT,&layouts[stage],map) ||
-            map->dispatch_index!=UINT32_MAX || map->guard) return false;
+            map->dispatch_index!=UINT32_MAX) return false;
         for (size_t i=0;i<map->buffer_count;++i) map->buffer_indices[i]=canonical[map->buffer_indices[i]];
         for (size_t i=0;i<map->texture_count;++i) map->texture_indices[i]=canonical[map->texture_indices[i]];
         for (size_t i=0;i<map->sampler_count;++i) map->sampler_indices[i]=canonical[map->sampler_indices[i]];

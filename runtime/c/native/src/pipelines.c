@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
-#include "d3d12_indirect.h"
+#include "d3d12_frontend.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -144,15 +144,12 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
         }
     }
     doe_dx_shader *compiled = NULL;
-    native_d3d12_guard_code *guard = NULL;
     if (d3d12) {
         /* SDK loading/compilation and final module release occur outside every
          * owner lock. This ordinary call lease protects the frontend throughout. */
         native_failure failure = native_d3d12_compile_compute(&stage, &compiled);
-        if (failure.status == NATIVE_OK) failure = native_d3d12_guard_compile(device,&guard);
         if (failure.status != NATIVE_OK) {
             native_d3d12_compiler_release(compiled);
-            native_d3d12_guard_code_release(guard);
             error->type = native_result_error(failure.status);
             native_failure_format(&failure, "D3D12 shader compilation failed", error->message);
             return NULL;
@@ -161,7 +158,6 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) {
         native_d3d12_compiler_release(compiled);
-        native_d3d12_guard_code_release(guard);
         pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline allocation failed");
         return NULL;
     }
@@ -189,7 +185,7 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
             }
         } else if (device->backend.kind == WGPUBackendType_Metal)
             backend_failure = native_metal_pipeline_create(payload,&stage);
-        else if (d3d12) backend_failure = native_d3d12_pipeline_create(payload, &stage, compiled, guard);
+        else if (d3d12) backend_failure = native_d3d12_pipeline_create(payload, &stage, compiled);
         else backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
         if (backend_failure.status == NATIVE_OK)
             resource_status = doe_resource_pipeline_create(&device->resources, layout,
@@ -210,7 +206,6 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     if (automatic) doe_resource_pipeline_layout_release(layout);
     native_unlock(device);
     native_d3d12_compiler_release(compiled);
-    native_d3d12_guard_code_release(guard);
     if (pipeline && resource_status != DOE_RESOURCE_OK) {
         /* Its release, outside the device lock, also releases the payload. */
         doe_resource_pipeline_release(pipeline);
