@@ -157,6 +157,10 @@ $(BUILD)/test_objc_external: tests/test_objc_external.c $(BUILD)/libdoe_metal.a
 $(BUILD)/test_progress: tests/test_progress.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_progress.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 .PHONY: check-progress
-check-progress: $(BUILD)/test_progress
+check-progress: $(BUILD)/test_progress $(BUILD)/test_objc_progress
 	$(BUILD)/test_progress
+	$(BUILD)/test_objc_progress
 check: check-progress
+
+$(BUILD)/test_objc_progress: tests/test_objc_progress.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@

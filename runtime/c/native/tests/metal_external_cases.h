@@ -2,6 +2,8 @@
 #ifndef DOE_NATIVE_TEST_METAL_EXTERNAL_CASES_H
 #define DOE_NATIVE_TEST_METAL_EXTERNAL_CASES_H
 #include "doe_native_external_texture.h"
+#include "../src/surface.h"
+#include "../../backends/metal/src/progress.h"
 
 static doe_mtl_status external_import_ledger(void *userdata, void *native_device,
     doe_mtl_external_source source, void *handle, doe_mtl_native_external *out, doe_mtl_error *error)
@@ -82,11 +84,28 @@ static void metal_external_import_cases(state *s)
     native_lock(device);
     assert(device->pending && mock->resources.textures[slot] == identity && mock->live > baseline);
     unsigned released = mock->releases_by_kind[MOCK_KIND_TEXTURE];
+    doe_mtl_wait_lease lease = {0};
+    assert(doe_mtl_commands_hold(device->pending->native.value.metal,&lease) == DOE_MTL_OK);
     hold = false;
     native_queue_settlement settled = native_settle_pending(device);
     assert(settled.complete && settled.failure.status == NATIVE_OK && !device->pending);
+    assert(mock->releases_by_kind[MOCK_KIND_TEXTURE] == released + 2);
+    /* Resource retirement does not retire a separately held native wait handle.
+     * Exercise that lifetime deterministically, including an overlapping worker. */
+    assert(doe_mtl_commands_block(&lease,0) == DOE_MTL_OK);
+    doe_mtl_commands_unhold(&lease);
     native_unlock(device);
-    assert(mock->releases_by_kind[MOCK_KIND_TEXTURE] == released + 2 && mock->live == baseline);
+    struct timespec now, deadline;
+    assert(doe_monotonic_now(&now).status == DOE_HOST_OK);
+    assert(doe_time_add(&now,UINT64_C(5000000000),&deadline).status == DOE_HOST_OK);
+    for (;;) {
+        native_lock(device);
+        bool quiescent = mock->live == baseline;
+        native_unlock(device);
+        if (quiescent) break;
+        assert(doe_monotonic_now(&now).status == DOE_HOST_OK && !doe_time_reached(&now,&deadline));
+        assert(doe_sleep_for(UINT64_C(1000000)).status == DOE_HOST_OK);
+    }
     puts("PASS native Metal external import: transactional resource adoption, canonical plane-zero binding and both-plane pending retention; host ledger only");
 }
 #endif

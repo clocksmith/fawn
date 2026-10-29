@@ -409,10 +409,11 @@ static size_t observe(void *userdata, void *handle, bool wait, doe_mtl_error *er
     return command->status;
 }
 
-static doe_mtl_status block_command(void *userdata, void *handle, uint64_t timeout_ns) {
+static doe_mtl_status block_command(void *userdata, void *handle, void *event, uint64_t value, uint64_t timeout_ns) {
     mock_native *mock = userdata;
     mock_object *command = handle;
     assert(command && command->kind == MOCK_KIND_COMMAND);
+    (void)event; (void)value;
     ++mock->blocks;
     if (mock->block_hook) mock->block_hook(mock,handle,timeout_ns);
     else if ((command->status == 2 || command->status == 3) && timeout_ns)

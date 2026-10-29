@@ -1,11 +1,16 @@
 /* SPDX-License-Identifier: MIT */
 #include "mock_native.h"
 #include "../src/internal.h"
+#include "../src/progress.h"
 #include <assert.h>
 #include <stdio.h>
 static uint64_t signaled, observed;
 static unsigned event_releases, signals;
 static int event;
+static doe_mtl_status block(void *u, void *command, void *handle, uint64_t target, uint64_t timeout) {
+    (void)u; assert(command && handle == &event && target == 1 && timeout == 17);
+    return DOE_MTL_PENDING;
+}
 static void (*ordinary_release)(void *, void *);
 static doe_mtl_status create(void *u, void *device, void **out, doe_mtl_error *e) {
     (void)u; assert(device); *out=&event; return doe_mtl_fail(DOE_MTL_OK,"event",e);
@@ -30,6 +35,11 @@ int main(void) {
     assert(doe_mtl_commands_create(context,&commands,&error)==DOE_MTL_OK);
     assert(doe_mtl_context_prefer_timeline(context,&error)==DOE_MTL_INVALID_STATE);
     assert(doe_mtl_commands_submit(commands,&error)==DOE_MTL_OK&&signaled==1&&mock.commits==1);
+    context->native.block=block;
+    doe_mtl_wait_lease lease={0};
+    assert(doe_mtl_commands_hold(commands,&lease)==DOE_MTL_OK);
+    assert(lease.event==&event && lease.value==1);
+    assert(doe_mtl_commands_block(&lease,17)==DOE_MTL_PENDING);
     observed=1;
     assert(doe_mtl_commands_poll(commands,&error)==DOE_MTL_PENDING); /* Event alone cannot hide later NSError. */
     mock_result(&mock,5,-77);
@@ -47,6 +57,9 @@ int main(void) {
     assert(doe_mtl_commands_create(context,&commands,&error)==DOE_MTL_OK);
     assert(doe_mtl_commands_submit(commands,&error)==DOE_MTL_RANGE&&signals==2&&mock.commits==2);
     assert(doe_mtl_commands_release(commands)==DOE_MTL_OK);
-    doe_mtl_context_release(context);assert(event_releases==1);mock_assert_closed(&mock);
+    doe_mtl_context_release(context);assert(event_releases==0);
+    assert(doe_mtl_commands_block(&lease,17)==DOE_MTL_PENDING);
+    doe_mtl_commands_unhold(&lease);
+    assert(event_releases==1);mock_assert_closed(&mock);
     puts("PASS real event-call contract: monotonic signals, terminal-error authority, missing-event proof, overflow precommit and retained event lifetime");
 }

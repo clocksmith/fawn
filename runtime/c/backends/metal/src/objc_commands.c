@@ -1,10 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
-#endif
 #include "objc_abi.h"
-#include <errno.h>
-#include <time.h>
 
 doe_mtl_status doe_mtl_objc_command(void *userdata, void *queue, void **out,
     doe_mtl_error *error) {
@@ -155,33 +150,30 @@ size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_er
     return status;
 }
 
-/* The handle has its own native lease. Read status only: NSError transport,
- * speculative publication and resource retirement stay with ordinary observe.
- * Unlike waitUntilCompleted this operation has a monotonic bounded duration. */
-doe_mtl_status doe_mtl_objc_command_block(void *userdata, void *command, uint64_t timeout_ns)
+/* The lease retains the command and context (which owns the event). This wait
+ * only wakes the ordinary observer: it never publishes output or transports
+ * NSError. The SDK timeout is integral milliseconds; round down so a sub-ms
+ * remaining budget cannot become a longer blocking wait. No polling fallback. */
+doe_mtl_status doe_mtl_objc_command_block(void *userdata, void *command,
+    void *event, uint64_t value, uint64_t timeout_ns)
 {
     doe_mtl_objc *runtime = userdata;
-#if defined(__APPLE__) || defined(__linux__)
-    struct timespec started, now;
-    if (clock_gettime(CLOCK_MONOTONIC,&started) != 0) return DOE_MTL_NATIVE_FAILURE;
-    for (;;) {
-        size_t status = doe_mtl_objc_size(runtime,command,runtime->status);
-        if (status == 4 || status == 5) return DOE_MTL_OK;
-        if (status != 2 && status != 3) return DOE_MTL_COMPLETION_UNKNOWN;
-        if (clock_gettime(CLOCK_MONOTONIC,&now) != 0 || now.tv_sec < started.tv_sec)
-            return DOE_MTL_NATIVE_FAILURE;
-        uint64_t seconds = (uint64_t)(now.tv_sec - started.tv_sec);
-        if (seconds > UINT64_MAX / UINT64_C(1000000000)) return DOE_MTL_NATIVE_FAILURE;
-        uint64_t elapsed = seconds * UINT64_C(1000000000);
-        if (now.tv_nsec >= started.tv_nsec) elapsed += (uint64_t)(now.tv_nsec - started.tv_nsec);
-        else elapsed -= (uint64_t)(started.tv_nsec - now.tv_nsec);
-        if (elapsed >= timeout_ns) return DOE_MTL_PENDING;
-        uint64_t remaining = timeout_ns - elapsed;
-        const struct timespec pause = {0,(long)(remaining < UINT64_C(1000000) ? remaining : UINT64_C(1000000))};
-        if (nanosleep(&pause,NULL) != 0 && errno != EINTR) return DOE_MTL_NATIVE_FAILURE;
-    }
-#else
-    (void)runtime; (void)command; (void)timeout_ns;
-    return DOE_MTL_UNSUPPORTED;
-#endif
+    size_t status = doe_mtl_objc_size(runtime,command,runtime->status);
+    if (status == 4 || status == 5) return DOE_MTL_OK;
+    if (status != 2 && status != 3) return DOE_MTL_COMPLETION_UNKNOWN;
+    if (!timeout_ns) return DOE_MTL_PENDING;
+    const doe_mtl_objc_queries *queries = &runtime->queries;
+    if (!event || !value || !queries->event_wait || !queries->wait_until_value ||
+        !runtime->responds_call ||
+        !runtime->responds_call(event,runtime->responds,queries->wait_until_value))
+        return DOE_MTL_UNSUPPORTED;
+    uint64_t milliseconds = timeout_ns / UINT64_C(1000000);
+    if (!milliseconds) return DOE_MTL_PENDING;
+    doe_objc_bool signaled = queries->event_wait(event,queries->wait_until_value,value,milliseconds);
+    /* A failed command need not signal the event. Wake the observer on either
+     * terminal status even when the timed event wait itself expired. */
+    status = doe_mtl_objc_size(runtime,command,runtime->status);
+    if (status == 4 || status == 5) return DOE_MTL_OK;
+    if (status != 2 && status != 3) return DOE_MTL_COMPLETION_UNKNOWN;
+    return signaled ? DOE_MTL_OK : DOE_MTL_PENDING;
 }

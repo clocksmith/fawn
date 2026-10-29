@@ -139,10 +139,11 @@ native_result native_backend_device_policy(const native_backend *adapter, const 
          * identity. A changed system default is unavailable, never a fallback. */
         if (status == NATIVE_OK && doe_mtl_context_device(result.value.metal.context) !=
                 doe_mtl_context_device(adapter->value.metal.context)) status = NATIVE_UNAVAILABLE;
-        if (status == NATIVE_OK && policy) {
-            result.upload_policy = policy->upload_policy;
+        if (status == NATIVE_OK && policy) result.upload_policy = policy->upload_policy;
+        /* Ordinary policy-null devices need the same bounded completion event
+         * as extension-configured devices, before commands/resources escape. */
+        if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_prefer_timeline(result.value.metal.context, NULL));
-        }
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
         if (status == NATIVE_OK && native_metal_limits(&result.value.metal.caps,
