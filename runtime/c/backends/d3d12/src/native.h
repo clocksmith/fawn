@@ -105,7 +105,7 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     doe_dx_native_context **out, doe_dx_caps *caps, doe_dx_error *error);
 doe_dx_status doe_dx_native_query_luid(uint32_t low, int32_t high,
     doe_dx_adapter_identity *out, doe_dx_error *error);
-void doe_dx_native_close(doe_dx_native_context *context);
+doe_dx_status doe_dx_native_close(doe_dx_native_context *context);
 /* Shared actual-identity check, also exercised through the host link seam. */
 doe_dx_status doe_dx_validate_adapter(const doe_dx_options *options,
     const doe_dx_caps *caps, doe_dx_error *error);

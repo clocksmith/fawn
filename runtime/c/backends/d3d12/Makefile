@@ -102,3 +102,7 @@ sdk-control: $(BUILD)/test_windows_cache.exe
 
 $(BUILD)/test_surface: tests/test_surface.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_surface.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
+
+$(BUILD)/test_windows_wait.exe: tests/test_windows_wait.c src/windows_context.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
+sdk-control: $(BUILD)/test_windows_wait.exe

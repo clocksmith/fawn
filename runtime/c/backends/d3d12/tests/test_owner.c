@@ -394,6 +394,20 @@ static void failed_signal_after_prior_batch(void) {
     finish(owner);
 }
 
+static void retryable_native_cleanup(void) {
+    doe_dx_context *owner = context();
+    size_t allocations = mock.allocations;
+    mock.close_status = DOE_DX_COMPLETION_UNKNOWN;
+    assert(doe_dx_context_destroy(owner) == DOE_DX_COMPLETION_UNKNOWN);
+    assert(mock.contexts == 1 && mock.allocations == allocations);
+    assert(doe_dx_context_status(owner) == DOE_DX_OK);
+    mock.close_status = DOE_DX_NATIVE_FAILURE;
+    assert(doe_dx_context_destroy(owner) == DOE_DX_NATIVE_FAILURE);
+    assert(mock.contexts == 1 && mock.allocations == allocations);
+    mock.close_status = DOE_DX_OK;
+    finish(owner);
+}
+
 int main(void) {
     mock_reset();
     lifetime_and_order();
@@ -409,6 +423,7 @@ int main(void) {
     mapping_failure_outputs();
     loss_from_other_native_calls();
     failed_signal_after_prior_batch();
-    puts("D3D12 C host owner: 13 groups passed (no SDK or GPU execution)");
+    retryable_native_cleanup();
+    puts("D3D12 C host owner: 14 groups passed (no SDK or GPU execution)");
     return 0;
 }

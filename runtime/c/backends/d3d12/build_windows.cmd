@@ -69,4 +69,9 @@ cl /nologo /std:c11 /W4 /WX /Iinclude ^
     tests\test_windows_cache.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\test_windows_cache.obj" /Fe"%OUT%\test_windows_cache.exe"
 if not "%errorlevel%"=="0" exit /b 1
+rem Official SDK fence/event call composition, injected outcomes, no device.
+cl /nologo /std:c11 /W4 /WX /Iinclude ^
+    tests\test_windows_wait.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
+    /Fo"%OUT%\test_windows_wait.obj" /Fe"%OUT%\test_windows_wait.exe"
+if not "%errorlevel%"=="0" exit /b 1
 exit /b 0

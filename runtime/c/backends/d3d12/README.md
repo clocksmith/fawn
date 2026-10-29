@@ -197,8 +197,13 @@ promotion/decay permits the explicit promotable before-state after execution:
 C descriptor-handle calls use the Windows explicit return-pointer declarations
 in [Microsoft DirectX-Headers](https://github.com/microsoft/DirectX-Headers/blob/main/include/directx/d3d12.h).
 An actual installed SDK must accept these signatures; documentation inspection
-is not SDK compilation. Bounded fence polling avoids a timed-out native event
-registration retaining an unsafe event handle. Its performance is unqualified.
+is not SDK compilation. Bounded waits use one context-owned fence event;
+timeout or wait failure retains its registration and every resource obligation.
+A repeated wait consumes the existing signal before registering newer work.
+Only queried completion or terminal device loss settles work. Destruction drains
+an outstanding terminal event notification before closing its handle; a failed
+drain/close returns the existing failure status and retains the context for retry.
+These call-composition guarantees do not establish physical performance.
 
 ## Official DXC SDK adapter
 

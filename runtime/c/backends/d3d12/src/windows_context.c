@@ -12,8 +12,20 @@ doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error
     return doe_dx_fail(status, (int32_t)result, operation, error);
 }
 
-void doe_dx_native_close(doe_dx_native_context *context) {
-    if (!context) return;
+doe_dx_status doe_dx_native_close(doe_dx_native_context *context) {
+    if (!context) return DOE_DX_OK;
+    /* The common owner permits destruction only after completion or terminal
+     * device loss. Drain the corresponding event notification before closing
+     * its handle; timed-out waits keep both registration and context alive. */
+    if (context->completion_registered) {
+        if (WaitForSingleObject(context->completion_event, INFINITE) != WAIT_OBJECT_0)
+            return DOE_DX_COMPLETION_UNKNOWN;
+        context->completion_registered = false;
+    }
+    if (context->completion_event) {
+        if (!CloseHandle(context->completion_event)) return DOE_DX_NATIVE_FAILURE;
+        context->completion_event = NULL;
+    }
     doe_dx_cache_close(context);
     if (context->draw_signature) ID3D12CommandSignature_Release(context->draw_signature);
     if (context->draw_indexed_signature) ID3D12CommandSignature_Release(context->draw_indexed_signature);
@@ -22,6 +34,7 @@ void doe_dx_native_close(doe_dx_native_context *context) {
     if (context->queue) ID3D12CommandQueue_Release(context->queue);
     if (context->device) ID3D12Device_Release(context->device);
     free(context);
+    return DOE_DX_OK;
 }
 
 doe_dx_status doe_dx_native_open(const doe_dx_options *options,
@@ -110,18 +123,49 @@ doe_dx_status doe_dx_native_signal(doe_dx_native_context *context, uint64_t valu
 
 doe_dx_status doe_dx_native_wait(doe_dx_native_context *context, uint64_t value,
     uint32_t wait_ms, doe_dx_error *error) {
-    /* Bounded native fence polling avoids an outstanding event-registration
-     * lifetime after a timeout. No timeout or wait failure permits retirement.
-     * This is not a spin loop, and does not claim performance qualification. */
+    /* One event registration belongs to this serialized context until its
+     * signal is consumed. Repeated timeouts do not close or multiply it. An
+     * event wakes the observer; only the queried fence/device state settles
+     * work. In particular UINT64_MAX remains terminal loss, never success. */
     ULONGLONG start = GetTickCount64();
     for (;;) {
         uint64_t completed = 0;
         doe_dx_status status = doe_dx_native_completed(context, &completed, error);
         if (status != DOE_DX_OK) return status;
         if (completed >= value) return doe_dx_fail(DOE_DX_OK, 0, "fence.wait", error);
-        if (GetTickCount64() - start >= wait_ms)
+        ULONGLONG elapsed = GetTickCount64() - start;
+        if (elapsed >= wait_ms)
             return doe_dx_fail(DOE_DX_PENDING, 0, "fence.wait", error);
-        Sleep(1);
+        if (!context->completion_event) {
+            context->completion_event = CreateEventW(NULL, FALSE, FALSE, NULL);
+            if (!context->completion_event)
+                return doe_dx_fail(DOE_DX_NATIVE_FAILURE, (int32_t)GetLastError(),
+                    "CreateEventW.fence", error);
+        }
+        if (!context->completion_registered) {
+            HRESULT result = ID3D12Fence_SetEventOnCompletion(context->fence,
+                value, context->completion_event);
+            if (FAILED(result))
+                return doe_dx_hresult(result, "ID3D12Fence.SetEventOnCompletion", error);
+            context->completion_registered = true;
+        }
+        elapsed = GetTickCount64() - start;
+        if (elapsed >= wait_ms)
+            return doe_dx_fail(DOE_DX_PENDING, 0, "fence.wait", error);
+        DWORD result = WaitForSingleObject(context->completion_event,
+            (DWORD)(wait_ms - elapsed));
+        if (result == WAIT_OBJECT_0) {
+            context->completion_registered = false;
+            continue;
+        }
+        if (result == WAIT_TIMEOUT) {
+            status = doe_dx_native_completed(context, &completed, error);
+            if (status != DOE_DX_OK) return status;
+            return doe_dx_fail(completed >= value ? DOE_DX_OK : DOE_DX_PENDING,
+                0, "fence.wait", error);
+        }
+        return doe_dx_fail(DOE_DX_NATIVE_FAILURE, (int32_t)GetLastError(),
+            "WaitForSingleObject.fence", error);
     }
 }
 #endif
