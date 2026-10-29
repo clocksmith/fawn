@@ -169,7 +169,10 @@ doe_dx_status doe_dx_context_poll(doe_dx_context *context, uint32_t wait_ms,
         status = doe_dx_native_signal(context->native, context->next_fence, &detail);
         if (status != DOE_DX_OK) return observed(context, status, &detail, error);
         for (doe_dx_commands *item = context->pending; item; item = item->next)
-            if (!item->fence) item->fence = context->next_fence;
+            if (!item->fence) {
+                item->fence = context->next_fence;
+                doe_dx_commands_accept_buffers(item);
+            }
     }
     if (!context->pending) return doe_dx_fail(DOE_DX_OK, 0, "context.poll", error);
     if (wait_ms) {

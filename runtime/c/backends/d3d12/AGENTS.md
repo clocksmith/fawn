@@ -46,9 +46,15 @@
   same fence value; drain terminal notifications before final native close.
   Execute first publishes that ownership; failed signal/wait leaves every
   obligation intact. Only observed completion or terminal device loss settles it.
-- A buffer, texture or timestamp heap is exclusive to one recorded or unresolved command. This deliberately
-  rejects cross-command resource reuse until completion, rather than pretending
-  to support arbitrary overlapping command lists or WebGPU usage scopes.
+- A buffer has one exclusive unsubmitted recording reservation. Known-fenced
+  acceptance releases that reservation for later GPU use on the same ordered
+  queue; each existing command retains its own buffer reference. A borrowed
+  latest-accepted identity and initialization bit authorize future GPU recording,
+  never CPU access or retirement. Keep completed initialization separate; clear
+  either identity at retirement/discard only when it still names that command.
+  Failed signal retains the reservation until known-fenced recovery. CPU access
+  rejects both recording and pending use. Textures/timestamps retain exclusive
+  recorded/unresolved ownership; this is not arbitrary overlapping usage scopes.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
   states stay fixed. Descriptor heaps and allocators survive their whole submission.
 - Test host ownership at the private typed native-call link seam, not a simulated
@@ -89,7 +95,7 @@
   CBV/SRV native state. Writable UAV aliases require disjoint byte ranges; reject
   mixed read/write classes before recording. Transition/restore each allocation
   once, retaining individual descriptor ranges. Resource budgeting counts unique
-  allocations, never descriptor aliases. Separate-command exclusivity remains.
+  allocations, never descriptor aliases. Unsubmitted reservations remain exclusive.
 
 - Growing use spans stay command-owned. Reserve all required capacities before
   native recording or publishing counts, initialization or leases; failed

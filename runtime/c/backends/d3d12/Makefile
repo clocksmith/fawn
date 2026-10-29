@@ -108,7 +108,7 @@ $(BUILD)/test_windows_wait.exe: tests/test_windows_wait.c src/windows_context.c 
 sdk-control: $(BUILD)/test_windows_wait.exe
 
 $(BUILD)/test_progress: tests/test_progress.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_progress.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_progress.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
 .PHONY: check-progress
 check-progress: $(BUILD)/test_progress
 	$(BUILD)/test_progress

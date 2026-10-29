@@ -12,7 +12,8 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   direct command queue, private fence and observable adapter identity.
 - Default/UAV-capable, zero-initialized upload, and readback buffers; checked
   transfer ranges and scoped map/unmap. Default/readback initialization requires
-  a full copy, published only after successful completion.
+  a full copy, published as completed only after successful completion. A known
+  fenced acceptance separately authorizes future GPU use on the same queue.
 - Precompiled DXIL/DXBC compute pipelines, immutable structured SRV/UAV layout,
   register spaces, ranged descriptors and three-dimensional dispatch.
 - GPU-owned indirect compute records with checked allocation/range/alignment,
@@ -104,9 +105,14 @@ not independently reference-counted: release every caller object, poll pending
 submissions, then call context_destroy. BUSY means the context is still owned by
 the caller and must remain available for polling/release. Submitted commands are
 context-owned even if the caller releases them. Recording-only commands are
-canceled by release. Different pending commands may use disjoint resources; a
-buffer, texture or timestamp heap cannot belong to another recorded/unresolved command. This restriction is
-explicit, not a claim of full command-buffer or WebGPU concurrency parity.
+canceled by release. Buffers keep one exclusive unsubmitted recording reservation.
+Known-fenced acceptance releases it for later queue-ordered GPU uses, retaining
+one existing reference per command through retirement. A borrowed latest pending
+command and its accepted initialization proof authorize GPU recording; CPU maps
+and writes still reject pending use. Completed initialization remains separate,
+including partial retirement, lost devices and signal recovery. Textures and
+timestamp heaps retain exclusive recorded/unresolved ownership. This is not full
+command-buffer or WebGPU concurrency parity.
 
 No depth sampling/stencil/compressed/sRGB texture, mip/array texture or general view, indirect draw, base vertex, primitive restart, MSAA/multiple attachments,
 presentation, occlusion/pipeline-statistic query,
@@ -444,9 +450,10 @@ receipts above do not qualify this later source.
 Repeated read-only views of one buffer may overlap, including CBV plus structured
 SRV views. Disjoint writable UAV ranges may share that buffer too; overlapping
 writable ranges and read/write class mixing reject before native recording.
-Aliasing between separate unresolved commands is still rejected by the existing
-exclusive-use owner. Texture, geometry and indirect-argument alias restrictions
-remain unchanged.
+An unsubmitted command retains an exclusive buffer reservation. After known-fenced
+acceptance, later buffer uses follow the same native queue order; CPU access stays
+excluded until all accepted uses retire. Texture, geometry and indirect-argument
+alias admission within each command remains unchanged.
 
 Each unique buffer consumes one existing command resource slot and lease. Native
 barriers combine compatible CBV/SRV read-state bits and transition/restore once
@@ -463,8 +470,9 @@ public WARP consumption remains separate.
 The command remains the only resource-retirement owner. Its existing buffer,
 texture, query and pipeline use records now occupy checked growable spans; there
 is no cumulative 64-resource or 65536-operation admission limit. Buffer, texture
-and query objects retain their existing exclusive command pointer plus a stable
-slot index. Lookup is constant time even when storage moves; no caller retains
+and query objects retain an exclusive recording pointer plus a stable slot index;
+buffers additionally borrow their latest known-fenced pending identity. Lookup is
+constant time even when storage moves; no caller retains
 a use-record address across a reserve. Per-dispatch descriptor capacity remains
 64 and static samplers remain 16. Those pipeline bounds do not cap the number of
 objects a sequence of commands may use.

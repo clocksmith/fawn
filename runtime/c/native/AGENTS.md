@@ -27,10 +27,13 @@ one device lease and observes completion; do not add a second queue or report
 unknown work as terminal. Vulkan, Metal and D3D12 submissions return once accepted.
 Metal preserves each resource's single recording owner: discard provisional
 uncommitted BUSY work before settling the specific accepted predecessor and
-recording again; unknown/failure never retries. D3D12 likewise discards every
-provisional native record before waiting on a conflict matched to its accepted
-common pending owner. Distinct writes/submissions need no device-wide drain;
-read/map/reuse waits only for its resource's accepted owner. A context-owned event
+recording again; unknown/failure never retries. D3D12 buffers admit later GPU
+uses through known-fenced acceptance on their existing ordered queue; recording
+reservations remain exclusive and completed initialization remains separate.
+D3D12 discards provisional native work before any remaining texture/query
+conflict wait matched to its accepted common pending owner. Writes/submissions
+need no device-wide drain; CPU read/map waits only for its resource's accepted
+owner. A context-owned event
 lease permits unlocked observation without retaining a command shell or creating
 another submission owner. Revalidate after every unlocked wait. The worker waits outside the
 device mutex under an actual native handle lease, then observes completion

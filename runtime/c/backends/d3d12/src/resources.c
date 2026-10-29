@@ -52,7 +52,7 @@ static doe_dx_status host_access(doe_dx_buffer *buffer, uint64_t offset,
     if (buffer->context->lost) return DOE_DX_DEVICE_LOST;
     if (buffer->memory != (write ? DOE_DX_UPLOAD : DOE_DX_READBACK)) return DOE_DX_UNSUPPORTED;
     if (!doe_dx_range(buffer->size, offset, size)) return DOE_DX_RANGE;
-    if (buffer->owner) return DOE_DX_BUSY;
+    if (buffer->owner || buffer->pending) return DOE_DX_BUSY;
     if (!write && !buffer->initialized) return DOE_DX_UNINITIALIZED;
     return DOE_DX_OK;
 }

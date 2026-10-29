@@ -411,7 +411,11 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
         native_buffer *payload = doe_resource_buffer_native(buffer);
-        failure = native_settle_for_buffer(device, payload);
+        /* D3D12 snapshots writes into retained upload staging, then copies on
+         * its ordered queue. It never CPU-writes the destination allocation.
+         * CPU read/map below still waits for that buffer's accepted owner. */
+        failure = device->backend.kind == WGPUBackendType_D3D12 ?
+            native_settle_routine(device).failure : native_settle_for_buffer(device, payload);
         /* A Metal resource wait drops the mutex. A concurrent map/destroy must
          * be admitted by the same resource owner before any CPU write. */
         if (failure.status == NATIVE_OK)

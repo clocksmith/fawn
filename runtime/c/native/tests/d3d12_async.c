@@ -10,7 +10,7 @@ typedef struct gate_case {
     state *state;
     ID3D12Fence *gate;
     WGPUBuffer a, b, ephemeral, readback;
-    WGPUCommandBuffer independent, dependent;
+    WGPUCommandBuffer independent, dependent, before_rewrite;
     HANDLE accepted, map_started, map_done, dependent_started, dependent_done, stop;
     atomic_bool watchdog_fired;
     WGPUMapAsyncStatus map_status;
@@ -29,11 +29,14 @@ static void watchdog(void *identity)
 static void writes_and_submit(void *identity)
 {
     gate_case *test = identity;
-    uint32_t a = 41, b = 1;
-    wgpuQueueWriteBuffer(test->state->queue, test->a, 0, &a, sizeof(a));
+    uint32_t initial = 10, a = 41, b = 1;
+    wgpuQueueWriteBuffer(test->state->queue, test->a, 0, &initial, sizeof(initial));
     wgpuQueueWriteBuffer(test->state->queue, test->b, 0, &b, sizeof(b));
     wgpuQueueWriteBuffer(test->state->queue, test->ephemeral, 0, &a, sizeof(a));
     wgpuBufferRelease(test->ephemeral);
+    wgpuQueueSubmit(test->state->queue, 1, &test->before_rewrite);
+    wgpuCommandBufferRelease(test->before_rewrite);
+    wgpuQueueWriteBuffer(test->state->queue, test->a, 0, &a, sizeof(a));
     wgpuQueueSubmit(test->state->queue, 1, &test->independent);
     wgpuCommandBufferRelease(test->independent);
     assert(SetEvent(test->accepted));
@@ -105,6 +108,7 @@ static void ordered_work(void)
     WGPUBuffer output = buffer(&s, 4, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
     WGPUBuffer readback = buffer(&s, 4, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
     WGPUBuffer final = buffer(&s, 4, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUBuffer intermediate = buffer(&s, 4, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
     WGPUComputePipeline first = pipeline(&s,
         "@group(0) @binding(0) var<storage,read_write> o:array<u32>;"
         "@compute @workgroup_size(1) fn main(){o[0]=7u;}");
@@ -121,6 +125,7 @@ static void ordered_work(void)
     gate_case test = {.state=&s,.a=a,.b=b,.ephemeral=ephemeral,.readback=readback,
         .independent=dispatch_copy(&s,first,first_group,output,readback),
         .dependent=dispatch_copy(&s,second,second_group,output,final),
+        .before_rewrite=dispatch_copy(&s,second,second_group,output,intermediate),
         .map_status=WGPUMapAsyncStatus_Force32};
     HANDLE *events[] = {&test.accepted,&test.map_started,&test.map_done,
         &test.dependent_started,&test.dependent_done,&test.stop};
@@ -163,25 +168,31 @@ static void ordered_work(void)
         assert(wgpuDeviceGetLimits(s.device, &limits) == WGPUStatus_Success);
         Sleep(1);
     }
-    bool dependent_waited = WaitForSingleObject(test.dependent_done, 0) == WAIT_TIMEOUT;
+    bool dependent_accepted = WaitForSingleObject(test.dependent_done, 1000) == WAIT_OBJECT_0;
     assert(SUCCEEDED(ID3D12Fence_Signal(test.gate, 1)));
     assert(SetEvent(test.stop));
     assert(doe_thread_join(&dependent).status == DOE_HOST_OK);
     assert(doe_thread_join(&mapper).status == DOE_HOST_OK);
     assert(doe_thread_join(&guard).status == DOE_HOST_OK);
     /* All gates are open and work is terminal before reporting an assertion. */
+    expect_value(&s, intermediate, 11);
     expect_value(&s, readback, 7);
     expect_value(&s, final, 42);
     bool valid = accepted_before_gate && pending_map && held && observed == DOE_DX_PENDING &&
-        dependent_waited && !atomic_load(&test.watchdog_fired) && test.map_future &&
+        dependent_accepted && !atomic_load(&test.watchdog_fired) && test.map_future &&
         test.map_status == WGPUMapAsyncStatus_Aborted;
     wgpuBufferRelease(a); wgpuBufferRelease(b); wgpuBufferRelease(output);
-    wgpuBufferRelease(readback); wgpuBufferRelease(final);
+    wgpuBufferRelease(readback); wgpuBufferRelease(final); wgpuBufferRelease(intermediate);
     wgpuBindGroupRelease(first_group); wgpuBindGroupRelease(second_group);
     wgpuComputePipelineRelease(first); wgpuComputePipelineRelease(second);
     ID3D12Fence_Release(test.gate);
     for (size_t i = 0; i < sizeof(events) / sizeof(*events); ++i) assert(CloseHandle(*events[i]));
     consumer_finish(&s);
+    printf("gated acceptance: writes=%u pendingMap=%u lease=%u waitStatus=%u dependent=%u watchdog=%u mapFuture=%u mapStatus=%u\n",
+        (unsigned)accepted_before_gate,(unsigned)pending_map,(unsigned)held,(unsigned)observed,
+        (unsigned)dependent_accepted,(unsigned)atomic_load(&test.watchdog_fired),
+        (unsigned)test.map_future,(unsigned)test.map_status);
+    fflush(stdout);
     assert(valid);
 }
 
@@ -242,6 +253,6 @@ int main(void)
 {
     ordered_work();
     terminal_loss();
-    printf("PASS actual gated D3D12 queue: distinct writes/unrelated submit accepted before GPU release, unlocked concurrent map/dependency waits, timeout/cancel/early release, exact7/42 readback, own-device terminal loss and teardown %s\n", adapter_class_scope());
+    printf("PASS actual gated D3D12 queue: distinct/reused writes and dependent compute accepted before GPU release, unlocked concurrent map, timeout/cancel/early release, exact11/7/42 readback, own-device terminal loss and teardown %s\n", adapter_class_scope());
     return 0;
 }
