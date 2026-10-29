@@ -189,6 +189,10 @@ doe_dx_status doe_dx_native_signal(doe_dx_native_context *context, uint64_t valu
 /* DEVICE_LOST must mean terminal device removal, not an arbitrary HRESULT. */
 doe_dx_status doe_dx_native_completed(doe_dx_native_context *context, uint64_t *out,
     doe_dx_error *error);
+doe_dx_status doe_dx_native_progress_close(doe_dx_native_context *context);
+doe_dx_status doe_dx_native_progress_hold(doe_dx_native_context *, uint64_t, doe_dx_wait_record **, doe_dx_error *);
+doe_dx_status doe_dx_native_progress_block(const doe_dx_wait_record *, uint32_t, doe_dx_error *);
+doe_dx_status doe_dx_native_progress_unhold(doe_dx_native_context *, doe_dx_wait_record *, doe_dx_error *);
 doe_dx_status doe_dx_native_wait(doe_dx_native_context *context, uint64_t value,
     uint32_t wait_ms, doe_dx_error *error);
 #endif

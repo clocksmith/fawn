@@ -573,3 +573,28 @@ doe_dx_status doe_dx_native_format_caps(doe_dx_native_context *context,doe_dx_fo
     *out=mock.reported_format_caps;
     return DOE_DX_OK;
 }
+
+struct doe_dx_wait_record { doe_dx_native_context *context; uint64_t value; };
+doe_dx_status doe_dx_native_progress_hold(doe_dx_native_context *context,
+    uint64_t value, doe_dx_wait_record **out, doe_dx_error *error) {
+    (void)error;
+    doe_dx_wait_record *record = calloc(1, sizeof(*record));
+    if (!record) return DOE_DX_OUT_OF_MEMORY;
+    *record = (doe_dx_wait_record){context, value};
+    *out = record;
+    return DOE_DX_OK;
+}
+doe_dx_status doe_dx_native_progress_block(const doe_dx_wait_record *record,
+    uint32_t wait_ms, doe_dx_error *error) {
+    (void)wait_ms;
+    uint64_t completed = 0;
+    doe_dx_status status = doe_dx_native_completed(record->context, &completed, error);
+    return status != DOE_DX_OK ? status : completed >= record->value ? DOE_DX_OK : DOE_DX_PENDING;
+}
+doe_dx_status doe_dx_native_progress_unhold(doe_dx_native_context *context,
+    doe_dx_wait_record *record, doe_dx_error *error) {
+    (void)error;
+    if (!record || record->context != context) return DOE_DX_INVALID_ARGUMENT;
+    free(record);
+    return DOE_DX_OK;
+}

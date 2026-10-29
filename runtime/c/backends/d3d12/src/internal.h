@@ -118,6 +118,7 @@ struct doe_dx_commands {
     doe_dx_pipeline **pipelines;
     size_t pipeline_count, pipeline_capacity;
     doe_dx_commands *next;
+    doe_dx_commands *conflict; /* Borrowed first conflicting recording owner. */
 };
 
 void doe_dx_surface_acquisition_complete(doe_dx_texture *);

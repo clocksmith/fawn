@@ -20,9 +20,9 @@ Pinned ABI, inventoried legacy/browser signatures, [owner contracts](AGENTS.md),
 Select without fallback; use selected payloads. Windows LUID preserves exact
 words/software identity; unknown chains and forced fallback reject. Reflection
 never replaces dispatch analysis; unknown work retains resources.
-D3D12 indirect guards initialize lazily on the device: compile unlocked, publish
-under rechecked device state, and retain private pipelines through command retirement.
-Metal/Vulkan acceptance, conflict settlement and initialization share pending ownership.
+D3D12 device guards initialize lazily: compile unlocked, publish under rechecked
+device state, retain pipelines through retirement. Native acceptance, conflict
+settlement and initialization share pending ownership; held event observers run unlocked.
 Presentation retains frame/backbuffer identity and leases across early release,
 teardown/resize until backend completion. Display timestamps never redefine
 WorkDone. Surface-before-device locking, errors, rollback and retirement ownership persist.

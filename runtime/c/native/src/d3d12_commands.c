@@ -63,3 +63,13 @@ native_result native_d3d12_command_release(native_command_handle *commands)
     return NATIVE_UNAVAILABLE;
 #endif
 }
+
+bool native_d3d12_command_in_flight(const native_command_handle *commands)
+{
+#if defined(_WIN32)
+    return doe_dx_commands_result(commands->value.d3d12.commands, NULL) == DOE_DX_PENDING;
+#else
+    (void)commands;
+    return false;
+#endif
+}

@@ -115,6 +115,11 @@ native_failure native_submit_backend_commands(native_device *device,
     assert(native_command_release(&commands) == NATIVE_OK);
     return native_failure_status(NATIVE_OK);
 }
+native_failure native_submit_backend_commands_async(native_device *device,
+    native_command_handle commands)
+{
+    return native_submit_backend_commands(device, commands);
+}
 int main(void)
 {
     native_device device = {0};

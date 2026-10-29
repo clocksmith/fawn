@@ -303,6 +303,7 @@ typedef struct native_queue_settlement {
     native_failure failure;
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
+native_queue_settlement native_d3d12_drain_pending(native_device *device);
 /* Observes completion without blocking: running work stays linked and is not
  * a failure. routine polls on Vulkan, whose submissions run asynchronously,
  * and recovers on the backends that still wait at submit. */
@@ -345,6 +346,7 @@ void native_release_initialization(native_device *device);
 /* Caller holds the device mutex and one ordinary device lease. Always adopts
  * the tagged command object, including allocation failure/unknown completion. */
 native_failure native_submit_backend_commands(native_device *device, native_command_handle commands);
+native_failure native_submit_backend_commands_async(native_device *device, native_command_handle commands);
 native_failure native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps);
 /* Resource finalizer for a native_texture payload: releases its backend texture

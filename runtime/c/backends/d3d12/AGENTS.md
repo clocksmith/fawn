@@ -39,6 +39,11 @@
   presentation, later source, other devices or performance. Preserve its first
   infrastructure failure and source/tool/binary identities.
 - The serialized context is the sole submitted-command retirement owner.
+  A held progress lease may observe its native fence/event outside serialization.
+  The existing context object obligation protects those handles after a command
+  shell retires; timeout parks its event registration, never closes it. Active
+  observers cannot be collected or destroyed. Reuse parked registrations for the
+  same fence value; drain terminal notifications before final native close.
   Execute first publishes that ownership; failed signal/wait leaves every
   obligation intact. Only observed completion or terminal device loss settles it.
 - A buffer, texture or timestamp heap is exclusive to one recorded or unresolved command. This deliberately

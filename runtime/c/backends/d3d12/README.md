@@ -203,6 +203,10 @@ A repeated wait consumes the existing signal before registering newer work.
 Only queried completion or terminal device loss settles work. Destruction drains
 an outstanding terminal event notification before closing its handle; a failed
 drain/close returns the existing failure status and retains the context for retry.
+Held event leases additionally permit read-only fence observation outside context
+serialization. The existing context object obligation protects native handles after
+a command shell retires. Active observers cannot be closed; timed-out registrations
+remain context-owned and are reused for that fence or drained after terminal work.
 These call-composition guarantees do not establish physical performance.
 
 ## Official DXC SDK adapter

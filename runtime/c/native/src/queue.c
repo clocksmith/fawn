@@ -154,6 +154,8 @@ static void settle_resources(native_pending *pending, bool success)
  * until each record is terminal (queue idle for uncertain submissions). */
 static native_queue_settlement settle_pending(native_device *device, bool poll)
 {
+    if (!poll && device->backend.kind == WGPUBackendType_D3D12)
+        return native_d3d12_drain_pending(device);
     native_queue_settlement result = {.complete = true};
     native_pending **cursor = &device->pending;
     while (*cursor) {
@@ -230,7 +232,7 @@ native_queue_settlement native_poll_pending(native_device *device)
 native_queue_settlement native_settle_routine(native_device *device)
 {
     return consume_settlement(device, device->backend.kind == WGPUBackendType_Vulkan ||
-        device->backend.kind == WGPUBackendType_Metal);
+        device->backend.kind == WGPUBackendType_Metal || device->backend.kind == WGPUBackendType_D3D12);
 }
 
 /* Host access waits only while this buffer has an accepted native owner.
@@ -247,6 +249,22 @@ native_failure native_settle_for_buffer(native_device *device, const native_buff
             doe_time_add(&now,UINT64_C(5000000000),&deadline).status != DOE_HOST_OK)
             return native_failure_status(NATIVE_FAILURE);
         return native_metal_wait_owner(device,owner,&deadline);
+    }
+    if (device->backend.kind == WGPUBackendType_D3D12) {
+#if defined(_WIN32)
+        native_failure failure = native_poll_pending(device).failure;
+        if (failure.status != NATIVE_OK) return failure;
+        if (!buffer->handle.d3d12) return native_failure_status(NATIVE_INVALID_STATE);
+        doe_dx_commands *owner = doe_dx_buffer_owner(buffer->handle.d3d12->allocation);
+        if (!owner) return failure;
+        struct timespec now, deadline;
+        if (doe_monotonic_now(&now).status != DOE_HOST_OK ||
+            doe_time_add(&now, UINT64_C(30000000000), &deadline).status != DOE_HOST_OK)
+            return native_failure_status(NATIVE_FAILURE);
+        return native_d3d12_wait_owner(device, owner, &deadline);
+#else
+        return native_failure_status(NATIVE_UNAVAILABLE);
+#endif
     }
     if (device->backend.kind != WGPUBackendType_Vulkan) return native_settle_pending(device).failure;
     native_failure first = native_poll_pending(device).failure;
@@ -333,17 +351,24 @@ native_pending *native_surface_retirement_take(native_device *device, native_pen
     return NULL;
 }
 
-/* Vulkan and Metal submissions return once the queue accepts them:
+/* Admitted backend submissions return once the queue accepts them:
  * the record keeps its native and resource leases on the pending list until
  * the progress worker or a later public call observes it terminal. wait keeps
- * the explicit synchronous wait (D3D12, programs, private initialization).
+ * the explicit synchronous wait (programs and private initialization).
  * A refused submission recovers before returning, as before. */
 static native_failure submit_pending(native_device *device, native_pending *pending, bool wait)
 {
     link_pending(device, pending);
     native_failure failure = native_command_submit(&pending->native);
-    wait = wait || (pending->native.kind != WGPUBackendType_Vulkan && pending->native.kind != WGPUBackendType_Metal);
-    if (failure.status == NATIVE_OK && wait) failure = native_command_wait(&pending->native);
+    if (failure.status == NATIVE_OK && wait) {
+        if (pending->native.kind == WGPUBackendType_D3D12 && native_command_in_flight(&pending->native)) {
+            struct timespec now, deadline;
+            if (doe_monotonic_now(&now).status != DOE_HOST_OK ||
+                doe_time_add(&now, UINT64_C(30000000000), &deadline).status != DOE_HOST_OK)
+                failure = native_failure_status(NATIVE_FAILURE);
+            else failure = native_d3d12_wait_owner(device, pending->native.value.d3d12.commands, &deadline);
+        } else failure = native_command_wait(&pending->native);
+    }
     if (failure.status != NATIVE_OK) {
         device->queue_failed = true;
         native_queue_settlement settled = native_settle_pending(device);
@@ -381,7 +406,7 @@ native_failure native_submit_program(native_device *device, native_command_handl
     return submit_pending(device, pending, true);
 }
 
-native_failure native_submit_backend_commands(native_device *device, native_command_handle commands)
+static native_failure submit_backend_commands(native_device *device, native_command_handle commands, bool wait)
 {
     native_pending *pending = calloc(1, sizeof(*pending));
     if (!pending) {
@@ -391,7 +416,17 @@ native_failure native_submit_backend_commands(native_device *device, native_comm
     pending->device = device;
     native_device_retain(device);
     pending->native = commands;
-    return submit_pending(device, pending, true);
+    return submit_pending(device, pending, wait);
+}
+
+native_failure native_submit_backend_commands(native_device *device, native_command_handle commands)
+{
+    return submit_backend_commands(device, commands, true);
+}
+
+native_failure native_submit_backend_commands_async(native_device *device, native_command_handle commands)
+{
+    return submit_backend_commands(device, commands, false);
 }
 
 native_failure native_flush_initialization(native_device *device)
@@ -516,6 +551,8 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     if (failure.status == NATIVE_OK) failure = native_flush_initialization(device);
     if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
         failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
+    else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)
+        failure = native_d3d12_record_batch(device,&pending->native,pending->resources,count);
     else {
         if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)

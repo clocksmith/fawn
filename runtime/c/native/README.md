@@ -17,6 +17,11 @@ The authored Windows compute/buffer path consumes compiler-owned HLSL ABI11,
 the official DXC SDK adapter and the existing [private D3D12 owner](../backends/d3d12/README.md).
 Device creation reopens exact adapter identity. Native allocations start with real
 zero initialization; uniform padding never widens logical storage descriptors.
+The D3D12 queue source returns after accepted uploads/submissions, retaining the
+existing common pending command/device/resource leases. Distinct resource work
+can queue independently; conflicting reuse discards provisional native work,
+observes the accepted predecessor through a held event outside the mutex, and
+revalidates before recording again. Timeout/cancellation never retires GPU work.
 Unmapped-at-creation MapRead buffers use native READBACK storage and map the
 completed allocation directly. Mapped-at-creation buffers retain DEFAULT storage
 for initial writeback; both paths zero the complete physical allocation before publication.

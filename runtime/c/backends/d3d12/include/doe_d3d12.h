@@ -9,13 +9,19 @@ extern "C" {
 #endif
 
 /* Private backend ABI, not WebGPU validation or a provider-selection policy.
- * Serialize every call for a context and its objects. No callbacks are invoked.
+ * Serialize every call for a context and its objects, except read-only block
+ * under an acquired wait lease. No callbacks are invoked.
  * Inputs are borrowed for the call. Constructors leave *out unchanged on failure.
  * Context destruction is explicit and refuses outstanding objects/submissions. */
 typedef struct doe_dx_context doe_dx_context;
 typedef struct doe_dx_buffer doe_dx_buffer;
 typedef struct doe_dx_pipeline doe_dx_pipeline;
 typedef struct doe_dx_commands doe_dx_commands;
+typedef struct doe_dx_wait_record doe_dx_wait_record;
+typedef struct doe_dx_wait_lease {
+    doe_dx_context *context;
+    doe_dx_wait_record *record;
+} doe_dx_wait_lease;
 
 typedef enum doe_dx_status {
     DOE_DX_OK,
@@ -188,6 +194,21 @@ doe_dx_status doe_dx_commands_dispatch(doe_dx_commands *commands,
 doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *error);
 /* Does not poll; context_poll advances completion. */
 doe_dx_status doe_dx_commands_result(const doe_dx_commands *commands, doe_dx_error *error);
+
+/* Borrowed identities, valid only under context serialization. They authorize
+ * no retirement; the caller must match conflicts to its accepted pending owner. */
+doe_dx_commands *doe_dx_buffer_owner(const doe_dx_buffer *buffer);
+doe_dx_commands *doe_dx_commands_conflict(const doe_dx_commands *commands);
+/* Hold requires a zeroed output lease and only a submitted command with a known ordered fence. The existing
+ * context object obligation protects its actual fence/device/event after the
+ * command shell retires. Block is read-only and may run outside serialization;
+ * no concurrent block/unhold on the same lease. Hold/unhold stay serialized.
+ * Timeout/cancellation never closes an outstanding event registration. */
+doe_dx_status doe_dx_commands_hold(doe_dx_commands *, doe_dx_wait_lease *, doe_dx_error *);
+doe_dx_status doe_dx_commands_block(const doe_dx_wait_lease *, uint32_t, doe_dx_error *);
+/* Consumes the active lease even on cleanup failure; the context retains the
+ * event obligation for retry/drain. An invalid lease is left unchanged. */
+doe_dx_status doe_dx_commands_unhold(doe_dx_wait_lease *, doe_dx_error *);
 
 #ifdef __cplusplus
 }
