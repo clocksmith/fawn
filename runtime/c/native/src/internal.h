@@ -242,7 +242,8 @@ bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *requir
 void native_buffer_release(void *userdata, void *handle);
 native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
-native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage);
+native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+    bool direct_readback);
 void native_buffer_close(native_buffer *buffer);
 native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);

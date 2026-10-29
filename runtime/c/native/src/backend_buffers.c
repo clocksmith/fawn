@@ -2,7 +2,8 @@
 #include "internal.h"
 #include "d3d12_frontend.h"
 
-native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage)
+native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+    bool direct_readback)
 {
     native_backend *backend = &buffer->device->backend;
     if (backend->kind == WGPUBackendType_Vulkan) {
@@ -26,7 +27,7 @@ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32
             size, DOE_MTL_SHARED, &buffer->handle.metal, &error);
         return native_failure_metal(status, &error);
     }
-    if (backend->kind == WGPUBackendType_D3D12) return native_d3d12_buffer_create(buffer, size, usage);
+    if (backend->kind == WGPUBackendType_D3D12) return native_d3d12_buffer_create(buffer, size, usage, direct_readback);
     return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
