@@ -5,7 +5,7 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 ## Target
 
 Execute admitted D3D12 compute, offscreen graphics, transfers and timestamps with
-explicit native resource/completion obligations.
+explicit resource/completion obligations.
 
 ## Authority
 
@@ -15,7 +15,7 @@ explicit native resource/completion obligations.
 
 ## Scope
 
-Private ABI, Windows code/fixtures; [guide](README.md).
+Private Windows ABI/fixtures; [guide](README.md).
 
 ## Contracts
 
@@ -24,8 +24,8 @@ Private ABI, Windows code/fixtures; [guide](README.md).
 
 ## Invariants
 
-- Unknown completion retains dependencies/events; release/timeout never settles them; destruction refuses unresolved work.
-- Held fence observers run unlocked; events stay context-owned, retirement serialized.
+- Unknown completion retains dependencies/events; release/timeout cannot settle; unresolved destruction rejects.
+- Pending ordered buffers exclude CPU access; fence observers run unlocked; context-owned events/serialized retirement.
 - Retained Zig remains intact; no hidden delegation/default change.
 - Portable controls prove ownership; SDK controls composition, never driver execution.
 - DXC preserves diagnostics and blob/module lifetime; no CLI, filesystem includes or source interpretation.

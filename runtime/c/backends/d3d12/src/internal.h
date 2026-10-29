@@ -18,12 +18,14 @@ struct doe_dx_context {
 struct doe_dx_buffer {
     doe_dx_context *context;
     doe_dx_native_buffer *native;
-    doe_dx_commands *owner; /* Borrowed: this command holds a buffer reference. */
+    doe_dx_commands *owner; /* Borrowed unsubmitted recording reservation. */
+    doe_dx_commands *pending; /* Borrowed latest fenced use; command retains buffer. */
     uint32_t references;
     size_t owner_index;
     uint64_t size;
     doe_dx_memory memory;
-    bool initialized;
+    bool initialized; /* Completed full initialization. */
+    bool accepted_initialized; /* Future GPU use, guarded by pending identity. */
 };
 struct doe_dx_texture {
     doe_dx_surface *surface;
@@ -82,7 +84,7 @@ struct doe_dx_pipeline {
 };
 typedef struct doe_dx_buffer_use {
     doe_dx_buffer *buffer;
-    bool initialized; /* Speculative until completion. */
+    bool initialized; /* Speculative until a known-fenced acceptance. */
 } doe_dx_buffer_use;
 typedef struct doe_dx_texture_use {
     bool surface_acquire;
@@ -173,6 +175,7 @@ void doe_dx_use_buffer(doe_dx_commands *commands, doe_dx_buffer *buffer);
 doe_dx_status doe_dx_context_result(doe_dx_context *context, doe_dx_status status,
     const doe_dx_error *error);
 void doe_dx_context_lose(doe_dx_context *context, const doe_dx_error *error);
+void doe_dx_commands_accept_buffers(doe_dx_commands *commands);
 void doe_dx_commands_dispose(doe_dx_commands *commands);
 void doe_dx_commands_settle(doe_dx_commands *commands, bool lost, const doe_dx_error *error);
 #endif

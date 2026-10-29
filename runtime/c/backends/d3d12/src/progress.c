@@ -3,7 +3,7 @@
 
 doe_dx_commands *doe_dx_buffer_owner(const doe_dx_buffer *buffer)
 {
-    return buffer ? buffer->owner : NULL;
+    return buffer ? (buffer->owner ? buffer->owner : buffer->pending) : NULL;
 }
 
 doe_dx_commands *doe_dx_commands_conflict(const doe_dx_commands *commands)

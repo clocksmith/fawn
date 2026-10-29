@@ -24,8 +24,13 @@ doe_dx_status doe_dx_commands_create(doe_dx_context *context,
 static void release_resources(doe_dx_commands *commands, bool publish) {
     for (size_t index = 0; index < commands->buffer_count; index++) {
         doe_dx_buffer_use *use = &commands->buffers[index];
-        use->buffer->owner = NULL;
-        if (publish) use->buffer->initialized = use->initialized;
+        if (use->buffer->owner == commands) use->buffer->owner = NULL;
+        if (use->buffer->pending == commands) {
+            use->buffer->pending = NULL;
+            use->buffer->accepted_initialized = false;
+        }
+        /* Initialization is monotonic; retirement may visit newer fences first. */
+        if (publish && use->initialized) use->buffer->initialized = true;
         doe_dx_buffer_release(use->buffer);
     }
     commands->buffer_count = 0;
@@ -52,6 +57,20 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
     for (size_t index = 0; index < commands->pipeline_count; index++)
         doe_dx_pipeline_release(commands->pipelines[index]);
     commands->pipeline_count = 0;
+}
+
+/* Every command retains its existing buffer references through retirement.
+ * A known fence establishes acceptance on this context's one ordered queue;
+ * publish only future GPU-readable initialization, never CPU completion. */
+void doe_dx_commands_accept_buffers(doe_dx_commands *commands) {
+    if (commands->state != DOE_DX_SUBMITTED || !commands->fence) abort();
+    for (size_t index = 0; index < commands->buffer_count; ++index) {
+        doe_dx_buffer_use *use = &commands->buffers[index];
+        if (use->buffer->owner != commands) abort();
+        use->buffer->owner = NULL;
+        use->buffer->pending = commands;
+        use->buffer->accepted_initialized = use->initialized;
+    }
 }
 
 void doe_dx_commands_dispose(doe_dx_commands *commands) {
@@ -113,7 +132,8 @@ doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
     }
     doe_dx_buffer_use *use = doe_dx_find_buffer(commands, buffer);
     if (!use && buffer->references == UINT32_MAX) return DOE_DX_RANGE;
-    if (readable && !(use ? use->initialized : buffer->initialized)) return DOE_DX_UNINITIALIZED;
+    bool initialized = buffer->pending ? buffer->accepted_initialized : buffer->initialized;
+    if (readable && !(use ? use->initialized : initialized)) return DOE_DX_UNINITIALIZED;
     return DOE_DX_OK;
 }
 
@@ -123,7 +143,7 @@ void doe_dx_use_buffer(doe_dx_commands *commands, doe_dx_buffer *buffer) {
     buffer->owner_index = commands->buffer_count;
     doe_dx_buffer_use *use = &commands->buffers[commands->buffer_count++];
     use->buffer = buffer;
-    use->initialized = buffer->initialized;
+    use->initialized = buffer->pending ? buffer->accepted_initialized : buffer->initialized;
     buffer->owner = commands;
     buffer->references++; /* Preflight checked overflow and capacity. */
 }
@@ -200,6 +220,7 @@ doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *er
     status = doe_dx_native_signal(context->native, context->next_fence, &detail);
     if (status == DOE_DX_OK) {
         commands->fence = context->next_fence;
+        doe_dx_commands_accept_buffers(commands);
         if (presented!=DOE_DX_OK) {
             if (presented==DOE_DX_DEVICE_LOST) doe_dx_context_lose(context,&presentation);
             if (error) *error=presentation;
