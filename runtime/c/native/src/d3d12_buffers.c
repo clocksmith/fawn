@@ -43,9 +43,12 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
 }
 #endif
 
-native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage)
+native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+    bool direct_readback)
 {
 #if defined(_WIN32)
+    if (direct_readback && usage != DOE_VK_BUFFER_COPY_DST)
+        return native_failure_status(NATIVE_INVALID_ARGUMENT);
     uint64_t alignment = usage & DOE_VK_BUFFER_UNIFORM ?
         buffer->device->backend.value.d3d12.caps.limits.uniform_offset_alignment : 4;
     uint64_t bound = native_allocation_bound(buffer->device);
@@ -58,12 +61,13 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     if (!payload) return native_failure_status(NATIVE_OUT_OF_MEMORY);
     doe_dx_error error = {0};
     doe_dx_status status = doe_dx_buffer_create(buffer->device->backend.value.d3d12.context,
-        physical, DOE_DX_DEFAULT, &payload->allocation, &error);
+        physical, direct_readback ? DOE_DX_READBACK : DOE_DX_DEFAULT, &payload->allocation, &error);
     if (status != DOE_DX_OK) {
         free(payload);
         return native_failure_d3d12(status, &error);
     }
     payload->allocation_size = physical;
+    payload->memory = direct_readback ? DOE_DX_READBACK : DOE_DX_DEFAULT;
     buffer->handle.d3d12 = payload;
     /* Initialized upload heaps supply genuine zeros for the entire native
      * allocation, including private CBV padding. Public length stays unchanged. */
@@ -74,6 +78,7 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     (void)buffer;
     (void)size;
     (void)usage;
+    (void)direct_readback;
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
 }
@@ -94,6 +99,15 @@ native_failure native_d3d12_buffer_read(native_buffer *buffer, uint64_t offset, 
 #if defined(_WIN32)
     if (!size) return native_failure_status(NATIVE_OK);
     if (!bytes || !buffer->handle.d3d12) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    native_d3d12_buffer *payload = buffer->handle.d3d12;
+    if (payload->memory == DOE_DX_READBACK) {
+        /* The resource/map owner has already established completion. The
+         * backend still rejects unknown ownership or uninitialized bytes; a
+         * READBACK allocation needs no second GPU copy before its CPU map. */
+        doe_dx_error error = {0};
+        doe_dx_status status = doe_dx_buffer_read(payload->allocation, offset, bytes, size, &error);
+        return native_failure_d3d12(status, &error);
+    }
     doe_dx_buffer *staging = NULL;
     doe_dx_error error = {0};
     doe_dx_status status = doe_dx_buffer_create(buffer->device->backend.value.d3d12.context,

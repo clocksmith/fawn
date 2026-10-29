@@ -745,3 +745,9 @@ $(BUILD)/d3d12-guard-prepare: tests/d3d12_guard_prepare.c src/d3d12_indirect_pre
 check-d3d12-guard-prepare: $(BUILD)/d3d12-guard-prepare
 	$(BUILD)/d3d12-guard-prepare
 check: check-d3d12-guard-prepare
+
+$(BUILD)/readback-placement: tests/readback_placement.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+# Actual Windows SDK compile only; the test replaces typed calls, never _WIN32.
+$(BUILD)/d3d12-buffer-placement.exe: tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c $(HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c -o $@

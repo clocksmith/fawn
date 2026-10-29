@@ -17,6 +17,9 @@ The authored Windows compute/buffer path consumes compiler-owned HLSL ABI11,
 the official DXC SDK adapter and the existing [private D3D12 owner](../backends/d3d12/README.md).
 Device creation reopens exact adapter identity. Native allocations start with real
 zero initialization; uniform padding never widens logical storage descriptors.
+Unmapped-at-creation MapRead buffers use native READBACK storage and map the
+completed allocation directly. Mapped-at-creation buffers retain DEFAULT storage
+for initial writeback; both paths zero the complete physical allocation before publication.
 The authored texture-copy path adds five four-byte color formats in 2D, with one
 mip, layer and sample, real zero initialization and partial GPU transfers that
 preserve public row padding. Immutable views and sampler descriptors use the
