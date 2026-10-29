@@ -20,6 +20,8 @@ struct doe_dx_native_context {
     ID3D12Device *device;
     ID3D12CommandQueue *queue;
     ID3D12Fence *fence;
+    HANDLE completion_event;
+    bool completion_registered;
     ID3D12CommandSignature *dispatch_signature;
     ID3D12CommandSignature *draw_signature, *draw_indexed_signature;
     doe_dx_limits limits;
