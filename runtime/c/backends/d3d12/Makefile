@@ -117,3 +117,14 @@ check: check-progress
 $(BUILD)/test_windows_progress.exe: tests/test_windows_progress.c src/windows_context.c src/windows_progress.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
 sdk-control: $(BUILD)/test_windows_progress.exe
+
+$(BUILD)/test_zero_upload: tests/test_zero_upload.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_zero_upload.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
+.PHONY: check-zero-upload
+check-zero-upload: $(BUILD)/test_zero_upload
+	$(BUILD)/test_zero_upload
+check: check-zero-upload
+
+# Build only; actual driver execution is a separate explicit developer action.
+$(BUILD)/native_zero_upload.exe: tests/native_zero_upload.c $(BUILD)/libdoe_d3d12.a
+native-fixture: $(BUILD)/native_zero_upload.exe

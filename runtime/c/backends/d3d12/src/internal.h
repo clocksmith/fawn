@@ -14,6 +14,7 @@ struct doe_dx_context {
     uint64_t next_fence;
     bool lost;
     doe_dx_commands *pending;
+    doe_dx_buffer *zero_upload; /* One context-owned immutable staging lease. */
 };
 struct doe_dx_buffer {
     doe_dx_context *context;
@@ -24,6 +25,7 @@ struct doe_dx_buffer {
     size_t owner_index;
     uint64_t size;
     doe_dx_memory memory;
+    bool immutable_zero; /* Shared zero staging is never writable through the API. */
     bool initialized; /* Completed full initialization. */
     bool accepted_initialized; /* Future GPU use, guarded by pending identity. */
 };

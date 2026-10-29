@@ -30,8 +30,11 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
     native_device *device = buffer->device;
     doe_dx_buffer *staging = NULL;
     doe_dx_error error = {0};
-    doe_dx_status status = doe_dx_buffer_create(device->backend.value.d3d12.context,
-        size, DOE_DX_UPLOAD, &staging, &error);
+    /* Acquire a real caller lease before copy_now may unlock while waiting.
+     * Shared initialization sources stay immutable; user writes get fresh staging. */
+    doe_dx_status status = initialize ?
+        doe_dx_zero_upload_acquire(device->backend.value.d3d12.context, size, &staging, &error) :
+        doe_dx_buffer_create(device->backend.value.d3d12.context, size, DOE_DX_UPLOAD, &staging, &error);
     native_failure failure = native_failure_d3d12(status, &error);
     if (status == DOE_DX_OK && !initialize) {
         status = doe_dx_buffer_write(staging, 0, bytes, size, &error);

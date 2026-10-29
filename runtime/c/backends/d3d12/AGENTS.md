@@ -55,6 +55,13 @@
   Failed signal retains the reservation until known-fenced recovery. CPU access
   rejects both recording and pending use. Textures/timestamps retain exclusive
   recorded/unresolved ownership; this is not arbitrary overlapping usage scopes.
+- The existing context may retain one immutable zero-filled UPLOAD buffer up to
+  one MiB. Acquire returns a separate ordinary caller lease; preserve it across
+  unlocked frontend initialization waits and cache replacement. Larger sources
+  remain uncached. CPU writes reject shared zero sources; never use them for
+  caller data. Copies still cover the whole destination allocation/padding.
+  Context destruction drops only its cache lease before checking outstanding
+  caller/command/event obligations; failed native close remains retryable.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
   states stay fixed. Descriptor heaps and allocators survive their whole submission.
 - Test host ownership at the private typed native-call link seam, not a simulated

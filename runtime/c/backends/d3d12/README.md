@@ -445,6 +445,23 @@ VA clamping, bad allocation size/alignment and exact hardware/LUID selection. It
 creates no device and establishes no real driver capability. Historical source
 receipts above do not qualify this later source.
 
+## Immutable zero-upload reuse
+
+`doe_dx_zero_upload_acquire` returns a retained immutable zero-filled upload
+source. The existing context keeps at most one source up to one MiB; growth
+publishes only after the replacement is completely initialized, and larger
+requests use uncached storage. Existing caller/command references keep an older
+source alive across replacement and unlocked initialization waits. Host writes
+to these sources reject; caller data always uses separate mutable staging.
+
+The frontend still copies zeros over each whole native allocation, including
+uniform padding, and waits for constructor initialization to complete. Reuse
+changes allocation ownership, not initialized ranges or GPU ordering. Context
+destruction releases its cache lease; outstanding caller, command and event
+obligations still refuse destruction. `test_zero_upload.c` checks these owner
+edges without executing data. `native_zero_upload.c` separately checks actual
+GPU zero copies and readback over small, padded, cached and uncached sizes.
+
 ## Buffer aliases within one command
 
 Repeated read-only views of one buffer may overlap, including CBV plus structured
