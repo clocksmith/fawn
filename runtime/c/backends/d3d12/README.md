@@ -65,8 +65,9 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   makes no zero-content promise. Teardown drops only the cache's ordinary lease.
 - Compute and graphics resource descriptors borrow contiguous ranges of a
   context-owned 4096-entry shader-visible heap instead of creating a heap per
-  descriptor use. The first heap is created by the first descriptor preparation and
-  lives with the context; a range returns only when its command is discarded,
+  descriptor use. The first heap is created with the device (device-opening owner,
+  as Dawn creates its shader-visible heap), not in the first submission, and lives
+  with the context; a range returns only when its command is discarded,
   terminally lost or successfully retired, so no CPU descriptor write overlaps GPU
   use. Overflow creates another heap that releases once empty. Sampler heaps and
   RTV/DSV/clear views keep their per-use owners. `test_windows_descriptor_ring.c`

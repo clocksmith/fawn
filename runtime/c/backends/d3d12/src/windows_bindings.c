@@ -139,38 +139,54 @@ void doe_dx_descriptor_gpu_start(const doe_dx_descriptor_use *use, D3D12_GPU_DES
     use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap, out);
     if (use->ring) out->ptr += (UINT64)use->ring_first * use->ring->stride;
 }
+static doe_dx_status ring_create(doe_dx_native_context *context, UINT capacity,
+    struct doe_dx_descriptor_ring **out, doe_dx_error *error) {
+    struct doe_dx_descriptor_ring *ring = calloc(1, sizeof(*ring));
+    if (ring) ring->used = calloc((capacity + 63u) / 64u, sizeof(*ring->used));
+    if (!ring || !ring->used) {
+        free(ring);
+        return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.ring.allocate", error);
+    }
+    D3D12_DESCRIPTOR_HEAP_DESC description = {0};
+    description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    description.NumDescriptors = capacity;
+    HRESULT result = ID3D12Device_CreateDescriptorHeap(context->device, &description,
+        &IID_ID3D12DescriptorHeap, (void **)&ring->heap);
+    if (FAILED(result)) {
+        free(ring->used);
+        free(ring);
+        return doe_dx_hresult(result, "ID3D12Device.CreateDescriptorHeap.resources", error);
+    }
+    ring->capacity = capacity;
+    ring->stride = ID3D12Device_GetDescriptorHandleIncrementSize(context->device,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    ring->context = context;
+    /* Append: the first ring stays the long-lived one. */
+    struct doe_dx_descriptor_ring **tail = &context->descriptor_rings;
+    while (*tail) tail = &(*tail)->next;
+    *tail = ring;
+    *out = ring;
+    return DOE_DX_OK;
+}
+
+/* Device opening creates the long-lived ring up front, as part of device
+ * creation; later preparations only borrow ranges. Idempotent. */
+doe_dx_status doe_dx_native_descriptors_prepare(doe_dx_native_context *context, doe_dx_error *error) {
+    if (context->descriptor_rings) return DOE_DX_OK;
+    struct doe_dx_descriptor_ring *ring = NULL;
+    return ring_create(context, DOE_DX_RING_DESCRIPTORS, &ring, error);
+}
+
 doe_dx_status doe_dx_descriptor_ring_take(doe_dx_native_context *context, UINT count,
     doe_dx_descriptor_use *use, D3D12_CPU_DESCRIPTOR_HANDLE *cpu, doe_dx_error *error) {
     struct doe_dx_descriptor_ring *ring = context->descriptor_rings;
     UINT first = 0;
     while (ring && !ring_take(ring, count, &first)) ring = ring->next;
     if (!ring) {
-        ring = calloc(1, sizeof(*ring));
-        const UINT capacity = count > DOE_DX_RING_DESCRIPTORS ? count : DOE_DX_RING_DESCRIPTORS;
-        if (ring) ring->used = calloc((capacity + 63u) / 64u, sizeof(*ring->used));
-        if (!ring || !ring->used) {
-            free(ring);
-            return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.ring.allocate", error);
-        }
-        D3D12_DESCRIPTOR_HEAP_DESC description = {0};
-        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        description.NumDescriptors = capacity;
-        HRESULT result = ID3D12Device_CreateDescriptorHeap(context->device, &description,
-            &IID_ID3D12DescriptorHeap, (void **)&ring->heap);
-        if (FAILED(result)) {
-            free(ring->used);
-            free(ring);
-            return doe_dx_hresult(result, "ID3D12Device.CreateDescriptorHeap.resources", error);
-        }
-        ring->capacity = capacity;
-        ring->stride = ID3D12Device_GetDescriptorHandleIncrementSize(context->device,
-            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        ring->context = context;
-        /* Append: the first ring stays the long-lived one. */
-        struct doe_dx_descriptor_ring **tail = &context->descriptor_rings;
-        while (*tail) tail = &(*tail)->next;
-        *tail = ring;
+        doe_dx_status status = ring_create(context, count > DOE_DX_RING_DESCRIPTORS ? count :
+            DOE_DX_RING_DESCRIPTORS, &ring, error);
+        if (status != DOE_DX_OK) return status;
         if (!ring_take(ring, count, &first)) abort(); /* An empty ring of this capacity fits. */
     }
     use->ring = ring;
