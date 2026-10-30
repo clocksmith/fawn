@@ -74,6 +74,33 @@ static void run(state *s)
     wgpuBufferRelease(output);
     wgpuComputePipelineRelease(compute);
 }
+static void render(state *s)
+{
+    static const char *const code =
+        "@vertex fn vs(@builtin(vertex_index) i : u32) -> @builtin(position) vec4f {\n"
+        "  return vec4f(f32(i), 0.0, 0.0, 1.0);\n}\n"
+        "@fragment fn fs() -> @location(0) vec4f { return vec4f(1.0, 0.0, 0.0, 1.0); }\n";
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){code, WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_desc = {.nextInChain=&source.chain};
+    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device, &shader_desc);
+    assert(module);
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = WGPUTextureFormat_RGBA8Unorm;
+    WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+    fragment.module = module;
+    fragment.entryPoint = (WGPUStringView){"fs", WGPU_STRLEN};
+    fragment.targetCount = 1;
+    fragment.targets = &target;
+    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.vertex.module = module;
+    descriptor.vertex.entryPoint = (WGPUStringView){"vs", WGPU_STRLEN};
+    descriptor.fragment = &fragment;
+    WGPURenderPipeline result = wgpuDeviceCreateRenderPipeline(s->device, &descriptor);
+    assert(result);
+    wgpuRenderPipelineRelease(result);
+    wgpuShaderModuleRelease(module);
+}
 static DoeNativePipelineCacheInfo info_of(state *s)
 {
     DoeNativePipelineCacheInfo info;
@@ -120,11 +147,24 @@ int main(void)
     assert(blobs.loads == 4 && blobs.hits == 3 && blobs.stores == 2);
     assert(info.load_attempts == 1 && info.load_successes == 0 && info.serializations == 1);
 
+    /* Render pipelines share the store: a miss stores, a fresh device loads. */
+    const unsigned stores = blobs.stores;
+    render(&third);
+    assert(blobs.stores == stores + 1u);
+    info = info_of(&third);
+    assert(info.load_attempts == 2 && info.load_successes == 0 && info.serializations == 2);
+    state fourth = {0};
+    consumer_init(&fourth);
+    configure(&fourth, &blobs);
+    render(&fourth);
+    info = info_of(&fourth);
+    assert(blobs.stores == stores + 1u && info.load_attempts == 1 && info.load_successes == 1 && info.serializations == 0);
+    consumer_finish(&fourth);
     consumer_finish(&third);
     consumer_finish(&second);
     consumer_finish(&first);
     free(blobs.value);
     printf("PASS embedder pipeline blobs: miss/store, memory reuse, driver-accepted hit, corrupt miss, "
-        "unlocked callbacks and exact output; %s\n", adapter_class_scope());
+        "render miss/load, unlocked callbacks and exact output; %s\n", adapter_class_scope());
     return 0;
 }

@@ -181,6 +181,12 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
 
 doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error) {
+    return doe_vk_render_pipeline_create_blob(context, desc, NULL, out, error);
+}
+
+doe_vk_status doe_vk_render_pipeline_create_blob(doe_vk_context *context,
+    const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline_blob *blob, doe_vk_pipeline **out, doe_vk_error *error) {
+    if (blob) { blob->produced = NULL; blob->produced_size = 0; }
     if (context == NULL || out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "graphics descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "graphics context", error);
     color_targets targets;
@@ -299,9 +305,17 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .pDynamicState = &dynamic, .layout = pipeline->layout, .renderPass = pipeline->render_pass,
         .basePipelineIndex = -1
     };
-    status = doe_vk_result(context, context->vk.vkCreateGraphicsPipelines(context->device, context->driver_cache, 1,
+    VkPipelineCache cache = context->driver_cache;
+    const bool temporary = blob && context->pipeline_blobs;
+    bool loaded = false;
+    if (temporary) {
+        status = doe_vk_pipeline_blob_open(context, blob, &cache, &loaded, error);
+        if (status != DOE_VK_OK) goto failed;
+    }
+    status = doe_vk_result(context, context->vk.vkCreateGraphicsPipelines(context->device, cache, 1,
         &create, NULL, &pipeline->pipeline), "vkCreateGraphicsPipelines", error);
-    doe_vk_driver_cache_record(context, status == DOE_VK_OK);
+    if (temporary) doe_vk_pipeline_blob_close(context, cache, loaded, status == DOE_VK_OK, blob);
+    else doe_vk_driver_cache_record(context, status == DOE_VK_OK);
     if (status != DOE_VK_OK) goto failed;
     context->vk.vkDestroyShaderModule(context->device, vertex, NULL);
     if (fragment != 0) context->vk.vkDestroyShaderModule(context->device, fragment, NULL);

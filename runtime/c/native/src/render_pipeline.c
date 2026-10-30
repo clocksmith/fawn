@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
+#include "doe_vk_cache.h"
 #include "metal_frontend.h"
 #include "d3d12_graphics_internal.h"
 #include <stdlib.h>
@@ -86,8 +87,26 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
             descriptor->multisample.alphaToCoverageEnabled, descriptor->primitive.topology == WGPUPrimitiveTopology_PointList,
             &interface_limits, &device->backend.limits) ||
         !native_render_fragment_depth(stages, stage_count, descriptor->depthStencil)) return NULL;
+    /* Embedder pipeline blobs: lookup and store run without any Doe lock. */
+    DoeNativePipelineBlobStore blobs = {0};
+    uint8_t build[32] = {0}, blob_key[32];
+    native_lock(device);
+    blobs = device->pipeline_blobs;
+    memcpy(build, device->build_identity, sizeof(build));
+    native_unlock(device);
+    native_blob loaded = {0};
+    doe_vk_pipeline_blob blob = {0};
+    const bool use_blobs = blobs.load && device->backend.kind == WGPUBackendType_Vulkan && doe_vk_render_pipeline_blob_key(device->backend.value.vulkan.context,
+        stages[0].source_key, fragment ? stages[1].source_key : build, build, native.vertex.words, native.vertex.word_count,
+        native.vertex.entrypoint, fragment ? native.fragment.words : NULL, fragment ? native.fragment.word_count : 0,
+        fragment ? native.fragment.entrypoint : NULL, blob_key);
+    if (use_blobs) {
+        blobs.load(blobs.userdata, blob_key, sizeof(blob_key), native_receive_blob, &loaded);
+        blob.loaded = loaded.bytes;
+        blob.loaded_size = loaded.size;
+    }
     native_pipeline *payload = calloc(1, sizeof(*payload));
-    if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
+    if (!payload) { free(loaded.bytes); *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;
     payload->vertex_count = native.vertex_buffer_count;
     doe_resource_render_pipeline *pipeline = NULL;
@@ -109,13 +128,17 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
         native.immediate_stages = ((payload->immediate_stages & WGPUShaderStage_Vertex) ? 1u : 0u) |
             ((payload->immediate_stages & WGPUShaderStage_Fragment) ? 16u : 0u);
         doe_vk_error detail = {0};
-        backend = doe_vk_render_pipeline_create(device->backend.value.vulkan.context, &native, &payload->handle.vulkan, &detail);
+        backend = doe_vk_render_pipeline_create_blob(device->backend.value.vulkan.context, &native,
+            use_blobs ? &blob : NULL, &payload->handle.vulkan, &detail);
         failure = native_failure_vulkan(backend, &detail);
         if (backend == DOE_VK_OK) status = doe_resource_render_pipeline_create(&device->resources, layout, &resource,
             (doe_resource_native){payload,NULL,native_pipeline_release}, &pipeline);
     }
     if (automatic) doe_resource_pipeline_layout_release(layout);
     native_unlock(device);
+    free(loaded.bytes);
+    if (blob.produced) blobs.store(blobs.userdata, blob_key, sizeof(blob_key), blob.produced, blob.produced_size);
+    free(blob.produced);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
         error->type = backend != DOE_VK_OK ? native_result_error(failure.status) : native_resource_error(status);

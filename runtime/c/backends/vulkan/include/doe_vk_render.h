@@ -134,6 +134,10 @@ typedef struct doe_vk_render_pipeline_desc {
  * color_write_mask. Only then may fragment be entirely zero (no native stage). */
 doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error);
+/* As doe_vk_pipeline_create_blob (doe_vk.h) for a graphics pipeline. */
+struct doe_vk_pipeline_blob;
+doe_vk_status doe_vk_render_pipeline_create_blob(doe_vk_context *context,
+    const doe_vk_render_pipeline_desc *desc, struct doe_vk_pipeline_blob *blob, doe_vk_pipeline **out, doe_vk_error *error);
 
 typedef union doe_vk_clear_color {
     float float32[4];

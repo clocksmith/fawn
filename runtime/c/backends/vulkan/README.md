@@ -745,7 +745,7 @@ teardown attempts best-effort flush before destroying the cache/device. Counters
 record driver load, pipeline creation and serialization operations, not binary
 hits. Header-only driver blobs are valid and do not imply compiled-code reuse.
 
-`doe_vk_context_pipeline_blobs` instead gives each new compute pipeline a
+`doe_vk_context_pipeline_blobs` instead gives each new compute or render pipeline a
 temporary `VkPipelineCache` seeded from caller-supplied bytes in the same
 envelope, and returns a fresh envelope only when nothing compatible was loaded.
 It never opens a file and excludes the directory cache. `doe_vk_pipeline_blob_key`
