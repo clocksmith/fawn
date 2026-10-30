@@ -226,6 +226,13 @@ release alone never clears that native command pointer or authorizes cleanup.
 Report only composed frontend limits/features; SDK guarantees and private-backend
 controls never establish missing public graphics or presentation behavior.
 
+D3D12 buffer creation CPU-zeroes READBACK resources before publication. DEFAULT
+initialization uses full-width zero copies accepted through the existing common
+pending/device owner; later GPU work inherits known-fenced initialization, while
+CPU maps still wait for the actual buffer owner. Keep mappedAtCreation on DEFAULT
+with its separate zeroed CPU shadow, and preserve allocation/publication-failure
+leases. Texture initialization retains its existing completion contract.
+
 D3D12 image bindings use the compiler's selected handle/class/register records.
 Runtime samplers copy canonical immutable values into the command-owned heap;
 never infer a format from an unrelated bound view or cache borrowed descriptors.

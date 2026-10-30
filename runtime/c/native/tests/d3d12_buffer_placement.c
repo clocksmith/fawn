@@ -17,11 +17,11 @@ struct doe_dx_buffer {
 };
 struct doe_dx_commands { doe_dx_buffer *source, *destination; };
 typedef struct control {
-    unsigned allocations, copies, reads, live;
-    uint64_t copy_size;
+    unsigned allocations, copies, reads, live, readback_zeroes, async_submissions;
+    uint64_t copy_size, zero_size;
     doe_dx_memory destination;
     native_result submission;
-    doe_dx_status copy_status;
+    doe_dx_status copy_status, zero_status;
     doe_dx_commands *pending;
 } control;
 static control seen;
@@ -42,6 +42,15 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     seen.allocations++;
     seen.live++;
     return DOE_DX_OK;
+}
+doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error)
+{
+    seen.readback_zeroes++; seen.zero_size=size;
+    if (seen.zero_status != DOE_DX_OK) return seen.zero_status;
+    doe_dx_status status=doe_dx_buffer_create(context,size,DOE_DX_READBACK,out,error);
+    if (status == DOE_DX_OK) (*out)->initialized=true;
+    return status;
 }
 /* Frontend composition seam only. Cache ownership/reuse is independently
  * exercised by the backend's test_zero_upload against the actual owner. */
@@ -125,7 +134,21 @@ native_failure native_submit_backend_commands(native_device *device,
 native_failure native_submit_backend_commands_async(native_device *device,
     native_command_handle commands)
 {
-    return native_submit_backend_commands(device, commands);
+    (void)device;
+    assert(!seen.pending);
+    seen.pending=commands.value.d3d12.commands;
+    seen.async_submissions++;
+    return native_failure_status(seen.submission);
+}
+static void retire_pending(bool success)
+{
+    assert(seen.pending);
+    native_command_handle pending={.kind=WGPUBackendType_D3D12,
+        .value.d3d12={.commands=seen.pending}};
+    seen.pending->destination->pending=false;
+    seen.pending->destination->initialized=success;
+    assert(native_command_release(&pending) == NATIVE_OK);
+    seen.pending=NULL;
 }
 int main(void)
 {
@@ -137,8 +160,8 @@ int main(void)
     assert(!seen.allocations && !buffer.handle.d3d12);
     assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, true).status == NATIVE_OK);
     assert(buffer.handle.d3d12->memory == DOE_DX_READBACK);
-    assert(buffer.handle.d3d12->allocation_size == 16 && seen.copy_size == 16);
-    assert(seen.destination == DOE_DX_READBACK && seen.live == 1);
+    assert(buffer.handle.d3d12->allocation_size == 16 && seen.zero_size == 16);
+    assert(seen.readback_zeroes == 1 && !seen.copies && !seen.async_submissions && seen.live == 1);
     unsigned allocations = seen.allocations, copies = seen.copies;
     unsigned char bytes[16] = {0};
     assert(native_d3d12_buffer_read(&buffer, 0, bytes, sizeof(bytes)).status == NATIVE_OK);
@@ -156,23 +179,31 @@ int main(void)
     assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
     assert(buffer.handle.d3d12->memory == DOE_DX_DEFAULT && seen.copy_size == 256);
     assert(buffer.handle.d3d12->allocation_size == 256 && seen.destination == DOE_DX_DEFAULT);
+    assert(seen.pending && seen.async_submissions == 1 && seen.live == 2);
+    retire_pending(true); /* Native completion marker; no GPU/data execution. */
     copies = seen.copies;
     assert(native_d3d12_buffer_read(&buffer, 0, bytes, sizeof(bytes)).status == NATIVE_OK);
     assert(seen.copies == copies + 1 && seen.destination == DOE_DX_READBACK);
     native_d3d12_buffer_close(&buffer);
+    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_UNIFORM,false).status == NATIVE_OK);
+    assert(seen.pending && seen.live == 2 && seen.copy_size == 256);
+    native_d3d12_buffer_close(&buffer);
+    assert(!buffer.handle.d3d12 && seen.live == 2);
+    retire_pending(true);
+    assert(!seen.live);
+    seen.zero_status=DOE_DX_NATIVE_FAILURE;
+    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_COPY_DST,true).status == NATIVE_FAILURE);
+    assert(!buffer.handle.d3d12 && !seen.live);
+    seen.zero_status=DOE_DX_OK;
     seen.copy_status = DOE_DX_NATIVE_FAILURE;
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, true).status == NATIVE_FAILURE);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_FAILURE);
     assert(!buffer.handle.d3d12 && !seen.live);
     seen.copy_status = DOE_DX_OK;
     seen.submission = NATIVE_PENDING;
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, true).status == NATIVE_PENDING);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_PENDING);
     assert(!buffer.handle.d3d12 && seen.pending && seen.live == 2);
-    native_command_handle pending = {.kind=WGPUBackendType_D3D12,
-        .value.d3d12={.commands=seen.pending}};
     /* The injected backend now reports terminal failure, permitting release. */
-    pending.value.d3d12.commands->destination->pending = false;
-    assert(native_command_release(&pending) == NATIVE_OK);
-    seen.pending = NULL;
+    retire_pending(false);
     assert(!seen.live);
     puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map, pending rejection and failure retention; no GPU");
     return 0;

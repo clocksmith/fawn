@@ -135,6 +135,14 @@ void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer) {
     free(buffer);
 }
 
+doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_error *error) {
+    assert(buffer && !buffer->recorded);
+    mock.readback_zeroes++;
+    if (mock.readback_zero_status != DOE_DX_OK)
+        return doe_dx_fail(mock.readback_zero_status,-201,"mock.readback_zero",error);
+    return outcome(MOCK_ZERO_READBACK,error);
+}
+
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error) {
     assert(buffer && bytes && size && !buffer->recorded);
