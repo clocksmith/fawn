@@ -135,11 +135,11 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     payload->allocation_size = physical;
     payload->memory = direct_readback ? DOE_DX_READBACK : DOE_DX_DEFAULT;
     buffer->handle.d3d12 = payload;
-    /* READBACK construction completed its full CPU zero fill. DEFAULT defers
-     * its complete zero copy (native width, CBV padding included) until the
-     * device's next recording, transfer or CPU read, unless a whole-allocation
-     * write initializes it first. Known-fenced acceptance of either copy
-     * protects later GPU uses, never CPU access. */
+    /* READBACK construction completed its full zero (CPU, or D3D12 at creation).
+     * DEFAULT defers its complete zero copy (native width, CBV padding included)
+     * until the device's next recording, transfer or CPU read, unless a
+     * whole-allocation write initializes it first. Known-fenced acceptance of
+     * either copy protects later GPU uses, never CPU access. */
     if (!direct_readback) {
         payload->zero_deferred = true;
         payload->next_deferred = buffer->device->backend.value.d3d12.deferred_zero;

@@ -42,6 +42,7 @@ struct doe_dx_native_buffer {
     doe_dx_memory memory;
     struct doe_dx_buffer_heap *heap; /* Non-NULL for a placed allocation. */
     uint64_t heap_mask;              /* Exactly the 64 KiB slots this resource owns. */
+    bool zeroed; /* D3D12 zeroed it at creation: committed, or never-placed slots. */
 };
 struct doe_dx_native_texture {
     ID3D12Resource *resource;

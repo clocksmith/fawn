@@ -91,8 +91,14 @@
   reads. Every storage row (raw or structured) carries its exact bound range size;
   other rows are zero. Never create a buffer per use for this table.
 - Buffers whose queried allocation is at most 1 MiB are placed in context-owned
-  4 MiB buffer-only heaps of their own memory class (64 KiB slots). Placement
-  never implies contents: every caller still fully initializes. Slots return only
+  4 MiB buffer-only heaps of their own memory class (64 KiB slots). Heaps and
+  committed resources never set D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, so D3D12 zeroes
+  them at creation. A buffer whose slots were never placed since CreateHeap, or a
+  new committed resource, is known zero: UPLOAD and zeroed-READBACK construction
+  skip their CPU zero writes. DEFAULT keeps its explicit deferred fill (skipping it
+  moved the queue's first execution into the caller's first submission and was
+  rejected). A slot placed once is never known zero again. Placement order is
+  unchanged (first fit). Slots return only
   when the resource is released after retirement; keep one empty heap per class,
   detach live heaps at close, and never retry a failed heap/placement as committed.
   Device creation prepares the first UPLOAD heap with the descriptor ring (its cost
@@ -113,7 +119,7 @@
   rejected submission or failed rebuild never loses them. Final device release
   discards a never-observed open command.
 - The additive zeroed READBACK constructor finishes CPU Map/zero/Unmap before
-  publication or any GPU use. Zero exactly resource Width, including requested
+  publication or any GPU use, unless D3D12 zeroed that memory at creation. Zero exactly resource Width, including requested
   padding, never committed-heap alignment slack. Keep ordinary READBACK create
   uninitialized and general host writes UPLOAD-only. Unmap ranges describe writes
   for tools; they are not a fence or permission for CPU/GPU overlap.

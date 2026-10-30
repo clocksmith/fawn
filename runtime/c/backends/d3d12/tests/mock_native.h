@@ -33,6 +33,7 @@ typedef struct mock_state {
     size_t contexts, buffers, pipelines, commands, textures, timestamps;
     size_t copies, dispatches, finishes, executes, signals, waits, recycled_commands;
     size_t buffer_orders, ordered_buffers, copies_before_order;
+    bool created_zeroed; /* Native creation reports D3D12-zeroed memory. */
     size_t readback_zeroes, lends;
     doe_dx_status readback_zero_status;
     size_t allocations, allocation_attempts, allocation_failure;

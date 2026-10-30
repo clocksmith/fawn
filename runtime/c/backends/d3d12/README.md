@@ -89,9 +89,17 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   returns the range on unmap, destroy, release or an undelivered map.
 - Buffers whose queried allocation is at most 1 MiB are placed resources in
   context-owned 4 MiB `ALLOW_ONLY_BUFFERS` heaps, one memory class per heap and
-  64 KiB slots; larger buffers stay committed. Placement does not change any
-  initialization rule: heap zeroing is never relied on, and DEFAULT, UPLOAD and
-  zeroed READBACK construction still initialize explicitly. A slot range returns
+  64 KiB slots; larger buffers stay committed. Neither heaps nor committed
+  resources set `D3D12_HEAP_FLAG_CREATE_NOT_ZEROED`, so D3D12 zeroes their memory
+  at creation. A heap records which slots were never placed; a buffer entirely in
+  such slots, or a new committed resource, is known zero, so UPLOAD and zeroed
+  READBACK construction skip their CPU zero writes. DEFAULT keeps its deferred
+  zero copy: skipping it too removed the queue's first ExecuteCommandLists from
+  the first queue write and the frozen prepared host operation then paid it. Once placed, a slot is never known zero again and
+  every later buffer there initializes explicitly (`native/tests/zero_reuse.c`
+  dirties and reuses slots; a build that trusts reused slots fails it). Dawn
+  creates heaps with CREATE_NOT_ZEROED and clears lazily on first use, leaving
+  this skip as an open TODO (d3d12/BufferD3D12.cpp:703-704). A slot range returns
   only when its resource is released (after the common owner's retirement), one
   empty heap per class is kept, and context close detaches heaps that still hold
   placements so their last buffer releases them. Heap or placement failure keeps

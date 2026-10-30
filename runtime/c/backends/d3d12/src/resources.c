@@ -32,7 +32,8 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
     doe_dx_buffer *buffer = NULL;
     doe_dx_status status = doe_dx_buffer_create(context,size,DOE_DX_READBACK,&buffer,error);
     if (status != DOE_DX_OK) return status;
-    status = doe_dx_native_zero_readback(buffer->native,error);
+    if (!doe_dx_native_buffer_zeroed(buffer->native))
+        status = doe_dx_native_zero_readback(buffer->native,error);
     if (status != DOE_DX_OK) {
         doe_dx_buffer_release(buffer);
         return doe_dx_context_result(context,status,error);
