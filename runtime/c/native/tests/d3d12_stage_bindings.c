@@ -85,6 +85,33 @@ static void raw_half_metadata(const doe_shader_options *options)
     stage.view.hlsl_entries=&row; reject(&pipeline,&stage);
     doe_shader_release(shader);
 }
+/* Structured storage that reads binding sizes takes one table row per canonical
+ * resource; uniform rows stay unsized in the backend. Copied rows isolate the flag. */
+static void structured_size_metadata(const doe_shader_options *options)
+{
+    const char *source="@group(0) @binding(0) var<uniform> limit:vec4u;"
+        "@group(0) @binding(2) var<storage,read_write> output:array<u32>;"
+        "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id:vec3u)"
+        "{output[id.x]=limit.x+arrayLength(&output);}";
+    doe_shader *shader=NULL; doe_shader_error error={0};
+    assert(doe_shader_create(options,source,strlen(source),&shader,&error)==DOE_SHADER_OK);
+    doe_shader_view view; assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
+    native_pipeline pipeline={.binding_count=2,.bindings={
+        {.group=0,.binding=0,.kind=DOE_BIND_BUFFER,.buffer_type=WGPUBufferBindingType_Uniform},
+        {.group=0,.binding=2,.kind=DOE_BIND_BUFFER,.buffer_type=WGPUBufferBindingType_Storage}}};
+    native_stage stage={.view=view,.entry=&view.entries[0]};
+    native_d3d12_layout layout; native_d3d12_compute map;
+    DoeCompilerHlslEntryV11 row=view.hlsl_entries[0];
+    stage.view.hlsl_entries=&row;
+    row.flags&=~DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES;
+    assert(native_d3d12_stage_bindings(&pipeline,&stage,&layout,&map) && !map.logical_size_count);
+    row.flags|=DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES;
+    assert(native_d3d12_stage_bindings(&pipeline,&stage,&layout,&map));
+    assert(map.logical_size_count==view.counts.resources && map.logical_size_count==2);
+    assert(layout.buffers[1].view==DOE_DX_STRUCTURED && layout.buffers[1].stride==4 && map.logical_size_indices[1]==1);
+    assert(!(map.entry_flags & DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE));
+    doe_shader_release(shader);
+}
 static void external_metadata(const doe_shader_options *options)
 {
     const char *source = "@group(2) @binding(3) var frame:texture_external;"
@@ -198,6 +225,7 @@ int main(int argc,char **argv)
     stage.entry=&view.entries[0];
     pipeline.bindings[4].buffer_type=WGPUBufferBindingType_ReadOnlyStorage; reject(&pipeline,&stage);
     raw_half_metadata(&options);
+    structured_size_metadata(&options);
     external_metadata(&options);
     samplers();
     doe_shader_release(shader);

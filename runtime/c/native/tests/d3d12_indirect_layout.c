@@ -46,7 +46,10 @@ int main(void)
     doe_shader_view view;
     assert(doe_shader_borrow(shader,&view) == DOE_SHADER_OK);
     doe_dx_binding_layout layout = {0};
-    assert(native_d3d12_guard_layout(&view,&layout));
+    uint32_t rows = UINT32_MAX;
+    assert(native_d3d12_guard_layout(&view,&layout,&rows));
+    /* The guard reads its binding's size-table row exactly when the compiler says so. */
+    assert(rows == ((view.hlsl_entries[0].flags & DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES) ? 1u : 0u));
     assert(layout.access == DOE_DX_READ_WRITE && layout.view == DOE_DX_STRUCTURED && layout.stride == 4);
     const doe_dx_binding_layout expected = layout;
     DoeCompilerHlslBindingV11 binding = view.hlsl_bindings[0];
@@ -61,28 +64,28 @@ int main(void)
         if (field == 1) binding.stride = 8;
         if (field == 2) binding.resource_index = UINT32_MAX;
         if (field == 3) binding.register_space = UINT32_MAX;
-        assert(!native_d3d12_guard_layout(&changed,&layout));
+        assert(!native_d3d12_guard_layout(&changed,&layout,&rows));
         assert(!memcmp(&layout,&expected,sizeof(layout)));
     }
     changed = view;
     changed.hlsl_entries = &entry;
     entry.dispatch_bytes = 16;
-    assert(!native_d3d12_guard_layout(&changed,&layout));
+    assert(!native_d3d12_guard_layout(&changed,&layout,&rows));
     entry = view.hlsl_entries[0];
     entry.flags = DOE_COMPILER_HLSL_ENTRY_WAVES;
-    assert(!native_d3d12_guard_layout(&changed,&layout));
+    assert(!native_d3d12_guard_layout(&changed,&layout,&rows));
     changed = view;
     changed.resources = &resource;
     resource.access = DOE_COMPILER_READ;
-    assert(!native_d3d12_guard_layout(&changed,&layout));
+    assert(!native_d3d12_guard_layout(&changed,&layout,&rows));
     changed = view;
     changed.entries = &stage;
     stage.first_resource_reference = UINT32_MAX;
-    assert(!native_d3d12_guard_layout(&changed,&layout));
+    assert(!native_d3d12_guard_layout(&changed,&layout,&rows));
     stage = view.entries[0];
     stage.workgroup_size[0] = 2;
-    assert(!native_d3d12_guard_layout(&changed,&layout));
-    assert(native_d3d12_guard_layout(&view,&layout));
+    assert(!native_d3d12_guard_layout(&changed,&layout,&rows));
+    assert(native_d3d12_guard_layout(&view,&layout,&rows));
     doe_shader_release(shader);
     puts("PASS D3D12 indirect guard compiler/metadata control; no SDK, adapter or GPU execution");
     return 0;

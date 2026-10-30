@@ -37,18 +37,23 @@ int main(void)
         doe_shader_view view;
         assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
         doe_dx_binding_layout bindings[3]={0};
-        assert(scan==2 ? native_d3d12_storage_kernel_layout(&view,64,1,bindings) :
-            native_d3d12_draw_layout(&view,scan!=0,bindings));
+        native_d3d12_kernel_sizes sizes={UINT32_MAX,{0}};
+        assert(scan==2 ? native_d3d12_storage_kernel_layout(&view,64,1,bindings,&sizes) :
+            native_d3d12_draw_layout(&view,scan!=0,bindings,&sizes));
+        /* Size rows follow the compiled entry's STORAGE_SIZES requirement. */
+        assert(sizes.count == ((view.hlsl_entries[0].flags & DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES) ?
+            view.counts.resources : 0u));
+        for (size_t i=0;sizes.count && i<(scan==1 ? 3u : 1u);++i) assert(sizes.indices[i]==i);
         size_t count=scan==1 ? 3u : 1u;
         for (size_t i=0;i<count;++i) assert(bindings[i].stride==4 && bindings[i].view==DOE_DX_STRUCTURED &&
             bindings[i].access==(i ? DOE_DX_READ_ONLY : DOE_DX_READ_WRITE));
         doe_dx_binding_layout saved[3]; memcpy(saved,bindings,sizeof(saved));
         doe_shader_view bad=view; DoeCompilerEntryV5 entry=*view.entries;
         bad.entries=&entry; entry.workgroup_size[0]=2;
-        assert(!native_d3d12_draw_layout(&bad,scan!=0,bindings) && !memcmp(saved,bindings,sizeof(saved)));
+        assert(!native_d3d12_draw_layout(&bad,scan!=0,bindings,&sizes) && !memcmp(saved,bindings,sizeof(saved)));
         bad=view; bad.target=DOE_SHADER_METAL;
-        assert(!native_d3d12_draw_layout(&bad,scan!=0,bindings) && !memcmp(saved,bindings,sizeof(saved)));
-        if (scan<2) assert(!native_d3d12_draw_layout(&view,scan==0,bindings) && !memcmp(saved,bindings,sizeof(saved)));
+        assert(!native_d3d12_draw_layout(&bad,scan!=0,bindings,&sizes) && !memcmp(saved,bindings,sizeof(saved)));
+        if (scan<2) assert(!native_d3d12_draw_layout(&view,scan==0,bindings,&sizes) && !memcmp(saved,bindings,sizeof(saved)));
         doe_shader_release(shader);
     }
     puts("PASS shared timestamp and V2 argument/index-scan WGSL to real HLSL reflection, typed register/stride/access and unchanged failures; no DXC/SDK/GPU");

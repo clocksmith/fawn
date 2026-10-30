@@ -149,7 +149,7 @@ static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
             pipeline->immediate_words,resources->immediate_words,0);
     if (use) doe_dx_bind_descriptors(commands,pipeline,use,false);
     if (use && use->storage_sizes[0]) ID3D12GraphicsCommandList_SetComputeRootConstantBufferView(list,
-        pipeline->storage_sizes_root,ID3D12Resource_GetGPUVirtualAddress(use->storage_sizes[0]->resource));
+        pipeline->storage_sizes_root,use->storage_sizes[0]);
     doe_dx_transition_resources(commands, pipeline, resources, false, false);
     if (arguments) {
         doe_dx_transition(list, arguments->resource,

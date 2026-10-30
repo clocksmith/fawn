@@ -174,15 +174,19 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
         if (native) return false;
         native = &view->hlsl_entries[i];
     }
-    if (!native || native->stage != expected_stage || (native->flags & ~(DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS|DOE_COMPILER_HLSL_ENTRY_NATIVE16|DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE|DOE_COMPILER_HLSL_ENTRY_WAVES|DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER|DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS)) ||
+    if (!native || native->stage != expected_stage || (native->flags & ~(DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS|DOE_COMPILER_HLSL_ENTRY_NATIVE16|DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE|DOE_COMPILER_HLSL_ENTRY_WAVES|DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER|DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS|DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES)) ||
         (array_views && !(native->flags & DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS))) return false;
+    /* Raw and structured storage entries that read binding sizes take one
+     * table row per canonical resource, filled from the bound ranges. */
+    const bool sizes=(native->flags & (DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE|DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES))!=0;
     if (raw_storage!=((native->flags & DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE)!=0) ||
-        (raw_storage && (!(native->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) || view->counts.resources>16384))) return false;
+        (raw_storage && !(native->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16)) ||
+        (sizes && view->counts.resources>16384)) return false;
     if ((native->flags & DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER) &&
         (!(native->flags & DOE_COMPILER_HLSL_ENTRY_WAVES) || expected_stage!=DOE_COMPILER_STAGE_COMPUTE)) return false;
     if ((native->flags & DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS) && expected_stage!=DOE_COMPILER_STAGE_VERTEX) return false;
     result.entry_flags=native->flags;
-    result.logical_size_count=raw_storage ? (uint32_t)view->counts.resources : 0;
+    result.logical_size_count=sizes ? (uint32_t)view->counts.resources : 0;
     if (expected_stage != DOE_COMPILER_STAGE_COMPUTE && native->dispatch_bytes) return false;
     if (!native->dispatch_bytes) {
         if (native->dispatch_register != UINT32_MAX || native->dispatch_space != UINT32_MAX) return false;
@@ -205,7 +209,8 @@ bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_st
     return native_d3d12_stage_bindings_for(pipeline,stage,DOE_COMPILER_STAGE_COMPUTE,out,map);
 }
 
-bool native_d3d12_storage_kernel_layout(const doe_shader_view *view,uint32_t workgroup,size_t count,doe_dx_binding_layout out[3])
+bool native_d3d12_storage_kernel_layout(const doe_shader_view *view,uint32_t workgroup,size_t count,doe_dx_binding_layout out[3],
+    native_d3d12_kernel_sizes *sizes)
 {
     if (!view || !out || !count || count>3 || !workgroup || view->counts.entries!=1 || !view->entries || view->counts.resources!=count || !view->resources)
         return false;
@@ -225,7 +230,12 @@ bool native_d3d12_storage_kernel_layout(const doe_shader_view *view,uint32_t wor
     for (size_t i=0;i<count;++i) {
         if (map.buffer_indices[i]!=i || map.uniform[i]) return false;
     }
+    if (map.logical_size_count && !sizes) return false;
     memcpy(out,layout.buffers,count*sizeof(*out));
+    if (sizes) {
+        *sizes=(native_d3d12_kernel_sizes){.count=map.logical_size_count};
+        for (size_t i=0;i<count;++i) sizes->indices[i]=map.logical_size_indices[i];
+    }
     return true;
 }
 

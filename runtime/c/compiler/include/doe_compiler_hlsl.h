@@ -19,6 +19,10 @@ extern "C" {
 #define DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER 8u
 #define DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS 16u
 #define DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS 32u
+/* The entry reads the storage-size table at STORAGE_SIZES_REGISTER/SPACE.
+ * RAW_STORAGE entries read it too; structured storage reads it for
+ * runtime-array bounds and arrayLength. */
+#define DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES 64u
 /* Vertex-stage uint2: first vertex / signed base-vertex bits, first instance. */
 #define DOE_COMPILER_HLSL_DRAW_OFFSETS_REGISTER 3u
 #define DOE_COMPILER_HLSL_DRAW_OFFSETS_SPACE 7u
@@ -42,9 +46,10 @@ extern "C" {
 /* Sparse, source-resource ordered union of emitted entries. register_kind is a
  * separate namespace, not a resource-kind enum. Structured buffers require
  * stride four; raw storage buffers and all other descriptors use zero.
- * RAW_STORAGE entries require a packed uint size per canonical resource_index
- * at STORAGE_SIZES_REGISTER/SPACE, rounded to uint4 carriers. Values are exact
- * logical binding byte sizes, not padded native RAW view extents. The declared WGSL byte layout
+ * STORAGE_SIZES entries require a packed uint size per canonical resource_index
+ * at STORAGE_SIZES_REGISTER/SPACE, rounded to uint4 carriers. Storage rows hold
+ * exact logical binding byte sizes (the bound range), not padded native view
+ * extents or allocation sizes; other rows are unread. The declared WGSL byte layout
  * remains in the shared resource/type reflection; CBV padding is runtime-owned. */
 typedef struct {
     uint32_t resource_index, register_kind, shader_register, register_space, stride;

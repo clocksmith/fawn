@@ -74,6 +74,14 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   use. Overflow creates another heap that releases once empty. Sampler heaps and
   RTV/DSV/clear views keep their per-use owners. `test_windows_descriptor_ring.c`
   is the official-SDK CPU control.
+- Entries that read binding sizes (compiler flags STORAGE_SIZES or RAW_STORAGE)
+  get one root CBV at b2, space7 holding a uint per canonical resource: each
+  storage binding's exact bound range size, zero elsewhere. The table is written
+  into 256-byte slots of a persistently mapped 64 KiB UPLOAD arena owned by the
+  descriptor ring (the first ring's is created with the device, like its heap),
+  taken and returned with the use's descriptor range, instead of a buffer created
+  per descriptor use. A table beyond one arena (more than 16384
+  canonical resources across a use's stages) rejects with RANGE.
 - Read mappings of READBACK buffers (`doe_dx_buffer_lend_read`) lend the mapped
   allocation bytes to the caller instead of copying them into a host shadow. The
   Map stays open until `doe_dx_buffer_return_read`; while lent, GPU recording, host

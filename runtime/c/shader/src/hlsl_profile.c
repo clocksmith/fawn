@@ -11,9 +11,10 @@ static bool consistent(const doe_shader_view *view, const DoeCompilerHlslProfile
     const uint32_t flags = view->hlsl_entries[0].flags;
     if ((profile->shader_model == 620u) != ((flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) != 0u)) return false;
     /* A supplied positive certificate must not contradict native requirements.
-     * Zero flags alone never produces or restores a certificate. */
-    if (profile->shader_model == 501u &&
-        (profile->stage != DOE_COMPILER_STAGE_COMPUTE || flags != 0u)) return false;
+     * Zero flags alone never produces or restores a certificate. STORAGE_SIZES
+     * is a binding (size-table CBV) requirement, not a shader-model one. */
+    if (profile->shader_model == 501u && (profile->stage != DOE_COMPILER_STAGE_COMPUTE ||
+        (flags & ~DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES) != 0u)) return false;
     return true;
 }
 
