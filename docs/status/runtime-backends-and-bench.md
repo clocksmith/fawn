@@ -157,8 +157,11 @@ unestablished. Doe has promising execution evidence, not the final objective.
   submit. A second round rejected four placement and barrier candidates and two
   descriptor-pool candidates under their frozen rules. The descriptor-pool
   candidates halved submit but missed a per-workload and teardown criterion.
-  The remaining owner decisions are recorded there. Retained Zig is unmeasured
-  there. This is diagnostic evidence, not the application win.
+  The remaining owner decisions are recorded there. Owner-revised
+  complete-operation contracts (M7R, M2R) also failed. M7R missed only its
+  upload/readback bound: 1.022 against 1.02. A side-by-side code read and a
+  counting layer record the memory types Doe and Dawn pick and their Vulkan
+  calls per submit. Retained Zig is unmeasured there. This is diagnostic evidence, not the application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss

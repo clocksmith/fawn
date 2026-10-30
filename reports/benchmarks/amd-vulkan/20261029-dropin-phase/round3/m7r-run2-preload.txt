@@ -1,0 +1,3 @@
+%CPU CMD
+ 135 /opt/google/chrome/chrome --type=renderer --crashpad-handler-pid=1094351 --enable-crash-reporte
+49.8 node ~/deco/hatch/qwen-economics-20261030/doppler-next-harness/tools/qwen-economics/run.j

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c4-m7r",
+  "experiment": "M7R: a new prospective experiment, distinct from M7 and M7b. M7 and M7b remain recorded as failed under their own frozen rules; their results support this hypothesis only and pass nothing retroactively.",
+  "decision": "Owner decision relayed 2026-10-30: re-test reusable descriptor pools under a complete-operation contract that counts teardown.",
+  "control": "doe-c main at 1823497b5 (includes 4577caee3 and 9080e05bd)",
+  "mechanism": "Dispatch descriptor sets are allocated from context-owned FREE_DESCRIPTOR_SET pool blocks (256 sets, 1024 descriptors per type) and freed at use release, instead of vkCreateDescriptorPool/vkDestroyDescriptorPool per dispatch use per submission (the original M7 source, rebased onto 1823497b5)",
+  "codeComparison": "Counting-layer measurement, steady state per vector iteration: Doe main does 1 vkCreateDescriptorPool + 1 vkDestroyDescriptorPool + 1 vkAllocateDescriptorSets + 1 vkUpdateDescriptorSets; M7R does 1 allocate + 1 free + 1 update; Dawn does none because its sets are made at bind group creation",
+  "teardownAttribution": "A locked per-call teardown diagnostic on image put the M7 excess in the first buffer release (25 -> 55 us; it retires the final recording and frees its sets) and in device release (273 -> 313 us; destroys the block). Isolated microprobes time each call under 10 us, so the cause remains unexplained; teardown is counted in the gate below instead of excluded.",
+  "providers": {
+    "main": "1823497b5 library",
+    "m7r": "1823497b5 + M7R",
+    "dawn": "Dawn d04f88359",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "sampling": {
+    "pairs": 24,
+    "orders": "all 24 permutations of 4 providers",
+    "iterationsPerProcess": 32,
+    "inputs": "c1 frozen inputs and independent oracles"
+  },
+  "metric": "complete = compileNs + pipelineNs + resourcesNs + sum of every iteration's operation interval + teardownNs (CPU oracle excluded; setup, which M7R does not touch, excluded). Ratios are m7r/main per balanced pair; bootstrap 95% CI, 10000 resamples, seed 20261029.",
+  "acceptance": {
+    "validity": "every process ok and oracle-checked on every iteration; A/A dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1 on every workload",
+    "dispatchWorkloads": "vector and image: complete CI95 upper < 1.0 AND warm.submit CI95 upper < 1.0",
+    "uploadReadbackBound": "buffer_upload_readback_exact_1mb (no dispatch; not excluded): complete CI95 upper <= 1.02",
+    "phaseGuard": "no warm phase on any workload with ratio CI95 lower > 1.05; teardownNs and first.operation are recorded and are already inside complete",
+    "verdict": "pass only if validity, dispatchWorkloads, uploadReadbackBound and phaseGuard all hold"
+  },
+  "focusedCorrectness": "pre-freeze, untimed: all 78 physical native clients identical to the main control (only 'failures' fails, on main too); native software check, check-vulkan and Vulkan backend contracts compared with main (results recorded beside this contract)",
+  "frozenAtUtc": "2026-10-30T15:01:31Z",
+  "correctnessResults": {
+    "physicalClients": "78 run; failing: failures (also on main)",
+    "nativeSoftwareCheck": "90 PASS before the failures abort, identical to main; 44 later clients failing only sample-mask and d3d12-buffer-placement, identical to main",
+    "checkVulkan": "pass",
+    "vulkanContracts": "failing only surface_features and feature_contract, identical to main"
+  },
+  "hashes": {
+    "doe-work/m7r.patch": "441f1828b399616877b4358351e83ae3ebdf53158792162ce04e6427a900afbd",
+    "doe-work/build-m7r/native/libwebgpu_doe_c.so": "edcca0a5bc9c5893b51a58e480e956eb0cd475aef802807dc30684105fdb6f7f",
+    "doe-work/build-1823497b5/native/libwebgpu_doe_c.so": "25bf5dd38aa713a77c80cdb1d414897c4bf22937386e11e7c004c3f2d2780125",
+    "doe-work/c4/bin/harness-m7r": "d576aacc6106a00263fae66d8bbd90b4b21c5149e1a98b1f025e438331797128",
+    "doe-work/c4/bin/harness-main": "feefc0ce26fa8c4967b4d043105fbd09bf42a8f67050ee02c172183eead1f484",
+    "doe-work/c4/bin/harness-dawn": "cbb437c1494ef2a3a8b27d7fbaa1714dfdf9841b70a539b1fe3b199b30a28646",
+    "doe-work/c4/bin/harness-dawn-aa": "cbb437c1494ef2a3a8b27d7fbaa1714dfdf9841b70a539b1fe3b199b30a28646",
+    "doe-work/src-35018c4a3/bench/drop-in/dropin_phase_harness.c": "4fa1d52a910797ac56fcb317d07f562d4462567fd84485c50131e0fcf9bb6625",
+    "doe-work/src-35018c4a3/bench/tools/dropin_phase_cohort.py": "4cd33444c41e9b80b03d9bc19dca4ffed0870ed5efc30c53f5f49bc134a1aee2",
+    "doe-work/c1/inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1"
+  }
+}

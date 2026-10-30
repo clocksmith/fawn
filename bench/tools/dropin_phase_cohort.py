@@ -206,6 +206,11 @@ def bootstrap_median_ci(values: list[float]) -> tuple[float, float]:
 def process_metrics(row: dict) -> dict[str, float]:
     result = row["result"]
     metrics = {key: result[key] / 1e6 for key in ONE_TIME if key in result}
+    # Complete operation after device acquisition: one-time preparation, every
+    # iteration's host-operation interval (CPU oracle excluded) and teardown.
+    if all(key in result for key in ("compileNs", "pipelineNs", "resourcesNs", "teardownNs")):
+        metrics["complete"] = (result["compileNs"] + result["pipelineNs"] + result["resourcesNs"] +
+                               sum(result["phases"]["operation"]) + result["teardownNs"]) / 1e6
     metrics["processWall"] = row["processWallNs"] / 1e6
     metrics["cpuMs"] = row["childCpuMs"]
     metrics["maxRssMiB"] = result["maxRssKiB"] / 1024

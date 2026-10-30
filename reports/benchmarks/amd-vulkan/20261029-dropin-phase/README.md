@@ -288,3 +288,95 @@ were in `failed` for about 2.5 minutes until they were reset and started; all
 were active again with native initialization. The window script now resets and
 retries on start failure, and later windows were spaced at least 5 minutes
 apart. No later window needed the recovery path.
+
+## Round 3: owner-directed revised contracts (M7R, M2R) and a side-by-side code read
+
+The owner decided to re-test both trade-offs under revised contracts. M2, M7
+and M7b stay failed under their own frozen rules; their results only motivated
+these new experiments. Each new contract was written and hashed before any
+timed window: [`frozen-m7r.json`](round3/frozen-m7r.json) and
+[`frozen-m2r.json`](round3/frozen-m2r.json). The control is main at
+`1823497b5`, which includes `4577caee3` and `9080e05bd`. The gate metric
+`complete` is compile + pipeline + resources + every iteration's operation +
+teardown; setup and the CPU oracle are excluded.
+
+### Side-by-side code read and measurement
+
+A diagnostic counting layer ([source](round3/tools/count_layer.c)) records
+every `vkAllocateMemory` memory type and the per-iteration call counts.
+Per-iteration figures are (33-iteration count − 1-iteration count) / 32; see
+[`vulkan-call-counts.jsonl`](round3/vulkan-call-counts.jsonl).
+
+| Buffer class | Doe main | M2R | Dawn d04f88359 (`MemoryTypeSelector`, `GetMemoryKindFor`) |
+| --- | --- | --- | --- |
+| Storage in/out, uniform | heap 0, `0xe` (cached, snooped) | heap 1, `0x7` (device-local, write-combined) | heap 1, `0x1` (device-local, not host-visible), suballocated |
+| writeBuffer upload source | direct host write into the cached destination | direct host write into the heap 1 `0x7` destination | `DynamicUploader` staging in heap 1 `0x7`; 4 MiB writes reallocate it every iteration |
+| MapRead readback | heap 0 `0xe`, zero-copy map | heap 0 `0xe`, zero-copy map | heap 0 `0xe` |
+
+| Vector, per submit | Doe main | M7R | Dawn |
+| --- | ---: | ---: | ---: |
+| Descriptor create / destroy pool | 1 / 1 | 0 / 0 | 0 / 0 |
+| Descriptor allocate / free / update sets | 1 / 0 / 1 | 1 / 1 / 1 | 0 / 0 / 0 (sets made at bind-group creation) |
+| `vkCmdPipelineBarrier` | 4 | 4 | 6 |
+| `vkCmdCopyBuffer` | 1 | 1 | 2 (staging) |
+| Fence: reset / wait / status | 1 / 1 / 1 | 1 / 1 / 1 | 0.97 / 1 / 2 |
+| Total counted calls | 20 | 19 | 20 |
+
+Doe and Dawn issue the same number of calls per submit, but Doe's include a
+kernel-backed pool create and destroy. Dawn's extra calls are cheap command
+recordings.
+
+M7 teardown attribution, from a locked per-call
+[diagnostic](round3/tdiag/): the excess sits in the first buffer release
+(25 → 55 µs), which retires the final recording and frees its sets, and in
+device release (273 → 313 µs), which destroys the block. Isolated
+[microprobes](round3/tools/setprobe.txt) time every such call under 10 µs, so
+the cause remains unexplained. The contract therefore counts teardown inside
+`complete` rather than excluding it.
+
+Pre-freeze correctness for both candidates matched the main control:
+- 78 physical clients; only `failures` fails, on main too.
+- Native software check: 90 PASS before the same `failures` abort. The 44 later
+  clients fail only `sample-mask` and `d3d12-buffer-placement`, on main too.
+- `check-vulkan` passes. The Vulkan contracts fail only `surface_features` and
+  `feature_contract`.
+
+### M7R (reusable descriptor pools): FAIL
+
+- **Run 1** ([`m7r/`](round3/m7r/)): **invalid**. The A/A control failed
+  (Dawn A/A warm operation 0.985 [0.962,0.996] on upload/readback).
+- **Run 2** ([`m7r-run2/`](round3/m7r-run2/)): exactly one replacement under
+  the unchanged contract, [pre-registered](round3/m7r-replacement-note.json)
+  as final before the run. It was valid.
+
+| m7r / main (run 2) | complete | warm submit | warm operation | teardown |
+| --- | --- | --- | --- | --- |
+| vector | **0.886 [0.809,0.955]** | 0.555 [0.490,0.597] | 0.824 | 1.19 |
+| image | **0.956 [0.937,0.991]** | 0.510 [0.483,0.613] | 0.951 | 1.19 |
+| upload/readback (bound ≤ 1.02) | 0.998 [0.969,**1.022**] | 1.04 | 1.008 | 0.97 |
+
+The dispatch gates and the phase guard pass. The upload/readback bound fails:
+its CI upper bound is 1.022 against 1.02, while the median is unchanged. The
+verdict is FAIL. Against Dawn in this run, M7R reached `complete` 0.77
+(vector), 0.49 (image) and 0.83 (upload/readback). Warm operation was 0.99
+on vector, so the vector loss is closed, and 1.03 on upload/readback.
+
+### M2R (per-usage device-local placement): FAIL on the primary gate
+
+Run [`m2r/`](round3/m2r/) was valid.
+
+| m2r / main | complete | warm operation | warm completion | warm upload |
+| --- | --- | --- | --- | --- |
+| vector | 0.976 [0.914,**1.010**] | 0.931 [0.885,0.970] | 0.859 | 1.124 |
+| image | 0.972 [0.915,**1.015**] | 0.937 | 0.877 | 0.985 |
+| upload/readback | 0.962 [0.923,0.999] | 0.907 [0.885,0.930] | 0.852 | 1.123 |
+
+The primary gate fails because the vector and image `complete` CI upper bounds
+exceed 1.0. The stated per-phase allowances hold: upload ≤ 1.15, resources
+≤ 1.15, and no other phase regresses past a 1.05 lower bound. The separate
+upload-latency phase gate fails, with upload at 1.12x on both 1 MiB workloads.
+`complete` is dominated by a noisy first operation and teardown, so the 6-9%
+warm-operation and 12-15% completion gains do not clear it at 24 pairs.
+
+Neither runtime change is committed. Both patches stay as receipts:
+[`m7r.patch`](round3/m7r.patch) and [`m2r.patch`](round3/m2r.patch).
