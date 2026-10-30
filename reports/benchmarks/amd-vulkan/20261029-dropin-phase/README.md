@@ -464,3 +464,98 @@ hash differs, the contract has to be re-frozen as a new experiment.
 1. M7R-2: vector, image, upload/readback (96 pairs each)
 2. M2R-2: vector, image, upload/readback (192 pairs each)
 3. Combined (c-direct): vector, image, upload/readback (192 pairs each)
+
+## Round 5: the frozen power-sized reruns
+
+The three round-4 contracts ran unchanged after the host reboot. The new
+kernel log had no `list_del` or amdgpu errors. Before the first window, all
+45 hashed paths matched their frozen sha256: the four libraries (main, M7R,
+M2R and c-direct), the harness binaries and source, the cohort tool, the
+inputs and the gate tooling. The contract files matched their `.sha256`
+records. The Dawn library matched the `54040e43…` recorded in
+[`builds/c3-build-dawn.json`](builds/c3-build-dawn.json). Nothing was rebuilt.
+See [`round5/receipt.json`](round5/receipt.json).
+
+### Operational changes (not contract changes)
+
+- The owner keeps the four participant units stopped and disabled. The
+  [round-5 window scripts](round5/tools/) never stop, start or restart them
+  and have no restart trap. Every window records the units as
+  inactive/disabled before and after it ran.
+- The GPU lock is shared with a Doppler agent and a sliced Fawn Chromium
+  build. Each attempt held the lock only while its window ran and released
+  it between windows.
+- Each attempt was judged against the full validity rule before moving on:
+  gate (foreign GPU ≤ 2%, foreign CPU ≤ 5%), zero failed processes, and the
+  Dawn A/A check ([`validity.json`](round5/m7r2/vector_scale_add_262k/attempt1/validity.json)).
+- From M2R-2 image onward, a pre-start [quiet check](round5/tools/quiet-check.sh)
+  declined to start above 3% host CPU. It never declined. `window_gate.py`
+  alone judges validity.
+
+### Windows
+
+Ten attempts ran and nine were valid. Foreign GPU was 0.0% in every attempt.
+In the valid attempts, foreign CPU was 1.08–1.66% and the A/A warm-operation
+medians were 0.993–1.002, each CI containing 1. One attempt was **invalid**:
+M2R-2 vector attempt 1 had foreign CPU at 5.175%. A CPU-only model conversion
+was running outside the lock. That attempt was rerun fresh, and its data are
+retained but not used.
+
+### Verdicts under each frozen rule
+
+| Contract | Pairs | Verdict | Decisive results (candidate / main) |
+| --- | ---: | --- | --- |
+| [M7R-2](round4/frozen-m7r2.json) | 96 | **PASS** ([gate](round5/m7r2/gate.out)) | complete: vector 0.887 [0.877,0.903], image 0.957 [0.945,0.974], upload/readback 0.996 [0.988,1.019] ≤ 1.02; warm submit: vector 0.586 [0.567,0.600], image 0.546 [0.527,0.570]; no phase-guard violations |
+| [M2R-2](round4/frozen-m2r2.json) | 192 | **PASS** (primary) ([gate](round5/m2r2/gate.out)) | complete: vector 0.925 [0.918,0.938], image 0.893 [0.882,0.900], upload/readback 0.925 [0.913,0.934]; allowances hold. The separate upload-latency gate **fails**: vector warm upload 1.112 [1.108,1.116] |
+| [Combined (c-direct)](round4/frozen-combined.json) | 192 | **FAIL** ([gate](round5/combined/gate.out)) | complete: vector 0.832 [0.820,0.842], image 0.843 [0.834,0.860], upload/readback 0.915 [0.903,0.934] all pass. The stated phase allowances fail on image teardown, 1.107 [1.086,1.143], lower bound > 1.05. The upload-latency gate also fails, with vector upload at 1.114 |
+
+### Against Dawn d04f88359 (same windows)
+
+| Candidate / Dawn | complete | warm operation | warm p95 | CPU | RSS |
+| --- | --- | --- | --- | --- | --- |
+| M7R vector | 0.860 [0.838,0.878] | **1.053 [1.037,1.078]** | 1.017 [0.949,1.046] | 0.904 | 0.899 |
+| M7R image | 0.611 [0.601,0.623] | 0.612 [0.599,0.621] | 0.615 | 0.797 | 0.891 |
+| M7R upload/readback | 0.914 [0.894,0.926] | **1.077 [1.064,1.093]** | 0.996 [0.946,1.031] | 0.889 | 0.932 |
+| M2R vector | 0.880 [0.870,0.890] | **1.144 [1.134,1.152]** | 1.019 [0.975,1.054] | 0.914 | 0.917 |
+| M2R image | 0.558 [0.553,0.565] | 0.550 [0.546,0.555] | 0.576 | 0.783 | 0.905 |
+| M2R upload/readback | 0.846 [0.834,0.860] | 0.977 [0.968,0.988] | 0.946 [0.919,0.988] | 0.893 | 0.945 |
+| Combined vector | 0.784 [0.775,0.794] | 0.959 [0.946,0.973] | 0.909 [0.875,0.956] | 0.895 | 0.917 |
+| Combined image | 0.528 [0.524,0.535] | 0.506 [0.502,0.511] | 0.526 | 0.778 | 0.906 |
+| Combined upload/readback | 0.846 [0.833,0.855] | 0.982 [0.974,0.992] | 0.942 [0.900,0.977] | 0.894 | 0.946 |
+
+Only the failed combined candidate is below Dawn in warm operation on all
+three workloads.
+
+### Landing: none
+
+No runtime source landed. M7R and M2R each pass against main `1823497b5`.
+Their composition is the c-direct source, and c-direct fails its frozen
+contract. Landing either one also changes the control the other passed
+against. Choosing which mechanism lands, if any, is an owner decision, and
+both patches stay as receipts. Under the
+[C migration rules](../../../../docs/c-migration/MIGRATION.md), a landed
+mechanism would enter only the Doe C Vulkan backend. Retained Zig remains the
+production default until the migration's default-switch gates pass. This
+record is a scoped native drop-in diagnostic, not the GOALS application win.
+
+### Remaining owners of loss against Dawn
+
+These are taken from the round-5 windows. A loss is a ratio whose CI lower
+bound is above 1.
+
+1. **Warm completion on image:** 1.56x with M7R, 1.28x with M2R and 1.17x
+   combined. Device-local placement (M2R) reduces it, but no candidate closes
+   it. The loss is also 1.15x on vector with M7R and M2R.
+2. **Buffer and bind-group creation (`resourcesNs`):** 1.6–2.1x on image and
+   upload/readback for every candidate. This is the round-2 accounting split:
+   Doe zeroes memory at creation, while Dawn pays the equivalent cost in its
+   first operation. First operation is 0.37–0.52x Dawn.
+3. **writeBuffer upload:** 1.02–1.03x on vector and upload/readback with M2R
+   and combined, which write directly into write-combined device-local memory.
+   M7R alone is 0.91x on vector and 1.025x on upload/readback.
+4. **Vector submit:** 1.66x without M7R. The per-submit descriptor-pool
+   create and destroy owns it, and M7R removes it (0.97x).
+5. **Map on image:** 1.02–1.05x.
+6. **Teardown:** M7R moves deferred cleanup into teardown, at 1.08–1.17x
+   against main. That is the combined candidate's failing phase. Teardown
+   stays below Dawn's (0.61–0.70x).

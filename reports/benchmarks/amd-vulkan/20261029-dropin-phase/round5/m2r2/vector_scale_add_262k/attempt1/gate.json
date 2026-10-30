@@ -1,0 +1,15 @@
+{
+ "windowSeconds": 36.754,
+ "foreignGpuBusyPercent": 0.0,
+ "foreignGpuClients": [],
+ "deviceGpuBusyPercentMean": 7.948,
+ "deviceGpuBusySamples": 348,
+ "foreignCpuPercentOfCapacity": 5.175,
+ "ownCpuSeconds": 34.019999999999996,
+ "cpus": 32,
+ "limits": {
+  "foreignGpuBusyPercent": 2.0,
+  "foreignCpuPercentOfCapacity": 5.0
+ },
+ "valid": false
+}

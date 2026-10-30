@@ -1,0 +1,13 @@
+PID PPID ELAPSED %CPU RSS COMMAND
+1568398 1568360 02:06 109 579652 node convert-safetensors-node.js
+1587864 1587820 00:00 50.0 13484 python3 window_gate.py
+6345 1 02:25:21 3.8 4512 bash framework-rgb-fan-run.sh
+25262 3258 02:23:51 2.3 392748 localsearch-3 
+247 2 02:31:25 1.1 0 [kswapd0] 
+221 2 02:31:25 0.8 0 [kcompactd0] 
+1519496 2 07:15 0.4 0 u130:0-kcryptd-252:0-1] 
+3226 1 02:25:30 0.4 56676 tailscaled tailscaled.state
+436 2 02:31:23 0.3 0 phy0-0] 
+1454899 2 13:52 0.3 0 u130:6-kcryptd-252:0-1] 
+3349 3258 02:25:30 0.3 131464 node server.mjs
+435 2 02:31:23 0.2 0 phy0-0] 
