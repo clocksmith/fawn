@@ -14,7 +14,7 @@ native_failure native_d3d12_timestamp_initialize(native_device *device)
     if (doe_timestamp_source(period,64,TIMESTAMP_WORKGROUP,source,sizeof(source),&length)!=DOE_TIMESTAMP_SOURCE_OK)
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
     native_d3d12_kernel_code *code=NULL;
-    native_failure failure=native_d3d12_storage_compile(source,length,TIMESTAMP_WORKGROUP,1,&code);
+    native_failure failure=native_d3d12_storage_compile(device,source,length,TIMESTAMP_WORKGROUP,1,&code);
     if (failure.status==NATIVE_OK) failure=native_d3d12_kernel_pipeline(device,code,&device->d3d12_timestamp_pipeline);
     native_d3d12_kernel_code_release(code);
     return failure;

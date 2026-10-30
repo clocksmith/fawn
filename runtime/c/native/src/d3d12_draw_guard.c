@@ -19,10 +19,10 @@ bool native_d3d12_draw_layout(const doe_shader_view *view,bool scan,doe_dx_bindi
 {
     return native_d3d12_storage_kernel_layout(view,scan ? 64u : 1u,scan ? 3u : 1u,out);
 }
-native_failure native_d3d12_storage_compile(const char *source,size_t length,uint32_t workgroup,
-    size_t count,native_d3d12_kernel_code **out)
+native_failure native_d3d12_storage_compile(native_device *device,const char *source,size_t length,
+    uint32_t workgroup,size_t count,native_d3d12_kernel_code **out)
 {
-    if (!source || !length || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    if (!device || !source || !length || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     doe_shader *shader=NULL;
     doe_shader_error error={0};
     doe_shader_status status=native_compile_shader_target(DOE_SHADER_HLSL,source,length,&shader,&error);
@@ -39,20 +39,20 @@ native_failure native_d3d12_storage_compile(const char *source,size_t length,uin
     if (code && doe_shader_borrow(shader,&stage.view)==DOE_SHADER_OK && native_d3d12_storage_kernel_layout(&stage.view,workgroup,count,code->bindings)) {
         code->count=count;
         stage.entry=&stage.view.entries[0];
-        failure=native_d3d12_compile_compute(&stage,&code->shader);
+        failure=native_d3d12_compile_compute(&device->backend,&stage,&code->shader);
     }
     doe_shader_release(shader);
     if (failure.status==NATIVE_OK) *out=code;
     else native_d3d12_kernel_code_release(code);
     return failure;
 }
-native_failure native_d3d12_draw_compile(bool scan,native_d3d12_kernel_code **out)
+native_failure native_d3d12_draw_compile(native_device *device,bool scan,native_d3d12_kernel_code **out)
 {
     char source[DOE_DRAW_INDEX_SCAN_SOURCE_CAPACITY]; size_t length=0;
     doe_draw_guard_source_status generated=scan ? doe_draw_index_scan_source(source,sizeof(source),&length) :
         doe_draw_argument_source_v2(source,sizeof(source),&length);
     if (generated!=DOE_DRAW_GUARD_SOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    return native_d3d12_storage_compile(source,length,scan ? 64u : 1u,scan ? 3u : 1u,out);
+    return native_d3d12_storage_compile(device,source,length,scan ? 64u : 1u,scan ? 3u : 1u,out);
 }
 native_failure native_d3d12_kernel_pipeline(native_device *device,const native_d3d12_kernel_code *code,doe_dx_pipeline **out)
 {

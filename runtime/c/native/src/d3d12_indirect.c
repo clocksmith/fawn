@@ -48,7 +48,7 @@ native_failure native_d3d12_guard_compile(native_device *device, native_d3d12_gu
         native_d3d12_guard_layout(&stage.view,&code->binding)) {
         stage.entry = &stage.view.entries[0];
         stage.visibility = WGPUShaderStage_Compute;
-        failure = native_d3d12_compile_compute(&stage,&code->shader);
+        failure = native_d3d12_compile_compute(&device->backend,&stage,&code->shader);
     }
     doe_shader_release(compiled);
     if (failure.status != NATIVE_OK) native_d3d12_guard_code_release(code);

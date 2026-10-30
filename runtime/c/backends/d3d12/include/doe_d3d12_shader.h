@@ -76,6 +76,17 @@ doe_dx_status doe_dx_shader_compile_required(const doe_dx_shader_options *option
  * while the caller owns this object; native PSO creation copies those bytes. */
 const uint8_t *doe_dx_shader_bytes(const doe_dx_shader *shader, size_t *size);
 void doe_dx_shader_release(doe_dx_shader *shader);
+/* One owned reference to the explicit fully qualified compiler module named by
+ * compiler_module_path, with the same load policy as compile. While retained,
+ * compile/release still take and drop their own module references, but the
+ * module is no longer unloaded and reloaded per shader. fxc names the selected
+ * compiler for diagnostics only; it never selects a different module. Same
+ * host-state rules.
+ * Failure leaves *out untouched. Release drops exactly this reference. */
+typedef struct doe_dx_shader_compiler doe_dx_shader_compiler;
+doe_dx_status doe_dx_shader_compiler_retain(const char *compiler_module_path, bool fxc,
+    doe_dx_shader_compiler **out, doe_dx_shader_error *error);
+void doe_dx_shader_compiler_release(doe_dx_shader_compiler *compiler);
 
 #ifdef __cplusplus
 }

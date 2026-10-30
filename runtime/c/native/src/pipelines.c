@@ -147,7 +147,7 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     if (d3d12) {
         /* SDK loading/compilation and final module release occur outside every
          * owner lock. This ordinary call lease protects the frontend throughout. */
-        native_failure failure = native_d3d12_compile_compute(&stage, &compiled);
+        native_failure failure = native_d3d12_compile_compute(&device->backend, &stage, &compiled);
         if (failure.status != NATIVE_OK) {
             native_d3d12_compiler_release(compiled);
             error->type = native_result_error(failure.status);
