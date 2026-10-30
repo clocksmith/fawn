@@ -45,7 +45,14 @@ the symbol and applies it immediately after creating an inner device, before
 publication or shader creation. A refusal destroys and releases the unpublished
 device. C browser disk shader persistence is disabled; the per-device memory cache
 remains available. Dawn's isolation-key cache descriptor stays with the outer
-device. This neither advertises a WebGPU feature nor accepts Dawn-private chains
+device. After that policy succeeds, the bridge attaches the outer
+device's blob cache through the provider's optional
+`doeNativeDeviceConfigurePipelineBlobStore`. Compute pipelines then load and
+store enveloped Vulkan driver caches through Chromium's WebGPU blob cache, which
+the browser process persists; the sandboxed provider opens no cache file. A
+provider without the symbol, or a refused store, logs
+`runtime_pipeline_blob_cache_unavailable` and creates pipelines uncached. Each
+configured device logs `runtime_pipeline_blob_cache` counters when destroyed. This neither advertises a WebGPU feature nor accepts Dawn-private chains
 in the C constructors. An older runtime without the operation rejects at load.
 
 The focused CPU boundary control uses the actual generated header and provider:
