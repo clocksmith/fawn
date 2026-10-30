@@ -166,7 +166,7 @@ static void test_layout(void) {
     has(text, "value.m1 = doe_r0_load4(offset + 12u)");
     /* Clamp to the last whole element after the 16-byte prefix; fewer than one
      * element clamps to index zero. No access guard remains. */
-    has(text, "min(uint(v1), (doe_r0_bytes() >= 48u ? (doe_r0_bytes() - 16u) / 32u - 1u : 0u)) * 32u");
+    has(text, "min(uint(v1), (max((doe_r0_bytes() - min(doe_r0_bytes(), 16u)) / 32u, 1u) - 1u)) * 32u");
     assert(strstr(text, "if (") == NULL);
     free(text);
     release(f);
