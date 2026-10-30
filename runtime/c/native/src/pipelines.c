@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 #include "d3d12_frontend.h"
+#include "doe_vk_cache.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -102,6 +103,17 @@ static uint32_t required_subgroup(const native_backend *backend, const DoeCompil
     return 32;
 }
 
+typedef struct native_blob { uint8_t *bytes; size_t size; } native_blob;
+static void receive_blob(void *receiver, const void *value, size_t size)
+{
+    native_blob *blob = receiver;
+    if (blob->bytes || !value || !size || size > DOE_VK_CACHE_BLOB_LIMIT) return;
+    blob->bytes = malloc(size);
+    if (!blob->bytes) return;
+    memcpy(blob->bytes, value, size);
+    blob->size = size;
+}
+
 static WGPUComputePipeline create_compute_pipeline(native_device *device,
     const WGPUComputePipelineDescriptor *descriptor, const native_stage *selected, native_pipeline_error *error)
 {
@@ -155,8 +167,29 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
             return NULL;
         }
     }
+    /* Embedder pipeline blobs: lookup and store run without any Doe lock. */
+    DoeNativePipelineBlobStore blobs = {0};
+    uint8_t build[32] = {0}, blob_key[32];
+    native_lock(device);
+    if (device->backend.kind == WGPUBackendType_Vulkan) {
+        blobs = device->pipeline_blobs;
+        memcpy(build, device->build_identity, sizeof(build));
+    }
+    native_unlock(device);
+    const uint32_t subgroup = device->backend.kind == WGPUBackendType_Vulkan && !stage.imported ?
+        required_subgroup(&device->backend, entry) : 0;
+    native_blob loaded = {0};
+    doe_vk_pipeline_blob blob = {0};
+    const bool use_blobs = blobs.load && doe_vk_pipeline_blob_key(device->backend.value.vulkan.context,
+        stage.source_key, build, view->words, view->counts.words, stage.name, subgroup, blob_key);
+    if (use_blobs) {
+        blobs.load(blobs.userdata, blob_key, sizeof(blob_key), receive_blob, &loaded);
+        blob.loaded = loaded.bytes;
+        blob.loaded_size = loaded.size;
+    }
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) {
+        free(loaded.bytes);
         native_d3d12_compiler_release(compiled);
         pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline allocation failed");
         return NULL;
@@ -178,9 +211,9 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
             if (!native_vulkan_binding_layout(payload,native_bindings)) backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
             else {
                 doe_vk_error detail = {0};
-                doe_vk_status status = doe_vk_pipeline_create_with_immediates(device->backend.value.vulkan.context,
-                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count, stage.imported ? 0 : required_subgroup(&device->backend, entry), payload->immediate_bytes,
-                    &payload->handle.vulkan, &detail);
+                doe_vk_status status = doe_vk_pipeline_create_blob(device->backend.value.vulkan.context,
+                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count, subgroup, payload->immediate_bytes,
+                    use_blobs ? &blob : NULL, &payload->handle.vulkan, &detail);
                 backend_failure = native_failure_vulkan(status, &detail);
             }
         } else if (device->backend.kind == WGPUBackendType_Metal)
@@ -205,6 +238,9 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     }
     if (automatic) doe_resource_pipeline_layout_release(layout);
     native_unlock(device);
+    free(loaded.bytes);
+    if (blob.produced) blobs.store(blobs.userdata, blob_key, sizeof(blob_key), blob.produced, blob.produced_size);
+    free(blob.produced);
     native_d3d12_compiler_release(compiled);
     if (pipeline && resource_status != DOE_RESOURCE_OK) {
         /* Its release, outside the device lock, also releases the payload. */
