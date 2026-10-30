@@ -380,3 +380,87 @@ warm-operation and 12-15% completion gains do not clear it at 24 pairs.
 
 Neither runtime change is committed. Both patches stay as receipts:
 [`m7r.patch`](round3/m7r.patch) and [`m2r.patch`](round3/m2r.patch).
+
+## Round 4 checkpoint: power-sized reruns frozen, timing stopped by a host fault
+
+M7R and M2R round 3 stay FAIL. On the coordinator's instruction, three new
+experiments were frozen and hashed, but none had run when timing stopped:
+
+| Contract | Candidate | Pairs | Status |
+| --- | --- | ---: | --- |
+| [`frozen-m7r2.json`](round4/frozen-m7r2.json) | M7R, unchanged (`round3/m7r.patch`) | 96 | not run |
+| [`frozen-m2r2.json`](round4/frozen-m2r2.json) | M2R, unchanged (`round3/m2r.patch`) | 192 | not run |
+| [`frozen-combined.json`](round4/frozen-combined.json) | M7R + M2R, [`c-direct`](round4/candidates/c-direct.patch), under the M2R contract including its upload-latency gate | 192 | not run |
+
+**Pair counts** come from an empirical bootstrap power simulation over the
+round-3 per-pair `complete` ratios ([`power2.py`](round4/power2.py)), targeting
+80% power per gate.
+
+**Window validity** (the coordinator's option 2, written into each contract
+before freezing):
+- Foreign GPU busy must be at most 2% of window wall time. It is computed from
+  amdgpu DRM fdinfo engine time of non-harness clients, sampled throughout.
+  Device `gpu_busy_percent` is recorded beside it.
+- Foreign CPU must be at most 5% of window CPU capacity: `/proc/stat` busy time
+  minus the harness tree.
+- The Dawn A/A check must pass.
+
+Invalid windows are rerun fresh and never reinterpreted. Tooling:
+[`window_gate.py`](round4/tools/window_gate.py) and
+[`gated-window.sh`](round4/tools/gated-window.sh).
+
+### Diagnostics that ran (both windows passed the gate, before the host fault)
+
+1. **[M7 teardown bracket](round4/td2/)** (gate: foreign GPU 0.0%, CPU 1.66%).
+   After an explicit settle (1-2 µs on both), the excess moved entirely onto
+   the release of a never-used 256-byte buffer: 22 µs on main against 54 µs on
+   M7R. The next release (`params`) was unchanged at 15-16 µs.
+   *Inference:* this is deferred driver or kernel cleanup run on the first
+   object release after the loop. Main pays it inside every iteration through
+   its per-submit descriptor-pool destroys; M7R pays it once at teardown. It is
+   moved, not added.
+2. **[Upload-recovery variants](round4/vdiag/)** (gate: foreign GPU 0.0%, CPU
+   1.19%). Ratios against main, from 24 pairs:
+
+| Variant | complete: vector / image / upload-readback | warm upload: same order |
+| --- | --- | --- |
+| c-direct (M7R + M2R) | 0.833 / 0.864 / 0.941 | 1.128 / 1.088 / 0.974 |
+| [c-stream](round4/candidates/c-stream.patch) (adds SSE2 non-temporal stores) | 0.851 / 0.867 / 0.929 | 1.121 / 1.047 / 0.997 |
+| [c-staging](round4/candidates/c-staging.patch) (cached staging ring that never reallocates) | 0.896 / 0.993 / 1.058 | 0.961 / 0.990 / 1.017 |
+
+Doe already maps persistently. No variant recovered upload without losing
+`complete`, so the simpler c-direct was frozen as the combined candidate.
+
+### Correctness before freezing
+
+All candidates (M7R, M2R, c-direct, c-stream, c-staging) matched the main
+control `1823497b5` on every suite ([variant results](round4/allchecks.out)):
+- **Physical clients:** all 78 ran; only `failures` fails, on main too.
+- **Native software check:** 90 PASS before the same `failures` abort, as on
+  main.
+- **Later check clients:** only `sample-mask` and `d3d12-buffer-placement`
+  fail, on main too.
+- **`check-vulkan`:** passes.
+- **Vulkan contracts:** only `surface_features` and `feature_contract` fail,
+  on main too.
+
+### Why timing stopped
+
+The host's amdgpu driver reported `list_del corruption` in its GPU
+memory-management lists from 17:39:30Z, triggered by a Chrome process, and a
+reboot is expected. The first M7R-2 window (vector) never started: its lock
+wait timed out after one hour with no window directory, and the retry was
+stopped while still waiting ([log](round4/m7r2-not-run/gated.out)). No timed
+window of this campaign overlaps the fault. Both diagnostics above ran earlier,
+at 16:19Z and 16:28Z.
+
+### To run after a healthy reboot
+
+The nine gated windows below, one per workload, under the unchanged frozen
+contracts. The [run scripts](round4/runs/) and [master](round4/master.sh) are
+retained. Rebuild exactly the hashed libraries and harness binaries; if any
+hash differs, the contract has to be re-frozen as a new experiment.
+
+1. M7R-2: vector, image, upload/readback (96 pairs each)
+2. M2R-2: vector, image, upload/readback (192 pairs each)
+3. Combined (c-direct): vector, image, upload/readback (192 pairs each)

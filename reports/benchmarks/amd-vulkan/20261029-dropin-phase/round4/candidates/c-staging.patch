@@ -1,0 +1,789 @@
+diff --git a/runtime/c/backends/vulkan/include/doe_vk.h b/runtime/c/backends/vulkan/include/doe_vk.h
+index 35343ea29..c83fc529c 100644
+--- a/runtime/c/backends/vulkan/include/doe_vk.h
++++ b/runtime/c/backends/vulkan/include/doe_vk.h
+@@ -230,6 +230,8 @@ void doe_vk_buffer_release(doe_vk_buffer *buffer);
+ uint64_t doe_vk_buffer_size(const doe_vk_buffer *buffer);
+ /* A submitted recording still uses the buffer, so host access is BUSY. */
+ bool doe_vk_buffer_busy(const doe_vk_buffer *buffer);
++/* True when the buffer has a persistent host mapping (HOST memory kind). */
++bool doe_vk_buffer_host_visible(const doe_vk_buffer *buffer);
+ /* Host memory is required coherent and initialized to zero on creation.
+  * Device memory requires explicit fill/copy before reading, as enforced upstream.
+  * Host accesses refuse buffers retained by recorded or unresolved GPU commands.
+diff --git a/runtime/c/backends/vulkan/src/descriptors.c b/runtime/c/backends/vulkan/src/descriptors.c
+index e63a35e30..11906368d 100644
+--- a/runtime/c/backends/vulkan/src/descriptors.c
++++ b/runtime/c/backends/vulkan/src/descriptors.c
+@@ -80,34 +80,81 @@ static doe_vk_status validate_resources(doe_vk_commands *commands,
+     return DOE_VK_OK;
+ }
+ 
+-static doe_vk_status descriptor_pool(doe_vk_commands *commands,
+-    doe_vk_pipeline *pipeline, doe_vk_dispatch_use *use, VkDescriptorSet *sets) {
+-    if (pipeline->group_count == 0) return DOE_VK_OK;
+-    uint32_t counts[5] = {0};
+-    for (uint32_t i = 0; i < pipeline->binding_count; ++i) ++counts[(uint32_t)pipeline->bindings[i].kind];
++/* Dispatch uses allocate their sets from context-owned blocks created with
++ * FREE_DESCRIPTOR_SET and free them at release, instead of creating and
++ * destroying a pool per use. A block that is exhausted or fragmented is
++ * skipped; a new block is created only when every block refuses. A set is
++ * written once by its use and never updated while any recording holds it. */
++enum { DESCRIPTOR_BLOCK_SETS = 256, DESCRIPTOR_BLOCK_PER_TYPE = 1024 };
++enum { VK_ERROR_FRAGMENTED_POOL_VALUE = -12, VK_ERROR_OUT_OF_POOL_MEMORY_VALUE = -1000069000,
++    VK_DESCRIPTOR_POOL_FREE_SET = 0x1 };
++struct doe_vk_descriptor_block {
++    VkDescriptorPool pool;
++    struct doe_vk_descriptor_block *next;
++};
++
++static doe_vk_status descriptor_block(doe_vk_context *context, struct doe_vk_descriptor_block **out) {
++    struct doe_vk_descriptor_block *block = calloc(1, sizeof(*block));
++    if (block == NULL) return DOE_VK_OUT_OF_MEMORY;
+     VkDescriptorPoolSize sizes[5];
+-    uint32_t size_count = 0;
+-    for (uint32_t i = 0; i < 5; ++i) {
+-        if (counts[i] != 0) sizes[size_count++] = (VkDescriptorPoolSize){ doe_vk_descriptor_type((doe_vk_binding_kind)i), counts[i] };
+-    }
++    for (uint32_t i = 0; i < 5; ++i)
++        sizes[i] = (VkDescriptorPoolSize){ doe_vk_descriptor_type((doe_vk_binding_kind)i), DESCRIPTOR_BLOCK_PER_TYPE };
+     const VkDescriptorPoolCreateInfo pool = {
+         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+-        .maxSets = pipeline->group_count,
+-        .poolSizeCount = size_count,
++        .flags = VK_DESCRIPTOR_POOL_FREE_SET,
++        .maxSets = DESCRIPTOR_BLOCK_SETS,
++        .poolSizeCount = 5,
+         .pPoolSizes = sizes
+     };
+-    doe_vk_context *context = commands->context;
+     doe_vk_status status = doe_vk_result(context, context->vk.vkCreateDescriptorPool(context->device,
+-        &pool, NULL, &use->pool), "vkCreateDescriptorPool", NULL);
+-    if (status != DOE_VK_OK) return status;
+-    const VkDescriptorSetAllocateInfo allocate = {
++        &pool, NULL, &block->pool), "vkCreateDescriptorPool", NULL);
++    if (status != DOE_VK_OK) {
++        free(block);
++        return status;
++    }
++    block->next = context->descriptor_blocks;
++    context->descriptor_blocks = block;
++    *out = block;
++    return DOE_VK_OK;
++}
++
++static doe_vk_status descriptor_pool(doe_vk_commands *commands,
++    doe_vk_pipeline *pipeline, doe_vk_dispatch_use *use, VkDescriptorSet *sets) {
++    if (pipeline->group_count == 0) return DOE_VK_OK;
++    doe_vk_context *context = commands->context;
++    VkDescriptorSetAllocateInfo allocate = {
+         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+-        .descriptorPool = use->pool,
+         .descriptorSetCount = pipeline->group_count,
+         .pSetLayouts = pipeline->sets
+     };
+-    return doe_vk_result(context, context->vk.vkAllocateDescriptorSets(context->device,
+-        &allocate, sets), "vkAllocateDescriptorSets", NULL);
++    VkResult result = 0;
++    for (struct doe_vk_descriptor_block *block = context->descriptor_blocks; block != NULL; block = block->next) {
++        allocate.descriptorPool = block->pool;
++        result = context->vk.vkAllocateDescriptorSets(context->device, &allocate, sets);
++        if (result == 0) {
++            use->pool = block->pool;
++            return DOE_VK_OK;
++        }
++        if (result != VK_ERROR_FRAGMENTED_POOL_VALUE && result != VK_ERROR_OUT_OF_POOL_MEMORY_VALUE)
++            return doe_vk_result(context, result, "vkAllocateDescriptorSets", NULL);
++    }
++    struct doe_vk_descriptor_block *fresh = NULL;
++    doe_vk_status status = descriptor_block(context, &fresh);
++    if (status != DOE_VK_OK) return status;
++    allocate.descriptorPool = fresh->pool;
++    result = context->vk.vkAllocateDescriptorSets(context->device, &allocate, sets);
++    if (result == 0) use->pool = fresh->pool;
++    /* A refusal from a fresh block means the layout cannot fit: a failure. */
++    return result == 0 ? DOE_VK_OK : doe_vk_result(context, result, "vkAllocateDescriptorSets", NULL);
++}
++
++void doe_vk_descriptor_blocks_clear(doe_vk_context *context) {
++    while (context->descriptor_blocks != NULL) {
++        struct doe_vk_descriptor_block *block = context->descriptor_blocks;
++        context->descriptor_blocks = block->next;
++        context->vk.vkDestroyDescriptorPool(context->device, block->pool, NULL);
++        free(block);
++    }
+ }
+ 
+ static bool buffers_only(const doe_vk_binding_resource *bindings, size_t count) {
+@@ -252,7 +299,8 @@ doe_vk_status doe_vk_commands_dispatch_resources(doe_vk_commands *commands,
+ }
+ 
+ void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use) {
+-    if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
++    if (use->pool != 0) /* Freeing never fails for a FREE_DESCRIPTOR_SET pool. */
++        (void)context->vk.vkFreeDescriptorSets(context->device, use->pool, use->pipeline->group_count, use->sets);
+     for (uint32_t i = 0; i < DOE_VK_MAX_BINDINGS; ++i) {
+         doe_vk_texture_view_release(use->views[i]);
+         doe_vk_sampler_release(use->samplers[i]);
+diff --git a/runtime/c/backends/vulkan/src/internal.h b/runtime/c/backends/vulkan/src/internal.h
+index 2554768ab..9059f6cc0 100644
+--- a/runtime/c/backends/vulkan/src/internal.h
++++ b/runtime/c/backends/vulkan/src/internal.h
+@@ -53,6 +53,9 @@ struct doe_vk_context {
+     /* Compute pipelines by exact creation input, most recent first: live
+      * ones and up to DOE_VK_RETAINED_PIPELINES released ones; see pipeline.c. */
+     struct doe_vk_pipeline *compute_pipelines;
++    /* Free-able descriptor pools that dispatch uses allocate their sets from;
++     * see descriptors.c. Accessed only under the owning device's serialization. */
++    struct doe_vk_descriptor_block *descriptor_blocks;
+     uint32_t retained_pipelines;
+     VkPipelineCache driver_cache;
+     char *driver_cache_path;
+@@ -70,6 +73,8 @@ struct doe_vk_context {
+ enum { DOE_VK_RETAINED_PIPELINES = 32 };
+ /* Destroys released compute pipelines; the context is releasing its device. */
+ void doe_vk_pipeline_cache_clear(doe_vk_context *context);
++/* Destroys every descriptor pool block; the context is releasing its device. */
++void doe_vk_descriptor_blocks_clear(doe_vk_context *context);
+ void doe_vk_driver_cache_clear(doe_vk_context *context);
+ void doe_vk_driver_cache_record(doe_vk_context *context, bool success);
+ doe_vk_status doe_vk_pipeline_blob_open(doe_vk_context *context, const doe_vk_pipeline_blob *blob,
+diff --git a/runtime/c/backends/vulkan/src/loader.c b/runtime/c/backends/vulkan/src/loader.c
+index 924e0c0a3..66b5886c8 100644
+--- a/runtime/c/backends/vulkan/src/loader.c
++++ b/runtime/c/backends/vulkan/src/loader.c
+@@ -91,6 +91,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
+     _Static_assert(sizeof(context->vk.vkCreateDescriptorPool) == sizeof(void *), "vkCreateDescriptorPool POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkDestroyDescriptorPool) == sizeof(void *), "vkDestroyDescriptorPool POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkAllocateDescriptorSets) == sizeof(void *), "vkAllocateDescriptorSets POSIX pointer size");
++    _Static_assert(sizeof(context->vk.vkFreeDescriptorSets) == sizeof(void *), "vkFreeDescriptorSets POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkUpdateDescriptorSets) == sizeof(void *), "vkUpdateDescriptorSets POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkCreatePipelineLayout) == sizeof(void *), "vkCreatePipelineLayout POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkDestroyPipelineLayout) == sizeof(void *), "vkDestroyPipelineLayout POSIX pointer size");
+@@ -186,6 +187,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
+         { "vkCreateDescriptorPool", &context->vk.vkCreateDescriptorPool, sizeof(context->vk.vkCreateDescriptorPool) },
+         { "vkDestroyDescriptorPool", &context->vk.vkDestroyDescriptorPool, sizeof(context->vk.vkDestroyDescriptorPool) },
+         { "vkAllocateDescriptorSets", &context->vk.vkAllocateDescriptorSets, sizeof(context->vk.vkAllocateDescriptorSets) },
++        { "vkFreeDescriptorSets", &context->vk.vkFreeDescriptorSets, sizeof(context->vk.vkFreeDescriptorSets) },
+         { "vkUpdateDescriptorSets", &context->vk.vkUpdateDescriptorSets, sizeof(context->vk.vkUpdateDescriptorSets) },
+         { "vkCreatePipelineLayout", &context->vk.vkCreatePipelineLayout, sizeof(context->vk.vkCreatePipelineLayout) },
+         { "vkDestroyPipelineLayout", &context->vk.vkDestroyPipelineLayout, sizeof(context->vk.vkDestroyPipelineLayout) },
+@@ -484,6 +486,7 @@ void doe_vk_context_release(doe_vk_context *context) {
+     /* Every recording/submission/resource owns a reference, so no native work
+      * can exist here. Unknown submissions cannot be released. */
+     doe_vk_pipeline_cache_clear(context);
++    doe_vk_descriptor_blocks_clear(context);
+     (void)doe_vk_context_pipeline_cache_flush(context, NULL);
+     doe_vk_driver_cache_clear(context);
+     doe_vk_command_spares_clear(context);
+diff --git a/runtime/c/backends/vulkan/src/resources.c b/runtime/c/backends/vulkan/src/resources.c
+index 914a40742..70ea486fe 100644
+--- a/runtime/c/backends/vulkan/src/resources.c
++++ b/runtime/c/backends/vulkan/src/resources.c
+@@ -163,6 +163,10 @@ bool doe_vk_buffer_busy(const doe_vk_buffer *buffer) {
+     return buffer != NULL && buffer->recorded_uses != 0;
+ }
+ 
++bool doe_vk_buffer_host_visible(const doe_vk_buffer *buffer) {
++    return buffer != NULL && buffer->mapped != NULL;
++}
++
+ uint64_t doe_vk_buffer_size(const doe_vk_buffer *buffer) {
+     return buffer != NULL ? buffer->size : 0;
+ }
+diff --git a/runtime/c/backends/vulkan/src/vk_abi_functions.h b/runtime/c/backends/vulkan/src/vk_abi_functions.h
+index 4f146aa1f..a902bc4dc 100644
+--- a/runtime/c/backends/vulkan/src/vk_abi_functions.h
++++ b/runtime/c/backends/vulkan/src/vk_abi_functions.h
+@@ -90,6 +90,7 @@ typedef struct doe_vk_functions {
+     VkResult (*vkCreateDescriptorPool)(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool);
+     void (*vkDestroyDescriptorPool)(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks *pAllocator);
+     VkResult (*vkAllocateDescriptorSets)(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo, VkDescriptorSet *pDescriptorSets);
++    VkResult (*vkFreeDescriptorSets)(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets);
+     void (*vkUpdateDescriptorSets)(VkDevice device, uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount, const void *pDescriptorCopies);
+     VkResult (*vkCreatePipelineLayout)(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout);
+     void (*vkDestroyPipelineLayout)(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks *pAllocator);
+diff --git a/runtime/c/backends/vulkan/tests/descriptor_reuse.c b/runtime/c/backends/vulkan/tests/descriptor_reuse.c
+index addbce20f..9c1e1c46a 100644
+--- a/runtime/c/backends/vulkan/tests/descriptor_reuse.c
++++ b/runtime/c/backends/vulkan/tests/descriptor_reuse.c
+@@ -6,7 +6,7 @@
+ 
+ /* Native procedure boundary only: counts descriptor work per recorded dispatch. */
+ static struct {
+-    unsigned pools_created, pools_destroyed, sets_allocated, updates;
++    unsigned pools_created, pools_destroyed, sets_allocated, sets_freed, updates;
+     unsigned barriers, dispatches, pipeline_binds, set_binds;
+     uint64_t next_handle;
+ } mock;
+@@ -23,6 +23,12 @@ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocat
+     assert(pool != 0);
+     ++mock.pools_destroyed;
+ }
++static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
++    (void)device; (void)sets;
++    assert(pool != 0 && count == 1);
++    ++mock.sets_freed;
++    return 0;
++}
+ static VkResult allocate_sets(VkDevice device, const VkDescriptorSetAllocateInfo *info, VkDescriptorSet *sets) {
+     (void)device;
+     for (uint32_t i = 0; i < info->descriptorSetCount; ++i) sets[i] = ++mock.next_handle;
+@@ -77,7 +83,8 @@ int main(void) {
+     context.caps.max_storage_buffer_range = 1u << 20;
+     context.vk = (doe_vk_functions){
+         .vkCreateDescriptorPool = create_pool, .vkDestroyDescriptorPool = destroy_pool,
+-        .vkAllocateDescriptorSets = allocate_sets, .vkUpdateDescriptorSets = update_sets,
++        .vkAllocateDescriptorSets = allocate_sets, .vkFreeDescriptorSets = free_sets,
++        .vkUpdateDescriptorSets = update_sets,
+         .vkCmdPipelineBarrier = barrier, .vkCmdBindPipeline = bind_pipeline,
+         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch
+     };
+@@ -103,7 +110,8 @@ int main(void) {
+     assert(doe_vk_commands_dispatch_resources(&commands, &other, &binding, 1, 1, 1, 1) == DOE_VK_OK);
+     binding.value.buffer.offset = 0;
+     assert(doe_vk_commands_dispatch_resources(&commands, &pipeline, &binding, 1, 1, 1, 1) == DOE_VK_OK);
+-    assert(mock.pools_created == 4 && mock.updates == 4 && mock.dispatches == 6);
++    /* Distinct uses allocate sets from the one context block. */
++    assert(mock.pools_created == 1 && mock.sets_allocated == 4 && mock.updates == 4 && mock.dispatches == 6);
+ 
+     /* Validation still runs for a shared use. */
+     buffer.content_status = DOE_VK_OUT_OF_MEMORY;
+@@ -112,8 +120,11 @@ int main(void) {
+     buffer.content_status = DOE_VK_OK;
+ 
+     release_uses(&commands);
+-    assert(mock.pools_destroyed == mock.pools_created && pipeline.references == 1 && other.references == 1);
++    assert(mock.sets_freed == mock.sets_allocated && mock.pools_destroyed == 0);
++    assert(pipeline.references == 1 && other.references == 1);
++    doe_vk_descriptor_blocks_clear(&context);
++    assert(mock.pools_destroyed == mock.pools_created);
+     assert(buffer.recorded_uses == 0 && buffer.references == 1);
+-    puts("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch");
++    puts("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch; sets come from and return to one context block");
+     return 0;
+ }
+diff --git a/runtime/c/backends/vulkan/tests/indirect_lifetime.c b/runtime/c/backends/vulkan/tests/indirect_lifetime.c
+index ea8aeb8fd..9416851b6 100644
+--- a/runtime/c/backends/vulkan/tests/indirect_lifetime.c
++++ b/runtime/c/backends/vulkan/tests/indirect_lifetime.c
+@@ -22,7 +22,7 @@ static void copy_buffer(VkCommandBuffer command, VkBuffer source, VkBuffer desti
+ static VkResult create_pool(VkDevice device, const VkDescriptorPoolCreateInfo *info,
+     const VkAllocationCallbacks *allocator, VkDescriptorPool *out) {
+     (void)device; (void)allocator;
+-    assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
++    assert(info->flags == 1 && info->maxSets >= 1 && info->poolSizeCount == 5); /* One free-able context block. */
+     *out = 9;
+     return 0;
+ }
+@@ -77,6 +77,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
+     assert(buffer == 3);
+     ++buffers_destroyed;
+ }
++static unsigned sets_freed;
++static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
++    (void)device;
++    assert(pool == 9 && count == 1 && sets[0] == 10);
++    ++sets_freed;
++    return 0;
++}
+ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocationCallbacks *allocator) {
+     (void)device; (void)allocator;
+     assert(pool == 9);
+@@ -99,7 +106,7 @@ int main(void) {
+         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch, .vkCmdDispatchIndirect = dispatch_indirect,
+         .vkDestroyPipeline = destroy_pipeline, .vkDestroyPipelineLayout = destroy_layout,
+         .vkDestroyDescriptorSetLayout = destroy_set, .vkDestroyBuffer = destroy_buffer,
+-        .vkDestroyDescriptorPool = destroy_pool, .vkWaitForFences = wait_lost};
++        .vkDestroyDescriptorPool = destroy_pool, .vkFreeDescriptorSets = free_sets, .vkWaitForFences = wait_lost};
+     doe_vk_dispatch_validator *validator = calloc(1, sizeof(*validator));
+     doe_vk_buffer *scratch = calloc(1, sizeof(*scratch));
+     doe_vk_pipeline *sanitize = calloc(1, sizeof(*sanitize)), *target = calloc(1, sizeof(*target));
+@@ -139,7 +146,9 @@ int main(void) {
+     commands->state = DOE_VK_SUBMITTED;
+     assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_DEVICE_LOST);
+     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+-    assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && pools_destroyed == 1);
++    assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && sets_freed == 1 && pools_destroyed == 0);
++    doe_vk_descriptor_blocks_clear(&context); /* The context block outlives the recording. */
++    assert(pools_destroyed == 1);
+     assert(context.references == 1 && args.references == 1 && args.content_status == DOE_VK_DEVICE_LOST);
+     puts("PASS indirect copy/guard/target-bind/dispatch ordering, exact12-byte scratch, barriers, last-byte and usage/type/late-target rejection before native work, early validator release and uncertain/failed retirement");
+     return 0;
+diff --git a/runtime/c/backends/vulkan/tests/timestamp_lifetime.c b/runtime/c/backends/vulkan/tests/timestamp_lifetime.c
+index 4eb97b463..b451caab8 100644
+--- a/runtime/c/backends/vulkan/tests/timestamp_lifetime.c
++++ b/runtime/c/backends/vulkan/tests/timestamp_lifetime.c
+@@ -32,7 +32,7 @@ static VkResult create_pool(VkDevice device, const VkDescriptorPoolCreateInfo *i
+     const VkAllocationCallbacks *allocator, VkDescriptorPool *out) {
+     (void)device;
+     (void)allocator;
+-    assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
++    assert(info->flags == 1 && info->maxSets >= 1 && info->poolSizeCount == 5); /* One free-able context block. */
+     *out = 9;
+     return 0;
+ }
+@@ -93,6 +93,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
+     assert(buffer == 3);
+     ++destroyed_buffer;
+ }
++static unsigned freed_sets;
++static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
++    (void)device;
++    assert(pool == 9 && count == 1 && sets[0] == 10);
++    ++freed_sets;
++    return 0;
++}
+ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocationCallbacks *allocator) {
+     (void)device;
+     (void)allocator;
+@@ -123,7 +130,7 @@ int main(void) {
+         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch,
+         .vkCmdCopyBuffer = copy_buffer, .vkDestroyPipeline = destroy_pipeline,
+         .vkDestroyPipelineLayout = destroy_layout, .vkDestroyDescriptorSetLayout = destroy_set,
+-        .vkDestroyBuffer = destroy_buffer, .vkDestroyDescriptorPool = destroy_pool,
++        .vkDestroyBuffer = destroy_buffer, .vkDestroyDescriptorPool = destroy_pool, .vkFreeDescriptorSets = free_sets,
+         .vkWaitForFences = wait_failed};
+     doe_vk_timestamp_normalizer *normalizer = calloc(1, sizeof(*normalizer));
+     doe_vk_buffer *scratch = calloc(1, sizeof(*scratch));
+@@ -170,7 +177,11 @@ int main(void) {
+     commands->state = DOE_VK_SUBMITTED;
+     assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_DEVICE_LOST);
+     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+-    assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && destroyed_pool == 1);
++    /* Sets return to the context block at retirement; the block itself lives
++     * until the context releases its device. */
++    assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && freed_sets == 1 && destroyed_pool == 0);
++    doe_vk_descriptor_blocks_clear(&context);
++    assert(destroyed_pool == 1);
+     assert(context.references == 1 && destination.references == 1 && pool.references == 1);
+     assert(destination.content_status == DOE_VK_DEVICE_LOST && pool.content_status == DOE_VK_DEVICE_LOST);
+     puts("PASS timestamp native copy/zero/descriptor/dispatch/copy ordering, exact short binding, zero-count no-op, early normalizer release and uncertain/failure lifetime");
+diff --git a/runtime/c/native/src/backend_buffers.c b/runtime/c/native/src/backend_buffers.c
+index f8172d868..1f8907528 100644
+--- a/runtime/c/native/src/backend_buffers.c
++++ b/runtime/c/native/src/backend_buffers.c
+@@ -3,14 +3,30 @@
+ #include "d3d12_frontend.h"
+ 
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+-    bool direct_readback)
++    bool direct_readback, bool host_mapped)
+ {
+     native_backend *backend = &buffer->device->backend;
+     if (backend->kind == WGPUBackendType_Vulkan) {
++        /* Mappable buffers and copy-only staging keep coherent host-cached memory.
++         * Buffers the GPU reads or writes in passes live in device-local memory:
++         * zeroed by a recorded fill and written through pooled host staging in
++         * the device's initialization batch, flushed ahead of any later work. */
++        const uint32_t gpu_usage = DOE_VK_BUFFER_UNIFORM | DOE_VK_BUFFER_STORAGE | DOE_VK_BUFFER_INDEX |
++            DOE_VK_BUFFER_VERTEX | DOE_VK_BUFFER_INDIRECT;
++        const bool device_resident = !host_mapped && (usage & gpu_usage) != 0;
+         doe_vk_error error = {0};
+-        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context,
+-            size, usage, DOE_VK_MEMORY_HOST, &buffer->handle.vulkan, &error);
+-        return native_failure_vulkan(status, &error);
++        if (device_resident) size = (size + 3) & ~UINT64_C(3); /* Whole-word fill; public size unchanged. */
++        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context, size,
++            device_resident ? usage | DOE_VK_BUFFER_COPY_DST : usage,
++            device_resident ? DOE_VK_MEMORY_DEVICE : DOE_VK_MEMORY_HOST, &buffer->handle.vulkan, &error);
++        native_failure failure = native_failure_vulkan(status, &error);
++        if (failure.status == NATIVE_OK && device_resident)
++            failure = native_queue_buffer_zero(buffer->device, buffer->handle.vulkan, size);
++        if (failure.status != NATIVE_OK && buffer->handle.vulkan) {
++            doe_vk_buffer_release(buffer->handle.vulkan); /* A recorded fill retains its own lease. */
++            buffer->handle.vulkan = NULL;
++        }
++        return failure;
+     }
+     if (backend->kind == WGPUBackendType_Metal) {
+         /* GPU index validation loads packed words, including an odd final
+@@ -77,7 +93,9 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset,
+ native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size)
+ {
+     if (buffer->device->backend.kind == WGPUBackendType_Vulkan)
+-        return native_failure_vulkan(doe_vk_buffer_write(buffer->handle.vulkan, offset, bytes, size), NULL);
++        return doe_vk_buffer_host_visible(buffer->handle.vulkan) ?
++            native_failure_vulkan(doe_vk_buffer_write(buffer->handle.vulkan, offset, bytes, size), NULL) :
++            native_stage_buffer_write(buffer->device, buffer->handle.vulkan, offset, bytes, size);
+     if (buffer->device->backend.kind == WGPUBackendType_Metal)
+         return native_failure_metal(doe_mtl_buffer_write(buffer->handle.metal, offset, bytes, size), NULL);
+     if (buffer->device->backend.kind == WGPUBackendType_D3D12)
+diff --git a/runtime/c/native/src/buffers.c b/runtime/c/native/src/buffers.c
+index a70fd87a2..141428c89 100644
+--- a/runtime/c/native/src/buffers.c
++++ b/runtime/c/native/src/buffers.c
+@@ -78,7 +78,8 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
+         NATIVE_UNSUPPORTED : native_device_result(device));
+     if (failure.status == NATIVE_OK)
+         failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage,
+-            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation);
++            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation,
++            (descriptor->usage & (WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite)) != 0);
+     doe_resource_status created = DOE_RESOURCE_OK;
+     if (failure.status == NATIVE_OK) {
+         created = doe_resource_buffer_create(&device->resources, &desc,
+@@ -428,8 +429,11 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
+         /* D3D12 snapshots writes into retained upload staging, then copies on
+          * its ordered queue. It never CPU-writes the destination allocation.
+          * CPU read/map below still waits for that buffer's accepted owner. */
+-        failure = device->backend.kind == WGPUBackendType_D3D12 ?
+-            native_settle_routine(device).failure : native_settle_for_buffer(device, payload);
++        const bool staged = device->backend.kind == WGPUBackendType_D3D12 ||
++            (device->backend.kind == WGPUBackendType_Vulkan && !doe_vk_buffer_host_visible(payload->handle.vulkan));
++        /* Vulkan device-local destinations are written by a queue-ordered copy
++         * from staging, never by the CPU, so they need no buffer settlement. */
++        failure = staged ? native_settle_routine(device).failure : native_settle_for_buffer(device, payload);
+         /* A Metal resource wait drops the mutex. A concurrent map/destroy must
+          * be admitted by the same resource owner before any CPU write. */
+         if (failure.status == NATIVE_OK)
+diff --git a/runtime/c/native/src/internal.h b/runtime/c/native/src/internal.h
+index 5cbc2690d..ca6898344 100644
+--- a/runtime/c/native/src/internal.h
++++ b/runtime/c/native/src/internal.h
+@@ -36,6 +36,15 @@ typedef struct native_adapter {
+ 
+ typedef struct native_pending native_pending;
+ typedef struct native_loss native_loss;
++/* Idle host staging buffers a Vulkan device keeps for device-local writes. */
++#define NATIVE_UPLOAD_STAGING 4u
++/* Staged device-local writes held before a recording copies them. */
++#define NATIVE_STAGED_COPIES 32u
++typedef struct native_staged_copy {
++    doe_vk_buffer *staging, *destination; /* One lease each until recorded. */
++    uint64_t offset;
++    size_t size;
++} native_staged_copy;
+ typedef struct native_device {
+     atomic_uint references;
+     atomic_uint external_references;
+@@ -77,7 +86,15 @@ typedef struct native_device {
+     /* Vulkan: unsubmitted zero initialization of newly created textures,
+      * flushed ahead of the next recording that may touch them. */
+     doe_vk_commands *init_batch;
+-    uint32_t init_batch_textures; /* Textures recorded into init_batch. */
++    uint32_t init_batch_textures; /* Textures, buffer zero fills and staged writes recorded. */
++    /* Vulkan host staging reused for device-local buffer writes; an entry is
++     * reused only while no recording retains it (doe_vk_buffer_busy false). */
++    doe_vk_buffer *upload_staging[NATIVE_UPLOAD_STAGING];
++    /* Staged writes in queue order. The next user submission records them at
++     * the head of its own recording; any other flush records them into
++     * init_batch after its fills. */
++    native_staged_copy staged[NATIVE_STAGED_COPIES];
++    uint32_t staged_count;
+ } native_device;
+ 
+ /* Native payloads have no independent reference count. Their resource owner
+@@ -259,7 +276,7 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset,
+     const unsigned char **out);
+ native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+-    bool direct_readback);
++    bool direct_readback, bool host_mapped);
+ void native_buffer_close(native_buffer *buffer);
+ native_result native_device_result(native_device *device);
+ void native_pipeline_release(void *userdata, void *handle);
+@@ -359,6 +376,18 @@ native_failure native_flush_initialization(native_device *device);
+ /* Textures one initialization batch holds before queueing submits it. */
+ #define NATIVE_INIT_BATCH_TEXTURES 64u
+ void native_release_initialization(native_device *device);
++/* Caller holds device mutex (Vulkan). Device-local buffers: zero fill and host
++ * writes recorded into the same initialization batch; writes snapshot bytes
++ * into idle pooled host staging before returning. */
++native_failure native_queue_buffer_zero(native_device *device, doe_vk_buffer *buffer, uint64_t size);
++native_failure native_stage_buffer_write(native_device *device, doe_vk_buffer *destination,
++    uint64_t offset, const void *bytes, size_t size);
++/* Records and releases every staged write into commands, in queue order. A
++ * failed copy still releases every lease and returns the first failure. */
++doe_vk_status native_record_staged(native_device *device, doe_vk_commands *commands);
++/* native_flush_initialization without the staged writes, for a submission that
++ * records them at the head of its own recording. */
++native_failure native_flush_batch(native_device *device);
+ /* Caller holds the device mutex and one ordinary device lease. Always adopts
+  * the tagged command object, including allocation failure/unknown completion. */
+ native_failure native_submit_backend_commands(native_device *device, native_command_handle commands);
+diff --git a/runtime/c/native/src/programs.c b/runtime/c/native/src/programs.c
+index f94e0b75e..17ea121c6 100644
+--- a/runtime/c/native/src/programs.c
++++ b/runtime/c/native/src/programs.c
+@@ -152,12 +152,14 @@ uint32_t doeNativeComputeProgramSubmit(void *handle)
+         failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
+     if (failure.status == NATIVE_OK) {
+         native_command_handle native = {0};
+-        if (program->recording) {
++        /* Queue writes and initialization batched before this replay precede
++         * it in queue order, for prepared recordings too. */
++        failure = native_flush_initialization(device);
++        if (failure.status == NATIVE_OK && program->recording) {
+             failure = native_failure_status(native_from_vulkan(doe_vk_commands_retain(program->recording)));
+             native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=program->recording};
+-        } else {
+-            failure = native_flush_initialization(device);
+-            if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &native);
++        } else if (failure.status == NATIVE_OK) {
++            failure = native_command_create(&device->backend, &native);
+             if (failure.status == NATIVE_OK) failure = native_record_resource_commands(&native, program->commands);
+             if (failure.status != NATIVE_OK && native_command_release(&native) != NATIVE_OK) abort();
+         }
+diff --git a/runtime/c/native/src/queue.c b/runtime/c/native/src/queue.c
+index fa2e82c1c..c3905e7a2 100644
+--- a/runtime/c/native/src/queue.c
++++ b/runtime/c/native/src/queue.c
+@@ -432,6 +432,27 @@ native_failure native_submit_backend_commands_async(native_device *device, nativ
+ native_failure native_flush_initialization(native_device *device)
+ {
+     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_materialize_zero(device);
++    if (device->staged_count) {
++        doe_vk_error error = {0};
++        doe_vk_status status = device->init_batch ? DOE_VK_OK :
++            doe_vk_commands_create(device->backend.value.vulkan.context, &device->init_batch, &error);
++        if (status == DOE_VK_OK) status = native_record_staged(device, device->init_batch);
++        else (void)native_record_staged(device, NULL); /* Releases leases; first copy fails. */
++        if (status != DOE_VK_OK) {
++            if (device->init_batch) {
++                doe_vk_commands_abandon(device->init_batch, status);
++                if (doe_vk_commands_release(device->init_batch) != DOE_VK_OK) abort();
++                device->init_batch = NULL;
++                device->init_batch_textures = 0;
++            }
++            return native_failure_vulkan(status, &error);
++        }
++    }
++    return native_flush_batch(device);
++}
++
++native_failure native_flush_batch(native_device *device)
++{
+     doe_vk_commands *batch = device->init_batch;
+     if (!batch) return native_failure_status(NATIVE_OK);
+     device->init_batch = NULL;
+@@ -549,13 +570,24 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
+         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
+         else ++pending->count;
+     }
+-    if (failure.status == NATIVE_OK) failure = native_flush_initialization(device);
++    /* Vulkan records staged buffer writes at the head of this submission's own
++     * recording (after any batched fills): one queue submission, same order. */
++    if (failure.status == NATIVE_OK) failure = device->backend.kind == WGPUBackendType_Vulkan ?
++        native_flush_batch(device) : native_flush_initialization(device);
+     if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
+         failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
+     else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)
+         failure = native_d3d12_record_batch(device,&pending->native,pending->resources,count);
+     else {
+         if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
++        if (failure.status == NATIVE_OK && device->staged_count) {
++            doe_vk_status staged = native_record_staged(device, pending->native.value.vulkan);
++            if (staged != DOE_VK_OK) {
++                /* The writes are consumed: poison what the recording holds. */
++                doe_vk_commands_abandon(pending->native.value.vulkan, staged);
++                failure = native_failure_vulkan(staged, NULL);
++            }
++        }
+         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+             failure = native_record_resource_commands(&pending->native, pending->resources[i]);
+     }
+@@ -603,10 +635,21 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
+     if (!device || callback.nextInChain) return (WGPUFuture){0};
+     native_device_retain(device);
+     native_lock(device);
++    /* Queue writes staged into the initialization batch precede this
++     * completion in queue order: submit them before settling. */
++    native_failure flushed = native_flush_initialization(device);
+     native_queue_settlement settled = native_settle_pending(device);
+     queue_delivery delivery = {.callback = callback,
+-        .status = device->queue_failed ? WGPUQueueWorkDoneStatus_Error : WGPUQueueWorkDoneStatus_Success};
++        .status = device->queue_failed || flushed.status != NATIVE_OK ?
++            WGPUQueueWorkDoneStatus_Error : WGPUQueueWorkDoneStatus_Success};
+     native_unlock(device);
++    /* Staged writes that could not be submitted are lost queue work: report
++     * the failure itself, never a successful completion of an empty queue. */
++    if (flushed.status != NATIVE_OK) {
++        char lost[NATIVE_FAILURE_MESSAGE_CAPACITY];
++        native_failure_format(&flushed, "queued buffer writes could not be submitted", lost);
++        native_error(device, native_result_error(flushed.status), lost);
++    }
+     WGPUFuture future = {0};
+     native_failure failure = settled.failure;
+     if (delivery.status == WGPUQueueWorkDoneStatus_Error && failure.status == NATIVE_OK)
+diff --git a/runtime/c/native/src/texture_init.c b/runtime/c/native/src/texture_init.c
+index f7f27b744..ce7a11bc2 100644
+--- a/runtime/c/native/src/texture_init.c
++++ b/runtime/c/native/src/texture_init.c
+@@ -77,30 +77,120 @@ native_failure native_initialize_texture(native_device *device, doe_vk_texture *
+  * contents is a queue-ordered submission, so zeros are in place before any
+  * first use. A failed recording abandons the batch, poisoning every texture
+  * it held rather than exposing allocator contents. */
+-native_failure native_queue_texture_initialization(native_device *device, doe_vk_texture *texture,
+-    const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps)
++static doe_vk_status open_batch(native_device *device, doe_vk_error *error)
++{
++    return device->init_batch ? DOE_VK_OK :
++        doe_vk_commands_create(device->backend.value.vulkan.context, &device->init_batch, error);
++}
++
++/* A failed recording abandons the whole batch, poisoning everything it held.
++ * The batch retains every texture, buffer and staging upload it holds until it
++ * is submitted, including objects released or destroyed meanwhile: bound it so
++ * work without submission cannot grow retention without limit. */
++static native_failure close_record(native_device *device, doe_vk_status status, const doe_vk_error *error)
+ {
+-    doe_vk_error error = {0};
+-    doe_vk_status status = DOE_VK_OK;
+-    if (!device->init_batch)
+-        status = doe_vk_commands_create(device->backend.value.vulkan.context, &device->init_batch, &error);
+-    if (status == DOE_VK_OK) status = record_initialization(device, device->init_batch, texture, desc, caps, &error);
+     if (status != DOE_VK_OK && device->init_batch) {
+         doe_vk_commands_abandon(device->init_batch, status);
+         if (doe_vk_commands_release(device->init_batch) != DOE_VK_OK) abort();
+         device->init_batch = NULL;
+         device->init_batch_textures = 0;
+     }
+-    if (status != DOE_VK_OK) return native_failure_vulkan(status, &error);
+-    /* The batch retains every texture and staging upload it holds until it is
+-     * submitted, including textures released or destroyed meanwhile: bound it
+-     * so creation without submission cannot grow retention without limit. */
++    if (status != DOE_VK_OK) return native_failure_vulkan(status, error);
+     if (++device->init_batch_textures >= NATIVE_INIT_BATCH_TEXTURES) return native_flush_initialization(device);
+     return native_failure_status(NATIVE_OK);
+ }
+ 
++native_failure native_queue_texture_initialization(native_device *device, doe_vk_texture *texture,
++    const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps)
++{
++    doe_vk_error error = {0};
++    doe_vk_status status = open_batch(device, &error);
++    if (status == DOE_VK_OK) status = record_initialization(device, device->init_batch, texture, desc, caps, &error);
++    return close_record(device, status, &error);
++}
++
++native_failure native_queue_buffer_zero(native_device *device, doe_vk_buffer *buffer, uint64_t size)
++{
++    doe_vk_error error = {0};
++    doe_vk_status status = open_batch(device, &error);
++    if (status == DOE_VK_OK) status = doe_vk_commands_fill(device->init_batch, buffer, 0, size, 0);
++    return close_record(device, status, &error);
++}
++
++/* An idle pooled staging buffer large enough, else a new one: pooled while a
++ * slot is free or replaces a smaller idle entry, otherwise transient (released
++ * here; the recorded copy keeps its own lease). Busy entries are never reused. */
++static doe_vk_status staging_for(native_device *device, size_t size, doe_vk_buffer **out, bool *pooled,
++    doe_vk_error *error)
++{
++    int free_slot = -1;
++    for (unsigned i = 0; i < NATIVE_UPLOAD_STAGING; ++i) {
++        doe_vk_buffer *entry = device->upload_staging[i];
++        if (!entry) { if (free_slot < 0) free_slot = (int)i; continue; }
++        bool queued = false;
++        for (uint32_t j = 0; j < device->staged_count; ++j) queued |= device->staged[j].staging == entry;
++        if (queued || doe_vk_buffer_busy(entry)) continue;
++        if (doe_vk_buffer_size(entry) >= size) { *out = entry; *pooled = true; return DOE_VK_OK; }
++        if (free_slot < 0) free_slot = (int)i;
++    }
++    doe_vk_status status = doe_vk_buffer_create(device->backend.value.vulkan.context, size,
++        DOE_VK_BUFFER_COPY_SRC, DOE_VK_MEMORY_HOST, out, error);
++    *pooled = status == DOE_VK_OK && free_slot >= 0;
++    if (*pooled) {
++        doe_vk_buffer_release(device->upload_staging[free_slot]); /* NULL or an idle smaller entry. */
++        device->upload_staging[free_slot] = *out;
++    }
++    return status;
++}
++
++native_failure native_stage_buffer_write(native_device *device, doe_vk_buffer *destination,
++    uint64_t offset, const void *bytes, size_t size)
++{
++    if (!size) return native_failure_status(NATIVE_OK);
++    doe_vk_error error = {0};
++    doe_vk_buffer *staging = NULL;
++    bool pooled = false;
++    doe_vk_status status = staging_for(device, size, &staging, &pooled, &error);
++    bool owned = status == DOE_VK_OK && !pooled; /* A transient keeps its creation lease. */
++    if (status == DOE_VK_OK) status = doe_vk_buffer_write(staging, 0, bytes, size);
++    if (status == DOE_VK_OK && pooled) owned = (status = doe_vk_buffer_retain(staging)) == DOE_VK_OK;
++    if (status == DOE_VK_OK) status = doe_vk_buffer_retain(destination);
++    if (status != DOE_VK_OK) {
++        if (owned) doe_vk_buffer_release(staging);
++        return native_failure_vulkan(status, &error);
++    }
++    /* The entry owns one staging lease (a transient keeps its creation one). */
++    device->staged[device->staged_count++] = (native_staged_copy){staging, destination, offset, size};
++    return device->staged_count == NATIVE_STAGED_COPIES ? native_flush_initialization(device) :
++        native_failure_status(NATIVE_OK);
++}
++
++doe_vk_status native_record_staged(native_device *device, doe_vk_commands *commands)
++{
++    doe_vk_status first = DOE_VK_OK;
++    for (uint32_t i = 0; i < device->staged_count; ++i) {
++        native_staged_copy *copy = &device->staged[i];
++        if (first == DOE_VK_OK)
++            first = doe_vk_commands_copy(commands, copy->staging, 0, copy->destination, copy->offset, copy->size);
++        doe_vk_buffer_release(copy->staging); /* The recording keeps its own leases. */
++        doe_vk_buffer_release(copy->destination);
++    }
++    device->staged_count = 0;
++    return first;
++}
++
+ void native_release_initialization(native_device *device)
+ {
++    /* Never submitted: staged writes are unobservable without a submission. */
++    for (uint32_t i = 0; i < device->staged_count; ++i) {
++        doe_vk_buffer_release(device->staged[i].staging);
++        doe_vk_buffer_release(device->staged[i].destination);
++    }
++    device->staged_count = 0;
++    for (unsigned i = 0; i < NATIVE_UPLOAD_STAGING; ++i) {
++        doe_vk_buffer_release(device->upload_staging[i]);
++        device->upload_staging[i] = NULL;
++    }
+     if (!device->init_batch) return;
+     /* Never submitted: its textures are unobservable without a submission. */
+     if (doe_vk_commands_release(device->init_batch) != DOE_VK_OK) abort();
+diff --git a/runtime/c/native/tests/program_prepare.c b/runtime/c/native/tests/program_prepare.c
+index 3a02d3d55..bf8ddf431 100644
+--- a/runtime/c/native/tests/program_prepare.c
++++ b/runtime/c/native/tests/program_prepare.c
+@@ -70,6 +70,15 @@ static VkResult descriptor_failure(VkDevice device, const VkDescriptorPoolCreate
+     return -1;
+ }
+ 
++/* Descriptor sets come from long-lived context blocks: set allocation is the
++ * recording-time native allocation whenever a block already exists. */
++static VkResult set_failure(VkDevice device, const VkDescriptorSetAllocateInfo *info, VkDescriptorSet *out)
++{
++    (void)device; (void)info; (void)out;
++    atomic_fetch_add(&faults, 1);
++    return -1;
++}
++
+ static VkResult sealing_failure(VkCommandBuffer command)
+ {
+     (void)command;
+@@ -94,9 +103,13 @@ doe_vk_status __wrap_doe_vk_commands_dispatch_resources(doe_vk_commands *command
+ {
+     doe_vk_context *context = commands->context;
+     doe_vk_functions saved = context->vk;
+-    if (fault == FAULT_RECORD) context->vk.vkCreateDescriptorPool = descriptor_failure;
++    if (fault == FAULT_RECORD) {
++        context->vk.vkCreateDescriptorPool = descriptor_failure;
++        context->vk.vkAllocateDescriptorSets = set_failure;
++    }
+     doe_vk_status status = __real_doe_vk_commands_dispatch_resources(commands, pipeline, bindings, count, x, y, z);
+     context->vk.vkCreateDescriptorPool = saved.vkCreateDescriptorPool;
++    context->vk.vkAllocateDescriptorSets = saved.vkAllocateDescriptorSets;
+     return status;
+ }
+ 
+@@ -429,6 +442,9 @@ static void pending_program_release(void)
+     void *program = doeNativeComputeProgramPrepare(s.queue, commands);
+     assert(program);
+     wgpuCommandBufferRelease(commands);
++    /* Complete the fixture's own queue writes first, so the armed submission
++     * is the program's replay rather than their batched upload. */
++    work_done(&s);
+     atomic_store(&observed_context, ((native_device *)s.device)->backend.value.vulkan.context);
+     atomic_store(&closed_contexts, 0);
+     atomic_store(&closed_recordings, 0);

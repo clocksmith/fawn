@@ -161,7 +161,10 @@ unestablished. Doe has promising execution evidence, not the final objective.
   complete-operation contracts (M7R, M2R) also failed. M7R missed only its
   upload/readback bound: 1.022 against 1.02. A side-by-side code read and a
   counting layer record the memory types Doe and Dawn pick and their Vulkan
-  calls per submit. Retained Zig is unmeasured there. This is diagnostic evidence, not the application win.
+  calls per submit. Power-sized reruns (M7R-2, M2R-2) and a combined
+  candidate were frozen with a measured contamination gate. All nine windows
+  remain unrun because the host's GPU driver faulted. Retained Zig is
+  unmeasured there. This is diagnostic evidence, not the application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss
