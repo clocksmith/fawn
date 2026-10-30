@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "shader_disk_cache.h"
+#include "../../shader/include/doe_shader_hlsl_profile.h"
 #include "../../common/include/doe_sha256.h"
 #include "../../backends/vulkan/src/cache_file.h"
 #include <stdio.h>
@@ -43,8 +44,10 @@ doe_shader *native_shader_disk_lookup(const uint8_t image_identity[32], const do
     if (!path) return NULL;
     uint8_t *bytes = NULL; size_t size = 0;
     doe_shader *shader = NULL;
-    if (doe_vk_cache_read(path,&bytes,&size))
-        (void)doe_shader_artifact_read(module,selection,values,count,pipeline,bytes,size,&shader);
+    if (doe_vk_cache_read(path,&bytes,&size)) {
+        if (doe_shader_hlsl_artifact_read(module,selection,values,count,pipeline,bytes,size,&shader) != DOE_SHADER_OK)
+            (void)doe_shader_artifact_read(module,selection,values,count,pipeline,bytes,size,&shader);
+    }
     free(bytes); free(path);
     return shader;
 }
@@ -53,7 +56,8 @@ void native_shader_disk_store(const uint8_t image_identity[32], const doe_shader
     const DoeCompilerEntrySelectionV5 *selection, const DoeCompilerOverrideValueV13 *values, size_t count,
     const DoeCompilerMetalPipelineOptionsV15 *pipeline, const doe_shader *shader)
 {
-    size_t size = doe_shader_artifact_size(shader);
+    const size_t profiled_size = doe_shader_hlsl_artifact_size(shader);
+    size_t size = profiled_size ? profiled_size : doe_shader_artifact_size(shader);
     if (!size) return;
     /* Refuse mismatched caller metadata even if the artifact itself is valid. */
     bool matches = pipeline ? doe_shader_metal_pipeline_matches(shader,module,selection,values,count,pipeline) :
@@ -61,7 +65,9 @@ void native_shader_disk_store(const uint8_t image_identity[32], const doe_shader
     if (!matches) return;
     uint8_t *bytes = malloc(size);
     if (!bytes) return;
-    if (doe_shader_artifact_write(shader,bytes,size)) {
+    const bool written = profiled_size ? doe_shader_hlsl_artifact_write(shader,bytes,size) :
+        doe_shader_artifact_write(shader,bytes,size);
+    if (written) {
         char *path = cache_path(image_identity,module,selection,values,count,pipeline,true);
         if (path) (void)doe_vk_cache_replace(path,bytes,size);
         free(path);

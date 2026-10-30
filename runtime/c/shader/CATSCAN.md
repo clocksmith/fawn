@@ -3,48 +3,42 @@
 Parent: [Experimental C migration](../CATSCAN.md)
 
 ## Target
-Own immutable compiler-derived module metadata and executable artifacts for
-independent consumers and the native frontend.
+Own immutable compiler-derived modules and executable artifacts.
 
 ## Authority
-Own allocation, identity, retained views and reference lifetime. The public C
-compiler alone owns WGSL validation, specialization, layouts and target meaning.
+Own allocation, identity, views and reference lifetime. The compiler alone owns
+WGSL validation, specialization, layouts and meaning.
 
 ## Scope
-Copied module source/policy, ABI13 validation metadata, selected-entry executable
-specializations and retained legacy compilation.
-Local-build pointer-free artifact import/export is part of immutable ownership;
-filesystem paths, cache admission and native image identity remain upstream.
+Copied module source/policy, symbolic metadata, selected artifacts, legacy compilation
+and pointer-free local-build serialization. Filesystem/cache/image policy stays upstream.
 
 ## Contracts
-[Public header](include/doe_shader.h) describes caller allocator lifetimes,
-explicit capacities and borrowed views. Module-only handles expose symbolic
-metadata; executable borrow rejects them. Specialization uses the saved immutable
-source/options and additive compiler ABI16, producing one declared entry at index0
-and immutable complete sampling-pair metadata from explicit staging capacity.
-The additive ABI15 Metal fragment policy is copied before callbacks and owned
-with exact sample-mask identity; it never changes the public source interface.
+[Public API](include/doe_shader.h) owns allocator lifetimes, capacities and borrows.
+Executable borrow rejects module-only handles. Specialization uses saved source/policy,
+one declared entry at index0, complete staged sampling/translation metadata and exact
+override snapshots. Copied ABI15 Metal sample masks preserve source interfaces.
+[HLSL profiles](include/doe_shader_hlsl_profile.h) retain explicit ABI19 requirements;
+their separate envelope preserves legacy artifact bytes. Legacy imports remain uncertified.
 
 ## Invariants
-No parser, source substitution, semantic equivalence engine, cache or device owner.
-Keys and double representations snapshot before compiler measure/fill; identity
-never equates different ordered values. Specialized artifacts retain their module
-and own code/value spans. Workspaces and temporary inputs release before success
-publication. Failed creation leaves the caller artifact unchanged; failed
-replacement preserves existing artifacts. Legacy creation retains its contract.
-Artifact import checks exact specialization identity, integrity, bounded spans
-and an iterative acyclic type graph before publication. It does not authenticate
-files against a local actor or turn target bytes into source validation.
+No parser, substitution, equivalence engine, cache or device owner.
+Snapshot keys/double representations before measure/fill; never equate different
+ordered values. Artifacts retain modules and own code/value spans.
+Release workspaces/temporary inputs before publication. Failed creation/replacement
+preserves caller outputs and existing artifacts. Legacy creation retains its contract.
+Import validates identity, integrity, bounded spans, acyclic types and profile/artifact
+consistency. It neither authenticates local files nor validates source through text.
 
 ## Acceptance
-[Owner tests](Makefile) cover C/C++ consumption, all targets, source/policy copying,
-module/executable separation, selected metadata, exact identity, acquisition faults,
-retained lifetimes and sanitizer controls. Compiler, SDK, native execution and
-physical qualification remain separate evidence.
-- Evidence: [Owner tests](Makefile).
+[Owner tests](Makefile) cover C/C++, targets, copied policy/source, module/executable
+separation, selected metadata, profile restoration, identity, acquisition/reentry faults,
+retained lifetimes and sanitizers. Compiler, SDK, native execution and physical
+qualification remain separate.
+- Evidence: [tests](Makefile).
 
 ## Non-goals
-Pipeline ownership, backend selection or numerical/device qualification.
+Pipelines, backend selection or numerical/device qualification.
 
 ## Freedom
-Internal storage and algorithms may vary within these boundaries.
+Storage/algorithms vary within these boundaries.

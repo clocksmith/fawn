@@ -23,12 +23,14 @@ typedef struct {
     size_t required_bytes, written_bytes;
     uint32_t entry_count;
     bool needs_dispatch_info, uses_subgroups;
+    uint32_t shader_model; /* Private conservative producer requirement, not ABI11 metadata. */
 } DoeHlslResult;
 /* Optional private staging spans, at least resource_count/entry_count records.
  * These are filled during real target measurement, never directly published. */
 typedef struct {
     DoeCompilerHlslBindingV11 *bindings;
     DoeCompilerHlslEntryV11 *entries;
+    bool profile_requirements; /* Only the explicit V19 facade requests certification. */
 } DoeHlslMetadata;
 DoeCompilerStatus doe_hlsl_emit(Source *, const CompilerWorkspace *, uint32_t selected_entry, DoeTargetScratch scratch,
                                 char *output, size_t capacity, DoeHlslResult *result);

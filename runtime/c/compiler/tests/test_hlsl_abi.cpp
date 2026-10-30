@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "hlsl_fixture.h"
+#include "../include/doe_compiler_hlsl_profile.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
@@ -9,6 +10,13 @@ int main() {
     static_assert(sizeof(DoeCompilerHlslBindingV11) == 20, "fixed register record");
     static_assert(sizeof(DoeCompilerHlslEntryV11) == 88, "fixed entry record");
     DoeCompilerTextCapacities caps = hlsl_capacities();
+    static_assert(std::is_standard_layout<DoeCompilerHlslProfileResultV19>::value,"V19 C result layout");
+    static_assert(sizeof(DoeCompilerHlslProfileV19) == 16,"V19 pointer-free profile");
+    const DoeCompilerTranslationCapacitiesV17 profile_caps{{{caps,32u},0u},8u};
+    DoeCompilerWorkspaceRequirements profile_required{};
+    assert(doe_compiler_hlsl_profile_requirements(19u,&profile_caps,sizeof(profile_caps),
+        &profile_required,sizeof(profile_required)) == DOE_COMPILER_OK);
+    assert(profile_required.size_bytes && profile_required.alignment_bytes);
     DoeCompilerWorkspaceRequirements required{};
     assert(doe_compiler_hlsl_requirements(11u, &caps, sizeof(caps), &required, sizeof(required)) == DOE_COMPILER_OK);
     void *workspace = std::malloc(required.size_bytes);

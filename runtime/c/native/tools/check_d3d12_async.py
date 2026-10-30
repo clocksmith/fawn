@@ -71,7 +71,7 @@ def main() -> int:
                                    str(build / "d3d12_windows_shader.obj"), str(imports), *libraries]),
     ]
     copied = {}
-    for name in ("doe_compiler.dll", "dxcompiler.dll", "dxil.dll"):
+    for name in ("doe_compiler.dll", "dxcompiler.dll", "dxil.dll", "d3dcompiler_47.dll"):
         shutil.copy2(build / name, out / name)
         copied[name] = digest(out / name)
     if args.run_physical:

@@ -17,6 +17,7 @@ typedef struct {
     unsigned indent;
     bool failed, needs_dispatch, uses_subgroups, uses_native16, uses_wave_counter, uses_array_views, uses_raw_storage;
     bool uses_draw_offsets;
+    uint32_t shader_model;
     DoeHlslMetadata metadata;
 } HlslEmitter;
 void hlsl_text(HlslEmitter *, const char *);
@@ -59,4 +60,5 @@ bool hlsl_function_used(HlslEmitter *, uint32_t);
 void hlsl_float_pack_helpers(HlslEmitter *);
 void hlsl_float_pack_expression(HlslEmitter *, const IrInstruction *, NumericBuiltinKind);
 void hlsl_subgroup(HlslEmitter *, const IrInstruction *, NumericBuiltinKind);
+uint32_t hlsl_profile(HlslEmitter *);
 #endif

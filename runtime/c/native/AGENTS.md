@@ -215,7 +215,9 @@ must be admitted by their actual composed path, not inferred from another backen
 
 D3D12 devices reopen the selected adapter by its exact LUID and software identity.
 The compiler owns HLSL entry names, bundle indices, registers and dispatch metadata;
-the SDK adapter never interprets WGSL. Load the explicit DXC dependency beside the
+the SDK adapter never interprets WGSL. An explicit ABI19 profile may select
+compute FXC501; imports/legacy artifacts retain DXC600/620. Restore profiles through
+the shader-owned integrity envelope, never text/flag inference. Load the exact dependency beside the
 provider, compile before taking the device mutex, and release compiler modules
 after unlocking. Keep logical binding lengths distinct from initialized private
 CBV padding. Transient upload/readback buffers belong to the private command's

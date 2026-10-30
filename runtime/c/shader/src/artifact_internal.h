@@ -32,6 +32,12 @@ typedef struct shader_artifact_header {
     DoeCompilerModuleV5 module;
     uint64_t counts[SHADER_ARTIFACT_SPAN_COUNT];
 } shader_artifact_header;
+typedef struct shader_hlsl_artifact_header {
+    uint8_t digest[32];
+    uint32_t magic, version;
+    uint64_t artifact_bytes;
+    DoeCompilerHlslProfileV19 profile;
+} shader_hlsl_artifact_header;
 bool shader_artifact_valid(const doe_shader_view *);
 typedef struct shader_artifact_walk { size_t type, next; } shader_artifact_walk;
 bool shader_artifact_acyclic(const doe_shader_view *, uint8_t *, shader_artifact_walk *);

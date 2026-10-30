@@ -552,6 +552,11 @@ test-native-builtins: build/doe-compiler-c
 	SPIRV_VAL='$(SPIRV_VAL)' python3 tests/test_native_builtins.py
 
 .PHONY: test-translation
+build/test_hlsl_profile: tests/test_hlsl_profile.c tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
+.PHONY: test-hlsl-profile
+test-hlsl-profile: build/test_hlsl_profile
+	build/test_hlsl_profile
 build/test_translation: tests/test_translation.c tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY) | build/.ready
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
 test-translation: build/test_translation

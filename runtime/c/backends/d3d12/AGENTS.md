@@ -4,12 +4,15 @@
   validation and shader meaning remain outside this backend-private ABI.
 - Use Windows SDK C declarations in `windows_*.c`; do not construct replacement
   COM vtables, spoof `_WIN32`, or call host controls an SDK/driver check.
-- `windows_shader.cpp` alone adapts official `dxcapi.h` C++ interfaces behind
+- `windows_shader.cpp` alone adapts official `dxcapi.h`/`d3dcompiler.h` interfaces behind
   [the private C shader ABI](include/doe_d3d12_shader.h), with exceptions/RTTI off.
   Load only the explicit fully qualified compiler module, use fixed compile flags
   and pass the compiler-owned entry index verbatim. No CLI, include handler,
   handwritten COM ABI, WGSL interpretation or capability policy belongs here.
-  Copy the first diagnostic before releasing DXC objects; returned bytecode owns
+  Explicit compiler requirement501 selects compute FXC; legacy/default600 and
+  native16/620 stay DXC. No retry/profile fallback or imported-source inference.
+  Keep ID3DBlob and IDxcBlob typed; never cast between compiler interfaces.
+  Copy the first diagnostic before releasing compiler objects; returned bytecode owns
   its blob and module. Restore caller fenv/MXCSR/errno/LastError before publication.
   SDK compilation/control evidence does not establish GPU execution.
 - Exact ordinal selection stays the zero default. WARP requires its explicit

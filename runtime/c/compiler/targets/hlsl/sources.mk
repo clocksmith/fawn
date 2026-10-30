@@ -5,3 +5,4 @@ HLSL_SOURCE_NAMES = text.c types.c resources.c image_types.c image.c numeric.c a
 HLSL_SOURCE_NAMES += float_pack.c
 
 HLSL_SOURCE_NAMES += subgroup.c
+HLSL_SOURCE_NAMES += profile.c

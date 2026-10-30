@@ -133,6 +133,14 @@ def main() -> int:
         shutil.copy2(path, out / path.name)
     for path in licenses:
         shutil.copy2(path, license_output / path.name)
+    fxc_helper = C_ROOT / 'runtime-cli/tools/sdk_fxc.py'
+    spec = importlib.util.spec_from_file_location('doe_sdk_fxc', fxc_helper)
+    if spec is None or spec.loader is None:
+        raise ImportError(f'cannot load selected Windows SDK packaging owner: {fxc_helper}')
+    fxc_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fxc_module)
+    fxc = fxc_module.stage_sdk_fxc(out, Path(os.environ.get('WindowsSdkDir', '')),
+                                os.environ.get('WindowsSDKVersion', ''))
     owners = owner_paths()
     sources = source_paths(owners)
     names = export_names()
@@ -197,6 +205,12 @@ def main() -> int:
         window_objects.append(obj)
     invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', *map(str, window_objects),
             '/Fe' + str(window_fixture), '/link', str(imports), 'kernel32.lib', 'user32.lib'], out)
+    # Compile only: actual FXC CPU execution needs an explicitly generated
+    # certified corpus and remains a separate SDK control, never a GPU claim.
+    fxc_source = C_ROOT / 'backends/d3d12/tests/native_fxc.c'
+    fxc_fixture = out / 'shader_fxc.exe'
+    invoke(consumer_flags + [str(fxc_source), '/Fo' + str(out / 'shader_fxc.obj'),
+            '/Fe' + str(fxc_fixture), '/link', str(shader_object), 'kernel32.lib', 'dxguid.lib'], out)
     headers = sorted(set(ROOT.joinpath('src').glob('*.h')) |
                      set(ROOT.joinpath('include').glob('*.h')) |
                      set(C_ROOT.joinpath('compiler/include').glob('*.h')) |
@@ -207,9 +221,10 @@ def main() -> int:
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
               ROOT / 'EXTENSION_SYMBOLS.txt', ROOT / 'LEGACY_SYMBOLS.txt', ROOT / 'SHARED_MEMORY_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
-              shader_adapter, window_source, window_host, ROOT / 'tests/surface_consumer.h',
+              shader_adapter, fxc_source, window_source, window_host, ROOT / 'tests/surface_consumer.h',
               ROOT / 'tests/consumer.h', ROOT / 'tests/adapter_class.h',
-              C_ROOT / 'runtime-cli/src/surface_platform.h', REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']
+              C_ROOT / 'runtime-cli/src/surface_platform.h', fxc_helper,
+              REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']
     out.joinpath('native-scope.json').write_text(json.dumps({
         'compiler': compiler, 'windows_sdk_version': os.environ.get('WindowsSDKVersion'),
         'vc_tools_version': os.environ.get('VCToolsVersion'),
@@ -221,9 +236,11 @@ def main() -> int:
         'dxc_package_input_sha256': {path.relative_to(dxc).as_posix(): digest(path)
                                     for path in [*dxc_headers, *dxc_runtime, *licenses]},
         'packaged_runtime_sha256': {path.name: digest(out / path.name)
-                                   for path in [compiler_library, *dxc_runtime]},
+                                   for path in [compiler_library, *dxc_runtime, out / 'd3dcompiler_47.dll']},
+        'fxc_runtime': fxc,
         'shader_adapter_object_sha256': digest(shader_object),
         'window_fixture_sha256': digest(window_fixture),
+        'shader_fxc_fixture_sha256': digest(fxc_fixture),
         'native_dll_sha256': digest(library),
         'scope': 'Actual SDK native DLL build/export audit and Win32 loader CPU host control only; no GPU, native device execution or production qualification.'
     }, indent=2, sort_keys=True) + '\n', encoding='utf-8')

@@ -46,7 +46,7 @@ static DoeCompilerStatus specialize(const doe_shader *module, const doe_shader_o
     const DoeCompilerMetalPipelineOptionsV15 *pipeline,
     const DoeCompilerSpecializationOutputs *outputs, DoeCompilerTextResult *result,
     DoeCompilerSamplingPairV16 *pairs, size_t pair_count, DoeCompilerTranslationResultV17 *translation,
-    DoeCompilerTranslationEntryV17 *entries, size_t entry_count)
+    DoeCompilerTranslationEntryV17 *entries, size_t entry_count, DoeCompilerHlslProfileV19 *profile)
 {
     const DoeCompilerTranslationCapacitiesV17 capacities = {
         {{*target,overrides},options->sampling_pairs},
@@ -59,11 +59,21 @@ static DoeCompilerStatus specialize(const doe_shader *module, const doe_shader_o
         .entries=entries,.entry_capacity=entry_count,
         .entry_record_size=sizeof(DoeCompilerTranslationEntryV17)};
     if (outputs) combined.sampling.target = *outputs;
-    DoeCompilerStatus status = doe_compiler_specialize_translation(DOE_COMPILER_TRANSLATION_ABI_VERSION,
-        (uint32_t)module->options.target,&sampling_options,sizeof(sampling_options),&capacities,sizeof(capacities),
-        workspace,workspace_size,module->source,module->source_size,selection,sizeof(*selection),
-        values,count,sizeof(*values),flags,outputs ? &combined : NULL,outputs ? sizeof(combined) : 0,
-        translation,sizeof(*translation));
+    DoeCompilerStatus status;
+    if (module->options.target == DOE_SHADER_HLSL) {
+        DoeCompilerHlslProfileResultV19 result19 = {0};
+        status = doe_compiler_specialize_hlsl_profile(DOE_COMPILER_HLSL_PROFILE_ABI_VERSION,
+            &sampling_options,sizeof(sampling_options),&capacities,sizeof(capacities),
+            workspace,workspace_size,module->source,module->source_size,selection,sizeof(*selection),
+            values,count,sizeof(*values),flags,outputs ? &combined : NULL,outputs ? sizeof(combined) : 0,
+            &result19,sizeof(result19));
+        *translation = result19.translation;
+        *profile = result19.profile;
+    } else status = doe_compiler_specialize_translation(DOE_COMPILER_TRANSLATION_ABI_VERSION,
+            (uint32_t)module->options.target,&sampling_options,sizeof(sampling_options),&capacities,sizeof(capacities),
+            workspace,workspace_size,module->source,module->source_size,selection,sizeof(*selection),
+            values,count,sizeof(*values),flags,outputs ? &combined : NULL,outputs ? sizeof(combined) : 0,
+            translation,sizeof(*translation));
     *result = translation->sampling.target;
     return status;
 }
@@ -95,6 +105,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
     DoeCompilerTextCapacities text_capacities = {.stages = capacities};
     DoeCompilerTextResult text_result = {0};
     DoeCompilerTranslationResultV17 translation = {0};
+    DoeCompilerHlslProfileV19 profile = {0};
     size_t override_capacity = module ? module->override_capacity : 0;
     DoeCompilerWorkspaceRequirements requirements;
     DoeCompilerStatus status = module ? specialization_requirements(&saved,override_capacity,&text_capacities,&requirements) :
@@ -123,7 +134,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         if (module) {
             status = specialize(module,&saved,override_capacity,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
                 values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION |
-                DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,saved_pipeline,NULL,&text_result,NULL,0,&translation,NULL,0);
+                DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,saved_pipeline,NULL,&text_result,NULL,0,&translation,NULL,0,&profile);
             result = text_result.stages;
         } else if (textual) {
             status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
@@ -159,6 +170,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         outcome = DOE_SHADER_COMPILE_FAILED;
     }
     if (status != DOE_COMPILER_OK) goto finished;
+    const DoeCompilerHlslProfileV19 measured_profile = profile;
     size_t key_bytes = 0;
     for (size_t i = 0; i < value_count; ++i) {
         if (values[i].key_length > SIZE_MAX - key_bytes) {
@@ -278,7 +290,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             else outputs.hlsl = hlsl_outputs;
             status = specialize(module,&saved,override_capacity,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
                 shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-                saved_pipeline,&outputs,&text_result,pairs,pair_count,&translation,translation_entries,translation_count);
+                saved_pipeline,&outputs,&text_result,pairs,pair_count,&translation,translation_entries,translation_count,&profile);
         } else status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
             shader->source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
             DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags, &text_outputs, &hlsl_outputs, &text_result);
@@ -287,7 +299,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         const DoeCompilerSpecializationOutputs outputs = {.spirv=shader->outputs};
         status = specialize(module,&saved,override_capacity,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
             shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-            saved_pipeline,&outputs,&text_result,pairs,pair_count,&translation,translation_entries,translation_count);
+            saved_pipeline,&outputs,&text_result,pairs,pair_count,&translation,translation_entries,translation_count,&profile);
         result = text_result.stages;
     } else {
         status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
@@ -295,6 +307,13 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             shader->source, source_size, &saved.selection, sizeof(saved.selection),
             DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION | saved.semantic_flags,
             &shader->outputs, sizeof(shader->outputs), &result, sizeof(result));
+    }
+    if (status == DOE_COMPILER_OK && module && saved.target == DOE_SHADER_HLSL &&
+        memcmp(&profile,&measured_profile,sizeof(profile))) {
+        status = DOE_COMPILER_INPUT_ERROR;
+        result.resources.module.diagnostic.status = status;
+        memcpy(result.resources.module.diagnostic.message,"HLSL profile changed after measurement",
+            sizeof("HLSL profile changed after measurement"));
     }
     if (status == DOE_COMPILER_OK) {
         shader->view = (doe_shader_view) {
@@ -320,6 +339,10 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             .translation_entries=translation_entries,.translation_entry_count=translation.published_entries,
             .translation_complete=module != NULL
         };
+        if (module && saved.target == DOE_SHADER_HLSL) {
+            shader->hlsl_profile = profile;
+            shader->hlsl_profile_complete = true;
+        }
         outcome = DOE_SHADER_OK;
     }
 finished:

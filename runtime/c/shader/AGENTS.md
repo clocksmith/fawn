@@ -23,3 +23,10 @@ hooks/userdata outlive every handle; retained views require a live reference.
 The Makefile owns the complete shader source inventory. C/C++ and sanitizer
 controls are host evidence; target SDK, native consumers and physical execution
 keep their own scope. No owner check starts GPU work implicitly.
+
+Selected HLSL specialization uses explicit compiler ABI19 and stores its immutable
+profile outside legacy views/artifact records. Measure/fill profiles must match.
+The separate local-build envelope binds that profile and exact legacy artifact
+under one digest; import restores it only after structural consistency checks.
+Legacy creation/import never infers a certificate. Preserve allocator-reentry
+snapshots and unchanged failure outputs; integrity is not authentication.

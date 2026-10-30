@@ -211,3 +211,13 @@ zero notices. Fatal validation preserves the existing error and publishes no
 partial module. See the compiler's [diagnostic contract](../compiler/DIAGNOSTICS.md)
 for global policy semantics, source locations, old-ABI transport limitations,
 and the separate unsupported scoped-attribute boundary.
+
+Selected HLSL specialization now requests the compiler's explicit ABI19 profile
+in the existing measure/fill transaction. `doe_shader_hlsl_profile` borrows that
+immutable record without changing legacy view layouts. A separate HLSL artifact
+envelope binds the record and exact legacy artifact with one integrity digest;
+its reader restores the record on existing cache hits after structural checks.
+Legacy artifact bytes/APIs remain unchanged and legacy imports stay uncertified.
+These local-build records are not authentication. The upstream cache still owns
+compiler/image identity and persistence policy. `test-hlsl-profile` exercises
+restoration, corruption, allocator reentry/failure and retained ownership.

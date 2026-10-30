@@ -3,45 +3,44 @@
 Parent: [Experimental C migration](../CATSCAN.md)
 
 ## Target
-Translate admitted WGSL into source-linked artifacts with C.
+Translate admitted WGSL into source-linked artifacts.
 
 ## Authority
-Own lexical admission, parsing, validation, typed IR, robustness lowering,
-emission, reflection and diagnostics; exclude device execution and application acceptance.
+Own parsing, validation, typed IR, robustness, emission, reflection and diagnostics;
+exclude execution and application acceptance.
 
 ## Scope
-The compiler; [initial coverage](MILESTONE_1.md) is historical.
+Compiler; [historical coverage](MILESTONE_1.md).
 
 ## Contracts
-Caller-owned spans and versioned APIs produce SPIR-V,
-MSL or HLSL through one typed pipeline. Reflection includes entry/binding
-metadata, HLSL spaces and native requirements; diagnostics retain source locations.
-The browser/offline adapter preserves validated WGSL with typed source edits;
-its bounded Wasm reactor imports no host functions.
-[ABI13/14 specialization](SPECIALIZATION.md) separates symbolic module validation
-from selected-entry or whole-module emission through shared semantics.
-The separate [host companion](host/README.md) owns allocating TSIR and explicit
-DXC orchestration without changing the allocation-free compiler API or Wasm imports.
+Versioned caller-owned spans produce SPIR-V, MSL or HLSL through shared semantics.
+Reflection carries entry/binding metadata, spaces and native requirements;
+diagnostics retain source locations. [Specialization](SPECIALIZATION.md) separates
+symbolic modules from selected/whole-module artifacts.
+[ABI19](include/doe_compiler_hlsl_profile.h) certifies conservative selected HLSL
+profiles in the same transaction; existing APIs/records/workspaces remain unchanged.
+Browser/offline edits preserve validated WGSL; bounded Wasm imports no host functions.
+The allocating [host companion](host/README.md) owns TSIR/explicit DXC orchestration.
 
 ## Invariants
-Unsupported syntax, types and targets reject without fallback.
-Failure publishes nothing and retains no pointers.
-Reflection and behavior derive from validated IR, never source matching.
-Limits reject rather than truncate; checked arithmetic precedes narrowing and access.
-Const, override and runtime stages remain distinct. Deferred facts are not
-executable values/layouts; replaced or unrequired initializers are not evaluated.
+Unsupported syntax/types/targets reject without fallback. Failure publishes nothing
+and retains no pointers. Reflection/profiles derive from validated IR and complete
+emission, never source matching. Unknown profile features retain the baseline.
+Limits reject, never truncate; check arithmetic before narrowing/access.
+Const/override/runtime stages stay distinct. Deferred facts are not executable
+values/layouts; replaced or unrequired initializers are not evaluated.
 
 ## Acceptance
-Frozen tests, independent execution, target validation,
-sanitizer boundaries and GCC consumption pass. Full migration
-requires retained support-matrix, target-interface and real-adopter gates.
-[MSL](targets/metal/README.md) and [HLSL](targets/hlsl/README.md) developer controls
-never establish independent semantics, SDK/device qualification or production adoption.
-- Evidence: [numeric/vector owner](MILESTONE_12_RESULTS.md), [independent gate](independent_tests_m12/PORTABLE_USAGE.md)
-and [retained tests](tests/).
+Frozen tests, independent execution, target validation, sanitizers and GCC
+consumption pass. Migration additionally requires retained support-matrix,
+target-interface and real-adopter gates. [MSL](targets/metal/README.md) and
+[HLSL](targets/hlsl/README.md) controls never establish independent semantics,
+SDK/device qualification or adoption.
+- Evidence: [numeric/vector owner](MILESTONE_12_RESULTS.md),
+[independent gate](independent_tests_m12/PORTABLE_USAGE.md), [tests](tests/).
 
 ## Non-goals
-Second host interpreters, GPU simulation as qualification or universal frameworks.
+Second interpreters, simulated qualification or universal frameworks.
 
 ## Freedom
-Internal algorithms may vary within these boundaries.
+Algorithms vary within these boundaries.

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_frontend.h"
+#include "../../shader/include/doe_shader_hlsl_profile.h"
 #include <stdlib.h>
 #include <string.h>
 #if defined(_WIN32)
@@ -13,7 +14,7 @@ static native_failure loader_failure(DWORD code, const char *operation)
     return native_failure_d3d12(error.status, &error);
 }
 
-static native_failure compiler_path(char **out)
+static native_failure compiler_path(bool fxc,char **out)
 {
     /* Dependency lookup is relative to this provider image, never ambient
      * current-directory/PATH search or a fallback compiler selection. The
@@ -30,11 +31,12 @@ static native_failure compiler_path(char **out)
     WCHAR *slash = wcsrchr(path, L'\\');
     WCHAR *forward = wcsrchr(path, L'/');
     if (forward && (!slash || forward > slash)) slash = forward;
-    static const WCHAR filename[] = L"dxcompiler.dll";
+    const WCHAR *filename = fxc ? L"d3dcompiler_47.dll" : L"dxcompiler.dll";
+    const size_t filename_units = wcslen(filename)+1u;
     size_t prefix = slash ? (size_t)(slash - path) + 1 : 0;
-    if (!prefix || prefix > sizeof(path) / sizeof(*path) - sizeof(filename) / sizeof(*filename))
+    if (!prefix || prefix > sizeof(path) / sizeof(*path) - filename_units)
         return loader_failure(ERROR_BAD_PATHNAME, "provider.DXC.path");
-    memcpy(path + prefix, filename, sizeof(filename));
+    memcpy(path + prefix, filename, filename_units*sizeof(*filename));
     int size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path, -1, NULL, 0, NULL, NULL);
     if (size <= 0) return loader_failure(GetLastError(), "WideCharToMultiByte.DXC.size");
     char *utf8 = malloc((size_t)size);
@@ -77,23 +79,30 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
     case DOE_COMPILER_STAGE_FRAGMENT: target=DOE_DX_SHADER_FRAGMENT; break;
     default: return native_failure_status(NATIVE_UNSUPPORTED);
     }
+    const bool native16 = !stage->imported && (entry->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) != 0;
+    uint32_t model = native16 ? 620u : 600u;
+    DoeCompilerHlslProfileV19 profile;
+    if (!stage->imported && doe_shader_hlsl_profile(stage->compiled,&profile)) {
+        if (profile.entry_index != selected || profile.stage != stage->entry->stage)
+            return native_failure_status(NATIVE_UNSUPPORTED);
+        model = profile.shader_model;
+    }
     char *path = NULL;
-    native_failure failure = compiler_path(&path);
+    native_failure failure = compiler_path(model == 501u,&path);
     if (failure.status != NATIVE_OK) return failure;
     doe_dx_shader_options options = {.compiler_module_path = path,
         .source = view->text, .source_size = view->text_size, .entry = stage->imported ? stage->name : entry->name,
         .stage = target, .has_entry_index = !stage->imported, .entry_index = entry ? entry->entry_index : 0};
     doe_dx_shader_error error = {0};
     const doe_dx_shader_projection projection={.interstage_mask=interstage_mask ? *interstage_mask : 0};
-    const bool native16 = !stage->imported && (entry->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) != 0;
-    const doe_dx_shader_requirements requirements = {.shader_model = native16 ? 620u : 600u,
+    const doe_dx_shader_requirements requirements = {.shader_model = model,
         .flags = native16 ? DOE_DX_SHADER_NATIVE16 : 0u};
     doe_dx_status status = doe_dx_shader_compile_required(&options,
         interstage_mask && !stage->imported ? &projection : NULL, &requirements, out, &error);
     doe_dx_error native = {status, error.native_code, error.operation};
     failure = native_failure_d3d12(status, &native);
     /* These exact target bytes/options were produced by the provider after
-     * WGSL validation. A rejected DXC input is a provider/compiler failure,
+     * WGSL validation. Rejected compiler input is a provider/compiler failure,
      * not a second diagnosis of invalid application WGSL. Keep its first detail. */
     if (status == DOE_DX_INVALID_ARGUMENT && !stage->imported) failure.status = NATIVE_FAILURE;
     if (status != DOE_DX_OK) {

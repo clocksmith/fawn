@@ -219,7 +219,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     for name in (native_name, compiler_name):
         shutil.copy2(objects / name, candidate / runtime_directory / name)
     if system == "Windows":
-        for name in ("dxcompiler.dll", "dxil.dll"):
+        for name in ("dxcompiler.dll", "dxil.dll", "d3dcompiler_47.dll"):
             shutil.copy2(objects / name, candidate / "bin" / name)
         shutil.copy2(objects / "webgpu_doe_c.lib", candidate / "lib/webgpu_doe_c.lib")
         shutil.copy2(objects / "compiler/doe_compiler.lib", candidate / "lib/doe_compiler.lib")

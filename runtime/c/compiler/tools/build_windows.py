@@ -75,7 +75,7 @@ def main() -> None:
                  ROOT / 'tests/test_windows_environment.c', ROOT / 'tests/test_overrides.c',
                  ROOT / 'tests/test_specialization.c', ROOT / 'tests/test_select.c',
                  ROOT / 'tests/test_depth_sampling.c', ROOT / 'tests/test_implicit_sampling.c',
-                 ROOT / 'tests/test_all_any.c']
+                 ROOT / 'tests/test_all_any.c', ROOT / 'tests/test_hlsl_profile.c']
     for source in consumers:
         name = source.stem
         executable = out / (name + '.exe')
@@ -101,7 +101,8 @@ def main() -> None:
             arguments.extend([artifacts, str(ROOT / 'tests/all_any_retained.wgsl'),
                               str(ROOT / 'tests/all_any_cases.wgsl')])
         invoke(arguments, out)
-    cpp_consumers = [ROOT / 'tests/cpp_consumer.cpp', ROOT / 'tests/cpp_consumer_specialization.cpp']
+    cpp_consumers = [ROOT / 'tests/cpp_consumer.cpp', ROOT / 'tests/cpp_consumer_specialization.cpp',
+                     ROOT / 'tests/test_hlsl_abi.cpp']
     for source in cpp_consumers:
         executable = out / (source.stem + '.exe')
         invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
@@ -117,7 +118,8 @@ def main() -> None:
                             'tests/depth_sampling.wgsl', 'tests/implicit_sampling.wgsl',
                             'tests/implicit_sample_compute_retained.wgsl',
                             'tests/implicit_compare_compute_retained.wgsl',
-                            'tests/all_any_retained.wgsl', 'tests/all_any_cases.wgsl'],
+                            'tests/all_any_retained.wgsl', 'tests/all_any_cases.wgsl',
+                            'tests/hlsl_fixture.h'],
         'scope': 'Actual Windows x64 DLL and ordinary C/C++ CPU consumers only; no GPU, runtime or CLI qualification.'
     }, indent=2) + '\n')
 

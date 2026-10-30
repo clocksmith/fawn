@@ -101,6 +101,10 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     hlsl_resources(e);
     hlsl_numeric_helpers(e);
     hlsl_functions(e);
+    if (!e->failed && e->metadata.profile_requirements) {
+        const uint32_t profile = hlsl_profile(e);
+        if (profile > e->shader_model) e->shader_model = profile;
+    }
     if (!e->failed && e->metadata.entries != NULL) {
         const FunctionRecord *function = &e->module->functions[e->module->entries[entry].function];
         DoeCompilerHlslEntryV11 *record = &e->metadata.entries[entry];
@@ -173,6 +177,7 @@ DoeCompilerStatus doe_hlsl_emit(Source *source, const CompilerWorkspace *module,
     result->entry_count = selected_entry == NO_ID ? module->entry_count : 1u;
     result->needs_dispatch_info = measure.needs_dispatch;
     result->uses_subgroups = measure.uses_subgroups;
+    result->shader_model = measure.shader_model;
     if (output == NULL) {
         errno = saved_errno;
         return DOE_COMPILER_OK;
@@ -218,6 +223,7 @@ DoeCompilerStatus doe_hlsl_emit_metadata(Source *source, const CompilerWorkspace
         result->entry_count = selected_entry == NO_ID ? module->entry_count : 1u;
         result->needs_dispatch_info = measure.needs_dispatch;
         result->uses_subgroups = measure.uses_subgroups;
+        result->shader_model = measure.shader_model;
     }
     errno = saved_errno;
     return source->diagnostic->status;

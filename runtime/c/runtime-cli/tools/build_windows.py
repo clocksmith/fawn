@@ -80,6 +80,8 @@ def main() -> int:
         producer_receipt = native / 'native-scope.json'
         receipt = json.loads(producer_receipt.read_text(encoding='utf-8'))
         runtime_names = ['webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll']
+        if 'd3dcompiler_47.dll' in receipt['packaged_runtime_sha256']:
+            runtime_names.append('d3dcompiler_47.dll')
         expected = {'webgpu_doe_c.dll': receipt['native_dll_sha256'], **receipt['packaged_runtime_sha256']}
         runtime_files = [native / name for name in runtime_names]
         for path in runtime_files:

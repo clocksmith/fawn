@@ -785,3 +785,16 @@ storage-use rejection. SDK CPU controls cover the real component encoding and
 optional format/query distinctions; their authored source is not an SDK run or
 a GPU execution result. CoreFeaturesAndLimits is not inferred from feature level
 or these optional-family queries alone.
+
+The additive explicit shader requirement501 selects official FXC `cs_5_1` for
+compiler-certified compute artifacts. Default/legacy600, native16/620, raw source
+imports and graphics keep their DXC paths. The native frontend consumes the
+compiler record, never source patterns or zero legacy flags; there is no compiler
+retry. FXC uses strictness, warnings-as-errors, IEEE strictness and optimization3,
+retains a typed `ID3DBlob` and the exact loaded module, and shares the existing
+host-state/diagnostic owner. DXC objects retain their distinct `IDxcBlob` type.
+Native Windows staging reuses the selected-SDK FXC packaging owner used by Dawn,
+records its exact identity and includes it in relocated packages. `native_fxc.c`
+is an explicit SDK CPU control over the certified emitted corpus, exact5.1
+reflection, failure outputs, entry defines, host state and blob/module lifetime;
+it is separate from physical GPU output and performance evidence.

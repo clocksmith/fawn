@@ -21,7 +21,7 @@ ROOT = build_windows.ROOT
 C_ROOT = build_windows.C_ROOT
 REPO = build_windows.REPO
 CLIENT_GIT_LF_SHA256 = '59ec673c671dde4de3cd4e06f7fc4252f4fde4b75edb5a980d044ea5a919538e'
-RUNTIME_FILES = ('webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll')
+RUNTIME_FILES = ('webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll', 'd3dcompiler_47.dll')
 
 WRAPPER = r'''/* SPDX-License-Identifier: MIT
  * Actual SDK diagnostics over the unchanged source-bound public client. */
