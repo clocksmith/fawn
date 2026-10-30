@@ -1,0 +1,125 @@
+diff --git a/runtime/c/backends/vulkan/include/doe_vk.h b/runtime/c/backends/vulkan/include/doe_vk.h
+index 0e404ccbf..5e09644b6 100644
+--- a/runtime/c/backends/vulkan/include/doe_vk.h
++++ b/runtime/c/backends/vulkan/include/doe_vk.h
+@@ -235,6 +235,11 @@ doe_vk_status doe_vk_buffer_write(doe_vk_buffer *buffer, uint64_t offset,
+     const void *bytes, size_t size);
+ doe_vk_status doe_vk_buffer_read(doe_vk_buffer *buffer, uint64_t offset,
+     void *bytes, size_t size);
++/* The persistent coherent host range under the same admission as a read. The
++ * pointer stays valid until the buffer's last release; callers keep it only
++ * while their own state forbids GPU use of the buffer (for example a mapping). */
++doe_vk_status doe_vk_buffer_host_range(doe_vk_buffer *buffer, uint64_t offset,
++    size_t size, const void **out);
+ 
+ typedef enum doe_vk_binding_kind {
+     DOE_VK_BINDING_UNIFORM,
+diff --git a/runtime/c/backends/vulkan/src/resources.c b/runtime/c/backends/vulkan/src/resources.c
+index 44b62d003..914a40742 100644
+--- a/runtime/c/backends/vulkan/src/resources.c
++++ b/runtime/c/backends/vulkan/src/resources.c
+@@ -187,12 +187,22 @@ doe_vk_status doe_vk_buffer_write(doe_vk_buffer *buffer, uint64_t offset,
+     return DOE_VK_OK;
+ }
+ 
++doe_vk_status doe_vk_buffer_host_range(doe_vk_buffer *buffer, uint64_t offset,
++    size_t size, const void **out) {
++    if (out == NULL) return DOE_VK_INVALID_ARGUMENT;
++    doe_vk_status status = host_access(buffer, offset, size);
++    if (status != DOE_VK_OK) return status;
++    if (buffer->content_status != DOE_VK_OK) return buffer->content_status;
++    *out = (const uint8_t *)buffer->mapped + (size_t)offset;
++    return DOE_VK_OK;
++}
++
+ doe_vk_status doe_vk_buffer_read(doe_vk_buffer *buffer, uint64_t offset,
+     void *bytes, size_t size) {
+     if (size != 0 && bytes == NULL) return DOE_VK_INVALID_ARGUMENT;
+-    doe_vk_status status = host_access(buffer, offset, size);
++    const void *source = NULL;
++    doe_vk_status status = doe_vk_buffer_host_range(buffer, offset, size, &source);
+     if (status != DOE_VK_OK) return status;
+-    if (buffer->content_status != DOE_VK_OK) return buffer->content_status;
+-    if (size != 0) memcpy(bytes, (const uint8_t *)buffer->mapped + (size_t)offset, size);
++    if (size != 0) memcpy(bytes, source, size);
+     return DOE_VK_OK;
+ }
+diff --git a/runtime/c/native/src/backend_buffers.c b/runtime/c/native/src/backend_buffers.c
+index b284080e0..7a7b13830 100644
+--- a/runtime/c/native/src/backend_buffers.c
++++ b/runtime/c/native/src/backend_buffers.c
+@@ -50,6 +50,16 @@ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *
+     return native_failure_status(NATIVE_UNSUPPORTED);
+ }
+ 
++native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
++    const unsigned char **out)
++{
++    if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
++    const void *range = NULL;
++    doe_vk_status status = doe_vk_buffer_host_range(buffer->handle.vulkan, offset, size, &range);
++    if (status == DOE_VK_OK) *out = range;
++    return native_failure_vulkan(status, NULL);
++}
++
+ native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size)
+ {
+     if (buffer->device->backend.kind == WGPUBackendType_Vulkan)
+diff --git a/runtime/c/native/src/buffers.c b/runtime/c/native/src/buffers.c
+index 70b359b71..977a4c60a 100644
+--- a/runtime/c/native/src/buffers.c
++++ b/runtime/c/native/src/buffers.c
+@@ -244,6 +244,7 @@ typedef struct map_delivery {
+     WGPUBufferMapCallbackInfo callback;
+     doe_resource_buffer *buffer;
+     unsigned char *bytes;
++    const unsigned char *direct; /* Backend-owned read range; never freed here. */
+     uint64_t generation, offset;
+     size_t size;
+     bool began;
+@@ -262,7 +263,7 @@ static void deliver_map(void *context)
+     if (value.began) {
+         bool success = value.status == WGPUMapAsyncStatus_Success;
+         doe_resource_status status = doe_resource_buffer_map_complete(value.buffer,
+-            value.generation, success, value.bytes);
++            value.generation, success, value.direct ? (unsigned char *)value.direct : value.bytes);
+         if (status == DOE_RESOURCE_OK) {
+             native_buffer *payload = doe_resource_buffer_native(value.buffer);
+             payload->mapping = value.bytes;
+@@ -307,13 +308,18 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
+         delivery.began = true;
+         const doe_resource_buffer_desc *desc = doe_resource_buffer_description(buffer);
+         delivery.size = size == WGPU_WHOLE_MAP_SIZE ? (size_t)(desc->size - offset) : size;
+-        delivery.bytes = malloc(delivery.size ? delivery.size : 1);
+         native_buffer *payload = doe_resource_buffer_native(buffer);
+-        if (delivery.bytes) {
++        /* Read mappings expose only const ranges and mapped buffers are refused
++         * by submission and queue writes, so a backend's persistent coherent
++         * bytes can be lent directly instead of copied into a host shadow. */
++        const bool direct = mode == WGPUMapMode_Read && device->backend.kind == WGPUBackendType_Vulkan;
++        delivery.bytes = direct ? NULL : malloc(delivery.size ? delivery.size : 1);
++        if (direct || delivery.bytes) {
+             failure = native_settle_for_buffer(device, payload);
+             consumed_failure = failure;
+             if (failure.status == NATIVE_OK)
+-                failure = native_buffer_read(payload, offset, delivery.bytes, delivery.size);
++                failure = direct ? native_buffer_host_range(payload, offset, delivery.size, &delivery.direct) :
++                    native_buffer_read(payload, offset, delivery.bytes, delivery.size);
+             if (failure.status != NATIVE_OK) consumed_failure = failure;
+             if (failure.status == NATIVE_OK) delivery.status = WGPUMapAsyncStatus_Success;
+             else if (native_device_result(device) != NATIVE_OK)
+diff --git a/runtime/c/native/src/internal.h b/runtime/c/native/src/internal.h
+index 6505dc5f9..79d47bcc8 100644
+--- a/runtime/c/native/src/internal.h
++++ b/runtime/c/native/src/internal.h
+@@ -241,6 +241,10 @@ uint64_t native_allocation_bound(const native_device *device);
+ bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);
+ void native_buffer_release(void *userdata, void *handle);
+ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
++/* Backend-owned persistent host bytes for a read mapping; NATIVE_UNSUPPORTED
++ * where the backend has no such range and the mapping must copy instead. */
++native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
++    const unsigned char **out);
+ native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+     bool direct_readback);

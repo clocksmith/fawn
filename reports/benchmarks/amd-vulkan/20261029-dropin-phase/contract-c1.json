@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c1",
+  "frozenAtUtc": "2026-10-30T01:28:05Z",
+  "sourceCommit": "35018c4a3 plus uncommitted bench/drop-in/dropin_phase_harness.c and bench/tools/dropin_phase_cohort.py (hashes below)",
+  "surface": "dropin (public webgpu.h ABI); one harness source linked per provider",
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "workloadOrigin": "Node5 package workloads: unchanged WGSL, generator, seed 0 inputs; set 1 = same generator seed+1000; independent CPU oracle cross-checked against frozen Node5 capture oracles",
+  "providers": {
+    "doe-c": "libwebgpu_doe_c.so built from 35018c4a3 (runtime/c/native default flags)",
+    "dawn": "source-built Dawn d04f88359 Release libwebgpu_dawn.so",
+    "dawn-aa": "byte-identical copy of the dawn harness binary (A/A control)"
+  },
+  "excludedProviders": {
+    "doe-zig": "retained Zig libwebgpu_doe_full.so rejects the TimedWaitAny instance feature at wgpuCreateInstance; fail-closed, recorded unsupported for this harness, not timed"
+  },
+  "sampling": {
+    "pairs": 24,
+    "orders": "all 6 permutations of the 3 providers, cycled",
+    "iterationsPerProcess": 32,
+    "warmIterations": "iterations 1..31",
+    "processesPerWorkload": 72
+  },
+  "phases": {
+    "oneTime": [
+      "setup (instance+adapter+device+queue)",
+      "compile (shader module)",
+      "pipeline (compute pipeline, auto layout)",
+      "resources (buffers, params, bind group)",
+      "teardown"
+    ],
+    "perIteration": [
+      "upload (queue writeBuffer)",
+      "encode (clear+pass+dispatch+copy+finish)",
+      "submit (queueSubmit return)",
+      "completion (onSubmittedWorkDone WaitAny)",
+      "map (mapAsync WaitAny + mapped copy + unmap)",
+      "operation = upload..map"
+    ],
+    "oracle": "every iteration, after the operation interval closes; any mismatch fails the process"
+  },
+  "statistics": {
+    "paired": "per-pair ratio provider/dawn of per-process metrics",
+    "summary": "median ratio, bootstrap 95% CI (10000 resamples, seed 20261029), provider-faster pair count, per-provider medians and p95",
+    "control": "dawn"
+  },
+  "acceptance": {
+    "validity": [
+      "every process status ok with all iterations oracle-checked",
+      "all providers report Radeon 8060S on Vulkan, adapterType != CPU",
+      "A/A: dawn-aa/dawn warm.operation median ratio within [0.95,1.05] and its CI95 contains 1"
+    ],
+    "scopedWarmOperationWin": "doe-c/dawn warm.operation ratio CI95 upper < 1.0 AND warmP95.operation ratio CI95 upper < 1.0 AND cpuMs ratio median <= 1.05 AND maxRssMiB ratio median <= 1.10",
+    "oneTimeRegressionBound": "setupNs+compileNs+pipelineNs individually: ratio CI95 lower bound <= 1.10, else recorded regression",
+    "claimBoundary": "A pass is a scoped native drop-in phase result on these three Node5 workloads on this host only. It is not the GOALS Vulkan application win, which needs a complete unchanged application."
+  },
+  "hostControls": "flock models-volume/doe-gpu-timing.lock; four Reploid participant units stopped for the window and restarted by EXIT trap; renderD128 holders recorded before timing",
+  "hashes": {
+    "bench/drop-in/dropin_phase_harness.c": "a3e9d322d9877c082e927fc3c1c89cd99fc00b46f09144f93a3e792630f56ecf",
+    "bench/tools/dropin_phase_cohort.py": "8bd6bfc9b099e6f9060fb9f50b7d11ca8a3f7fdc63679245d9d0e7677488f8ec",
+    "doe-work/c1/inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "doe-work/c1/bin/harness-doe-c": "480fa9baec137b81782677c0de9461527c90eadd4ace00721d9ba53ab1c4e291",
+    "doe-work/c1/bin/harness-dawn": "4e23478a07dab25fbdbb757b0a6349649905fef5e271cec9dc26ea9e22b7eb4e",
+    "doe-work/c1/bin/harness-dawn-aa": "4e23478a07dab25fbdbb757b0a6349649905fef5e271cec9dc26ea9e22b7eb4e",
+    "doe-work/build-35018c4a3/native/libwebgpu_doe_c.so": "f2569964942788345dc4500b82273e73360f8533e479e4d06143056b2f4434ea",
+    "bench/vendor/dawn/out/Release/libwebgpu_dawn.so": "54040e4349ef6e9dc57d096b0563cdd1419c423ed353ff1c9552e70f6ddfb7f3"
+  }
+}

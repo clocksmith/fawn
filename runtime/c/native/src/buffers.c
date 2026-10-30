@@ -244,6 +244,7 @@ typedef struct map_delivery {
     WGPUBufferMapCallbackInfo callback;
     doe_resource_buffer *buffer;
     unsigned char *bytes;
+    const unsigned char *direct; /* Backend-owned read range; never freed here. */
     uint64_t generation, offset;
     size_t size;
     bool began;
@@ -262,7 +263,7 @@ static void deliver_map(void *context)
     if (value.began) {
         bool success = value.status == WGPUMapAsyncStatus_Success;
         doe_resource_status status = doe_resource_buffer_map_complete(value.buffer,
-            value.generation, success, value.bytes);
+            value.generation, success, value.direct ? (unsigned char *)value.direct : value.bytes);
         if (status == DOE_RESOURCE_OK) {
             native_buffer *payload = doe_resource_buffer_native(value.buffer);
             payload->mapping = value.bytes;
@@ -307,13 +308,18 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
         delivery.began = true;
         const doe_resource_buffer_desc *desc = doe_resource_buffer_description(buffer);
         delivery.size = size == WGPU_WHOLE_MAP_SIZE ? (size_t)(desc->size - offset) : size;
-        delivery.bytes = malloc(delivery.size ? delivery.size : 1);
         native_buffer *payload = doe_resource_buffer_native(buffer);
-        if (delivery.bytes) {
+        /* Read mappings expose only const ranges and mapped buffers are refused
+         * by submission and queue writes, so a backend's persistent coherent
+         * bytes can be lent directly instead of copied into a host shadow. */
+        const bool direct = mode == WGPUMapMode_Read && device->backend.kind == WGPUBackendType_Vulkan;
+        delivery.bytes = direct ? NULL : malloc(delivery.size ? delivery.size : 1);
+        if (direct || delivery.bytes) {
             failure = native_settle_for_buffer(device, payload);
             consumed_failure = failure;
             if (failure.status == NATIVE_OK)
-                failure = native_buffer_read(payload, offset, delivery.bytes, delivery.size);
+                failure = direct ? native_buffer_host_range(payload, offset, delivery.size, &delivery.direct) :
+                    native_buffer_read(payload, offset, delivery.bytes, delivery.size);
             if (failure.status != NATIVE_OK) consumed_failure = failure;
             if (failure.status == NATIVE_OK) delivery.status = WGPUMapAsyncStatus_Success;
             else if (native_device_result(device) != NATIVE_OK)

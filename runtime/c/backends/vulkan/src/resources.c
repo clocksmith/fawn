@@ -187,12 +187,22 @@ doe_vk_status doe_vk_buffer_write(doe_vk_buffer *buffer, uint64_t offset,
     return DOE_VK_OK;
 }
 
-doe_vk_status doe_vk_buffer_read(doe_vk_buffer *buffer, uint64_t offset,
-    void *bytes, size_t size) {
-    if (size != 0 && bytes == NULL) return DOE_VK_INVALID_ARGUMENT;
+doe_vk_status doe_vk_buffer_host_range(doe_vk_buffer *buffer, uint64_t offset,
+    size_t size, const void **out) {
+    if (out == NULL) return DOE_VK_INVALID_ARGUMENT;
     doe_vk_status status = host_access(buffer, offset, size);
     if (status != DOE_VK_OK) return status;
     if (buffer->content_status != DOE_VK_OK) return buffer->content_status;
-    if (size != 0) memcpy(bytes, (const uint8_t *)buffer->mapped + (size_t)offset, size);
+    *out = (const uint8_t *)buffer->mapped + (size_t)offset;
+    return DOE_VK_OK;
+}
+
+doe_vk_status doe_vk_buffer_read(doe_vk_buffer *buffer, uint64_t offset,
+    void *bytes, size_t size) {
+    if (size != 0 && bytes == NULL) return DOE_VK_INVALID_ARGUMENT;
+    const void *source = NULL;
+    doe_vk_status status = doe_vk_buffer_host_range(buffer, offset, size, &source);
+    if (status != DOE_VK_OK) return status;
+    if (size != 0) memcpy(bytes, source, size);
     return DOE_VK_OK;
 }

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c1-m1",
+  "frozenAtUtc": "2026-10-30T01:31:46Z",
+  "parentContract": "frozen-contract.json (same workloads, inputs, oracles, harness, iterations, statistics)",
+  "mechanism": "M1: Vulkan read mappings lend the persistent coherent host range instead of malloc + copy into a host shadow (runtime/c native buffers.c, backend_buffers.c; backends/vulkan resources.c)",
+  "providers": {"doe-c": "baseline 35018c4a3 library", "doe-c-m1": "35018c4a3 + M1 patch", "dawn": "Dawn d04f88359", "dawn-aa": "byte-identical Dawn harness copy"},
+  "sampling": {"pairs": 24, "orders": "all 24 permutations of 4 providers", "iterationsPerProcess": 32},
+  "acceptance": {
+    "validity": "all processes ok and oracle-checked; A/A dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1",
+    "mechanismAccepted": "doe-c-m1/doe-c warm.map ratio CI95 upper < 1.0 on all three workloads AND warm.operation ratio CI95 upper <= 1.0 on all three AND no other warm phase or one-time phase with ratio CI95 lower > 1.05",
+    "scopedWarmOperationWin": "unchanged from parent contract, evaluated for doe-c-m1/dawn"
+  },
+  "focusedCorrectness": "runtime/c/native check-physical clients (74) passed on the M1 library before timing; software check result recorded separately"
+}
