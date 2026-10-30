@@ -353,6 +353,18 @@ static bool literal_index(const CompilerWorkspace *c, uint32_t semantic, uint32_
     *value = ir->operands.scalar.literal;
     return true;
 }
+/* A fixed-length index needs no guard when it is provably below the length:
+ * a nonnegative literal, or a bitwise AND with a nonnegative literal mask below
+ * the length (the result lies in [0, mask] for u32 and i32 alike). */
+static bool index_below(const CompilerWorkspace *c, uint32_t semantic, uint32_t length) {
+    uint32_t value;
+    if (literal_index(c, semantic, &value)) return value < length;
+    if (semantic == 0u || semantic > c->instruction_count) return false;
+    const IrInstruction *ir = &c->instructions[semantic - 1u];
+    if (ir->opcode != IR_BIT_AND || (ir->type != IR_U32 && ir->type != IR_I32)) return false;
+    return (literal_index(c, ir->operands.scalar.left, &value) && value < length) ||
+        (literal_index(c, ir->operands.scalar.right, &value) && value < length);
+}
 static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *condition) {
     CompilerWorkspace *c = e->program;
     *condition = 0u;
@@ -369,6 +381,15 @@ static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *cond
                 return spirv_emit_error(e, a->source_offset, "runtime array access without resource root");
             length = spirv_reserve_ids(e, 1u);
             if (!spirv_runtime_length(e, ir->operands.access.root, length)) return false;
+        } else if (index_below(c, a->index, input->count)) {
+            uint32_t index = e->values[a->index];
+            if (a->kind == ACCESS_INDEX_I32) {
+                const uint32_t converted = spirv_reserve_ids(e, 1u);
+                EMIT(OP_BITCAST, ID_U32, converted, index);
+                index = converted;
+            }
+            w->cursor = index;
+            continue;
         } else length = spirv_unsigned_constant(e, input->count);
         uint32_t index = e->values[a->index], check;
         if (a->kind == ACCESS_INDEX_I32) {

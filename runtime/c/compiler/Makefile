@@ -80,7 +80,8 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -lm -o $@
-test: compiler-core test-job test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
+test: compiler-core build/test_index_guards test-job test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
+	build/test_index_guards
 	build/test_api
 	build/test_boundaries
 	build/test_constants
@@ -156,6 +157,8 @@ test-compute: compiler-core build/test_compute_api
 	build/test_compute_api
 	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute
 
+build/test_index_guards: $(LIB_SOURCES) tests/test_index_guards.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_index_guards.c -lm -o $@
 build/test_compute_api: $(LIB_SOURCES) tests/test_compute_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_compute_api.c -lm -o $@
 .PHONY: sanitize-compute
