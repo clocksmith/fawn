@@ -12,6 +12,12 @@ The active Doe logo is `assets/doe-logo.svg`, and it should match
 `assets/logos/doe/2026-06-23-doe-logo-release-evidence.svg`. The active Doe
 macOS app icon is `assets/doe-logo.icns`, generated from that SVG.
 
+The active Fawn source is the pink/purple curled deer, selected by the owner on
+October 30, 2026. It uses the same deer artwork as `assets/doe-logo.svg`, with
+transparent square framing for app icons. The browser logo build also updates
+`browser/chromium/resources/fawn-icon.svg`. The June 28 spectrum-face drawing
+below is historical and must not be selected as current Fawn branding.
+
 ## Fawn source logos
 
 | Date | File | Source commit | Original path | Notes |
