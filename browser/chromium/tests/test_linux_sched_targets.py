@@ -134,8 +134,11 @@ def run(args: argparse.Namespace) -> None:
             flags = [*common, "--policy=" + mode, "--operation=" + operation]
             cases.append((mode + "-" + operation, binary, flags,
                           mode == "scoped" or operation.startswith("self")))
-    cases.append(("scoped-affinity-sibling", binary,
-                  [*common, "--policy=scoped", "--operation=affinity-sibling"], False))
+    for operation in ("affinity-sibling", "fd-identity"):
+        for mode in ("default", "scoped"):
+            cases.append((mode + "-" + operation, binary,
+                          [*common, "--policy=" + mode, "--operation=" + operation],
+                          mode == "scoped"))
     for name, flags in (
         ("native-dawn", ["--use-webgpu-runtime=dawn", "--ozone-platform=x11"]),
         ("wayland", ["--use-webgpu-runtime=doe", "--ozone-platform=wayland"]),

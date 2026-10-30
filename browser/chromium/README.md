@@ -153,9 +153,14 @@ and late-sandbox policies keep their existing behavior.
 That same route queries Vulkan's instance-extension metadata before sealing,
 while the existing SONAME preloads keep ICDs resident. This lets the loader
 register its own manifest paths on hosts where `/usr/lib` and `/lib` name the
-same library. It adds no file permissions or manifest parser and creates no
-Vulkan instance, device or queue. Query failure preserves the actual result and
-count; successful discovery does not establish adapter admission.
+same library. It adds no manifest parser and creates no Vulkan instance, device
+or queue. Query failure preserves the actual result and count; successful
+discovery does not establish adapter admission. The loader rescans manifests when
+the provider creates its instance after sealing, so the broker also receives
+read-only access to regular, root-owned, non-writable `*.json` files directly in
+`/usr/share/vulkan/icd.d` and `/etc/vulkan/icd.d`. Chromium's existing list names
+only architecture-suffixed spellings; Mesa hosts installing `radeon_icd.json`
+otherwise report no C adapter. Driver libraries and directories stay denied.
 
 For a Mesa host with a real X11 session and an already-built patched Chromium
 checkout, the focused resource check compiles the actual owning translation
@@ -178,13 +183,16 @@ context, Vulkan instance, device or queue;
 page WebGPU, native pixels, compositor output and browser acceptance require
 their separate physical controls.
 
-On that same early external X11 GLX route, a denied `sched_setscheduler` request
-for another thread or process returns `EPERM`. Self and current-thread requests
-retain Chromium's existing target checks; other scheduler operations and all
-other launch routes retain their existing policies. This permits Mesa's optional
-worker-priority request to fail without terminating the GPU process. The denied
-worker keeps its inherited scheduler, which must be accounted for in any later
-provider performance comparison.
+On that same early external X11 GLX route, a denied `sched_setscheduler` or
+`sched_setaffinity` request for another thread or process returns `EPERM`. Self
+and current-thread requests retain Chromium's existing target checks; other
+scheduler operations and all other launch routes retain their existing policies.
+This permits Mesa's optional worker priority and driver-thread pinning to fail
+without terminating the GPU process. Denied workers keep their inherited
+scheduler and affinity, which must be accounted for in any provider performance
+comparison. The route also allows `fcntl(F_DUPFD_QUERY)`, which Mesa's loader
+uses to compare a DRI3 descriptor with an already open device; it compares two
+caller-owned descriptors and opens or grants nothing.
 
 Forced Doe's default Linux WebGPU backend uses the provider's Vulkan adapter
 independently of Chromium's compositor API. Shared images travel through the
@@ -217,7 +225,7 @@ python3 browser/chromium/tests/test_linux_sched_targets.py run \
   --out /absolute/new-scheduler-cpu-results
 ```
 
-It verifies allowed self/current-thread requests, denied sibling/foreign requests
-with unchanged target priorities, and fatal controls for the default policy,
-unrelated affinity operation and other launch routes. It creates no GL context
+It verifies allowed self/current-thread requests, denied sibling/foreign
+scheduler and affinity requests with unchanged targets, descriptor comparison,
+and fatal controls for the default policy and other launch routes. It creates no GL context
 or GPU work and does not establish browser acceptance.
