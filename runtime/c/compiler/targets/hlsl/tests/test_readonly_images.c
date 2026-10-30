@@ -31,7 +31,7 @@ void test_readonly_images(const char *path)
     DoeCompilerHlslEntryV11 entries[1] = {0};
     DoeHlslResult result;
     assert(doe_hlsl_emit_metadata(&f->source,f->module,0,f->scratch,
-        (DoeHlslMetadata){bindings,entries},&result) == DOE_COMPILER_OK);
+        (DoeHlslMetadata){.bindings=bindings,.entries=entries},&result) == DOE_COMPILER_OK);
     assert(bindings[0].register_kind == DOE_COMPILER_HLSL_REGISTER_SRV);
     assert(bindings[1].register_kind == DOE_COMPILER_HLSL_REGISTER_SRV && bindings[1].shader_register == 3 &&
         bindings[1].register_space == 1 && bindings[1].stride == 0);

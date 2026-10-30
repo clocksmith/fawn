@@ -6,11 +6,11 @@ Parent: [C migration](../CATSCAN.md)
 Expose WebGPU entrypoints.
 
 ## Authority
-Own ABI conversion, adapter/device leases; exclude resource semantics, callbacks,
+Own ABI conversion/adapter/device leases; exclude resource semantics, callbacks,
 compilation, execution, production selection.
 
 ## Scope
-WebGPU/presentation and queried packed Metal imports; unsupported paths reject.
+WebGPU/presentation, queried packed Metal imports; unsupported paths reject.
 
 ## Contracts
 Pinned ABI, inventoried legacy/browser signatures, [owner contracts](AGENTS.md),
@@ -28,9 +28,9 @@ teardown/resize until backend completion. Display timestamps never redefine
 WorkDone. Surface-before-device locking, errors, rollback and retirement ownership persist.
 Metal occlusion, calibrated timestamps, unavailable samples, ordered resolves,
 depth and raster state retain their owners.
-Provider code stays resident; foreign callbacks unlocked.
-Persistent-cache opt-out precedes serialized shader/driver access; memory,
-caller-owned and opaque driver caches remain separate.
+Provider resident; foreign callbacks unlocked.
+Cache opt-out precedes serialized access; shader profiles bind persisted artifacts;
+memory/caller/driver caches stay separate. Uncertified/imported HLSL retains SM6.
 Legacy getters retain leases. Encoded writes snapshot staging with ordered copies.
 Unsupported external transforms yield unusable error objects; copies never imply
 conversion. Shared IOSurface properties expose physical formats before creation;
@@ -38,7 +38,7 @@ compatible views preserve them.
 
 ## Acceptance
 [Owner checks](Makefile) cover rejection, errors, rollback and cleanup.
-- Evidence: [Records](README.md) distinguish host, SDK, native/window and browser qualification.
+- Evidence: [Records](README.md) distinguish host, SDK, native/window, browser qualification.
 
 ## Non-goals
 Parallel resource engines, synthetic completion or default cutover.

@@ -111,3 +111,20 @@ there still reject. No source rewriting or synthetic public shader is introduced
 default output, stage rejection and FP state. The public `sample-mask` native
 fixture checks resolved pixels and atomic side effects with finite readback waits;
 SDK acceptance and a device run are separate from qualification.
+
+## Explicit HLSL profiles (ABI19)
+
+`doe_compiler_hlsl_profile_requirements` and `doe_compiler_specialize_hlsl_profile`
+reuse ABI17 caller budgets and the same selected typed transaction. The additive
+result carries an entry/stage/profile record; old ABI11 flags, language600 text,
+old APIs and workspace sizes remain unchanged. A positive501 profile covers the
+closed loop-free32-bit buffer-compute subset in `targets/hlsl/profile.c`, including
+actual emitted declarations/helpers and reachable functions. Unknown operations,
+types or insufficient certification work retain600; emitted native16 requires620.
+The initial certificate excludes loops, runtime numeric conversions and signed
+division/remainder: their existing target forms provoke FXC warnings under the
+preserved strict policy.
+This is a target-compiler requirement, separate from optimization/numeric policy.
+Legacy flags0 is never a certificate. `test-hlsl-profile` checks legacy byte and
+workspace identity, measure/fill, publication failures, subgroup/half exclusions
+and optional exact-source corpus export for separate Windows SDK controls.

@@ -13,6 +13,7 @@
 #include <windows.h>
 #include <unknwn.h>
 #include <dxcapi.h>
+#include <d3dcompiler.h>
 #include <cerrno>
 #include <cfenv>
 #include <cstdio>
@@ -28,6 +29,7 @@
 struct doe_dx_shader {
     HMODULE module;
     IDxcBlob *bytecode;
+    ID3DBlob *fxc_bytecode;
 };
 
 struct compile_state {
@@ -36,12 +38,15 @@ struct compile_state {
     IDxcResult *result;
     IDxcBlobUtf8 *diagnostic;
     IDxcBlob *bytecode;
+    ID3DBlob *fxc_bytecode, *fxc_diagnostic;
     wchar_t *path;
 };
 
 static void cleanup(compile_state *state)
 {
     if (state->bytecode) state->bytecode->Release();
+    if (state->fxc_bytecode) state->fxc_bytecode->Release();
+    if (state->fxc_diagnostic) state->fxc_diagnostic->Release();
     if (state->diagnostic) state->diagnostic->Release();
     if (state->result) state->result->Release();
     if (state->compiler) state->compiler->Release();
@@ -79,6 +84,12 @@ static doe_dx_status failed(compile_state *state, doe_dx_shader_error *error,
 {
     const char *message = operation;
     size_t length = std::strlen(operation);
+    if (state->fxc_diagnostic && state->fxc_diagnostic->GetBufferPointer() &&
+        state->fxc_diagnostic->GetBufferSize()) {
+        message = static_cast<const char *>(state->fxc_diagnostic->GetBufferPointer());
+        length = state->fxc_diagnostic->GetBufferSize();
+        if (message[length-1] == 0) --length;
+    }
     if (state->result) {
         /* Best-effort diagnostics never replace the first failure/code. */
         /* The SDK macro uses Microsoft UUID metadata. Acknowledge only that
@@ -124,6 +135,74 @@ static bool absolute_path(const wchar_t *path)
     return separator && separator != path + 2 && separator[1] != 0;
 }
 
+static doe_dx_status load_compiler(const doe_dx_shader_options *options,
+    compile_state *state,doe_dx_shader_error *error,bool fxc)
+{
+    const int path_size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+        options->compiler_module_path, -1, nullptr, 0);
+    if (!path_size || path_size > 32767)
+        return reject(error,fxc ? "invalid FXC UTF-8 module path" : "invalid DXC UTF-8 module path");
+    state->path = static_cast<wchar_t *>(std::calloc(static_cast<size_t>(path_size), sizeof(wchar_t)));
+    if (!state->path) return failed(state,error,DOE_DX_OUT_OF_MEMORY,
+        static_cast<int32_t>(E_OUTOFMEMORY),fxc ? "FXC.module_path.allocate" : "DXC.module_path.allocate");
+    if (!MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,options->compiler_module_path,
+            -1,state->path,path_size) || !absolute_path(state->path)) {
+        cleanup(state);
+        return reject(error,fxc ? "FXC module path must be fully qualified UTF-8" :
+            "DXC module path must be fully qualified UTF-8");
+    }
+    state->module = LoadLibraryExW(state->path,nullptr,
+        LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
+    if (!state->module) return failed(state,error,DOE_DX_UNAVAILABLE,
+        static_cast<int32_t>(GetLastError()),fxc ? "LoadLibraryExW(FXC)" : "LoadLibraryExW(DXC)");
+    return DOE_DX_OK;
+}
+
+static doe_dx_status compile_fxc(const doe_dx_shader_options *options,
+    doe_dx_shader **out,doe_dx_shader_error *error)
+{
+    compile_state state = {};
+    const doe_dx_status loaded = load_compiler(options,&state,error,true);
+    if (loaded != DOE_DX_OK) return loaded;
+    const FARPROC symbol = GetProcAddress(state.module,"D3DCompile");
+    if (!symbol) return failed(&state,error,DOE_DX_UNAVAILABLE,
+        static_cast<int32_t>(GetLastError()),"GetProcAddress(D3DCompile)");
+    decltype(&D3DCompile) compile;
+    static_assert(sizeof(compile) == sizeof(symbol),"Windows FXC procedure pointer ABI");
+    std::memcpy(&compile,&symbol,sizeof(compile));
+    char selected[16];
+    D3D_SHADER_MACRO definitions[2] = {};
+    if (options->has_entry_index) {
+        const int length = std::snprintf(selected,sizeof(selected),"%u",
+            static_cast<unsigned>(options->entry_index));
+        if (length <= 0 || static_cast<size_t>(length) >= sizeof(selected))
+            return failed(&state,error,DOE_DX_RANGE,static_cast<int32_t>(E_INVALIDARG),"FXC.entry_index");
+        definitions[0] = {"DOE_HLSL_ENTRY",selected};
+    }
+    /* Preserve strict arithmetic and warnings; match the existing optimized
+     * DXC policy rather than expose application-controlled compiler flags. */
+    const UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS |
+        D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+    const HRESULT result = compile(options->source,options->source_size,nullptr,
+        options->has_entry_index ? definitions : nullptr,nullptr,options->entry,"cs_5_1",
+        flags,0,&state.fxc_bytecode,&state.fxc_diagnostic);
+    if (FAILED(result)) return failed(&state,error,
+        result == E_OUTOFMEMORY ? DOE_DX_OUT_OF_MEMORY : DOE_DX_INVALID_ARGUMENT,
+        static_cast<int32_t>(result),"FXC.compile");
+    if (!state.fxc_bytecode || !state.fxc_bytecode->GetBufferPointer() || !state.fxc_bytecode->GetBufferSize())
+        return failed(&state,error,DOE_DX_NATIVE_FAILURE,static_cast<int32_t>(E_FAIL),"FXC.bytecode");
+    doe_dx_shader *shader = static_cast<doe_dx_shader *>(std::calloc(1,sizeof(*shader)));
+    if (!shader) return failed(&state,error,DOE_DX_OUT_OF_MEMORY,
+        static_cast<int32_t>(E_OUTOFMEMORY),"FXC.bytecode.allocate");
+    shader->module = state.module;
+    shader->fxc_bytecode = state.fxc_bytecode;
+    state.module = nullptr;
+    state.fxc_bytecode = nullptr;
+    cleanup(&state);
+    *out = shader;
+    return report(error,DOE_DX_OK,0,nullptr,nullptr,0);
+}
+
 static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection,bool require_projection,
     const doe_dx_shader_requirements *requirements,
@@ -139,11 +218,16 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
         return reject(error,"projection requires a vertex stage and zero reserved fields");
     const doe_dx_shader_requirements legacy = {600, 0, {0, 0}};
     if (!requirements) requirements = &legacy;
-    if ((requirements->shader_model != 600 && requirements->shader_model != 620) ||
+    if ((requirements->shader_model != 501 && requirements->shader_model != 600 && requirements->shader_model != 620) ||
         (requirements->flags & ~DOE_DX_SHADER_NATIVE16) || requirements->reserved[0] ||
         requirements->reserved[1] ||
         ((requirements->flags & DOE_DX_SHADER_NATIVE16) && requirements->shader_model != 620))
         return reject(error, "invalid or inconsistent DXC shader requirements");
+    if (requirements->shader_model == 501) {
+        if (options->stage != DOE_DX_SHADER_COMPUTE || projection || requirements->flags)
+            return reject(error,"SM5.1 requires an explicit compute profile without projection/native16");
+        return compile_fxc(options,out,error);
+    }
     const bool model62 = requirements->shader_model == 620;
     const wchar_t *profile;
     switch (options->stage) {
@@ -153,21 +237,8 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     default: return reject(error, "unsupported DXC shader stage");
     }
     compile_state state = {};
-    int path_size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-        options->compiler_module_path, -1, nullptr, 0);
-    if (!path_size || path_size > 32767) return reject(error, "invalid DXC UTF-8 module path");
-    state.path = static_cast<wchar_t *>(std::calloc(static_cast<size_t>(path_size), sizeof(wchar_t)));
-    if (!state.path) return failed(&state, error, DOE_DX_OUT_OF_MEMORY,
-        static_cast<int32_t>(E_OUTOFMEMORY), "DXC.module_path.allocate");
-    if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, options->compiler_module_path,
-            -1, state.path, path_size) || !absolute_path(state.path)) {
-        cleanup(&state);
-        return reject(error, "DXC module path must be fully qualified UTF-8");
-    }
-    state.module = LoadLibraryExW(state.path, nullptr,
-        LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
-    if (!state.module) return failed(&state, error, DOE_DX_UNAVAILABLE,
-        static_cast<int32_t>(GetLastError()), "LoadLibraryExW(DXC)");
+    const doe_dx_status loaded = load_compiler(options,&state,error,false);
+    if (loaded != DOE_DX_OK) return loaded;
     FARPROC symbol = GetProcAddress(state.module, "DxcCreateInstance");
     if (!symbol) return failed(&state, error, DOE_DX_UNAVAILABLE,
         static_cast<int32_t>(GetLastError()), "GetProcAddress(DxcCreateInstance)");
@@ -292,14 +363,26 @@ doe_dx_status doe_dx_shader_compile_required(const doe_dx_shader_options *option
 
 const uint8_t *doe_dx_shader_bytes(const doe_dx_shader *shader, size_t *size)
 {
-    if (size) *size = shader ? shader->bytecode->GetBufferSize() : 0;
-    return shader ? static_cast<const uint8_t *>(shader->bytecode->GetBufferPointer()) : nullptr;
+    if (size) *size = shader ? (shader->fxc_bytecode ? shader->fxc_bytecode->GetBufferSize() :
+        shader->bytecode->GetBufferSize()) : 0;
+    return shader ? static_cast<const uint8_t *>(shader->fxc_bytecode ?
+        shader->fxc_bytecode->GetBufferPointer() : shader->bytecode->GetBufferPointer()) : nullptr;
 }
 
 void doe_dx_shader_release(doe_dx_shader *shader)
 {
     if (!shader) return;
-    shader->bytecode->Release();
+    const DWORD saved_error = GetLastError();
+    const int saved_errno = errno;
+    const unsigned saved_mxcsr = _mm_getcsr();
+    fenv_t saved_environment;
+    if (std::fegetenv(&saved_environment)) std::abort();
+    if (shader->bytecode) shader->bytecode->Release();
+    if (shader->fxc_bytecode) shader->fxc_bytecode->Release();
     if (!FreeLibrary(shader->module)) std::abort();
     std::free(shader);
+    if (std::fesetenv(&saved_environment)) std::abort();
+    _mm_setcsr(saved_mxcsr);
+    errno = saved_errno;
+    SetLastError(saved_error);
 }

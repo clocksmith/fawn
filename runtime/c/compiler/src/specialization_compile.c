@@ -169,14 +169,14 @@ DoeCompilerStatus doe_compiler_specialize_sampling(uint32_t version, uint32_t ta
         workspace,workspace_size,source,length,selection,selection_size,values,value_count,
         value_record_size,flags,outputs,outputs_size,result,result_size,NULL);
 }
-DoeCompilerStatus doe_compiler_specialize_translation(uint32_t version, uint32_t target,
+static DoeCompilerStatus translation_compile(uint32_t version, uint32_t target,
     const DoeCompilerSamplingOptionsV16 *options, size_t options_size,
     const DoeCompilerTranslationCapacitiesV17 *caps, size_t capacities_size,
     void *workspace, size_t workspace_size, const char *source, size_t length,
     const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
     const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
     uint32_t flags, const DoeCompilerTranslationOutputsV17 *outputs, size_t outputs_size,
-    DoeCompilerTranslationResultV17 *result, size_t result_size) {
+    DoeCompilerTranslationResultV17 *result, size_t result_size, DoeCompilerHlslProfileV19 *profile) {
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != DOE_COMPILER_TRANSLATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
         result_size != sizeof(*result) || (outputs != NULL ? outputs_size != sizeof(*outputs) ||
@@ -196,7 +196,7 @@ DoeCompilerStatus doe_compiler_specialize_translation(uint32_t version, uint32_t
         return DOE_COMPILER_INPUT_ERROR;
     }
     TranslationContext translation = {.staging=(DoeCompilerTranslationEntryV17 *)((unsigned char *)workspace+base),
-        .capacity=caps->translation_entries,.outputs=outputs};
+        .capacity=caps->translation_entries,.outputs=outputs,.hlsl_profile=profile};
     const DoeCompilerStatus status = sampling_compile(DOE_COMPILER_SAMPLING_ABI_VERSION,target,options,options_size,
         &caps->sampling,sizeof(caps->sampling),workspace,workspace_size,source,length,selection,selection_size,
         values,value_count,value_record_size,flags,outputs != NULL ? &outputs->sampling : NULL,
@@ -204,6 +204,47 @@ DoeCompilerStatus doe_compiler_specialize_translation(uint32_t version, uint32_t
     result->required_entries = translation.count;
     if (status == DOE_COMPILER_OK && (flags & DOE_COMPILER_MODULE_MEASURE) == 0u)
         result->published_entries = translation.count;
+    errno = saved_errno;
+    return status;
+}
+
+DoeCompilerStatus doe_compiler_specialize_translation(uint32_t version, uint32_t target,
+    const DoeCompilerSamplingOptionsV16 *options, size_t options_size,
+    const DoeCompilerTranslationCapacitiesV17 *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
+    uint32_t flags, const DoeCompilerTranslationOutputsV17 *outputs, size_t outputs_size,
+    DoeCompilerTranslationResultV17 *result, size_t result_size) {
+    return translation_compile(version,target,options,options_size,caps,capacities_size,
+        workspace,workspace_size,source,length,selection,selection_size,values,value_count,
+        value_record_size,flags,outputs,outputs_size,result,result_size,NULL);
+}
+
+DoeCompilerStatus doe_compiler_specialize_hlsl_profile(uint32_t version,
+    const DoeCompilerSamplingOptionsV16 *options, size_t options_size,
+    const DoeCompilerTranslationCapacitiesV17 *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
+    uint32_t flags, const DoeCompilerTranslationOutputsV17 *outputs, size_t outputs_size,
+    DoeCompilerHlslProfileResultV19 *result, size_t result_size) {
+    if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_HLSL_PROFILE_ABI_VERSION || result_size != sizeof(*result) ||
+        options_size != sizeof(*options) || capacities_size != sizeof(*caps) ||
+        selection_size != sizeof(*selection) || value_record_size != sizeof(*values) ||
+        (outputs != NULL ? outputs_size != sizeof(*outputs) ||
+            outputs->entry_record_size != sizeof(DoeCompilerTranslationEntryV17) : outputs_size != 0u) ||
+        !output_records(DOE_COMPILER_TARGET_HLSL,outputs != NULL ? &outputs->sampling.target : NULL))
+        return DOE_COMPILER_ABI_MISMATCH;
+    const int saved_errno = errno;
+    memset(result,0,sizeof(*result));
+    DoeCompilerHlslProfileV19 profile = {0};
+    const DoeCompilerStatus status = translation_compile(DOE_COMPILER_TRANSLATION_ABI_VERSION,
+        DOE_COMPILER_TARGET_HLSL,options,options_size,caps,capacities_size,
+        workspace,workspace_size,source,length,selection,selection_size,values,value_count,
+        value_record_size,flags,outputs,outputs_size,&result->translation,sizeof(result->translation),&profile);
+    if (status == DOE_COMPILER_OK) result->profile = profile;
     errno = saved_errno;
     return status;
 }

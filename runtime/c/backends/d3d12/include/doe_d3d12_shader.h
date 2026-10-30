@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-/* Private official-DXC adapter. HLSL generation, reflection, entry selection and
+/* Private official Windows shader compiler adapter. HLSL generation, reflection, entry selection and
  * device requirements belong to the compiler/frontend, never this SDK shim. */
 typedef struct doe_dx_shader doe_dx_shader;
 typedef enum doe_dx_shader_stage {
@@ -17,7 +17,7 @@ typedef struct doe_dx_shader_options {
     const char *source; /* Borrowed exact UTF-8 bytes, no embedded NUL. */
     size_t source_size;
     const char *entry; /* Borrowed ASCII identifier, 1..63 characters. */
-    doe_dx_shader_stage stage; /* cs_6_0, vs_6_0 or ps_6_0, respectively. */
+    doe_dx_shader_stage stage; /* Legacy/default cs_6_0, vs_6_0 or ps_6_0. */
     bool has_entry_index;
     uint32_t entry_index; /* Compiler-owned DOE_HLSL_ENTRY value, never inferred. */
 } doe_dx_shader_options;
@@ -33,7 +33,7 @@ typedef struct doe_dx_shader_projection {
  * requires SM6.2 and the actual DXC 16-bit-types switch; no implicit promotion. */
 enum { DOE_DX_SHADER_NATIVE16 = 1u };
 typedef struct doe_dx_shader_requirements {
-    uint32_t shader_model; /* Exactly 600 or 620. */
+    uint32_t shader_model; /* Exactly 501, 600 or 620. Explicit501 is compute-only FXC. */
     uint32_t flags; /* DOE_DX_SHADER_NATIVE16 only; unknown bits reject. */
     uint32_t reserved[2];
 } doe_dx_shader_requirements;
@@ -48,15 +48,16 @@ typedef struct doe_dx_shader_error {
 } doe_dx_shader_error;
 
 /* No callbacks, shell, arbitrary flags, include handler or filesystem includes.
- * Uses -HV2021 -Ges -WX -Gis and exactly the requested stage/entry/optional index.
+ * DXC uses -HV2021 -Ges -WX -Gis and the requested stage/entry/optional index.
  * Both graphics profiles explicitly use prefix-stable signature packing; this
  * is a target ABI policy, not a new application compilation flag.
  * Inputs are borrowed only for this call. Output/error storage is live, aligned
  * and disjoint from each other and the inputs.
- * Failure leaves *out untouched and may replace error. Success owns one DXC
+ * Failure leaves *out untouched and may replace error. Legacy success owns one DXC
  * blob and its explicit module until release. Caller errno, LastError, standard
  * fenv and x86 MXCSR are preserved across this SDK call; this is not WGSL numeric
- * normalization. Serialize release against every borrowed view. */
+ * normalization. Release preserves the same host state. Serialize release
+ * against every borrowed view. */
 doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
     doe_dx_shader **out, doe_dx_shader_error *error);
 /* Same ownership/host-state/failure contract as compile. projection is required;
@@ -64,6 +65,9 @@ doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
 doe_dx_status doe_dx_shader_compile_projected(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection,doe_dx_shader **out,doe_dx_shader_error *error);
 /* requirements is required; projection is optional (vertex only when present).
+ * Explicit501 selects official FXC cs_5_1 with strict IEEE arithmetic, warnings
+ * as errors and optimization level3; no projection/native16. Module path must
+ * name that selected compiler. There is no retry/fallback between compilers.
  * All other ownership, diagnostics and host-state rules are compile's rules. */
 doe_dx_status doe_dx_shader_compile_required(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection, const doe_dx_shader_requirements *requirements,

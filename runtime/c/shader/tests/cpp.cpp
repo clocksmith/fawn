@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "doe_shader.h"
 #include "doe_shader_artifact.h"
+#include "doe_shader_hlsl_profile.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -47,6 +48,10 @@ int main() {
     assert(view.hlsl_binding_count == 1 && view.hlsl_entry_count == 1);
     assert(view.hlsl_bindings[0].register_space == 2 && view.hlsl_bindings[0].shader_register == 9);
     assert(view.hlsl_entries[0].dispatch_bytes == 16 && !std::strcmp(view.hlsl_entries[0].name, "main"));
+    DoeCompilerHlslProfileV19 profile{};
+    profile.shader_model = 123;
+    assert(!doe_shader_hlsl_profile(shader,&profile) && profile.shader_model == 123);
+    assert(doe_shader_hlsl_artifact_size(shader) == 0);
     assert(doe_shader_retain(shader) == DOE_SHADER_OK);
     doe_shader_release(shader);
     assert(view.hlsl_entries[0].dispatch_space == 7);
@@ -69,6 +74,8 @@ int main() {
     assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
     assert(view.counts.entries == 1 && view.module.selected_entry == 0 && view.entries[0].workgroup_size[0] == 4);
     assert(view.hlsl_entries[0].entry_index == 0 && !std::strcmp(view.hlsl_entries[0].name, "chosen"));
+    assert(doe_shader_hlsl_profile(shader,&profile) && profile.shader_model == 501u && profile.entry_index == 0u);
+    assert(doe_shader_hlsl_artifact_size(shader) > doe_shader_artifact_size(shader));
     doe_shader_release(shader);
 
 }

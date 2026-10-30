@@ -1726,3 +1726,11 @@ layouts and groups remain structurally compatible. Counts above one still
 reject; this does not add binding-array shader semantics. `singleton-layout`
 checks all four ordinary binding kinds, larger-count failures, explicit storage
 pipeline execution and readback with an ended pass retained across submission.
+
+For D3D12 selected compute, explicit compiler ABI19 profile501 chooses the staged
+official FXC module beside the provider. Uncertified legacy artifacts, native
+source imports and graphics retain DXC600/620. The existing shader cache uses the
+shader owner's separate profile envelope for HLSL; fresh, memory and disk hits
+retain the same immutable producer requirement. Legacy artifacts remain readable
+without gaining certification. Cache identity, opt-out, lifetime, compiler entry
+indices and all native resource/output gates remain with their existing owners.

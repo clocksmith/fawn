@@ -57,3 +57,10 @@ test-vulkan-graphics: $(BUILD)/vulkan_graphics
 
 $(BUILD)/test_specialize: tests/test_specialize.c $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_specialize.c $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -lm -o $@
+
+$(BUILD)/test_hlsl_profile: tests/test_hlsl_profile.c $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -o $@
+.PHONY: test-hlsl-profile
+test-hlsl-profile: $(BUILD)/test_hlsl_profile
+	$(BUILD)/test_hlsl_profile
+test: test-hlsl-profile

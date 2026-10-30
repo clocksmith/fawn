@@ -273,3 +273,12 @@ DoeCompilerStatus doe_compiler_translation_requirements(uint32_t version, uint32
     *requirements = result;
     return DOE_COMPILER_OK;
 }
+
+DoeCompilerStatus doe_compiler_hlsl_profile_requirements(uint32_t version,
+    const DoeCompilerTranslationCapacitiesV17 *caps, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_HLSL_PROFILE_ABI_VERSION) return DOE_COMPILER_ABI_MISMATCH;
+    return doe_compiler_translation_requirements(DOE_COMPILER_TRANSLATION_ABI_VERSION,
+        DOE_COMPILER_TARGET_HLSL,caps,capacities_size,requirements,requirements_size);
+}

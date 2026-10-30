@@ -2,6 +2,7 @@
 #ifndef DOE_SHADER_INTERNAL_H
 #define DOE_SHADER_INTERNAL_H
 #include "doe_shader.h"
+#include "doe_shader_hlsl_profile.h"
 #include <limits.h>
 #include <stdalign.h>
 #include <stdatomic.h>
@@ -30,6 +31,8 @@ struct doe_shader {
     size_t value_count;
     DoeCompilerStageOutputs outputs;
     doe_shader_view view;
+    DoeCompilerHlslProfileV19 hlsl_profile;
+    bool hlsl_profile_complete;
 };
 
 

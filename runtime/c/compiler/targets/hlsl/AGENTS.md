@@ -8,6 +8,16 @@ same serializer. Keep its private metadata staging attached to actual register
 declarations and entry emission; do not recreate register/feature policy in the
 facade or a runtime consumer. Existing ABI10 Metal records never become HLSL records.
 
+Explicit ABI19 alone requests a conservative profile certificate after complete
+selected-entry emission. Keep ABI11 flags/text and old facade workspace sizes
+unchanged. Classify primitive/aggregate types, storage tails, resources, reachable
+instructions/functions and module-wide helper declarations through the closed
+typed subset in `profile.c`. Unknown features or exhausted certification work
+retain SM6; native16 remains SM6.2. Never certify from zero flags or WGSL patterns.
+Every new target helper/syntax path must preserve that classification and actual
+FXC corpus controls before acquiring SM5.1 certification. SDK compilation and
+device/numeric execution remain separate evidence.
+
 - Resource identity is the resolved declaration index. A selected entry emits
   only its static resource/workgroup closure and reachable function bodies.
   Bundles isolate entries with DOE_HLSL_ENTRY; do not merge equal binding numbers
