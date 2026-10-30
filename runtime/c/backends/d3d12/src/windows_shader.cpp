@@ -386,3 +386,52 @@ void doe_dx_shader_release(doe_dx_shader *shader)
     errno = saved_errno;
     SetLastError(saved_error);
 }
+
+struct doe_dx_shader_compiler {
+    HMODULE module;
+};
+
+doe_dx_status doe_dx_shader_compiler_retain(const char *compiler_module_path, bool fxc,
+    doe_dx_shader_compiler **out, doe_dx_shader_error *error)
+{
+    const DWORD saved_error = GetLastError();
+    const int saved_errno = errno;
+    doe_dx_shader_error failure = {};
+    doe_dx_status status;
+    doe_dx_shader_compiler *compiler = nullptr;
+    if (!compiler_module_path || !out) {
+        status = reject(&failure, "compiler retain requires a module path and output");
+    } else {
+        doe_dx_shader_options options = {};
+        options.compiler_module_path = compiler_module_path;
+        compile_state state = {};
+        status = load_compiler(&options, &state, &failure, fxc);
+        if (status == DOE_DX_OK) {
+            compiler = static_cast<doe_dx_shader_compiler *>(std::calloc(1, sizeof(*compiler)));
+            if (!compiler) status = failed(&state, &failure, DOE_DX_OUT_OF_MEMORY,
+                static_cast<int32_t>(E_OUTOFMEMORY), "compiler.retain.allocate");
+            else {
+                compiler->module = state.module;
+                state.module = nullptr;
+                cleanup(&state);
+                *out = compiler;
+                status = report(&failure, DOE_DX_OK, 0, nullptr, nullptr, 0);
+            }
+        }
+    }
+    if (error) *error = failure;
+    errno = saved_errno;
+    SetLastError(saved_error);
+    return status;
+}
+
+void doe_dx_shader_compiler_release(doe_dx_shader_compiler *compiler)
+{
+    if (!compiler) return;
+    const DWORD saved_error = GetLastError();
+    const int saved_errno = errno;
+    if (!FreeLibrary(compiler->module)) std::abort();
+    std::free(compiler);
+    errno = saved_errno;
+    SetLastError(saved_error);
+}

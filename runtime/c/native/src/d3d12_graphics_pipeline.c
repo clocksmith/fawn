@@ -115,11 +115,11 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     }
     doe_dx_shader *compiled[2]={0};
     native_failure failure=native_failure_status(NATIVE_OK);
-    failure=native_d3d12_compile_vertex(&stages[0],interstage_mask,&compiled[0]);
-    if (failure.status==NATIVE_OK && count==2) failure=native_d3d12_compile_stage(&stages[1],&compiled[1]);
+    failure=native_d3d12_compile_vertex(&device->backend,&stages[0],interstage_mask,&compiled[0]);
+    if (failure.status==NATIVE_OK && count==2) failure=native_d3d12_compile_stage(&device->backend,&stages[1],&compiled[1]);
     native_d3d12_kernel_code *guards[2]={0};
-    if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(false,&guards[0]);
-    if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(true,&guards[1]);
+    if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(device,false,&guards[0]);
+    if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(device,true,&guards[1]);
     native_pipeline *payload=NULL;
     if (failure.status==NATIVE_OK) {
         payload=calloc(1,sizeof(*payload));

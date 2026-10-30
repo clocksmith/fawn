@@ -51,8 +51,29 @@ static native_failure compiler_path(bool fxc,char **out)
 }
 #endif
 
-static native_failure compile_stage(const native_stage *stage,const uint32_t *interstage_mask,doe_dx_shader **out)
+#if defined(_WIN32)
+/* The backend keeps one module reference per selected compiler for its whole
+ * lifetime, so pipeline creation stops unloading and reloading it. Concurrent
+ * first callers race only to publish; the loser drops its own reference. */
+static native_failure retain_compiler(native_backend *backend,bool fxc,const char *path)
 {
+    struct doe_dx_shader_compiler *_Atomic *slot = &backend->value.d3d12.compilers[fxc ? 0 : 1];
+    if (atomic_load(slot)) return native_failure_status(NATIVE_OK);
+    doe_dx_shader_compiler *retained = NULL;
+    doe_dx_shader_error error = {0};
+    doe_dx_status status = doe_dx_shader_compiler_retain(path,fxc,&retained,&error);
+    doe_dx_error native = {status, error.native_code, error.operation};
+    if (status != DOE_DX_OK) return native_failure_d3d12(status,&native);
+    doe_dx_shader_compiler *expected = NULL;
+    if (!atomic_compare_exchange_strong(slot,&expected,retained)) doe_dx_shader_compiler_release(retained);
+    return native_failure_status(NATIVE_OK);
+}
+#endif
+
+static native_failure compile_stage(native_backend *backend,const native_stage *stage,
+    const uint32_t *interstage_mask,doe_dx_shader **out)
+{
+    if (!backend) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (!stage || !stage->entry || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (interstage_mask && stage->entry->stage!=DOE_COMPILER_STAGE_VERTEX)
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
@@ -90,6 +111,11 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
     char *path = NULL;
     native_failure failure = compiler_path(model == 501u,&path);
     if (failure.status != NATIVE_OK) return failure;
+    failure = retain_compiler(backend,model == 501u,path);
+    if (failure.status != NATIVE_OK) {
+        free(path);
+        return failure;
+    }
     doe_dx_shader_options options = {.compiler_module_path = path,
         .source = view->text, .source_size = view->text_size, .entry = stage->imported ? stage->name : entry->name,
         .stage = target, .has_entry_index = !stage->imported, .entry_index = entry ? entry->entry_index : 0};
@@ -121,23 +147,24 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
 #endif
 }
 
-native_failure native_d3d12_compile_stage(const native_stage *stage,doe_dx_shader **out)
+native_failure native_d3d12_compile_stage(native_backend *backend,const native_stage *stage,doe_dx_shader **out)
 {
-    return compile_stage(stage,NULL,out);
+    return compile_stage(backend,stage,NULL,out);
 }
 
-native_failure native_d3d12_compile_vertex(const native_stage *stage,uint32_t interstage_mask,doe_dx_shader **out)
+native_failure native_d3d12_compile_vertex(native_backend *backend,const native_stage *stage,
+    uint32_t interstage_mask,doe_dx_shader **out)
 {
     if (!stage || !stage->entry || stage->entry->stage!=DOE_COMPILER_STAGE_VERTEX)
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    return compile_stage(stage,&interstage_mask,out);
+    return compile_stage(backend,stage,&interstage_mask,out);
 }
 
-native_failure native_d3d12_compile_compute(const native_stage *stage,doe_dx_shader **out)
+native_failure native_d3d12_compile_compute(native_backend *backend,const native_stage *stage,doe_dx_shader **out)
 {
     if (!stage || !stage->entry || stage->entry->stage!=DOE_COMPILER_STAGE_COMPUTE)
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    return native_d3d12_compile_stage(stage,out);
+    return native_d3d12_compile_stage(backend,stage,out);
 }
 
 void native_d3d12_compiler_release(doe_dx_shader *shader)

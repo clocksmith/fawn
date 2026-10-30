@@ -100,6 +100,9 @@ void native_d3d12_close(native_backend *backend)
      * until every private allocation/command is terminal and released. */
     if (backend->value.d3d12.context &&
         doe_dx_context_destroy(backend->value.d3d12.context) != DOE_DX_OK) abort();
+    /* Every shader and pipeline compiled through these modules is gone. */
+    for (size_t i = 0; i < 2; ++i)
+        doe_dx_shader_compiler_release(atomic_exchange(&backend->value.d3d12.compilers[i], NULL));
 #endif
     backend->value.d3d12.context = NULL;
 }

@@ -33,7 +33,9 @@ typedef struct native_backend {
     union {
         struct { doe_vk_context *context; doe_vk_caps caps; doe_vk_options options; } vulkan;
         struct { doe_mtl_context *context; doe_mtl_caps caps; } metal;
-        struct { doe_dx_context *context; doe_dx_caps caps; doe_dx_options options; } d3d12;
+        struct { doe_dx_context *context; doe_dx_caps caps; doe_dx_options options;
+            /* Lazily retained FXC [0] and DXC [1] modules, released after the context. */
+            struct doe_dx_shader_compiler *_Atomic compilers[2]; } d3d12;
     } value;
 } native_backend;
 typedef union native_buffer_handle {
