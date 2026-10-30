@@ -72,7 +72,10 @@ live in `../ir_view.h`. Keep target syntax/address policy outside that leaf;
 `../tests/test_ir_view.c` exercises malformed identities independently of emitters.
 
 Emit memory helpers only for selected reachable access roots, transfer types and
-read/write modes, including recursive aggregate children. `../closure.h` owns the
+read/write modes, including recursive aggregate children. Direct 32-bit scalar
+(i32/u32/f32) storage/uniform accesses write the helper body's word expression at
+the access site; their scalar helpers are emitted only when an aggregate helper
+reaches them. `../closure.h` owns the
 read-only bounded call/dependency queries in explicit caller-owned scratch.
 Resolve the function closure once and remember completed DAG nodes; a depth bound
 alone does not bound repeated shared subtrees. Do not grow a second semantic graph.

@@ -347,9 +347,20 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
                 hlsl_error(e, "HLSL store targets a read-only resource");
                 return;
             }
-            hlsl_format(e, "doe_r%u_store%u(offset, ", ir->operands.access.root, ir->type);
-            hlsl_value(e, ir->operands.access.value);
-            hlsl_text(e, ");\n");
+            if (hlsl_inline_scalar(e->module, ir->type)) {
+                hlsl_inline_store_open(e, ir->operands.access.root);
+                hlsl_value(e, ir->operands.access.value);
+                hlsl_inline_store_close(e, ir->operands.access.root);
+            } else {
+                hlsl_format(e, "doe_r%u_store%u(offset, ", ir->operands.access.root, ir->type);
+                hlsl_value(e, ir->operands.access.value);
+                hlsl_text(e, ");\n");
+            }
+        } else if (hlsl_inline_scalar(e->module, ir->type)) {
+            hlsl_value(e, ir->result);
+            hlsl_text(e, " = ");
+            hlsl_inline_load(e, ir->operands.access.root, ir->type);
+            hlsl_text(e, ";\n");
         } else {
             hlsl_value(e, ir->result);
             hlsl_format(e, " = doe_r%u_load%u(offset);\n", ir->operands.access.root, ir->type);

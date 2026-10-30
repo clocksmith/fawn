@@ -34,6 +34,12 @@ void hlsl_types(HlslEmitter *);
 void hlsl_constants(HlslEmitter *);
 void hlsl_resources(HlslEmitter *);
 bool hlsl_raw_storage(const CompilerWorkspace *, uint32_t);
+/* 32-bit scalar storage/uniform accesses are written at the access site, not
+ * through a doe_rN_load/store helper; aggregate helpers still call scalar ones. */
+bool hlsl_inline_scalar(const CompilerWorkspace *, TypeId);
+void hlsl_inline_load(HlslEmitter *, uint32_t resource, TypeId type);
+void hlsl_inline_store_open(HlslEmitter *, uint32_t resource);
+void hlsl_inline_store_close(HlslEmitter *, uint32_t resource);
 void hlsl_register(HlslEmitter *, uint32_t resource, uint32_t kind, uint32_t stride);
 void hlsl_handle_type(HlslEmitter *, TypeId);
 void hlsl_image_resource(HlslEmitter *, uint32_t);
