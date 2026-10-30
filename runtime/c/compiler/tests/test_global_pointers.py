@@ -54,7 +54,7 @@ def main():
                 output = compile_shader(directory, name, source, target)
                 if target == 'hlsl' and name == 'storage':
                     text = output.read_text()
-                    assert 'inout uint' not in text and 'doe_r0_store3' in text
+                    assert 'inout uint' not in text and 'r0[(offset + 0u) / 4u] = asuint(' in text
         invalid = [
             ALIAS.replace('return *p+*q;', '*p=7u;return *q;'),
             DIRECT.replace('return *p+direct();', '*p=7u;return direct();'),

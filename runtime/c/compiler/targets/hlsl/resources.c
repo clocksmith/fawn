@@ -50,6 +50,49 @@ static void word(HlslEmitter *e, uint32_t resource, bool uniform, uint32_t lane)
         hlsl_format(e,"r%u.Load(offset + %uu)",resource,lane*4u);
     else hlsl_format(e, "r%u[(offset + %uu) / 4u]", resource, lane * 4u);
 }
+bool hlsl_inline_scalar(const CompilerWorkspace *c, TypeId type) {
+    (void)c;
+    return type == IR_I32 || type == IR_U32 || type == IR_F32;
+}
+/* The same word expressions the scalar helper body uses, over the access
+ * site's `offset` local; no zero-initialized temporary or call. */
+void hlsl_inline_load(HlslEmitter *e, uint32_t resource, TypeId type) {
+    const bool uniform = e->module->resources[resource].kind == DOE_COMPILER_UNIFORM_BUFFER;
+    hlsl_text(e, type == IR_F32 ? "asfloat(" : type == IR_I32 ? "asint(" : "uint(");
+    word(e, resource, uniform, 0u);
+    hlsl_text(e, ")");
+}
+void hlsl_inline_store_open(HlslEmitter *e, uint32_t resource) {
+    if (hlsl_raw_storage(e->module, resource)) hlsl_format(e, "r%u.Store(offset + 0u, asuint(", resource);
+    else {
+        word(e, resource, false, 0u);
+        hlsl_text(e, " = asuint(");
+    }
+}
+void hlsl_inline_store_close(HlslEmitter *e, uint32_t resource) {
+    hlsl_text(e, hlsl_raw_storage(e->module, resource) ? "));\n" : ");\n");
+}
+/* A scalar helper is still needed when an aggregate helper's recursion reaches
+ * it; direct accesses of that scalar type are inlined at their sites. */
+static bool helper_needed(HlslEmitter *e, uint32_t resource, TypeId type, bool store, const char **error) {
+    const CompilerWorkspace *c = e->module;
+    if (!hlsl_inline_scalar(c, type))
+        return target_access_helper_used(c, &e->closure, ROOT_RESOURCE, resource, type, store, &e->traversal_left, error);
+    for (uint32_t function = 0u; function < c->function_count; ++function) {
+        if (!target_spend(&e->traversal_left, error)) return false;
+        if (!target_function_used(&e->closure, function)) continue;
+        const FunctionRecord *f = &c->functions[function];
+        for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
+            if (!target_spend(&e->traversal_left, error)) return false;
+            const IrInstruction *ir = &c->instructions[i];
+            if (ir->opcode != (store ? IR_ACCESS_STORE : IR_ACCESS_LOAD) || ir->type == type ||
+                ir->operands.access.category != ROOT_RESOURCE || ir->operands.access.root != resource) continue;
+            if (target_memory_dependency(c, &e->closure, ir->type, type, &e->traversal_left, error)) return true;
+            if (*error != NULL) return false;
+        }
+    }
+    return false;
+}
 /* Constant-buffer carriers are padded by the native binding owner. Storage
  * half accesses, unlike CBV carriers, are individually two-byte native ops. */
 static void half_lane(HlslEmitter *e, uint32_t resource, bool uniform,
@@ -243,8 +286,7 @@ void hlsl_resources(HlslEmitter *e) {
                 if (!memory_type(c, type)) continue;
                 for (unsigned mode = 0u; mode < (writable ? 2u : 1u); ++mode) {
                     const char *error = NULL;
-                    const bool used = target_access_helper_used(c, &e->closure, ROOT_RESOURCE,
-                        resource, type, mode != 0u, &e->traversal_left, &error);
+                    const bool used = helper_needed(e, resource, type, mode != 0u, &error);
                     if (error != NULL) { hlsl_error(e, error); return; }
                     if (!used) continue;
                     if (type_size(c, type) > UINT32_MAX) {
