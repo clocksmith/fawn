@@ -53,8 +53,10 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   readback, real direct-queue frequency and completion-backed slot publication.
 - Single-use command recording, early caller release, atomic submission ownership,
   finite waits, partial retirement, unknown-completion recovery and terminal loss.
-  Successful fence retirement may retain one closed native allocator/list pair on
-  the existing context. Later commands reset it in allocator/list order; failures
+  Successful fence retirement may retain up to four closed native allocator/list
+  pairs on the existing context, so a write, write, submit cycle stops creating a
+  pair every iteration. Later commands take the oldest and reset it in
+  allocator/list order; failures
   propagate without a fresh-create retry. Pending/lost/discarded recordings never
   supply a pair, and context teardown releases its idle native objects.
 - Caller-data writes may reuse one ordinary UPLOAD page up to one MiB on the
