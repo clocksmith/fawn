@@ -1,0 +1,234 @@
+diff --git a/runtime/c/backends/vulkan/include/doe_vk.h b/runtime/c/backends/vulkan/include/doe_vk.h
+index 5e09644b6..48ee411e9 100644
+--- a/runtime/c/backends/vulkan/include/doe_vk.h
++++ b/runtime/c/backends/vulkan/include/doe_vk.h
+@@ -97,6 +97,11 @@ typedef struct doe_vk_options {
+     doe_vk_queue_selection queue_selection;
+     doe_vk_sync_selection sync_selection;
+     doe_vk_subgroup_selection subgroup_selection;
++    /* Borrowed for the create call only. When set, the new context shares this
++     * live context's loader and VkInstance (reference-counted) instead of
++     * loading and creating its own; device selection still runs on that
++     * instance. The surface platforms must match the source's. */
++    doe_vk_context *share_instance;
+ } doe_vk_options;
+ 
+ typedef struct doe_vk_caps {
+diff --git a/runtime/c/backends/vulkan/src/internal.h b/runtime/c/backends/vulkan/src/internal.h
+index 5f4421f2b..d9ce9d3cb 100644
+--- a/runtime/c/backends/vulkan/src/internal.h
++++ b/runtime/c/backends/vulkan/src/internal.h
+@@ -9,6 +9,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <limits.h>
++#include <stdatomic.h>
+ 
+ doe_vk_status doe_vk_timeline_prepare(doe_vk_context *context, const doe_vk_options *options,
+     VkPhysicalDeviceTimelineSemaphoreFeatures *feature, doe_vk_error *error);
+@@ -23,8 +24,18 @@ doe_vk_status doe_vk_load_symbol(void *library, const char *name,
+ 
+ enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
+ enum { DOE_VK_COMMAND_SPARES = 8 };
++/* One loader handle and VkInstance shared by an adapter context and the device
++ * contexts opened from it; the last reference destroys the instance and
++ * unloads the loader. Atomic: contexts of different devices release freely. */
++typedef struct doe_vk_instance_owner {
++    atomic_uint references;
++    void *library;
++    VkInstance instance;
++    void (*destroy)(VkInstance instance, const VkAllocationCallbacks *allocator);
++} doe_vk_instance_owner;
+ struct doe_vk_context {
+     uint32_t references;
++    doe_vk_instance_owner *owner;
+     bool lost;
+     bool lost_drained; /* The queue was waited on once after loss; see commands.c. */
+     void *library;
+diff --git a/runtime/c/backends/vulkan/src/loader.c b/runtime/c/backends/vulkan/src/loader.c
+index 05693d77a..924e0c0a3 100644
+--- a/runtime/c/backends/vulkan/src/loader.c
++++ b/runtime/c/backends/vulkan/src/loader.c
+@@ -288,16 +288,43 @@ static void record_caps(doe_vk_context *context, const doe_vk_options *options,
+         context->properties.limits.maxSamplerAnisotropy : 0.0f;
+ }
+ 
+-doe_vk_status doe_vk_context_create(const doe_vk_options *options,
+-                                    doe_vk_context **out, doe_vk_error *error) {
+-    if (out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "context output", error);
+-    const doe_vk_options defaults = {0};
+-    if (options == NULL) options = &defaults;
+-    doe_vk_status policy_status = doe_vk_validate_queue_policy(options, error);
+-    if (policy_status != DOE_VK_OK) return policy_status;
+-    doe_vk_context *context = calloc(1, sizeof(*context));
+-    if (context == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "context", error);
+-    context->references = 1;
++static void unload_library(void *library) {
++    if (library == NULL) return;
++#if defined(_WIN32)
++    (void)FreeLibrary((HMODULE)library);
++#else
++    (void)dlclose(library);
++#endif
++}
++
++static void instance_owner_release(doe_vk_instance_owner *owner) {
++    if (owner == NULL || atomic_fetch_sub(&owner->references, 1) != 1) return;
++    if (owner->instance != NULL) owner->destroy(owner->instance, NULL);
++    unload_library(owner->library);
++    free(owner);
++}
++
++/* Borrows the source's loader, function table and instance under a new owner
++ * reference. Only instance-level state is shared; device state stays private. */
++static doe_vk_status share_instance(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error) {
++    doe_vk_context *source = options->share_instance;
++    if (source->owner == NULL || source->lost || source->caps.surface_platforms != options->surface_platforms)
++        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "shared instance source", error);
++    unsigned references = atomic_load(&source->owner->references);
++    do {
++        if (references == 0 || references == UINT_MAX) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "shared instance owner", error);
++    } while (!atomic_compare_exchange_weak(&source->owner->references, &references, references + 1));
++    context->owner = source->owner;
++    context->library = source->library;
++    context->vk = source->vk;
++    context->instance = source->instance;
++    return DOE_VK_OK;
++}
++
++static doe_vk_status create_instance(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error) {
++    context->owner = calloc(1, sizeof(*context->owner));
++    if (context->owner == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "instance owner", error);
++    atomic_init(&context->owner->references, 1);
+ #if defined(_WIN32)
+     /* The system loader is installed by the Vulkan runtime. Never search the
+      * working directory or silently substitute another implementation. */
+@@ -307,6 +334,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
+     const char *library_name = "libvulkan.so.1";
+     context->library = dlopen(library_name, RTLD_NOW | RTLD_LOCAL);
+ #endif
++    context->owner->library = context->library;
+     doe_vk_status status = DOE_VK_LOADER_UNAVAILABLE;
+     if (context->library == NULL) {
+ #if defined(_WIN32)
+@@ -314,13 +342,14 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
+ #else
+         doe_vk_fail(status, library_name, error);
+ #endif
+-        goto failed;
++        return status;
+     }
+     status = load_functions(context, error);
+-    if (status != DOE_VK_OK) goto failed;
++    if (status != DOE_VK_OK) return status;
++    context->owner->destroy = context->vk.vkDestroyInstance;
+     doe_vk_instance_extensions instance_extensions;
+     status = doe_vk_surface_instance_extensions(context, options->surface_platforms, &instance_extensions, error);
+-    if (status != DOE_VK_OK) goto failed;
++    if (status != DOE_VK_OK) return status;
+     const VkApplicationInfo application = {
+         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+         .pApplicationName = (const uint8_t *)"Doe experimental C",
+@@ -334,8 +363,23 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
+         .ppEnabledExtensionNames = instance_extensions.count != 0 ? instance_extensions.names : NULL
+     };
+     status = doe_vk_result(context, context->vk.vkCreateInstance(&instance, NULL, &context->instance), "vkCreateInstance", error);
+-    if (status != DOE_VK_OK) goto failed;
+-    status = doe_vk_surface_load_functions(context, options->surface_platforms, false, error);
++    if (status != DOE_VK_OK) return status;
++    context->owner->instance = context->instance;
++    return doe_vk_surface_load_functions(context, options->surface_platforms, false, error);
++}
++
++doe_vk_status doe_vk_context_create(const doe_vk_options *options,
++                                    doe_vk_context **out, doe_vk_error *error) {
++    if (out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "context output", error);
++    const doe_vk_options defaults = {0};
++    if (options == NULL) options = &defaults;
++    doe_vk_status policy_status = doe_vk_validate_queue_policy(options, error);
++    if (policy_status != DOE_VK_OK) return policy_status;
++    doe_vk_context *context = calloc(1, sizeof(*context));
++    if (context == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "context", error);
++    context->references = 1;
++    doe_vk_status status = options->share_instance != NULL ?
++        share_instance(context, options, error) : create_instance(context, options, error);
+     if (status != DOE_VK_OK) goto failed;
+     status = doe_vk_choose_device(context, options, error);
+     if (status != DOE_VK_OK) goto failed;
+@@ -445,14 +489,9 @@ void doe_vk_context_release(doe_vk_context *context) {
+     doe_vk_command_spares_clear(context);
+     if (context->timeline) context->vk.vkDestroySemaphore(context->device, context->timeline, NULL);
+     if (context->device != NULL) context->vk.vkDestroyDevice(context->device, NULL);
+-    if (context->instance != NULL) context->vk.vkDestroyInstance(context->instance, NULL);
+-    if (context->library != NULL) {
+-#if defined(_WIN32)
+-        (void)FreeLibrary((HMODULE)context->library);
+-#else
+-        (void)dlclose(context->library);
+-#endif
+-    }
++    /* The owner outlives every context sharing its instance, including a
++     * failed creation that loaded or created only part of it. */
++    instance_owner_release(context->owner);
+     free(context);
+ }
+ 
+diff --git a/runtime/c/backends/vulkan/tests/native_compute.c b/runtime/c/backends/vulkan/tests/native_compute.c
+index 566c423d3..267b6b3c8 100644
+--- a/runtime/c/backends/vulkan/tests/native_compute.c
++++ b/runtime/c/backends/vulkan/tests/native_compute.c
+@@ -19,10 +19,27 @@ int main(int argc, char **argv) {
+     uint32_t *spirv = malloc((size_t)length);
+     if (spirv == NULL || fread(spirv, 1, (size_t)length, file) != (size_t)length) return 2;
+     fclose(file);
+-    doe_vk_options options = { .allow_cpu_adapter = argc == 3 && strcmp(argv[2], "--allow-software") == 0 };
++    /* The device context shares an adapter-only context's instance, and the
++     * adapter is released before any device work: the shared owner keeps the
++     * instance and loader alive until the device context's last release. */
++    doe_vk_options options = { .allow_cpu_adapter = argc == 3 && strcmp(argv[2], "--allow-software") == 0,
++        .adapter_only = true };
++    doe_vk_context *adapter = NULL;
+     doe_vk_context *context = NULL;
+     doe_vk_error error;
+-    doe_vk_status status = doe_vk_context_create(&options, &context, &error);
++    doe_vk_status status = doe_vk_context_create(&options, &adapter, &error);
++    if (status == DOE_VK_OK) {
++        options.adapter_only = false;
++        options.share_instance = adapter;
++        options.surface_platforms = 1;
++        if (doe_vk_context_create(&options, &context, &error) != DOE_VK_INVALID_ARGUMENT || context != NULL) {
++            fprintf(stderr, "a shared instance with different surface platforms was not refused\n");
++            return 1;
++        }
++        options.surface_platforms = 0;
++        status = doe_vk_context_create(&options, &context, &error);
++        doe_vk_context_release(adapter);
++    }
+     if (status != DOE_VK_OK) {
+         printf("SKIP native execution: %s at %s, native=%d\n", doe_vk_status_name(status), error.operation, error.native_result);
+         free(spirv);
+@@ -71,6 +88,6 @@ int main(int argc, char **argv) {
+     }
+     doe_vk_buffer_release(readback);
+     doe_vk_context_release(context);
+-    puts("PASS real Vulkan compute, dependent visibility, fill/copy, readback, early caller release");
++    puts("PASS real Vulkan compute on a shared adapter instance released first, mismatched-surface sharing refused, dependent visibility, fill/copy, readback, early caller release");
+     return 0;
+ }
+diff --git a/runtime/c/native/src/backend.c b/runtime/c/native/src/backend.c
+index d6dc2888f..f5e827442 100644
+--- a/runtime/c/native/src/backend.c
++++ b/runtime/c/native/src/backend.c
+@@ -122,8 +122,12 @@ native_result native_backend_device_policy(const native_backend *adapter, const
+                 result.value.vulkan.options.require_graphics_queue = false;
+         }
+         result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;
++        /* Share the adapter's loader and instance: identity selection still runs,
++         * on that instance, without a second instance and driver enumeration. */
++        result.value.vulkan.options.share_instance = adapter->value.vulkan.context;
+         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
+             &result.value.vulkan.context, NULL));
++        result.value.vulkan.options.share_instance = NULL;
+         if (status == NATIVE_OK)
+             status = native_from_vulkan(doe_vk_context_caps(result.value.vulkan.context, &result.value.vulkan.caps));
+         if (status == NATIVE_OK &&

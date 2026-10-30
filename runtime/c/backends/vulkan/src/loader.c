@@ -288,16 +288,43 @@ static void record_caps(doe_vk_context *context, const doe_vk_options *options,
         context->properties.limits.maxSamplerAnisotropy : 0.0f;
 }
 
-doe_vk_status doe_vk_context_create(const doe_vk_options *options,
-                                    doe_vk_context **out, doe_vk_error *error) {
-    if (out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "context output", error);
-    const doe_vk_options defaults = {0};
-    if (options == NULL) options = &defaults;
-    doe_vk_status policy_status = doe_vk_validate_queue_policy(options, error);
-    if (policy_status != DOE_VK_OK) return policy_status;
-    doe_vk_context *context = calloc(1, sizeof(*context));
-    if (context == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "context", error);
-    context->references = 1;
+static void unload_library(void *library) {
+    if (library == NULL) return;
+#if defined(_WIN32)
+    (void)FreeLibrary((HMODULE)library);
+#else
+    (void)dlclose(library);
+#endif
+}
+
+static void instance_owner_release(doe_vk_instance_owner *owner) {
+    if (owner == NULL || atomic_fetch_sub(&owner->references, 1) != 1) return;
+    if (owner->instance != NULL) owner->destroy(owner->instance, NULL);
+    unload_library(owner->library);
+    free(owner);
+}
+
+/* Borrows the source's loader, function table and instance under a new owner
+ * reference. Only instance-level state is shared; device state stays private. */
+static doe_vk_status share_instance(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error) {
+    doe_vk_context *source = options->share_instance;
+    if (source->owner == NULL || source->lost || source->caps.surface_platforms != options->surface_platforms)
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "shared instance source", error);
+    unsigned references = atomic_load(&source->owner->references);
+    do {
+        if (references == 0 || references == UINT_MAX) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "shared instance owner", error);
+    } while (!atomic_compare_exchange_weak(&source->owner->references, &references, references + 1));
+    context->owner = source->owner;
+    context->library = source->library;
+    context->vk = source->vk;
+    context->instance = source->instance;
+    return DOE_VK_OK;
+}
+
+static doe_vk_status create_instance(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error) {
+    context->owner = calloc(1, sizeof(*context->owner));
+    if (context->owner == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "instance owner", error);
+    atomic_init(&context->owner->references, 1);
 #if defined(_WIN32)
     /* The system loader is installed by the Vulkan runtime. Never search the
      * working directory or silently substitute another implementation. */
@@ -307,6 +334,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     const char *library_name = "libvulkan.so.1";
     context->library = dlopen(library_name, RTLD_NOW | RTLD_LOCAL);
 #endif
+    context->owner->library = context->library;
     doe_vk_status status = DOE_VK_LOADER_UNAVAILABLE;
     if (context->library == NULL) {
 #if defined(_WIN32)
@@ -314,13 +342,14 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
 #else
         doe_vk_fail(status, library_name, error);
 #endif
-        goto failed;
+        return status;
     }
     status = load_functions(context, error);
-    if (status != DOE_VK_OK) goto failed;
+    if (status != DOE_VK_OK) return status;
+    context->owner->destroy = context->vk.vkDestroyInstance;
     doe_vk_instance_extensions instance_extensions;
     status = doe_vk_surface_instance_extensions(context, options->surface_platforms, &instance_extensions, error);
-    if (status != DOE_VK_OK) goto failed;
+    if (status != DOE_VK_OK) return status;
     const VkApplicationInfo application = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pApplicationName = (const uint8_t *)"Doe experimental C",
@@ -334,8 +363,23 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         .ppEnabledExtensionNames = instance_extensions.count != 0 ? instance_extensions.names : NULL
     };
     status = doe_vk_result(context, context->vk.vkCreateInstance(&instance, NULL, &context->instance), "vkCreateInstance", error);
-    if (status != DOE_VK_OK) goto failed;
-    status = doe_vk_surface_load_functions(context, options->surface_platforms, false, error);
+    if (status != DOE_VK_OK) return status;
+    context->owner->instance = context->instance;
+    return doe_vk_surface_load_functions(context, options->surface_platforms, false, error);
+}
+
+doe_vk_status doe_vk_context_create(const doe_vk_options *options,
+                                    doe_vk_context **out, doe_vk_error *error) {
+    if (out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "context output", error);
+    const doe_vk_options defaults = {0};
+    if (options == NULL) options = &defaults;
+    doe_vk_status policy_status = doe_vk_validate_queue_policy(options, error);
+    if (policy_status != DOE_VK_OK) return policy_status;
+    doe_vk_context *context = calloc(1, sizeof(*context));
+    if (context == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "context", error);
+    context->references = 1;
+    doe_vk_status status = options->share_instance != NULL ?
+        share_instance(context, options, error) : create_instance(context, options, error);
     if (status != DOE_VK_OK) goto failed;
     status = doe_vk_choose_device(context, options, error);
     if (status != DOE_VK_OK) goto failed;
@@ -445,14 +489,9 @@ void doe_vk_context_release(doe_vk_context *context) {
     doe_vk_command_spares_clear(context);
     if (context->timeline) context->vk.vkDestroySemaphore(context->device, context->timeline, NULL);
     if (context->device != NULL) context->vk.vkDestroyDevice(context->device, NULL);
-    if (context->instance != NULL) context->vk.vkDestroyInstance(context->instance, NULL);
-    if (context->library != NULL) {
-#if defined(_WIN32)
-        (void)FreeLibrary((HMODULE)context->library);
-#else
-        (void)dlclose(context->library);
-#endif
-    }
+    /* The owner outlives every context sharing its instance, including a
+     * failed creation that loaded or created only part of it. */
+    instance_owner_release(context->owner);
     free(context);
 }
 

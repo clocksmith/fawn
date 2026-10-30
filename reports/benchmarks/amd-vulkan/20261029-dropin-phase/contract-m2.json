@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c1-m2",
+  "frozenAtUtc": "2026-10-30T01:41:16Z",
+  "parentContract": "frozen-contract.json (same workloads, inputs, oracles, harness, iterations, statistics)",
+  "mechanism": "M2 (on top of accepted M1): Vulkan buffers without MapRead/MapWrite usage keep the persistent coherent host mapping but prefer device-local memory (DOE_VK_MEMORY_HOST_DEVICE_LOCAL); mappable buffers keep host-cached memory",
+  "hypothesis": "warm completion excess over Dawn scales with bytes because GPU accesses go to snooped host-cached memory",
+  "providers": {"doe-c-m1": "accepted M1 library (control for this mechanism)", "doe-c-m2": "M1 + M2", "dawn": "Dawn d04f88359", "dawn-aa": "byte-identical Dawn harness copy"},
+  "sampling": {"pairs": 24, "orders": "all 24 permutations of 4 providers", "iterationsPerProcess": 32},
+  "acceptance": {
+    "validity": "all processes ok and oracle-checked; A/A dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1",
+    "mechanismAccepted": "doe-c-m2/doe-c-m1 warm.completion CI95 upper < 1.0 on at least the two compute workloads AND warm.operation CI95 upper <= 1.0 on all three AND no warm or one-time phase with ratio CI95 lower > 1.05",
+    "scopedWarmOperationWin": "unchanged from parent contract, evaluated for doe-c-m2/dawn"
+  },
+  "focusedCorrectness": "74 physical native clients, software native check (115 PASS) and check-vulkan (lavapipe) passed on the M2 tree before timing"
+}

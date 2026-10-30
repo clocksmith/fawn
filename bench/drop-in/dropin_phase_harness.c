@@ -11,6 +11,10 @@
  * sets so a skipped dispatch, clear or copy cannot pass on stale bytes.
  * The process prints one JSON object on stdout. */
 #define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE /* ru_maxrss */
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#endif
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -167,6 +171,7 @@ int main(int argc, char **argv)
     instance_desc.requiredFeatures = instance_features;
     s.instance = wgpuCreateInstance(&instance_desc);
     if (!s.instance) die("instance");
+    uint64_t t_instance = now_ns();
     WGPURequestAdapterOptions adapter_options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
     adapter_options.backendType = WGPUBackendType_Vulkan;
     adapter_options.powerPreference = WGPUPowerPreference_HighPerformance;
@@ -179,6 +184,7 @@ int main(int argc, char **argv)
     WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
     if (wgpuAdapterGetInfo(s.adapter, &info) != WGPUStatus_Success) die("adapter_info");
     if (info.backendType != WGPUBackendType_Vulkan || info.adapterType == WGPUAdapterType_CPU) die("adapter_not_physical_vulkan");
+    uint64_t t_adapter = now_ns();
     s.done = false;
     WGPUDeviceDescriptor device_desc = WGPU_DEVICE_DESCRIPTOR_INIT;
     device_desc.uncapturedErrorCallbackInfo.callback = on_error;
@@ -335,11 +341,13 @@ int main(int argc, char **argv)
     print_json_string("adapterDevice", info.device);
     print_json_string("adapterDescription", info.description);
     printf("\"adapterType\":%d,\"vendorID\":%u,\"deviceID\":%u,\"bytes\":%zu,\"iterations\":%ld,"
-        "\"oracleChecked\":%ld,\"setupNs\":%llu,\"compileNs\":%llu,\"pipelineNs\":%llu,"
+        "\"oracleChecked\":%ld,\"setupNs\":%llu,\"setupInstanceNs\":%llu,\"setupAdapterNs\":%llu,\"setupDeviceNs\":%llu,\"compileNs\":%llu,\"pipelineNs\":%llu,"
         "\"resourcesNs\":%llu,\"loopNs\":%llu,\"teardownNs\":%llu,\"processInMainNs\":%llu,\"cpuMs\":%.3f,"
         "\"maxRssKiB\":%ld,\"phases\":{",
         (int)info.adapterType, info.vendorID, info.deviceID, bytes, iterations, iterations,
-        (unsigned long long)(t_setup - t0), (unsigned long long)(t_compile - t_setup),
+        (unsigned long long)(t_setup - t0), (unsigned long long)(t_instance - t0),
+        (unsigned long long)(t_adapter - t_instance), (unsigned long long)(t_setup - t_adapter),
+        (unsigned long long)(t_compile - t_setup),
         (unsigned long long)(t_pipeline - t_compile), (unsigned long long)(t_resources - t_pipeline),
         (unsigned long long)(t_loop - t_resources), (unsigned long long)(t_teardown - t_loop),
         (unsigned long long)(t_teardown - process_start), cpu_total, usage.ru_maxrss);

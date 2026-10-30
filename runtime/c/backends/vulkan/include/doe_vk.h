@@ -97,6 +97,11 @@ typedef struct doe_vk_options {
     doe_vk_queue_selection queue_selection;
     doe_vk_sync_selection sync_selection;
     doe_vk_subgroup_selection subgroup_selection;
+    /* Borrowed for the create call only. When set, the new context shares this
+     * live context's loader and VkInstance (reference-counted) instead of
+     * loading and creating its own; device selection still runs on that
+     * instance. The surface platforms must match the source's. */
+    doe_vk_context *share_instance;
 } doe_vk_options;
 
 typedef struct doe_vk_caps {

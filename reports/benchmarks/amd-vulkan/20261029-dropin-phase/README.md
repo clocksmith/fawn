@@ -114,15 +114,85 @@ the 1.05 regression threshold.
 The one-time regression bound fails on all three workloads. Setup takes about
 1.33x Dawn's time, roughly 7 ms per process.
 
-## Remaining owners of loss (after M1)
+## M2, rejected: GPU-only buffers in device-local memory
 
-1. Setup (instance, adapter and device): about +7 ms per process.
-2. Warm completion: 1.20x (copy), 1.46x (vector) and 1.87x (image). The added
-   time scales with bytes moved. That pattern is consistent with every buffer
-   being GPU-accessed from snooped host-cached memory instead of device-local
-   memory. This is a hypothesis; see candidate M2.
-3. Warm submit on vector: 1.70x.
-4. Resources for buffer-only creation: 1.67x.
+M2 built on M1. Buffers without map usage kept the coherent persistent mapping
+but preferred device-local memory; mappable buffers stayed host-cached. See
+[`m2/candidate.patch`](m2/candidate.patch) and
+[`contract-m2.json`](contract-m2.json). Its focused correctness checks passed:
+the same 74 physical clients, the software check (115 PASS) and `check-vulkan`.
 
-Losses and failed candidates stay retained here. Neither a pass on a single
-workload nor the rule above promotes a public claim.
+| doe-c-m2 / doe-c-m1 | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| warm completion | 0.84 [0.82,0.86] | 0.74 [0.73,0.75] | 0.84 [0.83,0.85] |
+| warm operation | 0.91 [0.88,0.92] | 0.86 [0.84,0.88] | 0.91 [0.88,0.93] |
+| warm upload | **1.11 [1.10,1.14]** | 1.02 [0.98,1.04] | 1.01 [0.98,1.10] |
+
+**Rejected under the frozen rule.** Vector warm upload regressed: the lower CI
+bound exceeds 1.05, because host writes now go to write-combined device-local
+memory. The completion and operation gains are real and remain recorded, but
+the frozen rule takes precedence over them. Any successor must keep upload
+within the bound or be frozen as a separate trade-off decision. Against Dawn,
+M2 reached warm operation 0.56x (image), 1.16x (vector) and 1.05x
+(upload/readback).
+
+## M3, accepted: device contexts share the adapter's Vulkan instance
+
+A harness revision split setup into instance, adapter and device inside the
+unchanged setup interval. An untimed diagnostic showed adapter cost equal for
+both providers (about 21 ms). `requestDevice` took 9.5 ms on Doe and 1.5 ms on
+Dawn. An `openat` trace showed Doe loading the loader, creating a second
+`VkInstance` and enumerating ICDs and the render node a second time for each
+device.
+
+M3 gives the adapter context and its device contexts one loader handle and
+`VkInstance` through an atomically reference-counted owner. Identity selection
+still runs on that instance, and the native identity comparison is unchanged.
+A source with different surface platforms is refused. See
+[`m3/candidate.patch`](m3/candidate.patch) and
+[`contract-m3.json`](contract-m3.json).
+
+The extended `native_compute` covers the new lifetime. The adapter is released
+before device work, and mismatched sharing is refused. It passed on RADV and
+lavapipe. The other focused checks also passed: 74 physical clients, the
+software check (115 PASS) and `check-vulkan`. Vulkan backend contracts match
+M1: `surface_features` and `feature_contract` segfault on both M1 and M3
+(pre-existing), and every other contract passes.
+
+| doe-c-m3 / doe-c-m1 | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| setup, device | 0.08 [0.07,0.08] | 0.08 [0.08,0.08] | 0.07 [0.07,0.08] |
+| setup | 0.66 [0.64,0.70] | 0.74 [0.70,0.76] | 0.69 [0.67,0.72] |
+| teardown | 0.60 [0.55,0.63] | 0.64 [0.62,0.66] | 0.55 [0.52,0.61] |
+| process wall | 0.81 [0.79,0.85] | 0.92 [0.90,0.93] | 0.84 [0.80,0.85] |
+| process CPU | 0.82 [0.78,0.85] | 0.91 [0.89,0.93] | 0.82 [0.79,0.83] |
+| first operation | 0.98 [0.89,1.09] | 0.97 [0.91,1.03] | **1.18 [1.08,1.27]** |
+
+The frozen mechanism rule passes. One disclosed side effect falls outside the
+rule's named phases: the copy workload's first operation is slower than M1
+(0.84 ms against 0.73 ms). It is retained as an open observation.
+
+### Current state against Dawn (M1 + M3), with the frozen scoped rule
+
+| Workload | warm operation | warm p95 | setup | process wall | CPU | RSS | Scoped rule |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| image invert 1024 | 0.65 [0.62,0.66], 24/24 | 0.66 [0.57,0.70] | 0.99 | 0.84 | 0.80 | 0.91 | **pass** |
+| vector 262k | 1.29 [1.26,1.31], 0/24 | 1.24 [1.17,1.30] | 0.95 | 0.92 | 0.90 | 0.92 | fail |
+| upload/readback 1 MiB | 1.07 [1.04,1.08], 3/24 | 0.97 [0.89,1.07] | 0.92 | 0.87 | 0.86 | 0.95 | fail |
+
+The one-time regression bound now passes on all three workloads; it failed at
+the baseline. A/A ratios stay within the frozen window.
+
+## Remaining owners of loss (M1 + M3 against Dawn)
+
+1. Warm completion: 1.13x (copy), 1.38x (vector) and 1.74x (image). M2 shows
+   memory placement owns most of this. Any accepted successor must not regress
+   host upload.
+2. Warm submit on vector: 1.70x [1.58,1.84].
+3. Resources for buffer creation: 1.67-1.88x on image and copy.
+4. Map on image: 1.05x.
+
+Retained Zig remains unmeasured on this harness because it refuses
+`TimedWaitAny`. Losses and failed candidates stay retained here. Neither a pass
+on a single workload nor the rules above promotes a public claim, and none of
+this is the GOALS application win.

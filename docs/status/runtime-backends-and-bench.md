@@ -148,6 +148,14 @@ unestablished. Doe has promising execution evidence, not the final objective.
   the native and package rows in `reports/claim-index.json` predate current code
   and need re-running and auditing; complete Doppler generation waits for an
   uncontended GPU window (see the complete-generation campaign below).
+  The [drop-in phase attribution](../../reports/benchmarks/amd-vulkan/20261029-dropin-phase/README.md)
+  compares Doe C with source-built Dawn on three Node5 workloads, with phase
+  splits, balanced pairs and an A/A control. It accepted zero-copy read
+  mappings and shared adapter instances, and it rejected device-local placement
+  for a host-upload regression. Image invert passes its scoped rule. Vector and
+  upload/readback still lose warm operation time, mainly in completion and
+  submit. Retained Zig is unmeasured there. This is diagnostic evidence, not
+  the application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss

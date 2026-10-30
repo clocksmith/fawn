@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c2-m3",
+  "frozenAtUtc": "2026-10-30T01:48:44Z",
+  "parentContract": "c1 frozen-contract.json workloads, inputs (c1/inputs, unchanged hashes), oracles, iterations and statistics; harness revision adds setupInstanceNs/setupAdapterNs/setupDeviceNs inside the unchanged setup interval",
+  "mechanism": "M3 (on top of accepted M1): a Vulkan device context shares its adapter context loader and VkInstance through an atomically reference-counted owner instead of dlopen + vkCreateInstance + driver enumeration per device; identity selection still runs on that instance",
+  "diagnosis": "untimed split: adapter about 21 ms for both providers; requestDevice 9.5 ms Doe vs 1.5 ms Dawn; openat trace shows Doe enumerating ICDs and opening the render node twice",
+  "providers": {"doe-c-m1": "accepted M1 library (control)", "doe-c-m3": "M1 + M3", "dawn": "Dawn d04f88359", "dawn-aa": "byte-identical Dawn harness copy"},
+  "sampling": {"pairs": 24, "orders": "all 24 permutations of 4 providers", "iterationsPerProcess": 32},
+  "acceptance": {
+    "validity": "all processes ok and oracle-checked; A/A dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1",
+    "mechanismAccepted": "doe-c-m3/doe-c-m1 setupDeviceNs and setupNs CI95 upper < 1.0 on all three workloads AND no warm or other one-time phase with ratio CI95 lower > 1.05",
+    "scopedWarmOperationWin": "unchanged from parent contract, evaluated for doe-c-m3/dawn; oneTimeRegressionBound re-evaluated"
+  },
+  "focusedCorrectness": "shared-instance native_compute (adapter released first, mismatched surface refused) on RADV and lavapipe; 74 physical native clients; native software check 115 PASS; check-vulkan; vulkan backend contracts identical to M1 (surface_features and feature_contract segfault on both)"
+}
