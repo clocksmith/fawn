@@ -48,6 +48,9 @@ native_failure native_d3d12_compile_stage(native_backend *backend,const native_s
 native_failure native_d3d12_compile_vertex(native_backend *backend,const native_stage *,uint32_t interstage_mask,doe_dx_shader **);
 native_failure native_d3d12_compile_compute(native_backend *backend,const native_stage *stage, doe_dx_shader **out);
 void native_d3d12_compiler_release(doe_dx_shader *shader);
+/* Device open retains the FXC module compute HLSL profile 501 selects, as Dawn loads
+ * its compiler with the device; each compile still selects its own module. */
+native_failure native_d3d12_retain_compute_compiler(native_backend *backend);
 native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const native_stage *stage,
     const doe_dx_shader *shader);
 void native_d3d12_pipeline_close(native_pipeline *pipeline);
