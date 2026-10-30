@@ -46,7 +46,7 @@ typedef struct doe_dx_dynamic_pipeline_desc {
     uint32_t immediate_bytes; /* Aligned extent, at most64 bytes, b1 space7. */
     uint64_t immediate_required_bytes;
     uint32_t logical_size_count; /* Canonical resource_count, b2 space7; max16384. */
-    const uint32_t *logical_size_indices; /* One canonical index per buffer; raw rows consume it. */
+    const uint32_t *logical_size_indices; /* One canonical index per buffer; storage rows consume it. */
 } doe_dx_dynamic_pipeline_desc;
 typedef struct doe_dx_dynamic_resources {
     const doe_dx_texture_view_desc *texture_views; /* NULL: legacy whole2D rows. */

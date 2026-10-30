@@ -24,7 +24,7 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
     memcpy(native->immediate_words,values->immediate_words,sizeof(native->immediate_words));
     native->logical_size_count=plan->logical_size_count;
     for (size_t i=0;i<plan->binding_count;++i) native->logical_size_indices[i]=
-        plan->bindings[i].view==DOE_DX_RAW ? plan->logical_size_indices[i] : UINT32_MAX;
+        plan->logical_size_count && doe_dx_buffer_descriptor_kind(&plan->bindings[i])!=DOE_DX_DESCRIPTOR_CBV ? plan->logical_size_indices[i] : UINT32_MAX;
     const doe_dx_compute_resources *resources = &values->resources;
     doe_dx_status status;
     const doe_dx_buffer_binding *bindings = resources->buffers;

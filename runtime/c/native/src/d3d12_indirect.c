@@ -8,6 +8,7 @@
 struct native_d3d12_guard_code {
     doe_dx_shader *shader;
     doe_dx_binding_layout binding;
+    uint32_t size_rows; /* 1 when the guard reads its binding's size-table row. */
 };
 
 void native_d3d12_guard_code_release(native_d3d12_guard_code *code)
@@ -45,7 +46,7 @@ native_failure native_d3d12_guard_compile(native_device *device, native_d3d12_gu
     native_failure failure = native_failure_status(code ? NATIVE_INVALID_STATE : NATIVE_OUT_OF_MEMORY);
     native_stage stage = {0};
     if (code && doe_shader_borrow(compiled,&stage.view) == DOE_SHADER_OK &&
-        native_d3d12_guard_layout(&stage.view,&code->binding)) {
+        native_d3d12_guard_layout(&stage.view,&code->binding,&code->size_rows)) {
         stage.entry = &stage.view.entries[0];
         stage.visibility = WGPUShaderStage_Compute;
         failure = native_d3d12_compile_compute(&device->backend,&stage,&code->shader);
@@ -64,10 +65,12 @@ native_failure native_d3d12_guard_pipeline(native_device *device,
     size_t size = 0;
     const uint8_t *bytes = doe_dx_shader_bytes(code->shader,&size);
     if (!bytes || !size) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    const doe_dx_pipeline_desc desc = {.bytecode=bytes,.bytecode_size=size,
-        .bindings=&code->binding,.binding_count=1};
+    static const uint32_t row = 0u; /* The guard's only canonical resource. */
+    const doe_dx_dynamic_pipeline_desc desc = {.resources={.buffers={.bytecode=bytes,.bytecode_size=size,
+        .bindings=&code->binding,.binding_count=1}},.logical_size_count=code->size_rows,
+        .logical_size_indices=code->size_rows ? &row : NULL};
     doe_dx_error error = {0};
-    doe_dx_status status = doe_dx_pipeline_create(device->backend.value.d3d12.context,&desc,out,&error);
+    doe_dx_status status = doe_dx_pipeline_create_dynamic(device->backend.value.d3d12.context,&desc,out,&error);
     return native_failure_d3d12(status,&error);
 #else
     (void)device;

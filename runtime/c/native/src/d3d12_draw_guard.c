@@ -8,6 +8,7 @@ struct native_d3d12_kernel_code {
     doe_dx_shader *shader;
     doe_dx_binding_layout bindings[3];
     size_t count;
+    native_d3d12_kernel_sizes sizes;
 };
 void native_d3d12_kernel_code_release(native_d3d12_kernel_code *code)
 {
@@ -15,9 +16,10 @@ void native_d3d12_kernel_code_release(native_d3d12_kernel_code *code)
     native_d3d12_compiler_release(code->shader);
     free(code);
 }
-bool native_d3d12_draw_layout(const doe_shader_view *view,bool scan,doe_dx_binding_layout out[3])
+bool native_d3d12_draw_layout(const doe_shader_view *view,bool scan,doe_dx_binding_layout out[3],
+    native_d3d12_kernel_sizes *sizes)
 {
-    return native_d3d12_storage_kernel_layout(view,scan ? 64u : 1u,scan ? 3u : 1u,out);
+    return native_d3d12_storage_kernel_layout(view,scan ? 64u : 1u,scan ? 3u : 1u,out,sizes);
 }
 native_failure native_d3d12_storage_compile(native_device *device,const char *source,size_t length,
     uint32_t workgroup,size_t count,native_d3d12_kernel_code **out)
@@ -36,7 +38,7 @@ native_failure native_d3d12_storage_compile(native_device *device,const char *so
     native_d3d12_kernel_code *code=calloc(1,sizeof(*code));
     native_failure failure=native_failure_status(code ? NATIVE_INVALID_STATE : NATIVE_OUT_OF_MEMORY);
     native_stage stage={.visibility=WGPUShaderStage_Compute};
-    if (code && doe_shader_borrow(shader,&stage.view)==DOE_SHADER_OK && native_d3d12_storage_kernel_layout(&stage.view,workgroup,count,code->bindings)) {
+    if (code && doe_shader_borrow(shader,&stage.view)==DOE_SHADER_OK && native_d3d12_storage_kernel_layout(&stage.view,workgroup,count,code->bindings,&code->sizes)) {
         code->count=count;
         stage.entry=&stage.view.entries[0];
         failure=native_d3d12_compile_compute(&device->backend,&stage,&code->shader);
@@ -61,9 +63,11 @@ native_failure native_d3d12_kernel_pipeline(native_device *device,const native_d
     size_t size=0;
     const uint8_t *bytes=doe_dx_shader_bytes(code->shader,&size);
     if (!bytes || !size) return native_failure_status(NATIVE_INVALID_STATE);
-    const doe_dx_pipeline_desc desc={bytes,size,code->bindings,code->count};
+    /* The kernel's size-table rows come from its compiled entry, like any user pipeline. */
+    const doe_dx_dynamic_pipeline_desc desc={.resources={.buffers={bytes,size,code->bindings,code->count}},
+        .logical_size_count=code->sizes.count,.logical_size_indices=code->sizes.count ? code->sizes.indices : NULL};
     doe_dx_error error={0};
-    doe_dx_status status=doe_dx_pipeline_create(device->backend.value.d3d12.context,&desc,out,&error);
+    doe_dx_status status=doe_dx_pipeline_create_dynamic(device->backend.value.d3d12.context,&desc,out,&error);
     return native_failure_d3d12(status,&error);
 #else
     (void)device; (void)code; (void)out;

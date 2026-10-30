@@ -76,7 +76,7 @@ static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_ren
 {
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
         if (use->storage_sizes[stage]) ID3D12GraphicsCommandList_SetGraphicsRootConstantBufferView(commands->list,
-            draw->pipeline->render->storage_sizes_root[stage],ID3D12Resource_GetGPUVirtualAddress(use->storage_sizes[stage]->resource));
+            draw->pipeline->render->storage_sizes_root[stage],use->storage_sizes[stage]);
     ID3D12DescriptorHeap *heaps[2];
     UINT count=0;
     if (use->heap) heaps[count++]=use->heap;

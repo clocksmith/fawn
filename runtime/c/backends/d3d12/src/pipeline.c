@@ -56,8 +56,11 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
             binding->shader_register==1 && binding->register_space==7) return DOE_DX_INVALID_ARGUMENT;
         if (dynamic && dynamic->logical_size_count && kind==DOE_DX_DESCRIPTOR_CBV &&
             binding->shader_register==2 && binding->register_space==7) return DOE_DX_INVALID_ARGUMENT;
-        if (binding->view==DOE_DX_RAW && (!dynamic || !dynamic->logical_size_count ||
-            dynamic->logical_size_indices[index]>=dynamic->logical_size_count)) return DOE_DX_INVALID_ARGUMENT;
+        /* Raw views always read the size table; with a table, every storage
+         * view owns one distinct canonical row. */
+        const bool sized=kind!=DOE_DX_DESCRIPTOR_CBV && dynamic && dynamic->logical_size_count;
+        if ((binding->view==DOE_DX_RAW && !sized) ||
+            (sized && dynamic->logical_size_indices[index]>=dynamic->logical_size_count)) return DOE_DX_INVALID_ARGUMENT;
         switch (kind) {
         case DOE_DX_DESCRIPTOR_CBV: ++cbvs; break;
         case DOE_DX_DESCRIPTOR_SRV: ++srvs; break;
@@ -69,7 +72,7 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
             return DOE_DX_INVALID_ARGUMENT;
         for (size_t prior = 0; prior < index; prior++) {
             const doe_dx_binding_layout *other = &buffers->bindings[prior];
-            if (binding->view==DOE_DX_RAW && other->view==DOE_DX_RAW &&
+            if (sized && doe_dx_buffer_descriptor_kind(other)!=DOE_DX_DESCRIPTOR_CBV &&
                 dynamic->logical_size_indices[index]==dynamic->logical_size_indices[prior]) return DOE_DX_INVALID_ARGUMENT;
             if (same_register(binding->shader_register, binding->register_space, kind,
                 other->shader_register, other->register_space, doe_dx_buffer_descriptor_kind(other))) return DOE_DX_INVALID_ARGUMENT;

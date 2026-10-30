@@ -79,6 +79,13 @@
   or successfully retired. Device creation prepares the first heap (never the first
   submission) and keeps it for the context; extra heaps for
   overflow release when empty. Sampler/RTV/DSV/clear heaps keep their own owners.
+- Storage-size tables (root CBV b2, space7) live in the same ring: each ring owns
+  one 64 KiB UPLOAD arena of 256-byte slots, mapped once and released with the
+  ring; device creation prepares the first ring's arena with its heap (never the
+  first dispatch), overflow rings create theirs on first need. A use takes its table slots with its descriptor range
+  from one ring and returns both together, so a CPU table write never overlaps GPU
+  reads. Every storage row (raw or structured) carries its exact bound range size;
+  other rows are zero. Never create a buffer per use for this table.
 - Buffers whose queried allocation is at most 1 MiB are placed in context-owned
   4 MiB buffer-only heaps of their own memory class (64 KiB slots). Placement
   never implies contents: every caller still fully initializes. Slots return only

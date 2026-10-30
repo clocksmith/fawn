@@ -87,7 +87,8 @@ static void profile_is(const doe_shader *shader, uint32_t model)
     doe_shader_view view;
     assert(doe_shader_borrow(shader,&view) == DOE_SHADER_OK && view.target_language_version == 600);
     assert(view.hlsl_entry_count == 1);
-    if (model == 501) assert(!view.hlsl_entries[0].flags); /* Legacy ABI11 row stays unchanged. */
+    /* Legacy ABI11 row stays unchanged; only the size-table binding flag may accompany 501. */
+    if (model == 501) assert(!(view.hlsl_entries[0].flags & ~DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES));
 }
 
 static void uncertified(const doe_shader *shader)

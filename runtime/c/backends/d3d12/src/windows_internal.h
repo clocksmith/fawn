@@ -80,11 +80,12 @@ struct doe_dx_native_pipeline {
     doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
 };
 typedef struct doe_dx_descriptor_use {
-    doe_dx_native_buffer *storage_sizes[DOE_DX_RENDER_STAGES];
+    D3D12_GPU_VIRTUAL_ADDRESS storage_sizes[DOE_DX_RENDER_STAGES]; /* Ring constant slots; 0 when absent. */
     ID3D12DescriptorHeap *heap;
     ID3D12DescriptorHeap *sampler_heap;
     struct doe_dx_descriptor_ring *ring; /* Borrowed heap range instead of an owned heap. */
     UINT ring_first, ring_count;
+    UINT constant_first, constant_count; /* Storage-size slots in the same ring. */
     struct doe_dx_descriptor_use *next;
 } doe_dx_descriptor_use;
 /* GPU start of this use's resource descriptors (heap start plus ring offset). */
@@ -93,6 +94,13 @@ void doe_dx_descriptor_gpu_start(const doe_dx_descriptor_use *use, D3D12_GPU_DES
  * terminally lost or successfully retired, never while GPU use may remain. */
 void doe_dx_descriptor_ring_free(doe_dx_descriptor_use *use);
 void doe_dx_descriptor_rings_close(doe_dx_native_context *context);
+#define DOE_DX_DESCRIPTOR_CONSTANT_SLOT 256u /* Root-CBV alignment. */
+/* Borrows count contiguous descriptors and slots contiguous 256-byte constant
+ * slots (at most 256, needing count>0) from one ring. Slots return with the
+ * descriptors; the CPU pointer is the slot's persistently mapped bytes. */
+doe_dx_status doe_dx_descriptor_ring_take_slots(doe_dx_native_context *context, UINT count, UINT slots,
+    doe_dx_descriptor_use *use, D3D12_CPU_DESCRIPTOR_HANDLE *cpu, doe_dx_error *error);
+uint8_t *doe_dx_descriptor_constants(const doe_dx_descriptor_use *use, UINT slot);
 /* Borrows count contiguous descriptors into use and returns their CPU start. */
 doe_dx_status doe_dx_descriptor_ring_take(doe_dx_native_context *context, UINT count,
     doe_dx_descriptor_use *use, D3D12_CPU_DESCRIPTOR_HANDLE *cpu, doe_dx_error *error);
@@ -100,7 +108,8 @@ doe_dx_status doe_dx_prepare_color_view(doe_dx_native_commands *,doe_dx_native_t
     uint32_t,doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
 doe_dx_status doe_dx_prepare_depth_view(doe_dx_native_commands *,doe_dx_native_texture *,const doe_dx_texture_view_desc *,
     bool,bool,doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
-doe_dx_status doe_dx_prepare_storage_sizes(doe_dx_native_commands *,const doe_dx_native_resources *,doe_dx_native_buffer **,doe_dx_error *);
+UINT doe_dx_storage_size_slots(const doe_dx_native_resources *);
+doe_dx_status doe_dx_write_storage_sizes(const doe_dx_native_resources *,uint8_t *,size_t,doe_dx_error *);
 struct doe_dx_native_commands {
     doe_dx_native_context *context; /* Context cannot close with live commands. */
     ID3D12CommandAllocator *allocator;
