@@ -108,6 +108,8 @@ doe_dx_status doe_dx_native_query_luid(uint32_t low, int32_t high,
 doe_dx_status doe_dx_native_close(doe_dx_native_context *context);
 /* Creates the context's long-lived shader-visible descriptor heap if absent. */
 doe_dx_status doe_dx_native_descriptors_prepare(doe_dx_native_context *context, doe_dx_error *error);
+/* Creates the context's first UPLOAD buffer heap if none exists. */
+doe_dx_status doe_dx_native_upload_heap_prepare(doe_dx_native_context *context, doe_dx_error *error);
 /* Shared actual-identity check, also exercised through the host link seam. */
 doe_dx_status doe_dx_validate_adapter(const doe_dx_options *options,
     const doe_dx_caps *caps, doe_dx_error *error);

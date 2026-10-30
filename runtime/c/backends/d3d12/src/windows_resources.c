@@ -69,6 +69,41 @@ static bool heap_take(struct doe_dx_buffer_heap *heap, uint64_t slots, uint64_t 
     return false;
 }
 
+static HRESULT heap_create(doe_dx_native_context *context, const D3D12_HEAP_PROPERTIES *properties,
+    doe_dx_memory memory, struct doe_dx_buffer_heap **out, const char **operation) {
+    struct doe_dx_buffer_heap *heap = calloc(1, sizeof(*heap));
+    *operation = "native.buffer_heap.allocate";
+    if (!heap) return E_OUTOFMEMORY;
+    D3D12_HEAP_DESC desc = {0};
+    desc.SizeInBytes = DOE_DX_BUFFER_HEAP_SLOTS * DOE_DX_BUFFER_HEAP_SLOT;
+    desc.Properties = *properties;
+    desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    desc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
+    *operation = "ID3D12Device.CreateHeap.buffers";
+    HRESULT result = ID3D12Device_CreateHeap(context->device, &desc, &IID_ID3D12Heap, (void **)&heap->heap);
+    if (FAILED(result)) { free(heap); return result; }
+    heap->context = context;
+    heap->memory = memory;
+    heap->next = context->buffer_heaps;
+    context->buffer_heaps = heap;
+    *out = heap;
+    return result;
+}
+
+/* Device opening creates the first UPLOAD buffer heap, as it does the descriptor
+ * ring, so the first queue write does not pay its creation. It is the class's one
+ * retained empty heap; placement and release rules are unchanged. Idempotent. */
+doe_dx_status doe_dx_native_upload_heap_prepare(doe_dx_native_context *context, doe_dx_error *error) {
+    for (struct doe_dx_buffer_heap *heap = context->buffer_heaps; heap; heap = heap->next)
+        if (heap->memory == DOE_DX_UPLOAD) return DOE_DX_OK;
+    const D3D12_HEAP_PROPERTIES properties = {.Type = D3D12_HEAP_TYPE_UPLOAD,
+        .CreationNodeMask = 1, .VisibleNodeMask = 1};
+    struct doe_dx_buffer_heap *heap = NULL;
+    const char *operation = NULL;
+    HRESULT result = heap_create(context, &properties, DOE_DX_UPLOAD, &heap, &operation);
+    return FAILED(result) ? doe_dx_hresult(result, operation, error) : DOE_DX_OK;
+}
+
 static HRESULT place_buffer(doe_dx_native_context *context, const D3D12_HEAP_PROPERTIES *properties,
     const D3D12_RESOURCE_DESC *description, const D3D12_RESOURCE_ALLOCATION_INFO *allocation,
     D3D12_RESOURCE_STATES state, doe_dx_memory memory, doe_dx_native_buffer *buffer, const char **operation) {
@@ -78,21 +113,8 @@ static HRESULT place_buffer(doe_dx_native_context *context, const D3D12_HEAP_PRO
     struct doe_dx_buffer_heap *heap = context->buffer_heaps;
     while (heap && (heap->memory != memory || !heap_take(heap, slots, align, &mask, &offset))) heap = heap->next;
     if (!heap) {
-        heap = calloc(1, sizeof(*heap));
-        *operation = "native.buffer_heap.allocate";
-        if (!heap) return E_OUTOFMEMORY;
-        D3D12_HEAP_DESC desc = {0};
-        desc.SizeInBytes = DOE_DX_BUFFER_HEAP_SLOTS * DOE_DX_BUFFER_HEAP_SLOT;
-        desc.Properties = *properties;
-        desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-        desc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
-        *operation = "ID3D12Device.CreateHeap.buffers";
-        HRESULT result = ID3D12Device_CreateHeap(context->device, &desc, &IID_ID3D12Heap, (void **)&heap->heap);
-        if (FAILED(result)) { free(heap); return result; }
-        heap->context = context;
-        heap->memory = memory;
-        heap->next = context->buffer_heaps;
-        context->buffer_heaps = heap;
+        HRESULT result = heap_create(context, properties, memory, &heap, operation);
+        if (FAILED(result)) return result;
         if (!heap_take(heap, slots, align, &mask, &offset)) abort(); /* Admitted size fits an empty heap. */
     }
     *operation = "ID3D12Device.CreatePlacedResource";

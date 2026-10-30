@@ -95,6 +95,8 @@
   never implies contents: every caller still fully initializes. Slots return only
   when the resource is released after retirement; keep one empty heap per class,
   detach live heaps at close, and never retry a failed heap/placement as committed.
+  Device creation prepares the first UPLOAD heap with the descriptor ring (its cost
+  moves from the first queue write to device creation); failure fails the open.
 - DEFAULT zero fills are deferred on an exact per-device list and submitted, all in
   one command, before any later D3D12 recording or CPU read. Only a whole-allocation
   queue write (padding included) may replace a fill; partial writes materialize first.
