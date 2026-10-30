@@ -63,6 +63,11 @@ WGPUErrorType native_result_error(native_result status);
  * Vulkan requires their complete WSI chain or fails; Metal rejects any bit. */
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
     native_backend *out);
+/* As native_backend_open, but a Vulkan source adapter with identical surface
+ * platforms lends its loader and instance; selection, caps and admission rerun.
+ * NULL, another kind or other platforms open their own instance. */
+native_result native_backend_open_shared(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
+    const native_backend *source, native_backend *out);
 native_result native_backend_open_luid(uint32_t low, int32_t high,
     uint32_t surface_platforms, native_backend *out);
 native_result native_backend_device(const native_backend *adapter, native_backend *out);

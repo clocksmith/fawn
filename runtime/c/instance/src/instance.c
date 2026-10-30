@@ -78,6 +78,11 @@ doe_instance_status doe_instance_create(const doe_instance_config *config,
     return DOE_INSTANCE_OK;
 }
 
+void *doe_instance_hook_userdata(const doe_instance *instance)
+{
+    return instance->config.hook_userdata;
+}
+
 doe_instance *doe_instance_from_handle(void *readable_handle)
 {
     uint32_t magic;

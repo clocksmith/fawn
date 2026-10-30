@@ -5,6 +5,41 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Instance-owned adapter source. Its private Vulkan adapter context lends the
+ * loader and VkInstance to later adapter requests with the same surface
+ * platforms, as each device already borrows its adapter's instance. Physical
+ * selection, identity, caps and admission still run for every request. */
+typedef struct native_instance_state {
+    doe_mutex mutex;
+    bool has_source;
+    native_backend source;
+} native_instance_state;
+
+static void instance_state_remove(void *userdata, doe_instance *instance)
+{
+    native_instance_state *state = userdata;
+    (void)instance;
+    if (state->has_source) native_backend_close(&state->source);
+    if (doe_mutex_destroy(&state->mutex).status != DOE_HOST_OK) abort();
+    free(state);
+}
+
+static native_result open_adapter(doe_instance *instance, WGPUBackendType kind, bool fallback,
+    uint32_t surface_platforms, native_backend *out)
+{
+    native_instance_state *state = doe_instance_hook_userdata(instance);
+    if (kind != WGPUBackendType_Vulkan) return native_backend_open(kind, fallback, surface_platforms, out);
+    if (doe_mutex_lock(&state->mutex).status != DOE_HOST_OK) abort();
+    native_result status = native_backend_open_shared(kind, fallback, surface_platforms,
+        state->has_source ? &state->source : NULL, out);
+    /* The source is a separate adapter context: callers never share one. */
+    if (status == NATIVE_OK && !state->has_source &&
+            native_backend_open_shared(kind, fallback, surface_platforms, out, &state->source) == NATIVE_OK)
+        state->has_source = true;
+    if (doe_mutex_unlock(&state->mutex).status != DOE_HOST_OK) abort();
+    return status;
+}
+
 WGPUInstance wgpuCreateInstance(const WGPUInstanceDescriptor *descriptor)
 {
     if (descriptor) {
@@ -16,13 +51,24 @@ WGPUInstance wgpuCreateInstance(const WGPUInstanceDescriptor *descriptor)
                 descriptor->requiredLimits->timedWaitAnyMaxCount >
                     doe_instance_limits().timedWaitAnyMaxCount)) return NULL;
     }
+    native_instance_state *state = calloc(1, sizeof(*state));
+    if (!state) return NULL;
+    if (doe_mutex_init(&state->mutex, false).status != DOE_HOST_OK) {
+        free(state);
+        return NULL;
+    }
     doe_instance_config config = {
         .abi_version = DOE_INSTANCE_ABI_VERSION,
         .object_allocator = {NULL, NULL, native_allocate, native_deallocate},
-        .wait_allocator = {NULL, NULL, native_allocate, native_deallocate}
+        .wait_allocator = {NULL, NULL, native_allocate, native_deallocate},
+        .hook_userdata = state,
+        .remove_label = instance_state_remove
     };
     doe_instance *instance = NULL;
-    if (doe_instance_create(&config, &instance) != DOE_INSTANCE_OK) return NULL;
+    if (doe_instance_create(&config, &instance) != DOE_INSTANCE_OK) {
+        instance_state_remove(state, NULL);
+        return NULL;
+    }
     return (WGPUInstance)instance;
 }
 
@@ -112,19 +158,19 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
         const bool discover = !compatible && kind == WGPUBackendType_Vulkan && native_surface_default_platforms();
         native_result status = selection.has_luid ?
             native_backend_open_luid(selection.luid_low, selection.luid_high, required, &backend) :
-            native_backend_open(kind, force_fallback,
+            open_adapter(instance, kind, force_fallback,
                 discover ? native_surface_default_platforms() : required, &backend);
         if (discover && status == NATIVE_UNSUPPORTED)
-            status = native_backend_open(kind, force_fallback, 0, &backend);
+            status = open_adapter(instance, kind, force_fallback, 0, &backend);
         /* WebGPU may answer a default request with the fallback adapter; on
          * Vulkan a host whose only device is a CPU implementation (lavapipe)
          * gets it from the default open, reported as the fallback adapter,
          * and a non-CPU device that fails admission retries with the CPU one. */
         if ((status == NATIVE_UNAVAILABLE || status == NATIVE_UNSUPPORTED) && !force_fallback &&
             kind == WGPUBackendType_Vulkan) {
-            status = native_backend_open(kind, true, discover ? native_surface_default_platforms() : required, &backend);
+            status = open_adapter(instance, kind, true, discover ? native_surface_default_platforms() : required, &backend);
             if (discover && status == NATIVE_UNSUPPORTED)
-                status = native_backend_open(kind, true, 0, &backend);
+                status = open_adapter(instance, kind, true, 0, &backend);
         }
         if (status == NATIVE_OK && compatible) {
             status = native_surface_compatible(compatible, &backend);

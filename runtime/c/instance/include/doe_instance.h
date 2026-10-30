@@ -104,6 +104,9 @@ void doe_instance_release(doe_instance *instance);
 void doe_instance_undo_retain(doe_instance *instance);
 /* Requires a live non-NULL instance. Does not retain or issue a future ID. */
 doe_instance_queue_lease doe_instance_borrow_queue(doe_instance *instance);
+/* Requires a live non-NULL instance. Returns the configured hook_userdata by
+ * value; acquires nothing. Its owner's remove_label hook ends its lifetime. */
+void *doe_instance_hook_userdata(const doe_instance *instance);
 /* count0 succeeds before inspecting instance/infos. Otherwise NULL instance
  * returns Error3; readable infos[count] is required after checked size bounds.
  * Copy into distinct accepted-future records using wait_allocator, copy flags
