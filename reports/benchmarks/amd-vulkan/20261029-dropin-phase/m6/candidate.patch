@@ -1,0 +1,80 @@
+diff --git a/runtime/c/backends/vulkan/src/commands.c b/runtime/c/backends/vulkan/src/commands.c
+index 2bae76b08..07d509eba 100644
+--- a/runtime/c/backends/vulkan/src/commands.c
++++ b/runtime/c/backends/vulkan/src/commands.c
+@@ -40,15 +40,30 @@ doe_vk_status doe_vk_use_buffer(doe_vk_commands *commands, doe_vk_buffer *buffer
+ 
+ /* Deliberately conservative synchronization. The production optimization and
+  * hazard tracker are not claimed migrated by this correctness-first owner. */
++/* Between commands of one recording only device accesses can conflict: host
++ * writes before submission are visible through vkQueueSubmit, and the host
++ * cannot access memory mid-recording. Device-only scopes avoid the cache
++ * writeback a host-read destination forces on every command. */
+ void doe_vk_barrier(doe_vk_commands *commands) {
+     const VkMemoryBarrier barrier = {
+         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+-        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT,
++        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
++        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT
++    };
++    commands->context->vk.vkCmdPipelineBarrier(commands->command, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
++        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &barrier, 0, NULL, 0, NULL);
++}
++
++/* Last command of every recording: all device writes become visible to host
++ * reads after the fence that follows, and later submissions see them too. */
++static void barrier_to_host(doe_vk_commands *commands) {
++    const VkMemoryBarrier barrier = {
++        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
++        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+         .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_HOST_READ_BIT
+     };
+-    const VkFlags stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_HOST_BIT;
+-    commands->context->vk.vkCmdPipelineBarrier(commands->command, stages, stages, 0,
+-        1, &barrier, 0, NULL, 0, NULL);
++    commands->context->vk.vkCmdPipelineBarrier(commands->command, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
++        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0, NULL, 0, NULL);
+ }
+ 
+ static doe_vk_status create_commands(doe_vk_context *context, bool reusable,
+@@ -313,7 +328,7 @@ doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *erro
+         status = doe_vk_poison(commands, DOE_VK_UNSUPPORTED);
+         return doe_vk_fail(status, "reusable recording state", error);
+     }
+-    doe_vk_barrier(commands);
++    barrier_to_host(commands);
+     status = doe_vk_result(commands->context, commands->context->vk.vkEndCommandBuffer(commands->command),
+         "vkEndCommandBuffer", error);
+     if (status != DOE_VK_OK) {
+@@ -352,7 +367,7 @@ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *er
+         commands->failure = *error;
+         return status;
+     }
+-    doe_vk_barrier(commands);
++    barrier_to_host(commands);
+     status = doe_vk_result(context, context->vk.vkEndCommandBuffer(commands->command), "vkEndCommandBuffer", error);
+     if (status != DOE_VK_OK) {
+         (void)doe_vk_poison(commands, status);
+diff --git a/runtime/c/native/Makefile b/runtime/c/native/Makefile
+index 6103a92aa..c20ad0774 100644
+--- a/runtime/c/native/Makefile
++++ b/runtime/c/native/Makefile
+@@ -428,7 +428,7 @@ check-present-sanitizers:
+ 	  '$(SANITIZER_BUILD)/thread/surface-faults'
+ 	TSAN_OPTIONS='halt_on_error=1 suppressions=$(abspath tests/tsan.supp)' '$(SANITIZER_BUILD)/thread/surface-faults'
+ .PHONY: check-physical
+-check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
++check-physical:
+ 	@set -e; for client in $(PHYSICAL_CLIENTS); do \
+ 		env -u VK_ICD_FILENAMES DOE_C_TEST_ADAPTER=physical $(BUILD)/$$client; \
+ 	done
+@@ -751,3 +751,9 @@ $(BUILD)/readback-placement: tests/readback_placement.c tests/consumer.h tests/a
+ # Actual Windows SDK compile only; the test replaces typed calls, never _WIN32.
+ $(BUILD)/d3d12-buffer-placement.exe: tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c $(HEADERS) | $(BUILD)
+ 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c -o $@
++
++# Prerequisites expand immediately, so they are declared after the last
++# PHYSICAL_CLIENTS append; the recipe above already reads the full list.
++ifeq ($(SHARED_PLATFORM),Linux)
++check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
++endif

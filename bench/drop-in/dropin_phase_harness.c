@@ -328,6 +328,7 @@ int main(int argc, char **argv)
     if (pipeline) wgpuComputePipelineRelease(pipeline);
     if (module) wgpuShaderModuleRelease(module);
     wgpuQueueRelease(queue);
+    uint64_t t_released = now_ns();
     wgpuDeviceDestroy(s.device);
     wgpuDeviceRelease(s.device);
     uint64_t t_teardown = now_ns();
@@ -342,7 +343,7 @@ int main(int argc, char **argv)
     print_json_string("adapterDescription", info.description);
     printf("\"adapterType\":%d,\"vendorID\":%u,\"deviceID\":%u,\"bytes\":%zu,\"iterations\":%ld,"
         "\"oracleChecked\":%ld,\"setupNs\":%llu,\"setupInstanceNs\":%llu,\"setupAdapterNs\":%llu,\"setupDeviceNs\":%llu,\"compileNs\":%llu,\"pipelineNs\":%llu,"
-        "\"resourcesNs\":%llu,\"loopNs\":%llu,\"teardownNs\":%llu,\"processInMainNs\":%llu,\"cpuMs\":%.3f,"
+        "\"resourcesNs\":%llu,\"loopNs\":%llu,\"teardownNs\":%llu,\"teardownReleaseNs\":%llu,\"teardownDeviceNs\":%llu,\"processInMainNs\":%llu,\"cpuMs\":%.3f,"
         "\"maxRssKiB\":%ld,\"phases\":{",
         (int)info.adapterType, info.vendorID, info.deviceID, bytes, iterations, iterations,
         (unsigned long long)(t_setup - t0), (unsigned long long)(t_instance - t0),
@@ -350,6 +351,7 @@ int main(int argc, char **argv)
         (unsigned long long)(t_compile - t_setup),
         (unsigned long long)(t_pipeline - t_compile), (unsigned long long)(t_resources - t_pipeline),
         (unsigned long long)(t_loop - t_resources), (unsigned long long)(t_teardown - t_loop),
+        (unsigned long long)(t_released - t_loop), (unsigned long long)(t_teardown - t_released),
         (unsigned long long)(t_teardown - process_start), cpu_total, usage.ru_maxrss);
     for (int p = 0; p < P_COUNT; p++) {
         printf("%s\"%s\":[", p ? "," : "", PHASE_NAMES[p]);

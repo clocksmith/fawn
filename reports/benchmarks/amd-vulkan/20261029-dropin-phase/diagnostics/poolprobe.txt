@@ -1,0 +1,5 @@
+per-type 2 sets 1: create 5.1us destroy 5.0us
+per-type 64 sets 16: create 3.6us destroy 3.3us
+per-type 256 sets 64: create 3.5us destroy 3.1us
+per-type 512 sets 128: create 7.6us destroy 10.7us
+per-type 1024 sets 256: create 3.8us destroy 2.7us

@@ -51,7 +51,7 @@ WORKLOADS = {
     },
 }
 SECOND_SET_SEED_OFFSET = 1000
-ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "processInMainNs")
+ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "teardownReleaseNs", "teardownDeviceNs", "processInMainNs")
 LOOP_PHASES = ("upload", "encode", "submit", "completion", "map", "operation")
 BOOTSTRAP_RESAMPLES = 10000
 BOOTSTRAP_SEED = 20261029

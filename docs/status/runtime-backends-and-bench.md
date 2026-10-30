@@ -154,8 +154,11 @@ unestablished. Doe has promising execution evidence, not the final objective.
   mappings and shared adapter instances, and it rejected device-local placement
   for a host-upload regression. Image invert passes its scoped rule. Vector and
   upload/readback still lose warm operation time, mainly in completion and
-  submit. Retained Zig is unmeasured there. This is diagnostic evidence, not
-  the application win.
+  submit. A second round rejected four placement and barrier candidates and two
+  descriptor-pool candidates under their frozen rules. The descriptor-pool
+  candidates halved submit but missed a per-workload and teardown criterion.
+  The remaining owner decisions are recorded there. Retained Zig is unmeasured
+  there. This is diagnostic evidence, not the application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss

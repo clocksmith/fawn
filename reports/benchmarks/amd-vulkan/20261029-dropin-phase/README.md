@@ -196,3 +196,95 @@ Retained Zig remains unmeasured on this harness because it refuses
 `TimedWaitAny`. Losses and failed candidates stay retained here. Neither a pass
 on a single workload nor the rules above promotes a public claim, and none of
 this is the GOALS application win.
+
+## Round 2: the remaining owners, taken in order
+
+Unchanged rules: frozen contracts, balanced pairs and the A/A control, one
+mechanism per cohort, the GPU lock and participant restart. The control is the
+current main library (M1 + M3). Later windows use a harness revision that also
+splits teardown (c3). Every timed window kept A/A warm-operation ratios within
+0.98-1.01.
+
+### 1. GPU completion: no placement successor passes; physical attribution
+
+| Candidate | Result |
+| --- | --- |
+| M4: M2 placement plus non-temporal stores into write-combined mappings | Dropped untimed. [`wcprobe`](diagnostics/wcprobe.txt) shows streaming stores do not beat `memcpy` into write-combined memory, and cached memory stays the cheapest host-write target, so the M2 upload cost remains. [Patch](m4/candidate.patch). |
+| M5: non-host-visible device-local storage, pooled cached staging, copies recorded at the head of the next submission | **Rejected** ([contract](contract-m5.json)). Against M3, warm completion was 1.00, 1.06 and 1.03, with no gain. Vector submit regressed 1.10 [1.06,1.22] and copy resources 1.65. Correctness passed after two repairs that are not committed: prepared program replay flushes staged writes, and a failed `onSubmittedWorkDone` flush is reported. Without them, the fault sweep found a silently lost write. [Patch](m5/candidate.patch). |
+| M6: device-only barriers between commands, host barrier only at recording end | Not promoted. It had no completion effect in the locked [copy size sweep](diagnostics/copy-size-sweep.txt) (columns: upload, submit, completion and map µs). [Patch](m6/candidate.patch). |
+
+The size sweep compares completion on copy-only work, Doe against Dawn.
+Doe's fixed cost is about 3-5 µs higher. The per-byte cost diverges: 16 MiB
+takes 314 µs on Doe against 119 µs on Dawn. Doe's GPU reads and writes
+snooped host-cached memory, which M2 showed costs completion. Moving those
+bytes out of CPU cache adds host write time, either in upload (M2) or in a GPU
+staging copy that again reads snooped memory (M5). No candidate passed the
+frozen per-phase rule. Choosing between an operation-level trade-off and the
+strict per-phase rule is an owner decision, not something this campaign
+decides.
+
+### 2. Vector submit: owner found; two candidates rejected on frozen technicalities
+
+Doe records Vulkan work at `wgpuQueueSubmit`. Every dispatch, on every
+submission, created a descriptor pool and destroyed it when the recording was
+released.
+
+| Candidate vs M3 | warm submit | warm operation | Frozen rule |
+| --- | --- | --- | --- |
+| M7: context-owned free-able pool blocks (256 sets, 1024 per type) ([contract](contract-m7.json)) | 0.53 vector, 0.54 image | 0.82 vector, 0.92 image, 1.000 [0.986,1.029] copy | **Rejected.** The copy workload, which has no dispatch, was neutral but not at or below 1.0. Image teardown was 1.13 [1.08,1.20]. |
+| M7b: 32-set blocks of 64 descriptors per type ([contract](contract-m7b.json)) | 0.57 vector, 0.56 image | 0.86 vector, 0.93 image, 1.006 [0.987,1.029] copy | **Rejected** for the same two reasons. Image teardown was 1.16 [1.07,1.27]. |
+
+A [teardown split](diagnostics/m7-teardown-split-summary.json) puts the image
+excess in both object release (+31 µs) and device destruction (+26 µs). It
+appears only on the 4 MiB workload. Pool create and destroy cost 3-5 µs at any
+size ([poolprobe](diagnostics/poolprobe.txt)), so the remaining owner is
+unidentified; no sampling profiler is available on this host. Against Dawn, M7
+reached 0.59x warm operation on image. Vector stayed at 1.07x, with submit at
+parity (0.96). The patches are kept at [M7](m7/candidate.patch) and
+[M7b](m7b/candidate.patch). A pass would need a frozen rule that does not
+require improvement on a workload the mechanism cannot touch. That is an owner
+decision; it was not changed after the result.
+
+### 3. Buffer and bind-group creation: an accounting split, not a net loss
+
+Doe zeroes every host-memory buffer at creation, touching fresh pages. Dawn
+pays the equivalent cost in its first operation. Creation plus first operation
+is already lower on Doe: image is about 2.9 ms against 5.0 ms, and
+upload/readback is about 1.0 ms against 1.8 ms.
+
+M8 (lazy zero-init: full host writes skip zeroing, and the first GPU use
+records a fill) cut image resources from 1.05 to 0.49 ms untimed but roughly
+doubled first operation (2.3 to 4.3 ms). The cost only moves, so M8 is
+rejected untimed. [Patch](m8/candidate.patch).
+
+### 4. First-operation regression from the shared instance: diagnosed, not a Doe mechanism
+
+Iteration 0 of upload/readback is slower on M3 than on M1 by about 0.1-0.15 ms,
+spread over submit, completion and map. Two locked controls ran a diagnostic
+harness variant, not committed, with a 9 ms gap after setup:
+- An [idle gap](diagnostics/first-op-idle-control.jsonl.gz) made iteration 0
+  worse for both libraries.
+- A [busy-spin gap](diagnostics/first-op-busy-control.jsonl.gz) made M3 worse
+  (0.90 ms against 0.84 ms; M1 0.69 ms).
+
+Elapsed time and CPU frequency ramp therefore do not explain it. The extra
+instance enumeration in M1 just before the first submit helps. *Inference*,
+not verified because debugfs requires root: GPU power gating is incidentally
+woken by that enumeration. An explicit wake would move the cost into setup, so
+nothing is changed.
+
+### Committed in round 2
+
+- `runtime/c/native/Makefile`: `check-physical` prerequisites are declared
+  after the last `PHYSICAL_CLIENTS` append. `external-textures` and the later
+  clients are now built and run, and `check-physical` passes with 74 clients.
+- The harness splits teardown into object release and device destruction.
+
+### Host incident
+
+The sweep window's restart hit systemd's `StartLimitBurst=3` per 5 minutes
+because two windows' restarts landed close together. Three participant units
+were in `failed` for about 2.5 minutes until they were reset and started; all
+were active again with native initialization. The window script now resets and
+retries on start failure, and later windows were spaced at least 5 minutes
+apart. No later window needed the recovery path.
