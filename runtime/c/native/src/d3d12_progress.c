@@ -16,8 +16,19 @@ static native_failure wait_owner(native_device *device, doe_dx_commands *owner,
     const struct timespec *deadline, bool require_alive)
 {
     native_pending *pending = accepted_owner(device, owner);
-    if (!pending || !native_command_in_flight(&pending->native))
-        return native_failure_status(NATIVE_BUSY);
+    if (!pending) return native_failure_status(NATIVE_BUSY);
+    if (!native_command_in_flight(&pending->native)) {
+        /* One backend poll retires every command its completed fence covers,
+         * so a later record's poll can make an earlier, already-walked record
+         * terminal while it stays linked. That is completion awaiting ordinary
+         * observation, not a conflict: observe it here. A record that remains
+         * linked without being in flight still has no wait to authorize. */
+        native_failure observed = native_poll_pending(device).failure;
+        if (observed.status != NATIVE_OK) return observed;
+        pending = accepted_owner(device, owner);
+        return native_failure_status(pending && !native_command_in_flight(&pending->native) ?
+            NATIVE_BUSY : NATIVE_OK);
+    }
     doe_dx_wait_lease lease = {0};
     doe_dx_error detail = {0};
     doe_dx_status status = doe_dx_commands_hold(owner, &lease, &detail);

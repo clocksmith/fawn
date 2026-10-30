@@ -388,6 +388,72 @@ static void terminal_loss(void)
     consumer_finish(&s);
 }
 
+/* A later record's backend poll retires every command its fence covers, so an
+ * earlier record can be terminal yet still linked once a poll walk returns
+ * incomplete. The pending owner must observe that completion, not report the
+ * still-linked record as a conflict (WorkDone then published no future). The
+ * device mutex is held throughout, so the progress worker cannot settle it. */
+static void stale_terminal_owner(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    native_device *device = (native_device *)s.device;
+    doe_dx_context *context = device->backend.value.d3d12.context;
+    WGPUBuffer target = buffer(&s, 4, WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc);
+    uint32_t value = 1;
+    wgpuQueueWriteBuffer(s.queue, target, 0, &value, sizeof(value));
+    native_lock(device);
+    native_drain_pending(device);
+    assert(!device->pending);
+    ID3D12Fence *gate = NULL;
+    assert(SUCCEEDED(ID3D12Device_CreateFence(context->native->device, 0,
+        D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void **)&gate)));
+    assert(SUCCEEDED(ID3D12CommandQueue_Wait(context->native->queue, gate, 1)));
+    wgpuQueueWriteBuffer(s.queue, target, 0, &value, sizeof(value));
+    assert(SUCCEEDED(ID3D12CommandQueue_Wait(context->native->queue, gate, 2)));
+    wgpuQueueWriteBuffer(s.queue, target, 0, &value, sizeof(value));
+    native_pending *first = device->pending;
+    assert(first && first->next && !first->next->next);
+    doe_dx_commands *earlier = first->native.value.d3d12.commands;
+    const uint64_t earlier_fence = earlier->fence;
+    assert(earlier_fence && first->next->native.value.d3d12.commands->fence > earlier_fence);
+    assert(SUCCEEDED(ID3D12Fence_Signal(gate, 1)));
+    uint64_t completed = 0;
+    for (unsigned attempt = 0; attempt < 5000 && completed < earlier_fence; ++attempt) {
+        assert(doe_dx_native_completed(context->native, &completed, NULL) == DOE_DX_OK);
+        if (completed < earlier_fence) Sleep(1);
+    }
+    assert(completed >= earlier_fence);
+    /* The backend poll a later record would issue: earlier retires in the
+     * backend while its frontend record stays linked behind running work. */
+    assert(doe_dx_context_poll(context, 0, NULL) == DOE_DX_PENDING);
+    assert(device->pending == first && !native_command_in_flight(&first->native));
+    struct timespec now, deadline;
+    assert(doe_monotonic_now(&now).status == DOE_HOST_OK &&
+        doe_time_add(&now, UINT64_C(5000000000), &deadline).status == DOE_HOST_OK);
+    native_failure waited = native_d3d12_wait_owner(device, earlier, &deadline);
+    const bool observed = device->pending && device->pending != first &&
+        native_command_in_flight(&device->pending->native) && !device->pending->next;
+    assert(SUCCEEDED(ID3D12Fence_Signal(gate, 2)));
+    native_unlock(device);
+    printf("stale terminal owner: wait=%d observed=%u\n", (int)waited.status, (unsigned)observed);
+    fflush(stdout);
+    assert(waited.status == NATIVE_OK && observed);
+    WGPUBuffer readback = buffer(&s, 4, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, target, 0, readback, 0, 4);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    assert(commands);
+    wgpuCommandEncoderRelease(encoder);
+    wgpuQueueSubmit(s.queue, 1, &commands);
+    wgpuCommandBufferRelease(commands);
+    expect_value(&s, readback, 1);
+    ID3D12Fence_Release(gate);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(target);
+    consumer_finish(&s);
+}
+
 int main(int argc,char **argv)
 {
     if (argc == 2 && !strcmp(argv[1],"--initialization-debug")) {
@@ -400,6 +466,7 @@ int main(int argc,char **argv)
     }
     assert(argc == 1);
     ordered_work();
+    stale_terminal_owner();
     initialization_ordering(false);
     terminal_loss();
     printf("PASS actual gated D3D12 queue: distinct/reused writes and dependent compute accepted before GPU release, unlocked concurrent map, timeout/cancel/early release, exact11/7/42 readback, own-device terminal loss and teardown %s\n", adapter_class_scope());
