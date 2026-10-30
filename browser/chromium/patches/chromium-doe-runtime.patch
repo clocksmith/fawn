@@ -36,18 +36,21 @@ index e41489d4c9..ebce50ab41 100644
      if (use_v4l2_codec) {
        deps += [ "//media/gpu/v4l2" ]
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
-index 2e53794fa3..bde501d044 100644
+index 2e53794fa3..49c904e82a 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
-@@ -8,6 +8,7 @@
+@@ -6,8 +6,10 @@
+
+ #include <dlfcn.h>
  #include <errno.h>
++#include <fcntl.h>
  #include <stdlib.h>
  #include <sys/stat.h>
 +#include <sys/sysmacros.h>
 
  #include <array>
  #include <memory>
-@@ -16,16 +17,21 @@
+@@ -16,18 +18,25 @@
  #include <vector>
 
  #include "base/base_paths.h"
@@ -59,6 +62,7 @@ index 2e53794fa3..bde501d044 100644
  #include "base/functional/bind.h"
  #include "base/logging.h"
  #include "base/path_service.h"
++#include "base/posix/eintr_wrapper.h"
 +#include "base/strings/string_number_conversions.h"
 +#include "base/strings/string_util.h"
  #include "base/strings/stringprintf.h"
@@ -68,8 +72,11 @@ index 2e53794fa3..bde501d044 100644
 +#include "gpu/config/gpu_switches.h"
  #include "media/gpu/buildflags.h"
  #include "sandbox/linux/bpf_dsl/policy.h"
++#include "sandbox/linux/syscall_broker/broker_client.h"
  #include "sandbox/linux/syscall_broker/broker_command.h"
-@@ -36,6 +42,11 @@
+ #include "sandbox/linux/syscall_broker/broker_file_permission.h"
+ #include "sandbox/linux/syscall_broker/broker_process.h"
+@@ -36,6 +45,11 @@
  #include "sandbox/policy/linux/bpf_cros_arm_gpu_policy_linux.h"
  #include "sandbox/policy/linux/bpf_gpu_policy_linux.h"
  #include "sandbox/policy/linux/sandbox_linux.h"
@@ -81,7 +88,7 @@ index 2e53794fa3..bde501d044 100644
 
  #if BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
-@@ -46,6 +57,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
+@@ -46,6 +60,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
  using sandbox::syscall_broker::BrokerProcess;
 
  namespace content {
@@ -117,7 +124,7 @@ index 2e53794fa3..bde501d044 100644
  namespace {
 
  inline bool IsChromeOS() {
-@@ -224,11 +264,132 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+@@ -224,11 +267,174 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
    permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
  }
 
@@ -196,6 +203,48 @@ index 2e53794fa3..bde501d044 100644
 +  return true;
 +}
 +
++// Since Linux 6.8 a DRM file records the process using it, and the first
++// ioctl from another process waits for an RCU grace period to transfer it. A
++// brokered open makes the broker that recorded user. Compositor Vulkan and the
++// provider's first adapter each open an admitted render node after sealing, so
++// this route opens those files itself first; later opens use the broker.
++constexpr int kPreopenedRenderNodeFiles = 2;
++constexpr int kRenderNodeOpenFlags = O_RDWR | O_CLOEXEC;
++
++void PreopenExternalGlxRenderNodes(
++    const sandbox::policy::SandboxSeccompBPF::Options& options) {
++  using PreopenedFile = sandbox::syscall_broker::BrokerClient::PreopenedFile;
++  std::vector<std::unique_ptr<PreopenedFile>> files;
++  for (int i = 128; i <= 137; ++i) {
++    const std::string node = base::StringPrintf("/dev/dri/renderD%d", i);
++    struct stat info;
++    std::vector<BrokerFilePermission> admitted;
++    if (lstat(node.c_str(), &info) != 0 ||
++        !AddExternalGlxDrmPermissions(&admitted, node, info, options)) {
++      continue;
++    }
++    for (int copy = 0; copy < kPreopenedRenderNodeFiles; ++copy) {
++      base::ScopedFD fd(HANDLE_EINTR(open(node.c_str(), kRenderNodeOpenFlags)));
++      struct stat opened;
++      if (!fd.is_valid() || fstat(fd.get(), &opened) != 0 ||
++          !S_ISCHR(opened.st_mode) || opened.st_rdev != info.st_rdev) {
++        break;
++      }
++      auto file = std::make_unique<PreopenedFile>();
++      file->path = node;
++      file->flags = kRenderNodeOpenFlags;
++      file->fd = fd.release();
++      files.push_back(std::move(file));
++    }
++  }
++  if (!files.empty()) {
++    sandbox::policy::SandboxLinux::GetInstance()
++        ->broker_process()
++        ->GetBrokerClientSignalBased()
++        ->AdoptPreopenedFiles(std::move(files));
++  }
++}
++
 +void AddSystemDrircPermissions(std::vector<BrokerFilePermission>* permissions) {
 +  const base::FilePath directory("/usr/share/drirc.d");
 +  struct stat info;
@@ -253,7 +302,7 @@ index 2e53794fa3..bde501d044 100644
      permissions->push_back(BrokerFilePermission::ReadWrite(path));
 
      uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
-@@ -240,13 +401,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+@@ -240,13 +446,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
    }
  }
 
@@ -274,7 +323,7 @@ index 2e53794fa3..bde501d044 100644
    }
  }
 
-@@ -592,6 +756,37 @@ void LoadVulkanLibraries() {
+@@ -592,6 +801,37 @@ void LoadVulkanLibraries() {
    dlopen("libvulkan_freedreno.so", dlopen_flag);
  }
 
@@ -312,7 +361,7 @@ index 2e53794fa3..bde501d044 100644
  void LoadChromecastV4L2Libraries() {
    for (const char* path : kAllowedChromecastPaths) {
      const std::string library_path(std::string(path) +
-@@ -604,23 +799,26 @@ void LoadChromecastV4L2Libraries() {
+@@ -604,23 +844,26 @@ void LoadChromecastV4L2Libraries() {
  }  // namespace
 
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
@@ -346,7 +395,7 @@ index 2e53794fa3..bde501d044 100644
    // All GPU process policies need this file brokered out.
    static const char kDriRcPath[] = "/etc/drirc";
    std::vector<BrokerFilePermission> permissions = {
-@@ -669,12 +867,37 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+@@ -669,12 +912,37 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
    }
 
    AddStandardGpuPermissions(&permissions);
@@ -385,7 +434,7 @@ index 2e53794fa3..bde501d044 100644
    if (IsArchitectureArm()) {
      LoadArmGpuLibraries();
    }
-@@ -696,11 +919,36 @@ bool LoadLibrariesForGpu(
+@@ -696,11 +964,39 @@ bool LoadLibrariesForGpu(
  }
 
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
@@ -416,6 +465,9 @@ index 2e53794fa3..bde501d044 100644
 -      CommandSetForGPU(options), FilePermissionsForGpu(options), options);
 +      CommandSetForGPU(options, early_sandbox),
 +      FilePermissionsForGpu(options, early_sandbox), options);
++  if (UsesEarlyExternalGlxResources(early_sandbox)) {
++    PreopenExternalGlxRenderNodes(options);
++  }
 
 -  if (!LoadLibrariesForGpu(options))
 +  if (!LoadLibrariesForGpu(options, early_sandbox)) {
@@ -1020,6 +1072,127 @@ index 0d58ffa8e5..f367a5ace6 100644
 
  // Restricts the |pid| argument of prlimit64 to 0 (meaning the calling process)
  // or target_pid.
+diff --git a/sandbox/linux/syscall_broker/broker_client.cc b/sandbox/linux/syscall_broker/broker_client.cc
+old mode 100644
+new mode 100755
+index 1e33e31407..7f230e1988
+--- a/sandbox/linux/syscall_broker/broker_client.cc
++++ b/sandbox/linux/syscall_broker/broker_client.cc
+@@ -12,6 +12,7 @@
+ #include <sys/socket.h>
+ #include <sys/stat.h>
+
++#include <string_view>
+ #include <utility>
+
+ #include "base/check.h"
+@@ -36,7 +37,39 @@ BrokerClient::BrokerClient(const BrokerSandboxConfig& policy,
+       ipc_channel_(std::move(ipc_channel)),
+       fast_check_in_client_(fast_check_in_client) {}
+
+-BrokerClient::~BrokerClient() = default;
++BrokerClient::~BrokerClient() {
++  for (const auto& file : preopened_files_) {
++    const int fd = file->fd.exchange(-1);
++    if (fd >= 0) {
++      close(fd);
++    }
++  }
++}
++
++void BrokerClient::AdoptPreopenedFiles(
++    std::vector<std::unique_ptr<PreopenedFile>> files) {
++  CHECK(preopened_files_.empty());
++  preopened_files_ = std::move(files);
++}
++
++int BrokerClient::TakePreopenedFile(const char* pathname, int flags) const {
++  for (const auto& file : preopened_files_) {
++    if (file->flags != flags || file->path != std::string_view(pathname)) {
++      continue;
++    }
++    const auto [allowed, unlink_after_open] =
++        CommandOpenIsSafe(policy_->allowed_command_set,
++                          *policy_->file_permissions, pathname, flags);
++    if (!allowed || unlink_after_open) {
++      return -1;
++    }
++    const int fd = file->fd.exchange(-1, std::memory_order_acq_rel);
++    if (fd >= 0) {
++      return fd;
++    }
++  }
++  return -1;
++}
+
+ int BrokerClient::Access(const char* pathname, int mode) const {
+   if (!pathname)
+@@ -72,6 +105,10 @@ int BrokerClient::Open(const char* pathname, int flags) const {
+            .first) {
+     return -policy_->file_permissions->denied_errno();
+   }
++  const int preopened = TakePreopenedFile(pathname, flags);
++  if (preopened >= 0) {
++    return preopened;
++  }
+   return PathAndFlagsSyscallReturningFD(COMMAND_OPEN, pathname, flags);
+ }
+
+diff --git a/sandbox/linux/syscall_broker/broker_client.h b/sandbox/linux/syscall_broker/broker_client.h
+index 3d530c7800..66e0de8e26 100644
+--- a/sandbox/linux/syscall_broker/broker_client.h
++++ b/sandbox/linux/syscall_broker/broker_client.h
+@@ -9,6 +9,11 @@
+ #include <sys/types.h>
+ #include <unistd.h>
+
++#include <atomic>
++#include <memory>
++#include <string>
++#include <vector>
++
+ #include "base/memory/raw_ref.h"
+ #include "sandbox/linux/syscall_broker/broker_channel.h"
+ #include "sandbox/linux/syscall_broker/broker_command.h"
+@@ -47,6 +52,20 @@ class SANDBOX_EXPORT BrokerClient : public SyscallDispatcher {
+
+   ~BrokerClient() override;
+
++  // An independent open file that the sandboxed process created itself
++  // before its sandbox started.
++  struct PreopenedFile {
++    std::string path;
++    int flags = 0;
++    std::atomic<int> fd{-1};
++  };
++
++  // Open() returns one of these files instead of performing the equivalent
++  // brokered open: each is used at most once, only for exactly its path and
++  // flags, and only when the policy admits that request. Must be called while
++  // the process is still single-threaded, before its sandbox starts.
++  void AdoptPreopenedFiles(std::vector<std::unique_ptr<PreopenedFile>> files);
++
+   // Get the file descriptor used for IPC.
+   int GetIPCDescriptorForTesting() const { return ipc_channel_.get(); }
+
+@@ -79,6 +98,9 @@ class SANDBOX_EXPORT BrokerClient : public SyscallDispatcher {
+  private:
+   int PathOnlySyscall(BrokerCommand syscall_type, const char* pathname) const;
+
++  // Returns an adopted descriptor for this admitted request, or -1.
++  int TakePreopenedFile(const char* pathname, int flags) const;
++
+   int PathAndFlagsSyscall(BrokerCommand syscall_type,
+                           const char* pathname,
+                           int flags) const;
+@@ -99,6 +121,7 @@ class SANDBOX_EXPORT BrokerClient : public SyscallDispatcher {
+
+   const raw_ref<const BrokerSandboxConfig> policy_;
+   const BrokerChannel::EndPoint ipc_channel_;
++  std::vector<std::unique_ptr<PreopenedFile>> preopened_files_;
+   const bool fast_check_in_client_;  // Whether to forward a request that we
+                                      // know will be denied to the broker. (Used
+                                      // for tests).
 diff --git a/sandbox/policy/linux/bpf_gpu_policy_linux.cc b/sandbox/policy/linux/bpf_gpu_policy_linux.cc
 index 74333b96d1..4f533d8b5a 100644
 --- a/sandbox/policy/linux/bpf_gpu_policy_linux.cc
@@ -1102,6 +1275,22 @@ index cf02752619..0e46396dcc 100644
  };
 
  }  // namespace policy
+diff --git a/sandbox/policy/linux/sandbox_linux.h b/sandbox/policy/linux/sandbox_linux.h
+index 76e20d21b7..1dac050715 100644
+--- a/sandbox/policy/linux/sandbox_linux.h
++++ b/sandbox/policy/linux/sandbox_linux.h
+@@ -242,6 +242,11 @@ class SANDBOX_POLICY_EXPORT SandboxLinux {
+   // Only usable if StartBrokerProcess() was already called.
+   bpf_dsl::ResultExpr HandleViaBroker(int sysno) const;
+
++  // Only usable if StartBrokerProcess() was already called.
++  syscall_broker::BrokerProcess* broker_process() const {
++    return broker_process_;
++  }
++
+  private:
+   friend struct base::DefaultSingletonTraits<SandboxLinux>;
+
 diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
 index 50b2478e6c..9c883ba66b 100644
 --- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
