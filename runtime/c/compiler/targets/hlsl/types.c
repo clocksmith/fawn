@@ -183,6 +183,7 @@ void hlsl_composite(HlslEmitter *e, const IrInstruction *ir) {
         return;
     }
     hlsl_indent(e);
+    hlsl_define(e, ir->result);
     hlsl_value(e, ir->result);
     hlsl_text(e, " = ");
     if ((t->kind == TYPE_VECTOR || t->kind == TYPE_MATRIX) && count != 0u) {

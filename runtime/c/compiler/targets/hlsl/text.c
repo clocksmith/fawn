@@ -61,6 +61,7 @@ bool hlsl_inline_constant(const IrInstruction *ir) {
 }
 void hlsl_value(HlslEmitter *e, uint32_t id) {
     (void)hlsl_value_type(e, id);
+    hlsl_assignment_use(e, id);
     if (id != 0u && id <= e->module->instruction_count &&
         hlsl_inline_constant(&e->module->instructions[id - 1u])) {
         /* An immutable literal: inlining preserves every value snapshot. */

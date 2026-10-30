@@ -179,6 +179,27 @@ static void test_layout(void) {
     free(text);
     release(f);
 }
+/* Definite assignment: straight-line values drop the zero initializer; a loop
+ * body value read in continuing (reachable through continue) keeps it, as does a
+ * value read after its short-circuit region. Scalar constants have no local. */
+static void test_definite_assignment(void) {
+    const char *source = "@group(0) @binding(0) var<storage,read_write> o:array<u32>;"
+        "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) id:vec3u){"
+        "var i=0u;loop{let a=o[i]+3u;if(a>9u){continue;}o[i]=a;"
+        "continuing{let b=a*2u;i=i+b;break if i>4u;}}"
+        "let d=(id.x>1u)&&(o[0]>2u);if(d){o[1]=i;}"
+        "o[2]=bitcast<u32>(f32(o[3])*1.5);}";
+    Fixture *f = prepare(source);
+    char *text = emit(f, 0u);
+    has(text, "    uint v6;\n");
+    has(text, "    uint v8 = (uint)0;\n");
+    has(text, "v19 = (v8 * 0x00000002u);");
+    has(text, " = (bool)0;\n");
+    has(text, "asfloat(0x3fc00000u)");
+    assert(strstr(text, "v6 = (uint)0") == NULL);
+    free(text);
+    release(f);
+}
 static void test_workgroup(void) {
     const char *source = "var<workgroup> tile:array<u32,4>;"
         "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
@@ -459,6 +480,7 @@ int main(int argc, char **argv) {
     test_helper_closure();
     test_residual();
     test_layout();
+    test_definite_assignment();
     test_workgroup();
     test_vectors_and_builtins();
     test_entries_and_rejection();
