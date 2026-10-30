@@ -67,7 +67,8 @@ static void function_body(HlslEmitter *e, uint32_t index) {
     }
     for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
         const IrInstruction *ir = &c->instructions[i];
-        if (ir->result == 0u || ir->opcode == IR_HANDLE || ir->opcode == IR_ADDRESS) continue;
+        if (ir->result == 0u || ir->opcode == IR_HANDLE || ir->opcode == IR_ADDRESS ||
+            hlsl_inline_constant(ir)) continue;
         if (ir->result != i + 1u) {
             hlsl_error(e, "HLSL value identity differs from its IR slot");
             return;

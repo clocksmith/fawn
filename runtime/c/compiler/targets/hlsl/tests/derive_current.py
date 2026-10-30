@@ -13,7 +13,8 @@ old = '''        char output[16] = "intact";
         assert(strcmp(output, "intact") == 0);'''
 new = '''        char *output = emit(f, 0u);
         /* Both unchanged programs now lower to actual lvalue/inout operations. */
-        assert(strstr(output, " = 7u;") != NULL || strstr(output, " = v") != NULL);
+        /* Scalar constants are written at their use. */
+        assert(strstr(output, " = 0x00000007u;") != NULL);
         if (i == 0u) assert(strstr(output, "inout uint") != NULL);
         free(output);'''
 assert source.count(old) == 1, "Frozen pointer control drifted; review the adapter"

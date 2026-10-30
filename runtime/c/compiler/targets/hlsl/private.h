@@ -28,6 +28,8 @@ void hlsl_error(HlslEmitter *, const char *);
 void hlsl_type(HlslEmitter *, TypeId);
 void hlsl_zero(HlslEmitter *, TypeId);
 void hlsl_value(HlslEmitter *, uint32_t);
+/* A scalar (non-composite) IR constant is written at each use, never as a local. */
+bool hlsl_inline_constant(const IrInstruction *);
 TypeId hlsl_value_type(HlslEmitter *, uint32_t);
 void hlsl_constant(HlslEmitter *, TypeId, uint64_t, bool);
 void hlsl_types(HlslEmitter *);
