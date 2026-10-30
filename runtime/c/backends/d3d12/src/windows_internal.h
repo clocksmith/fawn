@@ -14,6 +14,7 @@
 
 struct doe_dx_pipeline_cache;
 struct doe_dx_buffer_heap;
+struct doe_dx_descriptor_ring;
 struct doe_dx_native_context {
     struct doe_dx_pipeline_cache *cache;
     uint64_t cache_driver_version;
@@ -29,6 +30,7 @@ struct doe_dx_native_context {
     ID3D12CommandAllocator *idle_allocator;
     ID3D12GraphicsCommandList *idle_list;
     struct doe_dx_buffer_heap *buffer_heaps; /* Placed-buffer heaps, one memory class each. */
+    struct doe_dx_descriptor_ring *descriptor_rings; /* Shader-visible CBV/SRV/UAV ranges. */
     doe_dx_limits limits;
 };
 struct doe_dx_native_buffer {
@@ -78,8 +80,19 @@ typedef struct doe_dx_descriptor_use {
     doe_dx_native_buffer *storage_sizes[DOE_DX_RENDER_STAGES];
     ID3D12DescriptorHeap *heap;
     ID3D12DescriptorHeap *sampler_heap;
+    struct doe_dx_descriptor_ring *ring; /* Borrowed heap range instead of an owned heap. */
+    UINT ring_first, ring_count;
     struct doe_dx_descriptor_use *next;
 } doe_dx_descriptor_use;
+/* GPU start of this use's resource descriptors (heap start plus ring offset). */
+void doe_dx_descriptor_gpu_start(const doe_dx_descriptor_use *use, D3D12_GPU_DESCRIPTOR_HANDLE *out);
+/* Returns a ring range; called only when the owning command is discarded,
+ * terminally lost or successfully retired, never while GPU use may remain. */
+void doe_dx_descriptor_ring_free(doe_dx_descriptor_use *use);
+void doe_dx_descriptor_rings_close(doe_dx_native_context *context);
+/* Borrows count contiguous descriptors into use and returns their CPU start. */
+doe_dx_status doe_dx_descriptor_ring_take(doe_dx_native_context *context, UINT count,
+    doe_dx_descriptor_use *use, D3D12_CPU_DESCRIPTOR_HANDLE *cpu, doe_dx_error *error);
 doe_dx_status doe_dx_prepare_color_view(doe_dx_native_commands *,doe_dx_native_texture *,const doe_dx_texture_view_desc *,
     uint32_t,doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
 doe_dx_status doe_dx_prepare_depth_view(doe_dx_native_commands *,doe_dx_native_texture *,const doe_dx_texture_view_desc *,

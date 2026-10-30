@@ -151,6 +151,10 @@ $(BUILD)/test_windows_buffer_heaps.exe: tests/test_windows_buffer_heaps.c $(HEAD
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
 sdk-control: $(BUILD)/test_windows_buffer_heaps.exe
 
+$(BUILD)/test_windows_descriptor_ring.exe: tests/test_windows_descriptor_ring.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
+sdk-control: $(BUILD)/test_windows_descriptor_ring.exe
+
 $(BUILD)/test_upload_staging: tests/test_upload_staging.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_upload_staging.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
 .PHONY: check-upload-staging

@@ -61,6 +61,7 @@ def main() -> int:
     zero_source = REPO / "runtime/c/backends/d3d12/tests/test_windows_readback_zero.c"
     reuse_source = REPO / "runtime/c/backends/d3d12/tests/test_windows_command_reuse.c"
     heaps_source = REPO / "runtime/c/backends/d3d12/tests/test_windows_buffer_heaps.c"
+    ring_source = REPO / "runtime/c/backends/d3d12/tests/test_windows_descriptor_ring.c"
     private_objects = [path for name, path in objects.items()
                        if name.startswith("runtime/c/backends/d3d12/")]
     sdk_objects = [path for name, path in objects.items()
@@ -83,6 +84,10 @@ def main() -> int:
                                           "/Fe" + str(out / "heaps_sdk.exe"), "/link",
                                           *map(str, private_objects), *libraries]),
         ("buffer-heaps-sdk-run", [str(out / "heaps_sdk.exe")]),
+        ("descriptor-ring-sdk-build", flags + [str(ring_source), "/Fo" + str(out / "ring_sdk.obj"),
+                                             "/Fe" + str(out / "ring_sdk.exe"), "/link",
+                                             *map(str, private_objects), *libraries]),
+        ("descriptor-ring-sdk-run", [str(out / "ring_sdk.exe")]),
         ("physical-build", flags + [str(physical_source), "/Fo" + str(out / "physical.obj"),
                                    "/Fe" + str(out / "physical.exe"), "/link", *map(str, objects.values()),
                                    str(build / "d3d12_windows_shader.obj"), str(imports), *libraries]),
@@ -114,7 +119,7 @@ def main() -> int:
                "nativeScopeSha256": digest(build / "native-scope.json"),
                "nativeDllSha256": digest(build / "webgpu_doe_c.dll"), "sourceDrift": final_drift,
                "testInputs": {str(path.relative_to(REPO)): digest(path)
-                              for path in (sdk_source, zero_source, reuse_source, heaps_source, physical_source,
+                              for path in (sdk_source, zero_source, reuse_source, heaps_source, ring_source, physical_source,
                                            Path(__file__).resolve())},
                "runtimeDlls": copied, "commands": rows}
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")

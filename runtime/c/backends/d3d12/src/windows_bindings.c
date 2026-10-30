@@ -65,6 +65,123 @@ static void write_set(ID3D12Device *device,const doe_dx_resource_set *set,
     }
 }
 
+/* Long-lived shader-visible CBV/SRV/UAV heaps owned by the context. A use
+ * borrows one contiguous range; it returns only through
+ * doe_dx_descriptor_ring_free when its command can no longer reach the GPU.
+ * The first ring stays for the context lifetime; extra rings release when empty. */
+#define DOE_DX_RING_DESCRIPTORS 4096u
+struct doe_dx_descriptor_ring {
+    ID3D12DescriptorHeap *heap;
+    doe_dx_native_context *context; /* NULL once detached by context close. */
+    UINT capacity, live, cursor;
+    UINT stride;
+    uint64_t *used; /* One bit per descriptor. */
+    struct doe_dx_descriptor_ring *next;
+};
+
+static bool ring_bit(const struct doe_dx_descriptor_ring *ring, UINT index) {
+    return (ring->used[index / 64u] >> (index % 64u)) & 1u;
+}
+static void ring_mark(struct doe_dx_descriptor_ring *ring, UINT first, UINT count, bool value) {
+    for (UINT i = first; i < first + count; ++i) {
+        const uint64_t bit = UINT64_C(1) << (i % 64u);
+        if (value) ring->used[i / 64u] |= bit;
+        else ring->used[i / 64u] &= ~bit;
+    }
+}
+/* First fit from the cursor, then from zero: ranges recycle in submission order. */
+static bool ring_take(struct doe_dx_descriptor_ring *ring, UINT count, UINT *first) {
+    if (count > ring->capacity - ring->live) return false;
+    for (int pass = 0; pass < 2; ++pass) {
+        UINT start = pass ? 0 : ring->cursor, run = 0;
+        for (UINT i = start; i < ring->capacity; ++i) {
+            run = ring_bit(ring, i) ? 0 : run + 1u;
+            if (run == count) {
+                *first = i + 1u - count;
+                ring_mark(ring, *first, count, true);
+                ring->live += count;
+                ring->cursor = i + 1u == ring->capacity ? 0 : i + 1u;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+static void ring_destroy(struct doe_dx_descriptor_ring *ring) {
+    if (ring->context) {
+        struct doe_dx_descriptor_ring **cursor = &ring->context->descriptor_rings;
+        while (*cursor != ring) cursor = &(*cursor)->next;
+        *cursor = ring->next;
+    }
+    ID3D12DescriptorHeap_Release(ring->heap);
+    free(ring->used);
+    free(ring);
+}
+void doe_dx_descriptor_ring_free(doe_dx_descriptor_use *use) {
+    struct doe_dx_descriptor_ring *ring = use->ring;
+    ring_mark(ring, use->ring_first, use->ring_count, false);
+    ring->live -= use->ring_count;
+    use->ring = NULL;
+    use->heap = NULL;
+    /* Keep only the oldest ring; a detached or extra empty ring releases. */
+    if (!ring->live && (!ring->context || ring != ring->context->descriptor_rings)) ring_destroy(ring);
+}
+void doe_dx_descriptor_rings_close(doe_dx_native_context *context) {
+    while (context->descriptor_rings) {
+        struct doe_dx_descriptor_ring *ring = context->descriptor_rings;
+        context->descriptor_rings = ring->next;
+        ring->context = NULL;
+        ring->next = NULL;
+        if (!ring->live) ring_destroy(ring);
+    }
+}
+void doe_dx_descriptor_gpu_start(const doe_dx_descriptor_use *use, D3D12_GPU_DESCRIPTOR_HANDLE *out) {
+    use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap, out);
+    if (use->ring) out->ptr += (UINT64)use->ring_first * use->ring->stride;
+}
+doe_dx_status doe_dx_descriptor_ring_take(doe_dx_native_context *context, UINT count,
+    doe_dx_descriptor_use *use, D3D12_CPU_DESCRIPTOR_HANDLE *cpu, doe_dx_error *error) {
+    struct doe_dx_descriptor_ring *ring = context->descriptor_rings;
+    UINT first = 0;
+    while (ring && !ring_take(ring, count, &first)) ring = ring->next;
+    if (!ring) {
+        ring = calloc(1, sizeof(*ring));
+        const UINT capacity = count > DOE_DX_RING_DESCRIPTORS ? count : DOE_DX_RING_DESCRIPTORS;
+        if (ring) ring->used = calloc((capacity + 63u) / 64u, sizeof(*ring->used));
+        if (!ring || !ring->used) {
+            free(ring);
+            return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.ring.allocate", error);
+        }
+        D3D12_DESCRIPTOR_HEAP_DESC description = {0};
+        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        description.NumDescriptors = capacity;
+        HRESULT result = ID3D12Device_CreateDescriptorHeap(context->device, &description,
+            &IID_ID3D12DescriptorHeap, (void **)&ring->heap);
+        if (FAILED(result)) {
+            free(ring->used);
+            free(ring);
+            return doe_dx_hresult(result, "ID3D12Device.CreateDescriptorHeap.resources", error);
+        }
+        ring->capacity = capacity;
+        ring->stride = ID3D12Device_GetDescriptorHandleIncrementSize(context->device,
+            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        ring->context = context;
+        /* Append: the first ring stays the long-lived one. */
+        struct doe_dx_descriptor_ring **tail = &context->descriptor_rings;
+        while (*tail) tail = &(*tail)->next;
+        *tail = ring;
+        if (!ring_take(ring, count, &first)) abort(); /* An empty ring of this capacity fits. */
+    }
+    use->ring = ring;
+    use->ring_first = first;
+    use->ring_count = count;
+    use->heap = ring->heap;
+    ring->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(ring->heap, cpu);
+    cpu->ptr += (SIZE_T)first * ring->stride;
+    return DOE_DX_OK;
+}
+
 doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
     const doe_dx_resource_set *sets,size_t count,doe_dx_descriptor_use **out,doe_dx_error *error) {
     if (!sets || !count || count>DOE_DX_RENDER_STAGES)
@@ -97,13 +214,12 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
     D3D12_DESCRIPTOR_HEAP_DESC description = {0};
     description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     description.NumDescriptors = (UINT)resource_count;
+    D3D12_CPU_DESCRIPTOR_HANDLE handle={0},samplers={0};
     if (description.NumDescriptors) {
-        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
-            &IID_ID3D12DescriptorHeap,(void **)&use->heap);
-        if (FAILED(result)) {
+        doe_dx_status status = doe_dx_descriptor_ring_take(commands->context,description.NumDescriptors,use,&handle,error);
+        if (status != DOE_DX_OK) {
             doe_dx_release_descriptors(use);
-            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.resources",error);
+            return status;
         }
     }
     if (sampler_count) {
@@ -116,8 +232,6 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
             return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.samplers",error);
         }
     }
-    D3D12_CPU_DESCRIPTOR_HANDLE handle={0},samplers={0};
-    if (use->heap) use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap,&handle);
     if (use->sampler_heap) use->sampler_heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->sampler_heap,&samplers);
     UINT resource_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     UINT sampler_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);

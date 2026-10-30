@@ -83,7 +83,7 @@ static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_ren
     if (use->sampler_heap) heaps[count++]=use->sampler_heap;
     ID3D12GraphicsCommandList_SetDescriptorHeaps(commands->list,count,heaps);
     D3D12_GPU_DESCRIPTOR_HANDLE resources={0},samplers={0};
-    if (use->heap) use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap,&resources);
+    if (use->heap) doe_dx_descriptor_gpu_start(use,&resources);
     if (use->sampler_heap) use->sampler_heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->sampler_heap,&samplers);
     UINT resource_stride=ID3D12Device_GetDescriptorHandleIncrementSize(commands->context->device,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

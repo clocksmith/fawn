@@ -63,6 +63,14 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   separate. A speculative larger page's OOM alone permits an exact-size retry.
   Initial allocation zeros its full width; reuse copies only caller bytes and
   makes no zero-content promise. Teardown drops only the cache's ordinary lease.
+- Compute and graphics resource descriptors borrow contiguous ranges of a
+  context-owned 4096-entry shader-visible heap instead of creating a heap per
+  descriptor use. The first heap is created by the first descriptor preparation and
+  lives with the context; a range returns only when its command is discarded,
+  terminally lost or successfully retired, so no CPU descriptor write overlaps GPU
+  use. Overflow creates another heap that releases once empty. Sampler heaps and
+  RTV/DSV/clear views keep their per-use owners. `test_windows_descriptor_ring.c`
+  is the official-SDK CPU control.
 - Buffers whose queried allocation is at most 1 MiB are placed resources in
   context-owned 4 MiB `ALLOW_ONLY_BUFFERS` heaps, one memory class per heap and
   64 KiB slots; larger buffers stay committed. Placement does not change any
