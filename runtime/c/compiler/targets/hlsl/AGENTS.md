@@ -26,7 +26,9 @@ device/numeric execution remain separate evidence.
   Use the shared byte layouts for offsets, array strides and member transfers;
   HLSL struct or cbuffer packing is not WGSL layout. Never copy resource padding.
 - Guard signed indices and each indexed subobject before forming offsets or
-  accesses. Loads initialize zero; invalid stores discard. Preserve IR value
+  accesses. Loads initialize zero; invalid stores discard. One guard per access:
+  a runtime-tail bound already implies the byte range; keep the byte check only
+  for fixed-size storage paths, and query each view size once per invocation. Preserve IR value
   snapshots, source-order call arguments, short circuits and continuing paths.
 - Texture handles preserve typed declaration/formal identity. Query a valid base
   mip first, then guard the requested mip before its dimension query and every

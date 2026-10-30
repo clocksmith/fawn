@@ -47,6 +47,9 @@ void hlsl_composite(HlslEmitter *, const IrInstruction *);
 void hlsl_array_length(HlslEmitter *, const IrInstruction *);
 void hlsl_access(HlslEmitter *, const IrInstruction *);
 void hlsl_private_initialization(HlslEmitter *);
+/* Storage-buffer byte sizes are queried once per invocation into the context. */
+bool hlsl_storage_size_field(HlslEmitter *, uint32_t resource);
+void hlsl_storage_size_initialization(HlslEmitter *);
 void hlsl_functions(HlslEmitter *);
 void hlsl_entry_name(HlslEmitter *, uint32_t);
 bool hlsl_graphics_admit(HlslEmitter *);

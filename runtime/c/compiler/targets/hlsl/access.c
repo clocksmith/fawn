@@ -30,8 +30,28 @@ static const ResourceRecord *resource_root(HlslEmitter *e, const IrInstruction *
     }
     return &e->module->resources[ir->operands.access.root];
 }
+/* Indexed steps each need a guard; member/component steps are statically in range. */
+static bool path_guarded(HlslEmitter *e, const HlslPath *path, bool *runtime_out) {
+    bool any = false;
+    *runtime_out = false;
+    for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
+        const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
+        if (step->kind == ACCESS_MEMBER || step->kind == ACCESS_COMPONENT) continue;
+        uint32_t extent;
+        bool runtime;
+        if (path_input(e, step) == NULL) return false;
+        if (!target_index_extent(e->module, step->input_type, &extent, &runtime)) {
+            hlsl_error(e, "HLSL indexed access has no typed extent");
+            return false;
+        }
+        any = true;
+        if (runtime) *runtime_out = true;
+    }
+    return any;
+}
+/* Emits the conjunction of every indexed step's guard, joined by " && ". */
 static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path) {
-    hlsl_text(e, "true");
+    bool first = true;
     for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
         const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
         if (step->kind == ACCESS_MEMBER || step->kind == ACCESS_COMPONENT) continue;
@@ -43,15 +63,17 @@ static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path
             hlsl_error(e, "HLSL indexed access has no typed extent");
             return;
         }
+        if (!first) hlsl_text(e, " && ");
+        first = false;
         if (step->kind == ACCESS_INDEX_I32) {
-            hlsl_text(e, " && (");
+            hlsl_text(e, "(");
             hlsl_value(e, step->index);
-            hlsl_text(e, " >= 0)");
+            hlsl_text(e, " >= 0) && ");
         } else if (step->kind != ACCESS_INDEX_U32) {
             hlsl_error(e, "Hlsl dynamic access kind is unsupported");
             return;
         }
-        hlsl_text(e, " && (uint(");
+        hlsl_text(e, "(uint(");
         hlsl_value(e, step->index);
         hlsl_text(e, ") < ");
         if (runtime) {
@@ -61,8 +83,12 @@ static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path
                 hlsl_error(e, "HLSL runtime array has no bounded resource root");
                 return;
             }
-            hlsl_format(e, "(bytes >= %" PRIu64 "u ? (bytes - %" PRIu64 "u) / %" PRIu64 "u : 0u)",
-                        r->tail_offset, r->tail_offset, r->tail_stride);
+            /* A zero tail offset makes the guard bytes / stride exactly. */
+            if (r->tail_offset == 0u)
+                hlsl_format(e, "ctx.doe_bytes%u / %" PRIu64 "u", ir->operands.access.root, r->tail_stride);
+            else hlsl_format(e, "(ctx.doe_bytes%u >= %" PRIu64 "u ? (ctx.doe_bytes%u - %" PRIu64 "u) / %" PRIu64 "u : 0u)",
+                        ir->operands.access.root, r->tail_offset, ir->operands.access.root,
+                        r->tail_offset, r->tail_stride);
         } else hlsl_format(e, "%uu", extent);
         hlsl_text(e, ")");
     }
@@ -253,10 +279,6 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_error(e, "HLSL resource access is absent from the selected static entry closure");
         return;
     }
-    if (resource != NULL && resource->kind == DOE_COMPILER_STORAGE_BUFFER) {
-        hlsl_indent(e);
-        hlsl_format(e, "uint bytes = doe_r%u_bytes();\n", ir->operands.access.root);
-    }
     if (!store) {
         hlsl_indent(e);
         hlsl_value(e, ir->result);
@@ -264,23 +286,34 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_zero(e, ir->type);
         hlsl_text(e, ";\n");
     }
-    hlsl_indent(e);
-    hlsl_text(e, "if (");
-    bounds(e, ir, &path);
-    hlsl_text(e, ") {\n");
-    ++e->indent;
-    hlsl_indent(e);
+    /* One guard per access. A storage path with a runtime-array index is bounded
+     * by idx < (bytes - tail_offset) / stride: the accessed bytes lie inside that
+     * element (inner offset + size <= stride), so offset + size <= bytes follows
+     * and the former byte check is implied. Fixed-size storage paths keep the byte
+     * check against the actual bound size. Invalid loads stay zero; stores drop. */
+    bool runtime = false;
+    const bool indexed = path_guarded(e, &path, &runtime);
+    const bool byte_check = resource != NULL && resource->kind == DOE_COMPILER_STORAGE_BUFFER && !runtime;
+    const uint64_t access_size = atomic ? UINT64_C(4) : type_size(e->module, ir->type);
     if (resource != NULL) {
+        hlsl_indent(e);
         hlsl_text(e, "uint offset = ");
         byte_offset(e, &path);
         hlsl_text(e, ";\n");
-        if (resource->kind == DOE_COMPILER_STORAGE_BUFFER) {
-            hlsl_indent(e);
-            hlsl_format(e, "if (offset <= bytes && %" PRIu64 "u <= bytes - offset) {\n",
-                        atomic ? UINT64_C(4) : type_size(e->module, ir->type));
-            ++e->indent;
-        }
+    }
+    const bool guarded = indexed || byte_check;
+    if (guarded) {
         hlsl_indent(e);
+        hlsl_text(e, "if (");
+        bounds(e, ir, &path);
+        if (byte_check)
+            hlsl_format(e, "%soffset <= ctx.doe_bytes%u && %" PRIu64 "u <= ctx.doe_bytes%u - offset",
+                indexed ? " && " : "", ir->operands.access.root, access_size, ir->operands.access.root);
+        hlsl_text(e, ") {\n");
+        ++e->indent;
+    }
+    hlsl_indent(e);
+    if (resource != NULL) {
         if (atomic) atomic_operation(e, ir, &path, scalar);
         else if (store) {
             if (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE) {
@@ -293,10 +326,6 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         } else {
             hlsl_value(e, ir->result);
             hlsl_format(e, " = doe_r%u_load%u(offset);\n", ir->operands.access.root, ir->type);
-        }
-        if (resource->kind == DOE_COMPILER_STORAGE_BUFFER) {
-            --e->indent;
-            hlsl_line(e, "}");
         }
     } else if (ir->operands.access.category == ROOT_WORKGROUP &&
         e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_IMMEDIATE) {
@@ -314,8 +343,10 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         else object_path(e, ir, &path);
         hlsl_text(e, ";\n");
     }
-    --e->indent;
-    hlsl_line(e, "}");
+    if (guarded) {
+        --e->indent;
+        hlsl_line(e, "}");
+    }
     --e->indent;
     hlsl_line(e, "}");
 }
@@ -327,6 +358,6 @@ void hlsl_array_length(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_error(e, "HLSL arrayLength requires a bounded storage runtime array");
         return;
     }
-    hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? (doe_r%u_bytes() - %" PRIu64
+    hlsl_format(e, "(ctx.doe_bytes%u >= %" PRIu64 "u ? (ctx.doe_bytes%u - %" PRIu64
         "u) / %" PRIu64 "u : 0u)", index, r->tail_offset, index, r->tail_offset, r->tail_stride);
 }

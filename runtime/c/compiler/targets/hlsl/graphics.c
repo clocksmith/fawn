@@ -177,6 +177,9 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
     hlsl_text(e, inputs != 0u ? "(DoeStage1 input) {\n" : "() {\n");
     hlsl_line(e, "    DoeContext ctx = (DoeContext)0;");
     hlsl_private_initialization(e);
+    e->indent = 1u;
+    hlsl_storage_size_initialization(e);
+    e->indent = 0u;
     for (uint32_t i = 0u; i < entry->interface_count; ++i) {
         const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
         if (leaf->direction != DOE_COMPILER_INTERFACE_INPUT) continue;
