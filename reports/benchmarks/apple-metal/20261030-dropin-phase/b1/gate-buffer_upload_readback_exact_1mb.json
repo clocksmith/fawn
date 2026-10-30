@@ -1,0 +1,115 @@
+{
+  "valid": false,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": false
+  },
+  "windowWallSeconds": 11.214939417084679,
+  "foreignCpuSeconds": 48.15999999998032,
+  "foreignCpuFraction": 0.5367839964277255,
+  "topForeignCpu": [
+    [
+      6.829999999987194,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      5.8799999999992,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mds"
+    ],
+    [
+      5.109999999996944,
+      "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/156.0.8078.48/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)"
+    ],
+    [
+      3.58,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+    ],
+    [
+      3.17,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+    ],
+    [
+      3.0999999999999996,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+    ],
+    [
+      2.5999999999999996,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+    ],
+    [
+      2.4399999999999995,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared"
+    ]
+  ],
+  "idleGpuMedianBefore": 17,
+  "idleGpuMedianAfter": 19,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.05
+  },
+  "before": {
+    "utc": "2026-10-30T20:17:46Z",
+    "monotonic": 1149850.333228583,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "100%; discharging; 5:09 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      15,
+      17,
+      18,
+      17,
+      17
+    ],
+    "loadAverage": [
+      17.83740234375,
+      22.99560546875,
+      17.423828125
+    ]
+  },
+  "after": {
+    "utc": "2026-10-30T20:18:02Z",
+    "monotonic": 1149866.823833583,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "100%; discharging; 5:09 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      24,
+      18,
+      18,
+      19,
+      19
+    ],
+    "loadAverage": [
+      18.1513671875,
+      22.73486328125,
+      17.458984375
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "doe=<work>/bin/harness-doe",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "buffer_upload_readback_exact_1mb",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/b1/raw-buffer_upload_readback_exact_1mb.jsonl"
+  ]
+}

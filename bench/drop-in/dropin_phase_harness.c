@@ -5,7 +5,10 @@
  * fixed compute application loop: one-time setup, shader compilation, pipeline
  * and resource preparation, then repeated upload -> encode -> submit ->
  * completion -> map/readback operations. Every phase boundary is a host
- * CLOCK_MONOTONIC reading, not a GPU timestamp. Each iteration's output is
+ * monotonic host-clock reading, not a GPU timestamp (CLOCK_MONOTONIC; on Apple,
+ * CLOCK_UPTIME_RAW, because Darwin quantizes CLOCK_MONOTONIC to 1 us). The
+ * backend is fixed at compile time: Vulkan unless DOE_PHASE_BACKEND_METAL is
+ * defined; the adapter must report that backend. Each iteration's output is
  * checked against an independent CPU oracle after the host-operation interval
  * closes; a mismatch fails the process. Inputs alternate between two frozen
  * sets so a skipped dispatch, clear or copy cannot pass on stale bytes.
@@ -25,6 +28,20 @@
 
 #include "webgpu.h"
 
+#ifdef DOE_PHASE_BACKEND_METAL
+#define PHASE_BACKEND WGPUBackendType_Metal
+#define PHASE_BACKEND_ERROR "adapter_not_physical_metal"
+#else
+#define PHASE_BACKEND WGPUBackendType_Vulkan
+#define PHASE_BACKEND_ERROR "adapter_not_physical_vulkan"
+#endif
+#ifdef __APPLE__
+#define PHASE_CLOCK CLOCK_UPTIME_RAW
+#define RSS_UNITS_PER_KIB 1024 /* Darwin ru_maxrss is bytes */
+#else
+#define PHASE_CLOCK CLOCK_MONOTONIC
+#define RSS_UNITS_PER_KIB 1 /* Linux ru_maxrss is KiB */
+#endif
 #define WAIT_NS 10000000000ull
 #define MAX_ITERATIONS 4096
 enum { P_UPLOAD, P_ENCODE, P_SUBMIT, P_COMPLETION, P_MAP, P_OPERATION, P_COUNT };
@@ -33,7 +50,7 @@ static const char *const PHASE_NAMES[P_COUNT] = {"upload", "encode", "submit", "
 static uint64_t now_ns(void)
 {
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    clock_gettime(PHASE_CLOCK, &ts);
     return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
 }
 
@@ -173,7 +190,7 @@ int main(int argc, char **argv)
     if (!s.instance) die("instance");
     uint64_t t_instance = now_ns();
     WGPURequestAdapterOptions adapter_options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-    adapter_options.backendType = WGPUBackendType_Vulkan;
+    adapter_options.backendType = PHASE_BACKEND;
     adapter_options.powerPreference = WGPUPowerPreference_HighPerformance;
     WGPURequestAdapterCallbackInfo adapter_cb = WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT;
     adapter_cb.mode = WGPUCallbackMode_WaitAnyOnly;
@@ -183,7 +200,7 @@ int main(int argc, char **argv)
     if (!s.done || s.status != (int)WGPURequestAdapterStatus_Success || !s.adapter) die("adapter");
     WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
     if (wgpuAdapterGetInfo(s.adapter, &info) != WGPUStatus_Success) die("adapter_info");
-    if (info.backendType != WGPUBackendType_Vulkan || info.adapterType == WGPUAdapterType_CPU) die("adapter_not_physical_vulkan");
+    if (info.backendType != PHASE_BACKEND || info.adapterType == WGPUAdapterType_CPU) die(PHASE_BACKEND_ERROR);
     uint64_t t_adapter = now_ns();
     s.done = false;
     WGPUDeviceDescriptor device_desc = WGPU_DEVICE_DESCRIPTOR_INIT;
@@ -352,7 +369,7 @@ int main(int argc, char **argv)
         (unsigned long long)(t_pipeline - t_compile), (unsigned long long)(t_resources - t_pipeline),
         (unsigned long long)(t_loop - t_resources), (unsigned long long)(t_teardown - t_loop),
         (unsigned long long)(t_released - t_loop), (unsigned long long)(t_teardown - t_released),
-        (unsigned long long)(t_teardown - process_start), cpu_total, usage.ru_maxrss);
+        (unsigned long long)(t_teardown - process_start), cpu_total, usage.ru_maxrss / RSS_UNITS_PER_KIB);
     for (int p = 0; p < P_COUNT; p++) {
         printf("%s\"%s\":[", p ? "," : "", PHASE_NAMES[p]);
         for (long it = 0; it < iterations; it++) printf("%s%llu", it ? "," : "", (unsigned long long)samples[p][it]);

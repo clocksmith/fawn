@@ -1,0 +1,115 @@
+{
+  "valid": false,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": false,
+    "foreignCpu": false
+  },
+  "windowWallSeconds": 16.13059025001712,
+  "foreignCpuSeconds": 30.199999999994898,
+  "foreignCpuFraction": 0.23402739400657427,
+  "topForeignCpu": [
+    [
+      10.110000000000582,
+      "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/156.0.8078.48/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)"
+    ],
+    [
+      7.2700000000040745,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      1.5900000000000318,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      1.3099999999976717,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)"
+    ],
+    [
+      0.9500000000000455,
+      "<home>/.codex/computer-use/Codex Computer Use.app/Contents/MacOS/SkyComputerUseService"
+    ],
+    [
+      0.7999999999956344,
+      "/System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/MacOS/WallpaperAerialsExtension"
+    ],
+    [
+      0.7399999999999949,
+      "/usr/libexec/PerfPowerServices"
+    ],
+    [
+      0.7299999999999898,
+      "/usr/libexec/replayd"
+    ]
+  ],
+  "idleGpuMedianBefore": 25,
+  "idleGpuMedianAfter": 26,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-30T21:30:05Z",
+    "monotonic": 1154189.298952208,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "85%; discharging; 7:07 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      25,
+      26,
+      26,
+      25,
+      25
+    ],
+    "loadAverage": [
+      3.431640625,
+      8.4345703125,
+      11.01123046875
+    ]
+  },
+  "after": {
+    "utc": "2026-10-30T21:30:26Z",
+    "monotonic": 1154210.720271458,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "85%; discharging; 6:57 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      31,
+      24,
+      26,
+      27,
+      25
+    ],
+    "loadAverage": [
+      3.8212890625,
+      8.125,
+      10.82373046875
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "doe=<work>/bin/harness-doe",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "vector_scale_add_262k",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/b2/vector_scale_add_262k/attempt1-raw.jsonl"
+  ]
+}

@@ -6,7 +6,9 @@ links the harness, ``run`` executes balanced provider orders per pair and
 retains every raw process result, ``summarize`` reports per-phase medians, p95,
 paired ratios with bootstrap confidence intervals and sample counts.
 
-Timing is host CLOCK_MONOTONIC per phase, not GPU timestamps. The oracle check
+Timing is a host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on
+Apple), not GPU timestamps. ``build --backend`` fixes the adapter backend the
+harness requests and asserts (Vulkan by default, or Metal). The oracle check
 runs after each iteration's host-operation interval closes and is mandatory.
 """
 
@@ -135,11 +137,14 @@ def prepare(out: Path, oracle_plans: Path | None) -> None:
     print(json.dumps({"status": "prepared", "out": str(out)}))
 
 
-def build(library: Path, output: Path, compiler: str) -> None:
-    argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", f"-I{HEADERS}", str(HARNESS),
+BACKEND_DEFINES = {"vulkan": [], "metal": ["-DDOE_PHASE_BACKEND_METAL"]}
+
+
+def build(library: Path, output: Path, compiler: str, backend: str) -> None:
+    argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", *BACKEND_DEFINES[backend], f"-I{HEADERS}", str(HARNESS),
             str(library.resolve()), f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
     subprocess.run(argv, check=True)
-    print(json.dumps({"binary": str(output), "sha256": sha256(output), "library": str(library),
+    print(json.dumps({"binary": str(output), "sha256": sha256(output), "library": str(library), "backend": backend,
                       "librarySha256": sha256(library), "harnessSha256": sha256(HARNESS), "argv": argv}))
 
 
@@ -229,7 +234,8 @@ def summarize(args: argparse.Namespace) -> None:
     ok = [r for r in rows if r not in failed]
     report = {"schemaVersion": 1, "rawFiles": {p: sha256(Path(p)) for p in args.raw}, "failedProcesses": len(failed),
               "bootstrap": {"resamples": BOOTSTRAP_RESAMPLES, "seed": BOOTSTRAP_SEED, "interval": 0.95},
-              "timing": "host CLOCK_MONOTONIC per phase; not GPU timestamps", "workloads": {}}
+              "timing": "host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on Apple); not GPU timestamps",
+              "workloads": {}}
     for workload in sorted({r["workload"] for r in rows}):
         by_pair: dict[int, dict[str, dict]] = {}
         for r in ok:
@@ -281,6 +287,7 @@ def main() -> None:
     b.add_argument("--library", required=True)
     b.add_argument("--output", required=True)
     b.add_argument("--cc", default="gcc")
+    b.add_argument("--backend", choices=sorted(BACKEND_DEFINES), default="vulkan")
     r = sub.add_parser("run")
     r.add_argument("--inputs", required=True)
     r.add_argument("--provider", action="append", required=True, help="name=harness-binary")
@@ -297,7 +304,7 @@ def main() -> None:
     if args.command == "prepare":
         prepare(Path(args.out), Path(args.oracle_plans) if args.oracle_plans else None)
     elif args.command == "build":
-        build(Path(args.library), Path(args.output), args.cc)
+        build(Path(args.library), Path(args.output), args.cc, args.backend)
     elif args.command == "run":
         run(args)
     else:

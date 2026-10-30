@@ -1,0 +1,4 @@
+clang -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/native_compute.c <work>/build-m2/metal/libdoe_metal.a  -o <work>/build-m2/metal/native_compute
+DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["<work>/build-m2/metal/native_compute", "--run"], check=True, timeout=20)'
+Metal native device: Apple M3; shared/private copy + 64 uint compute + readback
+Metal native smoke: exact 64-element readback and early caller-release lifetime pass
