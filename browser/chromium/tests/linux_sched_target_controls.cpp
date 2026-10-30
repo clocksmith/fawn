@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cerrno>
 #include <cstdio>
+#include <fcntl.h>
 #include <pthread.h>
 #include <sched.h>
 #include <sys/prctl.h>
@@ -73,8 +74,9 @@ int main(int argc, char** argv) {
       !command->HasSwitch("late-policy"));
   CHECK_EQ(selected, command->HasSwitch("expect-selected"));
   if (mode == "scoped" && selected) {
-    options.gpu_sched_setscheduler_failure =
+    options.gpu_sched_target_failure =
         sandbox::SchedTargetFailurePolicy::kReturnEPERM;
+    options.gpu_allow_file_description_query = true;
   }
 #endif
   int requests[2], responses[2];
@@ -138,14 +140,36 @@ int main(int argc, char** argv) {
     CHECK_EQ(errno, EPERM);
     printf("DENIED target=%d errno=%d\n", target, errno);
   } else if (operation == "affinity-sibling") {
+    cpu_set_t before;
+    CHECK_EQ(sched_getaffinity(0, sizeof(before), &before), 0);
     cpu_set_t cpus;
     CPU_ZERO(&cpus);
     CPU_SET(0, &cpus);
     printf("EXPECT_DENIED_SYSCALL nr=0x%lx\n", static_cast<long>(SYS_sched_setaffinity));
     fflush(stdout);
-    // Must retain the existing fatal restriction; this is not the repaired call.
-    CHECK_EQ(sched_setaffinity(worker.tid, sizeof(cpus), &cpus), 0);
-    CHECK(false) << "Nonself affinity unexpectedly returned";
+    // Denied for nonself targets: fatal by default, EPERM on the scoped route.
+    errno = 0;
+    CHECK_EQ(sched_setaffinity(worker.tid, sizeof(cpus), &cpus), -1);
+    CHECK_EQ(errno, EPERM);
+    cpu_set_t after;
+    CHECK_EQ(sched_getaffinity(0, sizeof(after), &after), 0);
+    CHECK(CPU_EQUAL(&before, &after));
+    printf("DENIED affinity target=%d errno=%d\n", worker.tid.load(), errno);
+  } else if (operation == "fd-identity") {
+    int ends[2];
+    CHECK_EQ(pipe(ends), 0);
+    const int alias = fcntl(ends[0], F_DUPFD_CLOEXEC, 0);
+    CHECK_GE(alias, 0);
+    constexpr int kDupfdQuery = 1024 + 3;
+    printf("EXPECT_DENIED_SYSCALL nr=0x%lx\n", static_cast<long>(SYS_fcntl));
+    fflush(stdout);
+    // Only compares two caller-owned descriptors; fatal outside the route.
+    CHECK_EQ(fcntl(ends[0], kDupfdQuery, alias), 1);
+    CHECK_EQ(fcntl(ends[0], kDupfdQuery, ends[1]), 0);
+    close(alias);
+    close(ends[0]);
+    close(ends[1]);
+    printf("COMPARED fd-identity same=1 other=0\n");
   } else {
     CHECK_EQ(operation, "self-worker");
   }
