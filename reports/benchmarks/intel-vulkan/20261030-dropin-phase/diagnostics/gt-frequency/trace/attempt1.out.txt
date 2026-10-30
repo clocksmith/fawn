@@ -1,0 +1,12 @@
+{"provider": "doe", "status": "ok", "warmCompletionMs": 5.738652, "freqSamples": 242, "nonzeroSamples": 197, "freqMedianNonzeroMhz": 150, "freqMaxMhz": 350}
+{"provider": "dawn", "status": "ok", "warmCompletionMs": 3.803432, "freqSamples": 239, "nonzeroSamples": 168, "freqMedianNonzeroMhz": 250.0, "freqMaxMhz": 400}
+{"provider": "doe", "status": "ok", "warmCompletionMs": 3.806316, "freqSamples": 197, "nonzeroSamples": 159, "freqMedianNonzeroMhz": 150, "freqMaxMhz": 350}
+{"provider": "dawn", "status": "ok", "warmCompletionMs": 3.143561, "freqSamples": 241, "nonzeroSamples": 167, "freqMedianNonzeroMhz": 250, "freqMaxMhz": 400}
+{"provider": "doe", "status": "ok", "warmCompletionMs": 4.377032, "freqSamples": 203, "nonzeroSamples": 160, "freqMedianNonzeroMhz": 150.0, "freqMaxMhz": 350}
+{"provider": "dawn", "status": "ok", "warmCompletionMs": 3.097379, "freqSamples": 239, "nonzeroSamples": 157, "freqMedianNonzeroMhz": 300, "freqMaxMhz": 400}
+{"provider": "doe", "status": "ok", "warmCompletionMs": 2.865345, "freqSamples": 190, "nonzeroSamples": 151, "freqMedianNonzeroMhz": 150, "freqMaxMhz": 400}
+{"provider": "dawn", "status": "ok", "warmCompletionMs": 4.586527, "freqSamples": 249, "nonzeroSamples": 186, "freqMedianNonzeroMhz": 200.0, "freqMaxMhz": 400}
+{"provider": "doe", "status": "ok", "warmCompletionMs": 5.528473, "freqSamples": 232, "nonzeroSamples": 192, "freqMedianNonzeroMhz": 150.0, "freqMaxMhz": 350}
+{"provider": "dawn", "status": "ok", "warmCompletionMs": 4.053208, "freqSamples": 250, "nonzeroSamples": 179, "freqMedianNonzeroMhz": 250, "freqMaxMhz": 350}
+{"provider": "doe", "status": "ok", "warmCompletionMs": 5.398456, "freqSamples": 227, "nonzeroSamples": 189, "freqMedianNonzeroMhz": 150, "freqMaxMhz": 350}
+{"provider": "dawn", "status": "ok", "warmCompletionMs": 3.16685, "freqSamples": 247, "nonzeroSamples": 180, "freqMedianNonzeroMhz": 250.0, "freqMaxMhz": 400}

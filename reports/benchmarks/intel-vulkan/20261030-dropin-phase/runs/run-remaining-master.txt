@@ -1,0 +1,12 @@
+2026-10-30T20:37:09Z m2r vector_scale_add_262k rc=0 attempt 4 rc=0 gateValid=True 0.0 2.301 False {}
+2026-10-30T20:40:45Z m2r image_rgba_invert_1024 rc=0 attempt 1 rc=0 gateValid=True 0.0 2.657 False {}
+2026-10-30T20:42:35Z m2r buffer_upload_readback_exact_1mb rc=0 attempt 1 rc=0 gateValid=True 0.0 3.13 False {}
+2026-10-30T20:44:48Z combined vector_scale_add_262k rc=0 attempt 1 rc=0 gateValid=True 0.0 2.573 False {}
+2026-10-30T20:48:25Z combined image_rgba_invert_1024 rc=0 attempt 1 rc=0 gateValid=True 0.0 2.542 False {}
+2026-10-30T20:50:15Z combined buffer_upload_readback_exact_1mb rc=0 attempt 1 rc=0 gateValid=True 0.0 2.578 False {}
+2026-10-30T20:52:27Z m6 vector_scale_add_262k rc=0 attempt 1 rc=0 gateValid=True 0.0 3.26 False {}
+2026-10-30T21:07:21Z m6 image_rgba_invert_1024 rc=1 attempt 4 rc=0 gateValid=False 0.0 18.369 True {}
+2026-10-30T21:09:25Z m6 buffer_upload_readback_exact_1mb rc=0 attempt 1 rc=0 gateValid=True 0.0 3.066 False {}
+2026-10-30T21:09:25Z DONE
+2026-10-30T21:21:11Z m6 image rerun rc=0 attempt 3 rc=0 gateValid=True 0.0 2.73 False {}
+RERUN-DONE
