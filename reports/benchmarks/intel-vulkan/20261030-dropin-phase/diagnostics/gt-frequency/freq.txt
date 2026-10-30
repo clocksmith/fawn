@@ -1,0 +1,4 @@
+original min=100 max=1250 rp0=1250
+pinned min=1250 max=1250
+restored min=100 max=1250
+DIAG-DONE

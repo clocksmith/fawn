@@ -139,7 +139,7 @@ Dawn records precise buffer barriers.
 | Loss | Owner, evidence class |
 | --- | --- |
 | Vector warm submit 1.28x | **Measured.** Per-submit descriptor pool create and destroy. M7R removes them and halves submit (below). |
-| Image warm completion 1.21x | **Unresolved; two hypotheses.** (a) Placement: Doe's GPU reads and writes 8 MiB of cached `0xf` pages, Dawn's uses `0x1`. M2R tests this. (b) Doe's 4 host-scoped barriers per submit. M6-I tests this. Both experiments are frozen and **not yet run** (see blocker). |
+| Image warm completion 1.21x | **Measured: GPU frequency management (i915), not Doe's work content.** M2R (placement) and M6-I (host-scoped barriers) show no effect. With the GT frequency pinned, the loss reverses (see [the diagnostic](#image-completion-owner-gpu-frequency-diagnostic)). |
 | Upload/readback resources 10.8x (+0.49 ms) | **Measured as an accounting split** (the amd-host M8 diagnosis). Doe zero-fills mapped memory at creation; Dawn pays it later. Resources plus first operation: Doe 0.54 + 3.23 ms against Dawn 0.05 + 6.24 ms. |
 | Pipeline 1.05-1.07x (+0.1 ms), image resources 1.07x (+0.13 ms), setup up to 1.04x | **Not attributed.** Each is small; the image resources excess is consistent with Doe zero-filling two 4 MiB buffers. |
 
@@ -173,29 +173,87 @@ including the gaps between processes, was 64-182 MHz against a 1250 MHz
 maximum (`gtActFreqMhzMean` in each `gate.json`). This result is intel-host
 evidence only; the amd-host M7R-2 contract remains frozen and unrun.
 
-## M2R, combined (c-direct) and M6-I: frozen, not run (blocker)
+## M2R, combined (c-direct) and M6-I on intel-host (192 pairs): all FAIL
 
-At 20:05Z, after the baseline and M7R windows, a `reploid-native-contributor`
-user service started on the host. It is enabled, joined a public swarm, and
-has zero peers. It uses about 29% of CPU capacity continuously, about 1.2
-cores while idle.
+The first M2R attempt was blocked. At 20:05Z a `reploid-native-contributor`
+user service started on the host and used about 29% of CPU capacity while
+idle, so all four M2R-vector attempts were gate-invalid (foreign CPU 13.9-42.2%;
+[`m2r-invalid-host-load/`](m2r-invalid-host-load/), retained, unused). The
+coordinator then stopped and disabled the service; contributors stay off while
+Doppler and Doe are under development.
 
-All four M2R-vector attempts were therefore gate-invalid: foreign CPU 13.9%,
-39.8%, 42.2% and 30.6%, with foreign GPU 3.2% on one attempt
-([`m2r-not-run/`](m2r-not-run/), retained, unused). This agent did not stop or
-pause a public contributor service without the owner's authorization, so
-timing stopped.
+The nine windows then ran under the unchanged contracts
+([runner](runs/run-remaining.sh), [log](runs/run-remaining-master.txt)):
+- Every counted window was gate-valid, A/A passed, and no process failed.
+- Some attempts were invalidated by the D3D12 agent's `make -C runtime/c`
+  checks and its pre-steps; they are retained.
+- The M6-I image window exhausted its four attempts, so it was rerun fresh
+  under the unchanged contract ([`m6/image_rgba_invert_1024-rerun/`](m6/image_rgba_invert_1024-rerun/),
+  [script](runs/rerun-m6-image.sh)). It became valid on attempt 3.
 
-[`runs/run-remaining.sh`](runs/run-remaining.sh) runs the nine pending windows
-under the unchanged contracts once the host passes the gate.
+| candidate / main | complete: vector, image, upload/readback | image warm completion | Verdict |
+| --- | --- | --- | --- |
+| [M2R](m2r/verdict.txt) | 0.997 [0.985,1.001], 0.989 [0.961,1.031], 1.000 [0.992,1.007] | 0.977 [0.929,1.016] | **FAIL** (primary gate) |
+| [c-direct](combined/verdict.txt) | **1.048 [1.035,1.059]**, 0.990 [0.965,1.023], 0.998 [0.986,1.007] | 1.043 [1.004,1.102] | **FAIL** (primary gate and phase allowances) |
+| [M6-I](m6/verdict.txt) | 1.003 [0.995,1.012], 0.991 [0.963,1.019], 0.997 [0.991,1.000] | 0.985 [0.938,1.015] | **FAIL** (target) |
 
-M6-I ([contract](contract-m6.json),
-[patch](candidates/m6-barriers.patch)) is the `commands.c` hunk of the
-amd-host [M6 patch](../../amd-vulkan/20261029-dropin-phase/m6/candidate.patch):
-- Barriers between commands use device-only scopes.
-- Only each recording's final barrier adds the HOST stage and `HOST_READ`.
-- **It changes the shared Vulkan recording path used on RADV.** Adopting it
-  needs its own RADV rerun.
+- **M2R has no measurable effect on ANV.** Write-combined (`0x7`) against
+  cached (`0xf`) placement does not change completion. Its separate
+  upload-latency gate also fails, on CI width only (upper bounds up to 1.036,
+  medians 0.991-1.002).
+- **c-direct reproduces the M7R signature.** Submit drops to 0.58 and 0.56,
+  but vector warm completion rises to 1.087 [1.077,1.098], violating the phase
+  allowance.
+- **M6-I passes its other-workload bound and phase guard but not its image
+  target.** It changes the shared Vulkan recording path used on RADV, so any
+  use needs its own RADV rerun. None is proposed, because it showed no effect
+  here.
+
+M6-I ([contract](contract-m6.json), [patch](candidates/m6-barriers.patch)) is
+the `commands.c` hunk of the amd-host
+[M6 patch](../../amd-vulkan/20261029-dropin-phase/m6/candidate.patch):
+barriers between commands use device-only scopes, and only each recording's
+final barrier adds the HOST stage and `HOST_READ`.
+
+These are intel-host results only; the amd-host M7R-2, M2R-2 and combined
+contracts stay frozen and unrun.
+
+## Image completion owner: GPU frequency diagnostic
+
+This is a diagnostic, not a contract, and claims nothing. The window runs
+24 balanced pairs of `image_rgba_invert_1024` (Doe main, Dawn, dawn-aa)
+([script](runs/diag-freq.sh)):
+- One window with the GT frequency untouched.
+- One with `gt_min_freq_mhz` = `gt_max_freq_mhz` = RP0 (1250 MHz), set
+  through sudo.
+- The original values (min 100, max 1250) are restored by a trap
+  ([`freq.txt`](diagnostics/gt-frequency/freq.txt)).
+
+Both windows were gate-valid, and A/A was 0.997 and 0.998.
+
+| image, Doe/Dawn | default governor | GT pinned at 1250 MHz |
+| --- | --- | --- |
+| warm completion ms | 5.01 / 3.29, **1.42 [1.26,1.54]** | 0.92 / 1.16, **0.79 [0.78,0.80]** |
+| warm operation | 1.02 [0.86,1.10] | 0.53 [0.53,0.54] |
+| complete | 0.92 [0.85,0.96] | 0.56 [0.56,0.57] |
+
+A 1 ms sampled trace of `gt_act_freq_mhz` covered six runs per provider in
+one gate-valid window ([`trace/`](diagnostics/gt-frequency/trace/),
+[sampler](runs/diag-freq-trace.py)). Under the default governor the GPU never
+exceeded 400 MHz. The median of non-idle samples was 150 MHz in every Doe run
+and 200-300 MHz in Dawn runs.
+
+**Owner, measured:** the image completion loss belongs to the i915 frequency
+governor's response to each provider's workload. At equal clocks Doe's
+GPU-side work completes faster.
+
+*Inference, not verified in the driver:* Dawn's extra per-submit GPU work (a
+staging copy) keeps the GPU busier, so the governor clocks it higher. The
+same mechanism plausibly explains the M7R and c-direct completion regressions
+on this adapter: a faster CPU submit leaves the GPU idle more.
+
+No Doe change follows. Vulkan exposes no frequency control, and adding GPU
+work or wait patterns to influence the governor would be a hidden heuristic.
 
 ## Correctness on intel-host (untimed, all variants)
 
@@ -224,20 +282,38 @@ M7R, M2R, c-direct and M6 fail exactly the same five.
 
 **`check-vulkan` (lavapipe):** passes for every variant.
 
-The five ANV physical failures on main are Doe correctness owners on this
-adapter. They predate this work and are not addressed here.
+### Fixes (test-only; runtime and compiler unchanged)
+
+None of the five ANV failures was a runtime or compiler defect. Each client
+asserted something false on this adapter or stale against current native code.
+
+| Client | Root cause | Commit |
+| --- | --- | --- |
+| `failures` (also failed on RADV) | Injection wrapped `doe_vk_pipeline_create_with_immediates` and `doe_vk_render_pipeline_create`. Native now calls the blob entry points (`runtime/c/native/src/pipelines.c:213`, `render_pipeline.c:131`), so the injected failure never fired (`tests/failures.c:183`). | `cb45d7ec8` |
+| aggregate software `check` abort at `vulkan-creation-errors` | Same stale render wrap (`tests/vulkan_creation_errors.c:18`). The aggregate now runs on (56 PASS) to the next, separate lavapipe failure, `msaa-sampling`. | `cb45d7ec8` |
+| `atomics`, `uniform-standard` (all Vulkan adapters) | `7d74fd1c6` changed only HLSL to clamp but made the shared clients assert clamping on every backend. SPIR-V still guards (`runtime/c/compiler/src/spirv.c` `access_condition`). Each client now asserts its target's contract; D3D12 values are unchanged. | `7f272c71b` |
+| `limits` | It required adapter `maxVertexAttributes` >= 32 (`tests/limits.c:750`). ANV reports 29; WebGPU guarantees 16. The raised check now uses the adapter's value. | `cf60a35bd` |
+| `format-features` | It assumed ASTC is unoffered (`tests/format_features.c:214`); ANV offers ASTC LDR. It now requests the first standard feature the adapter does not offer. | `d972a4783` |
+
+**After the fixes, on intel-host:**
+- 78 of 78 physical clients pass.
+- `check-vulkan` and `make -C runtime/c check` pass.
+- On lavapipe the aggregate `check` stops at `msaa-sampling`.
+
+RADV was not rerun, because its GPU is reserved for other work.
 
 ## Remaining owners on intel-host
 
-1. Image warm completion (1.21x against Dawn): placement or barriers.
-   Frozen as M2R, combined and M6-I, blocked on host load.
-2. Vector warm submit (1.28x): owner found (descriptor pool create and
-   destroy). The existing M7R mechanism fails on ANV because completion
-   regresses.
-3. Upload/readback resources: an accounting split, not a net loss.
-4. Small one-time costs: pipeline (+0.1 ms), image resources (+0.13 ms) and
-   setup (up to +0.9 ms). Not attributed.
-5. The five ANV physical correctness failures on main.
+1. **Image warm completion (1.21x against Dawn):** owned by i915 frequency
+   management (measured). There is no Doe mechanism.
+2. **Vector warm submit (1.28x):** the owner is per-submit descriptor pool
+   create and destroy. The existing mechanism (M7R, also in c-direct) fails on
+   ANV, because completion rises in the same way (inference: frequency).
+3. **Upload/readback resources:** an accounting split, not a net loss.
+4. **Small one-time costs:** pipeline (+0.1 ms), image resources (+0.13 ms)
+   and setup (up to +0.9 ms). Not attributed.
+5. **Lavapipe software check:** it now stops at `msaa-sampling`;
+   `anisotropy` also fails individually. Not investigated here.
 
-No runtime change is committed. Losses, invalid windows and the failed M7R
-result stay retained.
+No runtime change is committed. Losses, invalid windows and the failed
+candidates stay retained.
