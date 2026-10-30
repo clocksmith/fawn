@@ -16,6 +16,7 @@
 #include "native_shader_import.h"
 #include "shader_cache.h"
 #include "persistent_cache.h"
+#include "doe_native_pipeline_cache.h"
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
 #include "doe_vk_timestamp.h"
@@ -50,6 +51,9 @@ typedef struct native_device {
     doe_resource_config resources;
     native_shader_cache shaders;
     native_persistent_cache_policy persistent_cache;
+    /* Embedder blob store, set once under the mutex; snapshot before calling it. */
+    DoeNativePipelineBlobStore pipeline_blobs;
+    uint8_t build_identity[32];
     doe_label_store *labels;
     unsigned char queue_label_key;
     doe_error_scope_stack *errors;
@@ -132,6 +136,7 @@ typedef struct native_stage {
     WGPUShaderStage visibility;
     const char *name;
     char *owned_name;
+    uint8_t source_key[32]; /* WGSL source, entry and constants; zero for imports. */
 } native_stage;
 
 /* Distinct resources one pipeline references: at most two stages, each within

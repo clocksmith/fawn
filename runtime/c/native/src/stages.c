@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "../../shader/include/doe_shader_artifact.h"
 #include "shader_disk_cache.h"
 #include "shader_cache_identity.h"
 #include <stdlib.h>
@@ -113,6 +114,7 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         doe_shader_error detail = {0};
         native_lock(device);
         result.compiled = native_shader_cache_stage(&device->shaders,payload->module,&selection,values,count,pipeline);
+        const bool blob_key = device->pipeline_blobs.load != NULL;
         /* Reserve the persistent operation while holding the same mutex as the
          * one-way browser policy. Memory hits do not touch persistent storage. */
         const bool use_disk = !result.compiled &&
@@ -121,6 +123,9 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         bool have_identity = use_disk && device->shaders.image_identity_ready;
         if (have_identity) memcpy(image_identity,device->shaders.image_identity,sizeof(image_identity));
         native_unlock(device);
+        /* Locates embedder pipeline blobs; WGSL semantics never come from it. */
+        if (blob_key && !doe_shader_artifact_key(payload->module,&selection,values,count,pipeline,result.source_key))
+            memset(result.source_key,0,sizeof(result.source_key));
         if (!result.compiled) {
             if (use_disk && !have_identity && native_shader_cache_identity(image_identity)) {
                 native_lock(device);

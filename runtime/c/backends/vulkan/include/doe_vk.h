@@ -281,6 +281,15 @@ doe_vk_status doe_vk_pipeline_create_with_immediates(doe_vk_context *context,
     const uint32_t *spirv, size_t word_count, const char *entrypoint,
     const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
     uint32_t immediate_bytes, doe_vk_pipeline **out, doe_vk_error *error);
+/* As above; when caller blobs are enabled and blob is non-NULL, a new native
+ * pipeline uses a temporary driver cache seeded from blob->loaded and returns a
+ * fresh envelope in blob->produced only if nothing compatible was loaded.
+ * Memory reuse of an identical pipeline neither loads nor produces bytes. */
+struct doe_vk_pipeline_blob;
+doe_vk_status doe_vk_pipeline_create_blob(doe_vk_context *context,
+    const uint32_t *spirv, size_t word_count, const char *entrypoint,
+    const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
+    uint32_t immediate_bytes, struct doe_vk_pipeline_blob *blob, doe_vk_pipeline **out, doe_vk_error *error);
 doe_vk_status doe_vk_commands_set_immediates(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const void *bytes, uint32_t size);
 doe_vk_status doe_vk_pipeline_retain(doe_vk_pipeline *pipeline);
