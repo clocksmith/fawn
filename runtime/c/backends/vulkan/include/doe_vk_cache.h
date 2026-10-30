@@ -27,6 +27,13 @@ bool doe_vk_pipeline_blob_key(const doe_vk_context *, const uint8_t source[32], 
     const uint32_t *spirv, size_t word_count, const char *entrypoint, uint32_t required_subgroup_size,
     uint8_t key[32]);
 enum { DOE_VK_CACHE_BLOB_LIMIT = 32 * 1024 * 1024 }; /* Equals the cache file bound. */
+/* Render pipelines combine both stage keys; fixed-function state, layout and
+ * attachments are validated by the driver cache, not the key. fragment_spirv
+ * may be NULL for a depth-only pipeline. */
+bool doe_vk_render_pipeline_blob_key(const doe_vk_context *, const uint8_t vertex_source[32],
+    const uint8_t fragment_source[32], const uint8_t build[32], const uint32_t *vertex_spirv, size_t vertex_words,
+    const char *vertex_entry, const uint32_t *fragment_spirv, size_t fragment_words, const char *fragment_entry,
+    uint8_t key[32]);
 typedef struct doe_vk_pipeline_blob {
     const uint8_t *loaded; size_t loaded_size; /* Borrowed for the call; NULL on a miss. */
     uint8_t *produced; size_t produced_size;   /* Envelope to persist; the caller frees it. */

@@ -103,8 +103,7 @@ static uint32_t required_subgroup(const native_backend *backend, const DoeCompil
     return 32;
 }
 
-typedef struct native_blob { uint8_t *bytes; size_t size; } native_blob;
-static void receive_blob(void *receiver, const void *value, size_t size)
+void native_receive_blob(void *receiver, const void *value, size_t size)
 {
     native_blob *blob = receiver;
     if (blob->bytes || !value || !size || size > DOE_VK_CACHE_BLOB_LIMIT) return;
@@ -183,7 +182,7 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     const bool use_blobs = blobs.load && doe_vk_pipeline_blob_key(device->backend.value.vulkan.context,
         stage.source_key, build, view->words, view->counts.words, stage.name, subgroup, blob_key);
     if (use_blobs) {
-        blobs.load(blobs.userdata, blob_key, sizeof(blob_key), receive_blob, &loaded);
+        blobs.load(blobs.userdata, blob_key, sizeof(blob_key), native_receive_blob, &loaded);
         blob.loaded = loaded.bytes;
         blob.loaded_size = loaded.size;
     }

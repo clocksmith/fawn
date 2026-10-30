@@ -39,7 +39,7 @@ DOE_NATIVE_EXTENSION uint32_t doeNativeDevicePipelineCacheInfo(void *device,
 /* Embedder-owned pipeline blob store, for example a browser that persists bytes
  * behind its GPU sandbox. Doe performs no file access for it and holds no Doe
  * lock while calling it. Callbacks run synchronously on the thread creating a
- * compute pipeline of this device and never after that call returns; the
+ * compute or render pipeline of this device and never after that call returns; the
  * embedder keeps userdata valid until the device is released. A lookup may
  * precede reuse of an identical pipeline already held in device memory; then
  * nothing is loaded into the driver or stored. load either calls

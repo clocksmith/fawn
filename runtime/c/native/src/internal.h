@@ -138,6 +138,9 @@ typedef struct native_stage {
     char *owned_name;
     uint8_t source_key[32]; /* WGSL source, entry and constants; zero for imports. */
 } native_stage;
+/* Copies one embedder blob store value (first call only, bounded); see pipelines.c. */
+typedef struct native_blob { uint8_t *bytes; size_t size; } native_blob;
+void native_receive_blob(void *receiver, const void *value, size_t size);
 
 /* Distinct resources one pipeline references: at most two stages, each within
  * the per-stage binding limits native_supported_limits reports (limits.c). */

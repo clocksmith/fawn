@@ -170,6 +170,19 @@ bool doe_vk_pipeline_blob_key(const doe_vk_context *context, const uint8_t sourc
     key_add(key,spirv,word_count*4);
     return true;
 }
+bool doe_vk_render_pipeline_blob_key(const doe_vk_context *context, const uint8_t vertex_source[32],
+    const uint8_t fragment_source[32], const uint8_t build[32], const uint32_t *vertex_spirv, size_t vertex_words,
+    const char *vertex_entry, const uint32_t *fragment_spirv, size_t fragment_words, const char *fragment_entry,
+    uint8_t key[32]) {
+    uint8_t vertex[32], fragment[32]={0};
+    if (!doe_vk_pipeline_blob_key(context,vertex_source,build,vertex_spirv,vertex_words,vertex_entry,0,vertex)) return false;
+    if (fragment_spirv && !doe_vk_pipeline_blob_key(context,fragment_source,build,fragment_spirv,fragment_words,
+        fragment_entry,0,fragment)) return false;
+    static const char domain[]="doe.c.vulkan.render-pipeline-blob.v1";
+    doe_common_sha256(domain,sizeof(domain)-1,key);
+    key_add(key,vertex,sizeof(vertex)); key_add(key,fragment,sizeof(fragment));
+    return true;
+}
 /* Open the per-pipeline cache before creation; afterwards destroy it and, when
  * nothing compatible was loaded, return the new envelope for the caller. */
 doe_vk_status doe_vk_pipeline_blob_open(doe_vk_context *context, const doe_vk_pipeline_blob *blob,
