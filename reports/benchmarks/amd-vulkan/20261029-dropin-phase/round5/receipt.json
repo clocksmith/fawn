@@ -1,0 +1,51 @@
+{
+ "schemaVersion": 1,
+ "round": 5,
+ "purpose": "Run the nine gated windows of the three round-4 frozen contracts unchanged after the host reboot.",
+ "contracts": {
+  "round4/frozen-m7r2.json": "98157936a0e1a7aa0df483fde5e56d069f2ecc9682b2fd88f9f6625de9ee67e6",
+  "round4/frozen-m2r2.json": "4d9332c38d8681b50c240d188baed903e98117003b6fb9a8cbe422aca19c0447",
+  "round4/frozen-combined.json": "972b4024024ea14487f6aab7dc03262bcaaa38228c0f5ea66f81de35127c2ce8"
+ },
+ "preRunVerification": {
+  "hostHealth": "rebooted after the round-4 amdgpu list_del fault; zero list_del or amdgpu error lines in the current boot's kernel log before timing",
+  "contractHashes": "all 45 hashed paths (15 per contract: four libraries, harness binaries, harness source, cohort tool, inputs manifest, gate tooling, patches) matched their frozen sha256 before the first window; the contract files matched their .sha256 records",
+  "dawnLibrary": "bench/vendor/dawn/out/Release/libwebgpu_dawn.so sha256 54040e4349ef6e9dc57d096b0563cdd1419c423ed353ff1c9552e70f6ddfb7f3 at Dawn d04f88359, equal to builds/c3-build-dawn.json; bin-dawn and bin-dawn-aa link it by RUNPATH",
+  "rebuilt": "nothing; every library and harness binary is the frozen file"
+ },
+ "operationalChanges": {
+  "participantUnits": "The owner keeps the four Reploid participant units stopped and disabled. The round-5 window scripts never stop, start or restart them and carry no restart trap; each window records them as inactive/disabled before and after (services-*.txt).",
+  "gpuLock": "The GPU is shared with a Doppler agent and a sliced Fawn Chromium build under the same lock. Each attempt holds the lock only while its window runs; it is released between windows and between attempts. A lock-wait timeout retries without consuming an attempt.",
+  "validityAutomation": "Each attempt is judged against the full contract validity rule before the next step: gate.json valid (foreign GPU <= 2%, foreign CPU <= 5%), zero failed processes, and the Dawn A/A warm.operation check for that workload (validity.json).",
+  "quietCheck": "From M2R-2 image onward (gated-window v2), quiet-check.sh samples host CPU for 10 s inside the lock and declines to start a window above 3% busy, releasing the lock. It never declined. It is a pre-start check only; window_gate.py alone judges validity.",
+  "unchanged": "window_gate.py, the c5 run scripts, the harness binaries, the libraries, the cohort tool, the inputs and c4/gate.py are the frozen files"
+ },
+ "toolsAsRun": {
+  "note": "sha256 of the host files as run; committed copies under tools/ have the volume prefix removed",
+  "timed-window.sh": "343fc20387cbfb59865ae6abf661427f4fa2e7ef19c42b089fad5e4aae0476f2",
+  "gated-window.v1.sh": "81b09eb7e668287f519f94b66a818e78439beb7f26ce6c6b6dab58273c4ce0b9",
+  "gated-window.sh (v2)": "9dad7fa8b0553437a8a4979d02fdf800c087a1c6598125f05ef6784235696730",
+  "quiet-check.sh": "c9720c11628a4d26408a289294391623893da0156cc97c4f819d89b57da32592",
+  "master.sh": "c177194ca8699ff07205cb247dfe27ce5f3bd91ad65551b4115ae250ba4a62b3",
+  "v1Windows": ["m7r2/*", "m2r2/vector_scale_add_262k (attempts 1 and 2)"],
+  "v2Windows": ["m2r2/image_rgba_invert_1024", "m2r2/buffer_upload_readback_exact_1mb", "combined/*"]
+ },
+ "windows": {
+  "attempts": 10,
+  "valid": 9,
+  "invalid": [
+   {
+    "window": "m2r2/vector_scale_add_262k/attempt1",
+    "reason": "foreign CPU 5.175% of capacity > 5%; a CPU-only model conversion (node convert-safetensors-node.js, about 1.1 cores) ran outside the lock. Foreign GPU 0.0%, A/A 0.998 [0.986,1.006], zero failed processes.",
+    "disposition": "rerun fresh as attempt2 (valid); attempt1 data retained, not used, not reinterpreted"
+   }
+  ]
+ },
+ "summaries": "Each experiment's summary-vs-main.json and summary-vs-dawn.json come from the frozen cohort tool (sha256 4cd33444...) over the valid attempts' raw files, with paths relative to this directory and the volume prefix removed from the binary fields. rawFiles hashes are of the uncompressed .jsonl. gate.out is the frozen c4/gate.py (sha256 7ee90549...). The verdicts match the same computation over the unsanitized host files.",
+ "verdicts": {
+  "M7R-2": "PASS",
+  "M2R-2": "PASS (primary); separate uploadLatencyPhaseGate fails",
+  "combined": "FAIL (statedPhaseAllowances: image teardownNs 1.107 [1.086,1.143])"
+ },
+ "landing": "No runtime source landed. M7R and M2R each pass against main 1823497b5, but their composition is c-direct, which fails its frozen contract, and landing either changes the control the other passed against. The choice is an owner decision."
+}

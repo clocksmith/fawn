@@ -1,0 +1,13 @@
+PID PPID ELAPSED %CPU RSS COMMAND
+1436190 1436153 00:14 6.1 14216 python3 window_gate.py
+6345 1 02:10:06 3.8 4508 bash framework-rgb-fan-run.sh
+25262 3258 02:08:36 2.6 392748 localsearch-3 
+247 2 02:16:10 1.1 0 [kswapd0] 
+1422698 2 01:19 0.8 0 u128:2-gfx_0.0.0] 
+1422699 2 01:19 0.6 0 u128:3-sdma0] 
+221 2 02:16:10 0.5 0 [kcompactd0] 
+3226 1 02:10:15 0.4 55768 tailscaled tailscaled.state
+436 2 02:16:08 0.3 0 phy0-0] 
+3349 3258 02:10:15 0.3 131452 node server.mjs
+1013246 2 38:42 0.2 0 u128:0-sdma0] 
+435 2 02:16:08 0.2 0 phy0-0] 

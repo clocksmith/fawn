@@ -1,0 +1,17 @@
+{
+ "rc": 0,
+ "gateValid": true,
+ "foreignGpuBusyPercent": 0.0,
+ "foreignCpuPercentOfCapacity": 1.25,
+ "foreignGpuClients": [],
+ "failedProcesses": 0,
+ "aaWarmOperation": {
+  "median": 0.9995521985780803,
+  "ci95": [
+   0.9934127324298728,
+   1.0078882235499536
+  ]
+ },
+ "aaValid": true,
+ "valid": true
+}

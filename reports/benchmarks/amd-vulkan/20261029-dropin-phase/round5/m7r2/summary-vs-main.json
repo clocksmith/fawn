@@ -1,0 +1,3833 @@
+{
+  "schemaVersion": 1,
+  "rawFiles": {
+    "m7r2/vector_scale_add_262k/attempt1/raw-vector_scale_add_262k.jsonl": "7ff54239935e7035cb295242b0d97a6a68eb078c8364f035332c4d27213877e9",
+    "m7r2/image_rgba_invert_1024/attempt1/raw-image_rgba_invert_1024.jsonl": "81a4baedb1b526a2b8c5a23c1fd1189407fbe3844469e5e018597f3c980d317a",
+    "m7r2/buffer_upload_readback_exact_1mb/attempt1/raw-buffer_upload_readback_exact_1mb.jsonl": "5e5019c8a2d73661ad18abd80b7d43ebdd3036426502f516e41b686a2560eef6"
+  },
+  "failedProcesses": 0,
+  "bootstrap": {
+    "resamples": 10000,
+    "seed": 20261029,
+    "interval": 0.95
+  },
+  "timing": "host CLOCK_MONOTONIC per phase; not GPU timestamps",
+  "workloads": {
+    "buffer_upload_readback_exact_1mb": {
+      "providers": {
+        "dawn": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 3e-05,
+            "complete": 7.1842375,
+            "cpuMs": 37.057500000000076,
+            "first.completion": 0.020138000000000003,
+            "first.encode": 0.046632999999999994,
+            "first.map": 0.7488895,
+            "first.operation": 1.699064,
+            "first.submit": 0.24866300000000002,
+            "first.upload": 0.621054,
+            "maxRssMiB": 75.13671875,
+            "pipelineNs": 3e-05,
+            "processInMainNs": 34.776585,
+            "processWall": 39.7695995,
+            "resourcesNs": 0.1071065,
+            "setupAdapterNs": 19.6074785,
+            "setupDeviceNs": 1.3218735000000001,
+            "setupInstanceNs": 0.225665,
+            "setupNs": 21.2437235,
+            "teardownDeviceNs": 0.391998,
+            "teardownNs": 0.4105225,
+            "teardownReleaseNs": 0.016150499999999998,
+            "warm.completion": 0.087831,
+            "warm.encode": 0.001022,
+            "warm.map": 0.022537,
+            "warm.operation": 0.146977,
+            "warm.submit": 0.011396,
+            "warm.upload": 0.0204385,
+            "warmP95.completion": 0.11816199999999999,
+            "warmP95.encode": 0.002169,
+            "warmP95.map": 0.0263445,
+            "warmP95.operation": 0.21234,
+            "warmP95.submit": 0.020999999999999998,
+            "warmP95.upload": 0.030187
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 4.1e-05,
+            "complete": 7.83009,
+            "cpuMs": 39.78999999999999,
+            "first.completion": 0.03179,
+            "first.encode": 0.06419,
+            "first.map": 0.991857,
+            "first.operation": 2.074385,
+            "first.submit": 0.301879,
+            "first.upload": 0.806719,
+            "maxRssMiB": 75.4296875,
+            "pipelineNs": 3.1e-05,
+            "processInMainNs": 37.274032,
+            "processWall": 43.001744,
+            "resourcesNs": 0.141457,
+            "setupAdapterNs": 21.120151,
+            "setupDeviceNs": 1.757178,
+            "setupInstanceNs": 0.277442,
+            "setupNs": 22.795925,
+            "teardownDeviceNs": 0.553472,
+            "teardownNs": 0.581485,
+            "teardownReleaseNs": 0.030998,
+            "warm.completion": 0.094949,
+            "warm.encode": 0.001162,
+            "warm.map": 0.023113,
+            "warm.operation": 0.156084,
+            "warm.submit": 0.014828,
+            "warm.upload": 0.022633,
+            "warmP95.completion": 0.166393,
+            "warmP95.encode": 0.008165,
+            "warmP95.map": 0.044574,
+            "warmP95.operation": 0.266943,
+            "warmP95.submit": 0.042831,
+            "warmP95.upload": 0.042219
+          },
+          "pooledWarmP95": {
+            "upload": 0.040296,
+            "encode": 0.004979,
+            "submit": 0.029135,
+            "completion": 0.140123,
+            "map": 0.042069,
+            "operation": 0.235364
+          },
+          "pooledWarmMedian": {
+            "upload": 0.020469,
+            "encode": 0.001022,
+            "submit": 0.011612,
+            "completion": 0.087535,
+            "map": 0.022573,
+            "operation": 0.14694200000000002
+          }
+        },
+        "dawn-aa": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 3e-05,
+            "complete": 7.211276,
+            "cpuMs": 36.76350000000017,
+            "first.completion": 0.019767,
+            "first.encode": 0.046493,
+            "first.map": 0.7491099999999999,
+            "first.operation": 1.692792,
+            "first.submit": 0.2476915,
+            "first.upload": 0.6174975,
+            "maxRssMiB": 75.224609375,
+            "pipelineNs": 3e-05,
+            "processInMainNs": 34.519947,
+            "processWall": 39.6300825,
+            "resourcesNs": 0.1065255,
+            "setupAdapterNs": 19.664485,
+            "setupDeviceNs": 1.3362655,
+            "setupInstanceNs": 0.22615600000000002,
+            "setupNs": 21.2215115,
+            "teardownDeviceNs": 0.384674,
+            "teardownNs": 0.4013655,
+            "teardownReleaseNs": 0.016591,
+            "warm.completion": 0.0867635,
+            "warm.encode": 0.001022,
+            "warm.map": 0.022492,
+            "warm.operation": 0.145148,
+            "warm.submit": 0.0114815,
+            "warm.upload": 0.0204435,
+            "warmP95.completion": 0.118508,
+            "warmP95.encode": 0.0039629999999999995,
+            "warmP95.map": 0.026896,
+            "warmP95.operation": 0.211578,
+            "warmP95.submit": 0.020874,
+            "warmP95.upload": 0.030538
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 6e-05,
+            "complete": 7.921893,
+            "cpuMs": 39.7590000000001,
+            "first.completion": 0.029726,
+            "first.encode": 0.062959,
+            "first.map": 0.858997,
+            "first.operation": 1.963377,
+            "first.submit": 0.316546,
+            "first.upload": 0.844089,
+            "maxRssMiB": 75.4453125,
+            "pipelineNs": 5e-05,
+            "processInMainNs": 37.049309,
+            "processWall": 42.769437,
+            "resourcesNs": 0.178737,
+            "setupAdapterNs": 21.444702,
+            "setupDeviceNs": 1.861444,
+            "setupInstanceNs": 0.245963,
+            "setupNs": 23.145914,
+            "teardownDeviceNs": 0.550056,
+            "teardownNs": 0.57357,
+            "teardownReleaseNs": 0.027251,
+            "warm.completion": 0.0956,
+            "warm.encode": 0.001192,
+            "warm.map": 0.023484,
+            "warm.operation": 0.157006,
+            "warm.submit": 0.014918,
+            "warm.upload": 0.021761,
+            "warmP95.completion": 0.178677,
+            "warmP95.encode": 0.008415,
+            "warmP95.map": 0.049262,
+            "warmP95.operation": 0.289254,
+            "warmP95.submit": 0.042059,
+            "warmP95.upload": 0.044333
+          },
+          "pooledWarmP95": {
+            "upload": 0.040737,
+            "encode": 0.00526,
+            "submit": 0.033153,
+            "completion": 0.140354,
+            "map": 0.042139,
+            "operation": 0.238719
+          },
+          "pooledWarmMedian": {
+            "upload": 0.020509,
+            "encode": 0.001022,
+            "submit": 0.0120275,
+            "completion": 0.0867535,
+            "map": 0.022513,
+            "operation": 0.1465205
+          }
+        },
+        "m7r": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 3e-05,
+            "complete": 6.5706645,
+            "cpuMs": 33.01100000000007,
+            "first.completion": 0.1149615,
+            "first.encode": 0.00515,
+            "first.map": 0.20108900000000002,
+            "first.operation": 0.825955,
+            "first.submit": 0.461985,
+            "first.upload": 0.03712,
+            "maxRssMiB": 70.076171875,
+            "pipelineNs": 3e-05,
+            "processInMainNs": 32.8021635,
+            "processWall": 36.0234775,
+            "resourcesNs": 0.21905249999999998,
+            "setupAdapterNs": 19.525904,
+            "setupDeviceNs": 0.6852045,
+            "setupInstanceNs": 0.0177785,
+            "setupNs": 20.292898,
+            "teardownDeviceNs": 0.216117,
+            "teardownNs": 0.267954,
+            "teardownReleaseNs": 0.052714,
+            "warm.completion": 0.1002485,
+            "warm.encode": 0.000461,
+            "warm.map": 0.022327,
+            "warm.operation": 0.15910950000000001,
+            "warm.submit": 0.011141000000000002,
+            "warm.upload": 0.02099,
+            "warmP95.completion": 0.127315,
+            "warmP95.encode": 0.0006965000000000001,
+            "warmP95.map": 0.0252375,
+            "warmP95.operation": 0.20776099999999997,
+            "warmP95.submit": 0.017016999999999997,
+            "warmP95.upload": 0.027916999999999997
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 4e-05,
+            "complete": 7.217498,
+            "cpuMs": 35.608000000000004,
+            "first.completion": 0.1964,
+            "first.encode": 0.017092,
+            "first.map": 0.239912,
+            "first.operation": 1.023557,
+            "first.submit": 0.584019,
+            "first.upload": 0.046367,
+            "maxRssMiB": 70.33203125,
+            "pipelineNs": 3e-05,
+            "processInMainNs": 35.280429,
+            "processWall": 38.517724,
+            "resourcesNs": 0.259609,
+            "setupAdapterNs": 21.2311,
+            "setupDeviceNs": 1.268809,
+            "setupInstanceNs": 0.021,
+            "setupNs": 22.071522,
+            "teardownDeviceNs": 0.304182,
+            "teardownNs": 0.374264,
+            "teardownReleaseNs": 0.086452,
+            "warm.completion": 0.107162,
+            "warm.encode": 0.000531,
+            "warm.map": 0.023945,
+            "warm.operation": 0.166904,
+            "warm.submit": 0.012934,
+            "warm.upload": 0.024726,
+            "warmP95.completion": 0.190348,
+            "warmP95.encode": 0.002324,
+            "warmP95.map": 0.043833,
+            "warmP95.operation": 0.274838,
+            "warmP95.submit": 0.036349,
+            "warmP95.upload": 0.041829
+          },
+          "pooledWarmP95": {
+            "upload": 0.040186,
+            "encode": 0.001373,
+            "submit": 0.027071,
+            "completion": 0.14869,
+            "map": 0.041338,
+            "operation": 0.239681
+          },
+          "pooledWarmMedian": {
+            "upload": 0.021069499999999998,
+            "encode": 0.000461,
+            "submit": 0.011466500000000001,
+            "completion": 0.100694,
+            "map": 0.022412,
+            "operation": 0.15918
+          }
+        },
+        "main": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 3e-05,
+            "complete": 6.6052345,
+            "cpuMs": 32.9680000000001,
+            "first.completion": 0.116895,
+            "first.encode": 0.00503,
+            "first.map": 0.20310699999999998,
+            "first.operation": 0.8215665000000001,
+            "first.submit": 0.452492,
+            "first.upload": 0.037266,
+            "maxRssMiB": 70.107421875,
+            "pipelineNs": 3e-05,
+            "processInMainNs": 32.867290499999996,
+            "processWall": 36.1614165,
+            "resourcesNs": 0.2158265,
+            "setupAdapterNs": 19.57392,
+            "setupDeviceNs": 0.6854750000000001,
+            "setupInstanceNs": 0.018509499999999998,
+            "setupNs": 20.295673999999998,
+            "teardownDeviceNs": 0.2044495,
+            "teardownNs": 0.26194300000000004,
+            "teardownReleaseNs": 0.0539165,
+            "warm.completion": 0.0998425,
+            "warm.encode": 0.000451,
+            "warm.map": 0.022252,
+            "warm.operation": 0.1579025,
+            "warm.submit": 0.011096,
+            "warm.upload": 0.021029,
+            "warmP95.completion": 0.1329555,
+            "warmP95.encode": 0.0006665,
+            "warmP95.map": 0.0255335,
+            "warmP95.operation": 0.219563,
+            "warmP95.submit": 0.015805,
+            "warmP95.upload": 0.027882499999999998
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 4e-05,
+            "complete": 7.190929,
+            "cpuMs": 35.99000000000002,
+            "first.completion": 0.205637,
+            "first.encode": 0.017894,
+            "first.map": 0.275128,
+            "first.operation": 1.103217,
+            "first.submit": 0.569052,
+            "first.upload": 0.04765,
+            "maxRssMiB": 70.328125,
+            "pipelineNs": 3.1e-05,
+            "processInMainNs": 35.771754,
+            "processWall": 39.366611,
+            "resourcesNs": 0.259718,
+            "setupAdapterNs": 22.351379,
+            "setupDeviceNs": 1.021312,
+            "setupInstanceNs": 0.025317,
+            "setupNs": 23.083536,
+            "teardownDeviceNs": 0.27067,
+            "teardownNs": 0.3503,
+            "teardownReleaseNs": 0.083808,
+            "warm.completion": 0.108043,
+            "warm.encode": 0.000521,
+            "warm.map": 0.023264,
+            "warm.operation": 0.16972,
+            "warm.submit": 0.013365,
+            "warm.upload": 0.024486,
+            "warmP95.completion": 0.174378,
+            "warmP95.encode": 0.002905,
+            "warmP95.map": 0.043823,
+            "warmP95.operation": 0.258026,
+            "warmP95.submit": 0.039755,
+            "warmP95.upload": 0.04254
+          },
+          "pooledWarmP95": {
+            "upload": 0.040165,
+            "encode": 0.001383,
+            "submit": 0.027161,
+            "completion": 0.15364,
+            "map": 0.041408,
+            "operation": 0.246664
+          },
+          "pooledWarmMedian": {
+            "upload": 0.02106,
+            "encode": 0.00046,
+            "submit": 0.011371,
+            "completion": 0.100334,
+            "map": 0.0222615,
+            "operation": 0.15846349999999998
+          }
+        }
+      },
+      "paired": {
+        "dawn/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 1.0,
+              "ci95": [
+                1.0,
+                1.3118279569892475
+              ],
+              "n": 96,
+              "providerFasterPairs": 16
+            },
+            "complete": {
+              "median": 1.1011008800365698,
+              "ci95": [
+                1.0741192933671138,
+                1.1186949532957258
+              ],
+              "n": 96,
+              "providerFasterPairs": 7
+            },
+            "cpuMs": {
+              "median": 1.1251914535738625,
+              "ci95": [
+                1.1003606099911563,
+                1.1447219823291581
+              ],
+              "n": 96,
+              "providerFasterPairs": 4
+            },
+            "first.completion": {
+              "median": 0.1711260752043181,
+              "ci95": [
+                0.15922155376915811,
+                0.1761253970589508
+              ],
+              "n": 96,
+              "providerFasterPairs": 95
+            },
+            "first.encode": {
+              "median": 9.435544652156345,
+              "ci95": [
+                8.075800711743772,
+                11.06194322418694
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.map": {
+              "median": 3.7342170084824815,
+              "ci95": [
+                3.625138711816326,
+                3.7934153827991266
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.operation": {
+              "median": 2.0724215901548364,
+              "ci95": [
+                2.0323191601911996,
+                2.103814098156777
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "first.submit": {
+              "median": 0.5465122151976812,
+              "ci95": [
+                0.5360841725589481,
+                0.5587346098234237
+              ],
+              "n": 96,
+              "providerFasterPairs": 95
+            },
+            "first.upload": {
+              "median": 16.763292966283956,
+              "ci95": [
+                16.580821186541662,
+                16.91817422020432
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "maxRssMiB": {
+              "median": 1.0723176102573053,
+              "ci95": [
+                1.0711113578327967,
+                1.0733144799012972
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "pipelineNs": {
+              "median": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 96,
+              "providerFasterPairs": 25
+            },
+            "processInMainNs": {
+              "median": 1.0592099432052113,
+              "ci95": [
+                1.0386285828554307,
+                1.0806398664982722
+              ],
+              "n": 96,
+              "providerFasterPairs": 23
+            },
+            "processWall": {
+              "median": 1.1122097443131125,
+              "ci95": [
+                1.0847832176695287,
+                1.1318010318504683
+              ],
+              "n": 96,
+              "providerFasterPairs": 8
+            },
+            "resourcesNs": {
+              "median": 0.49307703035588246,
+              "ci95": [
+                0.4745119530151377,
+                0.5024950632438491
+              ],
+              "n": 96,
+              "providerFasterPairs": 94
+            },
+            "setupAdapterNs": {
+              "median": 0.9991906478601813,
+              "ci95": [
+                0.9845254114616748,
+                1.0192123816636645
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "setupDeviceNs": {
+              "median": 1.9421802945928526,
+              "ci95": [
+                1.8906277672794625,
+                1.981914732047455
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupInstanceNs": {
+              "median": 12.252585497027939,
+              "ci95": [
+                11.817041273320482,
+                12.74004429502959
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupNs": {
+              "median": 1.039725899647929,
+              "ci95": [
+                1.0276134725054038,
+                1.0618256641098045
+              ],
+              "n": 96,
+              "providerFasterPairs": 27
+            },
+            "teardownDeviceNs": {
+              "median": 1.9186244455680277,
+              "ci95": [
+                1.8365749424503368,
+                1.982896010597646
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "teardownNs": {
+              "median": 1.5826004741623478,
+              "ci95": [
+                1.5223052970721653,
+                1.6553367968201664
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "teardownReleaseNs": {
+              "median": 0.3137535033433314,
+              "ci95": [
+                0.29152530016066036,
+                0.3433574135259749
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.completion": {
+              "median": 0.8742664216160849,
+              "ci95": [
+                0.8633515531262498,
+                0.8905844518712991
+              ],
+              "n": 96,
+              "providerFasterPairs": 93
+            },
+            "warm.encode": {
+              "median": 2.2716740576496672,
+              "ci95": [
+                2.2001012292118585,
+                2.317460317460317
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.map": {
+              "median": 1.0167669164522515,
+              "ci95": [
+                1.0085117820983782,
+                1.023629405482378
+              ],
+              "n": 96,
+              "providerFasterPairs": 30
+            },
+            "warm.operation": {
+              "median": 0.9233799808376999,
+              "ci95": [
+                0.9180494833068361,
+                0.9370541867540667
+              ],
+              "n": 96,
+              "providerFasterPairs": 91
+            },
+            "warm.submit": {
+              "median": 1.0704311859651505,
+              "ci95": [
+                1.0163324562199436,
+                1.0883226362678418
+              ],
+              "n": 96,
+              "providerFasterPairs": 33
+            },
+            "warm.upload": {
+              "median": 0.9767348019843605,
+              "ci95": [
+                0.9700852642227468,
+                0.9840329119359188
+              ],
+              "n": 96,
+              "providerFasterPairs": 76
+            },
+            "warmP95.completion": {
+              "median": 0.8859835675527377,
+              "ci95": [
+                0.8526788855273341,
+                0.928435114665167
+              ],
+              "n": 96,
+              "providerFasterPairs": 65
+            },
+            "warmP95.encode": {
+              "median": 3.3008873248222237,
+              "ci95": [
+                2.5406793786944517,
+                3.8833229576981165
+              ],
+              "n": 96,
+              "providerFasterPairs": 12
+            },
+            "warmP95.map": {
+              "median": 1.0085167289192292,
+              "ci95": [
+                0.9711419879963824,
+                1.0623857783684998
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "warmP95.operation": {
+              "median": 0.9724306193093092,
+              "ci95": [
+                0.913551616625303,
+                1.0452930168008914
+              ],
+              "n": 96,
+              "providerFasterPairs": 52
+            },
+            "warmP95.submit": {
+              "median": 1.2726152208960577,
+              "ci95": [
+                1.1141115478835528,
+                1.3990374555346305
+              ],
+              "n": 96,
+              "providerFasterPairs": 30
+            },
+            "warmP95.upload": {
+              "median": 1.020538130273001,
+              "ci95": [
+                0.9840134785193304,
+                1.0804232707383525
+              ],
+              "n": 96,
+              "providerFasterPairs": 45
+            }
+          }
+        },
+        "dawn-aa/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 1.0166666666666666,
+              "ci95": [
+                1.0,
+                1.3333333333333335
+              ],
+              "n": 96,
+              "providerFasterPairs": 14
+            },
+            "complete": {
+              "median": 1.1003019790113455,
+              "ci95": [
+                1.0801893321476441,
+                1.1091753593392695
+              ],
+              "n": 96,
+              "providerFasterPairs": 8
+            },
+            "cpuMs": {
+              "median": 1.1115565679086215,
+              "ci95": [
+                1.0968103606619224,
+                1.1333205140531377
+              ],
+              "n": 96,
+              "providerFasterPairs": 10
+            },
+            "first.completion": {
+              "median": 0.16575234852139392,
+              "ci95": [
+                0.1591804068863283,
+                0.18277791910455354
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "first.encode": {
+              "median": 9.472492697176243,
+              "ci95": [
+                8.085687022900762,
+                10.617963472604453
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.map": {
+              "median": 3.6967917708293587,
+              "ci95": [
+                3.6400524062921695,
+                3.7553809464039163
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.operation": {
+              "median": 2.0706238377300297,
+              "ci95": [
+                2.017443404063725,
+                2.1130890443418773
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "first.submit": {
+              "median": 0.534607849848426,
+              "ci95": [
+                0.5246750411897686,
+                0.5700087545378316
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "first.upload": {
+              "median": 16.704671602099708,
+              "ci95": [
+                16.434165550056058,
+                16.937055837563452
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "maxRssMiB": {
+              "median": 1.0730852844578633,
+              "ci95": [
+                1.0722360308820262,
+                1.0743039248574304
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "pipelineNs": {
+              "median": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 96,
+              "providerFasterPairs": 22
+            },
+            "processInMainNs": {
+              "median": 1.0448186344180022,
+              "ci95": [
+                1.0201194299644973,
+                1.0654160145437486
+              ],
+              "n": 96,
+              "providerFasterPairs": 31
+            },
+            "processWall": {
+              "median": 1.0950497335032727,
+              "ci95": [
+                1.0614852498288943,
+                1.111755354199266
+              ],
+              "n": 96,
+              "providerFasterPairs": 11
+            },
+            "resourcesNs": {
+              "median": 0.4927217381985038,
+              "ci95": [
+                0.4757562776413906,
+                0.5038888888888889
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "setupAdapterNs": {
+              "median": 0.9955477618809712,
+              "ci95": [
+                0.9822428563212157,
+                1.0175490380284835
+              ],
+              "n": 96,
+              "providerFasterPairs": 51
+            },
+            "setupDeviceNs": {
+              "median": 1.9325152391699065,
+              "ci95": [
+                1.8785566979394832,
+                1.973479855491682
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "setupInstanceNs": {
+              "median": 12.26131682167508,
+              "ci95": [
+                11.886094371911438,
+                12.721548958759445
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupNs": {
+              "median": 1.0426672148539868,
+              "ci95": [
+                1.0220438431348138,
+                1.0618434968526946
+              ],
+              "n": 96,
+              "providerFasterPairs": 30
+            },
+            "teardownDeviceNs": {
+              "median": 1.9197780401753424,
+              "ci95": [
+                1.8499416654895129,
+                2.0195294901177254
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "teardownNs": {
+              "median": 1.5990364651447528,
+              "ci95": [
+                1.5133340714950645,
+                1.6820716939590001
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "teardownReleaseNs": {
+              "median": 0.3168157927559694,
+              "ci95": [
+                0.29148369213658765,
+                0.34667633011837734
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.completion": {
+              "median": 0.8697366749044002,
+              "ci95": [
+                0.857870841959212,
+                0.8783459249312413
+              ],
+              "n": 96,
+              "providerFasterPairs": 93
+            },
+            "warm.encode": {
+              "median": 2.263189537831091,
+              "ci95": [
+                2.1760368011323425,
+                2.310421286031042
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.map": {
+              "median": 1.010780963396819,
+              "ci95": [
+                1.0059086193676423,
+                1.0189196476721192
+              ],
+              "n": 96,
+              "providerFasterPairs": 34
+            },
+            "warm.operation": {
+              "median": 0.9277770250285674,
+              "ci95": [
+                0.9110089194777938,
+                0.9391286811739425
+              ],
+              "n": 96,
+              "providerFasterPairs": 87
+            },
+            "warm.submit": {
+              "median": 1.0401777629475624,
+              "ci95": [
+                1.0055630612731463,
+                1.0920130318886365
+              ],
+              "n": 96,
+              "providerFasterPairs": 37
+            },
+            "warm.upload": {
+              "median": 0.9793502241279645,
+              "ci95": [
+                0.9700189753320683,
+                0.9876495338171518
+              ],
+              "n": 96,
+              "providerFasterPairs": 71
+            },
+            "warmP95.completion": {
+              "median": 0.8796853405065308,
+              "ci95": [
+                0.8329767889613862,
+                0.9147295941378503
+              ],
+              "n": 96,
+              "providerFasterPairs": 70
+            },
+            "warmP95.encode": {
+              "median": 3.2946107437057663,
+              "ci95": [
+                2.418777943368107,
+                4.455535390199637
+              ],
+              "n": 96,
+              "providerFasterPairs": 12
+            },
+            "warmP95.map": {
+              "median": 1.0348810726606188,
+              "ci95": [
+                0.994036526276556,
+                1.0856931897150799
+              ],
+              "n": 96,
+              "providerFasterPairs": 40
+            },
+            "warmP95.operation": {
+              "median": 0.9656843436334857,
+              "ci95": [
+                0.9235714569177246,
+                1.012256531178578
+              ],
+              "n": 96,
+              "providerFasterPairs": 55
+            },
+            "warmP95.submit": {
+              "median": 1.203571607726269,
+              "ci95": [
+                1.0319862044408747,
+                1.4220682830282039
+              ],
+              "n": 96,
+              "providerFasterPairs": 37
+            },
+            "warmP95.upload": {
+              "median": 1.0001451740663452,
+              "ci95": [
+                0.9440646854075365,
+                1.1062505540758671
+              ],
+              "n": 96,
+              "providerFasterPairs": 48
+            }
+          }
+        },
+        "m7r/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 96,
+              "providerFasterPairs": 27
+            },
+            "complete": {
+              "median": 0.9957966779008549,
+              "ci95": [
+                0.988467916790434,
+                1.01931033266844
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "cpuMs": {
+              "median": 1.000760589502499,
+              "ci95": [
+                0.9789376778045034,
+                1.0203078043894078
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "first.completion": {
+              "median": 0.9359513328619162,
+              "ci95": [
+                0.8514681138110324,
+                1.0658047752298578
+              ],
+              "n": 96,
+              "providerFasterPairs": 52
+            },
+            "first.encode": {
+              "median": 1.020913055250921,
+              "ci95": [
+                0.9021410601344317,
+                1.1881405563689604
+              ],
+              "n": 96,
+              "providerFasterPairs": 45
+            },
+            "first.map": {
+              "median": 1.0048262657225977,
+              "ci95": [
+                0.967328817538923,
+                1.0200032137587831
+              ],
+              "n": 96,
+              "providerFasterPairs": 45
+            },
+            "first.operation": {
+              "median": 0.9979472215175119,
+              "ci95": [
+                0.972161102312871,
+                1.0323822738704362
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "first.submit": {
+              "median": 1.005246243448022,
+              "ci95": [
+                0.9806784166452367,
+                1.0358425341833646
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "first.upload": {
+              "median": 1.0015049027667708,
+              "ci95": [
+                0.9808557637241266,
+                1.0102861771058318
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "maxRssMiB": {
+              "median": 0.9994161165278033,
+              "ci95": [
+                0.9984418475236505,
+                1.001002780878795
+              ],
+              "n": 96,
+              "providerFasterPairs": 51
+            },
+            "pipelineNs": {
+              "median": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ],
+              "n": 96,
+              "providerFasterPairs": 21
+            },
+            "processInMainNs": {
+              "median": 0.9934387539624127,
+              "ci95": [
+                0.9733365523649102,
+                1.0124893903364471
+              ],
+              "n": 96,
+              "providerFasterPairs": 52
+            },
+            "processWall": {
+              "median": 0.9896747554336561,
+              "ci95": [
+                0.9710562282162234,
+                1.0133969291659284
+              ],
+              "n": 96,
+              "providerFasterPairs": 50
+            },
+            "resourcesNs": {
+              "median": 1.0145531045603273,
+              "ci95": [
+                0.9814061543490322,
+                1.0369874581521477
+              ],
+              "n": 96,
+              "providerFasterPairs": 44
+            },
+            "setupAdapterNs": {
+              "median": 0.9964195716860758,
+              "ci95": [
+                0.9697714829175083,
+                1.0113113579380535
+              ],
+              "n": 96,
+              "providerFasterPairs": 51
+            },
+            "setupDeviceNs": {
+              "median": 1.0026610312851667,
+              "ci95": [
+                0.9886869131308811,
+                1.0134495155278054
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "setupInstanceNs": {
+              "median": 0.9468179911192041,
+              "ci95": [
+                0.9140519778520477,
+                1.0237174355198522
+              ],
+              "n": 96,
+              "providerFasterPairs": 55
+            },
+            "setupNs": {
+              "median": 0.9941954164285796,
+              "ci95": [
+                0.9713432152178187,
+                1.017631302987312
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "teardownDeviceNs": {
+              "median": 1.027543353182061,
+              "ci95": [
+                0.9946906058824003,
+                1.065290252208137
+              ],
+              "n": 96,
+              "providerFasterPairs": 39
+            },
+            "teardownNs": {
+              "median": 1.0187207204929098,
+              "ci95": [
+                0.9888348371910552,
+                1.0654416379888751
+              ],
+              "n": 96,
+              "providerFasterPairs": 40
+            },
+            "teardownReleaseNs": {
+              "median": 0.9754939162988522,
+              "ci95": [
+                0.9253540781193021,
+                1.0366778207675416
+              ],
+              "n": 96,
+              "providerFasterPairs": 52
+            },
+            "warm.completion": {
+              "median": 1.0032786851118933,
+              "ci95": [
+                0.9847439193197549,
+                1.0132530823382986
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "warm.encode": {
+              "median": 1.0229629590616787,
+              "ci95": [
+                0.9804347826086957,
+                1.0464287060825912
+              ],
+              "n": 96,
+              "providerFasterPairs": 40
+            },
+            "warm.map": {
+              "median": 1.0076431480414607,
+              "ci95": [
+                0.9973168851877855,
+                1.0145603307966393
+              ],
+              "n": 96,
+              "providerFasterPairs": 43
+            },
+            "warm.operation": {
+              "median": 1.0070562250145891,
+              "ci95": [
+                0.9827903080992811,
+                1.0140107054716525
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "warm.submit": {
+              "median": 1.007694854688404,
+              "ci95": [
+                0.9869844627023509,
+                1.037758945386064
+              ],
+              "n": 96,
+              "providerFasterPairs": 45
+            },
+            "warm.upload": {
+              "median": 0.9981091798048622,
+              "ci95": [
+                0.9926229908642337,
+                1.007768467693037
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "warmP95.completion": {
+              "median": 0.9740268144643569,
+              "ci95": [
+                0.9176129783069872,
+                1.0270465907363924
+              ],
+              "n": 96,
+              "providerFasterPairs": 52
+            },
+            "warmP95.encode": {
+              "median": 1.054956821993272,
+              "ci95": [
+                0.972034348569049,
+                1.1497227356746766
+              ],
+              "n": 96,
+              "providerFasterPairs": 43
+            },
+            "warmP95.map": {
+              "median": 1.0010277069801856,
+              "ci95": [
+                0.9751689326711716,
+                1.0302557662949567
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "warmP95.operation": {
+              "median": 0.9788579644132771,
+              "ci95": [
+                0.956712804976849,
+                1.0193815733056133
+              ],
+              "n": 96,
+              "providerFasterPairs": 54
+            },
+            "warmP95.submit": {
+              "median": 1.052947760433855,
+              "ci95": [
+                0.9468957943019575,
+                1.2355121598408823
+              ],
+              "n": 96,
+              "providerFasterPairs": 40
+            },
+            "warmP95.upload": {
+              "median": 0.9990024588480688,
+              "ci95": [
+                0.9395975592038355,
+                1.0575079872204474
+              ],
+              "n": 96,
+              "providerFasterPairs": 48
+            }
+          }
+        }
+      }
+    },
+    "image_rgba_invert_1024": {
+      "providers": {
+        "dawn": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.473857,
+            "complete": 29.395166500000002,
+            "cpuMs": 73.44749999999988,
+            "first.completion": 0.0480905,
+            "first.encode": 0.096912,
+            "first.map": 3.0943145000000003,
+            "first.operation": 4.2302585,
+            "first.submit": 0.338903,
+            "first.upload": 0.6403205000000001,
+            "maxRssMiB": 98.76953125,
+            "pipelineNs": 1.2391975,
+            "processInMainNs": 70.514037,
+            "processWall": 78.2437645,
+            "resourcesNs": 0.676188,
+            "setupAdapterNs": 19.9718565,
+            "setupDeviceNs": 1.4880565,
+            "setupInstanceNs": 0.2532415,
+            "setupNs": 21.739094,
+            "teardownDeviceNs": 0.4840915,
+            "teardownNs": 0.6126834999999999,
+            "teardownReleaseNs": 0.1322935,
+            "warm.completion": 0.1342825,
+            "warm.encode": 0.0028955,
+            "warm.map": 0.076935,
+            "warm.operation": 0.6578935,
+            "warm.submit": 0.0420545,
+            "warm.upload": 0.397829,
+            "warmP95.completion": 0.16816150000000002,
+            "warmP95.encode": 0.0112965,
+            "warmP95.map": 0.091202,
+            "warmP95.operation": 0.8077055,
+            "warmP95.submit": 0.08303150000000001,
+            "warmP95.upload": 0.47286
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.732218,
+            "complete": 33.28589,
+            "cpuMs": 86.19999999999806,
+            "first.completion": 0.167716,
+            "first.encode": 0.157987,
+            "first.map": 3.795776,
+            "first.operation": 5.026443,
+            "first.submit": 0.577377,
+            "first.upload": 0.895726,
+            "maxRssMiB": 99.21875,
+            "pipelineNs": 1.458796,
+            "processInMainNs": 83.720114,
+            "processWall": 92.271913,
+            "resourcesNs": 0.954888,
+            "setupAdapterNs": 23.692671,
+            "setupDeviceNs": 2.040681,
+            "setupInstanceNs": 0.3295,
+            "setupNs": 25.55665,
+            "teardownDeviceNs": 0.60579,
+            "teardownNs": 0.770851,
+            "teardownReleaseNs": 0.157777,
+            "warm.completion": 0.140775,
+            "warm.encode": 0.003486,
+            "warm.map": 0.089578,
+            "warm.operation": 0.751064,
+            "warm.submit": 0.051487,
+            "warm.upload": 0.463934,
+            "warmP95.completion": 0.251433,
+            "warmP95.encode": 0.022412,
+            "warmP95.map": 0.174558,
+            "warmP95.operation": 1.020811,
+            "warmP95.submit": 0.138641,
+            "warmP95.upload": 0.62148
+          },
+          "pooledWarmP95": {
+            "upload": 0.521722,
+            "encode": 0.016441,
+            "submit": 0.106891,
+            "completion": 0.230985,
+            "map": 0.109416,
+            "operation": 0.958976
+          },
+          "pooledWarmMedian": {
+            "upload": 0.41512649999999995,
+            "encode": 0.002975,
+            "submit": 0.042585,
+            "completion": 0.133832,
+            "map": 0.07977000000000001,
+            "operation": 0.683497
+          }
+        },
+        "dawn-aa": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.470871,
+            "complete": 29.872298999999998,
+            "cpuMs": 74.89400000000069,
+            "first.completion": 0.047795,
+            "first.encode": 0.096577,
+            "first.map": 3.0974265,
+            "first.operation": 4.216832999999999,
+            "first.submit": 0.3352965,
+            "first.upload": 0.640491,
+            "maxRssMiB": 98.669921875,
+            "pipelineNs": 1.24294,
+            "processInMainNs": 72.228736,
+            "processWall": 79.3148005,
+            "resourcesNs": 0.6803105,
+            "setupAdapterNs": 20.571977,
+            "setupDeviceNs": 1.4305575,
+            "setupInstanceNs": 0.2510775,
+            "setupNs": 22.4726605,
+            "teardownDeviceNs": 0.492502,
+            "teardownNs": 0.626389,
+            "teardownReleaseNs": 0.13361099999999998,
+            "warm.completion": 0.13341150000000002,
+            "warm.encode": 0.0030055,
+            "warm.map": 0.081859,
+            "warm.operation": 0.686242,
+            "warm.submit": 0.043301,
+            "warm.upload": 0.4196345,
+            "warmP95.completion": 0.171658,
+            "warmP95.encode": 0.012824,
+            "warmP95.map": 0.0923435,
+            "warmP95.operation": 0.8335889999999999,
+            "warmP95.submit": 0.081714,
+            "warmP95.upload": 0.4840815
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.763847,
+            "complete": 32.105854,
+            "cpuMs": 85.35000000000093,
+            "first.completion": 0.135595,
+            "first.encode": 0.157827,
+            "first.map": 3.575591,
+            "first.operation": 5.056038,
+            "first.submit": 0.591303,
+            "first.upload": 0.867262,
+            "maxRssMiB": 99.29296875,
+            "pipelineNs": 1.544978,
+            "processInMainNs": 81.141761,
+            "processWall": 89.641091,
+            "resourcesNs": 1.080124,
+            "setupAdapterNs": 23.179375,
+            "setupDeviceNs": 2.073703,
+            "setupInstanceNs": 0.417326,
+            "setupNs": 25.140226,
+            "teardownDeviceNs": 0.667246,
+            "teardownNs": 0.816848,
+            "teardownReleaseNs": 0.163057,
+            "warm.completion": 0.141326,
+            "warm.encode": 0.003507,
+            "warm.map": 0.09005,
+            "warm.operation": 0.739532,
+            "warm.submit": 0.051056,
+            "warm.upload": 0.458523,
+            "warmP95.completion": 0.255,
+            "warmP95.encode": 0.027963,
+            "warmP95.map": 0.171373,
+            "warmP95.operation": 1.039327,
+            "warmP95.submit": 0.157236,
+            "warmP95.upload": 0.652067
+          },
+          "pooledWarmP95": {
+            "upload": 0.527674,
+            "encode": 0.017974,
+            "submit": 0.108474,
+            "completion": 0.234431,
+            "map": 0.137869,
+            "operation": 0.960167
+          },
+          "pooledWarmMedian": {
+            "upload": 0.420151,
+            "encode": 0.003006,
+            "submit": 0.043025999999999995,
+            "completion": 0.13336150000000002,
+            "map": 0.0809975,
+            "operation": 0.690349
+          }
+        },
+        "m7r": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.153399,
+            "complete": 18.005489,
+            "cpuMs": 58.65249999999911,
+            "first.completion": 0.212215,
+            "first.encode": 0.0091475,
+            "first.map": 0.8275129999999999,
+            "first.operation": 1.6542445,
+            "first.submit": 0.4490305,
+            "first.upload": 0.1377795,
+            "maxRssMiB": 87.931640625,
+            "pipelineNs": 1.0859495,
+            "processInMainNs": 59.989009,
+            "processWall": 65.1183455,
+            "resourcesNs": 1.144965,
+            "setupAdapterNs": 20.3922385,
+            "setupDeviceNs": 0.7527625,
+            "setupInstanceNs": 0.023835000000000002,
+            "setupNs": 21.2046685,
+            "teardownDeviceNs": 0.267058,
+            "teardownNs": 0.438546,
+            "teardownReleaseNs": 0.1687975,
+            "warm.completion": 0.209369,
+            "warm.encode": 0.0011175,
+            "warm.map": 0.084008,
+            "warm.operation": 0.402227,
+            "warm.submit": 0.013771,
+            "warm.upload": 0.0956445,
+            "warmP95.completion": 0.24476599999999998,
+            "warmP95.encode": 0.0028304999999999997,
+            "warmP95.map": 0.0955355,
+            "warmP95.operation": 0.49789700000000003,
+            "warmP95.submit": 0.027485999999999997,
+            "warmP95.upload": 0.13215349999999998
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.272653,
+            "complete": 19.51622,
+            "cpuMs": 68.4850000000008,
+            "first.completion": 0.26523,
+            "first.encode": 0.015289,
+            "first.map": 1.010312,
+            "first.operation": 1.970118,
+            "first.submit": 0.524057,
+            "first.upload": 0.182023,
+            "maxRssMiB": 88.26953125,
+            "pipelineNs": 1.788657,
+            "processInMainNs": 69.741981,
+            "processWall": 75.38308,
+            "resourcesNs": 1.471149,
+            "setupAdapterNs": 23.769947,
+            "setupDeviceNs": 1.181645,
+            "setupInstanceNs": 0.029836,
+            "setupNs": 24.645366,
+            "teardownDeviceNs": 0.383672,
+            "teardownNs": 0.631218,
+            "teardownReleaseNs": 0.239911,
+            "warm.completion": 0.225595,
+            "warm.encode": 0.001483,
+            "warm.map": 0.090871,
+            "warm.operation": 0.441801,
+            "warm.submit": 0.017423,
+            "warm.upload": 0.117301,
+            "warmP95.completion": 0.298482,
+            "warmP95.encode": 0.010911,
+            "warmP95.map": 0.16962,
+            "warmP95.operation": 0.620037,
+            "warmP95.submit": 0.068398,
+            "warmP95.upload": 0.171222
+          },
+          "pooledWarmP95": {
+            "upload": 0.149702,
+            "encode": 0.005381,
+            "submit": 0.037741,
+            "completion": 0.267744,
+            "map": 0.150965,
+            "operation": 0.556909
+          },
+          "pooledWarmMedian": {
+            "upload": 0.0953495,
+            "encode": 0.001132,
+            "submit": 0.013625,
+            "completion": 0.20860800000000002,
+            "map": 0.084198,
+            "operation": 0.40598900000000004
+          }
+        },
+        "main": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.1523875,
+            "complete": 18.906796,
+            "cpuMs": 59.001000000000104,
+            "first.completion": 0.2298075,
+            "first.encode": 0.008837,
+            "first.map": 0.8252835000000001,
+            "first.operation": 1.6785450000000002,
+            "first.submit": 0.4470265,
+            "first.upload": 0.13855099999999998,
+            "maxRssMiB": 87.873046875,
+            "pipelineNs": 1.0852985,
+            "processInMainNs": 60.480966,
+            "processWall": 65.71391299999999,
+            "resourcesNs": 1.150581,
+            "setupAdapterNs": 20.882562,
+            "setupDeviceNs": 0.7472965,
+            "setupInstanceNs": 0.0236795,
+            "setupNs": 21.7499545,
+            "teardownDeviceNs": 0.24295250000000002,
+            "teardownNs": 0.375312,
+            "teardownReleaseNs": 0.1324095,
+            "warm.completion": 0.227508,
+            "warm.encode": 0.0012125,
+            "warm.map": 0.0858265,
+            "warm.operation": 0.43797949999999997,
+            "warm.submit": 0.0251725,
+            "warm.upload": 0.096,
+            "warmP95.completion": 0.2624695,
+            "warmP95.encode": 0.003722,
+            "warmP95.map": 0.096742,
+            "warmP95.operation": 0.5318765000000001,
+            "warmP95.submit": 0.043707499999999996,
+            "warmP95.upload": 0.126899
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.266682,
+            "complete": 21.060034,
+            "cpuMs": 69.72999999999985,
+            "first.completion": 0.287521,
+            "first.encode": 0.019246,
+            "first.map": 1.081296,
+            "first.operation": 2.132244,
+            "first.submit": 0.655995,
+            "first.upload": 0.194386,
+            "maxRssMiB": 88.265625,
+            "pipelineNs": 1.578041,
+            "processInMainNs": 70.956265,
+            "processWall": 77.306982,
+            "resourcesNs": 1.636511,
+            "setupAdapterNs": 23.581963,
+            "setupDeviceNs": 1.136259,
+            "setupInstanceNs": 0.029275,
+            "setupNs": 24.360229,
+            "teardownDeviceNs": 0.338989,
+            "teardownNs": 0.56874,
+            "teardownReleaseNs": 0.227068,
+            "warm.completion": 0.242457,
+            "warm.encode": 0.001693,
+            "warm.map": 0.091352,
+            "warm.operation": 0.478911,
+            "warm.submit": 0.033172,
+            "warm.upload": 0.105298,
+            "warmP95.completion": 0.325623,
+            "warmP95.encode": 0.011182,
+            "warmP95.map": 0.165261,
+            "warmP95.operation": 0.7012,
+            "warmP95.submit": 0.084279,
+            "warmP95.upload": 0.168918
+          },
+          "pooledWarmP95": {
+            "upload": 0.14388,
+            "encode": 0.005881,
+            "submit": 0.061536,
+            "completion": 0.306637,
+            "map": 0.123382,
+            "operation": 0.604218
+          },
+          "pooledWarmMedian": {
+            "upload": 0.09544949999999999,
+            "encode": 0.001223,
+            "submit": 0.025097500000000002,
+            "completion": 0.227042,
+            "map": 0.085621,
+            "operation": 0.439748
+          }
+        }
+      },
+      "paired": {
+        "dawn/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 3.084812750914929,
+              "ci95": [
+                2.9808445882386185,
+                3.2748856472561894
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "complete": {
+              "median": 1.5582225732503323,
+              "ci95": [
+                1.5117735879649266,
+                1.5840142223261615
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "cpuMs": {
+              "median": 1.226696296034569,
+              "ci95": [
+                1.19949573203372,
+                1.2538613791397306
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.completion": {
+              "median": 0.20042201081236952,
+              "ci95": [
+                0.17871439426231028,
+                0.21801856425711763
+              ],
+              "n": 96,
+              "providerFasterPairs": 95
+            },
+            "first.encode": {
+              "median": 11.03358450572954,
+              "ci95": [
+                10.76651236310263,
+                12.05169285775001
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.map": {
+              "median": 3.6191543816484453,
+              "ci95": [
+                3.4299758548367194,
+                3.7930033996447907
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.operation": {
+              "median": 2.4887534098383934,
+              "ci95": [
+                2.4150490338289163,
+                2.5873379630808477
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "first.submit": {
+              "median": 0.7708006747579612,
+              "ci95": [
+                0.7337829220448628,
+                0.7971114521304326
+              ],
+              "n": 96,
+              "providerFasterPairs": 83
+            },
+            "first.upload": {
+              "median": 4.584347205043008,
+              "ci95": [
+                4.450446949086668,
+                4.673872625193092
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "maxRssMiB": {
+              "median": 1.1233611902481762,
+              "ci95": [
+                1.1223990752267472,
+                1.1245786766010288
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "pipelineNs": {
+              "median": 1.1602211495907344,
+              "ci95": [
+                1.14301510644261,
+                1.21805474407486
+              ],
+              "n": 96,
+              "providerFasterPairs": 24
+            },
+            "processInMainNs": {
+              "median": 1.1581286443520502,
+              "ci95": [
+                1.1325948872153526,
+                1.1848987964628634
+              ],
+              "n": 96,
+              "providerFasterPairs": 6
+            },
+            "processWall": {
+              "median": 1.179404963318541,
+              "ci95": [
+                1.1453776579655117,
+                1.195805562290411
+              ],
+              "n": 96,
+              "providerFasterPairs": 2
+            },
+            "resourcesNs": {
+              "median": 0.5934273747880442,
+              "ci95": [
+                0.5818328934493033,
+                0.6024362132676403
+              ],
+              "n": 96,
+              "providerFasterPairs": 95
+            },
+            "setupAdapterNs": {
+              "median": 0.9698980294704079,
+              "ci95": [
+                0.9458292472361132,
+                0.9938259992269454
+              ],
+              "n": 96,
+              "providerFasterPairs": 60
+            },
+            "setupDeviceNs": {
+              "median": 1.9711684015148276,
+              "ci95": [
+                1.860072936877931,
+                2.1174844570269125
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupInstanceNs": {
+              "median": 10.19269692820696,
+              "ci95": [
+                10.029755892104257,
+                10.774371919701888
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupNs": {
+              "median": 1.0119502429583487,
+              "ci95": [
+                0.9954896838734466,
+                1.042594893547116
+              ],
+              "n": 96,
+              "providerFasterPairs": 41
+            },
+            "teardownDeviceNs": {
+              "median": 1.9937954298213856,
+              "ci95": [
+                1.961529220055832,
+                2.0512076985533216
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "teardownNs": {
+              "median": 1.617030907782786,
+              "ci95": [
+                1.575091599747806,
+                1.6896971786798416
+              ],
+              "n": 96,
+              "providerFasterPairs": 3
+            },
+            "teardownReleaseNs": {
+              "median": 0.983264560946574,
+              "ci95": [
+                0.92190873136949,
+                1.0428622707992998
+              ],
+              "n": 96,
+              "providerFasterPairs": 51
+            },
+            "warm.completion": {
+              "median": 0.5906611830582957,
+              "ci95": [
+                0.5854232045797798,
+                0.5983763691510139
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.encode": {
+              "median": 2.3712237982888764,
+              "ci95": [
+                2.2481337326866644,
+                2.481651376146789
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "warm.map": {
+              "median": 0.9479313355546252,
+              "ci95": [
+                0.9284595066481623,
+                0.9694510988832847
+              ],
+              "n": 96,
+              "providerFasterPairs": 75
+            },
+            "warm.operation": {
+              "median": 1.5374037212728413,
+              "ci95": [
+                1.5125645959912646,
+                1.5750323634670647
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.submit": {
+              "median": 1.6768671695363544,
+              "ci95": [
+                1.5899856938483548,
+                1.7302786586179022
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.upload": {
+              "median": 4.401440235035766,
+              "ci95": [
+                4.2837756439783155,
+                4.468293087023153
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warmP95.completion": {
+              "median": 0.6385320700312325,
+              "ci95": [
+                0.6214188661234262,
+                0.6686100230652898
+              ],
+              "n": 96,
+              "providerFasterPairs": 93
+            },
+            "warmP95.encode": {
+              "median": 2.9905530566703193,
+              "ci95": [
+                2.291830272324256,
+                3.5578782336033443
+              ],
+              "n": 96,
+              "providerFasterPairs": 16
+            },
+            "warmP95.map": {
+              "median": 0.9196226177085215,
+              "ci95": [
+                0.8747027181130009,
+                0.9565567962469764
+              ],
+              "n": 96,
+              "providerFasterPairs": 68
+            },
+            "warmP95.operation": {
+              "median": 1.5301969567452731,
+              "ci95": [
+                1.459909596868559,
+                1.6156707727750534
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "warmP95.submit": {
+              "median": 1.754116909255784,
+              "ci95": [
+                1.599874213836478,
+                2.075142038927488
+              ],
+              "n": 96,
+              "providerFasterPairs": 16
+            },
+            "warmP95.upload": {
+              "median": 3.6110246840634455,
+              "ci95": [
+                3.456600217470098,
+                3.7918782620962053
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            }
+          }
+        },
+        "dawn-aa/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 3.1419083168262825,
+              "ci95": [
+                3.012679483261925,
+                3.2698094623104854
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "complete": {
+              "median": 1.5599566038230839,
+              "ci95": [
+                1.5450917458596265,
+                1.5860790592090115
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "cpuMs": {
+              "median": 1.2665761167775513,
+              "ci95": [
+                1.2204192499792517,
+                1.3083134588703615
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.completion": {
+              "median": 0.19815463075021666,
+              "ci95": [
+                0.16610415098015735,
+                0.21895488708445127
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "first.encode": {
+              "median": 11.359979956227797,
+              "ci95": [
+                10.653836427091038,
+                11.9542368699502
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.map": {
+              "median": 3.6204325056144615,
+              "ci95": [
+                3.458159901572052,
+                3.7187922673373945
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.operation": {
+              "median": 2.4696495310747437,
+              "ci95": [
+                2.3969315449513937,
+                2.5236919133186677
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "first.submit": {
+              "median": 0.7445145122982213,
+              "ci95": [
+                0.7315156490866453,
+                0.7789708999105348
+              ],
+              "n": 96,
+              "providerFasterPairs": 89
+            },
+            "first.upload": {
+              "median": 4.560900166701252,
+              "ci95": [
+                4.454914993153811,
+                4.664028211530837
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "maxRssMiB": {
+              "median": 1.123550175926535,
+              "ci95": [
+                1.122041709282762,
+                1.124905576538547
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "pipelineNs": {
+              "median": 1.18462469594542,
+              "ci95": [
+                1.1450155189840185,
+                1.25806204554682
+              ],
+              "n": 96,
+              "providerFasterPairs": 15
+            },
+            "processInMainNs": {
+              "median": 1.1756890031614398,
+              "ci95": [
+                1.1518880726308502,
+                1.2093782832703797
+              ],
+              "n": 96,
+              "providerFasterPairs": 7
+            },
+            "processWall": {
+              "median": 1.2031487426124605,
+              "ci95": [
+                1.1647647964273538,
+                1.2316188916931392
+              ],
+              "n": 96,
+              "providerFasterPairs": 3
+            },
+            "resourcesNs": {
+              "median": 0.5910704826431663,
+              "ci95": [
+                0.5837326923165156,
+                0.6146922155135427
+              ],
+              "n": 96,
+              "providerFasterPairs": 93
+            },
+            "setupAdapterNs": {
+              "median": 0.980143674026132,
+              "ci95": [
+                0.9545111732625479,
+                1.0032122800806238
+              ],
+              "n": 96,
+              "providerFasterPairs": 56
+            },
+            "setupDeviceNs": {
+              "median": 1.9358919628475975,
+              "ci95": [
+                1.8656749603363527,
+                1.9928192150454038
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupInstanceNs": {
+              "median": 10.574747661306477,
+              "ci95": [
+                10.033041081205253,
+                11.04373436800033
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupNs": {
+              "median": 1.0361447709147487,
+              "ci95": [
+                0.9983669901376135,
+                1.0507696148013748
+              ],
+              "n": 96,
+              "providerFasterPairs": 39
+            },
+            "teardownDeviceNs": {
+              "median": 2.040030608965224,
+              "ci95": [
+                1.972249916915919,
+                2.083932749175349
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "teardownNs": {
+              "median": 1.6677234234650882,
+              "ci95": [
+                1.607502387449376,
+                1.7108222049394892
+              ],
+              "n": 96,
+              "providerFasterPairs": 5
+            },
+            "teardownReleaseNs": {
+              "median": 0.9886323722435354,
+              "ci95": [
+                0.932057399325443,
+                1.0468392744376456
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "warm.completion": {
+              "median": 0.5861952478350028,
+              "ci95": [
+                0.5757960607845033,
+                0.6011595426810391
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.encode": {
+              "median": 2.4163023469857343,
+              "ci95": [
+                2.289137380191693,
+                2.514419329696025
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.map": {
+              "median": 0.9426279714220974,
+              "ci95": [
+                0.9300288992030825,
+                0.9538622107045496
+              ],
+              "n": 96,
+              "providerFasterPairs": 76
+            },
+            "warm.operation": {
+              "median": 1.523400369752487,
+              "ci95": [
+                1.4981453472514938,
+                1.5579815227085503
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.submit": {
+              "median": 1.6666641603347303,
+              "ci95": [
+                1.6319167919096187,
+                1.7327127021450166
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.upload": {
+              "median": 4.380697395868971,
+              "ci95": [
+                4.29393142491407,
+                4.441474373619679
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warmP95.completion": {
+              "median": 0.6564712867428899,
+              "ci95": [
+                0.6338825324780039,
+                0.6892804722787613
+              ],
+              "n": 96,
+              "providerFasterPairs": 90
+            },
+            "warmP95.encode": {
+              "median": 2.841102664534726,
+              "ci95": [
+                2.478869296944004,
+                3.384042584255858
+              ],
+              "n": 96,
+              "providerFasterPairs": 11
+            },
+            "warmP95.map": {
+              "median": 0.9133752216995314,
+              "ci95": [
+                0.8528447267640517,
+                0.9742602509478949
+              ],
+              "n": 96,
+              "providerFasterPairs": 63
+            },
+            "warmP95.operation": {
+              "median": 1.5586886703377143,
+              "ci95": [
+                1.4968110532691616,
+                1.6566613748437038
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warmP95.submit": {
+              "median": 1.6274981046412962,
+              "ci95": [
+                1.530570157292455,
+                2.0613452405370865
+              ],
+              "n": 96,
+              "providerFasterPairs": 14
+            },
+            "warmP95.upload": {
+              "median": 3.862475300369197,
+              "ci95": [
+                3.767791773556625,
+                3.9887938661161897
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            }
+          }
+        },
+        "m7r/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 1.0315234949655148,
+              "ci95": [
+                0.9762284474306854,
+                1.0715930241789648
+              ],
+              "n": 96,
+              "providerFasterPairs": 42
+            },
+            "complete": {
+              "median": 0.9572342049159183,
+              "ci95": [
+                0.9445854757112366,
+                0.9743646898746254
+              ],
+              "n": 96,
+              "providerFasterPairs": 67
+            },
+            "cpuMs": {
+              "median": 1.0104053084144606,
+              "ci95": [
+                0.9935942196180763,
+                1.0381519824875673
+              ],
+              "n": 96,
+              "providerFasterPairs": 41
+            },
+            "first.completion": {
+              "median": 0.923659434732435,
+              "ci95": [
+                0.9024971250205355,
+                0.9439657855193079
+              ],
+              "n": 96,
+              "providerFasterPairs": 78
+            },
+            "first.encode": {
+              "median": 0.9790171369509865,
+              "ci95": [
+                0.9204808646740927,
+                1.07748380423405
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "first.map": {
+              "median": 1.0040799286539976,
+              "ci95": [
+                0.9713228935059804,
+                1.0380190187795002
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "first.operation": {
+              "median": 0.9924978492889204,
+              "ci95": [
+                0.9728907677679554,
+                1.0111208514687564
+              ],
+              "n": 96,
+              "providerFasterPairs": 51
+            },
+            "first.submit": {
+              "median": 1.0085093564761431,
+              "ci95": [
+                0.9854481172726622,
+                1.0365807009689072
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "first.upload": {
+              "median": 1.0071111473185579,
+              "ci95": [
+                0.9855578582031223,
+                1.0299044619616802
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "maxRssMiB": {
+              "median": 1.0010432152456252,
+              "ci95": [
+                1.0004001778568252,
+                1.0014687926697605
+              ],
+              "n": 96,
+              "providerFasterPairs": 36
+            },
+            "pipelineNs": {
+              "median": 1.0081732105560477,
+              "ci95": [
+                0.9942254700253923,
+                1.07426310948357
+              ],
+              "n": 96,
+              "providerFasterPairs": 44
+            },
+            "processInMainNs": {
+              "median": 1.0002725858999995,
+              "ci95": [
+                0.9650739668499599,
+                1.0299030968454979
+              ],
+              "n": 96,
+              "providerFasterPairs": 48
+            },
+            "processWall": {
+              "median": 1.0021900961239028,
+              "ci95": [
+                0.9754253116726742,
+                1.0235211277828664
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "resourcesNs": {
+              "median": 0.9983189454944013,
+              "ci95": [
+                0.9725689361706822,
+                1.0207124247160257
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "setupAdapterNs": {
+              "median": 0.9793788138083084,
+              "ci95": [
+                0.9533191547632183,
+                1.0150953897443018
+              ],
+              "n": 96,
+              "providerFasterPairs": 53
+            },
+            "setupDeviceNs": {
+              "median": 1.0161258952676997,
+              "ci95": [
+                0.9860523208648927,
+                1.064103327505102
+              ],
+              "n": 96,
+              "providerFasterPairs": 44
+            },
+            "setupInstanceNs": {
+              "median": 1.0005378624530155,
+              "ci95": [
+                0.9583649475780021,
+                1.0571235518941746
+              ],
+              "n": 96,
+              "providerFasterPairs": 48
+            },
+            "setupNs": {
+              "median": 0.981502373383289,
+              "ci95": [
+                0.9574876505114731,
+                1.013728880521305
+              ],
+              "n": 96,
+              "providerFasterPairs": 53
+            },
+            "teardownDeviceNs": {
+              "median": 1.115896281622753,
+              "ci95": [
+                1.077941452917955,
+                1.1490793628880567
+              ],
+              "n": 96,
+              "providerFasterPairs": 19
+            },
+            "teardownNs": {
+              "median": 1.1671734521121668,
+              "ci95": [
+                1.1165834434599566,
+                1.2067340865619691
+              ],
+              "n": 96,
+              "providerFasterPairs": 19
+            },
+            "teardownReleaseNs": {
+              "median": 1.232728887880466,
+              "ci95": [
+                1.1700870793127796,
+                1.2687316600666647
+              ],
+              "n": 96,
+              "providerFasterPairs": 18
+            },
+            "warm.completion": {
+              "median": 0.9241870559671082,
+              "ci95": [
+                0.9054560828665045,
+                0.9397190055290817
+              ],
+              "n": 96,
+              "providerFasterPairs": 81
+            },
+            "warm.encode": {
+              "median": 0.9268714597525514,
+              "ci95": [
+                0.8891352549889135,
+                0.9575371549893843
+              ],
+              "n": 96,
+              "providerFasterPairs": 66
+            },
+            "warm.map": {
+              "median": 0.9890688272466478,
+              "ci95": [
+                0.9734564726402648,
+                1.001107910480833
+              ],
+              "n": 96,
+              "providerFasterPairs": 56
+            },
+            "warm.operation": {
+              "median": 0.9356681408802547,
+              "ci95": [
+                0.9142190106123645,
+                0.9460611435378592
+              ],
+              "n": 96,
+              "providerFasterPairs": 85
+            },
+            "warm.submit": {
+              "median": 0.5463264051427374,
+              "ci95": [
+                0.5265098405774524,
+                0.569874788377641
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.upload": {
+              "median": 0.9885746871209883,
+              "ci95": [
+                0.9734414960711929,
+                1.0114812116165295
+              ],
+              "n": 96,
+              "providerFasterPairs": 53
+            },
+            "warmP95.completion": {
+              "median": 0.9078409463051322,
+              "ci95": [
+                0.8902078174946914,
+                0.9444398200447908
+              ],
+              "n": 96,
+              "providerFasterPairs": 69
+            },
+            "warmP95.encode": {
+              "median": 0.9401648389702577,
+              "ci95": [
+                0.8154793154667486,
+                1.0891556514701917
+              ],
+              "n": 96,
+              "providerFasterPairs": 53
+            },
+            "warmP95.map": {
+              "median": 1.0024943969531122,
+              "ci95": [
+                0.9694023378812494,
+                1.0347744467187623
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "warmP95.operation": {
+              "median": 0.9188296939244917,
+              "ci95": [
+                0.8737036524428368,
+                0.9840455711140866
+              ],
+              "n": 96,
+              "providerFasterPairs": 61
+            },
+            "warmP95.submit": {
+              "median": 0.6089040086909459,
+              "ci95": [
+                0.5391786700036183,
+                0.6983490594001236
+              ],
+              "n": 96,
+              "providerFasterPairs": 77
+            },
+            "warmP95.upload": {
+              "median": 1.0305247043576098,
+              "ci95": [
+                0.9788964105010984,
+                1.1161168446072018
+              ],
+              "n": 96,
+              "providerFasterPairs": 42
+            }
+          }
+        }
+      }
+    },
+    "vector_scale_add_262k": {
+      "providers": {
+        "dawn": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.517587,
+            "complete": 10.0000115,
+            "cpuMs": 47.77649999999947,
+            "first.completion": 0.0397655,
+            "first.encode": 0.0904595,
+            "first.map": 0.755058,
+            "first.operation": 1.465337,
+            "first.submit": 0.3612635,
+            "first.upload": 0.1720235,
+            "maxRssMiB": 77.9609375,
+            "pipelineNs": 1.2710815,
+            "processInMainNs": 45.450206,
+            "processWall": 50.7578585,
+            "resourcesNs": 0.551596,
+            "setupAdapterNs": 20.3218965,
+            "setupDeviceNs": 1.3799065000000001,
+            "setupInstanceNs": 0.225929,
+            "setupNs": 21.851579,
+            "teardownDeviceNs": 0.406974,
+            "teardownNs": 0.5067565,
+            "teardownReleaseNs": 0.101365,
+            "warm.completion": 0.0969875,
+            "warm.encode": 0.002665,
+            "warm.map": 0.0230635,
+            "warm.operation": 0.163126,
+            "warm.submit": 0.014606999999999998,
+            "warm.upload": 0.023243,
+            "warmP95.completion": 0.1245135,
+            "warmP95.encode": 0.011065499999999999,
+            "warmP95.map": 0.027195999999999998,
+            "warmP95.operation": 0.2236495,
+            "warmP95.submit": 0.026445,
+            "warmP95.upload": 0.032276
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.740431,
+            "complete": 10.968167,
+            "cpuMs": 52.294000000000175,
+            "first.completion": 0.130064,
+            "first.encode": 0.131908,
+            "first.map": 1.06494,
+            "first.operation": 1.914305,
+            "first.submit": 0.479671,
+            "first.upload": 0.233248,
+            "maxRssMiB": 78.31640625,
+            "pipelineNs": 1.640981,
+            "processInMainNs": 50.12742,
+            "processWall": 55.601918,
+            "resourcesNs": 0.77734,
+            "setupAdapterNs": 24.119907,
+            "setupDeviceNs": 1.856075,
+            "setupInstanceNs": 0.274325,
+            "setupNs": 25.980401,
+            "teardownDeviceNs": 0.67091,
+            "teardownNs": 0.852892,
+            "teardownReleaseNs": 0.18074,
+            "warm.completion": 0.107372,
+            "warm.encode": 0.003146,
+            "warm.map": 0.023444,
+            "warm.operation": 0.179578,
+            "warm.submit": 0.019136,
+            "warm.upload": 0.023925,
+            "warmP95.completion": 0.171442,
+            "warmP95.encode": 0.033493,
+            "warmP95.map": 0.054042,
+            "warmP95.operation": 0.338566,
+            "warmP95.submit": 0.085261,
+            "warmP95.upload": 0.053149
+          },
+          "pooledWarmP95": {
+            "upload": 0.040576,
+            "encode": 0.018545,
+            "submit": 0.046878,
+            "completion": 0.134302,
+            "map": 0.042169,
+            "operation": 0.25547
+          },
+          "pooledWarmMedian": {
+            "upload": 0.023193,
+            "encode": 0.002665,
+            "submit": 0.014818,
+            "completion": 0.097383,
+            "map": 0.023023,
+            "operation": 0.1625055
+          }
+        },
+        "dawn-aa": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.479766,
+            "complete": 9.873232,
+            "cpuMs": 47.14099999999965,
+            "first.completion": 0.058444499999999996,
+            "first.encode": 0.08883150000000001,
+            "first.map": 0.7520675,
+            "first.operation": 1.4878390000000001,
+            "first.submit": 0.370055,
+            "first.upload": 0.1744275,
+            "maxRssMiB": 77.89453125,
+            "pipelineNs": 1.244943,
+            "processInMainNs": 45.3689325,
+            "processWall": 50.735616,
+            "resourcesNs": 0.5510545,
+            "setupAdapterNs": 20.332546,
+            "setupDeviceNs": 1.3361645,
+            "setupInstanceNs": 0.2258345,
+            "setupNs": 21.927158,
+            "teardownDeviceNs": 0.4032775,
+            "teardownNs": 0.5022635,
+            "teardownReleaseNs": 0.0993715,
+            "warm.completion": 0.097548,
+            "warm.encode": 0.0026699999999999996,
+            "warm.map": 0.023078,
+            "warm.operation": 0.16249049999999998,
+            "warm.submit": 0.014863,
+            "warm.upload": 0.023239000000000003,
+            "warmP95.completion": 0.12536049999999999,
+            "warmP95.encode": 0.0065520000000000005,
+            "warmP95.map": 0.027105999999999998,
+            "warmP95.operation": 0.2169375,
+            "warmP95.submit": 0.0253425,
+            "warmP95.upload": 0.029766
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.691829,
+            "complete": 10.829732,
+            "cpuMs": 51.20599999999964,
+            "first.completion": 0.169428,
+            "first.encode": 0.147006,
+            "first.map": 1.083324,
+            "first.operation": 1.94887,
+            "first.submit": 0.677522,
+            "first.upload": 0.212278,
+            "maxRssMiB": 78.3046875,
+            "pipelineNs": 1.561212,
+            "processInMainNs": 49.644577,
+            "processWall": 54.975047,
+            "resourcesNs": 0.773612,
+            "setupAdapterNs": 22.416305,
+            "setupDeviceNs": 1.892844,
+            "setupInstanceNs": 0.285666,
+            "setupNs": 24.19878,
+            "teardownDeviceNs": 0.55358,
+            "teardownNs": 0.76135,
+            "teardownReleaseNs": 0.178746,
+            "warm.completion": 0.108183,
+            "warm.encode": 0.003056,
+            "warm.map": 0.023825,
+            "warm.operation": 0.178986,
+            "warm.submit": 0.018534,
+            "warm.upload": 0.023885,
+            "warmP95.completion": 0.155231,
+            "warmP95.encode": 0.034164,
+            "warmP95.map": 0.050896,
+            "warmP95.operation": 0.336212,
+            "warmP95.submit": 0.089338,
+            "warmP95.upload": 0.053991
+          },
+          "pooledWarmP95": {
+            "upload": 0.040265,
+            "encode": 0.018375,
+            "submit": 0.046557,
+            "completion": 0.133641,
+            "map": 0.041658,
+            "operation": 0.249238
+          },
+          "pooledWarmMedian": {
+            "upload": 0.0232235,
+            "encode": 0.002665,
+            "submit": 0.014918,
+            "completion": 0.097644,
+            "map": 0.023103,
+            "operation": 0.16254000000000002
+          }
+        },
+        "m7r": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.1662475,
+            "complete": 8.4591375,
+            "cpuMs": 43.04150000000018,
+            "first.completion": 0.10107,
+            "first.encode": 0.0081955,
+            "first.map": 0.203998,
+            "first.operation": 0.7498885,
+            "first.submit": 0.40665850000000003,
+            "first.upload": 0.035671499999999995,
+            "maxRssMiB": 70.0390625,
+            "pipelineNs": 1.0818915,
+            "processInMainNs": 43.2036095,
+            "processWall": 46.368410499999996,
+            "resourcesNs": 0.336572,
+            "setupAdapterNs": 20.4432145,
+            "setupDeviceNs": 0.7046535,
+            "setupInstanceNs": 0.018349499999999998,
+            "setupNs": 21.1502135,
+            "teardownDeviceNs": 0.24545050000000002,
+            "teardownNs": 0.3299795,
+            "teardownReleaseNs": 0.0863815,
+            "warm.completion": 0.114555,
+            "warm.encode": 0.0012175,
+            "warm.map": 0.022467,
+            "warm.operation": 0.174423,
+            "warm.submit": 0.014106500000000001,
+            "warm.upload": 0.020934,
+            "warmP95.completion": 0.137543,
+            "warmP95.encode": 0.003992,
+            "warmP95.map": 0.026996,
+            "warmP95.operation": 0.2178645,
+            "warmP95.submit": 0.0245115,
+            "warmP95.upload": 0.031414
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.270668,
+            "complete": 9.565041,
+            "cpuMs": 46.2830000000003,
+            "first.completion": 0.256712,
+            "first.encode": 0.014648,
+            "first.map": 0.266881,
+            "first.operation": 1.091069,
+            "first.submit": 0.655992,
+            "first.upload": 0.047859,
+            "maxRssMiB": 70.3203125,
+            "pipelineNs": 1.680075,
+            "processInMainNs": 46.495035,
+            "processWall": 49.756296,
+            "resourcesNs": 0.506472,
+            "setupAdapterNs": 22.587688,
+            "setupDeviceNs": 1.103802,
+            "setupInstanceNs": 0.023925,
+            "setupNs": 23.388101,
+            "teardownDeviceNs": 0.302639,
+            "teardownNs": 0.46364,
+            "teardownReleaseNs": 0.131547,
+            "warm.completion": 0.124273,
+            "warm.encode": 0.001573,
+            "warm.map": 0.023254,
+            "warm.operation": 0.190378,
+            "warm.submit": 0.018575,
+            "warm.upload": 0.02135,
+            "warmP95.completion": 0.151836,
+            "warmP95.encode": 0.011662,
+            "warmP95.map": 0.045556,
+            "warmP95.operation": 0.296937,
+            "warmP95.submit": 0.056997,
+            "warmP95.upload": 0.045204
+          },
+          "pooledWarmP95": {
+            "upload": 0.040416,
+            "encode": 0.007134,
+            "submit": 0.041207,
+            "completion": 0.14346,
+            "map": 0.041909,
+            "operation": 0.247004
+          },
+          "pooledWarmMedian": {
+            "upload": 0.02101,
+            "encode": 0.001222,
+            "submit": 0.014187,
+            "completion": 0.1146655,
+            "map": 0.0224725,
+            "operation": 0.174948
+          }
+        },
+        "main": {
+          "processes": 96,
+          "warmIterationsPooled": 2976,
+          "median": {
+            "compileNs": 0.1694585,
+            "complete": 9.5161665,
+            "cpuMs": 44.03749999999906,
+            "first.completion": 0.118833,
+            "first.encode": 0.00811,
+            "first.map": 0.2063625,
+            "first.operation": 0.759742,
+            "first.submit": 0.4056015,
+            "first.upload": 0.035667000000000004,
+            "maxRssMiB": 70.087890625,
+            "pipelineNs": 1.0807194999999998,
+            "processInMainNs": 44.409667,
+            "processWall": 47.57087,
+            "resourcesNs": 0.3437855,
+            "setupAdapterNs": 20.319423,
+            "setupDeviceNs": 0.7052995,
+            "setupInstanceNs": 0.01858,
+            "setupNs": 21.064463500000002,
+            "teardownDeviceNs": 0.2149485,
+            "teardownNs": 0.293301,
+            "teardownReleaseNs": 0.0773905,
+            "warm.completion": 0.1304095,
+            "warm.encode": 0.001293,
+            "warm.map": 0.023249,
+            "warm.operation": 0.202776,
+            "warm.submit": 0.024411000000000002,
+            "warm.upload": 0.021205,
+            "warmP95.completion": 0.155733,
+            "warmP95.encode": 0.004758999999999999,
+            "warmP95.map": 0.0277575,
+            "warmP95.operation": 0.25281450000000005,
+            "warmP95.submit": 0.0449545,
+            "warmP95.upload": 0.032291
+          },
+          "p95AcrossProcesses": {
+            "compileNs": 0.278182,
+            "complete": 10.375043,
+            "cpuMs": 46.59899999999995,
+            "first.completion": 0.203823,
+            "first.encode": 0.017152,
+            "first.map": 0.312767,
+            "first.operation": 1.074699,
+            "first.submit": 0.618602,
+            "first.upload": 0.048481,
+            "maxRssMiB": 70.30859375,
+            "pipelineNs": 1.653335,
+            "processInMainNs": 47.414173,
+            "processWall": 50.791136,
+            "resourcesNs": 0.583034,
+            "setupAdapterNs": 22.646216,
+            "setupDeviceNs": 1.121957,
+            "setupInstanceNs": 0.022312,
+            "setupNs": 23.357322,
+            "teardownDeviceNs": 0.272352,
+            "teardownNs": 0.373331,
+            "teardownReleaseNs": 0.103865,
+            "warm.completion": 0.141566,
+            "warm.encode": 0.001614,
+            "warm.map": 0.025358,
+            "warm.operation": 0.220864,
+            "warm.submit": 0.029836,
+            "warm.upload": 0.021761,
+            "warmP95.completion": 0.179016,
+            "warmP95.encode": 0.009909,
+            "warmP95.map": 0.047789,
+            "warmP95.operation": 0.334418,
+            "warmP95.submit": 0.081934,
+            "warmP95.upload": 0.04228
+          },
+          "pooledWarmP95": {
+            "upload": 0.039324,
+            "encode": 0.007224,
+            "submit": 0.068398,
+            "completion": 0.166392,
+            "map": 0.039645,
+            "operation": 0.285406
+          },
+          "pooledWarmMedian": {
+            "upload": 0.02124,
+            "encode": 0.001303,
+            "submit": 0.024561,
+            "completion": 0.130355,
+            "map": 0.023354,
+            "operation": 0.2037225
+          }
+        }
+      },
+      "paired": {
+        "dawn/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 2.9658242542205624,
+              "ci95": [
+                2.840341385794879,
+                3.0709022278395186
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "complete": {
+              "median": 1.0403939777749867,
+              "ci95": [
+                1.0186947839427831,
+                1.060811596737968
+              ],
+              "n": 96,
+              "providerFasterPairs": 27
+            },
+            "cpuMs": {
+              "median": 1.0776351737601422,
+              "ci95": [
+                1.0558334783365233,
+                1.0969747314059943
+              ],
+              "n": 96,
+              "providerFasterPairs": 7
+            },
+            "first.completion": {
+              "median": 0.35022491592342037,
+              "ci95": [
+                0.2511267507973929,
+                0.5380537558655647
+              ],
+              "n": 96,
+              "providerFasterPairs": 82
+            },
+            "first.encode": {
+              "median": 10.932967978998494,
+              "ci95": [
+                10.139281416177745,
+                11.748177061304522
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.map": {
+              "median": 3.712042896527094,
+              "ci95": [
+                3.557639464494941,
+                3.8909492885209236
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.operation": {
+              "median": 1.900026275055255,
+              "ci95": [
+                1.818244862085987,
+                1.9487829256898574
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "first.submit": {
+              "median": 0.887517598438303,
+              "ci95": [
+                0.8387090713398055,
+                0.9155140905380996
+              ],
+              "n": 96,
+              "providerFasterPairs": 76
+            },
+            "first.upload": {
+              "median": 4.753194405494019,
+              "ci95": [
+                4.66536369434699,
+                4.853008332591999
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "maxRssMiB": {
+              "median": 1.1126011651865195,
+              "ci95": [
+                1.1108566960795263,
+                1.1136300494526865
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "pipelineNs": {
+              "median": 1.1272393185188105,
+              "ci95": [
+                1.0824845367778229,
+                1.1693072523126897
+              ],
+              "n": 96,
+              "providerFasterPairs": 27
+            },
+            "processInMainNs": {
+              "median": 1.0187781578676574,
+              "ci95": [
+                1.007191914498392,
+                1.0470036118763437
+              ],
+              "n": 96,
+              "providerFasterPairs": 31
+            },
+            "processWall": {
+              "median": 1.0657875357878976,
+              "ci95": [
+                1.0489972015659972,
+                1.0879728323489877
+              ],
+              "n": 96,
+              "providerFasterPairs": 9
+            },
+            "resourcesNs": {
+              "median": 1.614927066905706,
+              "ci95": [
+                1.5907963013131123,
+                1.6378267023393338
+              ],
+              "n": 96,
+              "providerFasterPairs": 6
+            },
+            "setupAdapterNs": {
+              "median": 0.9896630707161129,
+              "ci95": [
+                0.9660821084848369,
+                1.0139901026059226
+              ],
+              "n": 96,
+              "providerFasterPairs": 51
+            },
+            "setupDeviceNs": {
+              "median": 1.9139523437239179,
+              "ci95": [
+                1.8752934186703742,
+                1.9731335780541603
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "setupInstanceNs": {
+              "median": 12.397838663653314,
+              "ci95": [
+                11.839525608732158,
+                12.91701854231687
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupNs": {
+              "median": 1.037385916694136,
+              "ci95": [
+                1.006654866261504,
+                1.0548263910279436
+              ],
+              "n": 96,
+              "providerFasterPairs": 33
+            },
+            "teardownDeviceNs": {
+              "median": 1.9405632723330148,
+              "ci95": [
+                1.8885893522563857,
+                2.022663102043782
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "teardownNs": {
+              "median": 1.8029825880295363,
+              "ci95": [
+                1.7582303640877712,
+                1.9019324117262608
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "teardownReleaseNs": {
+              "median": 1.4178884488291734,
+              "ci95": [
+                1.290475213499859,
+                1.5650362538817695
+              ],
+              "n": 96,
+              "providerFasterPairs": 15
+            },
+            "warm.completion": {
+              "median": 0.7463943384097619,
+              "ci95": [
+                0.7420157707427135,
+                0.7543283851566862
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.encode": {
+              "median": 2.0528612140638502,
+              "ci95": [
+                2.0230876865671643,
+                2.1256239600665556
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.map": {
+              "median": 0.9892609362892208,
+              "ci95": [
+                0.9798395744863381,
+                0.9956565173956479
+              ],
+              "n": 96,
+              "providerFasterPairs": 69
+            },
+            "warm.operation": {
+              "median": 0.7980446252383937,
+              "ci95": [
+                0.7874686692114028,
+                0.8123496269224912
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.submit": {
+              "median": 0.5938677851677207,
+              "ci95": [
+                0.5820114748565642,
+                0.6084428941955102
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.upload": {
+              "median": 1.0877664363025024,
+              "ci95": [
+                1.0753439857584248,
+                1.0956069910250352
+              ],
+              "n": 96,
+              "providerFasterPairs": 15
+            },
+            "warmP95.completion": {
+              "median": 0.8145884153560498,
+              "ci95": [
+                0.7725429145200291,
+                0.8275363724195213
+              ],
+              "n": 96,
+              "providerFasterPairs": 87
+            },
+            "warmP95.encode": {
+              "median": 1.816039020371929,
+              "ci95": [
+                1.488565956967444,
+                2.3324185560887765
+              ],
+              "n": 96,
+              "providerFasterPairs": 25
+            },
+            "warmP95.map": {
+              "median": 0.996409438296357,
+              "ci95": [
+                0.9507571811673243,
+                1.0641779489003746
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "warmP95.operation": {
+              "median": 0.8497091238179868,
+              "ci95": [
+                0.8272991744052063,
+                0.9109134222549573
+              ],
+              "n": 96,
+              "providerFasterPairs": 70
+            },
+            "warmP95.submit": {
+              "median": 0.6318170216458099,
+              "ci95": [
+                0.5171674819473561,
+                0.7047758069846866
+              ],
+              "n": 96,
+              "providerFasterPairs": 73
+            },
+            "warmP95.upload": {
+              "median": 1.0387721191367696,
+              "ci95": [
+                0.9894552285535377,
+                1.1003861003861004
+              ],
+              "n": 96,
+              "providerFasterPairs": 39
+            }
+          }
+        },
+        "dawn-aa/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 2.842279914670793,
+              "ci95": [
+                2.7279332825223763,
+                2.881071226281507
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "complete": {
+              "median": 1.0290481613162594,
+              "ci95": [
+                1.0108872351180127,
+                1.0476778112698788
+              ],
+              "n": 96,
+              "providerFasterPairs": 30
+            },
+            "cpuMs": {
+              "median": 1.0685435973575008,
+              "ci95": [
+                1.0606966496157884,
+                1.0980053012264726
+              ],
+              "n": 96,
+              "providerFasterPairs": 9
+            },
+            "first.completion": {
+              "median": 0.4013473295983866,
+              "ci95": [
+                0.27621728736789125,
+                0.5532954068625872
+              ],
+              "n": 96,
+              "providerFasterPairs": 76
+            },
+            "first.encode": {
+              "median": 11.34126896982895,
+              "ci95": [
+                10.624711453288178,
+                11.928571428571427
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.map": {
+              "median": 3.718334255023054,
+              "ci95": [
+                3.6216679276596784,
+                3.876801274965941
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "first.operation": {
+              "median": 1.9543445091920688,
+              "ci95": [
+                1.8916782195640296,
+                1.9906367504291815
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "first.submit": {
+              "median": 0.910500378408372,
+              "ci95": [
+                0.8716932637574671,
+                0.9636866083399827
+              ],
+              "n": 96,
+              "providerFasterPairs": 65
+            },
+            "first.upload": {
+              "median": 4.842889769241825,
+              "ci95": [
+                4.688077750160583,
+                4.9746066196418885
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "maxRssMiB": {
+              "median": 1.1123914759704234,
+              "ci95": [
+                1.1103027589680452,
+                1.1137424949966643
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "pipelineNs": {
+              "median": 1.1326541653388902,
+              "ci95": [
+                1.0910765088163705,
+                1.1496098256342835
+              ],
+              "n": 96,
+              "providerFasterPairs": 24
+            },
+            "processInMainNs": {
+              "median": 1.0184191839746481,
+              "ci95": [
+                1.005820990196546,
+                1.0322346213904814
+              ],
+              "n": 96,
+              "providerFasterPairs": 33
+            },
+            "processWall": {
+              "median": 1.0572559208990713,
+              "ci95": [
+                1.0508165475597586,
+                1.0771671109276864
+              ],
+              "n": 96,
+              "providerFasterPairs": 14
+            },
+            "resourcesNs": {
+              "median": 1.6147536054633371,
+              "ci95": [
+                1.585311527812134,
+                1.651075594718867
+              ],
+              "n": 96,
+              "providerFasterPairs": 8
+            },
+            "setupAdapterNs": {
+              "median": 1.0006645468522826,
+              "ci95": [
+                0.9856342213591405,
+                1.0237895992799961
+              ],
+              "n": 96,
+              "providerFasterPairs": 47
+            },
+            "setupDeviceNs": {
+              "median": 1.8697637728998533,
+              "ci95": [
+                1.8111975211130689,
+                1.9707948339973056
+              ],
+              "n": 96,
+              "providerFasterPairs": 3
+            },
+            "setupInstanceNs": {
+              "median": 12.140654156712037,
+              "ci95": [
+                11.739542054450139,
+                12.942928780371322
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "setupNs": {
+              "median": 1.0428797871092628,
+              "ci95": [
+                1.0259024467946531,
+                1.070370652021078
+              ],
+              "n": 96,
+              "providerFasterPairs": 31
+            },
+            "teardownDeviceNs": {
+              "median": 1.908724605705069,
+              "ci95": [
+                1.8375038725687878,
+                1.9737515150270137
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "teardownNs": {
+              "median": 1.7918123784215583,
+              "ci95": [
+                1.7264708492980456,
+                1.872487334848755
+              ],
+              "n": 96,
+              "providerFasterPairs": 1
+            },
+            "teardownReleaseNs": {
+              "median": 1.4064858951288364,
+              "ci95": [
+                1.3283597505062326,
+                1.5405584461752253
+              ],
+              "n": 96,
+              "providerFasterPairs": 17
+            },
+            "warm.completion": {
+              "median": 0.7493767854082305,
+              "ci95": [
+                0.7394404119926885,
+                0.7563806471513
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.encode": {
+              "median": 2.056038757487865,
+              "ci95": [
+                2.019255447406618,
+                2.107201309328969
+              ],
+              "n": 96,
+              "providerFasterPairs": 0
+            },
+            "warm.map": {
+              "median": 0.9926222122841626,
+              "ci95": [
+                0.9844957095232763,
+                0.9965167283048078
+              ],
+              "n": 96,
+              "providerFasterPairs": 64
+            },
+            "warm.operation": {
+              "median": 0.802662482824333,
+              "ci95": [
+                0.789553462686359,
+                0.8118376432261173
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.submit": {
+              "median": 0.6025756461833299,
+              "ci95": [
+                0.5909348689089561,
+                0.6142048716476667
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.upload": {
+              "median": 1.095444250963879,
+              "ci95": [
+                1.085273492286115,
+                1.1005680459113547
+              ],
+              "n": 96,
+              "providerFasterPairs": 10
+            },
+            "warmP95.completion": {
+              "median": 0.7911070967441267,
+              "ci95": [
+                0.7633841875473971,
+                0.8239461840581613
+              ],
+              "n": 96,
+              "providerFasterPairs": 87
+            },
+            "warmP95.encode": {
+              "median": 1.747130010359013,
+              "ci95": [
+                1.3713235294117647,
+                2.2756114692473046
+              ],
+              "n": 96,
+              "providerFasterPairs": 25
+            },
+            "warmP95.map": {
+              "median": 0.9825892839177437,
+              "ci95": [
+                0.9284814234984153,
+                1.0236958817317845
+              ],
+              "n": 96,
+              "providerFasterPairs": 55
+            },
+            "warmP95.operation": {
+              "median": 0.8560031838766394,
+              "ci95": [
+                0.813311265585347,
+                0.9176608066980854
+              ],
+              "n": 96,
+              "providerFasterPairs": 69
+            },
+            "warmP95.submit": {
+              "median": 0.5868140111971349,
+              "ci95": [
+                0.48741003485182816,
+                0.6771971766848816
+              ],
+              "n": 96,
+              "providerFasterPairs": 80
+            },
+            "warmP95.upload": {
+              "median": 0.9999149057473529,
+              "ci95": [
+                0.9244305683672747,
+                1.0671221864951768
+              ],
+              "n": 96,
+              "providerFasterPairs": 48
+            }
+          }
+        },
+        "m7r/main": {
+          "pairs": 96,
+          "ratio": {
+            "compileNs": {
+              "median": 0.9873498907632215,
+              "ci95": [
+                0.951081128447346,
+                1.0105490290098298
+              ],
+              "n": 96,
+              "providerFasterPairs": 55
+            },
+            "complete": {
+              "median": 0.8865778914178298,
+              "ci95": [
+                0.8768781436302608,
+                0.9026946632119482
+              ],
+              "n": 96,
+              "providerFasterPairs": 89
+            },
+            "cpuMs": {
+              "median": 0.9738871343767129,
+              "ci95": [
+                0.969683855192253,
+                0.9927746938056096
+              ],
+              "n": 96,
+              "providerFasterPairs": 62
+            },
+            "first.completion": {
+              "median": 0.8552434074354258,
+              "ci95": [
+                0.8328378930175582,
+                0.8913948991498873
+              ],
+              "n": 96,
+              "providerFasterPairs": 74
+            },
+            "first.encode": {
+              "median": 1.031480834197348,
+              "ci95": [
+                0.9321530418250951,
+                1.0930959559263198
+              ],
+              "n": 96,
+              "providerFasterPairs": 43
+            },
+            "first.map": {
+              "median": 0.987200547950518,
+              "ci95": [
+                0.9633025576690724,
+                1.007039086043269
+              ],
+              "n": 96,
+              "providerFasterPairs": 54
+            },
+            "first.operation": {
+              "median": 0.9705696305435613,
+              "ci95": [
+                0.955805058770223,
+                0.9937726235610986
+              ],
+              "n": 96,
+              "providerFasterPairs": 59
+            },
+            "first.submit": {
+              "median": 1.0082976080352668,
+              "ci95": [
+                0.9839989230702537,
+                1.0371843466665505
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "first.upload": {
+              "median": 0.999107934034659,
+              "ci95": [
+                0.9808103845916843,
+                1.020471769221024
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            },
+            "maxRssMiB": {
+              "median": 0.9995545174310332,
+              "ci95": [
+                0.99827192151179,
+                1.0008619931963416
+              ],
+              "n": 96,
+              "providerFasterPairs": 50
+            },
+            "pipelineNs": {
+              "median": 0.9955498473505409,
+              "ci95": [
+                0.9906731925210865,
+                1.0065364920979984
+              ],
+              "n": 96,
+              "providerFasterPairs": 52
+            },
+            "processInMainNs": {
+              "median": 0.9775171617995344,
+              "ci95": [
+                0.9607582681530739,
+                0.9853063184435853
+              ],
+              "n": 96,
+              "providerFasterPairs": 68
+            },
+            "processWall": {
+              "median": 0.9724452165803823,
+              "ci95": [
+                0.9628875834707074,
+                0.9869958467177858
+              ],
+              "n": 96,
+              "providerFasterPairs": 64
+            },
+            "resourcesNs": {
+              "median": 0.9916651343240585,
+              "ci95": [
+                0.9628555008086083,
+                1.014555668272116
+              ],
+              "n": 96,
+              "providerFasterPairs": 50
+            },
+            "setupAdapterNs": {
+              "median": 1.0119317312055394,
+              "ci95": [
+                0.9903869076929225,
+                1.025864030690694
+              ],
+              "n": 96,
+              "providerFasterPairs": 43
+            },
+            "setupDeviceNs": {
+              "median": 0.9906726017745083,
+              "ci95": [
+                0.9717574057592849,
+                1.017167811710781
+              ],
+              "n": 96,
+              "providerFasterPairs": 54
+            },
+            "setupInstanceNs": {
+              "median": 1.003495353348638,
+              "ci95": [
+                0.9524662374751924,
+                1.0309447242278988
+              ],
+              "n": 96,
+              "providerFasterPairs": 46
+            },
+            "setupNs": {
+              "median": 1.0120334991381799,
+              "ci95": [
+                0.9919080245277149,
+                1.0247696643081496
+              ],
+              "n": 96,
+              "providerFasterPairs": 43
+            },
+            "teardownDeviceNs": {
+              "median": 1.1165149629659046,
+              "ci95": [
+                1.074581489485781,
+                1.1609764273708814
+              ],
+              "n": 96,
+              "providerFasterPairs": 23
+            },
+            "teardownNs": {
+              "median": 1.1145203048812289,
+              "ci95": [
+                1.0502884810530284,
+                1.154625535238548
+              ],
+              "n": 96,
+              "providerFasterPairs": 27
+            },
+            "teardownReleaseNs": {
+              "median": 1.0921510357030968,
+              "ci95": [
+                1.0275400821723149,
+                1.1858259290485762
+              ],
+              "n": 96,
+              "providerFasterPairs": 34
+            },
+            "warm.completion": {
+              "median": 0.8580683793560631,
+              "ci95": [
+                0.8428341665544261,
+                0.8726852879790399
+              ],
+              "n": 96,
+              "providerFasterPairs": 92
+            },
+            "warm.encode": {
+              "median": 0.949125152799731,
+              "ci95": [
+                0.9220576773187841,
+                0.9825436408977556
+              ],
+              "n": 96,
+              "providerFasterPairs": 61
+            },
+            "warm.map": {
+              "median": 0.9633561658231031,
+              "ci95": [
+                0.9506759383233274,
+                0.9706047637574028
+              ],
+              "n": 96,
+              "providerFasterPairs": 86
+            },
+            "warm.operation": {
+              "median": 0.8537650477527938,
+              "ci95": [
+                0.8385585350146069,
+                0.8643533751126199
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.submit": {
+              "median": 0.5860288413407437,
+              "ci95": [
+                0.5671779785669258,
+                0.6004791056694171
+              ],
+              "n": 96,
+              "providerFasterPairs": 96
+            },
+            "warm.upload": {
+              "median": 0.9880333784340829,
+              "ci95": [
+                0.9797382861967076,
+                0.994590379648131
+              ],
+              "n": 96,
+              "providerFasterPairs": 66
+            },
+            "warmP95.completion": {
+              "median": 0.8793985694851725,
+              "ci95": [
+                0.8486905377312235,
+                0.908203841080542
+              ],
+              "n": 96,
+              "providerFasterPairs": 81
+            },
+            "warmP95.encode": {
+              "median": 0.9346406432741045,
+              "ci95": [
+                0.7196285787980398,
+                1.1605074132904196
+              ],
+              "n": 96,
+              "providerFasterPairs": 53
+            },
+            "warmP95.map": {
+              "median": 0.9578833470086741,
+              "ci95": [
+                0.907810807139307,
+                0.9784232365145228
+              ],
+              "n": 96,
+              "providerFasterPairs": 59
+            },
+            "warmP95.operation": {
+              "median": 0.8584266173957116,
+              "ci95": [
+                0.8326992458009398,
+                0.8752830388318698
+              ],
+              "n": 96,
+              "providerFasterPairs": 79
+            },
+            "warmP95.submit": {
+              "median": 0.6017747096325202,
+              "ci95": [
+                0.537977653303616,
+                0.6889853250489568
+              ],
+              "n": 96,
+              "providerFasterPairs": 84
+            },
+            "warmP95.upload": {
+              "median": 0.9956814331310442,
+              "ci95": [
+                0.9219110854503465,
+                1.0268952695724023
+              ],
+              "n": 96,
+              "providerFasterPairs": 49
+            }
+          }
+        }
+      }
+    }
+  }
+}

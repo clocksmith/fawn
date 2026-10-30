@@ -1,0 +1,13 @@
+PID PPID ELAPSED %CPU RSS COMMAND
+3501982 3501981 00:00 100 20440 python3 -m
+3501985 3501984 00:00 100 17804 python3 ssh-agent-session.py
+3501986 3501979 00:00 100 4580 ps -eo
+3501979 3500017 00:00 33.3 13600 python3 window_gate.py
+6345 1 05:16:22 3.8 4516 bash framework-rgb-fan-run.sh
+25262 3258 05:14:52 1.0 392732 localsearch-3 
+247 2 05:22:26 0.7 0 [kswapd0] 
+221 2 05:22:26 0.6 0 [kcompactd0] 
+3226 1 05:16:31 0.3 57168 tailscaled tailscaled.state
+436 2 05:22:24 0.3 0 phy0-0] 
+3349 3258 05:16:31 0.3 132476 node server.mjs
+3459069 2 03:51 0.2 0 u128:0-mt76] 

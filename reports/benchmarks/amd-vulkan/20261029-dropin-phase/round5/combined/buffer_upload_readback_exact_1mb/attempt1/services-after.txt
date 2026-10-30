@@ -1,0 +1,5 @@
+reploid-qwen-08b inactive disabled
+reploid-qwen-2b inactive disabled
+reploid-qwen-27b inactive disabled
+reploid-qwen-27b-split inactive disabled
+2026-10-30T23:42:12Z

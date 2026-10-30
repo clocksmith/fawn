@@ -1,0 +1,1 @@
+attempt 1 valid=True rc=0 gpu=0.0 cpu=1.318 clients=[] failed=0 aa={'median': 0.9926627983050726, 'ci95': [0.9820577164366374, 1.0079854874421499]}
