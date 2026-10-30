@@ -15,6 +15,7 @@
 struct doe_dx_pipeline_cache;
 struct doe_dx_buffer_heap;
 struct doe_dx_descriptor_ring;
+#define DOE_DX_IDLE_COMMAND_PAIRS 4u
 struct doe_dx_native_context {
     struct doe_dx_pipeline_cache *cache;
     uint64_t cache_driver_version;
@@ -27,8 +28,10 @@ struct doe_dx_native_context {
     doe_dx_wait_record *waits; /* Native event registrations, never GPU submissions. */
     ID3D12CommandSignature *dispatch_signature;
     ID3D12CommandSignature *draw_signature, *draw_indexed_signature;
-    ID3D12CommandAllocator *idle_allocator;
-    ID3D12GraphicsCommandList *idle_list;
+    /* Closed pairs from successfully retired commands, reused oldest first. */
+    ID3D12CommandAllocator *idle_allocators[DOE_DX_IDLE_COMMAND_PAIRS];
+    ID3D12GraphicsCommandList *idle_lists[DOE_DX_IDLE_COMMAND_PAIRS];
+    uint32_t idle_pairs;
     struct doe_dx_buffer_heap *buffer_heaps; /* Placed-buffer heaps, one memory class each. */
     struct doe_dx_descriptor_ring *descriptor_rings; /* Shader-visible CBV/SRV/UAV ranges. */
     doe_dx_limits limits;

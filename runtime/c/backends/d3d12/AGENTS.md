@@ -99,10 +99,11 @@
   or refused admission; return is idempotent and final release returns implicitly.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
   states stay fixed. Descriptor heaps/ranges and allocators survive their whole submission.
-  Only successful terminal retirement may transfer one closed native command
-  allocator/list pair to the serialized context for reuse. Reset allocator before
-  list; propagate either failure without fallback. Discarded, unknown and lost
-  work never enters this cache. Context teardown releases its one idle pair.
+  Only successful terminal retirement may transfer a closed native command
+  allocator/list pair to the serialized context for reuse; at most four pairs are
+  kept, reused oldest first. Reset allocator before list; propagate either
+  failure without fallback. Discarded, unknown and lost work never enters this
+  cache. Context teardown releases every idle pair.
 - Test host ownership at the private typed native-call link seam, not a simulated
   driver or shader interpreter. Keep actual Windows readback as a separate fixture.
 - Texture formats and immutable views remain an explicit subset. Whole-resource

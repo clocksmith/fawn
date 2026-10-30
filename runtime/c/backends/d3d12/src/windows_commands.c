@@ -16,20 +16,25 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
 }
 
 void doe_dx_native_commands_cache_close(doe_dx_native_context *context) {
-    if (context->idle_list) ID3D12GraphicsCommandList_Release(context->idle_list);
-    if (context->idle_allocator) ID3D12CommandAllocator_Release(context->idle_allocator);
-    context->idle_list = NULL;
-    context->idle_allocator = NULL;
+    while (context->idle_pairs) {
+        const uint32_t top = --context->idle_pairs;
+        ID3D12GraphicsCommandList_Release(context->idle_lists[top]);
+        ID3D12CommandAllocator_Release(context->idle_allocators[top]);
+        context->idle_lists[top] = NULL;
+        context->idle_allocators[top] = NULL;
+    }
 }
 
 void doe_dx_native_commands_recycle(doe_dx_native_commands *commands) {
     if (!commands) return;
     doe_dx_native_context *context = commands->context;
     /* Called only after a successfully observed terminal fence. Unknown/lost
-     * work and discarded recordings use destroy, never this transfer. */
-    if (!context->idle_allocator) {
-        context->idle_allocator = commands->allocator;
-        context->idle_list = commands->list;
+     * work and discarded recordings use destroy, never this transfer. Up to
+     * DOE_DX_IDLE_COMMAND_PAIRS pairs are kept; any further pair releases. */
+    if (context->idle_pairs < DOE_DX_IDLE_COMMAND_PAIRS) {
+        context->idle_allocators[context->idle_pairs] = commands->allocator;
+        context->idle_lists[context->idle_pairs] = commands->list;
+        context->idle_pairs++;
         commands->allocator = NULL;
         commands->list = NULL;
     }
@@ -41,11 +46,15 @@ doe_dx_status doe_dx_native_commands_create(doe_dx_native_context *context,
     doe_dx_native_commands *commands = calloc(1, sizeof(*commands));
     if (!commands) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.commands.allocate", error);
     commands->context = context;
-    if (context->idle_allocator) {
-        commands->allocator = context->idle_allocator;
-        commands->list = context->idle_list;
-        context->idle_allocator = NULL;
-        context->idle_list = NULL;
+    if (context->idle_pairs) {
+        /* Oldest first: the earliest retired pair is reused, as with one slot. */
+        commands->allocator = context->idle_allocators[0];
+        commands->list = context->idle_lists[0];
+        const uint32_t remaining = --context->idle_pairs;
+        memmove(context->idle_allocators, context->idle_allocators + 1, remaining * sizeof(*context->idle_allocators));
+        memmove(context->idle_lists, context->idle_lists + 1, remaining * sizeof(*context->idle_lists));
+        context->idle_allocators[remaining] = NULL;
+        context->idle_lists[remaining] = NULL;
         HRESULT reset = ID3D12CommandAllocator_Reset(commands->allocator);
         const char *operation = "ID3D12CommandAllocator.Reset";
         if (SUCCEEDED(reset)) {

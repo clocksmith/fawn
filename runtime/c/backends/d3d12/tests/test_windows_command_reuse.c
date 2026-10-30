@@ -30,19 +30,34 @@ struct sdk_fixture {
     ID3D12GraphicsCommandListVtbl list_methods;
     ID3D12DescriptorHeapVtbl heap_methods;
     doe_dx_native_context context;
-    sdk_allocator allocators[4];
-    sdk_list lists[4];
+    sdk_allocator allocators[8];
+    sdk_list lists[8];
     sdk_heap heaps[4];
     unsigned allocator_creates, list_creates;
     HRESULT allocator_result, list_result;
 };
+
+static ID3D12CommandAllocator *idle_allocator(const doe_dx_native_context *context)
+{
+    return context->idle_pairs ? context->idle_allocators[0] : NULL; /* Next reused: the oldest. */
+}
+static ID3D12GraphicsCommandList *idle_list(const doe_dx_native_context *context)
+{
+    return context->idle_pairs ? context->idle_lists[0] : NULL;
+}
+static bool pooled(const doe_dx_native_context *context, const void *object)
+{
+    for (uint32_t i = 0; i < context->idle_pairs; ++i)
+        if ((const void *)context->idle_allocators[i] == object || (const void *)context->idle_lists[i] == object) return true;
+    return false;
+}
 
 static HRESULT STDMETHODCALLTYPE reset_allocator(ID3D12CommandAllocator *raw)
 {
     sdk_allocator *allocator = (sdk_allocator *)raw;
     sdk_fixture *fixture = allocator->fixture;
     assert(!allocator->releases && !fixture->lists[allocator->index].open);
-    assert(!fixture->context.idle_allocator && !fixture->context.idle_list);
+    assert(!pooled(&fixture->context,raw)); /* Taken from the pool before its reset. */
     allocator->resets++;
     return allocator->reset_result;
 }
@@ -65,7 +80,7 @@ static HRESULT STDMETHODCALLTYPE reset_list(ID3D12GraphicsCommandList *raw,
     assert(raw_allocator == &allocator->iface && !pipeline);
     assert(!list->open && !list->releases && !allocator->releases);
     assert(allocator->resets == list->resets + 1);
-    assert(!fixture->context.idle_allocator && !fixture->context.idle_list);
+    assert(!pooled(&fixture->context,raw) && !pooled(&fixture->context,raw_allocator));
     list->resets++;
     if (SUCCEEDED(list->reset_result)) list->open = true;
     return list->reset_result;
@@ -103,7 +118,7 @@ static HRESULT STDMETHODCALLTYPE create_allocator(ID3D12Device *raw,
     assert(type == D3D12_COMMAND_LIST_TYPE_DIRECT && out);
     assert(!memcmp(iid,&IID_ID3D12CommandAllocator,sizeof(IID_ID3D12CommandAllocator)));
     unsigned index = fixture->allocator_creates++;
-    assert(index < 4);
+    assert(index < 8);
     if (FAILED(fixture->allocator_result)) return fixture->allocator_result;
     *out = &fixture->allocators[index].iface;
     return S_OK;
@@ -141,14 +156,14 @@ static void initialize(sdk_fixture *fixture)
     fixture->heap_methods.Release = release_heap;
     fixture->device.lpVtbl = &fixture->device_methods;
     fixture->context.device = &fixture->device;
-    for (unsigned index = 0; index < 4; index++) {
+    for (unsigned index = 0; index < 8; index++) {
         fixture->allocators[index].iface.lpVtbl = &fixture->allocator_methods;
         fixture->allocators[index].fixture = fixture;
         fixture->allocators[index].index = index;
         fixture->lists[index].iface.lpVtbl = &fixture->list_methods;
         fixture->lists[index].fixture = fixture;
         fixture->lists[index].index = index;
-        fixture->heaps[index].iface.lpVtbl = &fixture->heap_methods;
+        if (index < 4) fixture->heaps[index].iface.lpVtbl = &fixture->heap_methods;
     }
 }
 
@@ -186,18 +201,18 @@ static void completed_pair_reuses_and_releases_descriptors(void)
     assert(doe_dx_native_finish(commands,NULL) == DOE_DX_OK);
     /* Successful terminal completion is the external precondition of recycle. */
     doe_dx_native_commands_recycle(commands);
-    assert(fixture.context.idle_allocator == &fixture.allocators[0].iface);
-    assert(fixture.context.idle_list == &fixture.lists[0].iface);
+    assert(idle_allocator(&fixture.context) == &fixture.allocators[0].iface);
+    assert(idle_list(&fixture.context) == &fixture.lists[0].iface);
     assert(!fixture.allocators[0].releases && !fixture.lists[0].releases);
     for (unsigned index = 0; index < 4; index++) assert(fixture.heaps[index].releases == 1);
     commands = fresh(&fixture,0);
     assert(fixture.allocator_creates == 1 && fixture.list_creates == 1);
     assert(fixture.allocators[0].resets == 1 && fixture.lists[0].resets == 1);
-    assert(!fixture.context.idle_allocator && !fixture.context.idle_list);
+    assert(!idle_allocator(&fixture.context) && !idle_list(&fixture.context));
     assert(doe_dx_native_finish(commands,NULL) == DOE_DX_OK);
     doe_dx_native_commands_recycle(commands);
     doe_dx_native_commands_cache_close(&fixture.context);
-    assert(!fixture.context.idle_allocator && !fixture.context.idle_list);
+    assert(!idle_allocator(&fixture.context) && !idle_list(&fixture.context));
     assert(fixture.allocators[0].releases == 1 && fixture.lists[0].releases == 1);
     doe_dx_native_commands_cache_close(&fixture.context); /* Idempotent teardown. */
 }
@@ -214,21 +229,38 @@ static void two_live_pairs_bound_cache_and_discard(void)
     assert(doe_dx_native_finish(second,NULL) == DOE_DX_OK);
     doe_dx_native_commands_recycle(first);
     doe_dx_native_commands_recycle(second);
-    assert(fixture.context.idle_allocator == &fixture.allocators[0].iface);
-    assert(fixture.context.idle_list == &fixture.lists[0].iface);
-    assert(!fixture.allocators[0].releases && !fixture.lists[0].releases);
-    assert(fixture.allocators[1].releases == 1 && fixture.lists[1].releases == 1);
+    /* Both completed pairs are kept; the oldest is reused first. */
+    assert(fixture.context.idle_pairs == 2u);
+    assert(idle_allocator(&fixture.context) == &fixture.allocators[0].iface);
+    assert(idle_list(&fixture.context) == &fixture.lists[0].iface);
+    for (unsigned index = 0; index < 2; index++)
+        assert(!fixture.allocators[index].releases && !fixture.lists[index].releases);
     for (unsigned index = 0; index < 4; index++) assert(fixture.heaps[index].releases == 1);
     first = fresh(&fixture,0);
-    assert(fixture.allocator_creates == 2 && fixture.list_creates == 2);
+    second = fresh(&fixture,1);
+    assert(fixture.allocator_creates == 2 && fixture.list_creates == 2 && !fixture.context.idle_pairs);
     /* Destroy is unconditional discard, even for a successfully closed list. */
     assert(doe_dx_native_finish(first,NULL) == DOE_DX_OK);
     doe_dx_native_commands_destroy(first);
-    assert(!fixture.context.idle_allocator && !fixture.context.idle_list);
     assert(fixture.allocators[0].releases == 1 && fixture.lists[0].releases == 1);
-    second = fresh(&fixture,2);
     doe_dx_native_commands_destroy(second); /* Unsubmitted/open discard never caches. */
-    assert(fixture.allocators[2].releases == 1 && fixture.lists[2].releases == 1);
+    assert(fixture.allocators[1].releases == 1 && fixture.lists[1].releases == 1);
+    assert(!fixture.context.idle_pairs);
+    /* Bound: five completed pairs keep four; the fifth releases at once. */
+    doe_dx_native_commands *live[5];
+    for (unsigned index = 0; index < 5; index++) live[index] = fresh(&fixture,2u + index);
+    for (unsigned index = 0; index < 5; index++) {
+        assert(doe_dx_native_finish(live[index],NULL) == DOE_DX_OK);
+        doe_dx_native_commands_recycle(live[index]);
+    }
+    assert(fixture.context.idle_pairs == DOE_DX_IDLE_COMMAND_PAIRS);
+    for (unsigned index = 2; index < 6; index++)
+        assert(!fixture.allocators[index].releases && !fixture.lists[index].releases);
+    assert(fixture.allocators[6].releases == 1 && fixture.lists[6].releases == 1);
+    doe_dx_native_commands_cache_close(&fixture.context);
+    for (unsigned index = 2; index < 7; index++)
+        assert(fixture.allocators[index].releases == 1 && fixture.lists[index].releases == 1);
+    assert(!fixture.context.idle_pairs);
     doe_dx_native_commands_cache_close(&fixture.context);
 }
 
@@ -251,7 +283,7 @@ static void reset_failure(bool allocator_failure, HRESULT result, doe_dx_status 
     assert(fixture.allocator_creates == 1 && fixture.list_creates == 1); /* No retry. */
     assert(fixture.allocators[0].resets == 1 && fixture.lists[0].resets == (allocator_failure ? 0u : 1u));
     assert(fixture.allocators[0].releases == 1 && fixture.lists[0].releases == 1);
-    assert(!fixture.context.idle_allocator && !fixture.context.idle_list);
+    assert(!idle_allocator(&fixture.context) && !idle_list(&fixture.context));
     doe_dx_native_commands_cache_close(&fixture.context);
     commands = fresh(&fixture,1); /* A separate later call may create a new pair. */
     doe_dx_native_commands_destroy(commands);
@@ -273,7 +305,7 @@ static void fresh_native_failure(bool allocator_failure)
         "ID3D12Device.CreateCommandList"));
     assert(fixture.allocator_creates == 1 && fixture.list_creates == (allocator_failure ? 0u : 1u));
     assert(fixture.allocators[0].releases == (allocator_failure ? 0u : 1u));
-    assert(!fixture.lists[0].releases && !fixture.context.idle_allocator && !fixture.context.idle_list);
+    assert(!fixture.lists[0].releases && !idle_allocator(&fixture.context) && !idle_list(&fixture.context));
     doe_dx_native_commands_cache_close(&fixture.context);
 }
 
@@ -287,6 +319,6 @@ int main(void)
     reset_failure(false,DXGI_ERROR_DEVICE_REMOVED,DOE_DX_DEVICE_LOST);
     fresh_native_failure(true);
     fresh_native_failure(false);
-    puts("PASS official SDK CPU completed-command reuse: distinct live pairs, closed reset order, descriptor release, one-pair bound, exact failures/no retry and final discard; no GPU/completion proof");
+    puts("PASS official SDK CPU completed-command reuse: distinct live pairs, closed reset order, descriptor release, four-pair oldest-first bound, exact failures/no retry and final discard; no GPU/completion proof");
     return 0;
 }
