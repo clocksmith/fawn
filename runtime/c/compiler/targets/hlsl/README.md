@@ -103,7 +103,11 @@ Implemented over current C IR:
 - Independent signed/fixed/runtime index guards, zero reads, discarded writes,
   checked view extents and no resource padding writes. Layout addressing is
   bounded to 32-bit bytes; invalid descriptor stride/overflow dimensions zero the
-  view. Uniform buffers are bounded to the 64 KiB target limit.
+  view. Uniform buffers are bounded to the 64 KiB target limit. Each access has one
+  guard: a runtime-tail index bound (bytes - tail) / stride implies the byte range
+  because the accessed leaf lies inside its element, so only fixed-size storage
+  paths add the explicit byte check. Unguarded paths emit no constant-true test.
+  Each storage view's byte size is queried once per invocation into the context.
 - Compute invocation inputs and the retained num_workgroups metadata contract;
   groupshared roots initialize once on lane zero, then synchronize. User
   workgroup barriers emit GroupMemoryBarrierWithGroupSync, not a device fence.
@@ -218,7 +222,10 @@ from a separate allocation size. The emitted-operation fixture covers a prefixed
 vector-element runtime tail, short views, partial elements and size-table identity.
 
 Memory helper emission follows selected entry call reachability and actual access
-root/type/mode closure. It no longer generates every concrete type for every
+root/type/mode closure. Integer division/remainder and float-to-integer helpers
+appear only when a reachable function performs that operation; the context carries
+only the inputs the entry sources or a reachable function reads, and an empty else
+block is not printed. It no longer generates every concrete type for every
 buffer. Vector transfers are helper leaves; arrays and structures include their
 called child helpers. Metal retains whole-workgroup initialization helpers and
 omits unrelated function bodies/context resources when one entry is selected.

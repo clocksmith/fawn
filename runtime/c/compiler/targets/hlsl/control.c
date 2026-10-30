@@ -18,10 +18,14 @@ static void selection(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t
     --e->indent;
     if (!marker(e, *cursor, IR_ELSE)) return;
     ++*cursor;
+    /* An else block that emits no statement is dropped, not printed empty. */
+    const size_t before_else = e->position;
     hlsl_line(e, "} else {");
+    const size_t else_body = e->position;
     ++e->indent;
     hlsl_block(e, cursor, depth + 1u, loop, continuing);
     --e->indent;
+    if (!e->failed && e->position == else_body) e->position = before_else;
     if (!marker(e, *cursor, IR_END_IF)) return;
     ++*cursor;
     hlsl_line(e, "}");

@@ -217,6 +217,7 @@ static void entry_wrapper(HlslEmitter *e) {
     e->indent = 1u;
     hlsl_line(e, "DoeContext ctx = (DoeContext)0;");
     hlsl_private_initialization(e);
+    hlsl_storage_size_initialization(e);
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i) {
         if ((mask & (1u << i)) == 0u) continue;
         hlsl_indent(e);
@@ -257,6 +258,38 @@ static void entry_wrapper(HlslEmitter *e) {
     e->indent = 0u;
     hlsl_text(e, "}\n");
 }
+bool hlsl_storage_size_field(HlslEmitter *e, uint32_t resource) {
+    const CompilerWorkspace *c = e->module;
+    return resource < c->resource_count && hlsl_entry_resource(e, resource) &&
+        !type_handle(c, c->resources[resource].type) &&
+        c->resources[resource].kind == DOE_COMPILER_STORAGE_BUFFER;
+}
+void hlsl_storage_size_initialization(HlslEmitter *e) {
+    for (uint32_t i = 0u; i < e->module->resource_count && !e->failed; ++i) {
+        if (!hlsl_storage_size_field(e, i)) continue;
+        hlsl_indent(e);
+        hlsl_format(e, "ctx.doe_bytes%u = doe_r%u_bytes();\n", i, i);
+    }
+}
+/* Entry inputs a context must carry: those the wrapper sources plus any input
+ * a reachable function reads. Unread builtin fields are not declared. */
+static uint32_t context_inputs(HlslEmitter *e) {
+    const CompilerWorkspace *c = e->module;
+    const EntryRecord *entry = &c->entries[e->entry];
+    uint32_t mask = entry->source_input_mask;
+    const bool group_waves = (mask & ((1u << INPUT_NUM_SUBGROUPS) | (1u << INPUT_SUBGROUP_ID))) != 0u;
+    if (entry->state.resolved.workgroup_storage_bytes != 0u || group_waves) mask |= 1u << INPUT_LOCAL_INDEX;
+    for (uint32_t f = 0u; f < c->function_count; ++f) {
+        if (!hlsl_function_used(e, f)) continue;
+        const FunctionRecord *function = &c->functions[f];
+        for (uint32_t i = function->instruction_start; i < function->instruction_end && i < c->instruction_count; ++i) {
+            const IrInstruction *ir = &c->instructions[i];
+            if (ir->opcode == IR_INPUT && ir->operands.scalar.binding < c->entry_input_count)
+                mask |= 1u << (unsigned)c->entry_inputs[ir->operands.scalar.binding].kind;
+        }
+    }
+    return mask;
+}
 void hlsl_private_initialization(HlslEmitter *e) {
     const CompilerWorkspace *c = e->module;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
@@ -283,14 +316,27 @@ void hlsl_functions(HlslEmitter *e) {
     if ((entry->source_input_mask & ((1u << INPUT_NUM_SUBGROUPS) | (1u << INPUT_SUBGROUP_ID))) != 0u)
         hlsl_text(e, "groupshared uint doe_wave_count;\n");
     hlsl_text(e, "struct DoeContext {\n");
+    const uint32_t inputs = context_inputs(e);
+    uint32_t fields = 0u;
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_ID; ++i)
-        hlsl_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
+        if ((inputs & (1u << i)) != 0u) {
+            hlsl_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
+            ++fields;
+        }
+    for (uint32_t i = 0u; i < c->resource_count; ++i)
+        if (hlsl_storage_size_field(e, i)) {
+            hlsl_format(e, "    uint doe_bytes%u;\n", i);
+            ++fields;
+        }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_PRIVATE) continue;
         hlsl_text(e, "    ");
         hlsl_type(e, c->workgroups[i].type);
         hlsl_format(e, " w%u;\n", i);
+        ++fields;
     }
+    /* Keep the context a nonempty aggregate for every HLSL compiler. */
+    if (!fields) hlsl_text(e, "    uint doe_unused;\n");
     hlsl_graphics_context(e);
     hlsl_text(e, "};\n");
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {

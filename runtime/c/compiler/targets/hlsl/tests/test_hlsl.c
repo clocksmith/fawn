@@ -160,7 +160,7 @@ static void test_layout(void) {
     has(text, "r0 : register(u2, space1)");
     has(text, "asfloat(r0[(offset + 8u) / 4u])");
     has(text, "value.m1 = doe_r0_load4(offset + 12u)");
-    has(text, "bytes >= 16u");
+    has(text, "ctx.doe_bytes0 >= 16u");
     has(text, ") / 32u : 0u)");
     free(text);
     release(f);
@@ -244,7 +244,10 @@ static void test_control_and_host_fixture(const char *output_path) {
     has(text, "do {\n");
     has(text, "} while (false);");
     has(text, "doe_div(");
-    has(text, "a % (b == 0u ? 1u : b)");
+    /* Only the reachable signed i32 division emits its helper; unused u32 and
+     * float-to-integer helpers are not printed. */
+    has(text, "bool bad = b == 0 || (a == asint(0x80000000u) && b == -1);");
+    assert(strstr(text, "a % (b == 0u ? 1u : b)") == NULL && strstr(text, "doe_u32(") == NULL);
     has(text, "asint((asuint(");
     has(text, " >= 0)");
     if (output_path != NULL) {

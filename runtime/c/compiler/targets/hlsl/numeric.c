@@ -30,12 +30,36 @@ static void decomposition_helpers(HlslEmitter *e) {
         hlsl_text(e, "(second); return result; }\n");
     }
 }
+/* Integer division/remainder and float-to-integer guards are emitted only when a
+ * reachable function performs that exact operation; the bodies are unchanged. */
 void hlsl_numeric_helpers(HlslEmitter *e) {
     decomposition_helpers(e);
     hlsl_float_pack_helpers(e);
-    hlsl_text(e,
+    const CompilerWorkspace *c = e->module;
+    bool div_u32 = false, div_i32 = false, to_i32 = false, to_u32 = false;
+    for (uint32_t f = 0u; f < c->function_count; ++f) {
+        if (!hlsl_function_used(e, f)) continue;
+        const FunctionRecord *function = &c->functions[f];
+        for (uint32_t i = function->instruction_start; i < function->instruction_end && i < c->instruction_count; ++i) {
+            const IrInstruction *ir = &c->instructions[i];
+            const TypeId leaf = type_leaf(c, ir->type);
+            if (ir->opcode == IR_DIVIDE || ir->opcode == IR_REMAINDER) {
+                if (leaf == IR_U32) div_u32 = true;
+                else if (leaf == IR_I32) div_i32 = true;
+                else if (leaf != IR_F32 && leaf != IR_F16) div_u32 = div_i32 = true;
+            } else if (ir->opcode == IR_CONVERT) {
+                const TypeId from = type_leaf(c, ir->operands.scalar.binding);
+                if (from == IR_F32 || from == IR_F16) {
+                    if (leaf == IR_I32) to_i32 = true;
+                    else if (leaf == IR_U32) to_u32 = true;
+                }
+            }
+        }
+    }
+    if (div_u32) hlsl_text(e,
         "inline uint doe_div(uint a, uint b) { return a / (b == 0u ? 1u : b); }\n"
-        "inline uint doe_rem(uint a, uint b) { return b == 0u ? 0u : a % (b == 0u ? 1u : b); }\n"
+        "inline uint doe_rem(uint a, uint b) { return b == 0u ? 0u : a % (b == 0u ? 1u : b); }\n");
+    if (div_i32) hlsl_text(e,
         "inline int doe_div(int a, int b) {\n"
         "    bool bad = b == 0 || (a == asint(0x80000000u) && b == -1);\n"
         "    return a / (bad ? 1 : b);\n"
@@ -43,11 +67,13 @@ void hlsl_numeric_helpers(HlslEmitter *e) {
         "inline int doe_rem(int a, int b) {\n"
         "    bool bad = b == 0 || (a == asint(0x80000000u) && b == -1);\n"
         "    return bad ? 0 : a % (bad ? 1 : b);\n"
-        "}\n"
+        "}\n");
+    if (to_i32) hlsl_text(e,
         "inline int doe_i32(float a) {\n"
         "    float finite = isnan(a) ? 0.0f : a;\n"
         "    return int(clamp(finite, -2147483648.0f, 2147483520.0f));\n"
-        "}\n"
+        "}\n");
+    if (to_u32) hlsl_text(e,
         "inline uint doe_u32(float a) {\n"
         "    float finite = isnan(a) ? 0.0f : a;\n"
         "    return uint(clamp(finite, 0.0f, 4294967040.0f));\n"

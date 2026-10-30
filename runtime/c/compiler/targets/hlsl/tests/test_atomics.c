@@ -54,7 +54,12 @@ static void all_operations(const char *prefix, bool workgroup, bool signed_value
     if (workgroup) {
         has(text, "groupshared DoeT");
         has(text, "GroupMemoryBarrierWithGroupSync()");
-    } else has(text, "if (offset <= bytes && 4u <= bytes - offset)");
+    } else {
+        /* Runtime-array atomics: one index guard against the hoisted size implies
+         * the word range, so no second byte guard and no constant-true wrapper. */
+        has(text, "ctx.doe_bytes0 / 4u)");
+        assert(!strstr(text, "- offset") && !strstr(text, "if (true"));
+    }
     save(prefix, workgroup ? signed_value ? "signed_shared" : "unsigned_shared" :
         signed_value ? "signed_storage" : "unsigned_storage", text);
     /* A malformed typed operand span fails measurement, preserving every byte. */
@@ -85,7 +90,10 @@ void test_atomics(const char *prefix) {
         "let old=atomicAdd(&data.tail[atomicAdd(&effects,1u)],i32(atomicAdd(&effects,2u)));"
         "let result=atomicCompareExchangeWeak(&data.tail[0],old,5i);}");
     char *text = emit(fixture, 0);
-    has(text, "bytes >= 16u ? (bytes - 16u) / 4u : 0u");
+    has(text, "ctx.doe_bytes0 >= 16u ? (ctx.doe_bytes0 - 16u) / 4u : 0u");
+    /* The runtime-tail index guard implies the byte range: no second check. */
+    assert(!strstr(text, "<= ctx.doe_bytes0 - offset"));
+    has(text, "ctx.doe_bytes0 = doe_r0_bytes();");
     save(prefix, "effects", text);
     free(text);
     release(fixture);
