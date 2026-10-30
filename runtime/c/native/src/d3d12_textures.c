@@ -8,7 +8,8 @@
 static native_failure initialize(native_device *device,doe_dx_texture *texture)
 {
     native_command_handle commands={0};
-    native_failure failure=native_command_create(&device->backend,&commands);
+    native_failure failure=native_d3d12_materialize_zero(device);
+    if (failure.status==NATIVE_OK) failure=native_command_create(&device->backend,&commands);
     if (failure.status!=NATIVE_OK) return failure;
     doe_dx_error detail={0};
     doe_dx_status status=doe_dx_commands_initialize_texture(commands.value.d3d12.commands,texture,&detail);

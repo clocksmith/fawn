@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
 #include "d3d12_texture_desc.h"
+#include "d3d12_frontend.h"
 #include <stdlib.h>
 #if defined(_WIN32)
 static const WGPUTextureUsage usages=WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_CopySrc|
@@ -47,7 +48,8 @@ static bool configuration(const WGPUSurfaceConfiguration *config,native_device *
 }
 static native_failure return_frame(native_surface *surface,doe_dx_texture *texture,bool present) {
     native_device *device=surface->device;native_command_handle work={0};
-    native_failure failure=native_command_create(&device->backend,&work);
+    native_failure failure=native_d3d12_materialize_zero(device);
+    if(failure.status==NATIVE_OK)failure=native_command_create(&device->backend,&work);
     if(failure.status!=NATIVE_OK)return failure;
     doe_dx_error detail={0};
     doe_dx_status status=present?doe_dx_commands_present(work.value.d3d12.commands,surface->d3d12,texture,&detail):
@@ -135,6 +137,7 @@ void native_d3d12_surface_acquire(native_surface *surface,WGPUSurfaceTexture *ou
     if(failure.status==NATIVE_OK&&surface->presented!=NATIVE_OK)failure=native_failure_status(surface->presented);
     if(failure.status==NATIVE_OK&&!surface->current){
         failure=native_settle_pending(device).failure;native_command_handle work={0};doe_dx_texture *texture=NULL;
+        if(failure.status==NATIVE_OK)failure=native_d3d12_materialize_zero(device);
         if(failure.status==NATIVE_OK)failure=native_command_create(&device->backend,&work);
         if(failure.status==NATIVE_OK){doe_dx_error detail={0};
             doe_dx_status status=doe_dx_surface_acquire(surface->d3d12,work.value.d3d12.commands,&texture,&detail);
