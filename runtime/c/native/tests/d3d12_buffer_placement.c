@@ -59,6 +59,11 @@ doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
 {
     return doe_dx_buffer_create(context, size, DOE_DX_UPLOAD, out, error);
 }
+doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error)
+{
+    return doe_dx_buffer_create(context,size,DOE_DX_UPLOAD,out,error);
+}
 void doe_dx_buffer_release(doe_dx_buffer *buffer)
 {
     if (buffer && !--buffer->references) { seen.live--; free(buffer); }

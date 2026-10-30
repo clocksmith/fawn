@@ -65,6 +65,11 @@
   caller data. Copies still cover the whole destination allocation/padding.
   Context destruction drops only its cache lease before checking outstanding
   caller/command/event obligations; failed native close remains retryable.
+- Caller-data staging may retain one ordinary UPLOAD page up to one MiB. Reuse
+  requires exactly its cache lease and no recording/pending use. Busy/oversized
+  requests allocate independently; no CPU write overlaps GPU use. Only a larger
+  speculative page's OOM may retry the exact requested size. Keep immutable zero
+  storage separate, copy only caller bytes, and release both caches at teardown.
 - The additive zeroed READBACK constructor finishes CPU Map/zero/Unmap before
   publication or any GPU use. Zero exactly resource Width, including requested
   padding, never committed-heap alignment slack. Keep ordinary READBACK create

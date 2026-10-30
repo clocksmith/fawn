@@ -102,9 +102,12 @@ doe_dx_status doe_dx_context_destroy(doe_dx_context *context) {
     if (!context) return DOE_DX_INVALID_ARGUMENT;
     doe_dx_buffer *zero = context->zero_upload;
     context->zero_upload = NULL;
+    doe_dx_buffer *staging = context->upload_staging;
+    context->upload_staging = NULL;
     /* Drop only the cache lease. Caller/command/event obligations still refuse
      * destruction, including a constructor waiting outside its device mutex. */
     doe_dx_buffer_release(zero);
+    doe_dx_buffer_release(staging);
     if (context->objects || context->pending) return DOE_DX_BUSY;
     doe_dx_status status = doe_dx_native_close(context->native);
     if (status != DOE_DX_OK) return status;

@@ -179,6 +179,20 @@ static void ordered_work(void)
     expect_value(&s, intermediate, 11);
     expect_value(&s, readback, 7);
     expect_value(&s, final, 42);
+    native_lock(device);
+    doe_dx_buffer *staging = context->upload_staging;
+    assert(staging && staging->references == 1 && !staging->owner && !staging->pending);
+    native_unlock(device);
+    uint32_t later = 99;
+    wgpuQueueWriteBuffer(s.queue,a,0,&later,sizeof(later));
+    WGPUCommandBuffer reused = dispatch_copy(&s,second,second_group,output,final);
+    wgpuQueueSubmit(s.queue,1,&reused);
+    wgpuCommandBufferRelease(reused);
+    expect_value(&s,final,100);
+    native_lock(device);
+    assert(context->upload_staging == staging && staging->references == 1 &&
+        !staging->owner && !staging->pending);
+    native_unlock(device);
     bool valid = accepted_before_gate && pending_map && held && observed == DOE_DX_PENDING &&
         dependent_accepted && !atomic_load(&test.watchdog_fired) && test.map_future &&
         test.map_status == WGPUMapAsyncStatus_Aborted;
@@ -189,7 +203,7 @@ static void ordered_work(void)
     ID3D12Fence_Release(test.gate);
     for (size_t i = 0; i < sizeof(events) / sizeof(*events); ++i) assert(CloseHandle(*events[i]));
     consumer_finish(&s);
-    printf("gated acceptance: writes=%u pendingMap=%u lease=%u waitStatus=%u dependent=%u watchdog=%u mapFuture=%u mapStatus=%u\n",
+    printf("gated acceptance: exact11/7/42 then idle-staging reuse100; writes=%u pendingMap=%u lease=%u waitStatus=%u dependent=%u watchdog=%u mapFuture=%u mapStatus=%u\n",
         (unsigned)accepted_before_gate,(unsigned)pending_map,(unsigned)held,(unsigned)observed,
         (unsigned)dependent_accepted,(unsigned)atomic_load(&test.watchdog_fired),
         (unsigned)test.map_future,(unsigned)test.map_status);

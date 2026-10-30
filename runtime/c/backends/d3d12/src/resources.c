@@ -72,6 +72,49 @@ doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
     return doe_dx_fail(DOE_DX_OK, 0, "zero_upload.acquire", error);
 }
 
+doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error) {
+    if (!context || !out || !size)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"upload.acquire",error);
+    if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST,0,"upload.acquire",error);
+    if (size > SIZE_MAX || size > context->caps.limits.max_buffer_size)
+        return doe_dx_fail(DOE_DX_RANGE,0,"upload.acquire",error);
+    doe_dx_buffer *cached = context->upload_staging;
+    bool idle = !cached || (cached->references == 1 && !cached->owner && !cached->pending);
+    if (cached && idle && cached->size >= size) {
+        doe_dx_status status = doe_dx_buffer_retain(cached);
+        if (status != DOE_DX_OK) return doe_dx_fail(status,0,"upload.retain",error);
+        *out = cached;
+        return doe_dx_fail(DOE_DX_OK,0,"upload.reuse",error);
+    }
+    /* Amortize small caller writes without ever reusing memory still held by
+     * a caller, recording, or pending command. This is not a second queue. */
+    uint64_t limit = 1024u * 1024u;
+    if (limit > context->caps.limits.max_buffer_size) limit = context->caps.limits.max_buffer_size;
+    if (limit > context->caps.limits.max_buffer_allocation_bytes)
+        limit = context->caps.limits.max_buffer_allocation_bytes;
+    bool cacheable = idle && size <= limit;
+    uint64_t capacity = cacheable ? limit : size;
+    doe_dx_buffer *prepared = NULL;
+    doe_dx_status status = doe_dx_buffer_create(context,capacity,DOE_DX_UPLOAD,&prepared,error);
+    /* A speculative larger page must not turn an otherwise satisfiable small
+     * request into OOM. Only that allocation result admits an exact-size retry. */
+    if (status == DOE_DX_OUT_OF_MEMORY && capacity > size)
+        status = doe_dx_buffer_create(context,size,DOE_DX_UPLOAD,&prepared,error);
+    if (status != DOE_DX_OK) return status;
+    if (cacheable) {
+        status = doe_dx_buffer_retain(prepared);
+        if (status != DOE_DX_OK) {
+            doe_dx_buffer_release(prepared);
+            return doe_dx_fail(status,0,"upload.retain",error);
+        }
+        context->upload_staging = prepared;
+        doe_dx_buffer_release(cached);
+    }
+    *out = prepared;
+    return doe_dx_fail(DOE_DX_OK,0,"upload.acquire",error);
+}
+
 doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer) {
     if (!buffer) return DOE_DX_INVALID_ARGUMENT;
     if (buffer->references == UINT32_MAX) return DOE_DX_RANGE;

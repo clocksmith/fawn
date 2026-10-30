@@ -57,6 +57,12 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   the existing context. Later commands reset it in allocator/list order; failures
   propagate without a fresh-create retry. Pending/lost/discarded recordings never
   supply a pair, and context teardown releases its idle native objects.
+- Caller-data writes may reuse one ordinary UPLOAD page up to one MiB on the
+  context. No other caller, recorded or pending command may still hold it. Busy
+  and larger writes allocate independent storage; immutable zero data stays
+  separate. A speculative larger page's OOM alone permits an exact-size retry.
+  Initial allocation zeros its full width; reuse copies only caller bytes and
+  makes no zero-content promise. Teardown drops only the cache's ordinary lease.
 - Typed statuses, first close failure, allocation rollback and native bounds.
 
 The additive [whole-pass render API](include/doe_d3d12_render.h) composes
