@@ -1,0 +1,7 @@
+2026-10-30T19:44:16Z baseline vector_scale_add_262k rc=0 attempt 1 rc=0 gateValid=True 0.0 3.915 False {}
+2026-10-30T19:45:52Z baseline image_rgba_invert_1024 rc=0 attempt 1 rc=0 gateValid=True 0.0 3.376 False {}
+2026-10-30T19:46:49Z baseline buffer_upload_readback_exact_1mb rc=0 attempt 1 rc=0 gateValid=True 0.0 3.433 False {}
+2026-10-30T19:49:01Z m7r vector_scale_add_262k rc=0 attempt 1 rc=0 gateValid=True 0.0 3.553 False {}
+2026-10-30T19:52:37Z m7r image_rgba_invert_1024 rc=0 attempt 1 rc=0 gateValid=True 0.0 2.993 False {}
+2026-10-30T20:01:05Z m7r buffer_upload_readback_exact_1mb rc=0 attempt 3 rc=0 gateValid=True 0.0 2.715 False {}
+2026-10-30T20:09:56Z m2r vector_scale_add_262k rc=1 attempt 4 rc=0 gateValid=False 0.0 30.57 False {}

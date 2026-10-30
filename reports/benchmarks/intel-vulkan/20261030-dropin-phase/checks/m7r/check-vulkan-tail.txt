@@ -1,0 +1,3 @@
+Resource indirect draw consumer: llvmpipe (LLVM 19.1.1, 256 bits); C ABI9 compute, retained Tint graphics; software only
+PASS GPU-produced indirect draw bundle/vertex-overflow/instance-overrun/firstInstance/zero/valid/stride-zero/last-byte controls, exact 64 pixels/eight occlusion results, unchanged source/padding, pending guards and twelve finalizers
+rc=0

@@ -1,0 +1,119 @@
+1 0   SHARED_PLATFORM="Linux" TMPDIR="W/checks-m6/native/tmp" EXTRA_CFLAGS=""
+2 0 W/checks-m6/native/d3d12-graphics-layout
+3 0 W/checks-m6/native/d3d12-graphics-limits
+4 0 python3 tools/check_d3d12_bindings.py --compiler-library "W/checks-m6/native/libdoe_compiler.so" --build-root "W/checks-m6/native"
+5 0 python3 tools/check_d3d12_indirect.py --compiler-library "W/checks-m6/native/libdoe_compiler.so" --build-root "W/checks-m6/native"
+6 0 W/checks-m6/native/provider-pin W/checks-m6/native/provider-pin-fixture.so
+7 0 python3 tests/build_dependencies.py
+8 0 W/checks-m6/native/backend-selection
+9 0 W/checks-m6/native/metal-bridge
+10 0 W/checks-m6/native/shader-image-reuse
+11 0 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; DOE_SHADER_CACHE_DIR="$directory" W/checks-m6/native/shader-c
+12 127 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; \
+13 134 DOE_SHADER_CACHE_DIR="$directory" W/checks-m6/native/shader-cache warm && DOE_SHADER_CACHE_DIR="$directory" W/checks-m6/native/shader-cache 
+14 0 W/checks-m6/native/shader-cache-no-build-id identity-absent
+15 127 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; \
+16 0 DOE_SHADER_CACHE_DIR="$directory" W/checks-m6/native/shader-cache warm && DOE_SHADER_CACHE_DIR="$directory" W/checks-m6/native/shader-cache-
+17 0 W/checks-m6/native/queue-texture-admission
+18 0 W/checks-m6/native/procedures-cxx
+19 0 W/checks-m6/native/instance-devices
+20 0 W/checks-m6/native/d3d12-graphics-vertices
+21 0 W/checks-m6/native/pipeline-blob
+22 0 W/checks-m6/native/external-textures
+23 0 W/checks-m6/native/optional-formats
+24 0 W/checks-m6/native/legacy-api
+25 0 python3 tests/browser_required_procedures.py W/checks-m6/native/libwebgpu_doe_c.so
+26 0 W/checks-m6/native/indexed-guard-reuse
+27 0 W/checks-m6/native/shared-memory
+28 0 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; DOE_SHADER_CACHE_DIR="$directory" W/checks-m6/native/persiste
+29 0 W/checks-m6/native/adapter-request
+30 0 W/checks-m6/native/adapter-request-api
+31 0 W/checks-m6/native/singleton-layout
+32 0 W/checks-m6/native/shared-features
+33 0 W/checks-m6/native/d3d12-guard-prepare
+34 134 W/checks-m6/native/vulkan-creation-errors
+35 0 W/checks-m6/native/compilation-diagnostics
+36 0 W/checks-m6/native/shader-spans
+37 0 W/checks-m6/native/switch-control
+38 0 W/checks-m6/native/mapping-timing
+39 0 W/checks-m6/native/encoder-finish-oom
+40 0 W/checks-m6/native/map-oom
+41 0 W/checks-m6/native/binding-aliases
+42 0 W/checks-m6/native/command-resources
+43 0 W/checks-m6/native/draw-budget
+44 0 W/checks-m6/native/indirect-render
+45 0 W/checks-m6/native/indexed-render
+46 0 W/checks-m6/native/depth-copies
+47 0 W/checks-m6/native/depth-sampling
+48 0 W/checks-m6/native/readonly-depth-sampling
+49 0 W/checks-m6/native/depth-comparison
+50 0 W/checks-m6/native/implicit-sampling
+51 0 W/checks-m6/native/draw-guard
+52 0 W/checks-m6/native/d3d12-graphics
+53 0 W/checks-m6/native/cube-array
+54 0 W/checks-m6/native/view-formats
+55 0 W/checks-m6/native/point-list
+56 0 W/checks-m6/native/color-discard
+57 134 W/checks-m6/native/msaa-sampling
+58 0 W/checks-m6/native/format-features
+59 0 W/checks-m6/native/draw-features
+60 0 W/checks-m6/native/copy-layouts
+61 0 W/checks-m6/native/bc-compression
+62 0 W/checks-m6/native/component-swizzle
+63 0 W/checks-m6/native/pipeline-cache
+64 0 W/checks-m6/native/device-policy
+65 0 W/checks-m6/native/encoder-errors
+66 0 W/checks-m6/native/core-formats
+67 0 W/checks-m6/native/indirect-compute
+68 0 W/checks-m6/native/indirect-dispatch
+69 0 W/checks-m6/native/d3d12-texture-desc
+70 0 W/checks-m6/native/texture-bindings
+71 0 W/checks-m6/native/pipeline-overrides
+72 0 W/checks-m6/native/select
+73 0 W/checks-m6/native/all-any
+74 0 W/checks-m6/native/texture-transfers
+75 134 W/checks-m6/native/atomics
+76 0 W/checks-m6/native/atomic-operations ../compiler/tests/atomic_operations.wgsl
+77 0 W/checks-m6/native/debug
+78 0 W/checks-m6/native/msaa
+79 0 W/checks-m6/native/depth
+80 0 W/checks-m6/native/demote
+81 0 W/checks-m6/native/graphics-admission
+82 0 W/checks-m6/native/offscreen-triangle
+83 0 W/checks-m6/native/mixed-resources
+84 0 W/checks-m6/native/empty-shader
+85 0 W/checks-m6/native/graphics
+86 0 W/checks-m6/native/compute
+87 0 W/checks-m6/native/procedures-cxx
+88 0 W/checks-m6/native/lifecycle
+89 0 W/checks-m6/native/textures
+90 0 W/checks-m6/native/admission
+91 134 W/checks-m6/native/failures
+92 0 W/checks-m6/native/timestamps
+93 0 W/checks-m6/native/recovery
+94 0 W/checks-m6/native/pending-progress
+95 0 W/checks-m6/native/barrier-coverage
+96 0 W/checks-m6/native/async-submit
+97 0 W/checks-m6/native/queue-sync-info
+98 0 W/checks-m6/native/fault-sweep
+99 0 W/checks-m6/native/concurrency
+100 0 W/checks-m6/native/lost-objects
+101 0 W/checks-m6/native/vulkan-identity
+102 0 W/checks-m6/native/backend-failure
+103 134 W/checks-m6/native/uniform-standard
+104 0 W/checks-m6/native/wgsl-language-features
+105 0 W/checks-m6/native/compute-programs
+106 0 W/checks-m6/native/fused-commands
+107 0 W/checks-m6/native/shader-check
+108 0 W/checks-m6/native/shader-reflection
+109 0 W/checks-m6/native/adapter-info
+110 0 W/checks-m6/native/program-prepare
+111 0 W/checks-m6/native/vertex-formats
+112 0 W/checks-m6/native/texture-binding-view-dimension
+113 0 W/checks-m6/native/mrt
+114 134 W/checks-m6/native/anisotropy
+115 0 W/checks-m6/native/storage-textures
+116 0 W/checks-m6/native/limits
+117 0 W/checks-m6/native/large-write
+118 0 W/checks-m6/native/slice-render
+119 0 python3 tests/audit-exports.py W/checks-m6/native/libwebgpu_doe_c.so --runtime

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "intel-vulkan-dropin-phase-m6",
+  "experiment": "M6-I: a new intel-host experiment targeting the baseline image warm.completion loss (1.21 [1.14,1.30] against Dawn). It reuses the mechanism hunk of the amd-host M6 patch (not promoted there; no completion effect in the amd-host copy size sweep). It is not a rerun of anything and does not count for RADV.",
+  "control": "doe-c main at 703ba96bf",
+  "candidate": "703ba96bf + candidates/m6-barriers.patch (the runtime/c/backends/vulkan/src/commands.c hunk of amd-vulkan/20261029-dropin-phase/m6/candidate.patch; its Makefile hunk is already on main)",
+  "mechanism": "Barriers between commands of one recording use device-only scopes (ALL_COMMANDS -> ALL_COMMANDS, MEMORY_WRITE -> MEMORY_READ|MEMORY_WRITE); only the final barrier of each recording adds the HOST stage and HOST_READ. Host writes before vkQueueSubmit are covered by the submission's implicit host-write ordering, and host access to a recorded buffer is refused while it has recorded uses.",
+  "intelHypothesis": "On ANV a barrier whose destination includes HOST_READ/HOST stage may force data-cache flushes on every command; main records 4 such barriers per dispatch submit. Inference from driver behavior, not verified.",
+  "sharedCode": "The mechanism is device-agnostic and changes the shared Vulkan recording path used on RADV. Any adoption needs a separate RADV rerun under its own contract; this result cannot authorize it.",
+  "providers": {
+    "main": "703ba96bf",
+    "m6": "candidate",
+    "dawn": "Dawn d04f88359 (contract-baseline.json build)",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "host": "intel-host as recorded in contract-baseline.json",
+  "sampling": {
+    "pairs": 192,
+    "orders": "all 24 permutations of 4 providers, cycled",
+    "iterationsPerProcess": 32,
+    "inputs": "frozen inputs (manifest afe4e1d3) and independent oracles",
+    "powerBasis": "No intel-host prior exists, so the pair count is not power-derived; 192 equals the largest amd-host round-4 count and costs a few minutes per window here."
+  },
+  "metric": "complete = compileNs + pipelineNs + resourcesNs + sum of every iteration's operation interval + teardownNs (CPU oracle excluded). Ratios are candidate/main per balanced pair; bootstrap 95% CI, 10000 resamples, seed 20261029.",
+  "acceptance": {
+    "target": "image_rgba_invert_1024: complete CI95 upper < 1.0 AND warm.completion CI95 upper < 1.0",
+    "otherBound": "vector_scale_add_262k and buffer_upload_readback_exact_1mb: complete CI95 upper <= 1.02",
+    "phaseGuard": "no warm phase on any workload with ratio CI95 lower > 1.05",
+    "verdict": "pass only if every workload window is valid and target, otherBound and phaseGuard hold (tools/gate_m6.py)"
+  },
+  "validity": "Each workload runs in its own window under tools/gated-window.sh. A window is INVALID if the intel window gate fails (foreign GPU > 2% of wall time from i915 fdinfo of non-harness clients, foreign CPU > 5% of capacity, or a `make -C runtime/c` process seen), any process fails or misses an oracle, or the A/A check fails (dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1). Gate-invalid windows rerun automatically (max 4); an A/A-invalid window reruns fresh once. Invalid data are retained and never used for the verdict.",
+  "preFreezeCorrectness": "pending at freeze: physical clients, software-check commands and check-vulkan on this host, compared with main; recorded in the README",
+  "runner": "runs/run-candidate.sh m6 m6 <workload> <log>",
+  "frozenAtUtc": "2026-10-30T20:18:44Z",
+  "hashes": {
+    "bin/harness-main": "04422fb61aec2101a73901b211c9e87f401aee80fc96ca38f9c117c8d3229ce9",
+    "bin/harness-dawn": "2f03a026c8ac36e1e30232d5819fc40ad47c6f1c1764686b3099b8335a3c695d",
+    "bin/harness-dawn-aa": "2f03a026c8ac36e1e30232d5819fc40ad47c6f1c1764686b3099b8335a3c695d",
+    "build-main/native/libwebgpu_doe_c.so": "ea179f5870a573f0b0f29f82f82468d58b2fa28d30e5da5b4a30347cc10ea6fb",
+    "dawn-lib/libwebgpu_dawn.so": "04520cd043340db0d9e122a26aec56163cca42225ef60e686df2de8bf989bcf0",
+    "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "bench/drop-in/dropin_phase_harness.c": "4fa1d52a910797ac56fcb317d07f562d4462567fd84485c50131e0fcf9bb6625",
+    "bench/tools/dropin_phase_cohort.py": "4cd33444c41e9b80b03d9bc19dca4ffed0870ed5efc30c53f5f49bc134a1aee2",
+    "tools/intel_window_gate.py": "51ef9224fa16e801bfa14be99cca7195c18ff6193f87c11b2ed7819896901e8a",
+    "tools/timed-window.sh": "1a55697143ac7fe5ada83f9252c081c000f85bb7b3f2bfad609c73a7295472a7",
+    "tools/gated-window.sh": "a1ce7501caf5245104fa82b534f5336f4639460a058903beb8d70f6cf029aae9",
+    "runs/run-candidate.sh": "661d84fbf608e280d270b8eec230b57ba51682f4f154a53f3a5e5d33567effbc",
+    "candidates/m6-barriers.patch": "c611abc9f0c4e6a6d244ba50085a247c166f146432c75fb350e5017e6e804369",
+    "tools/gate_m6.py": "b4600889a4f9c2ea2934aabf72f1810540788c971456a90b3265c9787579dafe",
+    "bin/harness-m6": "ec3a74b25aa2fb2cc89da50f016aac44e11c29358f60a75b9655af8f154b439a",
+    "build-m6/native/libwebgpu_doe_c.so": "ac4631beea20ca4af16b2d978a735b81b83868df8a0264dd54ce1ea6b4d38487"
+  }
+}

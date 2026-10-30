@@ -1,0 +1,58 @@
+== vector_scale_add_262k pairs=96 A/A warm.operation 1.008 [0.994,1.021]
+  setupNs            doe    19.2754  dawn    18.6690  ratio 1.025 [1.013,1.042]  doeFaster 32/96
+  compileNs          doe     0.1452  dawn     0.4146  ratio 0.350 [0.347,0.354]  doeFaster 96/96
+  pipelineNs         doe     2.1439  dawn     2.0394  ratio 1.053 [1.044,1.062]  doeFaster 14/96
+  resourcesNs        doe     0.8301  dawn     2.1118  ratio 0.388 [0.381,0.396]  doeFaster 96/96
+  teardownNs         doe     0.7417  dawn     1.8170  ratio 0.456 [0.376,0.565]  doeFaster 89/96
+  first.operation    doe     4.5294  dawn     5.1165  ratio 0.889 [0.878,0.898]  doeFaster 88/96
+  warm.upload        doe     0.0824  dawn     0.1945  ratio 0.492 [0.427,0.629]  doeFaster 80/96
+  warm.encode        doe     0.0086  dawn     0.0500  ratio 0.183 [0.170,0.204]  doeFaster 96/96
+  warm.submit        doe     0.1413  dawn     0.1298  ratio 1.283 [1.075,1.355]  doeFaster 29/96
+  warm.completion    doe     2.2688  dawn     3.1006  ratio 0.732 [0.727,0.737]  doeFaster 95/96
+  warm.map           doe     0.0705  dawn     0.1239  ratio 0.745 [0.558,0.865]  doeFaster 71/96
+  warm.operation     doe     2.5799  dawn     3.5980  ratio 0.738 [0.716,0.751]  doeFaster 95/96
+  warmP95.operation  doe     2.8237  dawn     3.7129  ratio 0.761 [0.753,0.768]  doeFaster 95/96
+  complete           doe    88.9663  dawn   120.0874  ratio 0.747 [0.735,0.759]  doeFaster 94/96
+  processWall        doe   125.3087  dawn   159.5715  ratio 0.788 [0.773,0.811]  doeFaster 95/96
+  cpuMs              doe    54.1280  dawn    61.8165  ratio 0.870 [0.858,0.900]  doeFaster 78/96
+  maxRssMiB          doe    72.0000  dawn    83.2500  ratio 0.865 [0.865,0.865]  doeFaster 96/96
+  scopedWarmOperationWin=pass oneTimeRegressions=[]
+== image_rgba_invert_1024 pairs=96 A/A warm.operation 1.003 [0.966,1.019]
+  setupNs            doe    18.4196  dawn    18.3868  ratio 1.001 [0.999,1.009]  doeFaster 42/96
+  compileNs          doe     0.1183  dawn     0.4059  ratio 0.291 [0.287,0.296]  doeFaster 96/96
+  pipelineNs         doe     2.1469  dawn     2.0254  ratio 1.066 [1.061,1.069]  doeFaster 5/96
+  resourcesNs        doe     2.2703  dawn     2.1391  ratio 1.066 [1.054,1.070]  doeFaster 2/96
+  teardownNs         doe     0.7276  dawn     1.1459  ratio 0.676 [0.608,0.714]  doeFaster 78/96
+  first.operation    doe     5.6999  dawn     8.8909  ratio 0.642 [0.636,0.649]  doeFaster 94/96
+  warm.upload        doe     0.3207  dawn     1.5532  ratio 0.223 [0.177,0.264]  doeFaster 96/96
+  warm.encode        doe     0.0126  dawn     0.0516  ratio 0.238 [0.226,0.250]  doeFaster 96/96
+  warm.submit        doe     0.2022  dawn     0.2146  ratio 0.934 [0.833,1.090]  doeFaster 53/96
+  warm.completion    doe     4.3726  dawn     3.4147  ratio 1.206 [1.135,1.298]  doeFaster 25/96
+  warm.map           doe     0.3146  dawn     0.2376  ratio 1.290 [0.979,1.521]  doeFaster 40/96
+  warm.operation     doe     5.1702  dawn     5.8500  ratio 0.892 [0.807,0.920]  doeFaster 71/96
+  warmP95.operation  doe     7.0061  dawn     7.2700  ratio 0.955 [0.925,0.978]  doeFaster 63/96
+  complete           doe   170.5976  dawn   203.5099  ratio 0.843 [0.821,0.863]  doeFaster 87/96
+  processWall        doe   234.7517  dawn   261.2666  ratio 0.891 [0.879,0.917]  doeFaster 83/96
+  cpuMs              doe   102.5515  dawn   137.2395  ratio 0.747 [0.726,0.780]  doeFaster 96/96
+  maxRssMiB          doe    93.0000  dawn   104.3750  ratio 0.891 [0.890,0.891]  doeFaster 96/96
+  scopedWarmOperationWin=pass oneTimeRegressions=[]
+== buffer_upload_readback_exact_1mb pairs=96 A/A warm.operation 0.996 [0.978,1.015]
+  setupNs            doe    19.4082  dawn    18.5491  ratio 1.039 [1.026,1.057]  doeFaster 21/96
+  compileNs          doe     0.0000  dawn     0.0000  ratio 1.078 [1.000,1.150]  doeFaster 34/96
+  pipelineNs         doe     0.0000  dawn     0.0000  ratio 1.039 [1.000,1.077]  doeFaster 25/96
+  resourcesNs        doe     0.5420  dawn     0.0493  ratio 10.822 [10.592,11.153]  doeFaster 0/96
+  teardownNs         doe     0.8140  dawn     1.4220  ratio 0.613 [0.537,0.725]  doeFaster 82/96
+  first.operation    doe     3.2252  dawn     6.2435  ratio 0.516 [0.513,0.519]  doeFaster 95/96
+  warm.upload        doe     0.0837  dawn     0.1795  ratio 0.499 [0.463,0.531]  doeFaster 96/96
+  warm.encode        doe     0.0022  dawn     0.0182  ratio 0.137 [0.121,0.144]  doeFaster 96/96
+  warm.submit        doe     0.0454  dawn     0.0941  ratio 0.553 [0.484,0.579]  doeFaster 91/96
+  warm.completion    doe     1.5170  dawn     2.5346  ratio 0.596 [0.588,0.602]  doeFaster 95/96
+  warm.map           doe     0.0667  dawn     0.1126  ratio 0.671 [0.618,0.734]  doeFaster 69/96
+  warm.operation     doe     1.7130  dawn     2.9029  ratio 0.593 [0.579,0.607]  doeFaster 95/96
+  warmP95.operation  doe     1.8735  dawn     3.0782  ratio 0.614 [0.596,0.622]  doeFaster 96/96
+  complete           doe    58.2677  dawn    96.2815  ratio 0.603 [0.590,0.624]  doeFaster 96/96
+  processWall        doe    93.3392  dawn   134.4544  ratio 0.705 [0.686,0.719]  doeFaster 96/96
+  cpuMs              doe    45.7280  dawn    54.4950  ratio 0.847 [0.809,0.889]  doeFaster 80/96
+  maxRssMiB          doe    70.7500  dawn    78.2500  ratio 0.906 [0.904,0.906]  doeFaster 96/96
+  scopedWarmOperationWin=pass oneTimeRegressions=[]
+VALIDITY {'noFailedProcesses': True, 'aa.vector_scale_add_262k': True, 'aa.image_rgba_invert_1024': True, 'aa.buffer_upload_readback_exact_1mb': True} VALID

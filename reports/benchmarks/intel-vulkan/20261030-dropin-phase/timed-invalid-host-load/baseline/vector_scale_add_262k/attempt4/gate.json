@@ -1,0 +1,21 @@
+{
+ "windowSeconds": 41.799,
+ "foreignGpuBusyPercent": 1.559,
+ "foreignGpuClients": {
+  "ChatGPT": 430.14,
+  "Xwayland": 221.357
+ },
+ "ownGpuClientsSeen": 119,
+ "gtActFreqMhzMean": 74.8,
+ "gtActFreqSamples": 331,
+ "foreignCpuPercentOfCapacity": 7.614,
+ "ownCpuSeconds": 17.36,
+ "cpus": 4,
+ "foreignRuntimeCMakeSeen": false,
+ "limits": {
+  "foreignGpuBusyPercent": 2.0,
+  "foreignCpuPercentOfCapacity": 5.0,
+  "foreignRuntimeCMake": false
+ },
+ "valid": false
+}
