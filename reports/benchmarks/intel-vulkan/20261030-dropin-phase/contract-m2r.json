@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "intel-vulkan-dropin-phase-m2r",
+  "experiment": "M2R on intel-host: a new prospective experiment with the unchanged amd-host candidate source. Its result is intel-host evidence only and does not count for RADV; the amd-host contracts stay frozen and unrun.",
+  "control": "doe-c main at 703ba96bf (the patch applies cleanly; its sha256 matches the amd-host frozen value)",
+  "candidate": "703ba96bf + reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r.patch (unchanged)",
+  "mechanism": "per-usage placement: buffers without map usage prefer DEVICE_LOCAL within HOST_VISIBLE|HOST_COHERENT",
+  "intelHypothesis": "On ANV every memory type is DEVICE_LOCAL, so M2R's preference selects the first 0x7 type (write-combined, uncached) for GPU buffers instead of main's 0xf (cached). Unlike RADV it does not change heap; the expected effect is direction-unknown: cheaper GPU access to uncached pages versus slower host writes into write-combined memory.",
+  "providers": {
+    "main": "703ba96bf",
+    "m2r": "candidate",
+    "dawn": "Dawn d04f88359 (contract-baseline.json build)",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "host": "intel-host as recorded in contract-baseline.json",
+  "sampling": {
+    "pairs": 192,
+    "orders": "all 24 permutations of 4 providers, cycled",
+    "iterationsPerProcess": 32,
+    "inputs": "frozen inputs (manifest afe4e1d3) and independent oracles",
+    "powerBasis": "No intel-host prior exists, so the pair count is not power-derived; 192 equals the largest amd-host round-4 count and costs a few minutes per window here."
+  },
+  "metric": "complete = compileNs + pipelineNs + resourcesNs + sum of every iteration's operation interval + teardownNs (CPU oracle excluded). Ratios are candidate/main per balanced pair; bootstrap 95% CI, 10000 resamples, seed 20261029.",
+  "acceptance": {
+    "primaryGate": "complete CI95 upper < 1.0 on all three workloads",
+    "statedPhaseAllowances": "warm.upload median ratio <= 1.15 and resourcesNs median ratio <= 1.15 on each workload; every other warm phase, first.operation, setupNs, compileNs, pipelineNs and teardownNs ratio CI95 lower <= 1.05",
+    "uploadLatencyPhaseGate": "separate: warm.upload CI95 upper <= 1.02 on all three workloads. Recorded and reported; it does not change the primary verdict.",
+    "verdict": "primary pass only if every workload window is valid and primaryGate and statedPhaseAllowances hold (tools/gate.py mode m2r)"
+  },
+  "validity": "Each workload runs in its own window under tools/gated-window.sh. A window is INVALID if the intel window gate fails (foreign GPU > 2% of wall time from i915 fdinfo of non-harness clients, foreign CPU > 5% of capacity, or a `make -C runtime/c` process seen), any process fails or misses an oracle, or the A/A check fails (dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1). Gate-invalid windows rerun automatically (max 4); an A/A-invalid window reruns fresh once. Invalid data are retained and never used for the verdict.",
+  "preFreezeCorrectness": "untimed, same host: 78 physical clients identical to main (main fails format-features, atomics, failures, uniform-standard, limits on ANV); 119 software-check commands identical to main except one non-reproducing failure each for m7r (metal-bridge) and m2r (async-submit), 0/10 on rerun for every variant including main; check-vulkan passes",
+  "frozenAtUtc": "2026-10-30T19:43:10Z",
+  "hashes": {
+    "bin/harness-main": "04422fb61aec2101a73901b211c9e87f401aee80fc96ca38f9c117c8d3229ce9",
+    "bin/harness-dawn": "2f03a026c8ac36e1e30232d5819fc40ad47c6f1c1764686b3099b8335a3c695d",
+    "bin/harness-dawn-aa": "2f03a026c8ac36e1e30232d5819fc40ad47c6f1c1764686b3099b8335a3c695d",
+    "build-main/native/libwebgpu_doe_c.so": "ea179f5870a573f0b0f29f82f82468d58b2fa28d30e5da5b4a30347cc10ea6fb",
+    "dawn-lib/libwebgpu_dawn.so": "04520cd043340db0d9e122a26aec56163cca42225ef60e686df2de8bf989bcf0",
+    "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "bench/drop-in/dropin_phase_harness.c": "4fa1d52a910797ac56fcb317d07f562d4462567fd84485c50131e0fcf9bb6625",
+    "bench/tools/dropin_phase_cohort.py": "4cd33444c41e9b80b03d9bc19dca4ffed0870ed5efc30c53f5f49bc134a1aee2",
+    "tools/intel_window_gate.py": "51ef9224fa16e801bfa14be99cca7195c18ff6193f87c11b2ed7819896901e8a",
+    "tools/timed-window.sh": "1a55697143ac7fe5ada83f9252c081c000f85bb7b3f2bfad609c73a7295472a7",
+    "tools/gated-window.sh": "a1ce7501caf5245104fa82b534f5336f4639460a058903beb8d70f6cf029aae9",
+    "tools/gate.py": "7ee9054983d25b8fa4f2a689a74b140b97a0a3502a141bb148fe4f9bc925a56f",
+    "runs/run-candidate.sh": "661d84fbf608e280d270b8eec230b57ba51682f4f154a53f3a5e5d33567effbc",
+    "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r.patch": "40f2ad56e396c55ee3dce13a89be00438815a1a1b2d80327d607923577e8a67c",
+    "bin/harness-m2r": "6a2986992a438325ef0e06a45bad453bb0a4273395614a2dd0a47345bb8909d0",
+    "build-m2r/native/libwebgpu_doe_c.so": "a36b5eb3a4e30ece3a8cec831d79bf91cfd024ddf7eaa22eb6ae560ab8970309"
+  },
+  "amendments": [
+    {
+      "atUtc": "2026-10-30T19:33:38Z",
+      "previousFreeze": "2026-10-30T19:22:17Z",
+      "beforeAnyTimedWindow": true,
+      "change": "The foreign-make guard pattern is anchored to '^make -C runtime/c'. The unanchored pattern matched this agent's own launcher shell, so the first gated window waited on itself and never started. No timing data existed. Only the three gate tool hashes changed; workloads, binaries, sampling and acceptance are unchanged."
+    },
+    {
+      "atUtc": "2026-10-30T19:43:10Z",
+      "previousFreeze": "2026-10-30T19:33:38Z",
+      "change": "Host control added; validity thresholds, workloads, binaries, sampling and acceptance unchanged. A resident desktop app (/usr/lib/chatgpt/ChatGPT) uses about 8.5% of CPU capacity and about 1% GPU time at idle (60 s per-process measurement), which alone exceeds the 5% foreign-CPU limit. timed-window.sh now pauses it with SIGSTOP for each window and resumes it with SIGCONT in its EXIT trap (gated-window.sh adds a second resume trap). A 60 s gated idle probe with the pause measured foreign GPU 0.0% and foreign CPU 2.2%. No timed window of this candidate had run."
+    }
+  ]
+}

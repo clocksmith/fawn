@@ -1,0 +1,5 @@
+main physicalFail=format-features atomics failures uniform-standard limits  softwareFail=12 13 15 34 57 75 91 103 114  checkVulkan=rc=0
+m7r physicalFail=format-features atomics failures uniform-standard limits  softwareFail=9 12 13 15 34 57 75 91 103 114  checkVulkan=rc=0
+m2r physicalFail=format-features atomics failures uniform-standard limits  softwareFail=12 13 15 34 57 75 91 96 103 114  checkVulkan=rc=0
+c-direct physicalFail=format-features atomics failures uniform-standard limits  softwareFail=12 13 15 34 57 75 91 103 114  checkVulkan=rc=0
+m6 physicalFail=format-features atomics failures uniform-standard limits  softwareFail=12 13 15 34 57 75 91 103 114  checkVulkan=rc=0

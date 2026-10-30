@@ -1,0 +1,119 @@
+1 0   SHARED_PLATFORM="Linux" TMPDIR="W/checks-m2r/native/tmp" EXTRA_CFLAGS=""
+2 0 W/checks-m2r/native/d3d12-graphics-layout
+3 0 W/checks-m2r/native/d3d12-graphics-limits
+4 0 python3 tools/check_d3d12_bindings.py --compiler-library "W/checks-m2r/native/libdoe_compiler.so" --build-root "W/checks-m2r/native"
+5 0 python3 tools/check_d3d12_indirect.py --compiler-library "W/checks-m2r/native/libdoe_compiler.so" --build-root "W/checks-m2r/native"
+6 0 W/checks-m2r/native/provider-pin W/checks-m2r/native/provider-pin-fixture.so
+7 0 python3 tests/build_dependencies.py
+8 0 W/checks-m2r/native/backend-selection
+9 0 W/checks-m2r/native/metal-bridge
+10 0 W/checks-m2r/native/shader-image-reuse
+11 0 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; DOE_SHADER_CACHE_DIR="$directory" W/checks-m2r/native/shader-
+12 127 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; \
+13 134 DOE_SHADER_CACHE_DIR="$directory" W/checks-m2r/native/shader-cache warm && DOE_SHADER_CACHE_DIR="$directory" W/checks-m2r/native/shader-cach
+14 0 W/checks-m2r/native/shader-cache-no-build-id identity-absent
+15 127 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; \
+16 0 DOE_SHADER_CACHE_DIR="$directory" W/checks-m2r/native/shader-cache warm && DOE_SHADER_CACHE_DIR="$directory" W/checks-m2r/native/shader-cach
+17 0 W/checks-m2r/native/queue-texture-admission
+18 0 W/checks-m2r/native/procedures-cxx
+19 0 W/checks-m2r/native/instance-devices
+20 0 W/checks-m2r/native/d3d12-graphics-vertices
+21 0 W/checks-m2r/native/pipeline-blob
+22 0 W/checks-m2r/native/external-textures
+23 0 W/checks-m2r/native/optional-formats
+24 0 W/checks-m2r/native/legacy-api
+25 0 python3 tests/browser_required_procedures.py W/checks-m2r/native/libwebgpu_doe_c.so
+26 0 W/checks-m2r/native/indexed-guard-reuse
+27 0 W/checks-m2r/native/shared-memory
+28 0 directory=$(mktemp -d); trap 'rm -f "$directory"/*.bin; rmdir "$directory"' 0; DOE_SHADER_CACHE_DIR="$directory" W/checks-m2r/native/persist
+29 0 W/checks-m2r/native/adapter-request
+30 0 W/checks-m2r/native/adapter-request-api
+31 0 W/checks-m2r/native/singleton-layout
+32 0 W/checks-m2r/native/shared-features
+33 0 W/checks-m2r/native/d3d12-guard-prepare
+34 134 W/checks-m2r/native/vulkan-creation-errors
+35 0 W/checks-m2r/native/compilation-diagnostics
+36 0 W/checks-m2r/native/shader-spans
+37 0 W/checks-m2r/native/switch-control
+38 0 W/checks-m2r/native/mapping-timing
+39 0 W/checks-m2r/native/encoder-finish-oom
+40 0 W/checks-m2r/native/map-oom
+41 0 W/checks-m2r/native/binding-aliases
+42 0 W/checks-m2r/native/command-resources
+43 0 W/checks-m2r/native/draw-budget
+44 0 W/checks-m2r/native/indirect-render
+45 0 W/checks-m2r/native/indexed-render
+46 0 W/checks-m2r/native/depth-copies
+47 0 W/checks-m2r/native/depth-sampling
+48 0 W/checks-m2r/native/readonly-depth-sampling
+49 0 W/checks-m2r/native/depth-comparison
+50 0 W/checks-m2r/native/implicit-sampling
+51 0 W/checks-m2r/native/draw-guard
+52 0 W/checks-m2r/native/d3d12-graphics
+53 0 W/checks-m2r/native/cube-array
+54 0 W/checks-m2r/native/view-formats
+55 0 W/checks-m2r/native/point-list
+56 0 W/checks-m2r/native/color-discard
+57 134 W/checks-m2r/native/msaa-sampling
+58 0 W/checks-m2r/native/format-features
+59 0 W/checks-m2r/native/draw-features
+60 0 W/checks-m2r/native/copy-layouts
+61 0 W/checks-m2r/native/bc-compression
+62 0 W/checks-m2r/native/component-swizzle
+63 0 W/checks-m2r/native/pipeline-cache
+64 0 W/checks-m2r/native/device-policy
+65 0 W/checks-m2r/native/encoder-errors
+66 0 W/checks-m2r/native/core-formats
+67 0 W/checks-m2r/native/indirect-compute
+68 0 W/checks-m2r/native/indirect-dispatch
+69 0 W/checks-m2r/native/d3d12-texture-desc
+70 0 W/checks-m2r/native/texture-bindings
+71 0 W/checks-m2r/native/pipeline-overrides
+72 0 W/checks-m2r/native/select
+73 0 W/checks-m2r/native/all-any
+74 0 W/checks-m2r/native/texture-transfers
+75 134 W/checks-m2r/native/atomics
+76 0 W/checks-m2r/native/atomic-operations ../compiler/tests/atomic_operations.wgsl
+77 0 W/checks-m2r/native/debug
+78 0 W/checks-m2r/native/msaa
+79 0 W/checks-m2r/native/depth
+80 0 W/checks-m2r/native/demote
+81 0 W/checks-m2r/native/graphics-admission
+82 0 W/checks-m2r/native/offscreen-triangle
+83 0 W/checks-m2r/native/mixed-resources
+84 0 W/checks-m2r/native/empty-shader
+85 0 W/checks-m2r/native/graphics
+86 0 W/checks-m2r/native/compute
+87 0 W/checks-m2r/native/procedures-cxx
+88 0 W/checks-m2r/native/lifecycle
+89 0 W/checks-m2r/native/textures
+90 0 W/checks-m2r/native/admission
+91 134 W/checks-m2r/native/failures
+92 0 W/checks-m2r/native/timestamps
+93 0 W/checks-m2r/native/recovery
+94 0 W/checks-m2r/native/pending-progress
+95 0 W/checks-m2r/native/barrier-coverage
+96 134 W/checks-m2r/native/async-submit
+97 0 W/checks-m2r/native/queue-sync-info
+98 0 W/checks-m2r/native/fault-sweep
+99 0 W/checks-m2r/native/concurrency
+100 0 W/checks-m2r/native/lost-objects
+101 0 W/checks-m2r/native/vulkan-identity
+102 0 W/checks-m2r/native/backend-failure
+103 134 W/checks-m2r/native/uniform-standard
+104 0 W/checks-m2r/native/wgsl-language-features
+105 0 W/checks-m2r/native/compute-programs
+106 0 W/checks-m2r/native/fused-commands
+107 0 W/checks-m2r/native/shader-check
+108 0 W/checks-m2r/native/shader-reflection
+109 0 W/checks-m2r/native/adapter-info
+110 0 W/checks-m2r/native/program-prepare
+111 0 W/checks-m2r/native/vertex-formats
+112 0 W/checks-m2r/native/texture-binding-view-dimension
+113 0 W/checks-m2r/native/mrt
+114 134 W/checks-m2r/native/anisotropy
+115 0 W/checks-m2r/native/storage-textures
+116 0 W/checks-m2r/native/limits
+117 0 W/checks-m2r/native/large-write
+118 0 W/checks-m2r/native/slice-render
+119 0 python3 tests/audit-exports.py W/checks-m2r/native/libwebgpu_doe_c.so --runtime

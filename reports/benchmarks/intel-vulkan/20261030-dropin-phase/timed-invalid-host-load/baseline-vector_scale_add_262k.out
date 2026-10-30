@@ -1,0 +1,4 @@
+attempt 1 rc=0 gateValid=False 1.531 9.243 False {'ChatGPT': 447.324, 'Xwayland': 198.936}
+attempt 2 rc=0 gateValid=False 1.674 7.95 False {'ChatGPT': 490.554, 'Xwayland': 211.287}
+attempt 3 rc=0 gateValid=False 1.66 10.755 False {'ChatGPT': 489.75, 'Xwayland': 207.447}
+attempt 4 rc=0 gateValid=False 1.559 7.614 False {'ChatGPT': 430.14, 'Xwayland': 221.357}

@@ -1,0 +1,18 @@
+{
+ "windowSeconds": 34.591,
+ "foreignGpuBusyPercent": 0.0,
+ "foreignGpuClients": {},
+ "ownGpuClientsSeen": 63,
+ "gtActFreqMhzMean": 64.2,
+ "gtActFreqSamples": 272,
+ "foreignCpuPercentOfCapacity": 3.433,
+ "ownCpuSeconds": 15.030000000000001,
+ "cpus": 4,
+ "foreignRuntimeCMakeSeen": false,
+ "limits": {
+  "foreignGpuBusyPercent": 2.0,
+  "foreignCpuPercentOfCapacity": 5.0,
+  "foreignRuntimeCMake": false
+ },
+ "valid": true
+}

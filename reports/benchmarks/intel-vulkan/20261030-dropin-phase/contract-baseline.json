@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "intel-vulkan-dropin-phase-b1",
+  "experiment": "New intel-host baseline: Doe C main against source-built Dawn on Intel Tiger Lake UHD (ANV). Separate backend/adapter evidence; it neither transfers to nor inherits from the amd-host RADV campaign.",
+  "host": {
+    "label": "intel-host",
+    "cpu": "11th Gen Intel Core i3-1115G4 (2 cores, 4 threads), intel_pstate powersave governor, turbo on",
+    "memory": "32 GiB",
+    "os": "Ubuntu 24.04.3, Linux 6.8.0-90-generic",
+    "gpu": "Intel(R) UHD Graphics (TGL GT2), vendor 0x8086 device 0x9a78, integrated",
+    "driver": "Mesa 24.2.8-1ubuntu1~24.04.1 ANV, Vulkan 1.3.289",
+    "memoryTypes": "one 15.5 GiB DEVICE_LOCAL heap; types 0/4 0x1, 1/5 0x7 (device-local, host-visible, coherent, write-combined), 2/6 0xf (adds HOST_CACHED), 3 0x21 (protected)",
+    "sharedUse": "GNOME desktop session and a Chromium-based desktop app stay running and hold the render node; they are measured by the window gate, not stopped"
+  },
+  "sourceCommit": "703ba96bf",
+  "surface": "dropin (public webgpu.h ABI); one harness source linked per provider",
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "workloadOrigin": "unchanged amd-host C1 workloads: Node5 WGSL, generator, seed-0 inputs, set 1 = seed+1000; inputs manifest byte-identical to the amd-host c1 manifest; independent CPU oracle on every iteration",
+  "providers": {
+    "doe": "libwebgpu_doe_c.so built from 703ba96bf (runtime/c/native default flags, gcc 13.3)",
+    "dawn": "source-built Dawn d04f88359391a12375c1a3e948a0b2dcb4c97a18 (the amd-host revision), CMake Release, DAWN_BUILD_MONOLITHIC_LIBRARY=SHARED, Vulkan on, tests/samples off, gcc 13.3. Deviations from the amd-host configuration: DAWN_USE_X11=OFF (X11-xcb development headers absent on this host) and DAWN_SUPPORTS_CXX_MODULES=OFF (gcc 13 cannot scan C++20 modules); neither touches the compute, buffer or queue paths",
+    "dawn-aa": "byte-identical copy of the dawn harness binary (A/A control)"
+  },
+  "sampling": {
+    "pairs": 96,
+    "orders": "all 6 permutations of the 3 providers, cycled",
+    "iterationsPerProcess": 32,
+    "warmIterations": "iterations 1..31",
+    "processesPerWorkload": 288
+  },
+  "phases": "identical to amd-host contract-c1.json (setup, compile, pipeline, resources, teardown; per-iteration upload, encode, submit, completion, map, operation); complete = compile + pipeline + resources + sum of every iteration's operation + teardown",
+  "statistics": "per-pair ratio provider/dawn of per-process metrics; median ratio, bootstrap 95% CI (10000 resamples, seed 20261029), provider-faster pair count",
+  "acceptance": {
+    "validity": [
+      "every process status ok with all 32 iterations oracle-checked",
+      "every provider reports Intel(R) UHD Graphics (TGL GT2), adapterType != CPU",
+      "A/A: dawn-aa/dawn warm.operation median ratio within [0.95,1.05] and its CI95 contains 1, per workload",
+      "window gate valid: foreign GPU (i915 fdinfo engine time of non-harness clients) <= 2% of window wall time, foreign CPU <= 5% of window CPU capacity, no `make -C runtime/c` process seen"
+    ],
+    "scopedWarmOperationWin": "doe/dawn warm.operation ratio CI95 upper < 1.0 AND warmP95.operation ratio CI95 upper < 1.0 AND cpuMs ratio median <= 1.05 AND maxRssMiB ratio median <= 1.10 (same rule as amd-host c1)",
+    "oneTimeRegressionBound": "setupNs, compileNs, pipelineNs individually: ratio CI95 lower <= 1.10, else recorded regression",
+    "invalidWindows": "a gate-invalid window is rerun fresh automatically (max 4 attempts); an A/A-invalid window is rerun fresh once under the unchanged contract; invalid data are retained and never used for the verdict",
+    "claimBoundary": "A pass is a scoped native drop-in phase result on these three workloads on intel-host only. It is not the GOALS Vulkan application win, does not qualify Intel support, and does not transfer to RADV."
+  },
+  "tooling": {
+    "run": "runs/run-baseline.sh under tools/gated-window.sh (timing lock in the work root)",
+    "gate": "tools/intel_window_gate.py, tools/timed-window.sh, tools/gated-window.sh",
+    "evaluator": "tools/baseline_gate.py over `dropin_phase_cohort summarize --control dawn`"
+  },
+  "hashes": {
+    "bin/harness-main": "04422fb61aec2101a73901b211c9e87f401aee80fc96ca38f9c117c8d3229ce9",
+    "bin/harness-dawn": "2f03a026c8ac36e1e30232d5819fc40ad47c6f1c1764686b3099b8335a3c695d",
+    "bin/harness-dawn-aa": "2f03a026c8ac36e1e30232d5819fc40ad47c6f1c1764686b3099b8335a3c695d",
+    "build-main/native/libwebgpu_doe_c.so": "ea179f5870a573f0b0f29f82f82468d58b2fa28d30e5da5b4a30347cc10ea6fb",
+    "dawn-lib/libwebgpu_dawn.so": "04520cd043340db0d9e122a26aec56163cca42225ef60e686df2de8bf989bcf0",
+    "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "bench/drop-in/dropin_phase_harness.c": "4fa1d52a910797ac56fcb317d07f562d4462567fd84485c50131e0fcf9bb6625",
+    "bench/tools/dropin_phase_cohort.py": "4cd33444c41e9b80b03d9bc19dca4ffed0870ed5efc30c53f5f49bc134a1aee2",
+    "tools/intel_window_gate.py": "51ef9224fa16e801bfa14be99cca7195c18ff6193f87c11b2ed7819896901e8a",
+    "tools/timed-window.sh": "1a55697143ac7fe5ada83f9252c081c000f85bb7b3f2bfad609c73a7295472a7",
+    "tools/gated-window.sh": "a1ce7501caf5245104fa82b534f5336f4639460a058903beb8d70f6cf029aae9",
+    "tools/baseline_gate.py": "80a57d8825530c57100c560dc4d1476ab27634eb19bb02af4686a2b63bec90cd",
+    "runs/run-baseline.sh": "cb96fcece95d3a591136a2fb085e17b37782adbf5834818bbdf13d6003df72e1"
+  },
+  "frozenAtUtc": "2026-10-30T19:43:10Z",
+  "amendments": [
+    {
+      "atUtc": "2026-10-30T19:33:38Z",
+      "previousFreeze": "2026-10-30T19:21:41Z",
+      "beforeAnyTimedWindow": true,
+      "change": "The foreign-make guard pattern is anchored to '^make -C runtime/c'. The unanchored pattern matched this agent's own launcher shell, so the first gated window waited on itself and never started. No timing data existed. Only the three gate tool hashes changed; workloads, binaries, sampling and acceptance are unchanged."
+    },
+    {
+      "atUtc": "2026-10-30T19:43:10Z",
+      "previousFreeze": "2026-10-30T19:33:38Z",
+      "change": "Host control added; validity thresholds, workloads, binaries, sampling and acceptance unchanged. A resident desktop app (/usr/lib/chatgpt/ChatGPT) uses about 8.5% of CPU capacity and about 1% GPU time at idle (60 s per-process measurement), which alone exceeds the 5% foreign-CPU limit. timed-window.sh now pauses it with SIGSTOP for each window and resumes it with SIGCONT in its EXIT trap (gated-window.sh adds a second resume trap). A 60 s gated idle probe with the pause measured foreign GPU 0.0% and foreign CPU 2.2%. Timed data before this amendment: baseline vector_scale_add_262k attempts 1-4 were gate-INVALID (foreign CPU 7.6-10.8%, foreign GPU 1.5-1.7%, clients ChatGPT and Xwayland), and an image_rgba_invert_1024 attempt was stopped partway. They are retained under timed-invalid-host-load/ and are never used for any verdict."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -eux
+cd ~/doe-intel-work/dawn
+export PATH=~/doe-intel-work/venv/bin:$PATH
+rm -f out/cmake-release/CMakeCache.txt; cmake -S . -B out/cmake-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DDAWN_FETCH_DEPENDENCIES=ON \
+ -DDAWN_BUILD_MONOLITHIC_LIBRARY=SHARED -DDAWN_BUILD_SAMPLES=OFF -DDAWN_BUILD_TESTS=OFF -DDAWN_BUILD_BENCHMARKS=OFF \
+ -DDAWN_ENABLE_DESKTOP_GL=OFF -DDAWN_ENABLE_OPENGLES=OFF -DDAWN_ENABLE_SWIFTSHADER=OFF -DDAWN_USE_GLFW=OFF \
+ -DDAWN_ENABLE_NULL=ON -DDAWN_ENABLE_VULKAN=ON -DDAWN_USE_X11=OFF -DDAWN_USE_WAYLAND=ON \
+ -DDAWN_SUPPORTS_CXX_MODULES=OFF -DTINT_BUILD_TESTS=OFF -DTINT_BUILD_CMD_TOOLS=OFF -DTINT_BUILD_GLSL_WRITER=OFF -DTINT_BUILD_HLSL_WRITER=OFF -DTINT_BUILD_MSL_WRITER=OFF
+ninja -C out/cmake-release -j4 webgpu_dawn
+ls -la out/cmake-release/src/dawn/native/libwebgpu_dawn.so || find out/cmake-release -name "libwebgpu_dawn.so*"
+echo BUILD-DONE

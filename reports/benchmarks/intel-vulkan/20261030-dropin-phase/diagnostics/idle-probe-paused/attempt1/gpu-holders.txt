@@ -1,0 +1,7 @@
+      1 ChatGPT
+      1 gnome-control-c
+      1 gnome-shell
+      1 gsd-xsettings
+      1 mutter-x11-fram
+      1 xdg-desktop-por
+      1 Xwayland

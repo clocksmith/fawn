@@ -1,0 +1,2 @@
+2026-10-30T19:35:00Z idle rc=1 attempt 2 rc=1 gateValid=False 0.0 6.718 False {}aattempt 3 rc=1 gateValid=False 0.0 6.458 False {}attempt 4 rc=1 gateValid=False 0.0 9.542 False {}
+2026-10-30T19:39:09Z baseline vector_scale_add_262k rc=1 attempt 4 rc=0 gateValid=False 1.559 7.614 False {'ChatGPT': 430.14, 'Xwayland': 221.357}
