@@ -50,7 +50,8 @@ void doe_dx_release_descriptors(doe_dx_descriptor_use *use)
 {
     if (!use) return;
     for (size_t i=0;i<DOE_DX_RENDER_STAGES;++i) if (use->storage_sizes[i]) doe_dx_native_buffer_destroy(use->storage_sizes[i]);
-    if (use->heap) ID3D12DescriptorHeap_Release(use->heap);
+    if (use->ring) doe_dx_descriptor_ring_free(use);
+    else if (use->heap) ID3D12DescriptorHeap_Release(use->heap);
     if (use->sampler_heap) ID3D12DescriptorHeap_Release(use->sampler_heap);
     free(use);
 }
@@ -65,7 +66,7 @@ void doe_dx_bind_descriptors(doe_dx_native_commands *commands,doe_dx_native_pipe
     ID3D12GraphicsCommandList_SetDescriptorHeaps(commands->list,count,heaps);
     if (use->heap) {
         D3D12_GPU_DESCRIPTOR_HANDLE handle;
-        use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap,&handle);
+        doe_dx_descriptor_gpu_start(use,&handle);
         if (graphics) ID3D12GraphicsCommandList_SetGraphicsRootDescriptorTable(commands->list,pipeline->resource_table,handle);
         else ID3D12GraphicsCommandList_SetComputeRootDescriptorTable(commands->list,pipeline->resource_table,handle);
     }

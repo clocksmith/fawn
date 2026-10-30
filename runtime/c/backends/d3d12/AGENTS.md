@@ -70,6 +70,11 @@
   requests allocate independently; no CPU write overlaps GPU use. Only a larger
   speculative page's OOM may retry the exact requested size. Keep immutable zero
   storage separate, copy only caller bytes, and release both caches at teardown.
+- Shader-visible CBV/SRV/UAV descriptors come from context-owned 4096-entry
+  heaps: each descriptor use borrows one contiguous range, rewritten before
+  recording, and returns it only when its command is discarded, terminally lost
+  or successfully retired. Keep the first heap for the context; extra heaps for
+  overflow release when empty. Sampler/RTV/DSV/clear heaps keep their own owners.
 - Buffers whose queried allocation is at most 1 MiB are placed in context-owned
   4 MiB buffer-only heaps of their own memory class (64 KiB slots). Placement
   never implies contents: every caller still fully initializes. Slots return only
@@ -81,7 +86,7 @@
   uninitialized and general host writes UPLOAD-only. Unmap ranges describe writes
   for tools; they are not a fence or permission for CPU/GPU overlap.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
-  states stay fixed. Descriptor heaps and allocators survive their whole submission.
+  states stay fixed. Descriptor heaps/ranges and allocators survive their whole submission.
   Only successful terminal retirement may transfer one closed native command
   allocator/list pair to the serialized context for reuse. Reset allocator before
   list; propagate either failure without fallback. Discarded, unknown and lost
