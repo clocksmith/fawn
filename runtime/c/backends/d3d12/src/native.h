@@ -117,6 +117,9 @@ void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer);
 doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_error *error);
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error);
+doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offset, size_t size,
+    const void **out, doe_dx_error *error);
+void doe_dx_native_unmap_read(doe_dx_native_buffer *buffer);
 doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
 doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,

@@ -42,6 +42,48 @@ static void admission_and_completed_initialization(void)
     mock_reset();
 }
 
+/* Lent read mappings: same admission as read, exclusive while lent, exact return. */
+static void lent_read_mapping(void)
+{
+    doe_dx_context *context = create_context();
+    doe_dx_buffer *ordinary = NULL, *zeroed = NULL;
+    const void *bytes = NULL;
+    assert(doe_dx_buffer_create(context,32,DOE_DX_READBACK,&ordinary,NULL) == DOE_DX_OK);
+    assert(doe_dx_buffer_lend_read(ordinary,0,32,&bytes,NULL) == DOE_DX_UNINITIALIZED && !bytes);
+    assert(doe_dx_buffer_create_readback_zeroed(context,32,&zeroed,NULL) == DOE_DX_OK);
+    assert(doe_dx_buffer_lend_read(zeroed,30,4,&bytes,NULL) == DOE_DX_RANGE && !bytes);
+    assert(doe_dx_buffer_lend_read(zeroed,4,8,NULL,NULL) == DOE_DX_INVALID_ARGUMENT);
+    assert(doe_dx_buffer_lend_read(zeroed,4,8,&bytes,NULL) == DOE_DX_OK && bytes && zeroed->lent);
+    assert(mock.lends == 1);
+    /* While lent: no second lend, no host read and no GPU recording. */
+    const void *again = NULL;
+    unsigned char byte = 0;
+    assert(doe_dx_buffer_lend_read(zeroed,0,4,&again,NULL) == DOE_DX_INVALID_STATE && !again);
+    assert(doe_dx_buffer_read(zeroed,0,&byte,1,NULL) == DOE_DX_INVALID_STATE);
+    doe_dx_commands *commands = NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL) == DOE_DX_OK);
+    doe_dx_buffer *upload = NULL;
+    assert(doe_dx_buffer_create(context,4,DOE_DX_UPLOAD,&upload,NULL) == DOE_DX_OK);
+    assert(doe_dx_commands_copy(commands,upload,0,zeroed,0,4,NULL) == DOE_DX_INVALID_STATE);
+    doe_dx_buffer_return_read(zeroed);
+    assert(!zeroed->lent && mock.lends == 0);
+    doe_dx_buffer_return_read(zeroed); /* Idempotent. */
+    assert(doe_dx_buffer_read(zeroed,0,&byte,1,NULL) == DOE_DX_OK);
+    /* Native map failure leaves nothing lent. */
+    mock.failure = MOCK_READ;
+    assert(doe_dx_buffer_lend_read(zeroed,0,4,&bytes,NULL) == DOE_DX_NATIVE_FAILURE && !zeroed->lent);
+    mock.failure = MOCK_NONE;
+    /* Release while lent unmaps before the allocation is destroyed. */
+    assert(doe_dx_buffer_lend_read(zeroed,0,4,&bytes,NULL) == DOE_DX_OK);
+    doe_dx_commands_release(commands);
+    doe_dx_buffer_release(upload);
+    doe_dx_buffer_release(ordinary);
+    doe_dx_buffer_release(zeroed);
+    assert(mock.lends == 0);
+    assert(doe_dx_context_destroy(context) == DOE_DX_OK);
+    mock_reset();
+}
+
 static void construction_rollback(void)
 {
     doe_dx_context *context = create_context();
@@ -138,9 +180,10 @@ int main(void)
     mock_reset();
     admission_and_completed_initialization();
     construction_rollback();
+    lent_read_mapping();
     native_map_loss_rolls_back();
     later_gpu_use_excludes_cpu(false);
     later_gpu_use_excludes_cpu(true);
-    puts("PASS D3D12 zeroed READBACK owner: admission, rollback, Map loss, completed initialization and later CPU exclusion/lifetime; no SDK/GPU/data oracle");
+    puts("PASS D3D12 zeroed READBACK owner: admission, rollback, Map loss, completed initialization, exclusive lent read mappings with exact return, and later CPU exclusion/lifetime; no SDK/GPU/data oracle");
     return 0;
 }

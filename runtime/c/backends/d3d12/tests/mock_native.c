@@ -5,7 +5,7 @@
 /* No shader interpreter or buffer-copy execution is present. These substitutes
  * only observe actual owner calls and enforce native object lifetime edges. */
 struct doe_dx_native_context { unsigned tag; };
-struct doe_dx_native_buffer { unsigned recorded; };
+struct doe_dx_native_buffer { unsigned recorded, lends; unsigned char bytes[64]; };
 struct doe_dx_native_pipeline { unsigned recorded; };
 struct doe_dx_native_texture { unsigned recorded; };
 struct doe_dx_native_timestamps { unsigned recorded; };
@@ -136,7 +136,7 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
 }
 
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer) {
-    assert(buffer && !buffer->recorded && mock.buffers);
+    assert(buffer && !buffer->recorded && !buffer->lends && mock.buffers);
     mock.buffers--;
     free(buffer);
 }
@@ -154,6 +154,23 @@ doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     assert(buffer && bytes && size && !buffer->recorded);
     (void)offset;
     return outcome(MOCK_WRITE, error);
+}
+
+doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offset, size_t size,
+    const void **out, doe_dx_error *error) {
+    assert(buffer && out && !buffer->recorded && !buffer->lends && offset + size <= sizeof(buffer->bytes));
+    doe_dx_status status = outcome(MOCK_READ, error);
+    if (status != DOE_DX_OK) return status;
+    buffer->lends++;
+    mock.lends++;
+    *out = buffer->bytes + offset;
+    return DOE_DX_OK;
+}
+
+void doe_dx_native_unmap_read(doe_dx_native_buffer *buffer) {
+    assert(buffer && buffer->lends == 1 && mock.lends);
+    buffer->lends--;
+    mock.lends--;
 }
 
 doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,

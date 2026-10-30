@@ -92,6 +92,11 @@
   padding, never committed-heap alignment slack. Keep ordinary READBACK create
   uninitialized and general host writes UPLOAD-only. Unmap ranges describe writes
   for tools; they are not a fence or permission for CPU/GPU overlap.
+- Public read mappings of READBACK buffers lend the mapped allocation instead of
+  copying it: lend has read's admission (initialized, no recording/pending use),
+  keeps one Map open, and while lent rejects GPU recording, host reads/writes and a
+  second lend. The frontend returns it on unmap, destroy, release, aborted delivery
+  or refused admission; return is idempotent and final release returns implicitly.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
   states stay fixed. Descriptor heaps/ranges and allocators survive their whole submission.
   Only successful terminal retirement may transfer one closed native command

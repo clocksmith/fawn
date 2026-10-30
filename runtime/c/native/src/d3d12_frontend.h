@@ -17,6 +17,11 @@ typedef struct native_d3d12_buffer {
  * deferred DEFAULT buffer into one command and submits it, without waiting,
  * before any recording, transfer or CPU read can observe those bytes. */
 native_failure native_d3d12_materialize_zero(native_device *device);
+/* Read mappings of READBACK buffers borrow the backend's mapped bytes; return
+ * unmaps. Both run under the device mutex after the buffer owner settled. */
+native_failure native_d3d12_buffer_lend(native_buffer *buffer, uint64_t offset, size_t size,
+    const unsigned char **out);
+void native_d3d12_buffer_return(native_buffer *buffer);
 
 native_result native_d3d12_open(bool fallback, native_backend *out);
 native_result native_d3d12_open_luid(uint32_t low, int32_t high, native_backend *out);

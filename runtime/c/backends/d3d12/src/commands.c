@@ -127,6 +127,7 @@ doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
     doe_dx_buffer *buffer, bool readable) {
     if (!buffer) return DOE_DX_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
+    if (buffer->lent) return DOE_DX_INVALID_STATE; /* Host-lent bytes exclude GPU use. */
     if (buffer->owner && buffer->owner != commands) {
         commands->conflict = buffer->owner;
         return DOE_DX_BUSY;

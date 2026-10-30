@@ -126,6 +126,7 @@ void doe_dx_buffer_release(doe_dx_buffer *buffer) {
     if (!buffer) return;
     buffer->references--;
     if (buffer->references) return;
+    doe_dx_buffer_return_read(buffer);
     doe_dx_native_buffer_destroy(buffer->native);
     buffer->context->objects--;
     free(buffer);
@@ -142,6 +143,7 @@ static doe_dx_status host_access(doe_dx_buffer *buffer, uint64_t offset,
     if (buffer->memory != (write ? DOE_DX_UPLOAD : DOE_DX_READBACK)) return DOE_DX_UNSUPPORTED;
     if (!doe_dx_range(buffer->size, offset, size)) return DOE_DX_RANGE;
     if (write && buffer->immutable_zero) return DOE_DX_UNSUPPORTED;
+    if (buffer->lent) return DOE_DX_INVALID_STATE;
     if (buffer->owner || buffer->pending) return DOE_DX_BUSY;
     if (!write && !buffer->initialized) return DOE_DX_UNINITIALIZED;
     return DOE_DX_OK;
@@ -163,4 +165,21 @@ doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
     if (!size) return doe_dx_fail(DOE_DX_OK, 0, "buffer.read", error);
     status = doe_dx_native_read(buffer->native, offset, bytes, size, error);
     return doe_dx_context_result(buffer->context, status, error);
+}
+
+doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, size_t size,
+    const void **out, doe_dx_error *error) {
+    if (!out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "buffer.lend", error);
+    /* host_access needs a non-null destination only for nonzero reads. */
+    doe_dx_status status = host_access(buffer, offset, out, size, false);
+    if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "buffer.lend", error);
+    status = doe_dx_native_map_read(buffer->native, offset, size, out, error);
+    if (status == DOE_DX_OK) buffer->lent = true;
+    return doe_dx_context_result(buffer->context, status, error);
+}
+
+void doe_dx_buffer_return_read(doe_dx_buffer *buffer) {
+    if (!buffer || !buffer->lent) return;
+    doe_dx_native_unmap_read(buffer->native);
+    buffer->lent = false;
 }

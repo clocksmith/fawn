@@ -29,6 +29,7 @@ struct doe_dx_buffer {
     bool immutable_zero; /* Shared zero staging is never writable through the API. */
     bool initialized; /* Completed full initialization. */
     bool accepted_initialized; /* Future GPU use, guarded by pending identity. */
+    bool lent; /* Mapped READBACK bytes lent to a read mapping. */
 };
 struct doe_dx_texture {
     doe_dx_surface *surface;
