@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "workloads": {
+    "vector_scale_add_262k": {
+      "kind": "scale_add",
+      "bytes": 1048576,
+      "sets": [
+        {
+          "seed": 211,
+          "frozenCrossCheck": "f32BufferOneOfV1",
+          "input": {
+            "path": "vector_scale_add_262k.set0.input.bin",
+            "sha256": "281b805bd581f25a09b1e2dd44c4630585c32b8863721fe1e8852397fae5525e"
+          },
+          "expectA": {
+            "path": "vector_scale_add_262k.set0.expectA.bin",
+            "sha256": "0d07e106df39f9371d9e87415b02579a3c4178c4fcbbbe9f6fffba74a1ea0c56"
+          },
+          "expectB": {
+            "path": "vector_scale_add_262k.set0.expectB.bin",
+            "sha256": "704580d8738481ea3b0e417d21b370c45c989073cee3c02c35d57778e2f40e7f"
+          }
+        },
+        {
+          "seed": 1211,
+          "frozenCrossCheck": "same-generator-distinct-seed",
+          "input": {
+            "path": "vector_scale_add_262k.set1.input.bin",
+            "sha256": "280df058562ed57f4dd245083b8d526acfc94db80421e746296d99253dfb483a"
+          },
+          "expectA": {
+            "path": "vector_scale_add_262k.set1.expectA.bin",
+            "sha256": "21b2c3b24070e5425f96ffd1519e0f9dc8b5eb9460d354d696db8fb1c65ce3de"
+          },
+          "expectB": {
+            "path": "vector_scale_add_262k.set1.expectB.bin",
+            "sha256": "cfbaad0c72f0cb0dbb37368a6f62cf75a3772c0c38f3f8d9cbffdff7ee7a4032"
+          }
+        }
+      ],
+      "shader": "bench/kernels/package_vector_scale_add.wgsl",
+      "shaderSha256": "8f2b3e2bb6955c1f7507936773589195c80e6a119cbd50d975f652d4f834e8c1"
+    },
+    "image_rgba_invert_1024": {
+      "kind": "invert",
+      "bytes": 4194304,
+      "sets": [
+        {
+          "seed": 307,
+          "frozenCrossCheck": "sha256Equals",
+          "input": {
+            "path": "image_rgba_invert_1024.set0.input.bin",
+            "sha256": "a815c15b9da2066858e9fd09191e78e0d374f173d4d92704275e6a51400ce93e"
+          },
+          "expectA": {
+            "path": "image_rgba_invert_1024.set0.expectA.bin",
+            "sha256": "80d5cf280ff1801411e9f0492652de312e2d9d6f82b3d864dce1607e9bf918f7"
+          },
+          "expectB": {
+            "path": "image_rgba_invert_1024.set0.expectB.bin",
+            "sha256": "80d5cf280ff1801411e9f0492652de312e2d9d6f82b3d864dce1607e9bf918f7"
+          }
+        },
+        {
+          "seed": 1307,
+          "frozenCrossCheck": "same-generator-distinct-seed",
+          "input": {
+            "path": "image_rgba_invert_1024.set1.input.bin",
+            "sha256": "423031a5bd903cb27be4be7f32c479b785722f9f31a058b8957cda5f1e46cbe1"
+          },
+          "expectA": {
+            "path": "image_rgba_invert_1024.set1.expectA.bin",
+            "sha256": "c3ce26cae34a7f1db76995938aad3bfbbb56cdc628ca2759c80250942b40b9d0"
+          },
+          "expectB": {
+            "path": "image_rgba_invert_1024.set1.expectB.bin",
+            "sha256": "c3ce26cae34a7f1db76995938aad3bfbbb56cdc628ca2759c80250942b40b9d0"
+          }
+        }
+      ],
+      "shader": "bench/kernels/package_image_rgba_invert.wgsl",
+      "shaderSha256": "687a30bc57f40bc94d60e970fc59a140d550890176a91816e1ca1f17a140337a"
+    },
+    "buffer_upload_readback_exact_1mb": {
+      "kind": "copy",
+      "bytes": 1048576,
+      "sets": [
+        {
+          "seed": 101,
+          "frozenCrossCheck": "sha256Equals",
+          "input": {
+            "path": "buffer_upload_readback_exact_1mb.set0.input.bin",
+            "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          },
+          "expectA": {
+            "path": "buffer_upload_readback_exact_1mb.set0.expectA.bin",
+            "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          },
+          "expectB": {
+            "path": "buffer_upload_readback_exact_1mb.set0.expectB.bin",
+            "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          }
+        },
+        {
+          "seed": 1101,
+          "frozenCrossCheck": "same-generator-distinct-seed",
+          "input": {
+            "path": "buffer_upload_readback_exact_1mb.set1.input.bin",
+            "sha256": "7d5e3f3178f6f7d88f790c15ffb56d17728b94e08faf97862b763993299e84e2"
+          },
+          "expectA": {
+            "path": "buffer_upload_readback_exact_1mb.set1.expectA.bin",
+            "sha256": "7d5e3f3178f6f7d88f790c15ffb56d17728b94e08faf97862b763993299e84e2"
+          },
+          "expectB": {
+            "path": "buffer_upload_readback_exact_1mb.set1.expectB.bin",
+            "sha256": "7d5e3f3178f6f7d88f790c15ffb56d17728b94e08faf97862b763993299e84e2"
+          }
+        }
+      ]
+    }
+  }
+}

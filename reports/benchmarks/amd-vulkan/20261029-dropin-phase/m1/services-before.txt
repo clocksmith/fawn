@@ -1,0 +1,4 @@
+reploid-qwen-08b active
+reploid-qwen-2b active
+reploid-qwen-27b active
+reploid-qwen-27b-split active

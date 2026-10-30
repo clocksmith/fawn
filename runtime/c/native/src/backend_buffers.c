@@ -50,6 +50,16 @@ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *
     return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
+native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
+    const unsigned char **out)
+{
+    if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
+    const void *range = NULL;
+    doe_vk_status status = doe_vk_buffer_host_range(buffer->handle.vulkan, offset, size, &range);
+    if (status == DOE_VK_OK) *out = range;
+    return native_failure_vulkan(status, NULL);
+}
+
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size)
 {
     if (buffer->device->backend.kind == WGPUBackendType_Vulkan)

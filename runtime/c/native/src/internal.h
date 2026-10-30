@@ -241,6 +241,10 @@ uint64_t native_allocation_bound(const native_device *device);
 bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
 native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
+/* Backend-owned persistent host bytes for a read mapping; NATIVE_UNSUPPORTED
+ * where the backend has no such range and the mapping must copy instead. */
+native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
+    const unsigned char **out);
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
 native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
     bool direct_readback);
