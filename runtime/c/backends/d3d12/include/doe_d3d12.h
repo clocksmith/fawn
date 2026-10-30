@@ -112,6 +112,10 @@ doe_dx_status doe_dx_context_create_from_luid(uint32_t low, int32_t high,
 doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *out);
 /* Nonmutating; no polling, error consumption or completion settlement. */
 doe_dx_status doe_dx_context_status(const doe_dx_context *context);
+/* Device-opening owner only: creates the long-lived shader-visible descriptor
+ * heap now, as part of device creation, instead of in the first submission.
+ * Idempotent. Failure keeps its exact status; the caller fails device creation. */
+doe_dx_status doe_dx_context_prepare_descriptors(doe_dx_context *context, doe_dx_error *error);
 /* Refuses destruction with BUSY until all caller objects have been released and
  * all submissions retired. On BUSY the context remains usable for polling. */
 doe_dx_status doe_dx_context_destroy(doe_dx_context *context);

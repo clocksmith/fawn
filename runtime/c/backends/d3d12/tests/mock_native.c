@@ -109,6 +109,12 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     return DOE_DX_OK;
 }
 
+doe_dx_status doe_dx_native_descriptors_prepare(doe_dx_native_context *context, doe_dx_error *error) {
+    (void)error;
+    assert(context);
+    return DOE_DX_OK;
+}
+
 doe_dx_status doe_dx_native_close(doe_dx_native_context *context) {
     assert(context && mock.contexts);
     if (mock.close_status != DOE_DX_OK) return mock.close_status;

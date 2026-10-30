@@ -76,7 +76,8 @@
 - Shader-visible CBV/SRV/UAV descriptors come from context-owned 4096-entry
   heaps: each descriptor use borrows one contiguous range, rewritten before
   recording, and returns it only when its command is discarded, terminally lost
-  or successfully retired. Keep the first heap for the context; extra heaps for
+  or successfully retired. Device creation prepares the first heap (never the first
+  submission) and keeps it for the context; extra heaps for
   overflow release when empty. Sampler/RTV/DSV/clear heaps keep their own owners.
 - Buffers whose queried allocation is at most 1 MiB are placed in context-owned
   4 MiB buffer-only heaps of their own memory class (64 KiB slots). Placement

@@ -93,6 +93,12 @@ doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *ou
     return DOE_DX_OK;
 }
 
+doe_dx_status doe_dx_context_prepare_descriptors(doe_dx_context *context, doe_dx_error *error) {
+    if (!context) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.descriptors", error);
+    if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "context.descriptors", error);
+    return doe_dx_native_descriptors_prepare(context->native, error);
+}
+
 doe_dx_status doe_dx_context_status(const doe_dx_context *context) {
     if (!context) return DOE_DX_INVALID_ARGUMENT;
     return context->lost ? DOE_DX_DEVICE_LOST : DOE_DX_OK;

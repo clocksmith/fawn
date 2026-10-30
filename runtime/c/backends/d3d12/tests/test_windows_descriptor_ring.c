@@ -113,6 +113,26 @@ static void ranges_are_disjoint_and_return_only_on_release(void)
     assert(device.heaps[0].releases == 1 && !context.descriptor_rings);
 }
 
+static void device_open_prepares_once(void)
+{
+    sdk_device device; doe_dx_native_context context;
+    initialize(&device,&context);
+    assert(doe_dx_native_descriptors_prepare(&context,NULL) == DOE_DX_OK);
+    assert(device.creates == 1 && device.heaps[0].count == 4096);
+    assert(doe_dx_native_descriptors_prepare(&context,NULL) == DOE_DX_OK && device.creates == 1);
+    SIZE_T cpu = 0;
+    doe_dx_descriptor_use *use = take(&context,3,&cpu);
+    assert(device.creates == 1 && use->heap == &device.heaps[0].iface && use->ring_first == 0);
+    doe_dx_release_descriptors(use);
+    doe_dx_descriptor_rings_close(&context);
+    assert(device.heaps[0].releases == 1);
+    initialize(&device,&context);
+    device.result = E_OUTOFMEMORY;
+    doe_dx_error error = {0};
+    assert(doe_dx_native_descriptors_prepare(&context,&error) == DOE_DX_OUT_OF_MEMORY);
+    assert(!context.descriptor_rings && !strcmp(error.operation,"ID3D12Device.CreateDescriptorHeap.resources"));
+}
+
 static void failure_and_detached_close(void)
 {
     sdk_device device; doe_dx_native_context context;
@@ -138,6 +158,7 @@ int main(void)
 {
     ranges_are_disjoint_and_return_only_on_release();
     failure_and_detached_close();
-    puts("PASS official SDK CPU descriptor ring: one long-lived 4096-entry heap, disjoint live ranges, offsets in CPU/GPU handles, release-only return, extra ring for overflow released when empty, exact creation failure, detached close; no GPU");
+    device_open_prepares_once();
+    puts("PASS official SDK CPU descriptor ring: one long-lived 4096-entry heap prepared once at device open, disjoint live ranges, offsets in CPU/GPU handles, release-only return, extra ring for overflow released when empty, exact creation failure, detached close; no GPU");
     return 0;
 }

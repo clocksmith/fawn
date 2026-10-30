@@ -81,6 +81,14 @@ native_result native_d3d12_reopen(const native_backend *adapter, native_backend 
     const doe_dx_caps *actual = &result.value.d3d12.caps;
     if (actual->luid_low == expected->luid_low && actual->luid_high == expected->luid_high &&
         actual->software_adapter == expected->software_adapter) {
+        /* Device creation, not the first submission, owns the shader-visible
+         * descriptor heap (Dawn creates its equivalent with the device too). */
+        doe_dx_error error = {0};
+        status = native_from_d3d12(doe_dx_context_prepare_descriptors(result.value.d3d12.context, &error));
+        if (status != NATIVE_OK) {
+            native_d3d12_close(&result);
+            return status;
+        }
         *out = result;
         return NATIVE_OK;
     }
