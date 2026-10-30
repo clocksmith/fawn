@@ -87,6 +87,7 @@ static void short_circuit(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint
     if (!marker(e, finish, IR_SHORT_END)) return;
     const IrInstruction *end = &e->module->instructions[finish];
     hlsl_indent(e);
+    hlsl_define(e, end->result);
     hlsl_value(e, end->result);
     hlsl_text(e, " = ");
     hlsl_value(e, begin->operands.scalar.left);
@@ -140,7 +141,13 @@ static void loop_body(HlslEmitter *e, uint32_t *cursor, unsigned depth) {
     --e->indent;
     hlsl_line(e, "}");
 }
+static void block_walk(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing);
 void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing) {
+    const bool entered = hlsl_assignment_enter(e); /* One structured region. */
+    block_walk(e, cursor, depth, loop, continuing);
+    if (entered) hlsl_assignment_leave(e);
+}
+static void block_walk(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing) {
     if (depth > DOE_HLSL_MAX_DEPTH) {
         hlsl_error(e, "Hlsl structured control exceeds target traversal budget");
         return;
@@ -242,6 +249,7 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             case IR_SHIFT_LEFT: case IR_SHIFT_RIGHT: case IR_CONVERT: case IR_BITCAST: case IR_CALL:
             case IR_BUILTIN: case IR_COMPOSITE: case IR_SWIZZLE: case IR_SELECT:
                 if (ir->result != 0u) {
+                    hlsl_define(e, ir->result);
                     hlsl_value(e, ir->result);
                     hlsl_text(e, " = ");
                 } else if (ir->opcode != IR_CALL) {

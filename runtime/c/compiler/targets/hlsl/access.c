@@ -201,6 +201,7 @@ static bool direct_scalar(HlslEmitter *e, const IrInstruction *ir, const HlslPat
     const bool uniform = resource->kind == DOE_COMPILER_UNIFORM_BUFFER;
     hlsl_indent(e);
     if (!store) {
+        hlsl_define(e, ir->result);
         hlsl_value(e, ir->result);
         hlsl_text(e, ir->type == IR_F32 ? " = asfloat(" : ir->type == IR_I32 ? " = asint(" : " = uint(");
     }
@@ -402,6 +403,7 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
     const bool guarded = resource == NULL && path_guarded(e, &path, &runtime);
     if (guarded && !store) {
         hlsl_indent(e);
+        hlsl_define(e, ir->result); /* The zero load precedes the guard. */
         hlsl_value(e, ir->result);
         hlsl_text(e, " = ");
         hlsl_zero(e, ir->type);
@@ -438,17 +440,20 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
                 hlsl_text(e, ");\n");
             }
         } else if (hlsl_inline_scalar(e->module, ir->type)) {
+            hlsl_define(e, ir->result); /* Resource accesses are never guarded. */
             hlsl_value(e, ir->result);
             hlsl_text(e, " = ");
             hlsl_inline_load(e, ir->operands.access.root, ir->type);
             hlsl_text(e, ";\n");
         } else {
+            hlsl_define(e, ir->result);
             hlsl_value(e, ir->result);
             hlsl_format(e, " = doe_r%u_load%u(offset);\n", ir->operands.access.root, ir->type);
         }
     } else if (ir->operands.access.category == ROOT_WORKGROUP &&
         e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_IMMEDIATE) {
         if (store) { hlsl_error(e,"immediate data cannot be written"); return; }
+        if (!guarded) hlsl_define(e,ir->result);
         hlsl_value(e,ir->result);
         hlsl_format(e," = doe_r%u_load%u(",e->module->resource_count + ir->operands.access.root,ir->type);
         byte_offset(e,&path,NULL);
@@ -456,7 +461,10 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
     } else if (atomic) atomic_operation(e, ir, &path, scalar);
     else {
         if (store) object_path(e, ir, &path);
-        else hlsl_value(e, ir->result);
+        else {
+            if (!guarded) hlsl_define(e, ir->result);
+            hlsl_value(e, ir->result);
+        }
         hlsl_text(e, " = ");
         if (store) hlsl_value(e, ir->operands.access.value);
         else object_path(e, ir, &path);

@@ -6,3 +6,4 @@ HLSL_SOURCE_NAMES += float_pack.c
 
 HLSL_SOURCE_NAMES += subgroup.c
 HLSL_SOURCE_NAMES += profile.c
+HLSL_SOURCE_NAMES += assignment.c

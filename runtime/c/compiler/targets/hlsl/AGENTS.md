@@ -51,6 +51,12 @@ device/numeric execution remain separate evidence.
 - A scalar IR constant has no value local: every use writes its literal
   (`asfloat(0x...u)`, `0x...u`, `asint(...)`). Composite constants keep their
   `doe_constantN()` functions.
+- A value local drops its zero initializer only when `assignment.c` proves it:
+  its first assignment is unconditional at its own statement (`hlsl_define`) and
+  every reference follows it in the same structured region or one nested inside.
+  Branch arms, cases, short-circuit sides and loop header/body/continuing are
+  separate regions. Any other value, and any function past the bounded state,
+  keeps `= (T)0`. Never drop an initializer by pattern or opcode alone.
 - Texture handles preserve typed declaration/formal identity. Query a valid base
   mip first, then guard the requested mip before its dimension query and every
   coordinate/layer/sample before a texel operation. Sampling array layers clamp.

@@ -6,6 +6,16 @@
 #include "../closure.h"
 #include "../ir_view.h"
 #include "../../include/doe_compiler_translation.h"
+/* Definite assignment of one function's values over its structured regions
+ * (assignment.c). Bounded storage: larger functions keep zero initialization. */
+enum { HLSL_ASSIGNMENT_VALUES = 512 };
+typedef struct {
+    uint32_t first, count, sequence, regions, depth;
+    bool valid;
+    uint32_t stack[DOE_HLSL_MAX_DEPTH + 2u];
+    uint32_t region[HLSL_ASSIGNMENT_VALUES], defined[HLSL_ASSIGNMENT_VALUES];
+    bool unsafe[HLSL_ASSIGNMENT_VALUES];
+} HlslAssignment;
 typedef struct {
     Source *source;
     TargetClosure closure;
@@ -19,7 +29,16 @@ typedef struct {
     bool uses_draw_offsets, uses_storage_sizes;
     uint32_t shader_model;
     DoeHlslMetadata metadata;
+    HlslAssignment *assignment; /* Non-NULL only during a function's analysis walk. */
 } HlslEmitter;
+/* Records value id's first assignment, written unconditionally where it stands. */
+void hlsl_define(HlslEmitter *, uint32_t id);
+void hlsl_assignment_use(HlslEmitter *, uint32_t id);
+bool hlsl_assignment_enter(HlslEmitter *);
+void hlsl_assignment_leave(HlslEmitter *);
+/* Walks the function body without output; true when value id needs no zero initializer. */
+void hlsl_assignment_analyze(HlslEmitter *, uint32_t function, HlslAssignment *);
+bool hlsl_assigned(const HlslAssignment *, uint32_t id);
 void hlsl_text(HlslEmitter *, const char *);
 void hlsl_format(HlslEmitter *, const char *, ...);
 void hlsl_line(HlslEmitter *, const char *);

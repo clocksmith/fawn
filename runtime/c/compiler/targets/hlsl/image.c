@@ -362,6 +362,7 @@ void hlsl_image(HlslEmitter *e, const IrInstruction *ir) {
     ++e->indent;
     if (ir->result != 0u) {
         hlsl_indent(e);
+        hlsl_define(e, ir->result);
         hlsl_value(e, ir->result);
         hlsl_text(e, " = ");
         hlsl_zero(e, ir->type);

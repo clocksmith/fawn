@@ -55,6 +55,8 @@ static void function_body(HlslEmitter *e, uint32_t index) {
         hlsl_error(e, "HLSL function IR or local range is invalid");
         return;
     }
+    HlslAssignment assignment;
+    hlsl_assignment_analyze(e, index, &assignment);
     signature(e, index);
     hlsl_text(e, " {\n");
     e->indent = 1u;
@@ -76,8 +78,12 @@ static void function_body(HlslEmitter *e, uint32_t index) {
         hlsl_indent(e);
         if (type_leaf(c, ir->type) == IR_F32) hlsl_text(e, "precise ");
         hlsl_type(e, ir->type);
-        hlsl_format(e, " v%u = ", ir->result);
-        hlsl_zero(e, ir->type);
+        hlsl_format(e, " v%u", ir->result);
+        /* Proven assigned before every use: no zero initializer. */
+        if (!hlsl_assigned(&assignment, ir->result)) {
+            hlsl_text(e, " = ");
+            hlsl_zero(e, ir->type);
+        }
         hlsl_text(e, ";\n");
     }
     e->function_end = f->instruction_end;
