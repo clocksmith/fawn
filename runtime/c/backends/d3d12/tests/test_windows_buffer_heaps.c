@@ -208,10 +208,36 @@ static void failures_keep_exact_status_without_committed_retry(void)
     assert(device.heaps[0].releases == 1 && device.resources[0].releases == 1);
 }
 
+static void upload_heap_prepared_at_open(void)
+{
+    sdk_device device; doe_dx_native_context context;
+    initialize(&device,&context);
+    doe_dx_error error = {0};
+    device.heap_result = E_OUTOFMEMORY;
+    assert(doe_dx_native_upload_heap_prepare(&context,&error) == DOE_DX_OUT_OF_MEMORY);
+    assert(!strcmp(error.operation,"ID3D12Device.CreateHeap.buffers") && !context.buffer_heaps);
+    device.heap_result = S_OK;
+    assert(doe_dx_native_upload_heap_prepare(&context,NULL) == DOE_DX_OK && device.heap_count == 1);
+    assert(device.heaps[0].type == D3D12_HEAP_TYPE_UPLOAD);
+    assert(doe_dx_native_upload_heap_prepare(&context,NULL) == DOE_DX_OK && device.heap_count == 1);
+    /* The first UPLOAD placement uses the prepared heap; other classes still create theirs. */
+    doe_dx_native_buffer *upload = create(&context,1u << 20,DOE_DX_UPLOAD);
+    assert(device.heap_count == 1 && upload->heap == context.buffer_heaps && offset_of(upload) == 0);
+    doe_dx_native_buffer *other = create(&context,SLOT,DOE_DX_DEFAULT);
+    assert(device.heap_count == 2 && other->heap != upload->heap);
+    /* Released, it stays the class's one retained empty heap until close. */
+    doe_dx_native_buffer_destroy(upload);
+    doe_dx_native_buffer_destroy(other);
+    assert(!device.heaps[0].releases && !device.heaps[1].releases);
+    doe_dx_buffer_heaps_close(&context);
+    assert(device.heaps[0].releases == 1 && device.heaps[1].releases == 1);
+}
+
 int main(void)
 {
     slots_classes_reuse_and_spare_bound();
     failures_keep_exact_status_without_committed_retry();
-    puts("PASS official SDK CPU placed-buffer heaps: per-class 64KiB slots, 1MiB placement bound, committed above it, slot reuse after release, one spare empty heap, exact heap/placement failures without committed retry, detached close; no GPU");
+    upload_heap_prepared_at_open();
+    puts("PASS official SDK CPU placed-buffer heaps: per-class 64KiB slots, 1MiB placement bound, committed above it, slot reuse after release, one spare empty heap, exact heap/placement failures without committed retry, detached close, UPLOAD heap prepared at open; no GPU");
     return 0;
 }

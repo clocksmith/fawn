@@ -113,7 +113,8 @@ doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *ou
 /* Nonmutating; no polling, error consumption or completion settlement. */
 doe_dx_status doe_dx_context_status(const doe_dx_context *context);
 /* Device-opening owner only: creates the long-lived shader-visible descriptor
- * heap now, as part of device creation, instead of in the first submission.
+ * heap and the first UPLOAD buffer heap now, as part of device creation, instead
+ * of in the first submission or queue write.
  * Idempotent. Failure keeps its exact status; the caller fails device creation. */
 doe_dx_status doe_dx_context_prepare_descriptors(doe_dx_context *context, doe_dx_error *error);
 /* Refuses destruction with BUSY until all caller objects have been released and
