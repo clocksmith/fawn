@@ -219,23 +219,22 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 
      auto toggles = instance->GetTogglesState();
      auto enabledTogglesName = toggles.GetEnabledToggleNames();
-@@ -61,8 +74,490 @@
+@@ -61,10 +74,502 @@
      instanceDesc.requiredLimits = &limits;
 
      mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
--
 +    if (!mInnerInstance) {
 +        dawn::ErrorLog() << "runtime_initialization_failed: wgpuCreateInstance returned null";
 +    }
-+
+
 +    if (instance->IsWebGPUExternalRuntimeRequired()) {
 +        dawn::InfoLog() << "runtime_instance_result: created=" << (mInnerInstance != nullptr)
 +                        << " required_feature_count=" << instanceDesc.requiredFeatureCount
 +                        << " timed_wait_max_count=" << limits.timedWaitAnyMaxCount;
 +    }
      mDawnProcs.supportedInstanceFeaturesFreeMembers(features);
-+}
-+
+ }
+
 +bool Backend::LoadDoeWireProcTable() {
 +    const auto& path = GetInstance()->GetWebGPUExternalRuntimeLibraryPath();
 +    std::string error;
@@ -249,6 +248,16 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +        dawn::ErrorLog() << "runtime_cache_policy_unavailable: "
 +                        << "doeNativeDeviceDisablePersistentCache: " << error;
 +        return false;
++    }
++    // Optional accelerator: without it every device reports the store unavailable.
++    mExternalPipelineBlobProc = reinterpret_cast<ConfigurePipelineBlobStoreProc>(
++        mExternalRuntimeLib.GetProc("doeNativeDeviceConfigurePipelineBlobStore", &error));
++    mExternalPipelineCacheInfoProc = reinterpret_cast<PipelineCacheInfoProc>(
++        mExternalRuntimeLib.GetProc("doeNativeDevicePipelineCacheInfo", &error));
++    if (!mExternalPipelineBlobProc || !mExternalPipelineCacheInfoProc) {
++        dawn::ErrorLog() << "runtime_pipeline_blob_cache_unavailable: provider symbols: " << error;
++        mExternalPipelineBlobProc = nullptr;
++        mExternalPipelineCacheInfoProc = nullptr;
 +    }
 +    auto lookup = reinterpret_cast<WGPUProcGetProcAddress>(
 +        mExternalRuntimeLib.GetProc("wgpuGetProcAddress", &error));
@@ -708,10 +717,12 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +        return false;
 +    }
 +    return true;
- }
-
++}
++
  Backend::~Backend() {
-@@ -74,42 +569,94 @@
+     if (mInnerInstance) {
+         mDawnProcs.instanceRelease(mInnerInstance);
+@@ -74,42 +579,94 @@
 
  std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
      const UnpackedPtr<RequestAdapterOptions>& options) {
@@ -737,10 +748,8 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
          // Unchain any other extensions if exist.
          innerToggles.chain.next = nullptr;
 -        innerAdapterOption.nextInChain = &(innerToggles.chain);
--    }
--
 +        nativeToggles = &innerToggles;
-+    }
+     }
 +#if defined(_WIN32)
 +    InnerRuntimeWindowsAdapterLuid luidStorage;
 +    innerAdapterOption.nextInChain = InnerRuntimeWindowsAdapterChain(
@@ -750,7 +759,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    innerAdapterOption.nextInChain = InnerRuntimeDescriptorChain(
 +        nativeToggles, outerRequiredChain, GetInstance()->IsWebGPUExternalRuntimeRequired());
 +#endif
-+
+
 +    if (GetInstance()->IsWebGPUExternalRuntimeRequired()) {
 +        dawn::InfoLog() << "runtime_adapter_request: backend_type="
 +                        << static_cast<uint32_t>(innerAdapterOption.backendType)
@@ -811,7 +820,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 
      if (innerAdapter == nullptr) {
          return {};
-@@ -126,6 +673,10 @@
+@@ -126,6 +683,18 @@
      return mInnerInstance;
  }
 
@@ -819,33 +828,44 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    return mExternalCacheDisableProc;
 +}
 +
++ConfigurePipelineBlobStoreProc Backend::GetExternalPipelineBlobProc() const {
++    return mExternalPipelineBlobProc;
++}
++
++PipelineCacheInfoProc Backend::GetExternalPipelineCacheInfoProc() const {
++    return mExternalPipelineCacheInfoProc;
++}
++
  BackendConnection* Connect(InstanceBase* instance) {
      return new Backend(instance, wgpu::BackendType::WebGPU);
  }
 diff --git a/src/dawn/native/webgpu/BackendWGPU.h b/src/dawn/native/webgpu/BackendWGPU.h
-index 399d42a2e..720a518cb 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.h
 +++ b/src/dawn/native/webgpu/BackendWGPU.h
 @@ -30,7 +30,9 @@
- 
+
  #include <vector>
- 
+
 +#include "src/dawn/common/DynamicLib.h"
  #include "src/dawn/native/BackendConnection.h"
 +#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
- 
+
  namespace dawn::native::webgpu {
- 
-@@ -46,8 +48,12 @@ class Backend : public BackendConnection {
- 
+
+@@ -46,8 +48,16 @@
+
      const DawnProcTable& GetFunctions() const;
      WGPUInstance GetInnerInstance() const;
 +    DisablePersistentCacheProc GetExternalCacheDisableProc() const;
- 
++    ConfigurePipelineBlobStoreProc GetExternalPipelineBlobProc() const;
++    PipelineCacheInfoProc GetExternalPipelineCacheInfoProc() const;
+
    private:
 +    bool LoadDoeWireProcTable();
 +    dawn::DynamicLib mExternalRuntimeLib;
 +    DisablePersistentCacheProc mExternalCacheDisableProc = nullptr;
++    ConfigurePipelineBlobStoreProc mExternalPipelineBlobProc = nullptr;
++    PipelineCacheInfoProc mExternalPipelineCacheInfoProc = nullptr;
      // The dawn proc table used as the underlying backend. It can be specified when creating the
      // backend. This is different from the static global gProcTable.
      DawnProcTable mDawnProcs;
@@ -914,7 +934,16 @@ diff --git a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp b/src/dawn/native/we
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
 --- a/src/dawn/native/webgpu/DeviceWGPU.cpp
 +++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
-@@ -54,6 +54,9 @@
+@@ -33,6 +33,8 @@
+ #include "src/dawn/common/Constants.h"
+ #include "src/dawn/common/StringViewUtils.h"
+ #include "src/dawn/native/BackendConnection.h"
++#include "src/dawn/native/Blob.h"
++#include "src/dawn/native/BlobCache.h"
+ #include "src/dawn/native/BindGroupLayoutInternal.h"
+ #include "src/dawn/native/Buffer.h"
+ #include "src/dawn/native/ChainUtils.h"
+@@ -54,6 +56,9 @@
  #include "src/dawn/native/webgpu/CommandBufferWGPU.h"
  #include "src/dawn/native/webgpu/ComputePipelineWGPU.h"
  #include "src/dawn/native/webgpu/ExternalTextureWGPU.h"
@@ -924,7 +953,7 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
  #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
  #include "src/dawn/native/webgpu/PipelineLayoutWGPU.h"
  #include "src/dawn/native/webgpu/QuerySetWGPU.h"
-@@ -72,6 +75,15 @@
+@@ -72,6 +77,15 @@
  #include "tint/tint.h"
 
  namespace dawn::native::webgpu {
@@ -940,7 +969,7 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 
  namespace {
 
-@@ -130,7 +142,14 @@
+@@ -130,7 +144,14 @@
      Ref<Device> device =
          AcquireRef(new Device(adapter, innerAdapter, descriptor, outerDeviceToggles, deviceToggles,
                                std::move(lostEvent)));
@@ -956,18 +985,18 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
      return device;
  }
 
-@@ -146,6 +165,7 @@
+@@ -146,6 +167,7 @@
      DAWN_ASSERT(adapter->GetPhysicalDevice()->GetBackendType() == wgpu::BackendType::WebGPU);
- 
+
      WGPUDeviceDescriptor apiDesc = *(ToAPI(*descriptor));
 +    WGPUChainedStruct* outerRequiredChain = apiDesc.nextInChain;
      std::string label = "Inner Device on " + adapter->GetPhysicalDevice()->GetName();
      apiDesc.label = ToOutputStringView(label);
- 
-@@ -162,43 +182,95 @@
+
+@@ -162,43 +184,159 @@
      apiToggleDescriptor.disabledToggleCount = disabledTogglesName.size();
      apiToggleDescriptor.disabledToggles = disabledTogglesName.data();
- 
+
 -    apiDesc.nextInChain = &apiToggleDescriptor.chain;
 -
 -    // Acquire a Ref to the outer webgpu::Device to avoid possible dangling pointer in the callback.
@@ -1072,7 +1101,7 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +            },
 +            nullptr, reinterpret_cast<void*>(outerDeviceRef)};
 +    }
- 
+
      // TODO(crbug.com/413053623): use adapterRequestDevice instead as dawn_wire doesn't support
      // adapterCreateDevice.
      mInnerHandle = wgpu->adapterCreateDevice(innerAdapter, &apiDesc);
@@ -1087,15 +1116,79 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +                : "runtime_device_creation_failed: adapterCreateDevice returned null");
 +            Ref<Device> retired = ExternalCallbacks().Remove(mExternalCallbackToken);
 +            mExternalCallbackToken = 0;
++        } else {
++            ConfigureExternalPipelineBlobs();
 +        }
 +    }
++}
++
++// Provider-owned cache files stay disabled above; driver pipeline caches persist
++// through this device's blob cache, which the browser process writes. A missing
++// or refused store is reported and leaves pipeline creation uncached.
++void Device::ConfigureExternalPipelineBlobs() {
++    auto* backend = ToBackend(GetPhysicalDevice())->GetBackend();
++    if (!backend->GetExternalPipelineBlobProc()) {
++        dawn::ErrorLog() << "runtime_pipeline_blob_cache_unavailable: provider has no blob store";
++        return;
++    }
++    const ExternalPipelineBlobStore store = {this, &Device::LoadExternalPipelineBlob,
++                                             &Device::StoreExternalPipelineBlob};
++    ExternalPipelineCacheInfo info = {};
++    const uint32_t status = backend->GetExternalPipelineBlobProc()(
++        mInnerHandle, kExternalPipelineCacheAbiVersion, &store, sizeof(store), &info, sizeof(info));
++    mExternalPipelineBlobs = status == 0;
++    if (!mExternalPipelineBlobs) {
++        dawn::ErrorLog() << "runtime_pipeline_blob_cache_unavailable: status=" << status
++                         << " message=" << std::string(info.message, strnlen(info.message, sizeof(info.message)));
++    }
++}
++
++CacheKey Device::ExternalPipelineBlobKey(const void* key, size_t keySize) const {
++    static constexpr char kDomain[] = "doe-external-pipeline-blob-v1";
++    CacheKey cacheKey = GetCacheKey();
++    const auto* domain = reinterpret_cast<const std::byte*>(kDomain);
++    const auto* bytes = static_cast<const std::byte*>(key);
++    cacheKey.insert(cacheKey.end(), domain, domain + sizeof(kDomain));
++    cacheKey.insert(cacheKey.end(), bytes, bytes + keySize);
++    return cacheKey;
++}
++
++// Both run synchronously inside the provider's pipeline creation for this device,
++// which outer pipeline initialization keeps alive; no provider lock is held.
++void Device::LoadExternalPipelineBlob(void* userdata,
++                                      const void* key,
++                                      size_t keySize,
++                                      void (*receive)(void*, const void*, size_t),
++                                      void* receiver) {
++    auto* device = static_cast<Device*>(userdata);
++    ResultOrError<Blob> loaded =
++        device->GetBlobCache()->Load(device->ExternalPipelineBlobKey(key, keySize));
++    if (loaded.IsError()) {
++        dawn::ErrorLog() << "runtime_pipeline_blob_cache_load_rejected: "
++                         << loaded.AcquireError()->GetFormattedMessage();
++        return;
++    }
++    Blob blob = loaded.AcquireSuccess();
++    if (!blob.Empty()) {
++        receive(receiver, blob.DataPtr(), blob.Size());
++    }
++}
++
++void Device::StoreExternalPipelineBlob(void* userdata,
++                                       const void* key,
++                                       size_t keySize,
++                                       const void* value,
++                                       size_t size) {
++    auto* device = static_cast<Device*>(userdata);
++    device->GetBlobCache()->Store(device->ExternalPipelineBlobKey(key, keySize),
++                                  std::span(static_cast<const std::byte*>(value), size));
  }
- 
+
  Device::~Device() {
-@@ -209,10 +281,95 @@
+@@ -209,10 +347,95 @@
      return ToBackend(GetPhysicalDevice())->GetBackend()->GetInnerInstance();
  }
- 
+
 +bool Device::IsExternalRuntime() const {
 +    return GetInstance()->IsWebGPUExternalRuntimeRequired();
 +}
@@ -1189,15 +1282,15 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
  }
 
  ResultOrError<Ref<BindGroupBase>> Device::CreateBindGroupImpl(
-@@ -380,10 +537,18 @@
+@@ -380,10 +603,29 @@
      //   is implicitly destroyed. This case is thread-safe because there are no
      //   other threads using the device since there are no other live refs.
- 
+
 -    if (ToBackend(GetQueue())->IsCapturing()) {
 +    if (GetQueue() && ToBackend(GetQueue())->IsCapturing()) {
          EndCapture();
      }
- 
+
 +    Ref<Device> retired;
 +    if (IsExternalRuntime()) {
 +        mExternalPublication.Retire();
@@ -1206,12 +1299,23 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +        retired = ExternalCallbacks().Remove(mExternalCallbackToken);
 +        mExternalCallbackToken = 0;
 +    }
++    if (mInnerHandle && mExternalPipelineBlobs) {
++        ExternalPipelineCacheInfo info = {};
++        auto* backend = ToBackend(GetPhysicalDevice())->GetBackend();
++        if (backend->GetExternalPipelineCacheInfoProc()(
++                mInnerHandle, kExternalPipelineCacheAbiVersion, &info, sizeof(info)) == 0) {
++            dawn::InfoLog() << "runtime_pipeline_blob_cache: lookups=" << info.loadAttempts
++                            << " driver_loads=" << info.loadSuccesses
++                            << " pipelines=" << info.additions << " stores=" << info.serializations
++                            << " store_failures=" << info.serializationFailures;
++        }
++    }
      if (mInnerHandle) {
          wgpu->deviceDestroy(mInnerHandle);
      }
-@@ -433,6 +598,7 @@
+@@ -433,6 +675,7 @@
  }
- 
+
  MaybeError Device::TickImpl() {
 +    wgpu->instanceProcessEvents(GetInnerInstance());
      wgpu->deviceTick(mInnerHandle);
@@ -1240,11 +1344,10 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/Device
  #include "src/dawn/native/webgpu/ObjectWGPU.h"
  #include "src/dawn/native/webgpu/QueueWGPU.h"
 
-@@ -53,6 +57,19 @@
-     ~Device() override;
+@@ -54,6 +58,19 @@
 
      MaybeError Initialize(const UnpackedPtr<DeviceDescriptor>& descriptor);
-+
+
 +    class ExternalErrorScope : public StackAllocated {
 +      public:
 +        explicit ExternalErrorScope(Device* device);
@@ -1257,10 +1360,11 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/Device
 +    };
 +    bool IsExternalRuntime() const;
 +
-
++
      uint32_t GetOptimalBytesPerRowAlignment() const override;
      uint64_t GetOptimalBufferToTextureCopyOffsetAlignment() const override;
-@@ -80,6 +97,13 @@
+
+@@ -80,6 +97,26 @@
      const raw_ref<const DawnProcTable> wgpu;
 
    private:
@@ -1269,6 +1373,19 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/Device
 +    InnerRuntimePublication mExternalPublication;
 +    InnerRuntimeErrorCapture mExternalInitializationError;
 +    std::vector<InnerRuntimeErrorCapture> mExternalErrorCaptures;
++    void ConfigureExternalPipelineBlobs();
++    static void LoadExternalPipelineBlob(void* userdata,
++                                         const void* key,
++                                         size_t keySize,
++                                         void (*receive)(void*, const void*, size_t),
++                                         void* receiver);
++    static void StoreExternalPipelineBlob(void* userdata,
++                                          const void* key,
++                                          size_t keySize,
++                                          const void* value,
++                                          size_t size);
++    CacheKey ExternalPipelineBlobKey(const void* key, size_t keySize) const;
++    bool mExternalPipelineBlobs = false;
 +    uintptr_t mExternalCallbackToken = 0;
 +
      Device(AdapterBase* adapter,
@@ -1380,7 +1497,7 @@ diff --git a/src/dawn/native/webgpu/InnerRuntimeDescriptor.h b/src/dawn/native/w
 new file mode 100644
 --- /dev/null
 +++ b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,183 @@
 +// Copyright 2026 The Doe Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -1508,6 +1625,36 @@ new file mode 100644
 +
 +// This is a private provider requirement, not a WebGPU procedure or capability.
 +using DisablePersistentCacheProc = WGPUStatus (*)(WGPUDevice);
++
++// Mirrors the provider's private DoeNativePipelineBlobStore and
++// DoeNativePipelineCacheInfo (doe_native_pipeline_cache.h, ABI version 1). The
++// outer device's blob cache owns persistence, so the browser process writes and
++// the sandboxed provider opens no cache files. Keys only locate driver caches
++// that the provider and the driver validate before use.
++struct ExternalPipelineBlobStore {
++    void* userdata;
++    void (*load)(void* userdata,
++                 const void* key,
++                 size_t keySize,
++                 void (*receive)(void* receiver, const void* value, size_t size),
++                 void* receiver);
++    void (*store)(void* userdata, const void* key, size_t keySize, const void* value, size_t size);
++};
++struct ExternalPipelineCacheInfo {
++    uint32_t status, enabled, dirty, reserved;
++    uint64_t loadAttempts, loadSuccesses, additions, additionFailures;
++    uint64_t serializations, serializationFailures;
++    int64_t nativeCode;
++    char message[256];
++};
++inline constexpr uint32_t kExternalPipelineCacheAbiVersion = 1;
++using ConfigurePipelineBlobStoreProc = uint32_t (*)(void*,
++                                                    uint32_t,
++                                                    const ExternalPipelineBlobStore*,
++                                                    size_t,
++                                                    ExternalPipelineCacheInfo*,
++                                                    size_t);
++using PipelineCacheInfoProc = uint32_t (*)(void*, uint32_t, ExternalPipelineCacheInfo*, size_t);
 +
 +// Called before a created external device is published or used for shaders.
 +// A refused policy destroys/releases only that unpublished device, then pumps
