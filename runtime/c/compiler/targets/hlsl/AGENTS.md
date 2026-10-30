@@ -48,6 +48,9 @@ device/numeric execution remain separate evidence.
   signed indices and each indexed subobject before forming the access; loads
   initialize zero and invalid stores discard. Preserve IR value snapshots,
   source-order call arguments, short circuits and continuing paths.
+- A scalar IR constant has no value local: every use writes its literal
+  (`asfloat(0x...u)`, `0x...u`, `asint(...)`). Composite constants keep their
+  `doe_constantN()` functions.
 - Texture handles preserve typed declaration/formal identity. Query a valid base
   mip first, then guard the requested mip before its dimension query and every
   coordinate/layer/sample before a texel operation. Sampling array layers clamp.

@@ -56,8 +56,18 @@ TypeId hlsl_value_type(HlslEmitter *e, uint32_t id) {
     hlsl_error(e, "operand has no typed value identity");
     return IR_VOID;
 }
+bool hlsl_inline_constant(const IrInstruction *ir) {
+    return ir->opcode == IR_CONSTANT && ir->operands.scalar.left == 0u;
+}
 void hlsl_value(HlslEmitter *e, uint32_t id) {
     (void)hlsl_value_type(e, id);
+    if (id != 0u && id <= e->module->instruction_count &&
+        hlsl_inline_constant(&e->module->instructions[id - 1u])) {
+        /* An immutable literal: inlining preserves every value snapshot. */
+        const IrInstruction *ir = &e->module->instructions[id - 1u];
+        hlsl_constant(e, ir->type, ir->operands.scalar.literal, false);
+        return;
+    }
     if (id != 0u && id <= e->module->instruction_count &&
         e->module->instructions[id - 1u].opcode == IR_ADDRESS) {
         const IrInstruction *ir = &e->module->instructions[id - 1u];
