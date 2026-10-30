@@ -131,11 +131,15 @@ typedef enum doe_dx_memory {
 } doe_dx_memory;
 /* Upload memory is zero initialized. Default/readback memory requires a full
  * copy before it may be read; a compute shader is not assumed to write all bytes.
- * Default buffers support structured SRV/UAVs; upload/readback are transfer-only. */
+ * Default buffers support structured SRV/UAVs; upload/readback are transfer-only.
+ * Upload zeros are written by the CPU unless D3D12 zeroed that memory at
+ * creation (a new committed resource, or never-placed slots of a heap; Doe never
+ * sets CREATE_NOT_ZEROED). */
 doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     doe_dx_memory memory, doe_dx_buffer **out, doe_dx_error *error);
 /* Additive constructor: CPU Map/zero/Unmap of the complete READBACK resource
- * width before publication, including caller-requested physical padding. No
+ * width before publication, including caller-requested physical padding, unless
+ * D3D12 zeroed that memory at creation (see doe_dx_buffer_create). No
  * GPU use exists yet; later uses retain ordinary pending/host exclusion.
  * General buffer_create READBACK initialization semantics remain unchanged. */
 doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint64_t size,

@@ -14,6 +14,9 @@ struct doe_dx_buffer_heap {
     doe_dx_native_context *context; /* NULL once detached by context close. */
     doe_dx_memory memory;
     uint64_t used;
+    /* Slots never placed since CreateHeap, which zeroes them (Doe never sets
+     * D3D12_HEAP_FLAG_CREATE_NOT_ZEROED). A released slot is never fresh again. */
+    uint64_t fresh;
     struct doe_dx_buffer_heap *next;
 };
 
@@ -84,6 +87,7 @@ static HRESULT heap_create(doe_dx_native_context *context, const D3D12_HEAP_PROP
     if (FAILED(result)) { free(heap); return result; }
     heap->context = context;
     heap->memory = memory;
+    heap->fresh = UINT64_MAX;
     heap->next = context->buffer_heaps;
     context->buffer_heaps = heap;
     *out = heap;
@@ -117,6 +121,8 @@ static HRESULT place_buffer(doe_dx_native_context *context, const D3D12_HEAP_PRO
         if (FAILED(result)) return result;
         if (!heap_take(heap, slots, align, &mask, &offset)) abort(); /* Admitted size fits an empty heap. */
     }
+    buffer->zeroed = (heap->fresh & mask) == mask;
+    heap->fresh &= ~mask;
     *operation = "ID3D12Device.CreatePlacedResource";
     HRESULT result = ID3D12Device_CreatePlacedResource(context->device, heap->heap, offset, description,
         state, NULL, &IID_ID3D12Resource, (void **)&buffer->resource);
@@ -172,7 +178,9 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     }
     buffer->size = size;
     buffer->memory = memory;
-    if (memory == DOE_DX_UPLOAD) {
+    /* A new committed resource's implicit heap is zeroed (HEAP_FLAG_NONE). */
+    if (!buffer->heap) buffer->zeroed = true;
+    if (memory == DOE_DX_UPLOAD && !buffer->zeroed) {
         void *mapped = NULL;
         D3D12_RANGE read = {0, 0};
         result = ID3D12Resource_Map(buffer->resource, 0, &read, &mapped);
@@ -186,6 +194,10 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     }
     *out = buffer;
     return doe_dx_fail(DOE_DX_OK, 0, "native.buffer.create", error);
+}
+
+bool doe_dx_native_buffer_zeroed(const doe_dx_native_buffer *buffer) {
+    return buffer && buffer->zeroed;
 }
 
 doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_error *error) {

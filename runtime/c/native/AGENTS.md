@@ -231,7 +231,8 @@ submission adopts and extends (one execution, one fence); every other recording,
 CPU read, map and work-done drain submits it first, and its copy log re-records
 the writes when an adopted recording fails. The backend AGENTS.md owns the rule.
 
-D3D12 buffer creation CPU-zeroes READBACK resources before publication. DEFAULT
+D3D12 buffer creation CPU-zeroes READBACK resources before publication unless
+D3D12 zeroed them at creation (backend AGENTS.md owns the rule). DEFAULT
 initialization uses full-width zero copies accepted through the existing common
 pending/device owner; later GPU work inherits known-fenced initialization, while
 CPU maps still wait for the actual buffer owner. Keep mappedAtCreation on DEFAULT

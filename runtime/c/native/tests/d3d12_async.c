@@ -322,9 +322,11 @@ static void initialization_ordering(bool debug)
             free(message);
         }
         ID3D12InfoQueue_Release(messages);
-        assert(clean && state_advisories == 0 && range_advisories == 3);
+        /* These READBACK buffers take never-placed slots of a new heap, which
+         * D3D12 zeroed at creation: no CPU zero write, so no range advisory. */
+        assert(clean && state_advisories == 0 && range_advisories == 0);
         puts("D3D12 initialization debug layer: no errors/corruption/unexpected warnings; "
-            "placed buffers emit no state advisory; 3 truthful READBACK-written-range advisories retained");
+            "placed buffers emit no state advisory; D3D12-zeroed READBACK placements need no CPU write");
     }
     consumer_finish(&s);
     printf("gated initialization: accepted=%u CPUzero=%u watchdog=%u; complete260-byte/partial-cacheline/256-byte-CBV-padding oracles\n",

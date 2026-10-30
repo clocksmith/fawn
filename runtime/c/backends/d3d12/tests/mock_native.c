@@ -5,7 +5,7 @@
 /* No shader interpreter or buffer-copy execution is present. These substitutes
  * only observe actual owner calls and enforce native object lifetime edges. */
 struct doe_dx_native_context { unsigned tag; };
-struct doe_dx_native_buffer { unsigned recorded, lends; doe_dx_memory memory; unsigned char bytes[64]; };
+struct doe_dx_native_buffer { unsigned recorded, lends; doe_dx_memory memory; bool zeroed; unsigned char bytes[64]; };
 struct doe_dx_native_pipeline { unsigned recorded; };
 struct doe_dx_native_texture { unsigned recorded; };
 struct doe_dx_native_timestamps { unsigned recorded; };
@@ -137,8 +137,13 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     *out = calloc(1, sizeof(**out));
     assert(*out);
     (*out)->memory = memory;
+    (*out)->zeroed = mock.created_zeroed;
     mock.buffers++;
     return DOE_DX_OK;
+}
+
+bool doe_dx_native_buffer_zeroed(const doe_dx_native_buffer *buffer) {
+    return buffer->zeroed;
 }
 
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer) {

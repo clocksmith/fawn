@@ -168,3 +168,10 @@ $(BUILD)/test_write_order: tests/test_write_order.c tests/mock_native.c tests/mo
 check-write-order: $(BUILD)/test_write_order
 	$(BUILD)/test_write_order
 check: check-write-order
+
+$(BUILD)/test_zeroed_creation: tests/test_zeroed_creation.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_zeroed_creation.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
+.PHONY: check-zeroed-creation
+check-zeroed-creation: $(BUILD)/test_zeroed_creation
+	$(BUILD)/test_zeroed_creation
+check: check-zeroed-creation

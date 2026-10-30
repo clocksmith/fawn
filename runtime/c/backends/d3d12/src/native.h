@@ -117,6 +117,9 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     uint64_t size, doe_dx_memory memory, doe_dx_native_buffer **out, doe_dx_error *error);
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer);
 doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_error *error);
+/* True when D3D12 zeroed every byte at creation and nothing has written it since
+ * creation returned: a new committed resource, or never-placed heap slots. */
+bool doe_dx_native_buffer_zeroed(const doe_dx_native_buffer *buffer);
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error);
 doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offset, size_t size,
