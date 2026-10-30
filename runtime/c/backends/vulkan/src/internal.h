@@ -57,6 +57,7 @@ struct doe_vk_context {
     VkPipelineCache driver_cache;
     char *driver_cache_path;
     doe_vk_pipeline_cache_stats driver_cache_stats;
+    bool pipeline_blobs; /* Caller-persisted per-pipeline caches; see driver_cache.c. */
     /* Reset command pools (one primary buffer each) and unsignaled fences of
      * recordings that were proven terminal or never submitted; see commands.c. */
     struct doe_vk_command_spare {
@@ -71,6 +72,10 @@ enum { DOE_VK_RETAINED_PIPELINES = 32 };
 void doe_vk_pipeline_cache_clear(doe_vk_context *context);
 void doe_vk_driver_cache_clear(doe_vk_context *context);
 void doe_vk_driver_cache_record(doe_vk_context *context, bool success);
+doe_vk_status doe_vk_pipeline_blob_open(doe_vk_context *context, const doe_vk_pipeline_blob *blob,
+    VkPipelineCache *cache, bool *loaded, doe_vk_error *error);
+void doe_vk_pipeline_blob_close(doe_vk_context *context, VkPipelineCache cache, bool loaded, bool created,
+    doe_vk_pipeline_blob *blob);
 void doe_vk_push_immediates(doe_vk_commands *commands, doe_vk_pipeline *pipeline, const void *bytes);
 /* Destroys spare command pools and fences; the context is releasing its device. */
 void doe_vk_command_spares_clear(doe_vk_context *context);

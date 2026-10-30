@@ -164,10 +164,11 @@ static bool keep_input(doe_vk_pipeline *pipeline, const doe_vk_shader *shader) {
     return true;
 }
 
-doe_vk_status doe_vk_pipeline_create_with_immediates(doe_vk_context *context,
+doe_vk_status doe_vk_pipeline_create_blob(doe_vk_context *context,
     const uint32_t *spirv, size_t word_count, const char *entrypoint,
     const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
-    uint32_t immediate_bytes, doe_vk_pipeline **out, doe_vk_error *error) {
+    uint32_t immediate_bytes, doe_vk_pipeline_blob *blob, doe_vk_pipeline **out, doe_vk_error *error) {
+    if (blob) { blob->produced = NULL; blob->produced_size = 0; }
     const doe_vk_shader shader = { spirv, word_count, entrypoint };
     if (context == NULL || out == NULL || !doe_vk_shader_valid(&shader))
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "pipeline descriptor", error);
@@ -229,8 +230,16 @@ doe_vk_status doe_vk_pipeline_create_with_immediates(doe_vk_context *context,
         .layout = pipeline->layout,
         .basePipelineIndex = -1
     };
-    status = doe_vk_result(context, context->vk.vkCreateComputePipelines(context->device, context->driver_cache, 1, &create, NULL, &pipeline->pipeline), "vkCreateComputePipelines", error);
-    doe_vk_driver_cache_record(context, status == DOE_VK_OK);
+    VkPipelineCache cache = context->driver_cache;
+    const bool temporary = blob && context->pipeline_blobs;
+    bool loaded = false;
+    if (temporary) {
+        status = doe_vk_pipeline_blob_open(context, blob, &cache, &loaded, error);
+        if (status != DOE_VK_OK) goto failed;
+    }
+    status = doe_vk_result(context, context->vk.vkCreateComputePipelines(context->device, cache, 1, &create, NULL, &pipeline->pipeline), "vkCreateComputePipelines", error);
+    if (temporary) doe_vk_pipeline_blob_close(context, cache, loaded, status == DOE_VK_OK, blob);
+    else doe_vk_driver_cache_record(context, status == DOE_VK_OK);
     if (status != DOE_VK_OK) goto failed;
     context->vk.vkDestroyShaderModule(context->device, module, NULL);
     pipeline->next_compute = context->compute_pipelines;
@@ -241,6 +250,14 @@ failed:
     if (module != 0) context->vk.vkDestroyShaderModule(context->device, module, NULL);
     doe_vk_pipeline_release(pipeline);
     return status;
+}
+
+doe_vk_status doe_vk_pipeline_create_with_immediates(doe_vk_context *context,
+    const uint32_t *spirv, size_t word_count, const char *entrypoint,
+    const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
+    uint32_t immediate_bytes, doe_vk_pipeline **out, doe_vk_error *error) {
+    return doe_vk_pipeline_create_blob(context,spirv,word_count,entrypoint,layout,binding_count,
+        required_subgroup_size,immediate_bytes,NULL,out,error);
 }
 
 doe_vk_status doe_vk_pipeline_create_with_subgroup(doe_vk_context *context,
