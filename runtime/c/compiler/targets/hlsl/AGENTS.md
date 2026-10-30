@@ -73,9 +73,10 @@ live in `../ir_view.h`. Keep target syntax/address policy outside that leaf;
 
 Emit memory helpers only for selected reachable access roots, transfer types and
 read/write modes, including recursive aggregate children. Direct 32-bit scalar
-(i32/u32/f32) storage/uniform accesses write the helper body's word expression at
-the access site; their scalar helpers are emitted only when an aggregate helper
-reaches them. `../closure.h` owns the
+(i32/u32/f32) storage/uniform accesses are one statement at the access site that
+indexes words directly (each byte term divided by four; no offset temporary or
+block); a term that is not a whole number of words keeps the byte-offset form.
+Their scalar helpers are emitted only when an aggregate helper reaches them. `../closure.h` owns the
 read-only bounded call/dependency queries in explicit caller-owned scratch.
 Resolve the function closure once and remember completed DAG nodes; a depth bound
 alone does not bound repeated shared subtrees. Do not grow a second semantic graph.

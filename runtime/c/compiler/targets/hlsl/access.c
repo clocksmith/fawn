@@ -147,6 +147,81 @@ static void byte_offset(HlslEmitter *e, const HlslPath *path, const IrInstructio
         }
     }
 }
+/* The clamped byte offset of a 4-byte-aligned scalar, divided by four term by
+ * term: the same index the helper body forms as (offset + 0u) / 4u, without the
+ * offset temporary. Returns false (emitting nothing) when a term is not a whole
+ * number of words; that access keeps the byte-offset form. */
+static bool word_terms(HlslEmitter *e, const HlslPath *path, bool emit, const IrInstruction *ir) {
+    bool any = false;
+    for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
+        const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
+        const TypeRecord *input = path_input(e, step);
+        if (input == NULL) return false;
+        uint64_t words = 0u;
+        if (step->kind == ACCESS_MEMBER) {
+            if (input->kind != TYPE_STRUCT || step->index >= input->count ||
+                input->element >= e->module->member_count || step->index >= e->module->member_count - input->element) {
+                hlsl_error(e, "Hlsl member access identity is invalid");
+                return false;
+            }
+            const uint64_t offset = e->module->members[input->element + step->index].offset;
+            if (offset % 4u != 0u) return false;
+            words = offset / 4u;
+        } else if (step->kind == ACCESS_COMPONENT) {
+            const uint64_t size = type_size(e->module, input->element);
+            if (size % 4u != 0u) return false;
+            words = (uint64_t)step->index * (size / 4u);
+        } else {
+            const uint64_t stride = input->kind == TYPE_VECTOR ? type_size(e->module, input->element) : input->state.layout.stride;
+            if (stride % 4u != 0u) return false;
+            if (emit) {
+                hlsl_text(e, any ? " + min(uint(" : "min(uint(");
+                hlsl_value(e, step->index);
+                hlsl_text(e, "), ");
+                last_index(e, ir, step);
+                hlsl_text(e, ")");
+                if (stride != 4u) hlsl_format(e, " * %" PRIu64 "u", stride / 4u);
+            }
+            any = true;
+            continue;
+        }
+        if (words == 0u) continue;
+        if (emit) hlsl_format(e, any ? " + %" PRIu64 "u" : "%" PRIu64 "u", words);
+        any = true;
+    }
+    if (emit && !any) hlsl_text(e, "0u");
+    return !e->failed;
+}
+/* Word-addressed 32-bit scalar storage/uniform access, written as one statement. */
+static bool direct_scalar(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path, bool store) {
+    const uint32_t root = ir->operands.access.root;
+    const ResourceRecord *resource = resource_root(e, ir);
+    if (resource == NULL || !hlsl_inline_scalar(e->module, ir->type) || hlsl_raw_storage(e->module, root) ||
+        !word_terms(e, path, false, ir)) return false;
+    const bool uniform = resource->kind == DOE_COMPILER_UNIFORM_BUFFER;
+    hlsl_indent(e);
+    if (!store) {
+        hlsl_value(e, ir->result);
+        hlsl_text(e, ir->type == IR_F32 ? " = asfloat(" : ir->type == IR_I32 ? " = asint(" : " = uint(");
+    }
+    if (uniform) {
+        hlsl_format(e, "r%u_data[(", root);
+        (void)word_terms(e, path, true, ir);
+        hlsl_text(e, ") / 4u][(");
+        (void)word_terms(e, path, true, ir);
+        hlsl_text(e, ") % 4u]");
+    } else {
+        hlsl_format(e, "r%u[", root);
+        (void)word_terms(e, path, true, ir);
+        hlsl_text(e, "]");
+    }
+    if (store) {
+        hlsl_text(e, " = asuint(");
+        hlsl_value(e, ir->operands.access.value);
+        hlsl_text(e, ");\n");
+    } else hlsl_text(e, ");\n");
+    return true;
+}
 static void object_path(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path) {
     const uint32_t root = ir->operands.access.root;
     switch (ir->operands.access.category) {
@@ -305,12 +380,18 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
             return;
         }
     }
-    hlsl_line(e, "{");
-    ++e->indent;
     if (resource != NULL && !hlsl_entry_resource(e, ir->operands.access.root)) {
         hlsl_error(e, "HLSL resource access is absent from the selected static entry closure");
         return;
     }
+    if (!atomic && resource != NULL && store &&
+        (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE)) {
+        hlsl_error(e, "HLSL store targets a read-only resource");
+        return;
+    }
+    if (!atomic && direct_scalar(e, ir, &path, store)) return;
+    hlsl_line(e, "{");
+    ++e->indent;
     /* Storage and uniform resources clamp every index to its last valid
      * element (WGSL robustness permits any in-bounds element), so the access
      * executes unconditionally inside the declared extent: a runtime tail is
