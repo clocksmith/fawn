@@ -431,6 +431,7 @@ native_failure native_submit_backend_commands_async(native_device *device, nativ
 
 native_failure native_flush_initialization(native_device *device)
 {
+    if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_materialize_zero(device);
     doe_vk_commands *batch = device->init_batch;
     if (!batch) return native_failure_status(NATIVE_OK);
     device->init_batch = NULL;

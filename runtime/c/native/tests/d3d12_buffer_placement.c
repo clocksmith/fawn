@@ -15,7 +15,7 @@ struct doe_dx_buffer {
     unsigned references;
     bool initialized, pending;
 };
-struct doe_dx_commands { doe_dx_buffer *source, *destination; };
+struct doe_dx_commands { doe_dx_buffer *source[8], *destination[8]; unsigned count; };
 typedef struct control {
     unsigned allocations, copies, reads, live, readback_zeroes, async_submissions;
     uint64_t copy_size, zero_size;
@@ -102,9 +102,12 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands, doe_dx_buffer *sou
 {
     (void)error;
     if (seen.copy_status != DOE_DX_OK) return seen.copy_status;
-    assert(source->initialized && from + size <= source->size && to + size <= destination->size);
-    commands->source = source;
-    commands->destination = destination;
+    /* An accepted (pending) initializing copy also authorizes later GPU reads. */
+    assert((source->initialized || source->pending) && from + size <= source->size &&
+        to + size <= destination->size);
+    assert(commands->count < 8);
+    commands->source[commands->count] = source;
+    commands->destination[commands->count++] = destination;
     source->references++;
     destination->references++;
     destination->pending = true;
@@ -116,8 +119,10 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands, doe_dx_buffer *sou
 native_result native_command_release(native_command_handle *commands)
 {
     doe_dx_commands *work = commands->value.d3d12.commands;
-    if (work->source) doe_dx_buffer_release(work->source);
-    if (work->destination) doe_dx_buffer_release(work->destination);
+    for (unsigned i = 0; i < work->count; ++i) {
+        doe_dx_buffer_release(work->source[i]);
+        doe_dx_buffer_release(work->destination[i]);
+    }
     free(work);
     return NATIVE_OK;
 }
@@ -131,16 +136,19 @@ native_failure native_submit_backend_commands(native_device *device,
         seen.pending = work;
         return native_failure_status(seen.submission);
     }
-    work->destination->pending = false;
-    work->destination->initialized = true;
+    for (unsigned i = 0; i < work->count; ++i) {
+        work->destination[i]->pending = false;
+        work->destination[i]->initialized = true;
+    }
     assert(native_command_release(&commands) == NATIVE_OK);
     return native_failure_status(NATIVE_OK);
 }
+static void retire_pending(bool success);
 native_failure native_submit_backend_commands_async(native_device *device,
     native_command_handle commands)
 {
     (void)device;
-    assert(!seen.pending);
+    if (seen.pending) retire_pending(true); /* Queue order: the earlier one completes first. */
     seen.pending=commands.value.d3d12.commands;
     seen.async_submissions++;
     return native_failure_status(seen.submission);
@@ -150,8 +158,10 @@ static void retire_pending(bool success)
     assert(seen.pending);
     native_command_handle pending={.kind=WGPUBackendType_D3D12,
         .value.d3d12={.commands=seen.pending}};
-    seen.pending->destination->pending=false;
-    seen.pending->destination->initialized=success;
+    for (unsigned i = 0; i < seen.pending->count; ++i) {
+        seen.pending->destination[i]->pending=false;
+        seen.pending->destination[i]->initialized=success;
+    }
     assert(native_command_release(&pending) == NATIVE_OK);
     seen.pending=NULL;
 }
@@ -181,35 +191,71 @@ int main(void)
     assert(bytes[0] == 0x71);
     native_d3d12_buffer_close(&buffer);
     assert(!seen.live);
+    /* DEFAULT creation defers its zero fill: no copy or submission yet. */
+    unsigned submissions = seen.async_submissions;
+    copies = seen.copies;
     assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
-    assert(buffer.handle.d3d12->memory == DOE_DX_DEFAULT && seen.copy_size == 256);
-    assert(buffer.handle.d3d12->allocation_size == 256 && seen.destination == DOE_DX_DEFAULT);
-    assert(seen.pending && seen.async_submissions == 1 && seen.live == 2);
+    assert(buffer.handle.d3d12->memory == DOE_DX_DEFAULT && buffer.handle.d3d12->allocation_size == 256);
+    assert(buffer.handle.d3d12->zero_deferred && device.backend.value.d3d12.deferred_zero == buffer.handle.d3d12);
+    assert(seen.copies == copies && seen.async_submissions == submissions && seen.live == 1);
+    native_buffer other = {.device=&device};
+    assert(native_d3d12_buffer_create(&other, 4096, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_OK);
+    /* A CPU read materializes every deferred fill, whole width and padding, in one
+     * submission before its own transfer. */
+    assert(native_d3d12_buffer_read(&buffer, 0, bytes, sizeof(bytes)).status == NATIVE_OK);
+    assert(seen.async_submissions == submissions + 1 && seen.pending && seen.pending->count == 2);
+    assert(seen.pending->destination[0]->size == 4096 && seen.pending->destination[1]->size == 256);
+    assert(!device.backend.value.d3d12.deferred_zero && !buffer.handle.d3d12->zero_deferred);
     retire_pending(true); /* Native completion marker; no GPU/data execution. */
     copies = seen.copies;
     assert(native_d3d12_buffer_read(&buffer, 0, bytes, sizeof(bytes)).status == NATIVE_OK);
     assert(seen.copies == copies + 1 && seen.destination == DOE_DX_READBACK);
     native_d3d12_buffer_close(&buffer);
-    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_UNIFORM,false).status == NATIVE_OK);
-    assert(seen.pending && seen.live == 2 && seen.copy_size == 256);
-    native_d3d12_buffer_close(&buffer);
-    assert(!buffer.handle.d3d12 && seen.live == 2);
-    retire_pending(true);
+    native_d3d12_buffer_close(&other);
     assert(!seen.live);
+    /* A whole-allocation write is the complete initializing copy: no zero fill. */
+    assert(native_d3d12_buffer_create(&buffer, 4096, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_OK);
+    unsigned char page[4096] = {7};
+    copies = seen.copies;
+    assert(native_d3d12_buffer_write(&buffer, 0, page, sizeof(page)).status == NATIVE_OK);
+    assert(seen.copies == copies + 1 && seen.pending && seen.pending->count == 1 && seen.copy_size == 4096);
+    assert(!buffer.handle.d3d12->zero_deferred && !device.backend.value.d3d12.deferred_zero);
+    retire_pending(true);
+    native_d3d12_buffer_close(&buffer);
+    /* A partial write (here: uniform padding) materializes the fill first. */
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
+    copies = seen.copies;
+    submissions = seen.async_submissions;
+    assert(native_d3d12_buffer_write(&buffer, 0, page, 16).status == NATIVE_OK);
+    /* The 256-byte fill was submitted (and here retired) before the 16-byte copy. */
+    assert(seen.async_submissions == submissions + 2 && seen.copies == copies + 2);
+    assert(seen.copy_size == 16 && seen.pending && seen.pending->count == 1);
+    retire_pending(true);
+    native_d3d12_buffer_close(&buffer);
+    /* Release before any observation unlinks without a fill. */
+    copies = seen.copies;
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
+    native_d3d12_buffer_close(&buffer);
+    assert(!device.backend.value.d3d12.deferred_zero && seen.copies == copies && !seen.live);
+    assert(native_d3d12_materialize_zero(&device).status == NATIVE_OK && seen.copies == copies);
     seen.zero_status=DOE_DX_NATIVE_FAILURE;
     assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_COPY_DST,true).status == NATIVE_FAILURE);
     assert(!buffer.handle.d3d12 && !seen.live);
     seen.zero_status=DOE_DX_OK;
+    /* A failed fill recording leaves every buffer deferred and nothing submitted. */
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_OK);
     seen.copy_status = DOE_DX_NATIVE_FAILURE;
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_FAILURE);
-    assert(!buffer.handle.d3d12 && !seen.live);
+    submissions = seen.async_submissions;
+    assert(native_d3d12_materialize_zero(&device).status == NATIVE_FAILURE);
+    assert(buffer.handle.d3d12->zero_deferred && seen.async_submissions == submissions && !seen.pending);
     seen.copy_status = DOE_DX_OK;
     seen.submission = NATIVE_PENDING;
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_PENDING);
-    assert(!buffer.handle.d3d12 && seen.pending && seen.live == 2);
+    assert(native_d3d12_materialize_zero(&device).status == NATIVE_PENDING);
+    assert(!buffer.handle.d3d12->zero_deferred && seen.pending);
     /* The injected backend now reports terminal failure, permitting release. */
     retire_pending(false);
+    native_d3d12_buffer_close(&buffer);
     assert(!seen.live);
-    puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map, pending rejection and failure retention; no GPU");
+    puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
     return 0;
 }

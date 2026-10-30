@@ -109,6 +109,9 @@ native_failure native_d3d12_record_batch(native_device *device, native_command_h
 #if defined(_WIN32)
     struct timespec deadline;
     if (!deadline_from_now(&deadline)) return native_failure_status(NATIVE_FAILURE);
+    /* Deferred zero fills precede any recording that may read those buffers. */
+    native_failure materialized = native_d3d12_materialize_zero(device);
+    if (materialized.status != NATIVE_OK) return materialized;
     for (;;) {
         for (size_t i = 0; i < count; ++i)
             if (doe_resource_commands_validate_submission(resources[i]) != DOE_RESOURCE_OK)

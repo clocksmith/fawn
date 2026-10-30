@@ -10,7 +10,13 @@ typedef struct native_d3d12_buffer {
     doe_dx_buffer *allocation;
     uint64_t allocation_size;
     doe_dx_memory memory;
+    bool zero_deferred; /* Linked on the backend's deferred_zero list. */
+    struct native_d3d12_buffer *next_deferred;
 } native_d3d12_buffer;
+/* Caller holds the device mutex. Records the complete zero fill of every
+ * deferred DEFAULT buffer into one command and submits it, without waiting,
+ * before any recording, transfer or CPU read can observe those bytes. */
+native_failure native_d3d12_materialize_zero(native_device *device);
 
 native_result native_d3d12_open(bool fallback, native_backend *out);
 native_result native_d3d12_open_luid(uint32_t low, int32_t high, native_backend *out);

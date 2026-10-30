@@ -485,7 +485,14 @@ source alive across replacement and unlocked initialization waits. Host writes
 to these sources reject; caller data always uses separate mutable staging.
 
 The frontend copies zeros over each whole DEFAULT resource, including uniform
-padding, and returns after known-fenced queue acceptance. The common pending
+padding. Creation defers that copy: the device keeps an exact list of DEFAULT
+buffers not yet initialized, and before any later D3D12 recording (queue submit,
+texture/surface work, internal transfers) or CPU read it records every listed fill
+into one command and submits it. Only a queue write covering the whole allocation,
+padding included, removes a buffer without a fill, because that copy initializes
+every byte; a partial write materializes the fills first. A buffer released
+before any observation needs no fill. The fill returns after known-fenced queue
+acceptance. The common pending
 owner retains that initialization until terminal observation; CPU access still
 waits for the buffer's actual owner. Reuse changes allocation ownership, not
 initialized ranges or GPU ordering. Context

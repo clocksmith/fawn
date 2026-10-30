@@ -249,6 +249,8 @@ static void initialize_while_closed(void *identity)
     native_buffer *to=doe_resource_buffer_native((doe_resource_buffer *)test->padding);
     assert(from->handle.d3d12->allocation_size == 256);
     native_command_handle native={0};
+    /* Internal recordings, like every frontend one, first submit deferred fills. */
+    assert(native_d3d12_materialize_zero(device).status == NATIVE_OK);
     assert(native_command_create(&device->backend,&native).status == NATIVE_OK);
     assert(doe_dx_commands_copy(native.value.d3d12.commands,from->handle.d3d12->allocation,
         0,to->handle.d3d12->allocation,0,256,NULL) == DOE_DX_OK);
