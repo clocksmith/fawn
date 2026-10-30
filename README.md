@@ -1,5 +1,8 @@
 # Fawn
 
+**[canvascontext.com](https://canvascontext.com/)**: here are some things that can
+be done in most browsers, but we aim to do them better.
+
 Fawn is the whole project and the brand of its Chromium fork. **Doe** is the WebGPU
 runtime and WGSL compiler that power Fawn; it is also usable on its own from Node,
 Bun, Deno and native code. Durable browser workspaces for agents are an optional
