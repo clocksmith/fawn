@@ -122,12 +122,18 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         uint8_t image_identity[32];
         bool have_identity = use_disk && device->shaders.image_identity_ready;
         if (have_identity) memcpy(image_identity,device->shaders.image_identity,sizeof(image_identity));
+        const bool join_worker = use_disk && !have_identity && native_identity_worker_claim(&device->identity_worker);
         native_unlock(device);
         /* Locates embedder pipeline blobs; WGSL semantics never come from it. */
         if (blob_key && !doe_shader_artifact_key(payload->module,&selection,values,count,pipeline,result.source_key))
             memset(result.source_key,0,sizeof(result.source_key));
         if (!result.compiled) {
-            if (use_disk && !have_identity && native_shader_cache_identity(image_identity)) {
+            /* A worker result counts as this call's one identity attempt; a
+             * failed one disables persistence for this call, as inline failure does. */
+            const native_identity_take taken = join_worker ?
+                native_identity_worker_join(&device->identity_worker,image_identity) : NATIVE_IDENTITY_TAKE_NONE;
+            if (use_disk && !have_identity && taken != NATIVE_IDENTITY_TAKE_FAILED &&
+                (taken == NATIVE_IDENTITY_TAKE_READY || native_shader_cache_identity(image_identity))) {
                 native_lock(device);
                 memcpy(device->shaders.image_identity,image_identity,sizeof(image_identity));
                 device->shaders.image_identity_ready = true;

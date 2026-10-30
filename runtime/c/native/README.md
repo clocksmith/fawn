@@ -1685,7 +1685,16 @@ own storage. Files are isolated from retained Zig and native-driver caches in
 `$HOME/.cache/doe/c_shader_translation_cache_v1` (or
 `cache/doe/c_shader_translation_cache_v1` without HOME).
 `DOE_SHADER_CACHE_DIR` chooses another directory; an explicitly empty value
-disables persistence. Each artifact is at most one MiB. The checksum detects
+disables persistence.
+D3D12 device creation starts one per-device worker thread before the backend
+opens; it computes the same loaded-image identity (byte-identical digest), so the
+hash overlaps descriptor-ring, UPLOAD-heap and compiler-module creation. The first
+pipeline needing the identity claims it under the device mutex and joins outside
+it; any other caller keeps the inline computation. A failed worker identity
+disables persistence for that call exactly as an inline failure does, and later
+calls retry inline. Final device release (and failed construction) joins a
+never-claimed worker. The digest is held per device: no process-wide state, and
+the adapter/instance owners do not cache it. Each artifact is at most one MiB. The checksum detects
 corruption; it is not authentication against an actor who can rewrite the
 user's cache and digest.
 
