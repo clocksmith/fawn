@@ -16,6 +16,7 @@
 #include "native_shader_import.h"
 #include "shader_cache.h"
 #include "persistent_cache.h"
+#include "shader_identity_worker.h"
 #include "doe_native_pipeline_cache.h"
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
@@ -50,6 +51,7 @@ typedef struct native_device {
     native_backend backend;
     doe_resource_config resources;
     native_shader_cache shaders;
+    native_identity_worker identity_worker; /* See shader_identity_worker.h. */
     native_persistent_cache_policy persistent_cache;
     /* Embedder blob store, set once under the mutex; snapshot before calling it. */
     DoeNativePipelineBlobStore pipeline_blobs;

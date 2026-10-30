@@ -290,6 +290,7 @@ void native_device_release(void *identity)
     /* Pending resource submissions hold device leases, so finalization cannot
      * race or discard an unresolved backend obligation. */
     if (device->pending) abort();
+    native_identity_worker_finish(&device->identity_worker);
     native_release_initialization(device);
     native_pending_progress_destroy(device);
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
@@ -329,6 +330,8 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         free(device);
         return NULL;
     }
+    /* First, so the image hash overlaps the backend open below. */
+    if (adapter->backend.kind == WGPUBackendType_D3D12) native_identity_worker_start(&device->identity_worker);
     doe_error_scope_requirements requirements;
     doe_error_scope_result result = doe_error_scope_storage_requirements(DOE_ERROR_SCOPES_ABI_VERSION,
         &requirements);
@@ -416,6 +419,7 @@ failed_errors:
 failed_storage:
     free(device->error_storage);
 failed_mutex:
+    native_identity_worker_finish(&device->identity_worker);
     if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();
     free(device);
     return NULL;
