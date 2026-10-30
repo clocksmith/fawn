@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c4-m2r",
+  "experiment": "M2R: a new prospective experiment, distinct from M2. M2 remains recorded as failed under its own frozen rule; its result supports this hypothesis only and passes nothing retroactively.",
+  "decision": "Owner decision relayed 2026-10-30: gate device-local placement on complete-operation latency, with per-phase regressions stated in advance and a separate phase gate for uses that depend on individual phase latency.",
+  "control": "doe-c main at 1823497b5",
+  "mechanism": "Per-usage memory placement for Vulkan buffers. Buffers without MapRead/MapWrite usage (GPU-accessed storage, uniform, index, vertex, indirect, and the queue-write upload targets the CPU fills sequentially) prefer DEVICE_LOCAL within HOST_VISIBLE|HOST_COHERENT. On this device that resolves to heap 1, flags 0x7, which is uncached and write-combined. Mappable buffers keep HOST_CACHED, and MapRead keeps the zero-copy map from 7379fd2fe. MapWrite stays cached because Doe's write mapping snapshots current contents into a host shadow and none of these workloads use it.",
+  "codeComparison": "Counting-layer memory types, one iteration. Doe main: every buffer is heap 0, flags 0xe (cached and snooped). M2R: storage, uniform and upload targets are heap 1, flags 0x7; readback is heap 0, flags 0xe. Dawn d04f88359 (MemoryTypeSelector + BufferVk GetMemoryKindFor): storage and uniform are heap 1, flags 0x1, suballocated; writeBuffer staging is heap 1, flags 0x7; readback is heap 0, flags 0xe. Both put GPU-accessed data in uncached device-local memory and CPU-read data in cached memory.",
+  "providers": {
+    "main": "1823497b5 library",
+    "m2r": "1823497b5 + M2R",
+    "dawn": "Dawn d04f88359",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "sampling": {
+    "pairs": 24,
+    "orders": "all 24 permutations of 4 providers",
+    "iterationsPerProcess": 32,
+    "inputs": "c1 frozen inputs and independent oracles"
+  },
+  "metric": "complete = compileNs + pipelineNs + resourcesNs + sum of every iteration's operation interval + teardownNs (CPU oracle excluded). Ratios are m2r/main per balanced pair; bootstrap 95% CI, 10000 resamples, seed 20261029.",
+  "acceptance": {
+    "validity": "every process ok and oracle-checked on every iteration; A/A dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1 on every workload",
+    "primaryGate": "complete CI95 upper < 1.0 on all three workloads",
+    "statedPhaseAllowances": "accepted in advance: warm.upload median ratio <= 1.15 and resourcesNs median ratio <= 1.15 on each workload (host writes into write-combined memory). Every other warm phase, first.operation, setupNs, compileNs, pipelineNs and teardownNs must have ratio CI95 lower <= 1.05.",
+    "uploadLatencyPhaseGate": "a separate gate for applications that depend on writeBuffer latency itself: warm.upload CI95 upper <= 1.02 on all three workloads. It is recorded and reported separately. Failing it does not change the primary verdict, but the change must not be described as neutral for upload-latency-bound uses.",
+    "verdict": "primary pass only if validity, primaryGate and statedPhaseAllowances all hold"
+  },
+  "focusedCorrectness": "pre-freeze, untimed: all 78 physical native clients identical to the main control (only 'failures' fails, on main too); native software check, check-vulkan and Vulkan backend contracts compared with main (results recorded beside this contract)",
+  "frozenAtUtc": "2026-10-30T15:01:31Z",
+  "correctnessResults": {
+    "physicalClients": "78 run; failing: failures (also on main)",
+    "nativeSoftwareCheck": "90 PASS before the failures abort, identical to main; 44 later clients failing only sample-mask and d3d12-buffer-placement, identical to main",
+    "checkVulkan": "pass",
+    "vulkanContracts": "failing only surface_features and feature_contract, identical to main"
+  },
+  "hashes": {
+    "doe-work/m2r.patch": "40f2ad56e396c55ee3dce13a89be00438815a1a1b2d80327d607923577e8a67c",
+    "doe-work/build-m2r/native/libwebgpu_doe_c.so": "01a4d39f8e9b9451cec9f597a6d69eed2640dc0b998507f0cdc6d005ad38e9ce",
+    "doe-work/build-1823497b5/native/libwebgpu_doe_c.so": "25bf5dd38aa713a77c80cdb1d414897c4bf22937386e11e7c004c3f2d2780125",
+    "doe-work/c4/bin/harness-m2r": "507738b9226d5f1729b4b3eec947eaa43e596e7bbf6f6a459eb8ec47c8f927b3",
+    "doe-work/c4/bin/harness-main": "feefc0ce26fa8c4967b4d043105fbd09bf42a8f67050ee02c172183eead1f484",
+    "doe-work/c4/bin/harness-dawn": "cbb437c1494ef2a3a8b27d7fbaa1714dfdf9841b70a539b1fe3b199b30a28646",
+    "doe-work/c4/bin/harness-dawn-aa": "cbb437c1494ef2a3a8b27d7fbaa1714dfdf9841b70a539b1fe3b199b30a28646",
+    "doe-work/src-35018c4a3/bench/drop-in/dropin_phase_harness.c": "4fa1d52a910797ac56fcb317d07f562d4462567fd84485c50131e0fcf9bb6625",
+    "doe-work/src-35018c4a3/bench/tools/dropin_phase_cohort.py": "4cd33444c41e9b80b03d9bc19dca4ffed0870ed5efc30c53f5f49bc134a1aee2",
+    "doe-work/c1/inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1"
+  }
+}

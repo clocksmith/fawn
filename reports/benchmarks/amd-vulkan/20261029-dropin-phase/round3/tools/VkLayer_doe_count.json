@@ -1,0 +1,1 @@
+{"file_format_version":"1.0.0","layer":{"name":"VK_LAYER_DOE_count","type":"GLOBAL","library_path":"./libVkLayer_doe_count.so","api_version":"1.3.0","implementation_version":"1","description":"diagnostic call counter"}}

@@ -1,0 +1,10 @@
+{
+ "commandsHoldingRenderNodes": [
+  "Xwayland",
+  "chrome",
+  "gnome-shell",
+  "ibus-x11",
+  "mutter-x11-fram",
+  "xdg-desktop-por"
+ ]
+}

@@ -45,5 +45,15 @@ class DropinPhaseCohortTest(unittest.TestCase):
         self.assertLessEqual(low, high)
 
 
+class CompleteMetricTest(unittest.TestCase):
+    def test_complete_sums_preparation_operations_and_teardown(self) -> None:
+        phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}
+        phases["operation"] = [3_000_000, 1_000_000]
+        result = {"setupNs": 9_000_000, "compileNs": 1_000_000, "pipelineNs": 2_000_000, "resourcesNs": 500_000,
+                  "teardownNs": 250_000, "processInMainNs": 1, "maxRssKiB": 1024, "phases": phases}
+        metrics = cohort.process_metrics({"processWallNs": 1, "childCpuMs": 1.0, "result": result})
+        self.assertAlmostEqual(metrics["complete"], 7.75)
+
+
 if __name__ == "__main__":
     unittest.main()
