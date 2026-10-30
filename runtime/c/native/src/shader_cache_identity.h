@@ -20,4 +20,7 @@
  * Runtime options/device/pipeline inputs must be independently bound by caller.
  */
 bool native_shader_cache_identity(uint8_t digest[32]);
+/* Digest of the loaded native and compiler images' ELF linker build IDs only
+ * (no payload hashing). Locates embedder pipeline blobs; false elsewhere. */
+bool native_build_identity(uint8_t digest[32]);
 #endif

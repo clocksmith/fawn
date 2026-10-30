@@ -36,6 +36,34 @@ DOE_NATIVE_EXTENSION uint32_t doeNativeDeviceFlushPipelineCache(void *device,
     uint32_t abi_version, DoeNativePipelineCacheInfo *out, size_t out_size);
 DOE_NATIVE_EXTENSION uint32_t doeNativeDevicePipelineCacheInfo(void *device,
     uint32_t abi_version, DoeNativePipelineCacheInfo *out, size_t out_size);
+/* Embedder-owned pipeline blob store, for example a browser that persists bytes
+ * behind its GPU sandbox. Doe performs no file access for it and holds no Doe
+ * lock while calling it. Callbacks run synchronously on the thread creating a
+ * compute pipeline of this device and never after that call returns; the
+ * embedder keeps userdata valid until the device is released. A lookup may
+ * precede reuse of an identical pipeline already held in device memory; then
+ * nothing is loaded into the driver or stored. load either calls
+ * receive once with the stored bytes (copied before receive returns) or not at
+ * all. Keys only locate blobs: each value is an enveloped driver cache whose
+ * device, driver, version and digest are checked, and the driver validates its
+ * own contents, so a wrong or corrupt value is a miss, never another pipeline.
+ * Keys bind the WGSL source, entry point and constants, the loaded compiler and
+ * runtime build IDs, the exact SPIR-V and the adapter/driver identity.
+ * Configure once per Vulkan device; it is exclusive with the directory cache
+ * and independent of doeNativeDeviceDisablePersistentCache, which governs only
+ * Doe-owned files. Info counters: load_attempts = lookups, load_successes =
+ * driver-accepted loads, serializations = values handed to store. Other
+ * backends, or a runtime without ELF build IDs, return UNSUPPORTED. */
+typedef void (*DoeNativePipelineBlobReceive)(void *receiver, const void *value, size_t size);
+typedef struct DoeNativePipelineBlobStore {
+    void *userdata;
+    void (*load)(void *userdata, const void *key, size_t key_size,
+        DoeNativePipelineBlobReceive receive, void *receiver);
+    void (*store)(void *userdata, const void *key, size_t key_size, const void *value, size_t size);
+} DoeNativePipelineBlobStore;
+DOE_NATIVE_EXTENSION uint32_t doeNativeDeviceConfigurePipelineBlobStore(void *device,
+    uint32_t abi_version, const DoeNativePipelineBlobStore *store, size_t store_size,
+    DoeNativePipelineCacheInfo *out, size_t out_size);
 #ifdef __cplusplus
 }
 #endif

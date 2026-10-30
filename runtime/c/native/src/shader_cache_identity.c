@@ -131,6 +131,7 @@ typedef struct elf_search {
     size_t count;
     bool found;
     bool valid;
+    bool build_id_only;
 } elf_search;
 
 static int elf_image(struct dl_phdr_info *info, size_t size, void *opaque)
@@ -153,6 +154,7 @@ static int elf_image(struct dl_phdr_info *info, size_t size, void *opaque)
     search->hash.owner = base;
     if (!elf_build_id(info, &search->hash)) return 1;
     search->valid = true;
+    if (search->build_id_only) return 1;
     for (size_t i = 0; i < info->dlpi_phnum; ++i) {
         const ElfW(Phdr) *p = &info->dlpi_phdr[i];
         bool readonly = p->p_type == PT_LOAD && (p->p_flags & PF_R) && !(p->p_flags & PF_W);
@@ -181,6 +183,35 @@ static bool loaded_image(uintptr_t anchor, const image_hash *prior, size_t count
     (void)dl_iterate_phdr(elf_image, &search);
     if (!search.found || !search.valid || !search.hash.spans) return false;
     *hash = search.hash;
+    return true;
+}
+
+static bool loaded_build_id(uintptr_t anchor, image_hash *hash)
+{
+    elf_search search = {.anchor=anchor,.build_id_only=true};
+    (void)dl_iterate_phdr(elf_image, &search);
+    if (!search.found || !search.valid || !search.hash.spans) return false;
+    *hash = search.hash;
+    return true;
+}
+
+bool native_build_identity(uint8_t digest[32])
+{
+    if (!digest) return false;
+    bool (*native_function)(uint8_t *) = native_build_identity;
+    compiler_entry compiler_function = doe_compiler_compile;
+    uintptr_t native_address = 0, compiler_address = 0;
+    _Static_assert(sizeof(native_function) == sizeof(native_address), "native function address size");
+    _Static_assert(sizeof(compiler_function) == sizeof(compiler_address), "compiler function address size");
+    memcpy(&native_address, &native_function, sizeof(native_address));
+    memcpy(&compiler_address, &compiler_function, sizeof(compiler_address));
+    image_hash owners[2] = {0};
+    if (!loaded_build_id(native_address, &owners[0]) || !loaded_build_id(compiler_address, &owners[1])) return false;
+    uint8_t combined[88] = {0};
+    memcpy(combined, "DOE-LOADED-BUILD-IDS-v1", 23);
+    memcpy(combined + 24, owners[0].digest, 32);
+    memcpy(combined + 56, owners[1].digest, 32);
+    doe_common_sha256(combined, sizeof(combined), digest);
     return true;
 }
 #elif defined(_WIN32)
@@ -303,6 +334,14 @@ static bool loaded_image(uintptr_t anchor, const image_hash *prior, size_t count
     (void)count;
     (void)hash;
     return false;
+}
+#endif
+
+#if !defined(__linux__)
+bool native_build_identity(uint8_t digest[32])
+{
+    (void)digest;
+    return false; /* Only ELF linker build IDs are admitted for embedder blob keys. */
 }
 #endif
 

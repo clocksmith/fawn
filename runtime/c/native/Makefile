@@ -550,6 +550,13 @@ check-bitfield: $(BUILD)/bitfield
 $(BUILD)/pipeline-cache: tests/pipeline_cache.c tests/pipeline_cache_cases.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 
+$(BUILD)/pipeline-blob: tests/pipeline_blob.c tests/consumer.h tests/adapter_class.h include/doe_native_pipeline_cache.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-pipeline-blob
+check-pipeline-blob: $(BUILD)/pipeline-blob
+	$(BUILD)/pipeline-blob
+check: check-pipeline-blob
+
 $(BUILD)/device-policy: tests/device_policy.c tests/consumer.h tests/adapter_class.h include/doe_native_device_policy.h $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 

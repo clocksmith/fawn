@@ -1720,6 +1720,22 @@ forwards the actual disk lookup/store boundary: a disabled device performs
 neither operation, while the default device is a positive disk-access control.
 These development controls do not qualify an entire Chromium browser or release.
 
+An embedder that persists bytes itself, such as a browser writing from outside
+its GPU sandbox, can attach a pipeline blob store to a Vulkan device with
+`doeNativeDeviceConfigurePipelineBlobStore` (`doe_native_pipeline_cache.h`).
+This is a caller-owned cache: the opt-out above does not suppress it, and Doe
+opens no file for it. Each new compute pipeline looks up a 32-byte key bound to
+the WGSL source, entry point and constants, the loaded runtime and compiler ELF
+build IDs, the exact SPIR-V and the adapter/driver identity, then seeds a
+temporary driver cache with the returned envelope. The envelope's device,
+driver, version and digest checks and the driver's own validation make a wrong
+or corrupt value a miss; when nothing compatible was loaded the new envelope is
+handed back to `store`. Both callbacks run on the creating thread with no Doe
+lock held. The store is set once per device and excludes the directory cache.
+Render pipelines do not use it yet. `check-pipeline-blob` exercises miss/store,
+in-device reuse, a driver-accepted load on a fresh device, a corrupt value,
+unlocked callbacks and exact dispatch output; it does not qualify a browser.
+
 Pinned bind-group layout entries accept `bindingArraySize` zero (default) or one
 (normalized scalar). Both produce one canonical resource entry, so explicit
 layouts and groups remain structurally compatible. Counts above one still
