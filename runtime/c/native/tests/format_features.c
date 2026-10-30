@@ -228,14 +228,20 @@ static void disabled_controls(state *s)
         !wgpuDeviceHasFeature(s->device,WGPUFeatureName_Float32Blendable) &&
         !wgpuDeviceHasFeature(s->device,WGPUFeatureName_Depth32FloatStencil8) &&
         !wgpuDeviceHasFeature(s->device,WGPUFeatureName_RG11B10UfloatRenderable));
-    /* An unoffered feature fails the request instead of creating a device. */
+    /* An unoffered feature fails the request instead of creating a device. The
+     * offered set is the adapter's (ASTC, for one, is offered on ANV), so take
+     * the first standard optional feature this adapter does not offer. */
+    WGPUFeatureName unoffered = WGPUFeatureName_Force32;
+    for (uint32_t value = WGPUFeatureName_DepthClipControl; value <= WGPUFeatureName_SubgroupSizeControl; ++value)
+        if (!wgpuAdapterHasFeature(s->adapter,(WGPUFeatureName)value)) { unoffered = (WGPUFeatureName)value; break; }
+    assert(unoffered != WGPUFeatureName_Force32);
     unsigned failed = 0;
-    WGPUFeatureName astc = WGPUFeatureName_TextureCompressionASTC;
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.requiredFeatureCount = 1;
-    descriptor.requiredFeatures = &astc;
+    descriptor.requiredFeatures = &unoffered;
     WGPURequestDeviceCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=request_failed,.userdata1=&failed};
     assert(wgpuAdapterRequestDevice(s->adapter,&descriptor,callback).id && failed == 1);
+    printf("unoffered feature 0x%x refused\n",(unsigned)unoffered);
 
     WGPUShaderModule shader = module(s,FULL_SCREEN "@fragment fn fragment()->@location(0) vec4f{return vec4f(3.5,0.0,0.0,1.0);}");
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
