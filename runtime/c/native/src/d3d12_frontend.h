@@ -17,6 +17,24 @@ typedef struct native_d3d12_buffer {
  * deferred DEFAULT buffer into one command and submits it, without waiting,
  * before any recording, transfer or CPU read can observe those bytes. */
 native_failure native_d3d12_materialize_zero(native_device *device);
+/* Queue-write batching (d3d12_writes.c), under the device mutex. A write records
+ * into the open per-device command; the next queue submission adopts it, records
+ * its work after the writes and executes both under one fence. Every other D3D12
+ * recording, CPU read, map or work-done wait first flushes it on its own. */
+typedef struct native_d3d12_writes native_d3d12_writes;
+native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging,
+    doe_dx_buffer *destination, uint64_t offset, uint64_t size);
+native_failure native_d3d12_flush_writes(native_device *device);
+/* Zero fills, then open writes: precedes every D3D12 recording except submission. */
+native_failure native_d3d12_prepare_recording(native_device *device);
+/* adopted: out is the open command with its writes ordered before later records.
+ * Then exactly one of recorded (success) or rejected (discard; the log rebuilds). */
+native_failure native_d3d12_adopt_writes(native_device *device, native_command_handle *out,
+    bool *adopted);
+void native_d3d12_writes_recorded(native_device *device);
+void native_d3d12_writes_rejected(native_device *device, native_command_handle *adopted);
+/* Final device release discards a never-observed open command. */
+void native_d3d12_writes_close(native_backend *backend);
 /* Read mappings of READBACK buffers borrow the backend's mapped bytes; return
  * unmaps. Both run under the device mutex after the buffer owner settled. */
 native_failure native_d3d12_buffer_lend(native_buffer *buffer, uint64_t offset, size_t size,

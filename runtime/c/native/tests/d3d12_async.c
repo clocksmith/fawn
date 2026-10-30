@@ -408,10 +408,13 @@ static void stale_terminal_owner(void)
     ID3D12Fence *gate = NULL;
     assert(SUCCEEDED(ID3D12Device_CreateFence(context->native->device, 0,
         D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void **)&gate)));
+    /* Queue writes record into one open command; each flush submits one record. */
     assert(SUCCEEDED(ID3D12CommandQueue_Wait(context->native->queue, gate, 1)));
     wgpuQueueWriteBuffer(s.queue, target, 0, &value, sizeof(value));
+    assert(!device->pending && native_d3d12_flush_writes(device).status == NATIVE_OK);
     assert(SUCCEEDED(ID3D12CommandQueue_Wait(context->native->queue, gate, 2)));
     wgpuQueueWriteBuffer(s.queue, target, 0, &value, sizeof(value));
+    assert(native_d3d12_flush_writes(device).status == NATIVE_OK);
     native_pending *first = device->pending;
     assert(first && first->next && !first->next->next);
     doe_dx_commands *earlier = first->native.value.d3d12.commands;

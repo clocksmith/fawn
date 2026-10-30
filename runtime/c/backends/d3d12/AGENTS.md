@@ -100,6 +100,18 @@
 - DEFAULT zero fills are deferred on an exact per-device list and submitted, all in
   one command, before any later D3D12 recording or CPU read. Only a whole-allocation
   queue write (padding included) may replace a fill; partial writes materialize first.
+- Queue writes record into one open per-device command (frontend `d3d12_writes.c`),
+  which holds each copy's ordinary recording reservation. The next queue submission
+  adopts it: `doe_dx_commands_order_buffer_writes` transitions every DEFAULT use out
+  of COPY_DEST and back (copies into one COPY_DEST buffer are otherwise unordered),
+  then the submission's own work records after the writes, under one
+  ExecuteCommandLists and one fence. A READBACK destination cannot transition, so
+  those writes execute alone first. Every other recording, CPU read, map and
+  work-done drain submits the open command first; a second write into a logged
+  destination also does, as do the 64th write and 16 MiB. A copy log (staging and
+  destination leases) re-records the writes when an adopted recording fails, so a
+  rejected submission or failed rebuild never loses them. Final device release
+  discards a never-observed open command.
 - The additive zeroed READBACK constructor finishes CPU Map/zero/Unmap before
   publication or any GPU use. Zero exactly resource Width, including requested
   padding, never committed-heap alignment slack. Keep ordinary READBACK create

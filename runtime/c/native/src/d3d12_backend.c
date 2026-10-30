@@ -110,6 +110,7 @@ void native_d3d12_close(native_backend *backend)
 #if defined(_WIN32)
     /* Existing resource and pending device leases prevent this final close
      * until every private allocation/command is terminal and released. */
+    native_d3d12_writes_close(backend);
     if (backend->value.d3d12.context &&
         doe_dx_context_destroy(backend->value.d3d12.context) != DOE_DX_OK) abort();
     /* Every shader and pipeline compiled through these modules is gone. */

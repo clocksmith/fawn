@@ -191,6 +191,28 @@ doe_dx_status doe_dx_commands_copy_bytes(doe_dx_commands *commands,doe_dx_buffer
     return copy_bytes(commands,source,from,destination,to,size,false,error);
 }
 
+doe_dx_status doe_dx_commands_order_buffer_writes(doe_dx_commands *commands, doe_dx_error *error) {
+    doe_dx_status status = doe_dx_recording(commands, error);
+    if (status != DOE_DX_OK) return status;
+    /* READBACK state is fixed at COPY_DEST: nothing can order its writes here. */
+    for (size_t index = 0; index < commands->buffer_count; ++index)
+        if (commands->buffers[index].buffer->memory == DOE_DX_READBACK)
+            return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.order.fixed_state", error);
+    doe_dx_native_buffer *chunk[16];
+    size_t count = 0;
+    for (size_t index = 0; index < commands->buffer_count; ++index) {
+        doe_dx_buffer *buffer = commands->buffers[index].buffer;
+        if (buffer->memory != DOE_DX_DEFAULT) continue;
+        chunk[count++] = buffer->native;
+        if (count == 16) {
+            doe_dx_native_order_buffers(commands->native, chunk, count);
+            count = 0;
+        }
+    }
+    if (count) doe_dx_native_order_buffers(commands->native, chunk, count);
+    return doe_dx_fail(DOE_DX_OK, 0, "commands.order", error);
+}
+
 doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *error) {
     doe_dx_status status = doe_dx_recording(commands, error);
     if (status != DOE_DX_OK) return status;

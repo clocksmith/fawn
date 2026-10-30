@@ -96,6 +96,9 @@ native_queue_settlement native_d3d12_drain_pending(native_device *device)
     struct timespec deadline;
     if (!deadline_from_now(&deadline))
         return (native_queue_settlement){.failure={.status=NATIVE_FAILURE}};
+    /* Work done and draining include every earlier queue write. */
+    native_failure flushed = native_d3d12_flush_writes(device);
+    if (flushed.status != NATIVE_OK) return (native_queue_settlement){.failure=flushed};
     for (;;) {
         native_queue_settlement result = native_poll_pending(device);
         if (result.complete || result.failure.status != NATIVE_OK) return result;
@@ -127,11 +130,32 @@ native_failure native_d3d12_record_batch(native_device *device, native_command_h
         for (size_t i = 0; i < count; ++i)
             if (doe_resource_commands_validate_submission(resources[i]) != DOE_RESOURCE_OK)
                 return native_failure_status(NATIVE_INVALID_ARGUMENT);
-        native_failure failure = native_command_create(&device->backend, native);
+        /* Open queue writes are already recorded: this work appends after them
+         * in the same command, so one execution and one fence carry both. */
+        bool adopted = false;
+        native_failure failure = native_d3d12_adopt_writes(device, native, &adopted);
+        if (failure.status == NATIVE_OK && !adopted) failure = native_command_create(&device->backend, native);
+        else if (failure.status != NATIVE_OK) return failure;
         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
             failure = native_record_resource_commands(native, resources[i]);
-        if (failure.status != NATIVE_BUSY || native->kind != WGPUBackendType_D3D12) return failure;
-        doe_dx_commands *conflict = doe_dx_commands_conflict(native->value.d3d12.commands);
+        if (adopted && failure.status == NATIVE_OK) native_d3d12_writes_recorded(device);
+        if (failure.status != NATIVE_BUSY && !(adopted && failure.status != NATIVE_OK)) return failure;
+        doe_dx_commands *conflict = failure.status == NATIVE_BUSY ?
+            doe_dx_commands_conflict(native->value.d3d12.commands) : NULL;
+        if (adopted) {
+            /* Discard the partial records with the writes; the log rebuilds the
+             * writes, which then execute alone before any wait or retry. */
+            native_d3d12_writes_rejected(device, native);
+            const bool accepted = conflict && accepted_owner(device, conflict);
+            native_failure flushed = native_d3d12_flush_writes(device);
+            if (failure.status != NATIVE_BUSY) return failure;
+            if (flushed.status != NATIVE_OK) return flushed;
+            /* That submission polled: an accepted conflict may have retired. */
+            if (accepted && !accepted_owner(device, conflict)) continue;
+            failure = wait_owner(device, conflict, &deadline, true);
+            if (failure.status != NATIVE_OK) return failure;
+            continue;
+        }
         /* Discard every unsubmitted native record before waiting. Retrying the
          * immutable resource records cannot replay GPU work or preserve a new
          * speculative lease across an accepted predecessor's retirement. */
