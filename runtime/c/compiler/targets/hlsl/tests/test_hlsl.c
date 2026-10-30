@@ -116,7 +116,8 @@ static void test_helper_closure(void) {
     Fixture *f = prepare(target_closure_source);
     char *text = emit(f, 0u);
     /* Direct 32-bit scalar accesses are written at their sites: no scalar helpers. */
-    has(text, "r0[(offset + 0u) / 4u] = asuint(");
+    has(text, "r0[min(uint(");
+    has(text, "] = asuint(");
     assert(strstr(text, "doe_r0_store3(") == NULL);
     assert(strstr(text, "doe_r0_load3(uint offset") == NULL);
     assert(strstr(text, "doe_r0_store4(uint offset") == NULL);
@@ -127,7 +128,7 @@ static void test_helper_closure(void) {
     /* The Pair load keeps its member helpers; the direct f32 store is inline. */
     has(text, "doe_r1_load3(uint offset");
     has(text, "doe_r1_load4(uint offset");
-    has(text, "r2[(offset + 0u) / 4u] = asuint(");
+    has(text, "r2[min(uint(");
     assert(strstr(text, "doe_r2_store4(") == NULL);
     assert(strstr(text, "doe_r2_store3(uint offset") == NULL);
     assert(strstr(text, "doe_r0_") == NULL);
@@ -151,9 +152,11 @@ static void test_residual(void) {
     assert(strstr(text, "GetDimensions") == NULL);
     assert(strstr(text, "doe_r3_bytes") == NULL); /* The uniform has no size row read. */
     has(text, "cbuffer DoeUniform3 : register(b3, space0)");
-    has(text, "asfloat(r0[(offset + 0u) / 4u])");
-    has(text, "asfloat(r1[(offset + 0u) / 4u])");
-    has(text, "r2[(offset + 0u) / 4u] = asuint(");
+    /* Word-indexed scalar accesses: one statement, no offset temporary. */
+    has(text, "asfloat(r0[min(uint(");
+    has(text, "asfloat(r1[min(uint(");
+    has(text, "r2[min(uint(");
+    assert(strstr(text, "uint offset") == NULL);
     assert(strstr(text, "doe_r0_load4") == NULL && strstr(text, "doe_r2_store4") == NULL);
     has(text, "SV_DispatchThreadID");
     free(text);
