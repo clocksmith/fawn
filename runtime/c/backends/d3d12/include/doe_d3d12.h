@@ -222,6 +222,11 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
 doe_dx_status doe_dx_commands_dispatch(doe_dx_commands *commands,
     doe_dx_pipeline *pipeline, const doe_dx_buffer_binding *bindings,
     size_t binding_count, uint32_t x, uint32_t y, uint32_t z, doe_dx_error *error);
+/* Orders every buffer write already recorded in this command before its later
+ * records: each DEFAULT buffer it uses transitions COPY_DEST->COPY_SOURCE->COPY_DEST.
+ * Copies into one COPY_DEST buffer are otherwise not ordered against each other.
+ * Any READBACK use (state fixed at COPY_DEST) returns UNSUPPORTED, recording nothing. */
+doe_dx_status doe_dx_commands_order_buffer_writes(doe_dx_commands *commands, doe_dx_error *error);
 /* Submit once. A post-execute signal failure returns COMPLETION_UNKNOWN and
  * still transfers GPU ownership to the context. Never resubmit that command. */
 doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *error);

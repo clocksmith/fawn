@@ -107,6 +107,29 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
             D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 }
 
+void doe_dx_native_order_buffers(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *const *buffers, size_t count) {
+    /* A transition out of COPY_DEST waits for every earlier write in that state;
+     * returning to COPY_DEST keeps the per-operation state contract. */
+    D3D12_RESOURCE_BARRIER barriers[16];
+    for (size_t first = 0; first < count; first += 16) {
+        const size_t chunk = count - first < 16 ? count - first : 16;
+        for (size_t index = 0; index < chunk; ++index) {
+            barriers[index] = (D3D12_RESOURCE_BARRIER){.Type=D3D12_RESOURCE_BARRIER_TYPE_TRANSITION};
+            barriers[index].Transition.pResource = buffers[first + index]->resource;
+            barriers[index].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            barriers[index].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+            barriers[index].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        }
+        ID3D12GraphicsCommandList_ResourceBarrier(commands->list, (UINT)chunk, barriers);
+        for (size_t index = 0; index < chunk; ++index) {
+            barriers[index].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+            barriers[index].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+        }
+        ID3D12GraphicsCommandList_ResourceBarrier(commands->list, (UINT)chunk, barriers);
+    }
+}
+
 static doe_dx_status prepare_dispatch_signature(doe_dx_native_context *context,
     doe_dx_error *error) {
     if (context->dispatch_signature) return DOE_DX_OK;

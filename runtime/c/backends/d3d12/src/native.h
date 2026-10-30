@@ -185,6 +185,10 @@ void doe_dx_native_commands_recycle(doe_dx_native_commands *commands);
 void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *source,
     uint64_t source_offset, doe_dx_native_buffer *destination,
     uint64_t destination_offset, uint64_t size);
+/* Records COPY_DEST->COPY_SOURCE->COPY_DEST transitions for every listed DEFAULT
+ * buffer, so their earlier writes complete before any later record of the list. */
+void doe_dx_native_order_buffers(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *const *buffers, size_t count);
 /* Allocation failure is before recording; only successful calls append work. */
 doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,

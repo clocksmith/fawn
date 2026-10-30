@@ -5,7 +5,7 @@
 /* No shader interpreter or buffer-copy execution is present. These substitutes
  * only observe actual owner calls and enforce native object lifetime edges. */
 struct doe_dx_native_context { unsigned tag; };
-struct doe_dx_native_buffer { unsigned recorded, lends; unsigned char bytes[64]; };
+struct doe_dx_native_buffer { unsigned recorded, lends; doe_dx_memory memory; unsigned char bytes[64]; };
 struct doe_dx_native_pipeline { unsigned recorded; };
 struct doe_dx_native_texture { unsigned recorded; };
 struct doe_dx_native_timestamps { unsigned recorded; };
@@ -132,11 +132,11 @@ doe_dx_status doe_dx_native_close(doe_dx_native_context *context) {
 doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     uint64_t size, doe_dx_memory memory, doe_dx_native_buffer **out, doe_dx_error *error) {
     assert(context && size);
-    (void)memory;
     doe_dx_status status = outcome(MOCK_BUFFER, error);
     if (status != DOE_DX_OK) return status;
     *out = calloc(1, sizeof(**out));
     assert(*out);
+    (*out)->memory = memory;
     mock.buffers++;
     return DOE_DX_OK;
 }
@@ -286,6 +286,18 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
     mock.destination_offset = destination_offset;
     mock.copy_size = size;
     mock.copies++;
+}
+
+void doe_dx_native_order_buffers(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *const *buffers, size_t count) {
+    assert(commands && buffers && count && count <= 16);
+    for (size_t index = 0; index < count; ++index) {
+        assert(buffers[index]->memory == DOE_DX_DEFAULT);
+        record_buffer(commands, buffers[index]);
+    }
+    mock.buffer_orders++;
+    mock.ordered_buffers += count;
+    mock.copies_before_order = mock.copies;
 }
 
 static void record_texture(doe_dx_native_commands *commands, doe_dx_native_texture *texture) {

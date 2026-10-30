@@ -506,7 +506,22 @@ buffers not yet initialized, and before any later D3D12 recording (queue submit,
 texture/surface work, internal transfers) or CPU read it records every listed fill
 into one command and submits it. Only a queue write covering the whole allocation,
 padding included, removes a buffer without a fill, because that copy initializes
-every byte; a partial write materializes the fills first. A buffer released
+every byte; a partial write materializes the fills first.
+
+Queue writes still snapshot caller bytes into UPLOAD staging, but their copies
+record into one open command per device instead of a command list and
+submission each (Dawn likewise records writes into its pending command context,
+QueueD3D12.cpp:111-123, DeviceD3D12.cpp:544-578). The next queue submission
+adopts that command, orders the written DEFAULT buffers with a COPY_DEST to
+COPY_SOURCE to COPY_DEST transition pair and records its own work after them, so
+one ExecuteCommandLists call and one fence signal carry both. A READBACK
+destination, any other recording (texture/surface work, internal transfers), a
+CPU read, a map, a work-done drain, a second write to a logged destination, the
+64th write or 16 MiB of writes submit the open command on its own first. A
+retained copy log re-records the writes if the adopting submission fails to
+record, so earlier writes are never lost. `native/tests/d3d12_write_batch.c`
+(actual frontend, typed call seam), `tests/test_write_order.c` (backend seam)
+and `native/tests/write_order.c` (public ABI, physical) are its checks. A buffer released
 before any observation needs no fill. The fill returns after known-fenced queue
 acceptance. The common pending
 owner retains that initialization until terminal observation; CPU access still

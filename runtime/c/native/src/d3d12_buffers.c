@@ -10,7 +10,7 @@ static native_failure copy_now(native_device *device, doe_dx_buffer *source, uin
     doe_dx_buffer *destination, uint64_t to, uint64_t size, bool wait)
 {
     native_command_handle command = {0};
-    native_failure failure = native_d3d12_materialize_zero(device);
+    native_failure failure = native_d3d12_prepare_recording(device);
     if (failure.status != NATIVE_OK) return failure;
     failure = native_command_create(&device->backend, &command);
     if (failure.status != NATIVE_OK) return failure;
@@ -57,8 +57,14 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
         status = doe_dx_buffer_write(staging, 0, bytes, size, &error);
         failure = native_failure_d3d12(status, &error);
     }
-    if (failure.status == NATIVE_OK)
+    if (failure.status == NATIVE_OK && initialize)
         failure = copy_now(device, staging, 0, buffer->handle.d3d12->allocation, offset, size, false);
+    else if (failure.status == NATIVE_OK) {
+        /* A partial write's deferred zero fill executes before the open writes. */
+        failure = native_d3d12_materialize_zero(device);
+        if (failure.status == NATIVE_OK)
+            failure = native_d3d12_write_record(device, staging, payload->allocation, offset, size);
+    }
     doe_dx_buffer_release(staging);
     return failure;
 }

@@ -226,6 +226,11 @@ release alone never clears that native command pointer or authorizes cleanup.
 Report only composed frontend limits/features; SDK guarantees and private-backend
 controls never establish missing public graphics or presentation behavior.
 
+D3D12 queue writes record into one open per-device command that the next queue
+submission adopts and extends (one execution, one fence); every other recording,
+CPU read, map and work-done drain submits it first, and its copy log re-records
+the writes when an adopted recording fails. The backend AGENTS.md owns the rule.
+
 D3D12 buffer creation CPU-zeroes READBACK resources before publication. DEFAULT
 initialization uses full-width zero copies accepted through the existing common
 pending/device owner; later GPU work inherits known-fenced initialization, while

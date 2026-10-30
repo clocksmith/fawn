@@ -161,3 +161,10 @@ $(BUILD)/test_upload_staging: tests/test_upload_staging.c tests/mock_native.c te
 check-upload-staging: $(BUILD)/test_upload_staging
 	$(BUILD)/test_upload_staging
 check: check-upload-staging
+
+$(BUILD)/test_write_order: tests/test_write_order.c tests/mock_native.c tests/mock_surface.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_write_order.c tests/mock_native.c tests/mock_surface.c $(HOST_OBJECTS) -o $@
+.PHONY: check-write-order
+check-write-order: $(BUILD)/test_write_order
+	$(BUILD)/test_write_order
+check: check-write-order

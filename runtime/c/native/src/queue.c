@@ -252,7 +252,10 @@ native_failure native_settle_for_buffer(native_device *device, const native_buff
     }
     if (device->backend.kind == WGPUBackendType_D3D12) {
 #if defined(_WIN32)
-        native_failure failure = native_poll_pending(device).failure;
+        /* Open queue writes may target this buffer: submit them so the wait
+         * below observes an accepted native owner. */
+        native_failure failure = native_d3d12_flush_writes(device);
+        if (failure.status == NATIVE_OK) failure = native_poll_pending(device).failure;
         if (failure.status != NATIVE_OK) return failure;
         if (!buffer->handle.d3d12) return native_failure_status(NATIVE_INVALID_STATE);
         doe_dx_commands *owner = doe_dx_buffer_owner(buffer->handle.d3d12->allocation);
@@ -431,7 +434,7 @@ native_failure native_submit_backend_commands_async(native_device *device, nativ
 
 native_failure native_flush_initialization(native_device *device)
 {
-    if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_materialize_zero(device);
+    if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_prepare_recording(device);
     doe_vk_commands *batch = device->init_batch;
     if (!batch) return native_failure_status(NATIVE_OK);
     device->init_batch = NULL;
@@ -549,7 +552,9 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         else ++pending->count;
     }
-    if (failure.status == NATIVE_OK) failure = native_flush_initialization(device);
+    /* D3D12 materializes zero fills itself and adopts, not flushes, open writes. */
+    if (failure.status == NATIVE_OK && device->backend.kind != WGPUBackendType_D3D12)
+        failure = native_flush_initialization(device);
     if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
         failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
     else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)

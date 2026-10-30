@@ -38,6 +38,8 @@ typedef struct native_backend {
             struct doe_dx_shader_compiler *_Atomic compilers[2];
             /* DEFAULT buffers whose zero fill is deferred, under the device lock. */
             struct native_d3d12_buffer *deferred_zero;
+            /* Open queue-write command and its copy log (d3d12_writes.c), device lock. */
+            struct native_d3d12_writes *writes;
             } d3d12;
     } value;
 } native_backend;

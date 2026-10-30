@@ -133,6 +133,21 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands, doe_dx_buffer *sou
     seen.destination = destination->memory;
     return DOE_DX_OK;
 }
+doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer)
+{
+    buffer->references++;
+    return DOE_DX_OK;
+}
+doe_dx_status doe_dx_commands_order_buffer_writes(doe_dx_commands *commands, doe_dx_error *error)
+{
+    (void)commands; (void)error;
+    return DOE_DX_OK;
+}
+void doe_dx_commands_release(doe_dx_commands *work)
+{
+    native_command_handle handle = {.kind=WGPUBackendType_D3D12,.value.d3d12={.commands=work}};
+    assert(native_command_release(&handle) == NATIVE_OK);
+}
 native_result native_command_release(native_command_handle *commands)
 {
     doe_dx_commands *work = commands->value.d3d12.commands;
@@ -240,6 +255,9 @@ int main(void)
     unsigned char page[4096] = {7};
     copies = seen.copies;
     assert(native_d3d12_buffer_write(&buffer, 0, page, sizeof(page)).status == NATIVE_OK);
+    /* Queue writes record into the open command; this flush submits it. */
+    assert(seen.copies == copies + 1 && !seen.pending);
+    assert(native_d3d12_flush_writes(&device).status == NATIVE_OK);
     assert(seen.copies == copies + 1 && seen.pending && seen.pending->count == 1 && seen.copy_size == 4096);
     assert(!buffer.handle.d3d12->zero_deferred && !device.backend.value.d3d12.deferred_zero);
     retire_pending(true);
@@ -249,6 +267,7 @@ int main(void)
     copies = seen.copies;
     submissions = seen.async_submissions;
     assert(native_d3d12_buffer_write(&buffer, 0, page, 16).status == NATIVE_OK);
+    assert(native_d3d12_flush_writes(&device).status == NATIVE_OK);
     /* The 256-byte fill was submitted (and here retired) before the 16-byte copy. */
     assert(seen.async_submissions == submissions + 2 && seen.copies == copies + 2);
     assert(seen.copy_size == 16 && seen.pending && seen.pending->count == 1);
@@ -277,6 +296,7 @@ int main(void)
     /* The injected backend now reports terminal failure, permitting release. */
     retire_pending(false);
     native_d3d12_buffer_close(&buffer);
+    native_d3d12_writes_close(&device.backend);
     assert(!seen.live);
     puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map and lent read range, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
     return 0;
