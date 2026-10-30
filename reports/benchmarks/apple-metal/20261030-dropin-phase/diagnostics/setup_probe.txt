@@ -1,0 +1,12 @@
+objc 0.20 foundation 1.53 metal 0.00 iosurface+corevideo 0.00 MTLCreateSystemDefaultDevice 14.46 total 16.19 ms
+objc 0.20 foundation 1.45 metal 0.00 iosurface+corevideo 0.00 MTLCreateSystemDefaultDevice 19.45 total 21.10 ms
+objc 0.21 foundation 1.59 metal 0.00 iosurface+corevideo 0.00 MTLCreateSystemDefaultDevice 15.55 total 17.35 ms
+objc 0.19 foundation 1.43 metal 0.00 iosurface+corevideo 0.00 MTLCreateSystemDefaultDevice 19.00 total 20.63 ms
+objc 0.20 foundation 1.48 metal 0.00 iosurface+corevideo 0.00 MTLCreateSystemDefaultDevice 13.40 total 15.08 ms
+objc 0.21 foundation 1.53 metal 0.00 iosurface+corevideo 0.00 MTLCreateSystemDefaultDevice 19.75 total 21.49 ms
+linked: MTLCopyAllDevices 7.32 then MTLCreateSystemDefaultDevice 13.76 ms real 0.02 
+linked: MTLCopyAllDevices 6.87 then MTLCreateSystemDefaultDevice 6.22 ms real 0.01 
+linked: MTLCopyAllDevices 7.50 then MTLCreateSystemDefaultDevice 6.36 ms real 0.01 
+linked: MTLCopyAllDevices 7.25 then MTLCreateSystemDefaultDevice 6.27 ms real 0.01 
+linked: MTLCopyAllDevices 7.24 then MTLCreateSystemDefaultDevice 11.35 ms real 0.02 
+linked: MTLCopyAllDevices 7.23 then MTLCreateSystemDefaultDevice 8.76 ms real 0.01 

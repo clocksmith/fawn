@@ -1,0 +1,92 @@
+--- <work>/src-d57ab2877/runtime/c/native/src/queue.c	2026-10-30 16:00:45
++++ runtime/c/native/src/queue.c	2026-10-30 16:36:21
+@@ -1,5 +1,14 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "surface.h"
++#include <mach/mach_time.h>
++#include <stdio.h>
++/* DIAGNOSTIC ONLY (not committed): submit sub-phase attribution. */
++uint64_t diag_sum[12]; uint64_t diag_n; uint64_t diag_t;
++static void diag_dump(void) { mach_timebase_info_data_t tb; mach_timebase_info(&tb);
++    fprintf(stderr, "DIAG submits=%llu", (unsigned long long)diag_n);
++    for (int i = 0; i < 12; ++i) fprintf(stderr, " s%d=%.3f", i, diag_n > 1 ? (double)diag_sum[i] * tb.numer / tb.denom / (diag_n - 1) / 1000.0 : 0.0);
++    fprintf(stderr, " (us/submit)\n"); }
++#define DIAG_MARK(i) do { uint64_t now_ = mach_absolute_time(); if (diag_n > 1) diag_sum[i] += now_ - diag_t; diag_t = now_; } while (0)
+ #include "metal_frontend.h"
+ #include "d3d12_frontend.h"
+ #include "doe_native_queue.h"
+@@ -359,7 +368,9 @@
+ static native_failure submit_pending(native_device *device, native_pending *pending, bool wait)
+ {
+     link_pending(device, pending);
++    if (!wait) DIAG_MARK(10);
+     native_failure failure = native_command_submit(&pending->native);
++    if (!wait) DIAG_MARK(5);
+     if (failure.status == NATIVE_OK && wait) {
+         if (pending->native.kind == WGPUBackendType_D3D12 && native_command_in_flight(&pending->native)) {
+             struct timespec now, deadline;
+@@ -512,6 +523,8 @@
+     native_device *device = (native_device *)handle;
+     if (!device) return;
+     if (!count) return;
++    static int registered; if (!registered) { registered = 1; atexit(diag_dump); }
++    diag_t = mach_absolute_time(); ++diag_n;
+     native_device_retain(device);
+     if (!handles || count > SIZE_MAX / sizeof(doe_resource_commands *)) {
+         native_error(device, WGPUErrorType_Validation, "invalid queue submit array");
+@@ -531,9 +544,12 @@
+     }
+     pending->device = device;
+     native_device_retain(device);
++    DIAG_MARK(0);
+     native_lock(device);
++    DIAG_MARK(1);
+     native_failure failure = native_failure_status(native_device_result(device));
+     if (failure.status == NATIVE_OK) failure = native_settle_routine(device).failure;
++    DIAG_MARK(2);
+     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
+         pending->resources[i] = (doe_resource_commands *)handles[i];
+         if (doe_resource_commands_device(pending->resources[i]) != device)
+@@ -550,8 +566,9 @@
+         else ++pending->count;
+     }
+     if (failure.status == NATIVE_OK) failure = native_flush_initialization(device);
++    DIAG_MARK(3);
+     if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
+-        failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
++        { failure = native_metal_record_batch(device,&pending->native,pending->resources,count); DIAG_MARK(4); }
+     else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)
+         failure = native_d3d12_record_batch(device,&pending->native,pending->resources,count);
+     else {
+@@ -571,7 +588,9 @@
+          * on this device, so a resubmission is a validation error. */
+         invalidate_batch(device, count, handles);
+     }
++    DIAG_MARK(6);
+     native_unlock(device);
++    DIAG_MARK(7);
+     if (failure.status != NATIVE_OK) {
+         char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+         native_failure_format(&failure, "queue submission failed; unresolved work stays retained", message);
+--- <work>/src-d57ab2877/runtime/c/native/src/metal_progress.c	2026-10-30 16:00:45
++++ runtime/c/native/src/metal_progress.c	2026-10-30 16:36:21
+@@ -2,6 +2,9 @@
+ #include "surface.h"
+ #include "../../backends/metal/src/progress.h"
+ #include <stdlib.h>
++#include <mach/mach_time.h>
++extern uint64_t diag_sum[12]; extern uint64_t diag_n; extern uint64_t diag_t;
++#define DIAG_MARK(i) do { uint64_t now_ = mach_absolute_time(); if (diag_n > 1) diag_sum[i] += now_ - diag_t; diag_t = now_; } while (0)
+ 
+ /* Only the existing pending owner can authorize waiting/retrying a conflict.
+  * An unsubmitted foreign owner is BUSY, never a reason to wait or dispatch. */
+@@ -66,7 +69,9 @@
+         for (size_t i = 0; i < count; ++i)
+             if (doe_resource_commands_validate_submission(resources[i]) != DOE_RESOURCE_OK)
+                 return native_failure_status(NATIVE_INVALID_ARGUMENT);
++        DIAG_MARK(8);
+         native_failure failure = native_command_create(&device->backend,native);
++        DIAG_MARK(9);
+         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+             failure = native_record_resource_commands(native,resources[i]);
+         if (failure.status != NATIVE_BUSY || native->kind != WGPUBackendType_Metal) return failure;

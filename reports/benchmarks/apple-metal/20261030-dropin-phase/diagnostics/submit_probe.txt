@@ -1,0 +1,12 @@
+doe: unretained cb, pool per call, shared src, signal+commit       median 4.54 us
+dawn: retained cb (pre-made), shared src, handlers+signal+commit   median 4.92 us
+doe-shape with retained cb                                         median 4.58 us
+doe-shape without per-call pools                                   median 4.58 us
+doe-shape, private src                                             median 4.67 us
+commit only (empty unretained cb + signal)                         median 2.25 us
+doe: unretained cb, pool per call, shared src, signal+commit       median 4.58 us
+dawn: retained cb (pre-made), shared src, handlers+signal+commit   median 4.71 us
+doe-shape with retained cb                                         median 4.62 us
+doe-shape without per-call pools                                   median 4.83 us
+doe-shape, private src                                             median 4.50 us
+commit only (empty unretained cb + signal)                         median 2.17 us

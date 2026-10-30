@@ -1,0 +1,5 @@
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+<work>/build-m2/metal/test_images
+Metal image ownership controls: 13 groups passed; mocked native calls, no pixel/GPU execution
+<work>/build-m2/metal/test_objc_images
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU

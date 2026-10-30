@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "apple-metal-dropin-phase-m2",
+  "frozenAtUtc": "2026-10-30T20:40:24Z",
+  "experiment": "M2: obtain the system default Metal device by MTLCopyAllDevices when it reports exactly one device (the same native object; probe receipt diagnostics/identity_probe.txt), keeping MTLCreateSystemDefaultDevice for any other count (m2/candidate.patch). One mechanism; control is main d57ab2877. Independent of M1.",
+  "host": {
+    "label": "apple-host",
+    "machine": "Apple M3 (8 CPU cores, 10 GPU cores), 24 GiB unified memory",
+    "os": "macOS 26.6.2 (25G83)",
+    "gpu": "Apple M3 integrated, Metal 4",
+    "power": "internal battery, 100% at freeze, low-power mode off; power source must stay unchanged per window",
+    "sharedUse": "desktop session with an external 2560x1440 120 Hz display, browser and other app renderers stay running (idle GPU utilization 13-14% at freeze); the Reploid contributors are disabled"
+  },
+  "sourceCommit": "d57ab2877 (library); harness and cohort tool are d57ab2877 plus the uncommitted Metal port (hashes below)",
+  "surface": "dropin (public webgpu.h ABI); one harness source linked per provider, compiled with -DDOE_PHASE_BACKEND_METAL",
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "workloadOrigin": "unchanged amd-host C1 workloads; inputs manifest byte-identical to the amd-host and intel-host manifests (afe4e1d3...); independent CPU oracle on every iteration outside the timed interval",
+  "providers": {
+    "main": "libwebgpu_doe_c.dylib from d57ab2877 (control)",
+    "m2": "d57ab2877 + m2/candidate.patch",
+    "dawn": "source-built Dawn d04f88359391a12375c1a3e948a0b2dcb4c97a18 (the amd-host and intel-host revision), CMake Release, DAWN_BUILD_MONOLITHIC_LIBRARY=SHARED, Metal only, tests/samples/GLFW off, Tint SPIR-V/GLSL/HLSL writers off, Apple clang",
+    "dawn-aa": "byte-identical copy of the dawn harness binary (A/A control)"
+  },
+  "sampling": {
+    "pairs": 96,
+    "orders": "all 24 permutations of the 4 providers, cycled",
+    "iterationsPerProcess": 32,
+    "warmIterations": "iterations 1..31",
+    "processesPerWorkload": 384
+  },
+  "timing": "CLOCK_UPTIME_RAW (Darwin CLOCK_MONOTONIC is quantized to 1 us); host clock, not GPU timestamps",
+  "phases": "identical to amd-host contract-c1.json; complete = compile + pipeline + resources + sum of every iteration's operation + teardown",
+  "statistics": "per-pair ratio provider/dawn; median ratio, bootstrap 95% CI (10000 resamples, seed 20261029), provider-faster pair count",
+  "rules": {
+    "kind": "mechanism",
+    "control": "main",
+    "provider": "m2",
+    "aaProvider": "dawn-aa",
+    "aaControl": "dawn",
+    "aaWindow": [
+      0.95,
+      1.05
+    ],
+    "workloads": [
+      "vector_scale_add_262k",
+      "image_rgba_invert_1024",
+      "buffer_upload_readback_exact_1mb"
+    ],
+    "improve": {
+      "vector_scale_add_262k": [
+        "setupNs",
+        "processWall"
+      ],
+      "image_rgba_invert_1024": [
+        "setupNs",
+        "processWall"
+      ],
+      "buffer_upload_readback_exact_1mb": [
+        "setupNs",
+        "processWall"
+      ]
+    },
+    "noRegress": [
+      "compileNs",
+      "pipelineNs",
+      "resourcesNs",
+      "teardownNs",
+      "first.operation",
+      "warm.upload",
+      "warm.encode",
+      "warm.submit",
+      "warm.completion",
+      "warm.map",
+      "warm.operation",
+      "warmP95.operation",
+      "complete",
+      "cpuMs",
+      "maxRssMiB"
+    ],
+    "noRegressBound": 1.05
+  },
+  "acceptance": {
+    "validity": [
+      "every process status ok with all 32 iterations oracle-checked",
+      "every provider reports a Metal adapter that is not a CPU adapter",
+      "A/A: dawn-aa/dawn warm.operation median ratio within [0.95,1.05] and its CI95 contains 1, per workload",
+      "window gate (tools/mac_window.py) valid: power source and low-power mode unchanged, no thermal warning, idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity"
+    ],
+    "mechanismRule": "m2/main: setupNs and processWall CI95 upper < 1.0 on every workload, and every noRegress metric CI95 lower <= 1.05 on every workload. Correctness (recorded before freezing): 81 Metal physical clients match main per client; backends/metal check, sdk-abi, native-check and native-graphics-check pass.",
+    "invalidWindows": "an invalid window is retained, never used for the verdict, and rerun fresh once under the unchanged contract",
+    "claimBoundary": "A pass accepts the mechanism for the Metal C runtime on apple-host only; it does not by itself make a scoped win against Dawn and says nothing about Vulkan or D3D12."
+  },
+  "hashes": {
+    "bench/drop-in/dropin_phase_harness.c": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+    "bench/tools/dropin_phase_cohort.py": "55586b5c154908d40640559289bb8357063a3d6d064c7abfe8cc42e9ae9475d8",
+    "tools/mac_window.py": "fc7022d1787375356540db245202339e6bb85838e12d1f52bd70e4e70b3955c8",
+    "tools/evaluate.py": "e7aed73abf182b875c19bbe3098b664c422b3bd8505a60489c7e0ef793cc75d7",
+    "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "bin/harness-dawn": "951f82e828c21a1fdb5b766a9884eb61d64c6cd1f78279600477721222d62f9b",
+    "bin/harness-dawn-aa": "951f82e828c21a1fdb5b766a9884eb61d64c6cd1f78279600477721222d62f9b",
+    "build-d57ab2877/native/libwebgpu_doe_c.dylib": "0b0d278cb1c074e7d0ff6045cde381d96d815d5043db2824beb439f79e8a9543",
+    "build-d57ab2877/native/libdoe_compiler.dylib": "aa87f88c4599de1054d48758b01d5a73b1e042cbed009194126795b2a15780cd",
+    "dawn-build/libwebgpu_dawn.dylib": "c9e5faf8321ecb2d85de65a025cbb17461480c6b8a238d8403d59f2a5e64c618",
+    "bin/harness-main": "18d2c16a91f9fd54bb4194abcdb08ae45f8bcae223744845896d5b3c44490780",
+    "tools/wait_quiet.sh": "41dbeb80bca95c2cf0beee73d9e2ba1eec26fabb42716eda8f517a6966e5c4b5",
+    "bin/harness-doe-m2": "15b54feb118fa8e520bfa064603751d3c0d2090178db56ce8d413716f199e6d6",
+    "build-m2/native/libwebgpu_doe_c.dylib": "064798d5597e3e0015ab4ffe516be3b2af84971752b100cd023ef29bd24f7846",
+    "m2/candidate.patch": "cfdc9361e55e03eeca4744fcfb76e3388bcbc420f4f128acc19c0eb150cdf7cf"
+  }
+}

@@ -1,0 +1,1 @@
+count 1 same-across-copies 1 same-as-default 1 registryID 4294968287 default-registryID 4294968287 lowPower 0 headless 0 removable 0

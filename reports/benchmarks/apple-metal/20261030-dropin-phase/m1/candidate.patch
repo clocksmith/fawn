@@ -1,0 +1,87 @@
+diff --git a/runtime/c/backends/metal/include/doe_metal.h b/runtime/c/backends/metal/include/doe_metal.h
+index 19dea46..bfa2646 100644
+--- a/runtime/c/backends/metal/include/doe_metal.h
++++ b/runtime/c/backends/metal/include/doe_metal.h
+@@ -99,6 +99,11 @@ doe_mtl_status doe_mtl_buffer_write(doe_mtl_buffer *buffer, uint64_t offset,
+     const void *bytes, size_t size);
+ doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
+     void *bytes, size_t size);
++/* The shared allocation's host range under exactly the admission of a read.
++ * The pointer stays valid until the buffer's last release; callers keep it only
++ * while their own state forbids GPU use of the buffer (for example a mapping). */
++doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset,
++    size_t size, const void **out);
+ 
+ enum { DOE_MTL_BUFFER_SLOTS = 31 };
+ /* Compiler/native validation owns shader meaning, layout, usage and robust
+diff --git a/runtime/c/backends/metal/src/resources.c b/runtime/c/backends/metal/src/resources.c
+index 1d380ec..44e27c9 100644
+--- a/runtime/c/backends/metal/src/resources.c
++++ b/runtime/c/backends/metal/src/resources.c
+@@ -96,18 +96,30 @@ doe_mtl_status doe_mtl_buffer_write(doe_mtl_buffer *buffer, uint64_t offset,
+     return DOE_MTL_OK;
+ }
+ 
+-doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
+-    void *bytes, size_t size) {
+-    doe_mtl_status status = host_access(buffer, offset, bytes, size);
++doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset,
++    size_t size, const void **out) {
++    static const unsigned char empty = 0;
++    doe_mtl_status status = out != NULL ? host_access(buffer, offset, &empty, size) :
++        DOE_MTL_INVALID_ARGUMENT;
+     const unsigned char *contents;
+     if (status != DOE_MTL_OK) return status;
+     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
+     if (!buffer->initialized) return DOE_MTL_UNINITIALIZED;
+-    if (size == 0) return DOE_MTL_OK;
+     contents = buffer->context->native.contents(buffer->context->native.userdata,
+         buffer->native);
+     if (contents == NULL) return DOE_MTL_NATIVE_FAILURE;
+-    memmove(bytes, contents + (size_t)offset, size);
++    *out = contents + (size_t)offset;
++    return DOE_MTL_OK;
++}
++
++doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
++    void *bytes, size_t size) {
++    const void *source = NULL;
++    doe_mtl_status status;
++    if (size != 0 && bytes == NULL) return DOE_MTL_INVALID_ARGUMENT;
++    status = doe_mtl_buffer_host_range(buffer, offset, size, &source);
++    if (status != DOE_MTL_OK) return status;
++    if (size != 0) memmove(bytes, source, size);
+     return DOE_MTL_OK;
+ }
+ 
+diff --git a/runtime/c/native/src/backend_buffers.c b/runtime/c/native/src/backend_buffers.c
+index f8172d8..4c454ed 100644
+--- a/runtime/c/native/src/backend_buffers.c
++++ b/runtime/c/native/src/backend_buffers.c
+@@ -52,7 +52,10 @@ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *
+ 
+ bool native_buffer_host_lendable(const native_buffer *buffer)
+ {
+-    if (buffer->device->backend.kind == WGPUBackendType_Vulkan) return true;
++    /* Every public Vulkan buffer is persistently mapped coherent host memory
++     * and every public Metal buffer is a shared allocation (native_buffer_create). */
++    if (buffer->device->backend.kind == WGPUBackendType_Vulkan ||
++        buffer->device->backend.kind == WGPUBackendType_Metal) return true;
+     return buffer->device->backend.kind == WGPUBackendType_D3D12 && buffer->handle.d3d12 &&
+         buffer->handle.d3d12->memory == DOE_DX_READBACK;
+ }
+@@ -67,8 +70,13 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset,
+ {
+     if (buffer->device->backend.kind == WGPUBackendType_D3D12)
+         return native_d3d12_buffer_lend(buffer, offset, size, out);
+-    if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
+     const void *range = NULL;
++    if (buffer->device->backend.kind == WGPUBackendType_Metal) {
++        doe_mtl_status status = doe_mtl_buffer_host_range(buffer->handle.metal, offset, size, &range);
++        if (status == DOE_MTL_OK) *out = range;
++        return native_failure_metal(status, NULL);
++    }
++    if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
+     doe_vk_status status = doe_vk_buffer_host_range(buffer->handle.vulkan, offset, size, &range);
+     if (status == DOE_VK_OK) *out = range;
+     return native_failure_vulkan(status, NULL);

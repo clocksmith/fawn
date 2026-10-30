@@ -1,0 +1,4 @@
+clang -Iinclude -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow tests/native_graphics.c <work>/build-m2/metal/libdoe_metal.a  -o <work>/build-m2/metal/native_graphics
+DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["<work>/build-m2/metal/native_graphics", "--run"], check=True, timeout=20)'
+Metal graphics device: Apple M3; 8x8 4x-MSAA zero-init, alpha coverage, two empty raster draws, resolve/readback
+PASS bounded native Metal graphics: zero-init/no-op preserve, 4x-MSAA alpha coverage/resolve, empty viewport/scissor still execute vertices, early leases, actual pixels

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import struct
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
 from bench.lib import synthetic_assets
 from bench.tools import dropin_phase_cohort as cohort
@@ -43,6 +46,24 @@ class DropinPhaseCohortTest(unittest.TestCase):
         self.assertEqual(cohort.bootstrap_median_ci(values), cohort.bootstrap_median_ci(values))
         low, high = cohort.bootstrap_median_ci(values)
         self.assertLessEqual(low, high)
+
+
+class BackendBuildTest(unittest.TestCase):
+    def build_argv(self, backend: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            library = Path(directory) / "libwebgpu.so"
+            library.write_bytes(b"library")
+            output = Path(directory) / "harness"
+            output.write_bytes(b"binary")
+            with mock.patch.object(cohort.subprocess, "run") as run, mock.patch("builtins.print"):
+                cohort.build(library, output, "cc", backend)
+            return run.call_args.args[0]
+
+    def test_vulkan_default_adds_no_define(self) -> None:
+        self.assertFalse(any(arg.startswith("-DDOE_PHASE_BACKEND") for arg in self.build_argv("vulkan")))
+
+    def test_metal_selects_the_metal_backend(self) -> None:
+        self.assertIn("-DDOE_PHASE_BACKEND_METAL", self.build_argv("metal"))
 
 
 class CompleteMetricTest(unittest.TestCase):
