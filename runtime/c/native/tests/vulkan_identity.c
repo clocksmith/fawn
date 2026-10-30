@@ -8,6 +8,8 @@
 static unsigned live_contexts, closed_contexts;
 static bool wrong_identity, wrong_class, no_fragment_stores;
 static bool actual_contexts;
+static unsigned fresh_instances, shared_instances;
+static const doe_vk_context *last_share_source;
 
 doe_vk_status __real_doe_vk_context_create(const doe_vk_options *, doe_vk_context **, doe_vk_error *);
 void __real_doe_vk_context_release(doe_vk_context *);
@@ -18,6 +20,12 @@ doe_vk_status __wrap_doe_vk_context_create(const doe_vk_options *options,
     doe_vk_context **out, doe_vk_error *error)
 {
     if (actual_contexts) return __real_doe_vk_context_create(options, out, error);
+    if (options->share_instance) {
+        ++shared_instances;
+        last_share_source = options->share_instance;
+    } else {
+        ++fresh_instances;
+    }
     doe_vk_context *value = malloc(sizeof(*value));
     assert(value);
     *value = context();
@@ -45,6 +53,48 @@ void __wrap_doe_vk_context_release(doe_vk_context *value)
     --live_contexts;
     ++closed_contexts;
     free(value);
+}
+static WGPUAdapter requested;
+static void on_adapter(WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message,
+    void *userdata1, void *userdata2)
+{
+    (void)message; (void)userdata1; (void)userdata2;
+    assert(status == WGPURequestAdapterStatus_Success && adapter);
+    requested = adapter;
+}
+static WGPUAdapter request(WGPUInstance instance)
+{
+    WGPURequestAdapterOptions options = {.backendType = WGPUBackendType_Vulkan};
+    WGPURequestAdapterCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = on_adapter};
+    WGPUFutureWaitInfo wait = {wgpuInstanceRequestAdapter(instance, &options, callback), false};
+    requested = NULL;
+    assert(wgpuInstanceWaitAny(instance, 1, &wait, 0) == WGPUWaitStatus_Success && wait.completed);
+    return requested;
+}
+/* Public adapter requests on one instance: the first opens a VkInstance and a
+ * private source that borrows it; later requests borrow the source's instance
+ * and still run selection. The source closes with the instance. */
+static void instance_adapter_source(void)
+{
+    available = 3;
+    order[0] = 2; order[1] = 0; order[2] = 1;
+    unsigned fresh = fresh_instances, shared = shared_instances;
+    WGPUInstance instance = wgpuCreateInstance(NULL);
+    assert(instance);
+    WGPUAdapter first = request(instance);
+    assert(fresh_instances == fresh + 1 && shared_instances == shared + 1 && live_contexts == 2);
+    const doe_vk_context *source = last_share_source;
+    assert(source == ((native_adapter *)first)->backend.value.vulkan.context);
+    wgpuAdapterRelease(first);
+    WGPUAdapter second = request(instance);
+    assert(fresh_instances == fresh + 1 && shared_instances == shared + 2 && live_contexts == 2);
+    assert(last_share_source != source && ((native_adapter *)second)->backend.value.vulkan.caps.adapter_ordinal == 1);
+    wgpuAdapterRelease(second);
+    assert(live_contexts == 1);
+    wgpuInstanceRelease(instance);
+    assert(live_contexts == 0);
+    available = 3;
+    order[0] = 0; order[1] = 1; order[2] = 2;
 }
 static void unchanged_failure(native_backend *adapter, native_result expected)
 {
@@ -139,8 +189,10 @@ int main(int argc, char **argv)
     assert(live_contexts == 0);
     available = 3;
     order[0] = 0;
+    instance_adapter_source();
     puts("PASS native Vulkan identity bridge: changed order/handles, explicit CPU fallback, missing identity and mismatch rollback, "
-        "refused adapter without fragmentStoresAndAtomics, default CPU-only selection in one adapter-only context");
+        "refused adapter without fragmentStoresAndAtomics, default CPU-only selection in one adapter-only context, "
+        "later public adapter requests borrowing one instance-owned source closed with the instance");
     if (argc == 2) {
         actual_contexts = true;
         assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &adapter) == NATIVE_OK);

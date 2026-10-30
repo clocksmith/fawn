@@ -22,6 +22,12 @@ native_result native_backend_open_luid(uint32_t low, int32_t high,
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
     native_backend *out)
 {
+    return native_backend_open_shared(kind, fallback, surface_platforms, NULL, out);
+}
+
+native_result native_backend_open_shared(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
+    const native_backend *source, native_backend *out)
+{
     if (kind == WGPUBackendType_D3D12)
         return d3d12_surface_supported(surface_platforms) ?
             native_d3d12_open(fallback, out) : NATIVE_UNSUPPORTED;
@@ -39,8 +45,12 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
             /* An adapter answers capability and surface queries; each device
              * opens its own native device below. */
             .adapter_only=true};
+        if (source && source->kind == WGPUBackendType_Vulkan &&
+                source->value.vulkan.options.surface_platforms == surface_platforms)
+            result.value.vulkan.options.share_instance = source->value.vulkan.context;
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
+        result.value.vulkan.options.share_instance = NULL;
         if (status == NATIVE_OK)
             status = native_from_vulkan(doe_vk_context_caps(result.value.vulkan.context,
                 &result.value.vulkan.caps));
