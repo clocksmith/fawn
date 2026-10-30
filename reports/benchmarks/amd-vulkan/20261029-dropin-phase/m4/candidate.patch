@@ -1,0 +1,204 @@
+diff --git a/runtime/c/backends/vulkan/include/doe_vk.h b/runtime/c/backends/vulkan/include/doe_vk.h
+index 48ee411e9..0eae71556 100644
+--- a/runtime/c/backends/vulkan/include/doe_vk.h
++++ b/runtime/c/backends/vulkan/include/doe_vk.h
+@@ -219,9 +219,13 @@ enum {
+     DOE_VK_BUFFER_VERTEX = 128,
+     DOE_VK_BUFFER_INDIRECT = 256
+ };
++/* HOST prefers host-cached memory for host reads. HOST_DEVICE_LOCAL keeps the
++ * same persistent coherent mapping but prefers device-local memory for buffers
++ * the host only writes. DEVICE has no host mapping. */
+ typedef enum doe_vk_memory_kind {
+     DOE_VK_MEMORY_HOST,
+-    DOE_VK_MEMORY_DEVICE
++    DOE_VK_MEMORY_DEVICE,
++    DOE_VK_MEMORY_HOST_DEVICE_LOCAL
+ } doe_vk_memory_kind;
+ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+     uint32_t usage, doe_vk_memory_kind memory, doe_vk_buffer **out, doe_vk_error *error);
+diff --git a/runtime/c/backends/vulkan/src/internal.h b/runtime/c/backends/vulkan/src/internal.h
+index d9ce9d3cb..f02cc074b 100644
+--- a/runtime/c/backends/vulkan/src/internal.h
++++ b/runtime/c/backends/vulkan/src/internal.h
+@@ -84,6 +84,7 @@ struct doe_vk_buffer {
+     VkBuffer buffer;
+     VkDeviceMemory memory;
+     void *mapped;
++    bool write_combined; /* Host-visible without HOST_CACHED: host writes stream. */
+ };
+ struct doe_vk_pipeline {
+     doe_vk_context *context;
+diff --git a/runtime/c/backends/vulkan/src/resources.c b/runtime/c/backends/vulkan/src/resources.c
+index 914a40742..747e517de 100644
+--- a/runtime/c/backends/vulkan/src/resources.c
++++ b/runtime/c/backends/vulkan/src/resources.c
+@@ -1,5 +1,8 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "internal.h"
++#if defined(__x86_64__) || defined(_M_X64)
++#include <emmintrin.h>
++#endif
+ 
+ doe_vk_status doe_vk_fail(doe_vk_status status, const char *operation, doe_vk_error *error) {
+     if (error != NULL) *error = (doe_vk_error){ status, 0, operation };
+@@ -54,6 +57,34 @@ bool doe_vk_range(uint64_t allocation, uint64_t offset, uint64_t size) {
+     return offset <= allocation && size <= allocation - offset;
+ }
+ 
++/* Host writes into uncached (write-combined) mappings use non-temporal stores:
++ * ordinary stores there are much slower than into cached memory. The closing
++ * fence orders them before any later submission that reads the bytes. */
++static void host_store(void *destination, const void *source, size_t size, bool streaming) {
++#if defined(__x86_64__) || defined(_M_X64)
++    if (streaming && size >= 64) {
++        uint8_t *out = destination;
++        const uint8_t *in = source;
++        const size_t head = (16 - ((uintptr_t)out & 15)) & 15;
++        if (source != NULL) memcpy(out, in, head);
++        else memset(out, 0, head);
++        size_t i = head;
++        const __m128i zero = _mm_setzero_si128();
++        for (; i + 16 <= size; i += 16)
++            _mm_stream_si128((__m128i *)(void *)(out + i),
++                source != NULL ? _mm_loadu_si128((const __m128i *)(const void *)(in + i)) : zero);
++        if (source != NULL) memcpy(out + i, in + i, size - i);
++        else memset(out + i, 0, size - i);
++        _mm_sfence();
++        return;
++    }
++#else
++    (void)streaming;
++#endif
++    if (source != NULL) memcpy(destination, source, size);
++    else memset(destination, 0, size);
++}
++
+ doe_vk_status doe_vk_memory_type(const VkPhysicalDeviceMemoryProperties *properties,
+     uint32_t bits, uint32_t required, uint32_t preferred, uint32_t *out) {
+     if (properties == NULL || out == NULL || properties->memoryTypeCount > 32 ||
+@@ -81,7 +112,7 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+         DOE_VK_BUFFER_INDEX;
+     if (context == NULL || out == NULL || size == 0 || size > SIZE_MAX ||
+         usage == 0 || (usage & ~allowed) != 0 ||
+-        (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE))
++        (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE && kind != DOE_VK_MEMORY_HOST_DEVICE_LOCAL))
+         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "buffer descriptor", error);
+     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "buffer context", error);
+     doe_vk_buffer *buffer = calloc(1, sizeof(*buffer));
+@@ -108,9 +139,11 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+         status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "buffer memory requirements", error);
+         goto failed;
+     }
+-    uint32_t required = kind == DOE_VK_MEMORY_HOST ?
++    const bool host = kind != DOE_VK_MEMORY_DEVICE;
++    uint32_t required = host ?
+         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+-    uint32_t preferred = kind == DOE_VK_MEMORY_HOST ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT : 0;
++    uint32_t preferred = kind == DOE_VK_MEMORY_HOST ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT :
++        kind == DOE_VK_MEMORY_HOST_DEVICE_LOCAL ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : 0;
+     uint32_t index = 0;
+     status = doe_vk_memory_type(&context->memory, requirements.memoryTypeBits, required, preferred, &index);
+     if (status != DOE_VK_OK) {
+@@ -126,14 +159,16 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+     if (status != DOE_VK_OK) goto failed;
+     status = doe_vk_result(context, context->vk.vkBindBufferMemory(context->device, buffer->buffer, buffer->memory, 0), "vkBindBufferMemory", error);
+     if (status != DOE_VK_OK) goto failed;
+-    if (kind == DOE_VK_MEMORY_HOST) {
++    if (host) {
+         status = doe_vk_result(context, context->vk.vkMapMemory(context->device, buffer->memory, 0, size, 0, &buffer->mapped), "vkMapMemory", error);
+         if (status != DOE_VK_OK) goto failed;
+         if (buffer->mapped == NULL) {
+             status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "null mapped buffer", error);
+             goto failed;
+         }
+-        memset(buffer->mapped, 0, (size_t)size);
++        buffer->write_combined =
++            (context->memory.memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) == 0;
++        host_store(buffer->mapped, NULL, (size_t)size, buffer->write_combined);
+     }
+     *out = buffer;
+     return doe_vk_fail(DOE_VK_OK, "buffer ready", error);
+@@ -182,7 +217,7 @@ doe_vk_status doe_vk_buffer_write(doe_vk_buffer *buffer, uint64_t offset,
+     if (status != DOE_VK_OK) return status;
+     if (buffer->content_status != DOE_VK_OK && (offset != 0 || size != buffer->size))
+         return buffer->content_status;
+-    if (size != 0) memcpy((uint8_t *)buffer->mapped + (size_t)offset, bytes, size);
++    if (size != 0) host_store((uint8_t *)buffer->mapped + (size_t)offset, bytes, size, buffer->write_combined);
+     if (offset == 0 && size == buffer->size) buffer->content_status = DOE_VK_OK;
+     return DOE_VK_OK;
+ }
+diff --git a/runtime/c/native/Makefile b/runtime/c/native/Makefile
+index 6103a92aa..c20ad0774 100644
+--- a/runtime/c/native/Makefile
++++ b/runtime/c/native/Makefile
+@@ -428,7 +428,7 @@ check-present-sanitizers:
+ 	  '$(SANITIZER_BUILD)/thread/surface-faults'
+ 	TSAN_OPTIONS='halt_on_error=1 suppressions=$(abspath tests/tsan.supp)' '$(SANITIZER_BUILD)/thread/surface-faults'
+ .PHONY: check-physical
+-check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
++check-physical:
+ 	@set -e; for client in $(PHYSICAL_CLIENTS); do \
+ 		env -u VK_ICD_FILENAMES DOE_C_TEST_ADAPTER=physical $(BUILD)/$$client; \
+ 	done
+@@ -751,3 +751,9 @@ $(BUILD)/readback-placement: tests/readback_placement.c tests/consumer.h tests/a
+ # Actual Windows SDK compile only; the test replaces typed calls, never _WIN32.
+ $(BUILD)/d3d12-buffer-placement.exe: tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c $(HEADERS) | $(BUILD)
+ 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c -o $@
++
++# Prerequisites expand immediately, so they are declared after the last
++# PHYSICAL_CLIENTS append; the recipe above already reads the full list.
++ifeq ($(SHARED_PLATFORM),Linux)
++check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
++endif
+diff --git a/runtime/c/native/src/backend_buffers.c b/runtime/c/native/src/backend_buffers.c
+index 7a7b13830..aed89371b 100644
+--- a/runtime/c/native/src/backend_buffers.c
++++ b/runtime/c/native/src/backend_buffers.c
+@@ -3,13 +3,16 @@
+ #include "d3d12_frontend.h"
+ 
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+-    bool direct_readback)
++    bool direct_readback, bool host_mapped)
+ {
+     native_backend *backend = &buffer->device->backend;
+     if (backend->kind == WGPUBackendType_Vulkan) {
++        /* Mappable buffers keep host-cached memory for host reads; the host only
++         * writes the others (queue writes, mapped-at-creation), so they prefer
++         * device-local memory for GPU access through the same coherent mapping. */
+         doe_vk_error error = {0};
+-        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context,
+-            size, usage, DOE_VK_MEMORY_HOST, &buffer->handle.vulkan, &error);
++        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context, size, usage,
++            host_mapped ? DOE_VK_MEMORY_HOST : DOE_VK_MEMORY_HOST_DEVICE_LOCAL, &buffer->handle.vulkan, &error);
+         return native_failure_vulkan(status, &error);
+     }
+     if (backend->kind == WGPUBackendType_Metal) {
+diff --git a/runtime/c/native/src/buffers.c b/runtime/c/native/src/buffers.c
+index 977a4c60a..5ebd92188 100644
+--- a/runtime/c/native/src/buffers.c
++++ b/runtime/c/native/src/buffers.c
+@@ -77,7 +77,8 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
+         NATIVE_UNSUPPORTED : native_device_result(device));
+     if (failure.status == NATIVE_OK)
+         failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage,
+-            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation);
++            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation,
++            (descriptor->usage & (WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite)) != 0);
+     doe_resource_status created = DOE_RESOURCE_OK;
+     if (failure.status == NATIVE_OK) {
+         created = doe_resource_buffer_create(&device->resources, &desc,
+diff --git a/runtime/c/native/src/internal.h b/runtime/c/native/src/internal.h
+index 79d47bcc8..ec9ac27aa 100644
+--- a/runtime/c/native/src/internal.h
++++ b/runtime/c/native/src/internal.h
+@@ -247,7 +247,7 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset,
+     const unsigned char **out);
+ native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+-    bool direct_readback);
++    bool direct_readback, bool host_mapped);
+ void native_buffer_close(native_buffer *buffer);
+ native_result native_device_result(native_device *device);
+ void native_pipeline_release(void *userdata, void *handle);

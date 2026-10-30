@@ -428,7 +428,7 @@ check-present-sanitizers:
 	  '$(SANITIZER_BUILD)/thread/surface-faults'
 	TSAN_OPTIONS='halt_on_error=1 suppressions=$(abspath tests/tsan.supp)' '$(SANITIZER_BUILD)/thread/surface-faults'
 .PHONY: check-physical
-check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
+check-physical:
 	@set -e; for client in $(PHYSICAL_CLIENTS); do \
 		env -u VK_ICD_FILENAMES DOE_C_TEST_ADAPTER=physical $(BUILD)/$$client; \
 	done
@@ -751,3 +751,9 @@ $(BUILD)/readback-placement: tests/readback_placement.c tests/consumer.h tests/a
 # Actual Windows SDK compile only; the test replaces typed calls, never _WIN32.
 $(BUILD)/d3d12-buffer-placement.exe: tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c $(HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/backend_status.c src/backend_failure.c -o $@
+
+# Prerequisites expand immediately, so they are declared after the last
+# PHYSICAL_CLIENTS append; the recipe above already reads the full list.
+ifeq ($(SHARED_PLATFORM),Linux)
+check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
+endif

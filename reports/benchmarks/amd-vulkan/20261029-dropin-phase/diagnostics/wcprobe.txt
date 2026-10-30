@@ -1,0 +1,16 @@
+type2 flags=0x6 1MiB alloc+map=18us memcpy=17.9(med 18.3) stream16=17.5 stream32=17.7 memset=18.3
+type2 flags=0x6 4MiB alloc+map=37us memcpy=71.1(med 71.9) stream16=71.3 stream32=71.6 memset=74.1
+type3 flags=0x7 1MiB alloc+map=118us memcpy=14.6(med 15.1) stream16=21.1 stream32=17.6 memset=27.1
+type3 flags=0x7 4MiB alloc+map=155us memcpy=68.8(med 65.8) stream16=77.0 stream32=71.8 memset=106.5
+type4 flags=0x7 1MiB alloc+map=189us memcpy=14.1(med 14.5) stream16=21.5 stream32=17.7 memset=25.8
+type4 flags=0x7 4MiB alloc+map=212us memcpy=55.2(med 54.3) stream16=72.3 stream32=71.1 memset=105.8
+type5 flags=0xe 1MiB alloc+map=90us memcpy=13.7(med 14.3) stream16=21.7 stream32=17.7 memset=26.5
+type5 flags=0xe 4MiB alloc+map=160us memcpy=60.0(med 69.4) stream16=73.8 stream32=70.6 memset=105.3
+type6 flags=0xe 1MiB alloc+map=91us memcpy=14.8(med 15.6) stream16=22.0 stream32=17.9 memset=27.2
+type6 flags=0xe 4MiB alloc+map=84us memcpy=69.8(med 70.1) stream16=77.7 stream32=72.2 memset=106.6
+type8 flags=0xc6 1MiB alloc+map=35us memcpy=17.9(med 18.5) stream16=17.7 stream32=17.7 memset=18.4
+type8 flags=0xc6 4MiB alloc+map=28us memcpy=72.6(med 89.4) stream16=72.4 stream32=72.4 memset=75.0
+type9 flags=0xc7 1MiB alloc+map=143us memcpy=14.0(med 14.5) stream16=21.3 stream32=17.7 memset=26.8
+type9 flags=0xc7 4MiB alloc+map=203us memcpy=65.1(med 65.3) stream16=74.9 stream32=70.6 memset=104.5
+type10 flags=0xce 1MiB alloc+map=59us memcpy=13.8(med 14.5) stream16=22.0 stream32=18.8 memset=28.0
+type10 flags=0xce 4MiB alloc+map=175us memcpy=57.7(med 67.8) stream16=73.3 stream32=71.7 memset=112.5

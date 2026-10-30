@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c3-m7b",
+  "frozenAtUtc": "2026-10-30T02:36:48Z",
+  "parentContract": "c1 frozen-contract.json workloads, inputs (c1/inputs), oracles, iterations, statistics; c3 harness revision (setup and teardown split)",
+  "mechanism": "M7b: M7 with 32-set blocks of 64 descriptors per type (larger layouts get an exactly sized block); M7 (on top of accepted M1+M3): dispatch descriptor sets are allocated from context-owned FREE_DESCRIPTOR_SET pool blocks (256 sets, 1024 descriptors per type) and freed at use release, instead of vkCreateDescriptorPool/vkDestroyDescriptorPool per dispatch use per submission; a new block is created only when every block refuses",
+  "diagnosis": "Doe records Vulkan work at wgpuQueueSubmit; each dispatch created and later destroyed its own descriptor pool, a driver object allocation per submit",
+  "providers": {
+    "doe-c-m3": "current main library (control)",
+    "doe-c-m7b": "M3 + M7b",
+    "dawn": "Dawn d04f88359",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "sampling": {
+    "pairs": 24,
+    "orders": "all 24 permutations of 4 providers",
+    "iterationsPerProcess": 32
+  },
+  "acceptance": {
+    "validity": "all processes ok and oracle-checked; A/A dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1",
+    "mechanismAccepted": "doe-c-m7b/doe-c-m3 warm.submit CI95 upper < 1.0 on the two compute workloads AND warm.operation CI95 upper <= 1.0 on all three AND no warm phase, first.operation or one-time phase with ratio CI95 lower > 1.05",
+    "scopedWarmOperationWin": "unchanged from parent contract, evaluated for doe-c-m7b/dawn"
+  },
+  "focusedCorrectness": "native check-physical 74, native software check 115 PASS (fault-sweep included), check-vulkan, Vulkan backend contracts identical to M3 (surface_features and feature_contract pre-existing segfaults); descriptor_reuse/indirect_lifetime/timestamp_lifetime mocks and program_prepare record fault updated to the block contract",
+  "predecessor": "M7 rejected: copy warm.operation 1.000 [0.986,1.029] (dispatch-free, rule requires CI upper <= 1.0) and image teardown 1.13 [1.08,1.20]; diagnostic split put the teardown excess in both object release and device destruction"
+}
