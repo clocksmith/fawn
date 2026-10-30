@@ -50,6 +50,7 @@ uint asuint(float v) { uint r; std::memcpy(&r, &v, 4); return r; }
 int asint(uint v) { int r; std::memcpy(&r, &v, 4); return r; }
 float asfloat(uint v) { float r; std::memcpy(&r, &v, 4); return r; }
 uint min(uint a, uint b) { return a < b ? a : b; } /* HLSL uint min intrinsic. */
+uint max(uint a, uint b) { return a > b ? a : b; } /* HLSL uint max intrinsic. */
 struct HostView {
     uint *words = nullptr;
     uint count = 0;

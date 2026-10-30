@@ -58,7 +58,7 @@ static void all_operations(const char *prefix, bool workgroup, bool signed_value
         /* Runtime-array atomics clamp the index to the last bound word; the
          * interlocked operation is unconditional. */
         has(text, "min(uint(");
-        has(text, "(doe_r0_bytes() >= 4u ? doe_r0_bytes() / 4u - 1u : 0u)");
+        has(text, "(max(doe_r0_bytes() / 4u, 1u) - 1u)");
         assert(!strstr(text, "- offset") && !strstr(text, "if ((uint(") && !strstr(text, " >= 0)"));
     }
     save(prefix, workgroup ? signed_value ? "signed_shared" : "unsigned_shared" :
@@ -91,7 +91,7 @@ void test_atomics(const char *prefix) {
         "let old=atomicAdd(&data.tail[atomicAdd(&effects,1u)],i32(atomicAdd(&effects,2u)));"
         "let result=atomicCompareExchangeWeak(&data.tail[0],old,5i);}");
     char *text = emit(fixture, 0);
-    has(text, "(doe_r0_bytes() >= 20u ? (doe_r0_bytes() - 16u) / 4u - 1u : 0u)");
+    has(text, "(max((doe_r0_bytes() - min(doe_r0_bytes(), 16u)) / 4u, 1u) - 1u)");
     /* Clamped offsets need no guard; sizes are table reads, not context fields. */
     assert(!strstr(text, "if (") && !strstr(text, "ctx.doe_bytes"));
     has(text, "uint doe_r0_bytes() { return doe_storage_sizes[0u][0u]; }");

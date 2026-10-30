@@ -107,11 +107,13 @@ static void last_index(HlslEmitter *e, const IrInstruction *ir, const AccessStep
         hlsl_error(e, "HLSL runtime array has no bounded resource root");
         return;
     }
+    /* max(count, 1) - 1 equals count - 1 for count >= 1 and 0 for count 0;
+     * min(bytes, tail) keeps the tail subtraction from wrapping. Same bound as
+     * the conditional form, which FXC compiles measurably slower. */
     if (r->tail_offset == 0u)
-        hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? doe_r%u_bytes() / %" PRIu64 "u - 1u : 0u)",
-            root, r->tail_stride, root, r->tail_stride);
-    else hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? (doe_r%u_bytes() - %" PRIu64 "u) / %" PRIu64 "u - 1u : 0u)",
-            root, r->tail_offset + r->tail_stride, root, r->tail_offset, r->tail_stride);
+        hlsl_format(e, "(max(doe_r%u_bytes() / %" PRIu64 "u, 1u) - 1u)", root, r->tail_stride);
+    else hlsl_format(e, "(max((doe_r%u_bytes() - min(doe_r%u_bytes(), %" PRIu64 "u)) / %" PRIu64 "u, 1u) - 1u)",
+            root, root, r->tail_offset, r->tail_stride);
 }
 /* Resource paths (ir non-NULL) clamp each index to its last valid element. */
 static void byte_offset(HlslEmitter *e, const HlslPath *path, const IrInstruction *ir) {

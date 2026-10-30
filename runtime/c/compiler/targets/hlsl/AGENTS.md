@@ -28,7 +28,9 @@ device/numeric execution remain separate evidence.
 - Storage and uniform buffer accesses, including runtime-array tails and atomics,
   clamp every index: `min(uint(index), last)`, where last is a fixed array's or
   vector's extent minus one, or for a runtime tail (bytes - tail) / stride - 1 when
-  at least one element is bound and 0 otherwise. A negative i32 index reinterprets
+  at least one element is bound and 0 otherwise, emitted branch-free as
+  `max((bytes - min(bytes, tail)) / stride, 1u) - 1u` (FXC compiles the equal
+  conditional form measurably slower). A negative i32 index reinterprets
   as a large uint and clamps to last. A clamped access lies inside the declared
   extent and runs unconditionally: no zero load, no dropped store, no access guard.
   A runtime tail stays inside its binding; a fixed path stays inside its type.

@@ -67,7 +67,7 @@ static void source_forms(void) {
         DXIL_STAGE_COMPUTE, NULL);
     accepted("runtime array write clamp", "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
         "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) gid:vec3u){output[gid.x]=7u;}",
-        DXIL_STAGE_COMPUTE, "(doe_r0_bytes() >= 4u ? doe_r0_bytes() / 4u - 1u : 0u)");
+        DXIL_STAGE_COMPUTE, "(max(doe_r0_bytes() / 4u, 1u) - 1u)");
     accepted("first entry", "@compute @workgroup_size(1) fn main(){}"
         "@vertex fn later()->@builtin(position) vec4f{return vec4f(0,0,0,1);}",
         DXIL_STAGE_COMPUTE, NULL);
