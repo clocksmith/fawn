@@ -214,3 +214,29 @@ native_failure native_d3d12_buffer_write(native_buffer *buffer, uint64_t offset,
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
 }
+
+native_failure native_d3d12_buffer_lend(native_buffer *buffer, uint64_t offset, size_t size,
+    const unsigned char **out)
+{
+#if defined(_WIN32)
+    native_d3d12_buffer *payload = buffer->handle.d3d12;
+    if (!payload || payload->memory != DOE_DX_READBACK || !out) return native_failure_status(NATIVE_UNSUPPORTED);
+    const void *bytes = NULL;
+    doe_dx_error error = {0};
+    doe_dx_status status = doe_dx_buffer_lend_read(payload->allocation, offset, size, &bytes, &error);
+    if (status == DOE_DX_OK) *out = bytes;
+    return native_failure_d3d12(status, &error);
+#else
+    (void)buffer; (void)offset; (void)size; (void)out;
+    return native_failure_status(NATIVE_UNAVAILABLE);
+#endif
+}
+
+void native_d3d12_buffer_return(native_buffer *buffer)
+{
+#if defined(_WIN32)
+    if (buffer->handle.d3d12) doe_dx_buffer_return_read(buffer->handle.d3d12->allocation);
+#else
+    (void)buffer;
+#endif
+}

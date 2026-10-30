@@ -17,7 +17,7 @@ struct doe_dx_buffer {
 };
 struct doe_dx_commands { doe_dx_buffer *source[8], *destination[8]; unsigned count; };
 typedef struct control {
-    unsigned allocations, copies, reads, live, readback_zeroes, async_submissions;
+    unsigned allocations, copies, reads, live, readback_zeroes, async_submissions, lends, returns;
     uint64_t copy_size, zero_size;
     doe_dx_memory destination;
     native_result submission;
@@ -86,6 +86,23 @@ doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
     /* A call marker, never an oracle for GPU-produced or initialized data. */
     memset(bytes, 0x5a, size);
     return DOE_DX_OK;
+}
+doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, size_t size,
+    const void **out, doe_dx_error *error)
+{
+    (void)error;
+    assert(buffer->memory == DOE_DX_READBACK && offset + size <= buffer->size);
+    if (buffer->pending) return DOE_DX_BUSY;
+    if (!buffer->initialized) return DOE_DX_UNINITIALIZED;
+    static unsigned char lent[4096];
+    *out = lent + offset;
+    seen.lends++;
+    return DOE_DX_OK;
+}
+void doe_dx_buffer_return_read(doe_dx_buffer *buffer)
+{
+    (void)buffer;
+    seen.returns++;
 }
 native_failure native_command_create(const native_backend *backend,
     native_command_handle *out)
@@ -178,6 +195,11 @@ int main(void)
     assert(buffer.handle.d3d12->allocation_size == 16 && seen.zero_size == 16);
     assert(seen.readback_zeroes == 1 && !seen.copies && !seen.async_submissions && seen.live == 1);
     unsigned allocations = seen.allocations, copies = seen.copies;
+    /* Read mappings borrow the READBACK bytes; return is a separate call. */
+    const unsigned char *lent = NULL;
+    assert(native_d3d12_buffer_lend(&buffer, 4, 8, &lent).status == NATIVE_OK && lent && seen.lends == 1);
+    native_d3d12_buffer_return(&buffer);
+    assert(seen.returns == 1 && seen.copies == copies && seen.allocations == allocations);
     unsigned char bytes[16] = {0};
     assert(native_d3d12_buffer_read(&buffer, 0, bytes, sizeof(bytes)).status == NATIVE_OK);
     assert(bytes[0] == 0x5a && seen.allocations == allocations && seen.copies == copies);
@@ -256,6 +278,6 @@ int main(void)
     retire_pending(false);
     native_d3d12_buffer_close(&buffer);
     assert(!seen.live);
-    puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
+    puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map and lent read range, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
     return 0;
 }

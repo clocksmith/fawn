@@ -50,9 +50,23 @@ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *
     return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
+bool native_buffer_host_lendable(const native_buffer *buffer)
+{
+    if (buffer->device->backend.kind == WGPUBackendType_Vulkan) return true;
+    return buffer->device->backend.kind == WGPUBackendType_D3D12 && buffer->handle.d3d12 &&
+        buffer->handle.d3d12->memory == DOE_DX_READBACK;
+}
+
+void native_buffer_host_return(native_buffer *buffer)
+{
+    if (buffer->device->backend.kind == WGPUBackendType_D3D12) native_d3d12_buffer_return(buffer);
+}
+
 native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
     const unsigned char **out)
 {
+    if (buffer->device->backend.kind == WGPUBackendType_D3D12)
+        return native_d3d12_buffer_lend(buffer, offset, size, out);
     if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
     const void *range = NULL;
     doe_vk_status status = doe_vk_buffer_host_range(buffer->handle.vulkan, offset, size, &range);

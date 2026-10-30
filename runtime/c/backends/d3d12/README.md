@@ -72,6 +72,11 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   use. Overflow creates another heap that releases once empty. Sampler heaps and
   RTV/DSV/clear views keep their per-use owners. `test_windows_descriptor_ring.c`
   is the official-SDK CPU control.
+- Read mappings of READBACK buffers (`doe_dx_buffer_lend_read`) lend the mapped
+  allocation bytes to the caller instead of copying them into a host shadow. The
+  Map stays open until `doe_dx_buffer_return_read`; while lent, GPU recording, host
+  reads/writes and another lend reject with INVALID_STATE. The public frontend
+  returns the range on unmap, destroy, release or an undelivered map.
 - Buffers whose queried allocation is at most 1 MiB are placed resources in
   context-owned 4 MiB `ALLOW_ONLY_BUFFERS` heaps, one memory class per heap and
   64 KiB slots; larger buffers stay committed. Placement does not change any

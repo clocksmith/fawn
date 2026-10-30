@@ -251,6 +251,10 @@ void native_buffer_release(void *userdata, void *handle);
 native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
 /* Backend-owned persistent host bytes for a read mapping; NATIVE_UNSUPPORTED
  * where the backend has no such range and the mapping must copy instead. */
+/* True when read mappings lend backend bytes (Vulkan; D3D12 READBACK memory). */
+bool native_buffer_host_lendable(const native_buffer *buffer);
+/* Ends a lent read mapping; idempotent and a no-op where nothing is lent. */
+void native_buffer_host_return(native_buffer *buffer);
 native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
     const unsigned char **out);
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);

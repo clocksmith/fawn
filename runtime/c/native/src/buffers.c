@@ -10,6 +10,7 @@ void native_buffer_release(void *userdata, void *handle)
     native_buffer *payload = handle;
     free(payload->mapping);
     native_lock(payload->device);
+    native_buffer_host_return(payload);
     native_buffer_close(payload);
     native_unlock(payload->device);
     free(payload);
@@ -149,6 +150,7 @@ void wgpuBufferDestroy(WGPUBuffer handle)
     native_lock(device);
     native_buffer *payload = doe_resource_buffer_native(buffer);
     doe_resource_buffer_destroy(buffer);
+    native_buffer_host_return(payload);
     free(payload->mapping);
     payload->mapping = NULL;
     native_unlock(device);
@@ -167,6 +169,7 @@ void wgpuBufferUnmap(WGPUBuffer handle)
         doe_resource_buffer_map_span(buffer, &offset, &size) == DOE_RESOURCE_OK)
         failure = native_buffer_write(payload, offset, payload->mapping, (size_t)size);
     doe_resource_status resource_status = doe_resource_buffer_unmap(buffer);
+    native_buffer_host_return(payload);
     free(payload->mapping);
     payload->mapping = NULL;
     native_unlock(device);
@@ -268,7 +271,11 @@ static void deliver_map(void *context)
             native_buffer *payload = doe_resource_buffer_native(value.buffer);
             payload->mapping = value.bytes;
             value.bytes = NULL;
-        } else if (success) value.status = WGPUMapAsyncStatus_Aborted;
+        } else {
+            /* Not published: end any lent range now (idempotent if destroy did). */
+            if (value.direct) native_buffer_host_return(doe_resource_buffer_native(value.buffer));
+            if (success) value.status = WGPUMapAsyncStatus_Aborted;
+        }
     }
     native_unlock(device);
     free(value.bytes);
@@ -312,7 +319,7 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
         /* Read mappings expose only const ranges and mapped buffers are refused
          * by submission and queue writes, so a backend's persistent coherent
          * bytes can be lent directly instead of copied into a host shadow. */
-        const bool direct = mode == WGPUMapMode_Read && device->backend.kind == WGPUBackendType_Vulkan;
+        const bool direct = mode == WGPUMapMode_Read && native_buffer_host_lendable(payload);
         delivery.bytes = direct ? NULL : malloc(delivery.size ? delivery.size : 1);
         if (direct || delivery.bytes) {
             failure = native_settle_for_buffer(device, payload);
@@ -343,6 +350,7 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
         native_lock(device);
         if (delivery.began)
             (void)doe_resource_buffer_map_complete(buffer, delivery.generation, false, NULL);
+        if (delivery.direct) native_buffer_host_return(doe_resource_buffer_native(buffer));
         native_unlock(device);
         free(delivery.bytes);
         /* Admission did not transfer a callback obligation. The buffer lease

@@ -163,6 +163,13 @@ doe_dx_status doe_dx_buffer_write(doe_dx_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error);
 doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
+/* Lends the READBACK allocation's mapped bytes for a read mapping, under the same
+ * admission as read (initialized, no recording or pending use, context live).
+ * While lent, GPU recording, host reads/writes and a second lend reject with
+ * INVALID_STATE. Return unmaps; it is idempotent and release returns implicitly. */
+doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, size_t size,
+    const void **out, doe_dx_error *error);
+void doe_dx_buffer_return_read(doe_dx_buffer *buffer);
 
 enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16 };
 typedef enum doe_dx_binding_access { DOE_DX_READ_ONLY, DOE_DX_READ_WRITE } doe_dx_binding_access;

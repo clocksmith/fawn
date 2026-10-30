@@ -198,6 +198,28 @@ doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     return doe_dx_fail(DOE_DX_OK, 0, "native.buffer.write", error);
 }
 
+/* Map stays open until unmap_read: the read range tells the runtime which bytes
+ * the CPU reads; Unmap writes nothing. Completion was established by the caller. */
+doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offset, size_t size,
+    const void **out, doe_dx_error *error) {
+    void *mapped = NULL;
+    D3D12_RANGE read = {(SIZE_T)offset, (SIZE_T)offset + size};
+    HRESULT result = ID3D12Resource_Map(buffer->resource, 0, &read, &mapped);
+    if (FAILED(result)) return doe_dx_hresult(result, "ID3D12Resource.Map.lend", error);
+    if (!mapped) {
+        const D3D12_RANGE none = {0, 0};
+        ID3D12Resource_Unmap(buffer->resource, 0, &none);
+        return doe_dx_fail(DOE_DX_NATIVE_FAILURE, (int32_t)E_FAIL, "native.buffer.lend.pointer", error);
+    }
+    *out = (const unsigned char *)mapped + (size_t)offset;
+    return doe_dx_fail(DOE_DX_OK, 0, "native.buffer.lend", error);
+}
+
+void doe_dx_native_unmap_read(doe_dx_native_buffer *buffer) {
+    const D3D12_RANGE written = {0, 0};
+    ID3D12Resource_Unmap(buffer->resource, 0, &written);
+}
+
 doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error) {
     void *mapped = NULL;
