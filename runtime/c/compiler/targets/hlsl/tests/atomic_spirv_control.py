@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: MIT
 """Fresh emitted HLSL -> official DXC cs_6_0 SPIR-V -> actual CPU Vulkan.
 
-This checks target semantics and byte guards on software Vulkan, not D3D12,
-Windows SDK/driver behavior, physical hardware, or cross-device qualification.
+This checks target semantics (clamped storage indices, guarded workgroup
+indices) on software Vulkan, not D3D12, Windows SDK/driver behavior, physical
+hardware, or cross-device qualification. The runtime size table (b2, space7)
+is remapped to set 0, binding 2 because the explicit Vulkan consumer admits
+four descriptor sets; the consumer fills it from the actual binding ranges.
 """
 import os
 from pathlib import Path
@@ -31,7 +34,8 @@ def main():
         spirv = out / ('atomic_' + case + '.spv')
         subprocess.run([str(dxc), '-T', 'cs_6_0', '-E', 'main', '-Fo', str(source) + '.dxil', str(source)], check=True)
         subprocess.run([str(dxc), '-T', 'cs_6_0', '-E', 'main', '-spirv', '-fspv-target-env=vulkan1.1',
-                        '-Fo', str(spirv), str(source)], check=True)
+                        '-fvk-bind-register', 'u0', '0', '0', '0', '-fvk-bind-register', 'u1', '0', '1', '0',
+                        '-fvk-bind-register', 'b2', '7', '2', '0', '-Fo', str(spirv), str(source)], check=True)
         subprocess.run(['spirv-val', '--target-env', 'vulkan1.1', str(spirv)], check=True)
         subprocess.run([str(consumer), str(spirv), case], env=environment, check=True)
 

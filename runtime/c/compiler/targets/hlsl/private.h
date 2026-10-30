@@ -16,7 +16,7 @@ typedef struct {
     uint32_t selected_entry, entry, function_end, offset;
     unsigned indent;
     bool failed, needs_dispatch, uses_subgroups, uses_native16, uses_wave_counter, uses_array_views, uses_raw_storage;
-    bool uses_draw_offsets;
+    bool uses_draw_offsets, uses_storage_sizes;
     uint32_t shader_model;
     DoeHlslMetadata metadata;
 } HlslEmitter;
@@ -47,9 +47,9 @@ void hlsl_composite(HlslEmitter *, const IrInstruction *);
 void hlsl_array_length(HlslEmitter *, const IrInstruction *);
 void hlsl_access(HlslEmitter *, const IrInstruction *);
 void hlsl_private_initialization(HlslEmitter *);
-/* Storage-buffer byte sizes are queried once per invocation into the context. */
-bool hlsl_storage_size_field(HlslEmitter *, uint32_t resource);
-void hlsl_storage_size_initialization(HlslEmitter *);
+/* Storage-buffer byte sizes come from the runtime-supplied DoeStorageSizes
+ * table; true when the selected entry reads this resource's size. */
+bool hlsl_storage_size_used(HlslEmitter *, uint32_t resource);
 void hlsl_functions(HlslEmitter *);
 void hlsl_entry_name(HlslEmitter *, uint32_t);
 bool hlsl_graphics_admit(HlslEmitter *);

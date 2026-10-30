@@ -10,11 +10,12 @@ int main() {
         for (unsigned c = 0; c < 3; ++c) r3_data[r][c] = asuint(padded_values[r * 3 + c]);
         r3_data[r][3] = 0x6a6a6a6au;
     }
-    r0 = output; r0_count = 17;
-    r2 = matrices; r2_count = 6;
-    r4 = padded; r4_count = 8;
+    BIND(r0, 0, output, 17);
+    BIND(r2, 2, matrices, 6);
+    BIND(r4, 4, padded, 8);
     matrix_control();
-    const float expected[] = {22, 28, 8, 18, 28, 35, 44, 56, -1, 0, 0, 1, 9, 12, 4, 6, 15};
+    /* matrices[2] clamps to the one bound matrix, written just before: output[9] = 1. */
+    const float expected[] = {22, 28, 8, 18, 28, 35, 44, 56, -1, 1, 0, 1, 9, 12, 4, 6, 15};
     for (unsigned i = 0; i < 17; ++i) assert(asfloat(output[i]) == expected[i]);
     for (unsigned i = 0; i < 6; ++i) assert(asfloat(matrices[i]) == float(i + 1));
     assert(asfloat(output[17]) == -999.0f && asfloat(matrices[6]) == -777.0f);
@@ -23,5 +24,6 @@ int main() {
         for (unsigned c = 0; c < 3; ++c) assert(asfloat(padded[r * 4 + c]) == padded_values[r * 3 + c]);
         assert(padded[r * 4 + 3] == 0x5a5a5a5au && r3_data[r][3] == 0x6a6a6a6au);
     }
-    std::puts("HLSL matrix host control: reversed mul, transpose, determinant, OOB zero and stride/padding sentinels.");
+    assert(r0.beyond == 0 && r2.beyond == 0 && r4.beyond == 0);
+    std::puts("HLSL matrix host control: reversed mul, transpose, determinant, clamped storage index and stride/padding sentinels.");
 }

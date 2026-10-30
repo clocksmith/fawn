@@ -73,27 +73,48 @@ static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path
             hlsl_error(e, "Hlsl dynamic access kind is unsupported");
             return;
         }
+        if (runtime) {
+            (void)ir;
+            hlsl_error(e, "HLSL runtime array has no bounded resource root");
+            return;
+        }
         hlsl_text(e, "(uint(");
         hlsl_value(e, step->index);
-        hlsl_text(e, ") < ");
-        if (runtime) {
-            const ResourceRecord *r = resource_root(e, ir);
-            if (r == NULL || r->tail_stride == 0u || r->tail_stride > UINT32_MAX ||
-                r->tail_offset > UINT32_MAX) {
-                hlsl_error(e, "HLSL runtime array has no bounded resource root");
-                return;
-            }
-            /* A zero tail offset makes the guard bytes / stride exactly. */
-            if (r->tail_offset == 0u)
-                hlsl_format(e, "ctx.doe_bytes%u / %" PRIu64 "u", ir->operands.access.root, r->tail_stride);
-            else hlsl_format(e, "(ctx.doe_bytes%u >= %" PRIu64 "u ? (ctx.doe_bytes%u - %" PRIu64 "u) / %" PRIu64 "u : 0u)",
-                        ir->operands.access.root, r->tail_offset, ir->operands.access.root,
-                        r->tail_offset, r->tail_stride);
-        } else hlsl_format(e, "%uu", extent);
-        hlsl_text(e, ")");
+        hlsl_format(e, ") < %uu)", extent);
     }
 }
-static void byte_offset(HlslEmitter *e, const HlslPath *path) {
+/* Largest in-range index of one indexed step of a resource path. A runtime
+ * tail's count is (bytes - tail_offset) / stride from the runtime-supplied
+ * binding size; a count of zero still yields index zero, whose element begins
+ * at or beyond the bound range, where D3D12 view bounds read zero and drop
+ * writes. Fixed arrays and vectors use their static extent. */
+static void last_index(HlslEmitter *e, const IrInstruction *ir, const AccessStep *step) {
+    uint32_t extent;
+    bool runtime;
+    if (!target_index_extent(e->module, step->input_type, &extent, &runtime)) {
+        hlsl_error(e, "HLSL indexed access has no typed extent");
+        return;
+    }
+    if (!runtime) {
+        if (extent == 0u) hlsl_error(e, "HLSL indexed access has an empty extent");
+        hlsl_format(e, "%uu", extent - 1u);
+        return;
+    }
+    const uint32_t root = ir->operands.access.root;
+    const ResourceRecord *r = resource_root(e, ir);
+    if (r == NULL || r->tail_stride == 0u || r->tail_stride > UINT32_MAX ||
+        r->tail_offset > UINT32_MAX - r->tail_stride) {
+        hlsl_error(e, "HLSL runtime array has no bounded resource root");
+        return;
+    }
+    if (r->tail_offset == 0u)
+        hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? doe_r%u_bytes() / %" PRIu64 "u - 1u : 0u)",
+            root, r->tail_stride, root, r->tail_stride);
+    else hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? (doe_r%u_bytes() - %" PRIu64 "u) / %" PRIu64 "u - 1u : 0u)",
+            root, r->tail_offset + r->tail_stride, root, r->tail_offset, r->tail_stride);
+}
+/* Resource paths (ir non-NULL) clamp each index to its last valid element. */
+static void byte_offset(HlslEmitter *e, const HlslPath *path, const IrInstruction *ir) {
     hlsl_text(e, "0u");
     for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
         const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
@@ -110,9 +131,17 @@ static void byte_offset(HlslEmitter *e, const HlslPath *path) {
             hlsl_format(e, " + %uu", step->index * (uint32_t)type_size(e->module, input->element));
         } else {
             const uint64_t stride = input->kind == TYPE_VECTOR ? type_size(e->module, input->element) : input->state.layout.stride;
-            hlsl_text(e, " + uint(");
-            hlsl_value(e, step->index);
-            hlsl_format(e, ") * %" PRIu64 "u", stride);
+            if (ir != NULL) {
+                hlsl_text(e, " + min(uint(");
+                hlsl_value(e, step->index);
+                hlsl_text(e, "), ");
+                last_index(e, ir, step);
+                hlsl_format(e, ") * %" PRIu64 "u", stride);
+            } else {
+                hlsl_text(e, " + uint(");
+                hlsl_value(e, step->index);
+                hlsl_format(e, ") * %" PRIu64 "u", stride);
+            }
         }
     }
 }
@@ -149,7 +178,8 @@ static void object_path(HlslEmitter *e, const IrInstruction *ir, const HlslPath 
         }
     }
 }
-/* The enclosing access guard proves bounds before this lvalue is formed.
+/* Resource offsets are clamped in range; other roots' enclosing guard proves
+ * bounds before this lvalue is formed.
  * Storage and groupshared atomic<i32/u32> are native uint words. No target
  * pointer is fabricated, and ordered operands already name immutable IR values. */
 static void atomic_word(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path) {
@@ -279,36 +309,31 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_error(e, "HLSL resource access is absent from the selected static entry closure");
         return;
     }
-    if (!store) {
+    /* Storage and uniform resources clamp every index to its last valid
+     * element (WGSL robustness permits any in-bounds element), so the access
+     * executes unconditionally inside the declared extent: a runtime tail is
+     * bounded by its binding's size, a fixed path by its type, whose size the
+     * binding covers. Other roots keep one guard per access: invalid loads stay
+     * zero and invalid stores drop. */
+    bool runtime = false;
+    const bool guarded = resource == NULL && path_guarded(e, &path, &runtime);
+    if (guarded && !store) {
         hlsl_indent(e);
         hlsl_value(e, ir->result);
         hlsl_text(e, " = ");
         hlsl_zero(e, ir->type);
         hlsl_text(e, ";\n");
     }
-    /* One guard per access. A storage path with a runtime-array index is bounded
-     * by idx < (bytes - tail_offset) / stride: the accessed bytes lie inside that
-     * element (inner offset + size <= stride), so offset + size <= bytes follows
-     * and the former byte check is implied. Fixed-size storage paths keep the byte
-     * check against the actual bound size. Invalid loads stay zero; stores drop. */
-    bool runtime = false;
-    const bool indexed = path_guarded(e, &path, &runtime);
-    const bool byte_check = resource != NULL && resource->kind == DOE_COMPILER_STORAGE_BUFFER && !runtime;
-    const uint64_t access_size = atomic ? UINT64_C(4) : type_size(e->module, ir->type);
     if (resource != NULL) {
         hlsl_indent(e);
         hlsl_text(e, "uint offset = ");
-        byte_offset(e, &path);
+        byte_offset(e, &path, ir);
         hlsl_text(e, ";\n");
     }
-    const bool guarded = indexed || byte_check;
     if (guarded) {
         hlsl_indent(e);
         hlsl_text(e, "if (");
         bounds(e, ir, &path);
-        if (byte_check)
-            hlsl_format(e, "%soffset <= ctx.doe_bytes%u && %" PRIu64 "u <= ctx.doe_bytes%u - offset",
-                indexed ? " && " : "", ir->operands.access.root, access_size, ir->operands.access.root);
         hlsl_text(e, ") {\n");
         ++e->indent;
     }
@@ -332,7 +357,7 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         if (store) { hlsl_error(e,"immediate data cannot be written"); return; }
         hlsl_value(e,ir->result);
         hlsl_format(e," = doe_r%u_load%u(",e->module->resource_count + ir->operands.access.root,ir->type);
-        byte_offset(e,&path);
+        byte_offset(e,&path,NULL);
         hlsl_text(e,");\n");
     } else if (atomic) atomic_operation(e, ir, &path, scalar);
     else {
@@ -358,6 +383,39 @@ void hlsl_array_length(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_error(e, "HLSL arrayLength requires a bounded storage runtime array");
         return;
     }
-    hlsl_format(e, "(ctx.doe_bytes%u >= %" PRIu64 "u ? (ctx.doe_bytes%u - %" PRIu64
+    if (r->tail_offset == 0u)
+        hlsl_format(e, "(doe_r%u_bytes() / %" PRIu64 "u)", index, r->tail_stride);
+    else hlsl_format(e, "(doe_r%u_bytes() >= %" PRIu64 "u ? (doe_r%u_bytes() - %" PRIu64
         "u) / %" PRIu64 "u : 0u)", index, r->tail_offset, index, r->tail_offset, r->tail_stride);
+}
+/* True when a reachable function of the selected entry reads this storage
+ * buffer's binding size: a runtime-tail index or arrayLength. */
+bool hlsl_storage_size_used(HlslEmitter *e, uint32_t resource) {
+    const CompilerWorkspace *c = e->module;
+    if (resource >= c->resource_count || c->resources[resource].kind != DOE_COMPILER_STORAGE_BUFFER ||
+        !hlsl_entry_resource(e, resource)) return false;
+    for (uint32_t f = 0u; f < c->function_count && !e->failed; ++f) {
+        if (!hlsl_function_used(e, f)) continue;
+        const FunctionRecord *function = &c->functions[f];
+        const char *error = NULL;
+        if (function->instruction_end > c->instruction_count || function->instruction_start > function->instruction_end ||
+            !target_spend_count(&e->traversal_left, function->instruction_end - function->instruction_start, &error)) {
+            hlsl_error(e, error != NULL ? error : "HLSL function instruction range is invalid");
+            return false;
+        }
+        for (uint32_t i = function->instruction_start; i < function->instruction_end; ++i) {
+            const IrInstruction *ir = &c->instructions[i];
+            if (ir->opcode == IR_ARRAY_LENGTH) {
+                if (ir->operands.scalar.binding == resource) return true;
+                continue;
+            }
+            if ((ir->opcode != IR_ACCESS_LOAD && ir->opcode != IR_ACCESS_STORE && !atomic_opcode(ir->opcode)) ||
+                ir->operands.access.category != ROOT_RESOURCE || ir->operands.access.root != resource) continue;
+            HlslPath path = {0};
+            bool runtime = false;
+            if (!collect_path(e, ir->operands.access.path, &path)) return false;
+            if (path_guarded(e, &path, &runtime) && runtime) return true;
+        }
+    }
+    return false;
 }

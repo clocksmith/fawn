@@ -42,7 +42,7 @@ static void all_operations(const char *prefix, bool workgroup, bool signed_value
     has(text, "InterlockedAdd(");
     has(text, "InterlockedExchange(");
     has(text, "InterlockedCompareExchange(");
-    has(text, " >= 0)");
+    if (workgroup) has(text, " >= 0)"); /* Workgroup memory keeps its guard. */
     if (signed_value) {
         has(text, "asint(seen) < asint(");
         has(text, "asint(seen) > asint(");
@@ -55,10 +55,11 @@ static void all_operations(const char *prefix, bool workgroup, bool signed_value
         has(text, "groupshared DoeT");
         has(text, "GroupMemoryBarrierWithGroupSync()");
     } else {
-        /* Runtime-array atomics: one index guard against the hoisted size implies
-         * the word range, so no second byte guard and no constant-true wrapper. */
-        has(text, "ctx.doe_bytes0 / 4u)");
-        assert(!strstr(text, "- offset") && !strstr(text, "if (true"));
+        /* Runtime-array atomics clamp the index to the last bound word; the
+         * interlocked operation is unconditional. */
+        has(text, "min(uint(");
+        has(text, "(doe_r0_bytes() >= 4u ? doe_r0_bytes() / 4u - 1u : 0u)");
+        assert(!strstr(text, "- offset") && !strstr(text, "if ((uint(") && !strstr(text, " >= 0)"));
     }
     save(prefix, workgroup ? signed_value ? "signed_shared" : "unsigned_shared" :
         signed_value ? "signed_storage" : "unsigned_storage", text);
@@ -90,12 +91,13 @@ void test_atomics(const char *prefix) {
         "let old=atomicAdd(&data.tail[atomicAdd(&effects,1u)],i32(atomicAdd(&effects,2u)));"
         "let result=atomicCompareExchangeWeak(&data.tail[0],old,5i);}");
     char *text = emit(fixture, 0);
-    has(text, "ctx.doe_bytes0 >= 16u ? (ctx.doe_bytes0 - 16u) / 4u : 0u");
-    /* The runtime-tail index guard implies the byte range: no second check. */
-    assert(!strstr(text, "<= ctx.doe_bytes0 - offset"));
-    has(text, "ctx.doe_bytes0 = doe_r0_bytes();");
+    has(text, "(doe_r0_bytes() >= 20u ? (doe_r0_bytes() - 16u) / 4u - 1u : 0u)");
+    /* Clamped offsets need no guard; sizes are table reads, not context fields. */
+    assert(!strstr(text, "if (") && !strstr(text, "ctx.doe_bytes"));
+    has(text, "uint doe_r0_bytes() { return doe_storage_sizes[0u][0u]; }");
+    assert(!strstr(text, "doe_r1_bytes")); /* The fixed atomic needs no size. */
     save(prefix, "effects", text);
     free(text);
     release(fixture);
-    puts("HLSL atomics: all11 signed/unsigned storage/shared mappings, canonical bounds, compare-exchange results and failed publication controls passed.");
+    puts("HLSL atomics: all11 signed/unsigned storage/shared mappings, clamped storage/guarded shared bounds, compare-exchange results and failed publication controls passed.");
 }

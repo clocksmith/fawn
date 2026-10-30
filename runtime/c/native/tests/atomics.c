@@ -36,7 +36,10 @@ int main(void)
     wgpuBufferRelease(results);
     submit(&s,encoder);
     const uint32_t *words = map(&s,readback,112);
-    for (size_t i = 0; i < 4; ++i) assert(words[i] == 4);
+    /* Storage indices clamp: lanes -1 and 4 act on cells[3], so each of the four
+     * workgroups adds 1 to cells[0..2] and 3 to cells[3]. Workgroup indices keep
+     * their guard, so results below still see dropped out-of-range operations. */
+    for (size_t i = 0; i < 4; ++i) assert(words[i] == (i == 3 ? 12u : 4u));
     for (size_t i = 0; i < 12; ++i) {
         assert(words[4+i] == 0);
         assert(words[16+i] == (i%6 > 0 && i%6 < 5 ? 17u : 0u));

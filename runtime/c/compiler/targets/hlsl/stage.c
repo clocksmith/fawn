@@ -217,7 +217,6 @@ static void entry_wrapper(HlslEmitter *e) {
     e->indent = 1u;
     hlsl_line(e, "DoeContext ctx = (DoeContext)0;");
     hlsl_private_initialization(e);
-    hlsl_storage_size_initialization(e);
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i) {
         if ((mask & (1u << i)) == 0u) continue;
         hlsl_indent(e);
@@ -257,19 +256,6 @@ static void entry_wrapper(HlslEmitter *e) {
     hlsl_format(e, "doe_fn%u(ctx);\n", entry->function);
     e->indent = 0u;
     hlsl_text(e, "}\n");
-}
-bool hlsl_storage_size_field(HlslEmitter *e, uint32_t resource) {
-    const CompilerWorkspace *c = e->module;
-    return resource < c->resource_count && hlsl_entry_resource(e, resource) &&
-        !type_handle(c, c->resources[resource].type) &&
-        c->resources[resource].kind == DOE_COMPILER_STORAGE_BUFFER;
-}
-void hlsl_storage_size_initialization(HlslEmitter *e) {
-    for (uint32_t i = 0u; i < e->module->resource_count && !e->failed; ++i) {
-        if (!hlsl_storage_size_field(e, i)) continue;
-        hlsl_indent(e);
-        hlsl_format(e, "ctx.doe_bytes%u = doe_r%u_bytes();\n", i, i);
-    }
 }
 /* Entry inputs a context must carry: those the wrapper sources plus any input
  * a reachable function reads. Unread builtin fields are not declared. */
@@ -321,11 +307,6 @@ void hlsl_functions(HlslEmitter *e) {
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_ID; ++i)
         if ((inputs & (1u << i)) != 0u) {
             hlsl_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
-            ++fields;
-        }
-    for (uint32_t i = 0u; i < c->resource_count; ++i)
-        if (hlsl_storage_size_field(e, i)) {
-            hlsl_format(e, "    uint doe_bytes%u;\n", i);
             ++fields;
         }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {

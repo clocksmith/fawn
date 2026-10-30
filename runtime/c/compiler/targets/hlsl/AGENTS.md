@@ -25,11 +25,27 @@ device/numeric execution remain separate evidence.
 - Structured buffers are uint words with exactly four-byte descriptor stride.
   Use the shared byte layouts for offsets, array strides and member transfers;
   HLSL struct or cbuffer packing is not WGSL layout. Never copy resource padding.
-- Guard signed indices and each indexed subobject before forming offsets or
-  accesses. Loads initialize zero; invalid stores discard. One guard per access:
-  a runtime-tail bound already implies the byte range; keep the byte check only
-  for fixed-size storage paths, and query each view size once per invocation. Preserve IR value
-  snapshots, source-order call arguments, short circuits and continuing paths.
+- Storage and uniform buffer accesses, including runtime-array tails and atomics,
+  clamp every index: `min(uint(index), last)`, where last is a fixed array's or
+  vector's extent minus one, or for a runtime tail (bytes - tail) / stride - 1 when
+  at least one element is bound and 0 otherwise. A negative i32 index reinterprets
+  as a large uint and clamps to last. A clamped access lies inside the declared
+  extent and runs unconditionally: no zero load, no dropped store, no access guard.
+  A runtime tail stays inside its binding; a fixed path stays inside its type.
+  Admitted bindings cover the reflected minimum (the fixed size, plus one tail
+  element), so both hold for every validated binding. A zero-element tail
+  (possible only below that minimum) clamps to element 0, which begins
+  at or past the binding end; D3D12 buffer-view bounds read zero and drop writes
+  there, so no memory outside the binding is touched. WGSL robustness permits
+  any in-bounds element.
+- Storage byte sizes come only from the runtime-supplied DoeStorageSizes table
+  (b2, space7; one uint per canonical resource, the bound range bytes), declared
+  only when the entry reads a runtime-tail size or arrayLength (or binds raw
+  storage), with entry flag STORAGE_SIZES. Never query GetDimensions on buffers.
+- Workgroup, private, function and value roots keep one guard per access: guard
+  signed indices and each indexed subobject before forming the access; loads
+  initialize zero and invalid stores discard. Preserve IR value snapshots,
+  source-order call arguments, short circuits and continuing paths.
 - Texture handles preserve typed declaration/formal identity. Query a valid base
   mip first, then guard the requested mip before its dimension query and every
   coordinate/layer/sample before a texel operation. Sampling array layers clamp.
@@ -66,12 +82,13 @@ componentwise scalar products do not. Keep indexing, constant DAG children and
 byte-layout column stride on that one representation. The shared matrix fixture
 and wrong-order control protect against accidental target-convention mixing.
 
-Atomic IR uses the same access-path bounds/byte guard as ordinary memory. Never
-form the destination lvalue before every index and the four-byte extent pass.
+Atomic IR uses the same access-path policy as ordinary memory: storage atomics
+clamp their indices; workgroup atomics form the destination lvalue only after
+every index guard passes.
 Storage and workgroup atomic<i32/u32> use native uint words; reinterpret signed
 results and implement signed min/max with a retrying signed-comparison CAS loop,
-not unsigned native min/max. Compare-exchange initializes both old_value and
-exchanged before guards; strong exchange is a permitted weak implementation.
+not unsigned native min/max. Compare-exchange assigns both old_value and
+exchanged (before any workgroup guard); strong exchange is a permitted weak implementation.
 Ordered typed operand IDs are snapshots, never replayed source expressions.
 Interlocked operations preserve WGSL relaxed ordering; do not infer a memory
 fence or insert unrelated synchronization. Keep group initialization/barriers

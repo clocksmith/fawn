@@ -6,7 +6,7 @@ Parent: [Experimental C migration](../CATSCAN.md)
 Translate admitted WGSL into source-linked artifacts.
 
 ## Authority
-Own parsing, validation, typed IR, robustness, emission, reflection and diagnostics;
+Own parsing, validation, typed IR, robustness (HLSL clamps), emission, reflection and diagnostics;
 exclude execution and application acceptance.
 
 ## Scope

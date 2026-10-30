@@ -89,12 +89,15 @@ int main(int argc, char **argv) {
         assert(storage->bindings[i].shader_register == slots[i] && storage->bindings[i].register_space == spaces[i]);
         assert(storage->bindings[i].stride == (i < 2 ? 4u : 0u));
     }
-    assert(!storage->target_entries[0].flags && storage->target_entries[0].dispatch_register == UINT32_MAX);
+    /* A runtime-array index clamps against the runtime size table. */
+    assert(storage->target_entries[0].flags == DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES &&
+        storage->target_entries[0].dispatch_register == UINT32_MAX);
     assert(storage->target_entries[0].dispatch_space == UINT32_MAX && !storage->target_entries[0].dispatch_bytes);
     assert(storage->target_entries[1].entry_index == 1 && !strcmp(storage->target_entries[1].name, "selected"));
     /* Logical 2D image views use one-layer native arrays, independently of
      * the subgroup requirement. Keep this an exact requirement-set check. */
-    const uint32_t selected_flags = DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS;
+    const uint32_t selected_flags = DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS |
+        DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES;
     assert(storage->target_entries[1].flags == selected_flags);
     assert(storage->target_entries[1].dispatch_register == 0 && storage->target_entries[1].dispatch_space == 7);
     assert(storage->target_entries[1].dispatch_bytes == 16);
@@ -109,8 +112,11 @@ int main(int argc, char **argv) {
     assert(!strstr(storage->text, "register(u10, space2)"));
     assert(compile(&caps, workspace, required.size_bytes, hlsl_source, "first", 3u, &outputs, &result) == DOE_COMPILER_OK);
     assert(result.published_entries == 1 && result.published_bindings == 1);
-    assert(!storage->target_entries[0].flags && !strcmp(storage->target_entries[0].name, "first"));
+    assert(storage->target_entries[0].flags == DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES &&
+        !strcmp(storage->target_entries[0].name, "first"));
     write_fixture(directory, "first", &outputs, &result);
+    storage->text[result.published_text_bytes] = 0;
+    assert(strstr(storage->text, "register(b2, space7)") && !strstr(storage->text, "GetDimensions"));
     assert(compile(&caps, workspace, required.size_bytes, hlsl_source, "selected", 3u, &outputs, &result) == DOE_COMPILER_OK);
     assert(result.published_entries == 1 && storage->target_entries[0].entry_index == 1);
     assert(storage->target_entries[0].flags == selected_flags);

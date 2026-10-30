@@ -21,10 +21,11 @@ typedef struct uniform_case {
     "result[1]=u.values[i32(id.x)-1];result[2]=u.rows[1][0];result[3]=copy.end;}"
 
 static const uniform_case cases[] = {
-    {"tail4", TINY("1", "0"), 4, {3,0,0,0,3}, true, false, false},
-    {"tail8", TINY("2", "1"), 8, {5,0,0,0,5}, true, false, false},
-    {"tail12", TINY("3", "2"), 12, {7,0,0,0,7}, true, false, false},
-    {"nested64", NESTED("8"), 64, {167,0,23,41,999}, false, false, false},
+    /* Out-of-range uniform indices (-1, N, UINT32_MAX) clamp to the last element. */
+    {"tail4", TINY("1", "0"), 4, {3,3,3,3,3}, true, false, false},
+    {"tail8", TINY("2", "1"), 8, {5,5,5,5,5}, true, false, false},
+    {"tail12", TINY("3", "2"), 12, {7,7,7,7,7}, true, false, false},
+    {"nested64", NESTED("8"), 64, {167,7,23,41,999}, false, false, false},
     {"matrix32", "struct U{v:array<f32,2>,m:mat2x2f,last:u32}"
         "@group(0) @binding(0) var<uniform> u:U;" OUTPUT MAIN
         "{result[0]=u32(u.v[1]+u.m[1][0])+u.last;}",
@@ -32,9 +33,9 @@ static const uniform_case cases[] = {
     {"wrong-index", "@group(0) @binding(0) var<uniform> u:array<u32,3>;" OUTPUT MAIN
         "{result[0]=u[1];result[1]=u[i32(result[1])];result[2]=u[result[2]];"
         "result[3]=u[result[3]];result[4]=u[2];}",
-        12, {5,0,0,0,7}, true, false, true},
+        12, {5,7,7,7,7}, true, false, true},
     {"wrong-layout", NESTED("4"), 64,
-        {UINT32_C(0xaaaaab02),0,23,UINT32_C(0xbbbbbbbb),999}, false, false, true},
+        {UINT32_C(0xaaaaab02),7,23,UINT32_C(0xbbbbbbbb),999}, false, false, true},
 };
 
 static void run(state *s, const uniform_case *test, bool requirement)
@@ -113,6 +114,6 @@ int main(void)
     }
     consumer_finish(&s);
     printf("PASS public standard uniform layout: exact4/8/12/32/64-byte bindings, final scalar lane, "
-        "dynamic signed/unsigned OOB, nested/attributed aggregates and narrow matrix, distinguishable "
+        "dynamic signed/unsigned OOB clamped to the last element, nested/attributed aggregates and narrow matrix, distinguishable "
         "typed wrong-index/layout controls, requires and early releases %s\n", adapter_class_scope());
 }

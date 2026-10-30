@@ -296,7 +296,8 @@ int main(void)
     assert(view.hlsl_bindings[0].shader_register == 9 && view.hlsl_bindings[0].register_space == 2);
     assert(view.hlsl_bindings[0].stride == 4 && view.hlsl_bindings[1].register_kind == DOE_COMPILER_HLSL_REGISTER_CBV);
     assert(view.hlsl_entries[0].entry_index == 1 && !strcmp(view.hlsl_entries[0].name, "selected"));
-    assert(!view.hlsl_entries[0].flags && view.hlsl_entries[0].dispatch_bytes == 16);
+    /* The selected entry indexes a runtime array, so it reads the size table. */
+    assert(view.hlsl_entries[0].flags == DOE_COMPILER_HLSL_ENTRY_STORAGE_SIZES && view.hlsl_entries[0].dispatch_bytes == 16);
     assert(view.hlsl_entries[0].dispatch_register == 0 && view.hlsl_entries[0].dispatch_space == 7);
     assert(doe_shader_matches(shader, DOE_SHADER_HLSL, options.semantic_flags, hlsl_source, strlen(hlsl_source),
         options.compiler_identity, options.compiler_identity_size, &options.selection));
