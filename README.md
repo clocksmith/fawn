@@ -1,8 +1,10 @@
 # Fawn
 
-Fawn provides durable browser workspaces for agents. This repository also contains
-**Doe**, its independently usable WebGPU runtime and WGSL compiler. DoeLab tests
-improvements, and DoeProof records execution and qualification evidence.
+Fawn is the whole project and the brand of its Chromium fork. **Doe** is the WebGPU
+runtime and WGSL compiler that power Fawn; it is also usable on its own from Node,
+Bun, Deno and native code. Durable browser workspaces for agents are an optional
+Fawn feature. DoeLab tests improvements, and DoeProof records execution and
+qualification evidence.
 
 The canonical repository for Fawn and Doe is
 **[clocksmith/fawn](https://github.com/clocksmith/fawn)**. Doe is a component here,
