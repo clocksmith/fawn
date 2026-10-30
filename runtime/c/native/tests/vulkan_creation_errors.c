@@ -15,9 +15,12 @@ static doe_vk_status fail(doe_vk_error *error, const char *name)
     *error = (doe_vk_error){DOE_VK_OUT_OF_MEMORY, -2, operation};
     return DOE_VK_OUT_OF_MEMORY;
 }
-doe_vk_status __wrap_doe_vk_render_pipeline_create(doe_vk_context *context,
-    const doe_vk_render_pipeline_desc *desc, doe_vk_pipeline **out, doe_vk_error *error)
+/* Native render creation calls the blob-store entry point (render_pipeline.c). */
+doe_vk_status __wrap_doe_vk_render_pipeline_create_blob(doe_vk_context *context,
+    const doe_vk_render_pipeline_desc *desc, struct doe_vk_pipeline_blob *blob, doe_vk_pipeline **out,
+    doe_vk_error *error)
 {
+    (void)blob;
     assert(context && desc && out && !*out);
     return fail(error, "vkCreateGraphicsPipelines");
 }

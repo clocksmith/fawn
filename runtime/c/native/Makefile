@@ -146,7 +146,7 @@ $(BUILD)/bc-compression: tests/bc_compression.c tests/consumer.h tests/adapter_c
 $(BUILD)/component-swizzle: tests/component_swizzle.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/vulkan-creation-errors: tests/vulkan_creation_errors.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_render_pipeline_create,--wrap=doe_vk_occlusion_pool_create,--wrap=doe_vk_query_pool_create -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_render_pipeline_create_blob,--wrap=doe_vk_occlusion_pool_create,--wrap=doe_vk_query_pool_create -o $@
 $(BUILD)/compilation-diagnostics: tests/compilation_diagnostics.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=calloc -o $@
 $(BUILD)/shader-spans: tests/shader_spans.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
@@ -184,7 +184,7 @@ $(BUILD)/textures: tests/textures.c tests/consumer.h tests/adapter_class.h $(NAT
 $(BUILD)/admission: tests/admission.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/failures: tests/failures.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
-	$(CC) $(CPPFLAGS) $(CFLAGS) tests/failures.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_buffer_create -Wl,--wrap=doe_vk_pipeline_create_with_immediates -Wl,--wrap=doe_vk_render_pipeline_create -Wl,--wrap=doe_vk_timestamp_normalizer_create -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/failures.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_buffer_create -Wl,--wrap=doe_vk_pipeline_create_blob -Wl,--wrap=doe_vk_render_pipeline_create_blob -Wl,--wrap=doe_vk_timestamp_normalizer_create -o $@
 $(BUILD)/timestamps: tests/timestamps.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/timestamps.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 $(BUILD)/recovery: tests/recovery.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
