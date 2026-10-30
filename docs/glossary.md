@@ -1,16 +1,19 @@
 # Fawn and Doe glossary
 
 - `Doe`
-  - the independently usable WebGPU runtime and WGSL compiler developed within
-    the [Fawn repository](https://github.com/clocksmith/fawn); `doe-gpu` is its
-    JavaScript package
+  - the WebGPU implementation and WGSL compiler that power Fawn, developed within
+    the [Fawn repository](https://github.com/clocksmith/fawn); also usable on its
+    own from Node, Bun, Deno and native code. `doe-gpu` is its JavaScript package
 - `Fawn`
-  - the project and canonical repository containing the workspace service and Doe
-  - durable browser workspaces: one shared observation, action, and recovery
-    service above stock Chromium, defined by the
-    [workspace contract](fawn-workspace-contract.md)
-  - use the name alone only for this product; the retained uses below are
-    qualified
+  - the whole project and canonical repository, and the brand of its Chromium
+    fork, which Doe powers
+  - durable browser workspaces are an optional Fawn feature: one shared
+    observation, action, and recovery service, defined by the
+    [workspace contract](fawn-workspace-contract.md); call it the Fawn workspace
+    service
+- `Fawn browser`
+  - the Fawn-branded Chromium fork with Doe-owned page WebGPU under
+    `browser/chromium/`
 - `DoeRuntime`
   - independently useful GPU execution: the native WebGPU engine and its
     shared-library artifacts, with the selected C implementation and retained Zig
@@ -34,14 +37,15 @@
 - `subpath entrypoint`
   - an alternate export of one package family, not a separate product
 - `Chromium runtime integration`
-  - the optional forced-Doe Chromium build, smoke, and benchmark surface under
-    `browser/chromium/`; also called the browser lane
+  - the forced-Doe Chromium build, smoke, and benchmark surface under
+    `browser/chromium/` that produces the Fawn browser; also called the browser
+    lane
   - added only when measured benefits justify its compatibility and maintenance
     costs
 - `legacy Fawn shell build`
-  - the modified Chromium binary named `Fawn` in the retained A/B/C/D lanes,
-    release-archive contracts, and `FAWN_*` script variables; not the Fawn
-    workspace service
+  - the earlier modified Chromium binary named `Fawn` in the retained A/B/C/D
+    lanes, release-archive contracts, and `FAWN_*` script variables; the
+    predecessor of the current Fawn browser
 - `fawn_*` module ids
   - identifiers of the archived Track B browser-module proposals, retained in
     their schemas, fixtures, and draft contracts
