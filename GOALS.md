@@ -2,14 +2,17 @@
 
 ## Mission and thesis
 
-**Doe's central objective is to become Chromium's superior GPU execution
-foundation. Compute is one proving lane alongside graphics. Fawn provides
-durable browser workspaces; DoeLab tests improvements; DoeProof records evidence.**
+**Fawn is the whole project and the brand of its Chromium fork. Doe is the WebGPU
+implementation that powers Fawn. Doe's central objective is to become Chromium's
+superior GPU execution foundation; compute is one proving lane alongside graphics.
+DoeLab tests improvements; DoeProof records evidence.**
 
-Fawn begins above stock Chromium through one shared observation, action, and
-recovery service with narrow CDP/Playwright adapters. DoeRuntime and the
-independently usable WGSL compiler keep GPU programs executable, inspectable, and
-portable across hardware; neither their adoption nor Fawn requires the other.
+Doe also runs outside the browser, through Node, Bun and Deno and through native
+embedding, with the independently usable WGSL compiler keeping GPU programs
+executable, inspectable and portable across hardware. Standalone Doe use does not
+require the Fawn browser. Durable browser workspaces are an optional Fawn feature:
+one shared observation, action and recovery service with narrow CDP/Playwright
+adapters, which can also run above stock Chromium.
 This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
 [The thesis](docs/thesis.md) owns the technical rationale and the proofs that
