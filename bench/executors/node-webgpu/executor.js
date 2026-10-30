@@ -120,6 +120,7 @@ const TRACE_META_PROCESS_WALL_SOURCE = 'trace-meta-process-wall';
 const DEBUG_PROGRESS_INTERVAL = 64;
 const NODE_WEBGPU_UNSUPPORTED_ERROR_CODE = 'NODE_WEBGPU_UNSUPPORTED';
 const PACKAGE_QUEUE_SYNC_MODE = 'per-command';
+const PACKAGE_HOST_OPERATION_CONTRACT = 'selected-timing-excluding-nested-cpu-oracle.v1';
 const PACKAGE_QUEUE_WAIT_MODE = 'queue.onSubmittedWorkDone';
 const NODE_PACKAGE_QUEUE_WAIT_MODE = 'readback-or-fence.mapAsync';
 const PACKAGE_QUEUE_WAIT_SCOPE = 'terminal-or-readback';
@@ -1230,6 +1231,8 @@ function zeroPackageSetupBreakdown() {
     bufferCreateTotalNs: 0,
     initialDataWriteTotalNs: 0,
     shaderModuleCreateTotalNs: 0,
+    shaderSourceReadTotalNs: 0,
+    shaderModuleCompileTotalNs: 0,
     bindGroupLayoutCreateTotalNs: 0,
     pipelineLayoutCreateTotalNs: 0,
     pipelineCreateTotalNs: 0,
@@ -2628,10 +2631,16 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
         sourceKind: moduleDef.source.kind,
       });
     }
+    // shaderModuleCreateTotalNs keeps its historical read+compile interval;
+    // the two nested intervals separate source-file I/O from provider work.
     const moduleStartedAt = performance.now();
     const code = await readShaderSource(moduleDef);
+    const compileStartedAt = performance.now();
     shaderModules.set(moduleDef.id, device.createShaderModule({ code }));
-    setupBreakdownNs.shaderModuleCreateTotalNs += nsDelta(moduleStartedAt);
+    const moduleEndedAt = performance.now();
+    setupBreakdownNs.shaderSourceReadTotalNs += nsFromMs(compileStartedAt - moduleStartedAt);
+    setupBreakdownNs.shaderModuleCompileTotalNs += nsFromMs(moduleEndedAt - compileStartedAt);
+    setupBreakdownNs.shaderModuleCreateTotalNs += nsFromMs(moduleEndedAt - moduleStartedAt);
     shaderSourceInputs.push({ moduleDef, code });
     shaderModuleEvidenceInputs.push({
       moduleId: moduleDef.id,
@@ -2884,6 +2893,7 @@ async function executeSample(
   let executionSubmitWaitTotalNs = 0;
   let executionDispatchCount = 0;
   let executionSuccessCount = 0;
+  let cpuOracleValidationCount = 0;
   const stepBreakdownNs = zeroPackageStepBreakdown();
   const writeBreakdown = zeroPackageWriteBreakdown();
   const residentBufferLoadBreakdown = zeroPackageResidentBufferLoadBreakdown();
@@ -3374,6 +3384,7 @@ async function executeSample(
         readbackDigestCache,
       );
       readback.breakdownNs.readbackValidationTotalNs += nsDelta(validationStartedAt);
+      if (validationTemplates[index]) cpuOracleValidationCount += 1;
       if (!validation.ok) {
         throw new Error(`validation failed for ${step.bufferId}: ${validation.detail}`);
       }
@@ -3461,6 +3472,15 @@ async function executeSample(
   );
   const hostCommandOrchestrationTotalNs = Math.max(0, commandLoopWallNs - selectedLoopTotalNs);
   const timingMs = executionTotalNs / 1_000_000;
+  // Same-sample selected interval with its nested CPU oracle intervals removed.
+  // Every oracle still ran and passed above; timingMs keeps its historical scope.
+  const packageHostOperation = {
+    contract: PACKAGE_HOST_OPERATION_CONTRACT,
+    totalNs: Math.max(0, executionTotalNs - stepBreakdownNs.readbackValidationTotalNs),
+    excludedCpuOracleNs: stepBreakdownNs.readbackValidationTotalNs,
+    cpuOracleValidationCount,
+    cpuOracleValidationPassed: true,
+  };
   const determinismResult = await evaluateExecutionDeterminism({
     determinismConfig: normalizedPlan.determinism ?? null,
     provider: runtime.providerSpec.provider,
@@ -3567,6 +3587,7 @@ async function executeSample(
     packageSetupTotalNs: runtime.setupTotalNs,
     packageSetupBreakdownNs: runtime.setupBreakdownNs,
     packageStepBreakdownNs: stepBreakdownNs,
+    packageHostOperation,
     packageWriteBreakdown: writeBreakdown,
     packageResidentBufferLoads: residentBufferLoads,
     packageResidentBufferLoadBreakdown: residentBufferLoadBreakdown,

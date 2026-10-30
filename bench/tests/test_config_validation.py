@@ -361,6 +361,32 @@ class TestRealConfigs(unittest.TestCase):
         with self.assertRaises(jsonschema.ValidationError):
             jsonschema.validate(invalid_sync_policy, schema)
 
+    def test_trace_meta_host_operation_interval_is_separately_contracted(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        sch = repo_root / "config" / "trace-meta.schema.json"
+        schema = json.loads(sch.read_text(encoding="utf-8"))
+        package_required = set(schema["anyOf"][1]["required"])
+        self.assertNotIn("packageHostOperation", package_required)
+        properties = schema["properties"]
+        valid = {
+            "contract": "selected-timing-excluding-nested-cpu-oracle.v1",
+            "totalNs": 5_000_000,
+            "excludedCpuOracleNs": 17_000_000,
+            "cpuOracleValidationCount": 1,
+            "cpuOracleValidationPassed": True,
+        }
+        jsonschema.validate(valid, properties["packageHostOperation"])
+        for key, value in (("contract", "selected-timing"), ("cpuOracleValidationPassed", False),
+                           ("excludedCpuOracleNs", -1)):
+            invalid = dict(valid)
+            invalid[key] = value
+            with self.assertRaises(jsonschema.ValidationError):
+                jsonschema.validate(invalid, properties["packageHostOperation"])
+        setup = properties["packageSetupBreakdownNs"]["properties"]
+        self.assertIn("shaderModuleCreateTotalNs", setup)
+        self.assertIn("shaderSourceReadTotalNs", setup)
+        self.assertIn("shaderModuleCompileTotalNs", setup)
+
     def test_trace_meta_readback_extension_preserves_legacy_parsing(self):
         repo_root = Path(__file__).resolve().parents[2]
         sch = repo_root / "config" / "trace-meta.schema.json"

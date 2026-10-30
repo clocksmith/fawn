@@ -458,6 +458,8 @@
         "bufferCreateTotalNs": { "type": "integer", "minimum": 0 },
         "initialDataWriteTotalNs": { "type": "integer", "minimum": 0 },
         "shaderModuleCreateTotalNs": { "type": "integer", "minimum": 0 },
+        "shaderSourceReadTotalNs": { "type": "integer", "minimum": 0 },
+        "shaderModuleCompileTotalNs": { "type": "integer", "minimum": 0 },
         "bindGroupLayoutCreateTotalNs": { "type": "integer", "minimum": 0 },
         "pipelineLayoutCreateTotalNs": { "type": "integer", "minimum": 0 },
         "pipelineCreateTotalNs": { "type": "integer", "minimum": 0 },
@@ -508,6 +510,19 @@
         "readbackUnmapTotalNs": { "type": "integer", "minimum": 0 },
         "readbackValidationTotalNs": { "type": "integer", "minimum": 0 },
         "readbackCaptureTotalNs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "packageHostOperation": {
+      "description": "Same-sample selected timing interval (setup-inclusive or prepared, matching timingMs) with its nested CPU readback-oracle validation intervals removed. Every oracle still runs and must pass; timingMs keeps its historical scope.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "totalNs", "excludedCpuOracleNs", "cpuOracleValidationCount", "cpuOracleValidationPassed"],
+      "properties": {
+        "contract": { "const": "selected-timing-excluding-nested-cpu-oracle.v1" },
+        "totalNs": { "type": "integer", "minimum": 0 },
+        "excludedCpuOracleNs": { "type": "integer", "minimum": 0 },
+        "cpuOracleValidationCount": { "type": "integer", "minimum": 0 },
+        "cpuOracleValidationPassed": { "const": true }
       }
     },
     "packageWriteBreakdown": {
