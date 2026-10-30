@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LANE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SOURCE="${LANE_DIR}/assets/logo/source/fawn-icon-main.svg"
+CANONICAL_SOURCE="${SOURCE}"
 LINUX_OUT="${LANE_DIR}/assets/logo/compiled/linux"
 MACOS_OUT="${LANE_DIR}/assets/logo/compiled/macos"
 
@@ -65,6 +66,12 @@ if [[ ! -f "${SOURCE}" ]]; then
 fi
 
 mkdir -p "${LINUX_OUT}" "${MACOS_OUT}"
+
+# The start-page icon and native app icon share the owner's selected artwork.
+# A custom --source build must not replace the canonical browser resource.
+if [[ "${SOURCE}" == "${CANONICAL_SOURCE}" ]]; then
+  cp "${SOURCE}" "${LANE_DIR}/resources/fawn-icon.svg"
+fi
 
 render_png_linux() {
   local source_path="$1"
