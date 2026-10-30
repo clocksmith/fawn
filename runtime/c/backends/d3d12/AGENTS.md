@@ -72,6 +72,10 @@
   for tools; they are not a fence or permission for CPU/GPU overlap.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
   states stay fixed. Descriptor heaps and allocators survive their whole submission.
+  Only successful terminal retirement may transfer one closed native command
+  allocator/list pair to the serialized context for reuse. Reset allocator before
+  list; propagate either failure without fallback. Discarded, unknown and lost
+  work never enters this cache. Context teardown releases its one idle pair.
 - Test host ownership at the private typed native-call link seam, not a simulated
   driver or shader interpreter. Keep actual Windows readback as a separate fixture.
 - Texture formats and immutable views remain an explicit subset. Whole-resource

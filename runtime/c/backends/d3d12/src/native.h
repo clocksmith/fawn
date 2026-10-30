@@ -173,6 +173,8 @@ void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline);
 doe_dx_status doe_dx_native_commands_create(doe_dx_native_context *context,
     doe_dx_native_commands **out, doe_dx_error *error);
 void doe_dx_native_commands_destroy(doe_dx_native_commands *commands);
+/* Only the serialized common retirement owner may recycle proven-complete work. */
+void doe_dx_native_commands_recycle(doe_dx_native_commands *commands);
 void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *source,
     uint64_t source_offset, doe_dx_native_buffer *destination,
     uint64_t destination_offset, uint64_t size);

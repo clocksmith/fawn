@@ -15,11 +15,50 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
     free(commands);
 }
 
+void doe_dx_native_commands_cache_close(doe_dx_native_context *context) {
+    if (context->idle_list) ID3D12GraphicsCommandList_Release(context->idle_list);
+    if (context->idle_allocator) ID3D12CommandAllocator_Release(context->idle_allocator);
+    context->idle_list = NULL;
+    context->idle_allocator = NULL;
+}
+
+void doe_dx_native_commands_recycle(doe_dx_native_commands *commands) {
+    if (!commands) return;
+    doe_dx_native_context *context = commands->context;
+    /* Called only after a successfully observed terminal fence. Unknown/lost
+     * work and discarded recordings use destroy, never this transfer. */
+    if (!context->idle_allocator) {
+        context->idle_allocator = commands->allocator;
+        context->idle_list = commands->list;
+        commands->allocator = NULL;
+        commands->list = NULL;
+    }
+    doe_dx_native_commands_destroy(commands);
+}
+
 doe_dx_status doe_dx_native_commands_create(doe_dx_native_context *context,
     doe_dx_native_commands **out, doe_dx_error *error) {
     doe_dx_native_commands *commands = calloc(1, sizeof(*commands));
     if (!commands) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.commands.allocate", error);
     commands->context = context;
+    if (context->idle_allocator) {
+        commands->allocator = context->idle_allocator;
+        commands->list = context->idle_list;
+        context->idle_allocator = NULL;
+        context->idle_list = NULL;
+        HRESULT reset = ID3D12CommandAllocator_Reset(commands->allocator);
+        const char *operation = "ID3D12CommandAllocator.Reset";
+        if (SUCCEEDED(reset)) {
+            operation = "ID3D12GraphicsCommandList.Reset";
+            reset = ID3D12GraphicsCommandList_Reset(commands->list,commands->allocator,NULL);
+        }
+        if (FAILED(reset)) {
+            doe_dx_native_commands_destroy(commands);
+            return doe_dx_hresult(reset,operation,error);
+        }
+        *out = commands;
+        return doe_dx_fail(DOE_DX_OK,0,"native.commands.reuse",error);
+    }
     HRESULT result = ID3D12Device_CreateCommandAllocator(context->device,
         D3D12_COMMAND_LIST_TYPE_DIRECT, &IID_ID3D12CommandAllocator, (void **)&commands->allocator);
     const char *operation = "ID3D12Device.CreateCommandAllocator";

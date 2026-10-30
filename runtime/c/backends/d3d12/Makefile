@@ -140,3 +140,8 @@ check: check-readback-zero
 $(BUILD)/test_windows_readback_zero.exe: tests/test_windows_readback_zero.c src/windows_resources.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
 sdk-control: $(BUILD)/test_windows_readback_zero.exe
+
+# Successful completion is supplied by the caller; SDK control proves call composition.
+$(BUILD)/test_windows_command_reuse.exe: tests/test_windows_command_reuse.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -luser32 -o $@
+sdk-control: $(BUILD)/test_windows_command_reuse.exe

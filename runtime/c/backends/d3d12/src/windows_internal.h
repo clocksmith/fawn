@@ -25,6 +25,8 @@ struct doe_dx_native_context {
     doe_dx_wait_record *waits; /* Native event registrations, never GPU submissions. */
     ID3D12CommandSignature *dispatch_signature;
     ID3D12CommandSignature *draw_signature, *draw_indexed_signature;
+    ID3D12CommandAllocator *idle_allocator;
+    ID3D12GraphicsCommandList *idle_list;
     doe_dx_limits limits;
 };
 struct doe_dx_native_buffer {
@@ -85,6 +87,7 @@ struct doe_dx_native_commands {
     ID3D12GraphicsCommandList *list;
     doe_dx_descriptor_use *descriptors;
 };
+void doe_dx_native_commands_cache_close(doe_dx_native_context *context);
 doe_dx_status doe_dx_open_adapter(IDXGIFactory4 *factory, const doe_dx_options *options,
     IDXGIAdapter1 **out, doe_dx_caps *caps, doe_dx_error *error);
 DXGI_FORMAT doe_dx_texture_resource_format(doe_dx_format);

@@ -90,7 +90,8 @@ void doe_dx_commands_settle(doe_dx_commands *commands, bool lost, const doe_dx_e
     commands->state = lost || present_failed ? DOE_DX_FAILED : DOE_DX_COMPLETE;
     if (present_failed) commands->failure=commands->present_failure;
     else if (lost && error) commands->failure = *error;
-    doe_dx_native_commands_destroy(commands->native);
+    if (lost) doe_dx_native_commands_destroy(commands->native);
+    else doe_dx_native_commands_recycle(commands->native);
     commands->native = NULL;
     doe_dx_surface_retire_present(commands,true,!lost&&!present_failed);
     release_resources(commands, !lost);
