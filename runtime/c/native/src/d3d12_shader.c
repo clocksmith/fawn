@@ -147,6 +147,20 @@ static native_failure compile_stage(native_backend *backend,const native_stage *
 #endif
 }
 
+native_failure native_d3d12_retain_compute_compiler(native_backend *backend)
+{
+    if (!backend) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+#if defined(_WIN32)
+    char *path = NULL;
+    native_failure failure = compiler_path(true,&path);
+    if (failure.status == NATIVE_OK) failure = retain_compiler(backend,true,path);
+    free(path);
+    return failure;
+#else
+    return native_failure_status(NATIVE_UNAVAILABLE);
+#endif
+}
+
 native_failure native_d3d12_compile_stage(native_backend *backend,const native_stage *stage,doe_dx_shader **out)
 {
     return compile_stage(backend,stage,NULL,out);

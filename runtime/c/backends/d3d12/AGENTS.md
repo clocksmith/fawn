@@ -16,7 +16,11 @@
   its blob and module. The native backend separately retains one reference per selected
   compiler module for its lifetime (published by compare-exchange, released after
   the context), so pipelines stop unloading and reloading it; this never selects
-  or substitutes a module. Restore caller fenv/MXCSR/errno/LastError before publication.
+  or substitutes a module. Device open takes the FXC (compute profile 501) reference
+  the same way, as Dawn loads its compiler with the device: the load cost moves to
+  device creation, it is not removed. An open-time load failure is not a device
+  failure; the first compile retries the same explicit module and reports its own
+  failure. Restore caller fenv/MXCSR/errno/LastError before publication.
   SDK compilation/control evidence does not establish GPU execution.
 - Exact ordinal selection stays the zero default. WARP requires its explicit
   selector and software opt-in, uses EnumWarpAdapter, and verifies the actual

@@ -89,6 +89,10 @@ native_result native_d3d12_reopen(const native_backend *adapter, native_backend 
             native_d3d12_close(&result);
             return status;
         }
+        /* Load FXC with the device, not the first compute pipeline. A load
+         * failure is not a device failure: the first compile retries the same
+         * explicit module and reports that failure; nothing is substituted. */
+        (void)native_d3d12_retain_compute_compiler(&result);
         *out = result;
         return NATIVE_OK;
     }
