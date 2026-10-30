@@ -2,10 +2,105 @@
 #include "windows_internal.h"
 #ifdef _WIN32
 
+/* Small buffers are placed in context-owned 4 MiB buffer-only heaps of their
+ * memory class: 64 slots of 64 KiB. Placement never implies contents; every
+ * caller still fully initializes. A slot range returns only after the resource
+ * is released, which the common owner allows only after GPU use has retired. */
+#define DOE_DX_BUFFER_HEAP_SLOTS 64u
+#define DOE_DX_BUFFER_HEAP_SLOT (UINT64_C(64) * 1024u)
+#define DOE_DX_BUFFER_PLACEMENT_MAX (UINT64_C(1) << 20)
+struct doe_dx_buffer_heap {
+    ID3D12Heap *heap;
+    doe_dx_native_context *context; /* NULL once detached by context close. */
+    doe_dx_memory memory;
+    uint64_t used;
+    struct doe_dx_buffer_heap *next;
+};
+
+static void heap_unlink(struct doe_dx_buffer_heap *heap) {
+    if (!heap->context) return;
+    struct doe_dx_buffer_heap **cursor = &heap->context->buffer_heaps;
+    while (*cursor != heap) cursor = &(*cursor)->next;
+    *cursor = heap->next;
+    heap->context = NULL;
+}
+
+static void heap_free(struct doe_dx_buffer_heap *heap) {
+    heap_unlink(heap);
+    ID3D12Heap_Release(heap->heap);
+    free(heap);
+}
+
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer) {
     if (!buffer) return;
     if (buffer->resource) ID3D12Resource_Release(buffer->resource);
+    struct doe_dx_buffer_heap *heap = buffer->heap;
+    if (heap) {
+        heap->used &= ~buffer->heap_mask;
+        bool spare = false;
+        if (!heap->used && heap->context)
+            for (struct doe_dx_buffer_heap *other = heap->context->buffer_heaps; other; other = other->next)
+                if (other != heap && other->memory == heap->memory && !other->used) spare = true;
+        /* Keep at most one empty heap per memory class; detached heaps go now. */
+        if (!heap->used && (spare || !heap->context)) heap_free(heap);
+    }
     free(buffer);
+}
+
+void doe_dx_buffer_heaps_close(doe_dx_native_context *context) {
+    while (context->buffer_heaps) {
+        struct doe_dx_buffer_heap *heap = context->buffer_heaps;
+        if (heap->used) heap_unlink(heap);
+        else heap_free(heap);
+    }
+}
+
+static bool heap_take(struct doe_dx_buffer_heap *heap, uint64_t slots, uint64_t align, uint64_t *mask,
+    uint64_t *offset) {
+    const uint64_t run = slots == 64u ? UINT64_MAX : ((UINT64_C(1) << slots) - 1u);
+    for (uint64_t first = 0; first + slots <= DOE_DX_BUFFER_HEAP_SLOTS; first += align) {
+        const uint64_t candidate = run << first;
+        if (heap->used & candidate) continue;
+        heap->used |= candidate;
+        *mask = candidate;
+        *offset = first * DOE_DX_BUFFER_HEAP_SLOT;
+        return true;
+    }
+    return false;
+}
+
+static HRESULT place_buffer(doe_dx_native_context *context, const D3D12_HEAP_PROPERTIES *properties,
+    const D3D12_RESOURCE_DESC *description, const D3D12_RESOURCE_ALLOCATION_INFO *allocation,
+    D3D12_RESOURCE_STATES state, doe_dx_memory memory, doe_dx_native_buffer *buffer, const char **operation) {
+    const uint64_t slots = allocation->SizeInBytes / DOE_DX_BUFFER_HEAP_SLOT;
+    const uint64_t align = allocation->Alignment / DOE_DX_BUFFER_HEAP_SLOT;
+    uint64_t mask = 0, offset = 0;
+    struct doe_dx_buffer_heap *heap = context->buffer_heaps;
+    while (heap && (heap->memory != memory || !heap_take(heap, slots, align, &mask, &offset))) heap = heap->next;
+    if (!heap) {
+        heap = calloc(1, sizeof(*heap));
+        *operation = "native.buffer_heap.allocate";
+        if (!heap) return E_OUTOFMEMORY;
+        D3D12_HEAP_DESC desc = {0};
+        desc.SizeInBytes = DOE_DX_BUFFER_HEAP_SLOTS * DOE_DX_BUFFER_HEAP_SLOT;
+        desc.Properties = *properties;
+        desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+        desc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
+        *operation = "ID3D12Device.CreateHeap.buffers";
+        HRESULT result = ID3D12Device_CreateHeap(context->device, &desc, &IID_ID3D12Heap, (void **)&heap->heap);
+        if (FAILED(result)) { free(heap); return result; }
+        heap->context = context;
+        heap->memory = memory;
+        heap->next = context->buffer_heaps;
+        context->buffer_heaps = heap;
+        if (!heap_take(heap, slots, align, &mask, &offset)) abort(); /* Admitted size fits an empty heap. */
+    }
+    *operation = "ID3D12Device.CreatePlacedResource";
+    HRESULT result = ID3D12Device_CreatePlacedResource(context->device, heap->heap, offset, description,
+        state, NULL, &IID_ID3D12Resource, (void **)&buffer->resource);
+    buffer->heap = heap;
+    buffer->heap_mask = mask;
+    return result; /* Failure destroy returns the slots and any now-spare heap. */
 }
 
 doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
@@ -39,12 +134,19 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     }
     D3D12_RESOURCE_STATES state = memory == DOE_DX_UPLOAD ?
         D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COPY_DEST;
-    HRESULT result = ID3D12Device_CreateCommittedResource(context->device, &heap,
+    const char *operation = "ID3D12Device.CreateCommittedResource";
+    HRESULT result;
+    if (allocation.SizeInBytes <= DOE_DX_BUFFER_PLACEMENT_MAX &&
+        allocation.Alignment <= D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT &&
+        allocation.Alignment % DOE_DX_BUFFER_HEAP_SLOT == 0 &&
+        allocation.SizeInBytes % DOE_DX_BUFFER_HEAP_SLOT == 0)
+        result = place_buffer(context, &heap, &description, &allocation, state, memory, buffer, &operation);
+    else result = ID3D12Device_CreateCommittedResource(context->device, &heap,
         D3D12_HEAP_FLAG_NONE, &description, state, NULL, &IID_ID3D12Resource,
         (void **)&buffer->resource);
     if (FAILED(result)) {
         doe_dx_native_buffer_destroy(buffer);
-        return doe_dx_hresult(result, "ID3D12Device.CreateCommittedResource", error);
+        return doe_dx_hresult(result, operation, error);
     }
     buffer->size = size;
     buffer->memory = memory;

@@ -30,6 +30,7 @@ doe_dx_status doe_dx_native_close(doe_dx_native_context *context) {
     }
     doe_dx_cache_close(context);
     doe_dx_native_commands_cache_close(context);
+    doe_dx_buffer_heaps_close(context);
     if (context->draw_signature) ID3D12CommandSignature_Release(context->draw_signature);
     if (context->draw_indexed_signature) ID3D12CommandSignature_Release(context->draw_indexed_signature);
     if (context->dispatch_signature) ID3D12CommandSignature_Release(context->dispatch_signature);

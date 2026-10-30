@@ -63,6 +63,16 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   separate. A speculative larger page's OOM alone permits an exact-size retry.
   Initial allocation zeros its full width; reuse copies only caller bytes and
   makes no zero-content promise. Teardown drops only the cache's ordinary lease.
+- Buffers whose queried allocation is at most 1 MiB are placed resources in
+  context-owned 4 MiB `ALLOW_ONLY_BUFFERS` heaps, one memory class per heap and
+  64 KiB slots; larger buffers stay committed. Placement does not change any
+  initialization rule: heap zeroing is never relied on, and DEFAULT, UPLOAD and
+  zeroed READBACK construction still initialize explicitly. A slot range returns
+  only when its resource is released (after the common owner's retirement), one
+  empty heap per class is kept, and context close detaches heaps that still hold
+  placements so their last buffer releases them. Heap or placement failure keeps
+  its exact status without a committed retry. `test_windows_buffer_heaps.c` is the
+  official-SDK CPU control; it proves call composition only.
 - Typed statuses, first close failure, allocation rollback and native bounds.
 
 The additive [whole-pass render API](include/doe_d3d12_render.h) composes

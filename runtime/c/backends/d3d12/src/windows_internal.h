@@ -13,6 +13,7 @@
 #include <string.h>
 
 struct doe_dx_pipeline_cache;
+struct doe_dx_buffer_heap;
 struct doe_dx_native_context {
     struct doe_dx_pipeline_cache *cache;
     uint64_t cache_driver_version;
@@ -27,12 +28,15 @@ struct doe_dx_native_context {
     ID3D12CommandSignature *draw_signature, *draw_indexed_signature;
     ID3D12CommandAllocator *idle_allocator;
     ID3D12GraphicsCommandList *idle_list;
+    struct doe_dx_buffer_heap *buffer_heaps; /* Placed-buffer heaps, one memory class each. */
     doe_dx_limits limits;
 };
 struct doe_dx_native_buffer {
     ID3D12Resource *resource;
     uint64_t size;
     doe_dx_memory memory;
+    struct doe_dx_buffer_heap *heap; /* Non-NULL for a placed allocation. */
+    uint64_t heap_mask;              /* Exactly the 64 KiB slots this resource owns. */
 };
 struct doe_dx_native_texture {
     ID3D12Resource *resource;
@@ -88,6 +92,9 @@ struct doe_dx_native_commands {
     doe_dx_descriptor_use *descriptors;
 };
 void doe_dx_native_commands_cache_close(doe_dx_native_context *context);
+/* Releases empty placed-buffer heaps; a heap with live placements is detached
+ * and released by its last buffer. Context close normally finds none live. */
+void doe_dx_buffer_heaps_close(doe_dx_native_context *context);
 doe_dx_status doe_dx_open_adapter(IDXGIFactory4 *factory, const doe_dx_options *options,
     IDXGIAdapter1 **out, doe_dx_caps *caps, doe_dx_error *error);
 DXGI_FORMAT doe_dx_texture_resource_format(doe_dx_format);

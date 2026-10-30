@@ -18,7 +18,8 @@ typedef struct sdk_resource {
 typedef struct sdk_device {
     ID3D12Device iface;
     sdk_resource *resource;
-    unsigned allocations, creates;
+    ID3D12Heap heap;
+    unsigned allocations, creates, heaps, heap_releases;
 } sdk_device;
 
 static HRESULT STDMETHODCALLTYPE map_resource(ID3D12Resource *raw, UINT subresource,
@@ -84,6 +85,51 @@ static HRESULT STDMETHODCALLTYPE create_resource(ID3D12Device *raw,
     return S_OK;
 }
 
+static void check_resource(const sdk_device *device, const D3D12_RESOURCE_DESC *description,
+    D3D12_RESOURCE_STATES state, const D3D12_CLEAR_VALUE *clear, REFIID iid, void **out)
+{
+    assert(description && description->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER);
+    assert(description->Width == device->resource->width && description->Height == 1);
+    assert(description->DepthOrArraySize == 1 && description->MipLevels == 1);
+    assert(description->SampleDesc.Count == 1 && description->SampleDesc.Quality == 0);
+    assert(description->Layout == D3D12_TEXTURE_LAYOUT_ROW_MAJOR);
+    assert(description->Flags == D3D12_RESOURCE_FLAG_NONE);
+    assert(state == D3D12_RESOURCE_STATE_COPY_DEST && !clear && out);
+    assert(!memcmp(iid,&IID_ID3D12Resource,sizeof(IID_ID3D12Resource)));
+}
+
+static HRESULT STDMETHODCALLTYPE create_heap(ID3D12Device *raw, const D3D12_HEAP_DESC *desc,
+    REFIID iid, void **out)
+{
+    sdk_device *device = (sdk_device *)raw;
+    assert(desc && desc->SizeInBytes == 64u * 65536u && desc->Properties.Type == D3D12_HEAP_TYPE_READBACK);
+    assert(desc->Properties.CreationNodeMask == 1 && desc->Properties.VisibleNodeMask == 1);
+    assert(desc->Alignment == D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT);
+    assert(desc->Flags == D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS && out);
+    assert(!memcmp(iid,&IID_ID3D12Heap,sizeof(IID_ID3D12Heap)));
+    device->heaps++;
+    *out = &device->heap;
+    return S_OK;
+}
+
+static ULONG STDMETHODCALLTYPE release_heap(ID3D12Heap *raw)
+{
+    (void)raw;
+    return 0;
+}
+
+static HRESULT STDMETHODCALLTYPE place_resource(ID3D12Device *raw, ID3D12Heap *heap, UINT64 offset,
+    const D3D12_RESOURCE_DESC *description, D3D12_RESOURCE_STATES state,
+    const D3D12_CLEAR_VALUE *clear, REFIID iid, void **out)
+{
+    sdk_device *device = (sdk_device *)raw;
+    assert(heap == &device->heap && offset == 0);
+    check_resource(device,description,state,clear,iid,out);
+    device->creates++;
+    *out = &device->resource->iface;
+    return S_OK;
+}
+
 static void assert_bytes(const sdk_resource *resource, bool zeroed)
 {
     for (size_t index = 0; index < resource->capacity + 32; index++) {
@@ -92,13 +138,14 @@ static void assert_bytes(const sdk_resource *resource, bool zeroed)
     }
 }
 
-static void resource_width_and_admission(size_t width)
+static void resource_width_and_admission(size_t width, bool placed)
 {
     ID3D12ResourceVtbl resource_methods = {0};
     resource_methods.Map = map_resource;
     resource_methods.Unmap = unmap_resource;
     resource_methods.Release = release_resource;
-    const size_t capacity = 2u * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    /* At most 1 MiB is placed in a READBACK buffer heap; larger stays committed. */
+    const size_t capacity = (placed ? 2u : 17u) * D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
     sdk_resource resource = {.iface = {&resource_methods}, .width = width,
         .capacity = capacity, .map_result = S_OK};
     resource.bytes = malloc(capacity + 32);
@@ -107,7 +154,11 @@ static void resource_width_and_admission(size_t width)
     ID3D12DeviceVtbl device_methods = {0};
     device_methods.GetResourceAllocationInfo = allocation_info;
     device_methods.CreateCommittedResource = create_resource;
-    sdk_device device = {.iface = {&device_methods}, .resource = &resource};
+    device_methods.CreateHeap = create_heap;
+    device_methods.CreatePlacedResource = place_resource;
+    ID3D12HeapVtbl heap_methods = {0};
+    heap_methods.Release = release_heap;
+    sdk_device device = {.iface = {&device_methods}, .resource = &resource, .heap = {&heap_methods}};
     doe_dx_native_context context = {.device = &device.iface};
     context.limits.max_buffer_size = capacity;
     context.limits.max_buffer_allocation_bytes = capacity;
@@ -115,6 +166,7 @@ static void resource_width_and_admission(size_t width)
     assert(doe_dx_native_buffer_create(&context,width,DOE_DX_READBACK,&buffer,NULL) == DOE_DX_OK);
     assert(buffer && buffer->memory == DOE_DX_READBACK && buffer->size == width);
     assert(device.allocations == 1 && device.creates == 1 && !resource.maps && !resource.unmaps);
+    assert(device.heaps == (placed ? 1u : 0u) && (buffer->heap != NULL) == placed);
     assert_bytes(&resource,false); /* General READBACK construction remains uninitialized. */
     assert(doe_dx_native_zero_readback(buffer,NULL) == DOE_DX_OK);
     assert(resource.maps == 1 && resource.unmaps == 1);
@@ -129,6 +181,9 @@ static void resource_width_and_admission(size_t width)
     buffer->memory = DOE_DX_READBACK;
     doe_dx_native_buffer_destroy(buffer);
     assert(resource.releases == 1);
+    assert((context.buffer_heaps != NULL) == placed); /* One empty heap per class stays. */
+    doe_dx_buffer_heaps_close(&context);
+    assert(!context.buffer_heaps);
     free(resource.bytes);
 }
 
@@ -160,14 +215,16 @@ static void failed_map(HRESULT result, doe_dx_status expected, bool null_mapping
 
 int main(void)
 {
-    resource_width_and_admission(1);
-    resource_width_and_admission(257);
-    resource_width_and_admission(65537);
+    resource_width_and_admission(1,true);
+    resource_width_and_admission(257,true);
+    resource_width_and_admission(65537,true);
+    resource_width_and_admission(65537,false);
+    resource_width_and_admission(1048577,false);
     failed_map(E_FAIL,DOE_DX_NATIVE_FAILURE,false);
     failed_map(E_OUTOFMEMORY,DOE_DX_OUT_OF_MEMORY,false);
     failed_map(DXGI_ERROR_DEVICE_REMOVED,DOE_DX_DEVICE_LOST,false);
     failed_map(DXGI_ERROR_DEVICE_RESET,DOE_DX_DEVICE_LOST,false);
     failed_map(S_OK,DOE_DX_NATIVE_FAILURE,true);
-    puts("PASS official SDK CPU READBACK zero composition: READBACK/COPY_DEST, complete width, guard/heap slack, Map failures and null-map cleanup; no GPU");
+    puts("PASS official SDK CPU READBACK zero composition: READBACK/COPY_DEST, placed and committed, complete width, guard/heap slack, Map failures and null-map cleanup; no GPU");
     return 0;
 }

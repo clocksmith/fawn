@@ -70,6 +70,11 @@
   requests allocate independently; no CPU write overlaps GPU use. Only a larger
   speculative page's OOM may retry the exact requested size. Keep immutable zero
   storage separate, copy only caller bytes, and release both caches at teardown.
+- Buffers whose queried allocation is at most 1 MiB are placed in context-owned
+  4 MiB buffer-only heaps of their own memory class (64 KiB slots). Placement
+  never implies contents: every caller still fully initializes. Slots return only
+  when the resource is released after retirement; keep one empty heap per class,
+  detach live heaps at close, and never retry a failed heap/placement as committed.
 - The additive zeroed READBACK constructor finishes CPU Map/zero/Unmap before
   publication or any GPU use. Zero exactly resource Width, including requested
   padding, never committed-heap alignment slack. Keep ordinary READBACK create

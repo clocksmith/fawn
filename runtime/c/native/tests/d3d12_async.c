@@ -308,8 +308,9 @@ static void initialization_ordering(bool debug)
                 fprintf(stderr,"D3D12 debug message %u: %s\n",(unsigned)message->ID,message->pDescription);
                 /* The SDK explicitly permits CPU writes to READBACK. Keep the
                  * truthful written range for tooling; do not hide those writes
-                 * merely to avoid this low-utility advisory. DEFAULT initial
-                 * state is also an advisory: buffers implicitly start COMMON. */
+                 * merely to avoid this low-utility advisory. A committed DEFAULT
+                 * initial state is also an advisory (buffers implicitly start
+                 * COMMON); these <=1 MiB buffers are placed and must emit none. */
                 if (message->Severity == D3D12_MESSAGE_SEVERITY_WARNING &&
                     message->ID == D3D12_MESSAGE_ID_UNMAP_RANGE_NOT_EMPTY) range_advisories++;
                 else if (message->Severity == D3D12_MESSAGE_SEVERITY_WARNING &&
@@ -319,9 +320,9 @@ static void initialization_ordering(bool debug)
             free(message);
         }
         ID3D12InfoQueue_Release(messages);
-        assert(clean && state_advisories == 2 && range_advisories == 3);
+        assert(clean && state_advisories == 0 && range_advisories == 3);
         puts("D3D12 initialization debug layer: no errors/corruption/unexpected warnings; "
-            "2 DEFAULT-state and3 truthful READBACK-written-range advisories retained");
+            "placed buffers emit no state advisory; 3 truthful READBACK-written-range advisories retained");
     }
     consumer_finish(&s);
     printf("gated initialization: accepted=%u CPUzero=%u watchdog=%u; complete260-byte/partial-cacheline/256-byte-CBV-padding oracles\n",
