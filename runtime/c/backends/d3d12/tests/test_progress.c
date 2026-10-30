@@ -26,6 +26,7 @@ static void lease_survives_shell(bool lose)
     assert(context->objects == objects + 1);
     assert(doe_dx_commands_block(&lease, 0, NULL) == DOE_DX_PENDING);
     assert(doe_dx_commands_block(&lease, 1, NULL) == DOE_DX_PENDING);
+    assert(!mock.recycled_commands);
     doe_dx_commands_release(commands);
     doe_dx_buffer_release(upload);
     doe_dx_buffer_release(destination);
@@ -42,6 +43,7 @@ static void lease_survives_shell(bool lose)
     /* The original command and every private buffer have retired, while the
      * event observer still owns one obligation on the existing context. */
     assert(!mock.commands && !mock.buffers && context->objects == 1);
+    assert(mock.recycled_commands == (lose ? 0u : 1u));
     assert(doe_dx_context_destroy(context) == DOE_DX_BUSY);
     assert(doe_dx_commands_unhold(&lease, NULL) == DOE_DX_OK);
     assert(!lease.context && !lease.record);
@@ -138,7 +140,7 @@ static void retirement_preserves_later_identities(void)
     mock_reset();
 }
 
-static void unknown_signal_keeps_reservation(void)
+static void unknown_signal_keeps_reservation(bool lose)
 {
     doe_dx_context *context = NULL;
     doe_dx_buffer *upload = NULL, *gpu = NULL, *readback = NULL;
@@ -166,8 +168,15 @@ static void unknown_signal_keeps_reservation(void)
     doe_dx_buffer_release(upload);
     doe_dx_buffer_release(gpu);
     doe_dx_buffer_release(readback);
-    mock.lost = true;
-    assert(doe_dx_context_poll(context,0,NULL) == DOE_DX_DEVICE_LOST);
+    assert(!mock.recycled_commands);
+    if (lose) {
+        mock.lost = true;
+        assert(doe_dx_context_poll(context,0,NULL) == DOE_DX_DEVICE_LOST);
+    } else {
+        mock.completed = 2;
+        assert(doe_dx_context_poll(context,0,NULL) == DOE_DX_OK);
+    }
+    assert(mock.recycled_commands == (lose ? 0u : 2u));
     assert(!mock.commands && !mock.buffers);
     assert(doe_dx_context_destroy(context) == DOE_DX_OK);
     mock_reset();
@@ -215,7 +224,8 @@ int main(void)
     accepted_buffer_ordering(false);
     accepted_buffer_ordering(true);
     retirement_preserves_later_identities();
-    unknown_signal_keeps_reservation();
+    unknown_signal_keeps_reservation(false);
+    unknown_signal_keeps_reservation(true);
     partial_then_full_queued_initialization();
     lease_survives_shell(false);
     lease_survives_shell(true);

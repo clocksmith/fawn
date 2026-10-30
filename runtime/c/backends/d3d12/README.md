@@ -11,9 +11,11 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   selection, software-adapter opt-in, D3D12 device,
   direct command queue, private fence and observable adapter identity.
 - Default/UAV-capable, zero-initialized upload, and readback buffers; checked
-  transfer ranges and scoped map/unmap. Default/readback initialization requires
-  a full copy, published as completed only after successful completion. A known
-  fenced acceptance separately authorizes future GPU use on the same queue.
+  transfer ranges and scoped map/unmap. DEFAULT initialization uses a full copy,
+  published as completed after successful completion; known-fenced acceptance
+  separately authorizes future GPU use on the same queue. Ordinary READBACK
+  creation remains uninitialized; its additive zeroed constructor finishes full
+  CPU initialization before publication.
 - Precompiled DXIL/DXBC compute pipelines, immutable structured SRV/UAV layout,
   register spaces, ranged descriptors and three-dimensional dispatch.
 - GPU-owned indirect compute records with checked allocation/range/alignment,
@@ -51,6 +53,10 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   readback, real direct-queue frequency and completion-backed slot publication.
 - Single-use command recording, early caller release, atomic submission ownership,
   finite waits, partial retirement, unknown-completion recovery and terminal loss.
+  Successful fence retirement may retain one closed native allocator/list pair on
+  the existing context. Later commands reset it in allocator/list order; failures
+  propagate without a fresh-create retry. Pending/lost/discarded recordings never
+  supply a pair, and context teardown releases its idle native objects.
 - Typed statuses, first close failure, allocation rollback and native bounds.
 
 The additive [whole-pass render API](include/doe_d3d12_render.h) composes

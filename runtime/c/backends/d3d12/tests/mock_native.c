@@ -222,6 +222,12 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
     free(commands);
 }
 
+void doe_dx_native_commands_recycle(doe_dx_native_commands *commands) {
+    assert(commands && commands->execution && !mock.lost && mock.completed >= commands->execution);
+    mock.recycled_commands++;
+    doe_dx_native_commands_destroy(commands);
+}
+
 /* Borrow observation per native use, not a simulated ownership registry. */
 static void *observation_capacity(void *old, size_t count, size_t *capacity, size_t element) {
     if (count < *capacity) return old;
