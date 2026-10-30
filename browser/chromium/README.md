@@ -194,6 +194,17 @@ comparison. The route also allows `fcntl(F_DUPFD_QUERY)`, which Mesa's loader
 uses to compare a DRI3 descriptor with an already open device; it compares two
 caller-owned descriptors and opens or grants nothing.
 
+Since Linux 6.8 a DRM file records the process that uses it; the first ioctl
+from another process transfers it and waits for an RCU grace period. A brokered
+open makes the broker that recorded process, so compositor Vulkan and the
+provider's first adapter each waited about 20 ms on this route. After the broker
+starts and before sealing, the route therefore opens each admitted render node
+twice with `O_RDWR | O_CLOEXEC`. The broker client returns one of these files
+only for an `open` of exactly that path and those flags which the policy already
+admits; each is an independent file used once, and later opens use the broker.
+No path, device or access is added to the policy, and unused files stay open
+until the GPU process exits.
+
 Forced Doe's default Linux WebGPU backend uses the provider's Vulkan adapter
 independently of Chromium's compositor API. Shared images travel through the
 Skia staging owner, including its synchronization, format conversion and access
