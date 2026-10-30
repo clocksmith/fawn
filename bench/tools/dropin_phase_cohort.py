@@ -51,7 +51,7 @@ WORKLOADS = {
     },
 }
 SECOND_SET_SEED_OFFSET = 1000
-ONE_TIME = ("setupNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "processInMainNs")
+ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "processInMainNs")
 LOOP_PHASES = ("upload", "encode", "submit", "completion", "map", "operation")
 BOOTSTRAP_RESAMPLES = 10000
 BOOTSTRAP_SEED = 20261029
@@ -205,7 +205,7 @@ def bootstrap_median_ci(values: list[float]) -> tuple[float, float]:
 
 def process_metrics(row: dict) -> dict[str, float]:
     result = row["result"]
-    metrics = {key: result[key] / 1e6 for key in ONE_TIME}
+    metrics = {key: result[key] / 1e6 for key in ONE_TIME if key in result}
     metrics["processWall"] = row["processWallNs"] / 1e6
     metrics["cpuMs"] = row["childCpuMs"]
     metrics["maxRssMiB"] = result["maxRssKiB"] / 1024

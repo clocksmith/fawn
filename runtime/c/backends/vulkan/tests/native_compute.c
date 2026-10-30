@@ -19,10 +19,27 @@ int main(int argc, char **argv) {
     uint32_t *spirv = malloc((size_t)length);
     if (spirv == NULL || fread(spirv, 1, (size_t)length, file) != (size_t)length) return 2;
     fclose(file);
-    doe_vk_options options = { .allow_cpu_adapter = argc == 3 && strcmp(argv[2], "--allow-software") == 0 };
+    /* The device context shares an adapter-only context's instance, and the
+     * adapter is released before any device work: the shared owner keeps the
+     * instance and loader alive until the device context's last release. */
+    doe_vk_options options = { .allow_cpu_adapter = argc == 3 && strcmp(argv[2], "--allow-software") == 0,
+        .adapter_only = true };
+    doe_vk_context *adapter = NULL;
     doe_vk_context *context = NULL;
     doe_vk_error error;
-    doe_vk_status status = doe_vk_context_create(&options, &context, &error);
+    doe_vk_status status = doe_vk_context_create(&options, &adapter, &error);
+    if (status == DOE_VK_OK) {
+        options.adapter_only = false;
+        options.share_instance = adapter;
+        options.surface_platforms = 1;
+        if (doe_vk_context_create(&options, &context, &error) != DOE_VK_INVALID_ARGUMENT || context != NULL) {
+            fprintf(stderr, "a shared instance with different surface platforms was not refused\n");
+            return 1;
+        }
+        options.surface_platforms = 0;
+        status = doe_vk_context_create(&options, &context, &error);
+        doe_vk_context_release(adapter);
+    }
     if (status != DOE_VK_OK) {
         printf("SKIP native execution: %s at %s, native=%d\n", doe_vk_status_name(status), error.operation, error.native_result);
         free(spirv);
@@ -71,6 +88,6 @@ int main(int argc, char **argv) {
     }
     doe_vk_buffer_release(readback);
     doe_vk_context_release(context);
-    puts("PASS real Vulkan compute, dependent visibility, fill/copy, readback, early caller release");
+    puts("PASS real Vulkan compute on a shared adapter instance released first, mismatched-surface sharing refused, dependent visibility, fill/copy, readback, early caller release");
     return 0;
 }

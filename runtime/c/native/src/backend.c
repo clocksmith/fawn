@@ -122,8 +122,12 @@ native_result native_backend_device_policy(const native_backend *adapter, const 
                 result.value.vulkan.options.require_graphics_queue = false;
         }
         result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;
+        /* Share the adapter's loader and instance: identity selection still runs,
+         * on that instance, without a second instance and driver enumeration. */
+        result.value.vulkan.options.share_instance = adapter->value.vulkan.context;
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
+        result.value.vulkan.options.share_instance = NULL;
         if (status == NATIVE_OK)
             status = native_from_vulkan(doe_vk_context_caps(result.value.vulkan.context, &result.value.vulkan.caps));
         if (status == NATIVE_OK &&
