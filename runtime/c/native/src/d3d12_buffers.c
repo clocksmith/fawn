@@ -34,7 +34,7 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
      * immutable source; accepted GPU ordering carries the full-zero proof. */
     doe_dx_status status = initialize ?
         doe_dx_zero_upload_acquire(device->backend.value.d3d12.context, size, &staging, &error) :
-        doe_dx_buffer_create(device->backend.value.d3d12.context, size, DOE_DX_UPLOAD, &staging, &error);
+        doe_dx_upload_acquire(device->backend.value.d3d12.context, size, &staging, &error);
     native_failure failure = native_failure_d3d12(status, &error);
     if (status == DOE_DX_OK && !initialize) {
         status = doe_dx_buffer_write(staging, 0, bytes, size, &error);

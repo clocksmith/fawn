@@ -142,6 +142,13 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
  * Context destruction drops its cache lease before checking outstanding use. */
 doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error);
+/* Serialized caller-data staging, at least size bytes; contents unspecified on
+ * reuse. Write and copy only caller-provided bytes. One page up to one MiB uses
+ * the existing cache lease; reuse requires no other caller/recording/pending use.
+ * Busy/oversized requests remain uncached. A larger speculative page's OOM may
+ * retry the exact size; all other errors propagate. Release the caller lease. */
+doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error);
 
 doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer);
 void doe_dx_buffer_release(doe_dx_buffer *buffer);

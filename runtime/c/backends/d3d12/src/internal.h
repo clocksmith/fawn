@@ -15,6 +15,7 @@ struct doe_dx_context {
     bool lost;
     doe_dx_commands *pending;
     doe_dx_buffer *zero_upload; /* One context-owned immutable staging lease. */
+    doe_dx_buffer *upload_staging; /* One ordinary reusable caller-data staging lease. */
 };
 struct doe_dx_buffer {
     doe_dx_context *context;
