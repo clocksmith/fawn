@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "amd-vulkan-dropin-phase-c5-m7r2",
+  "experiment": "M7R-2: a new prospective experiment that reruns the M7R contract at a pre-registered pair count. M7R round 3 remains FAIL.",
+  "control": "doe-c main at 1823497b5",
+  "candidate": "1823497b5 + round3/m7r.patch (unchanged source)",
+  "mechanism": "reusable context-owned FREE_DESCRIPTOR_SET pool blocks (see round3)",
+  "teardownAttribution": "A bracketed locked diagnostic (c5/td2) found the M7R teardown excess moves entirely onto whichever object is released first: a never-used 256-byte buffer release took 22 us on main and 54 us on m7r. An explicit settle first cost 1-2 us in both, and the params release that follows was unchanged (15-16 us). The excess is deferred cleanup that main pays inside each iteration through its per-submit pool destroys; m7r pays it once at teardown. It is counted in complete.",
+  "providers": {
+    "main": "1823497b5",
+    "m7r": "M7R",
+    "dawn": "Dawn d04f88359",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "sampling": {
+    "pairs": 96,
+    "orders": "all 24 permutations of 4 providers, cycled",
+    "iterationsPerProcess": 32,
+    "inputs": "c1 frozen inputs and independent oracles",
+    "powerBasis": "Pair count chosen by empirical bootstrap power simulation from the round-3 per-pair complete ratios (doe-work/c4/power2.py, retained): resample n pairs from the observed distribution, compute the same 95% bootstrap CI of the median, and target at least 80% power per gate. Round-3 estimates: upload/readback bound 1.02 at an assumed true ratio of 1.00 reaches 0.865 power at 72 pairs; image 0.98 at 48; vector 0.86 at 24. 96 adds margin for joint power."
+  },
+  "metric": "complete = compileNs + pipelineNs + resourcesNs + sum of every iteration's operation interval + teardownNs (CPU oracle excluded). Ratios are candidate/main per balanced pair; bootstrap 95% CI, 10000 resamples, seed 20261029.",
+  "acceptance": {
+    "dispatchWorkloads": "vector and image: complete CI95 upper < 1.0 AND warm.submit CI95 upper < 1.0",
+    "uploadReadbackBound": "buffer_upload_readback_exact_1mb: complete CI95 upper <= 1.02 (unchanged from M7R)",
+    "phaseGuard": "no warm phase on any workload with ratio CI95 lower > 1.05",
+    "verdict": "pass only if every workload window is valid and dispatchWorkloads, uploadReadbackBound and phaseGuard all hold"
+  },
+  "validity": {
+    "perWindowGate": "Each workload runs in its own timed window under the GPU lock, with the four participant units stopped. A window is INVALID if (a) foreign GPU busy averages more than 2% of window wall time, measured from amdgpu DRM fdinfo engine time of every client whose executable is not a doe-work harness binary, sampled every 250 ms throughout (device gpu_busy_percent sampled every 100 ms is recorded beside it); or (b) foreign CPU time exceeds 5% of window CPU capacity (window seconds x 32 CPUs), computed as /proc/stat busy jiffies minus the harness command tree (GNU time) minus the sampler; or (c) any process fails or misses an oracle; or (d) the A/A check fails: dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1. Process snapshots at window start and end are retained as receipts.",
+    "invalidWindows": "An invalid window is rerun fresh under the unchanged contract; its data are retained and never used for the verdict and never reinterpreted.",
+    "tooling": "doe-work/window_gate.py and doe-work/gated-window.sh (hashed)"
+  },
+  "frozenAtUtc": "2026-10-30T16:28:45Z",
+  "hashes": {
+    "doe-work/build-1823497b5/native/libwebgpu_doe_c.so": "25bf5dd38aa713a77c80cdb1d414897c4bf22937386e11e7c004c3f2d2780125",
+    "doe-work/c5/bin-main": "feefc0ce26fa8c4967b4d043105fbd09bf42a8f67050ee02c172183eead1f484",
+    "doe-work/c5/bin-dawn": "cbb437c1494ef2a3a8b27d7fbaa1714dfdf9841b70a539b1fe3b199b30a28646",
+    "doe-work/c5/bin-dawn-aa": "cbb437c1494ef2a3a8b27d7fbaa1714dfdf9841b70a539b1fe3b199b30a28646",
+    "doe-work/src-35018c4a3/bench/drop-in/dropin_phase_harness.c": "4fa1d52a910797ac56fcb317d07f562d4462567fd84485c50131e0fcf9bb6625",
+    "doe-work/src-35018c4a3/bench/tools/dropin_phase_cohort.py": "4cd33444c41e9b80b03d9bc19dca4ffed0870ed5efc30c53f5f49bc134a1aee2",
+    "doe-work/c1/inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "doe-work/window_gate.py": "478d084557cf2c8944dba1ffaf2eb4c7696a0029b47614cf2c84082fb60c1e42",
+    "doe-work/gated-window.sh": "319263343d11f590d83a59d9a9d46cb1d54639506b3a94e237c270a5044615f1",
+    "doe-work/timed-window.sh": "b3b893055298c0b8cb9f893813ba466a080dc7806b22dd21a5a06fab8fd6d91a",
+    "doe-work/c5/power2.py": "fb5cb0ef5ca1d66f0b801eb19f2d7043ec527e5d0e3d3bdb980773b9636f965c",
+    "doe-work/c4/gate.py": "7ee9054983d25b8fa4f2a689a74b140b97a0a3502a141bb148fe4f9bc925a56f",
+    "doe-work/m7r.patch": "441f1828b399616877b4358351e83ae3ebdf53158792162ce04e6427a900afbd",
+    "doe-work/build-m7r/native/libwebgpu_doe_c.so": "edcca0a5bc9c5893b51a58e480e956eb0cd475aef802807dc30684105fdb6f7f",
+    "doe-work/c5/bin-m7r": "d576aacc6106a00263fae66d8bbd90b4b21c5149e1a98b1f025e438331797128"
+  }
+}

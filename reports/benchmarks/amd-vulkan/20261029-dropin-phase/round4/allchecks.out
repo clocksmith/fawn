@@ -1,0 +1,15 @@
+c-direct clients=78 failing: failures
+c-stream clients=78 failing: failures
+c-staging clients=78 failing: failures
+c-direct native-check rc=2 pass=90 aborts=failures.c make 
+c-direct check-vulkan rc=0
+c-direct vk-contracts failing: surface_features feature_contract
+c-stream native-check rc=2 pass=90 aborts=failures.c make 
+c-stream check-vulkan rc=0
+c-stream vk-contracts failing: surface_features feature_contract
+c-staging native-check rc=2 pass=90 aborts=failures.c make 
+c-staging check-vulkan rc=0
+c-staging vk-contracts failing: surface_features feature_contract
+c-direct after-failures clients=44 failing: sample-mask d3d12-buffer-placement
+c-stream after-failures clients=44 failing: sample-mask d3d12-buffer-placement
+c-staging after-failures clients=44 failing: sample-mask d3d12-buffer-placement
