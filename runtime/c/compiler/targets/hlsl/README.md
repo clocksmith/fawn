@@ -96,18 +96,22 @@ Implemented over current C IR:
 - Resource buffers use StructuredBuffer<uint> / RWStructuredBuffer<uint> views
   with **four-byte descriptor stride**, read-only t registers and writable u
   registers. Group maps directly to register space; binding maps to register.
-  Dynamic dimensions come from that bound view, not the underlying allocation.
+  Dynamic sizes come from the runtime-supplied `DoeStorageSizes` table (b2,
+  space7, one uint per canonical resource: the bound range's exact bytes), not a
+  view query or the underlying allocation. Entries reading it carry STORAGE_SIZES.
 - Uniforms use uint4 arrays in b registers. Shared WGSL byte offsets, explicit
   align/size padding, vec3's three words and nested strides determine fieldwise
   loads/stores. HLSL aggregate layout does not determine external buffer layout.
-- Independent signed/fixed/runtime index guards, zero reads, discarded writes,
-  checked view extents and no resource padding writes. Layout addressing is
-  bounded to 32-bit bytes; invalid descriptor stride/overflow dimensions zero the
-  view. Uniform buffers are bounded to the 64 KiB target limit. Each access has one
-  guard: a runtime-tail index bound (bytes - tail) / stride implies the byte range
-  because the accessed leaf lies inside its element, so only fixed-size storage
-  paths add the explicit byte check. Unguarded paths emit no constant-true test.
-  Each storage view's byte size is queried once per invocation into the context.
+- Storage and uniform buffer indices clamp, as WGSL robustness permits:
+  each indexed step becomes `min(uint(index), last)` with last = extent - 1 for
+  fixed arrays and vectors and (bytes - tail) / stride - 1 for a runtime tail with
+  at least one bound element (0 otherwise). Accesses run unconditionally, stay in
+  the declared extent and never write resource padding. A zero-element tail
+  clamps to element 0, at or past the binding end, where D3D12 view bounds read
+  zero and drop writes. Workgroup, private, function and value roots keep
+  independent signed/fixed index guards with zero reads and discarded writes.
+  Layout addressing is bounded to 32-bit bytes (tail offset plus stride included);
+  uniform buffers are bounded to the 64 KiB target limit.
 - Compute invocation inputs and the retained num_workgroups metadata contract;
   groupshared roots initialize once on lane zero, then synchronize. User
   workgroup barriers emit GroupMemoryBarrierWithGroupSync, not a device fence.
@@ -171,7 +175,7 @@ Derivative builtins, textureSampleBias/Grad, gather,
 offsets on remaining explicit non-depth sampling overloads,
 external textures, f16, pointer parameters,
 overrides and remaining retained builtin families remain incomplete. New shared
-atomic IR is lowered through the canonical guarded access owner as described below.
+atomic IR is lowered through the canonical access owner as described below.
 Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
 num_subgroups and subgroup_id explicitly reject because this owner does not
 assume a portable mapping from local invocation order to HLSL wave membership.
@@ -200,10 +204,13 @@ and unsupported-identity mutation controls. `library` produces a private archive
 whose shared compiler helper dependencies remain core-owned.
 
 `host-control` mechanically removes stage/resource annotations from five generated
-scalar/aggregate/image-guard/stage fixtures, binds word arrays, compiles their emitted
+scalar/aggregate/image-guard/stage fixtures, binds word arrays through host views
+that read zero, drop writes and count accesses past their bound words (as a D3D12
+buffer view does), fills the size table like the runtime, compiles their emitted
 C++ operations with GCC/UBSan and checks continuing, effects, call argument order,
-nested independent OOB reads, discarded-store RHS effects, integer wrapping,
-bounds, view sizes, field offsets and padding preservation. The image control uses asserting
+clamped negative/upper indices staying inside the binding, a zero-size binding,
+clamped-store RHS effects, local-root zero reads, integer wrapping, field offsets
+and padding preservation. The image control uses asserting
 query/load stubs with sentinel data solely to execute the emitted negative/upper
 LOD and coordinate guards; it does not emulate image formats, sampling or a GPU.
 The stage control executes typed formal/field identity, helper-call and return-leaf
@@ -216,10 +223,10 @@ No historical evidence or tests were removed. The private Metal adapter's
 measurement/control patterns informed this target; HLSL resource and entry
 contracts remain separate rather than creating a universal emitter framework.
 
-`arrayLength` uses the shared resolved storage-tail offset/stride and the bound
-view's size metadata. It does not inspect element contents or infer a short view
+`arrayLength` uses the shared resolved storage-tail offset/stride and the
+binding's size-table row. It does not inspect element contents or infer a short view
 from a separate allocation size. The emitted-operation fixture covers a prefixed
-vector-element runtime tail, short views, partial elements and size-table identity.
+vector-element runtime tail, short bindings, partial elements and size-table identity.
 
 Memory helper emission follows selected entry call reachability and actual access
 root/type/mode closure. Integer division/remainder and float-to-integer helpers
@@ -268,10 +275,11 @@ This is emitted-operation evidence, not DXC, DXIL, GPU precision or SDK acceptan
 ## Atomic operations
 
 All eleven existing WGSL atomic IR operations lower for writable storage and
-workgroup i32/u32 memory. The existing access-path owner checks negative and
-upper indices, runtime-tail length and the four-byte extent before forming a
-native lvalue. Results begin at zero (including compare-exchange's false flag)
-so invalid accesses retain guarded load-zero/store-discard behavior. Source
+workgroup i32/u32 memory. Storage atomics clamp their indices like every
+storage access, so the interlocked operation always runs on an in-range word.
+Workgroup atomics check negative and upper indices before forming a native
+lvalue; their results begin at zero (including compare-exchange's false flag),
+so invalid workgroup accesses keep load-zero/store-discard behavior. Source
 operand and index side effects still occur once in their validated IR order.
 
 Storage views and groupshared atomic leaves are native uint words. Add/subtract
@@ -299,9 +307,12 @@ make atomic-software OUT=/tmp/doe-hlsl-atomic DXC=/absolute/path/to/dxc \
 
 This compiles five fresh emitted fixtures to cs_6_0 DXIL, translates their exact
 HLSL bytes to SPIR-V with the same official DXC, validates them, and executes on
-an explicitly selected CPU Vulkan adapter. Fixed expected words check old values,
-wrap, signed min/max, successful/failed exchange, negative/high-index zero results,
-canaries and ordered operands even with an empty runtime tail. DXC's SPIR-V mode
+an explicitly selected CPU Vulkan adapter. The size table (b2, space7) is remapped
+to set 0, binding 2 for that consumer and filled from the binding ranges. Fixed
+expected words check old values, wrap, signed min/max, successful/failed exchange,
+negative/high storage indices acting on the last bound cell, negative/high
+workgroup indices reading zero, canaries and ordered operands even with an empty
+runtime tail. DXC's SPIR-V mode
 warns that allow_uav_condition is ignored; DXIL accepts the required attribute.
 These controls do not establish Windows/D3D12 execution, physical execution,
 concurrent forward-progress qualification, or the separate Metal atomic target.

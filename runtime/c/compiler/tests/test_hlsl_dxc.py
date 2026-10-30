@@ -27,6 +27,8 @@ def audit_reflection(assembly: str, metadata: dict, entry_name: str) -> None:
                 for record in metadata['bindings']}
     if entry['dispatchBytes']:
         expected.add(('cb', entry['dispatchRegister'], entry['dispatchSpace']))
+    if entry['flags'] & 64:  # STORAGE_SIZES: runtime size table at b2, space7.
+        expected.add(('cb', 2, 7))
     table = assembly.split('; Resource Bindings:', 1)[1].split('target datalayout', 1)[0]
     rows = re.findall(r'^;\s+\w+\s+(?:cbuffer|sampler|texture|UAV)\s+.+?\s+'
                       r'(cb|[stu])(\d+)(?:,space(\d+))?\s+\d+\s*$', table, re.M)

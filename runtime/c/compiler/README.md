@@ -271,9 +271,12 @@ A vec3 has size 12/alignment 16; array stride is 16. Uniform constraints validat
 layout rather than silently repacking it. Explicit @align/@size are owned values.
 Runtime arrays occur only at an admitted storage root or its direct final member.
 Uniform minimum binding extents remain host dispatch preconditions, not short-buffer
-zero-fill. Each access step guards before pointer formation; out-of-bounds loads
-produce typed zero and stores discard independently. An inner OOB load's zero may
-still be a valid outer index. Bounds do not establish descriptor overlap/race safety.
+zero-fill. In SPIR-V and MSL each access step guards before pointer formation;
+out-of-bounds loads produce typed zero and stores discard independently. An inner
+OOB load's zero may still be a valid outer index. The HLSL target instead clamps
+storage and uniform buffer indices to the last valid element (sizes from a
+runtime-supplied table) and guards only workgroup/private/function/value roots;
+see [its charter](targets/hlsl/AGENTS.md). Bounds do not establish descriptor overlap/race safety.
 
 Each helper emits actual target calls and fresh local state. Source evaluation
 order, local snapshots, termination, short circuit and robust Phi predecessors

@@ -4,7 +4,10 @@
 """Execute emitted scalar/aggregate/guard operations, not HLSL or GPU semantics.
 
 The mechanical shim removes HLSL resource/stage annotations, exposes word views,
-and maps zero aggregate initialization to C++. The image guard uses asserting
+and maps zero aggregate initialization to C++. Each storage view models a D3D12
+buffer view: words past the bound count read zero, drop writes and are counted,
+so a control can assert that clamped accesses never leave a nonempty binding.
+The runtime size table is a plain host array the control fills like the runtime. The image guard uses asserting
 query/load stubs and a sentinel result, not an image or sampling model.
 It does not simulate WGSL, threads,
 wave intrinsics, descriptor lifetime, a driver, or target compiler acceptance.
@@ -46,32 +49,52 @@ uint asuint(int v) { uint r; std::memcpy(&r, &v, 4); return r; }
 uint asuint(float v) { uint r; std::memcpy(&r, &v, 4); return r; }
 int asint(uint v) { int r; std::memcpy(&r, &v, 4); return r; }
 float asfloat(uint v) { float r; std::memcpy(&r, &v, 4); return r; }
+uint min(uint a, uint b) { return a < b ? a : b; } /* HLSL uint min intrinsic. */
+struct HostView {
+    uint *words = nullptr;
+    uint count = 0;
+    unsigned beyond = 0;
+    uint sink = 0;
+    uint& operator[](uint index) {
+        if (words != nullptr && index < count) return words[index];
+        ++beyond;
+        sink = 0;
+        return sink;
+    }
+};
+uint4 doe_storage_sizes[16] = {};
+/* Binds like the runtime: one view of `words` words and the exact byte size row. */
+#define BIND(view, row, data, words_) ((view).words = (data), (view).count = (words_), (view).beyond = 0, \
+    doe_storage_sizes[(row) / 4u][(row) % 4u] = (words_) * 4u)
 """
 scalar = r"""
 int main() {
     uint words[9] = {};
-    r0 = words;
-    r0_count = 7;
+    BIND(r0, 0, words, 7);
+    words[6] = 4242;
     words[7] = 12345;
     words[8] = 67890;
     control();
+    /* output[-1] clamps to the last element (6), read before output[6] is written. */
     assert(asint(words[0]) == 2 && asint(words[1]) == 12);
     assert(asint(words[2]) == INT_MIN && asint(words[3]) == INT_MIN);
-    assert(asint(words[4]) == -7 && words[5] == 0 && words[6] == 6);
-    assert(words[7] == 12345 && words[8] == 67890);
+    assert(asint(words[4]) == -7 && words[5] == 4242 && words[6] == 6);
+    assert(words[7] == 12345 && words[8] == 67890 && r0.beyond == 0);
     std::fill(std::begin(words), std::end(words), 0);
-    r0_count = 3;
+    BIND(r0, 0, words, 3);
     control();
-    assert(words[0] == 2 && words[1] == 12 && asint(words[2]) == INT_MIN);
+    /* Indices 3..6 and -1 clamp to element 2, whose last store is bump(5). */
+    assert(words[0] == 2 && words[1] == 12 && words[2] == 6);
     for (unsigned i = 3; i < 9; ++i) assert(words[i] == 0);
-    r0_stride = 8;
+    assert(r0.beyond == 0);
+    std::fill(std::begin(words), std::end(words), 0x5a5a5a5au);
+    BIND(r0, 0, words, 0);
     control();
-    assert(words[0] == 2 && words[1] == 12);
-    r0_stride = 4;
-    r0_count = 0xffffffffu;
-    control();
-    assert(words[0] == 2 && words[1] == 12);
-    std::puts("HLSL scalar host control: effects, continuing, wrap, signed bounds, view extent.");
+    /* A zero-size binding clamps to element zero, past the empty view: reads
+     * are zero, stores drop, and no bound word changes. */
+    for (unsigned i = 0; i < 9; ++i) assert(words[i] == 0x5a5a5a5au);
+    assert(r0.beyond != 0);
+    std::puts("HLSL scalar host control: effects, continuing, wrap, clamped signed/upper indices inside the binding, zero-size binding.");
 }
 """
 aggregate = r"""
@@ -80,12 +103,14 @@ int main() {
     uint data[8];
     std::fill(std::begin(data), std::end(data), 0x5a5a5a5au);
     data[0] = 2; data[1] = 5; data[5] = 7; data[6] = 9; data[7] = 13;
-    r0 = output; r0_count = 2;
-    r1 = data; r1_count = 8;
+    BIND(r0, 0, output, 2);
+    BIND(r1, 1, data, 8);
     aggregate_test();
+    /* value.tail[-1] indexes a local copy, which keeps its zero-load guard. */
     assert(output[0] == 20 && output[1] == 0 && output[2] == 2345);
     assert(data[0] == 5 && data[1] == 5 && data[5] == 7 && data[6] == 8 && data[7] == 13);
     for (unsigned i = 2; i < 5; ++i) assert(data[i] == 0x5a5a5a5au);
+    assert(r0.beyond == 0 && r1.beyond == 0);
     std::puts("HLSL aggregate host control: typed byte offsets, array copies, padding preservation.");
 }
 """
@@ -93,14 +118,18 @@ effects = r"""
 int main() {
     uint words[9] = {};
     uint indices[1] = {3};
-    r0 = words; r0_count = 8;
-    r1 = indices; r1_count = 1;
+    BIND(r0, 0, words, 8);
+    BIND(r1, 1, indices, 1);
     words[5] = 100; words[7] = 77; words[8] = 887;
     effects();
+    /* indices[-1] clamps to indices[0] == 3, so output[4] = output[3] = 77;
+     * output[10] clamps to element 7, so the late tick (8) lands there and
+     * output[6] = output[10] reads it back. Word 8 lies outside the binding. */
     assert(words[0] == 9 && words[1] == 102 && words[2] == 7);
-    assert(words[3] == 77 && words[4] == 8 && words[5] == 106);
-    assert(words[6] == 0 && words[7] == 77 && words[8] == 887);
-    std::puts("HLSL effects host control: ordered arguments, index snapshots, independent OOB roots, discarded-store effects.");
+    assert(words[3] == 77 && words[4] == 77 && words[5] == 106);
+    assert(words[6] == 8 && words[7] == 8 && words[8] == 887);
+    assert(r0.beyond == 0 && r1.beyond == 0);
+    std::puts("HLSL effects host control: ordered arguments, index snapshots, independent clamped roots, clamped-store effects.");
 }
 """
 image_types = r"""
@@ -144,7 +173,7 @@ image_guard = r"""
 int main() {
     uint words[8] = {};
     words[7] = 0x12345678;
-    r1 = words; r1_count = 7;
+    BIND(r1, 1, words, 7);
     image_guard();
     assert(asfloat(words[0]) == 42.0f);
     for (unsigned i = 1; i <= 5; ++i) assert(words[i] == 0);
@@ -176,24 +205,22 @@ int main() {
 array_length = r"""
 int main() {
     uint output[3] = {0, 0, 0x12345678};
-    r0 = nullptr; r1 = output; r1_count = 2;
-    const uint words[] = {0, 3, 4, 7, 8, 16, 0xffffffffu};
-    const uint expected[] = {0, 0, 0, 0, 1, 3, 0};
+    BIND(r1, 1, output, 2);
+    /* Byte sizes of the 16-byte-prefixed vec4u tail come from the table row. */
+    const uint bytes[] = {0, 12, 16, 28, 32, 64, 47};
+    const uint expected[] = {0, 0, 0, 0, 1, 3, 1};
     for (unsigned i = 0; i < 7; ++i) {
-        r0_count = words[i];
+        doe_storage_sizes[0][0] = bytes[i];
         array_length();
-        assert(output[0] == expected[i] && output[1] == 2 && output[2] == 0x12345678);
+        assert(output[0] == expected[i] && output[1] == 2 && output[2] == 0x12345678 && r1.beyond == 0);
     }
-    r0_count = 16; r0_stride = 8;
-    array_length();
-    assert(output[0] == 0);
-    std::puts("HLSL runtime array length: tail prefix, stride, partial elements and bound-view metadata.");
+    std::puts("HLSL runtime array length: tail prefix, stride, partial elements and runtime size-table rows.");
 }
 """
 switch_main = r"""
 int main() {
     uint words[16] = {};
-    r0 = words; r0_count = 16;
+    BIND(r0, 0, words, 16);
     for (uint lane = 0; lane < 8; ++lane) switch_entry(uint3{lane, 0, 0});
     const uint expected[16] = {11,11,23,8,99,99,99,99,1,1,1,1,1,1,1,1};
     for (unsigned i = 0; i < 16; ++i) assert(words[i] == expected[i]);
@@ -213,9 +240,9 @@ for name, main in controls:
         text = text.replace("Texture2D<float>", "ImageTexture")
         text = re.sub(r"\((int2|uint2|float4)\)0", r"\1{}", text)
     text = re.sub(r"(?:RW)?StructuredBuffer<uint> (r\d+) : register\([^;]+;",
-                  lambda m: f"uint* {m[1]}; uint {m[1]}_count; uint {m[1]}_stride = 4;", text)
-    text = re.sub(r"(r\d+)\.GetDimensions\(count, stride\);",
-                  lambda m: f"count = {m[1]}_count; stride = {m[1]}_stride;", text)
+                  lambda m: f"HostView {m[1]};", text)
+    text = re.sub(r"cbuffer DoeStorageSizes : register\([^\n]+\n", "", text)
+    assert "GetDimensions(count" not in text
     text = re.sub(r"\[numthreads\([^\n]+\]\n", "", text)
     if name == "matrices":
         # HLSL's aggregate zero cast initializes every numeric member. C++ {}

@@ -170,15 +170,15 @@ static void declare_resource(HlslEmitter *e, uint32_t index) {
             e->uses_native16 = true;
             hlsl_format(e,"%sByteAddressBuffer r%u : ",writable ? "RW" : "",index);
             hlsl_register(e,index,writable ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV,0u);
-            hlsl_format(e,";\nuint doe_r%u_bytes() { return doe_storage_sizes[%uu][%uu]; }\n",index,index/4u,index%4u);
         } else {
             hlsl_format(e, "%sStructuredBuffer<uint> r%u : ", writable ? "RW" : "", index);
             hlsl_register(e, index, writable ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 4u);
-            hlsl_text(e, ";\n");
-            hlsl_format(e, "uint doe_r%u_bytes() {\n    uint count, stride;\n", index);
-            hlsl_format(e, "    r%u.GetDimensions(count, stride);\n", index);
-            hlsl_text(e, "    return stride == 4u && count <= 0x3fffffffu ? count * 4u : 0u;\n}\n");
         }
+        hlsl_text(e, ";\n");
+        /* The binding's exact byte size comes from the runtime-supplied table,
+         * never from a native view query. */
+        if (hlsl_storage_size_used(e, index))
+            hlsl_format(e,"uint doe_r%u_bytes() { return doe_storage_sizes[%uu][%uu]; }\n",index,index/4u,index%4u);
     } else hlsl_error(e, "HLSL resource kind or access has no implementation");
 }
 static void immediate_resource(HlslEmitter *e) {
@@ -216,10 +216,12 @@ static void immediate_resource(HlslEmitter *e) {
 void hlsl_resources(HlslEmitter *e) {
     immediate_resource(e);
     const CompilerWorkspace *c = e->module;
-    bool raw = false;
-    for (uint32_t i = 0u; i < c->resource_count; ++i)
-        if (hlsl_entry_resource(e,i) && hlsl_raw_storage(c,i)) raw = true;
-    if (raw) {
+    bool sizes = false;
+    for (uint32_t i = 0u; i < c->resource_count && !e->failed; ++i)
+        if ((hlsl_entry_resource(e,i) && hlsl_raw_storage(c,i)) || hlsl_storage_size_used(e,i)) sizes = true;
+    if (e->failed) return;
+    if (sizes) {
+        e->uses_storage_sizes = true;
         if (c->resource_count > 16384u) {
             hlsl_error(e,"HLSL logical storage-size table exceeds 64 KiB CBV capacity"); return;
         }

@@ -141,7 +141,11 @@ static void test_residual(void) {
     Fixture *f = prepare(source);
     char *text = emit(f, 0u);
     has(text, "void residual(");
-    has(text, "r0.GetDimensions(count, stride)");
+    /* Runtime-array sizes come from the runtime table, never a view query. */
+    has(text, "cbuffer DoeStorageSizes : register(b2, space7) { uint4 doe_storage_sizes[1]; };");
+    has(text, "uint doe_r0_bytes() { return doe_storage_sizes[0u][0u]; }");
+    assert(strstr(text, "GetDimensions") == NULL);
+    assert(strstr(text, "doe_r3_bytes") == NULL); /* The uniform has no size row read. */
     has(text, "cbuffer DoeUniform3 : register(b3, space0)");
     has(text, "doe_r0_load4(offset)");
     has(text, "doe_r1_load4(offset)");
@@ -160,8 +164,10 @@ static void test_layout(void) {
     has(text, "r0 : register(u2, space1)");
     has(text, "asfloat(r0[(offset + 8u) / 4u])");
     has(text, "value.m1 = doe_r0_load4(offset + 12u)");
-    has(text, "ctx.doe_bytes0 >= 16u");
-    has(text, ") / 32u : 0u)");
+    /* Clamp to the last whole element after the 16-byte prefix; fewer than one
+     * element clamps to index zero. No access guard remains. */
+    has(text, "min(uint(v1), (doe_r0_bytes() >= 48u ? (doe_r0_bytes() - 16u) / 32u - 1u : 0u)) * 32u");
+    assert(strstr(text, "if (") == NULL);
     free(text);
     release(f);
 }
@@ -249,7 +255,9 @@ static void test_control_and_host_fixture(const char *output_path) {
     has(text, "bool bad = b == 0 || (a == asint(0x80000000u) && b == -1);");
     assert(strstr(text, "a % (b == 0u ? 1u : b)") == NULL && strstr(text, "doe_u32(") == NULL);
     has(text, "asint((asuint(");
-    has(text, " >= 0)");
+    /* The negative storage index clamps; no signed guard or access branch. */
+    has(text, "min(uint(");
+    assert(strstr(text, " >= 0)") == NULL && strstr(text, "if ((uint(") == NULL);
     if (output_path != NULL) {
         FILE *file = fopen(output_path, "wb");
         assert(file != NULL);
