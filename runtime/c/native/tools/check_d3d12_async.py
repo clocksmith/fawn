@@ -58,6 +58,9 @@ def main() -> int:
                for name in scope["sources"]}
     sdk_source = REPO / "runtime/c/backends/d3d12/tests/test_windows_progress.c"
     physical_source = ROOT / "tests/d3d12_async.c"
+    zero_source = REPO / "runtime/c/backends/d3d12/tests/test_windows_readback_zero.c"
+    private_objects = [path for name, path in objects.items()
+                       if name.startswith("runtime/c/backends/d3d12/")]
     sdk_objects = [path for name, path in objects.items()
                    if name.startswith("runtime/c/backends/d3d12/")
                    and not name.endswith(("/windows_context.c", "/windows_progress.c"))]
@@ -66,6 +69,10 @@ def main() -> int:
         ("sdk-build", flags + [str(sdk_source), "/Fo" + str(out / "sdk.obj"),
                               "/Fe" + str(out / "sdk.exe"), "/link", *map(str, sdk_objects), *libraries]),
         ("sdk-run", [str(out / "sdk.exe")]),
+        ("readback-zero-sdk-build", flags + [str(zero_source), "/Fo" + str(out / "zero_sdk.obj"),
+                                           "/Fe" + str(out / "zero_sdk.exe"), "/link",
+                                           *map(str, private_objects), *libraries]),
+        ("readback-zero-sdk-run", [str(out / "zero_sdk.exe")]),
         ("physical-build", flags + [str(physical_source), "/Fo" + str(out / "physical.obj"),
                                    "/Fe" + str(out / "physical.exe"), "/link", *map(str, objects.values()),
                                    str(build / "d3d12_windows_shader.obj"), str(imports), *libraries]),
@@ -76,6 +83,8 @@ def main() -> int:
         copied[name] = digest(out / name)
     if args.run_physical:
         commands.append(("physical-run", [str(out / "physical.exe")]))
+        commands.append(("initialization-debug-run", [str(out / "physical.exe"),
+                                                       "--initialization-debug"]))
     environment = os.environ.copy()
     environment["DOE_C_TEST_BACKEND"] = "d3d12"
     environment["DOE_C_TEST_ADAPTER"] = "physical"
@@ -95,7 +104,7 @@ def main() -> int:
                "nativeScopeSha256": digest(build / "native-scope.json"),
                "nativeDllSha256": digest(build / "webgpu_doe_c.dll"), "sourceDrift": final_drift,
                "testInputs": {str(path.relative_to(REPO)): digest(path)
-                              for path in (sdk_source, physical_source, Path(__file__).resolve())},
+                              for path in (sdk_source, zero_source, physical_source, Path(__file__).resolve())},
                "runtimeDlls": copied, "commands": rows}
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return 0 if not final_drift and all(row["exit"] == 0 for row in rows) else 1

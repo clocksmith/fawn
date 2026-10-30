@@ -26,6 +26,22 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     return doe_dx_fail(DOE_DX_OK, 0, "buffer.create", error);
 }
 
+doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error) {
+    if (!out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"readback_zero.create",error);
+    doe_dx_buffer *buffer = NULL;
+    doe_dx_status status = doe_dx_buffer_create(context,size,DOE_DX_READBACK,&buffer,error);
+    if (status != DOE_DX_OK) return status;
+    status = doe_dx_native_zero_readback(buffer->native,error);
+    if (status != DOE_DX_OK) {
+        doe_dx_buffer_release(buffer);
+        return doe_dx_context_result(context,status,error);
+    }
+    buffer->initialized = true; /* Synchronous CPU writes finished before any GPU use. */
+    *out = buffer;
+    return doe_dx_fail(DOE_DX_OK,0,"readback_zero.create",error);
+}
+
 doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error) {
     if (!context || !out || !size)

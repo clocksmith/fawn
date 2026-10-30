@@ -454,13 +454,27 @@ requests use uncached storage. Existing caller/command references keep an older
 source alive across replacement and unlocked initialization waits. Host writes
 to these sources reject; caller data always uses separate mutable staging.
 
-The frontend still copies zeros over each whole native allocation, including
-uniform padding, and waits for constructor initialization to complete. Reuse
-changes allocation ownership, not initialized ranges or GPU ordering. Context
+The frontend copies zeros over each whole DEFAULT resource, including uniform
+padding, and returns after known-fenced queue acceptance. The common pending
+owner retains that initialization until terminal observation; CPU access still
+waits for the buffer's actual owner. Reuse changes allocation ownership, not
+initialized ranges or GPU ordering. Context
 destruction releases its cache lease; outstanding caller, command and event
 obligations still refuse destruction. `test_zero_upload.c` checks these owner
 edges without executing data. `native_zero_upload.c` separately checks actual
 GPU zero copies and readback over small, padded, cached and uncached sizes.
+
+`doe_dx_buffer_create_readback_zeroed` separately performs a full CPU zero fill
+of READBACK resource Width before publication. Ordinary private READBACK creation
+remains uninitialized and ordinary writes remain UPLOAD-only. This uses
+[READBACK write-back memory](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type)
+under the [Map ordering contract](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12resource-map):
+CPU writes finish before any GPU command can reference the new resource. Written
+Unmap ranges are tooling metadata, not synchronization. Later GPU writes still
+require completion before CPU mapping. The host and official-SDK controls keep
+their separate scopes; the physical gated initialization fixture checks full
+zeros, a partial copy across a cache-line boundary, padded DEFAULT initialization,
+early release and loss before initialization completion.
 
 ## Buffer aliases within one command
 
@@ -798,3 +812,10 @@ records its exact identity and includes it in relocated packages. `native_fxc.c`
 is an explicit SDK CPU control over the certified emitted corpus, exact5.1
 reflection, failure outputs, entry defines, host state and blob/module lifetime;
 it is separate from physical GPU output and performance evidence.
+
+The gated initialization debug-layer control retains the SDK's READBACK
+`UNMAP_RANGE_NOT_EMPTY` advisory: CPU writes are supported, and the constructor
+reports their actual full range. It also records `CREATERESOURCE_STATE_IGNORED`
+for DEFAULT buffers. These documented advisories are counted explicitly; errors,
+corruption and all other warnings fail the control. A pass does not mean the
+SDK emitted no warnings.

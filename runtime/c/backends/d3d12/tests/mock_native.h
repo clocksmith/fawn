@@ -8,7 +8,7 @@ typedef enum mock_failure {
     MOCK_NONE, MOCK_OPEN, MOCK_BUFFER, MOCK_PIPELINE, MOCK_COMMANDS,
     MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
     MOCK_WRITE, MOCK_READ, MOCK_TEXTURE, MOCK_GRAPHICS, MOCK_DRAW, MOCK_TIMESTAMPS, MOCK_FREQUENCY,
-    MOCK_DISPATCH_INDIRECT, MOCK_NO_HARDWARE
+    MOCK_DISPATCH_INDIRECT, MOCK_NO_HARDWARE, MOCK_ZERO_READBACK
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
@@ -32,6 +32,8 @@ typedef struct mock_state {
     doe_dx_format queried_format;
     size_t contexts, buffers, pipelines, commands, textures, timestamps;
     size_t copies, dispatches, finishes, executes, signals, waits;
+    size_t readback_zeroes;
+    doe_dx_status readback_zero_status;
     size_t allocations, allocation_attempts, allocation_failure;
     uint64_t completed, last_signal;
     bool lost;

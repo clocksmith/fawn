@@ -65,6 +65,11 @@
   caller data. Copies still cover the whole destination allocation/padding.
   Context destruction drops only its cache lease before checking outstanding
   caller/command/event obligations; failed native close remains retryable.
+- The additive zeroed READBACK constructor finishes CPU Map/zero/Unmap before
+  publication or any GPU use. Zero exactly resource Width, including requested
+  padding, never committed-heap alignment slack. Keep ordinary READBACK create
+  uninitialized and general host writes UPLOAD-only. Unmap ranges describe writes
+  for tools; they are not a fence or permission for CPU/GPU overlap.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
   states stay fixed. Descriptor heaps and allocators survive their whole submission.
 - Test host ownership at the private typed native-call link seam, not a simulated

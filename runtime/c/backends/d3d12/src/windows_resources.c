@@ -64,6 +64,26 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     return doe_dx_fail(DOE_DX_OK, 0, "native.buffer.create", error);
 }
 
+doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_error *error) {
+    if (!buffer || buffer->memory != DOE_DX_READBACK)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"native.readback_zero.memory",error);
+    void *mapped = NULL;
+    const D3D12_RANGE no_read = {0,0};
+    HRESULT result = ID3D12Resource_Map(buffer->resource,0,&no_read,&mapped);
+    if (FAILED(result)) return doe_dx_hresult(result,"ID3D12Resource.Map.readback_zero",error);
+    if (!mapped) {
+        const D3D12_RANGE no_write = {0,0};
+        ID3D12Resource_Unmap(buffer->resource,0,&no_write);
+        return doe_dx_fail(DOE_DX_NATIVE_FAILURE,(int32_t)E_FAIL,"native.readback_zero.pointer",error);
+    }
+    /* Width is the accessible resource extent, not committed-heap alignment
+     * slack from GetResourceAllocationInfo. No command has used this resource. */
+    memset(mapped,0,(size_t)buffer->size);
+    const D3D12_RANGE written = {0,(SIZE_T)buffer->size};
+    ID3D12Resource_Unmap(buffer->resource,0,&written);
+    return doe_dx_fail(DOE_DX_OK,0,"native.readback_zero",error);
+}
+
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error) {
     void *mapped = NULL;

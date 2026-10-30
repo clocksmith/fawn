@@ -30,8 +30,8 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
     native_device *device = buffer->device;
     doe_dx_buffer *staging = NULL;
     doe_dx_error error = {0};
-    /* Acquire a real caller lease before copy_now may unlock while waiting.
-     * Shared initialization sources stay immutable; user writes get fresh staging. */
+    /* Both paths snapshot through retained staging. Initialization uses the
+     * immutable source; accepted GPU ordering carries the full-zero proof. */
     doe_dx_status status = initialize ?
         doe_dx_zero_upload_acquire(device->backend.value.d3d12.context, size, &staging, &error) :
         doe_dx_buffer_create(device->backend.value.d3d12.context, size, DOE_DX_UPLOAD, &staging, &error);
@@ -41,7 +41,7 @@ static native_failure upload(native_buffer *buffer, uint64_t offset,
         failure = native_failure_d3d12(status, &error);
     }
     if (failure.status == NATIVE_OK)
-        failure = copy_now(device, staging, 0, buffer->handle.d3d12->allocation, offset, size, initialize);
+        failure = copy_now(device, staging, 0, buffer->handle.d3d12->allocation, offset, size, false);
     doe_dx_buffer_release(staging);
     return failure;
 }
@@ -64,8 +64,11 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     native_d3d12_buffer *payload = calloc(1, sizeof(*payload));
     if (!payload) return native_failure_status(NATIVE_OUT_OF_MEMORY);
     doe_dx_error error = {0};
-    doe_dx_status status = doe_dx_buffer_create(buffer->device->backend.value.d3d12.context,
-        physical, direct_readback ? DOE_DX_READBACK : DOE_DX_DEFAULT, &payload->allocation, &error);
+    doe_dx_status status = direct_readback ?
+        doe_dx_buffer_create_readback_zeroed(buffer->device->backend.value.d3d12.context,
+            physical,&payload->allocation,&error) :
+        doe_dx_buffer_create(buffer->device->backend.value.d3d12.context,
+            physical,DOE_DX_DEFAULT,&payload->allocation,&error);
     if (status != DOE_DX_OK) {
         free(payload);
         return native_failure_d3d12(status, &error);
@@ -73,9 +76,11 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     payload->allocation_size = physical;
     payload->memory = direct_readback ? DOE_DX_READBACK : DOE_DX_DEFAULT;
     buffer->handle.d3d12 = payload;
-    /* Initialized upload heaps supply genuine zeros for the entire native
-     * allocation, including private CBV padding. Public length stays unchanged. */
-    native_failure failure = upload(buffer, 0, NULL, (size_t)physical, true);
+    /* READBACK construction completed its full CPU zero fill. DEFAULT copies
+     * genuine zeros over the complete native width, including CBV padding;
+     * known-fenced acceptance protects later GPU uses, never CPU access. */
+    native_failure failure = direct_readback ? native_failure_status(NATIVE_OK) :
+        upload(buffer, 0, NULL, (size_t)physical, true);
     if (failure.status != NATIVE_OK) native_d3d12_buffer_close(buffer);
     return failure;
 #else

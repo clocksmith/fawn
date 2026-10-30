@@ -5,6 +5,7 @@
 #include "../../backends/d3d12/src/internal.h"
 #include "../../backends/d3d12/src/windows_internal.h"
 #include "consumer.h"
+#include <d3d12sdklayers.h>
 
 typedef struct gate_case {
     state *state;
@@ -196,18 +197,139 @@ static void ordered_work(void)
     assert(valid);
 }
 
+typedef struct initialization_case {
+    gate_case gate;
+    WGPUBuffer full,partial,padding;
+    bool cpu_zeroes;
+} initialization_case;
+
+static void initialize_while_closed(void *identity)
+{
+    initialization_case *test=identity;
+    state *s=test->gate.state;
+    native_device *device=(native_device *)s->device;
+    WGPUBuffer source=buffer(s,260,WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
+    test->full=buffer(s,260,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
+    test->partial=buffer(s,260,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
+    const unsigned char *zero=map(s,test->partial,260);
+    test->cpu_zeroes=true;
+    for(size_t i=0;i<260;++i) if(zero[i]) test->cpu_zeroes=false;
+    wgpuBufferUnmap(test->partial);
+    const uint32_t update[2]={0x12345678u,0x9abcdef0u};
+    wgpuQueueWriteBuffer(s->queue,source,60,update,sizeof(update));
+    WGPUCommandEncoder encoder=wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,source,0,test->full,0,260);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,source,60,test->partial,60,sizeof(update));
+    WGPUCommandBuffer commands=wgpuCommandEncoderFinish(encoder,NULL);
+    assert(commands); wgpuCommandEncoderRelease(encoder);
+    wgpuQueueSubmit(s->queue,1,&commands);
+    wgpuCommandBufferRelease(commands);
+    wgpuBufferRelease(source); /* Both accepted initialization and copies retain it. */
+
+    WGPUBuffer uniform=buffer(s,13,WGPUBufferUsage_Uniform|WGPUBufferUsage_CopySrc);
+    test->padding=buffer(s,256,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
+    /* Backend-private padding oracle: the public logical source is only13
+     * bytes, while its initialized physical CBV allocation is256 bytes. */
+    native_lock(device);
+    native_buffer *from=doe_resource_buffer_native((doe_resource_buffer *)uniform);
+    native_buffer *to=doe_resource_buffer_native((doe_resource_buffer *)test->padding);
+    assert(from->handle.d3d12->allocation_size == 256);
+    native_command_handle native={0};
+    assert(native_command_create(&device->backend,&native).status == NATIVE_OK);
+    assert(doe_dx_commands_copy(native.value.d3d12.commands,from->handle.d3d12->allocation,
+        0,to->handle.d3d12->allocation,0,256,NULL) == DOE_DX_OK);
+    assert(native_submit_backend_commands_async(device,native).status == NATIVE_OK);
+    native_unlock(device);
+    wgpuBufferRelease(uniform);
+    assert(SetEvent(test->gate.accepted));
+}
+
+static void initialization_ordering(bool debug)
+{
+    state s={0}; consumer_init(&s);
+    native_device *device=(native_device *)s.device;
+    doe_dx_context *context=device->backend.value.d3d12.context;
+    ID3D12InfoQueue *messages=NULL;
+    if (debug) assert(SUCCEEDED(ID3D12Device_QueryInterface(context->native->device,
+        &IID_ID3D12InfoQueue,(void **)&messages)));
+    initialization_case test={.gate={.state=&s}};
+    test.gate.accepted=CreateEventW(NULL,TRUE,FALSE,NULL);
+    test.gate.stop=CreateEventW(NULL,TRUE,FALSE,NULL);
+    assert(test.gate.accepted && test.gate.stop);
+    atomic_init(&test.gate.watchdog_fired,false);
+    assert(SUCCEEDED(ID3D12Device_CreateFence(context->native->device,0,
+        D3D12_FENCE_FLAG_NONE,&IID_ID3D12Fence,(void **)&test.gate.gate)));
+    assert(SUCCEEDED(ID3D12CommandQueue_Wait(context->native->queue,test.gate.gate,1)));
+    doe_thread guard={0}, creator={0};
+    assert(doe_thread_create(&guard,watchdog,&test.gate).status == DOE_HOST_OK);
+    assert(doe_thread_create(&creator,initialize_while_closed,&test).status == DOE_HOST_OK);
+    const bool accepted=WaitForSingleObject(test.gate.accepted,2000) == WAIT_OBJECT_0;
+    assert(SUCCEEDED(ID3D12Fence_Signal(test.gate.gate,1)));
+    assert(SetEvent(test.gate.stop));
+    assert(doe_thread_join(&creator).status == DOE_HOST_OK);
+    assert(doe_thread_join(&guard).status == DOE_HOST_OK);
+    unsigned char expected[260]={0};
+    const uint32_t update[2]={0x12345678u,0x9abcdef0u};
+    memcpy(expected+60,update,sizeof(update));
+    assert(!memcmp(map(&s,test.full,sizeof(expected)),expected,sizeof(expected)));
+    wgpuBufferUnmap(test.full);
+    assert(!memcmp(map(&s,test.partial,sizeof(expected)),expected,sizeof(expected)));
+    wgpuBufferUnmap(test.partial);
+    const unsigned char *padding=map(&s,test.padding,256);
+    for(size_t i=0;i<256;++i) assert(padding[i] == 0);
+    wgpuBufferUnmap(test.padding);
+    wgpuBufferRelease(test.full); wgpuBufferRelease(test.partial); wgpuBufferRelease(test.padding);
+    ID3D12Fence_Release(test.gate.gate);
+    assert(CloseHandle(test.gate.accepted) && CloseHandle(test.gate.stop));
+    if (messages) {
+        bool clean=true;
+        unsigned state_advisories=0,range_advisories=0;
+        const UINT64 count=ID3D12InfoQueue_GetNumStoredMessagesAllowedByRetrievalFilter(messages);
+        for (UINT64 i=0;i<count;++i) {
+            SIZE_T size=0;
+            assert(SUCCEEDED(ID3D12InfoQueue_GetMessage(messages,i,NULL,&size)));
+            D3D12_MESSAGE *message=malloc(size);
+            assert(message && SUCCEEDED(ID3D12InfoQueue_GetMessage(messages,i,message,&size)));
+            if (message->Severity <= D3D12_MESSAGE_SEVERITY_WARNING) {
+                fprintf(stderr,"D3D12 debug message %u: %s\n",(unsigned)message->ID,message->pDescription);
+                /* The SDK explicitly permits CPU writes to READBACK. Keep the
+                 * truthful written range for tooling; do not hide those writes
+                 * merely to avoid this low-utility advisory. DEFAULT initial
+                 * state is also an advisory: buffers implicitly start COMMON. */
+                if (message->Severity == D3D12_MESSAGE_SEVERITY_WARNING &&
+                    message->ID == D3D12_MESSAGE_ID_UNMAP_RANGE_NOT_EMPTY) range_advisories++;
+                else if (message->Severity == D3D12_MESSAGE_SEVERITY_WARNING &&
+                    message->ID == D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED) state_advisories++;
+                else clean=false;
+            }
+            free(message);
+        }
+        ID3D12InfoQueue_Release(messages);
+        assert(clean && state_advisories == 2 && range_advisories == 3);
+        puts("D3D12 initialization debug layer: no errors/corruption/unexpected warnings; "
+            "2 DEFAULT-state and3 truthful READBACK-written-range advisories retained");
+    }
+    consumer_finish(&s);
+    printf("gated initialization: accepted=%u CPUzero=%u watchdog=%u; complete260-byte/partial-cacheline/256-byte-CBV-padding oracles\n",
+        (unsigned)accepted,(unsigned)test.cpu_zeroes,(unsigned)atomic_load(&test.gate.watchdog_fired));
+    fflush(stdout);
+    assert(accepted && test.cpu_zeroes && !atomic_load(&test.gate.watchdog_fired));
+}
+
 static void terminal_loss(void)
 {
     state s = {0};
     consumer_init(&s);
     native_device *device = (native_device *)s.device;
     doe_dx_context *context = device->backend.value.d3d12.context;
-    WGPUBuffer source = buffer(&s, 4, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
-    WGPUBuffer readback = buffer(&s, 4, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
     ID3D12Fence *gate = NULL;
     assert(SUCCEEDED(ID3D12Device_CreateFence(context->native->device, 0,
         D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void **)&gate)));
     assert(SUCCEEDED(ID3D12CommandQueue_Wait(context->native->queue, gate, 1)));
+    /* Construction itself is now accepted behind the closed GPU gate. Loss
+     * below must retire that initialization lease, not publish success. */
+    WGPUBuffer source = buffer(&s, 4, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    WGPUBuffer readback = buffer(&s, 4, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
     wgpuCommandEncoderCopyBufferToBuffer(encoder, source, 0, readback, 0, 4);
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
@@ -215,6 +337,7 @@ static void terminal_loss(void)
     wgpuCommandEncoderRelease(encoder);
     wgpuQueueSubmit(s.queue, 1, &commands);
     wgpuCommandBufferRelease(commands);
+    wgpuBufferRelease(source);
     native_lock(device);
     native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)readback);
     doe_dx_commands *owner = doe_dx_buffer_owner(payload->handle.d3d12->allocation);
@@ -244,14 +367,23 @@ static void terminal_loss(void)
     native_unlock(device);
     ID3D12Device5_Release(extended);
     ID3D12Fence_Release(gate);
-    wgpuBufferRelease(source);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
 }
 
-int main(void)
+int main(int argc,char **argv)
 {
+    if (argc == 2 && !strcmp(argv[1],"--initialization-debug")) {
+        ID3D12Debug *debug=NULL;
+        assert(SUCCEEDED(D3D12GetDebugInterface(&IID_ID3D12Debug,(void **)&debug)));
+        ID3D12Debug_EnableDebugLayer(debug);
+        ID3D12Debug_Release(debug);
+        initialization_ordering(true);
+        return 0;
+    }
+    assert(argc == 1);
     ordered_work();
+    initialization_ordering(false);
     terminal_loss();
     printf("PASS actual gated D3D12 queue: distinct/reused writes and dependent compute accepted before GPU release, unlocked concurrent map, timeout/cancel/early release, exact11/7/42 readback, own-device terminal loss and teardown %s\n", adapter_class_scope());
     return 0;

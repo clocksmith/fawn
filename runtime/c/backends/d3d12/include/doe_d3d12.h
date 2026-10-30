@@ -129,6 +129,12 @@ typedef enum doe_dx_memory {
  * Default buffers support structured SRV/UAVs; upload/readback are transfer-only. */
 doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     doe_dx_memory memory, doe_dx_buffer **out, doe_dx_error *error);
+/* Additive constructor: CPU Map/zero/Unmap of the complete READBACK resource
+ * width before publication, including caller-requested physical padding. No
+ * GPU use exists yet; later uses retain ordinary pending/host exclusion.
+ * General buffer_create READBACK initialization semantics remain unchanged. */
+doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, doe_dx_error *error);
 /* Retained, immutable zero-filled UPLOAD storage, at least size bytes. Context
  * serialization is required. Up to one MiB is reused/grown on the existing
  * context; larger requests remain uncached. CPU writes reject this buffer.
