@@ -13,25 +13,28 @@ doe_vk_status __wrap_doe_vk_buffer_create(doe_vk_context *context, uint64_t size
     if (injected_buffer_status != DOE_VK_OK) return injected_buffer_status;
     return __real_doe_vk_buffer_create(context,size,usage,memory,out,error);
 }
-/* Follow the actual compute creation boundary, including newly composed
- * subgroup/immediate fields; the old convenience wrapper is no longer called. */
-doe_vk_status __real_doe_vk_pipeline_create_with_immediates(doe_vk_context *,const uint32_t *,size_t,
-    const char *,const doe_vk_binding_layout *,size_t,uint32_t,uint32_t,doe_vk_pipeline **,doe_vk_error *);
-doe_vk_status __wrap_doe_vk_pipeline_create_with_immediates(doe_vk_context *context,const uint32_t *words,size_t count,
+/* Follow the actual native creation boundaries: native compute and render
+ * pipelines call the blob-store entry points directly (pipelines.c and
+ * render_pipeline.c); the older convenience wrappers are no longer called. */
+doe_vk_status __real_doe_vk_pipeline_create_blob(doe_vk_context *,const uint32_t *,size_t,
+    const char *,const doe_vk_binding_layout *,size_t,uint32_t,uint32_t,struct doe_vk_pipeline_blob *,
+    doe_vk_pipeline **,doe_vk_error *);
+doe_vk_status __wrap_doe_vk_pipeline_create_blob(doe_vk_context *context,const uint32_t *words,size_t count,
     const char *entry,const doe_vk_binding_layout *bindings,size_t binding_count,uint32_t subgroup,
-    uint32_t immediate_bytes,doe_vk_pipeline **out,doe_vk_error *error)
+    uint32_t immediate_bytes,struct doe_vk_pipeline_blob *blob,doe_vk_pipeline **out,doe_vk_error *error)
 {
     if (injected_pipeline_status != DOE_VK_OK) return injected_pipeline_status;
-    return __real_doe_vk_pipeline_create_with_immediates(context,words,count,entry,bindings,binding_count,
-        subgroup,immediate_bytes,out,error);
+    return __real_doe_vk_pipeline_create_blob(context,words,count,entry,bindings,binding_count,
+        subgroup,immediate_bytes,blob,out,error);
 }
-doe_vk_status __real_doe_vk_render_pipeline_create(doe_vk_context *,
-    const doe_vk_render_pipeline_desc *, doe_vk_pipeline **, doe_vk_error *);
-doe_vk_status __wrap_doe_vk_render_pipeline_create(doe_vk_context *context,
-    const doe_vk_render_pipeline_desc *descriptor, doe_vk_pipeline **out, doe_vk_error *error)
+doe_vk_status __real_doe_vk_render_pipeline_create_blob(doe_vk_context *,
+    const doe_vk_render_pipeline_desc *, struct doe_vk_pipeline_blob *, doe_vk_pipeline **, doe_vk_error *);
+doe_vk_status __wrap_doe_vk_render_pipeline_create_blob(doe_vk_context *context,
+    const doe_vk_render_pipeline_desc *descriptor, struct doe_vk_pipeline_blob *blob, doe_vk_pipeline **out,
+    doe_vk_error *error)
 {
     if (injected_pipeline_status != DOE_VK_OK) return injected_pipeline_status;
-    return __real_doe_vk_render_pipeline_create(context,descriptor,out,error);
+    return __real_doe_vk_render_pipeline_create_blob(context,descriptor,blob,out,error);
 }
 static bool fail_normalizer;
 doe_vk_status __real_doe_vk_timestamp_normalizer_create(doe_vk_context *,
