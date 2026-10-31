@@ -1,0 +1,121 @@
+{
+ "note": "Rebuilt 2026-10-30 for b3/m1r/m2r. Source trees: git archive d57ab2877, plus m1/candidate.patch or m2/candidate.patch applied with patch -p1. ZERO_AR_DATE=1 makes the -g debug map reproducible.",
+ "toolchain": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+ "libraries": {
+  "main": {
+   "command": "ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-d57ab2877/native CC=clang",
+   "libwebgpu_doe_c.dylib": "33bc676778c2bc1eff3baca2bc30dc76ed4b5c2cae75b07f67198a986ff4859c",
+   "libdoe_compiler.dylib": "aa87f88c4599de1054d48758b01d5a73b1e042cbed009194126795b2a15780cd"
+  },
+  "m1": {
+   "command": "ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-m1/native CC=clang",
+   "libwebgpu_doe_c.dylib": "828ab3e0a40f35eaf4a70a43697f9186aaeaccd9094e849c6e3c35d3408f4125",
+   "libdoe_compiler.dylib": "aa87f88c4599de1054d48758b01d5a73b1e042cbed009194126795b2a15780cd"
+  },
+  "m2": {
+   "command": "ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-m2/native CC=clang",
+   "libwebgpu_doe_c.dylib": "b5a4d0898c9fe15800d2ced024ccace2a123d6d8d8ea0399e9236dcc4051b463",
+   "libdoe_compiler.dylib": "aa87f88c4599de1054d48758b01d5a73b1e042cbed009194126795b2a15780cd"
+  }
+ },
+ "dawn": {
+  "revision": "d04f88359391a12375c1a3e948a0b2dcb4c97a18",
+  "command": "python3 tools/fetch_dawn_dependencies.py; ZERO_AR_DATE=1 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DDAWN_BUILD_MONOLITHIC_LIBRARY=SHARED -DDAWN_ENABLE_METAL=ON -DDAWN_ENABLE_VULKAN=OFF -DDAWN_ENABLE_OPENGLES=OFF -DDAWN_ENABLE_DESKTOP_GL=OFF -DDAWN_ENABLE_NULL=OFF -DDAWN_BUILD_SAMPLES=OFF -DDAWN_BUILD_TESTS=OFF -DTINT_BUILD_TESTS=OFF -DTINT_BUILD_CMD_TOOLS=OFF -DDAWN_USE_GLFW=OFF -DTINT_BUILD_SPV_READER=OFF -DTINT_BUILD_SPV_WRITER=OFF -DTINT_BUILD_GLSL_WRITER=OFF -DTINT_BUILD_HLSL_WRITER=OFF; ninja webgpu_dawn",
+  "libwebgpu_dawn.dylib": "c9e5faf8321ecb2d85de65a025cbb17461480c6b8a238d8403d59f2a5e64c618",
+  "matchesB1": true
+ },
+ "harnesses": [
+  {
+   "binary": "<work>/bin/harness-doe",
+   "sha256": "18d2c16a91f9fd54bb4194abcdb08ae45f8bcae223744845896d5b3c44490780",
+   "library": "<work>/build-d57ab2877/native/libwebgpu_doe_c.dylib",
+   "backend": "metal",
+   "librarySha256": "33bc676778c2bc1eff3baca2bc30dc76ed4b5c2cae75b07f67198a986ff4859c",
+   "harnessSha256": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+   "argv": [
+    "clang",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-DDOE_PHASE_BACKEND_METAL",
+    "-I<repo>/runtime/zig/vendor/webgpu-headers",
+    "<repo>/bench/drop-in/dropin_phase_harness.c",
+    "<work>/build-d57ab2877/native/libwebgpu_doe_c.dylib",
+    "-Wl,-rpath,<work>/build-d57ab2877/native",
+    "-o",
+    "<work>/bin/harness-doe"
+   ]
+  },
+  {
+   "binary": "<work>/bin/harness-doe-m1",
+   "sha256": "ebd3dcc061533281b6efd105e5bb9bdeb7f663a05bee5fc90248818f0536853f",
+   "library": "<work>/build-m1/native/libwebgpu_doe_c.dylib",
+   "backend": "metal",
+   "librarySha256": "828ab3e0a40f35eaf4a70a43697f9186aaeaccd9094e849c6e3c35d3408f4125",
+   "harnessSha256": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+   "argv": [
+    "clang",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-DDOE_PHASE_BACKEND_METAL",
+    "-I<repo>/runtime/zig/vendor/webgpu-headers",
+    "<repo>/bench/drop-in/dropin_phase_harness.c",
+    "<work>/build-m1/native/libwebgpu_doe_c.dylib",
+    "-Wl,-rpath,<work>/build-m1/native",
+    "-o",
+    "<work>/bin/harness-doe-m1"
+   ]
+  },
+  {
+   "binary": "<work>/bin/harness-doe-m2",
+   "sha256": "15b54feb118fa8e520bfa064603751d3c0d2090178db56ce8d413716f199e6d6",
+   "library": "<work>/build-m2/native/libwebgpu_doe_c.dylib",
+   "backend": "metal",
+   "librarySha256": "b5a4d0898c9fe15800d2ced024ccace2a123d6d8d8ea0399e9236dcc4051b463",
+   "harnessSha256": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+   "argv": [
+    "clang",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-DDOE_PHASE_BACKEND_METAL",
+    "-I<repo>/runtime/zig/vendor/webgpu-headers",
+    "<repo>/bench/drop-in/dropin_phase_harness.c",
+    "<work>/build-m2/native/libwebgpu_doe_c.dylib",
+    "-Wl,-rpath,<work>/build-m2/native",
+    "-o",
+    "<work>/bin/harness-doe-m2"
+   ]
+  },
+  {
+   "binary": "<work>/bin/harness-dawn",
+   "sha256": "951f82e828c21a1fdb5b766a9884eb61d64c6cd1f78279600477721222d62f9b",
+   "library": "<work>/dawn-build/src/dawn/native/libwebgpu_dawn.dylib",
+   "backend": "metal",
+   "librarySha256": "c9e5faf8321ecb2d85de65a025cbb17461480c6b8a238d8403d59f2a5e64c618",
+   "harnessSha256": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+   "argv": [
+    "clang",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-DDOE_PHASE_BACKEND_METAL",
+    "-I<repo>/runtime/zig/vendor/webgpu-headers",
+    "<repo>/bench/drop-in/dropin_phase_harness.c",
+    "<work>/dawn-build/src/dawn/native/libwebgpu_dawn.dylib",
+    "-Wl,-rpath,<work>/dawn-build/src/dawn/native",
+    "-o",
+    "<work>/bin/harness-dawn"
+   ]
+  }
+ ]
+}

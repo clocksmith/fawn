@@ -61,6 +61,22 @@ are not verdicts.
 | [`contract-b2.json`](contract-b2.json) | B1 rules; gate defect fixed, CPU limit amended before timing | vector x2, both invalid; image and upload/readback not run | none |
 | [`contract-m1.json`](contract-m1.json) | M1 vs main | not run | none |
 | [`contract-m2.json`](contract-m2.json) | M2 vs main | not run | none |
+| [`contract-b3.json`](contract-b3.json) | B2 rules on rebuilt binaries | frozen, not yet run | none |
+| [`contract-m1r.json`](contract-m1r.json) | M1 rules on rebuilt binaries | frozen, not yet run | none |
+| [`contract-m2r.json`](contract-m2r.json) | M2 rules on rebuilt binaries | frozen, not yet run | none |
+
+**Why b3, m1r and m2r exist.** The scratch tree holding the frozen binaries
+was deleted. A rebuild of the same sources reproduced the harness binaries, the
+Dawn library, `libdoe_compiler.dylib` and the inputs manifest byte for byte.
+It did not reproduce `libwebgpu_doe_c.dylib` for main, M1 or M2. The native
+Makefile builds with `-O2 -g`, and ld64 records each object's modification time
+in the debug map. The rebuild therefore sets `ZERO_AR_DATE=1`; with it, two
+clean builds of `d57ab2877` give identical bytes ([receipt](builds/b3-rebuild.json)).
+Because B2, M1 and M2 name library hashes that can no longer be produced, the
+same rules were frozen again as new prospective contracts. B2, M1 and M2 keep
+the status recorded above. Every b3, m1r and m2r window runs under the host-wide
+`flock /tmp/doe-gpu-timing.lock` ([run script](runs/run-b3-m1r-m2r.sh)). The
+Mac was on battery at freeze, and each window's gate records the battery level.
 
 - **B1 was invalid.** Spotlight was indexing after the Dawn build and took
   54-63% of window CPU capacity. The gate also had an accounting defect: it read
