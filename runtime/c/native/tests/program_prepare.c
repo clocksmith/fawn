@@ -70,6 +70,15 @@ static VkResult descriptor_failure(VkDevice device, const VkDescriptorPoolCreate
     return -1;
 }
 
+/* Descriptor sets come from long-lived context blocks: set allocation is the
+ * recording-time native allocation whenever a block already exists. */
+static VkResult set_failure(VkDevice device, const VkDescriptorSetAllocateInfo *info, VkDescriptorSet *out)
+{
+    (void)device; (void)info; (void)out;
+    atomic_fetch_add(&faults, 1);
+    return -1;
+}
+
 static VkResult sealing_failure(VkCommandBuffer command)
 {
     (void)command;
@@ -94,9 +103,13 @@ doe_vk_status __wrap_doe_vk_commands_dispatch_resources(doe_vk_commands *command
 {
     doe_vk_context *context = commands->context;
     doe_vk_functions saved = context->vk;
-    if (fault == FAULT_RECORD) context->vk.vkCreateDescriptorPool = descriptor_failure;
+    if (fault == FAULT_RECORD) {
+        context->vk.vkCreateDescriptorPool = descriptor_failure;
+        context->vk.vkAllocateDescriptorSets = set_failure;
+    }
     doe_vk_status status = __real_doe_vk_commands_dispatch_resources(commands, pipeline, bindings, count, x, y, z);
     context->vk.vkCreateDescriptorPool = saved.vkCreateDescriptorPool;
+    context->vk.vkAllocateDescriptorSets = saved.vkAllocateDescriptorSets;
     return status;
 }
 

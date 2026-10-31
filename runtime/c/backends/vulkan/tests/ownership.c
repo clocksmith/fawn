@@ -20,6 +20,7 @@ static struct {
     int32_t reset_result;
     unsigned resets;
     bool reusable_begin;
+    uint32_t type_bits, expected_type; /* Zero: the single-type default context. */
     unsigned char bytes[256];
 } mock;
 
@@ -45,13 +46,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
 static void requirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements *out) {
     (void)device;
     assert(buffer == 11);
-    *out = (VkMemoryRequirements){256, 64, 1};
+    *out = (VkMemoryRequirements){256, 64, mock.type_bits ? mock.type_bits : 1};
 }
 static VkResult allocate_memory(VkDevice device, const VkMemoryAllocateInfo *info,
     const VkAllocationCallbacks *allocator, VkDeviceMemory *out) {
     (void)device;
     (void)allocator;
-    assert(info->allocationSize == 256 && info->memoryTypeIndex == 0);
+    assert(info->allocationSize == 256 && info->memoryTypeIndex == mock.expected_type);
     VkResult result = step();
     if (result == 0) *out = 12;
     return result;
@@ -588,8 +589,94 @@ static void reusable_queries(void) {
     assert(ctx.references == 1);
 }
 
+/* HOST_DEVICE_LOCAL keeps HOST's host-cached placement without the
+ * DEVICE_LOCAL_HOST_WRITES bit and prefers device-local memory with it; HOST never
+ * changes. Types mirror windows-amd-host: DEVICE_LOCAL; HOST_VISIBLE|COHERENT;
+ * DEVICE_LOCAL|HOST_VISIBLE|COHERENT; HOST_VISIBLE|COHERENT|CACHED. */
+static void resource_profile_placement(void) {
+    const struct { uint32_t profile; doe_vk_memory_kind kind; uint32_t type; } cases[] = {
+        {0, DOE_VK_MEMORY_HOST, 3},
+        {0, DOE_VK_MEMORY_HOST_DEVICE_LOCAL, 3},
+        {DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS, DOE_VK_MEMORY_HOST_DEVICE_LOCAL, 3},
+        {DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS | DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES, DOE_VK_MEMORY_HOST, 3},
+        {DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS | DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES, DOE_VK_MEMORY_HOST_DEVICE_LOCAL, 2},
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        memset(&mock, 0, sizeof(mock));
+        mock.type_bits = 0xf;
+        mock.expected_type = cases[i].type;
+        doe_vk_context ctx = context();
+        ctx.caps.resource_profile = cases[i].profile;
+        ctx.memory.memoryTypeCount = 4;
+        ctx.memory.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        ctx.memory.memoryTypes[1].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        ctx.memory.memoryTypes[2].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        ctx.memory.memoryTypes[3].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+        doe_vk_buffer *buffer = NULL;
+        assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, cases[i].kind, &buffer, NULL) == DOE_VK_OK);
+        assert(buffer->mapped != NULL);
+        doe_vk_buffer_release(buffer);
+        assert(mock.memory_freed == 1 && ctx.references == 1);
+    }
+    memset(&mock, 0, sizeof(mock));
+}
+
+static void add_type(VkPhysicalDeviceMemoryProperties *m, uint32_t flags, uint32_t heap) {
+    m->memoryTypes[m->memoryTypeCount++] = (VkMemoryType){flags, heap};
+}
+
+/* The selection rule on each measured host's memory layout, plus its edges. */
+static void resource_profile_selection(void) {
+    const uint32_t dl = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, hv = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+        hc = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, cached = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    const uint32_t blocks = DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS;
+    const uint32_t both = DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS | DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES;
+    /* windows-amd-host: the CPU-writable device-local type lives in a 256 MiB window. */
+    VkPhysicalDeviceMemoryProperties windows = {0};
+    windows.memoryHeapCount = 3;
+    windows.memoryHeaps[0].size = UINT64_C(12257460224);
+    windows.memoryHeaps[1].size = UINT64_C(6128730112);
+    windows.memoryHeaps[2].size = UINT64_C(268435456);
+    add_type(&windows, dl, 0); add_type(&windows, hv | hc, 1); add_type(&windows, dl | hv | hc, 2);
+    add_type(&windows, hv | hc | cached, 1); add_type(&windows, dl | hv | hc | 0xc0, 2);
+    assert(doe_vk_resource_profile_select(0x1002, &windows) == blocks);
+    /* amd-host Strix Halo RADV: heap sizes from its 20261014 host record; type
+     * flags/heaps as the round-3 counting layer observed them. */
+    VkPhysicalDeviceMemoryProperties strix = {0};
+    strix.memoryHeapCount = 2;
+    strix.memoryHeaps[0].size = UINT64_C(22160818176);
+    strix.memoryHeaps[1].size = UINT64_C(44321644544);
+    add_type(&strix, dl, 1); add_type(&strix, hv | hc, 0); add_type(&strix, dl | hv | hc, 1);
+    add_type(&strix, hv | hc | cached, 0);
+    assert(doe_vk_resource_profile_select(0x1002, &strix) == both);
+    /* Intel Tiger Lake ANV (15.5 GiB single device-local heap, intel-vulkan
+     * record): large and CPU-writable, but not AMD, so the DEFAULT path stays. */
+    VkPhysicalDeviceMemoryProperties anv = {0};
+    anv.memoryHeapCount = 1;
+    anv.memoryHeaps[0].size = UINT64_C(16642998272);
+    add_type(&anv, dl, 0); add_type(&anv, dl | hv | hc, 0); add_type(&anv, dl | hv | hc | cached, 0);
+    assert(doe_vk_resource_profile_select(0x8086, &anv) == 0);
+    assert(doe_vk_resource_profile_select(0x10de, &strix) == 0 && doe_vk_resource_profile_select(0x10005, &strix) == 0);
+    /* Threshold edges on the first qualifying type's heap; later types never count. */
+    strix.memoryHeaps[1].size = DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES;
+    assert(doe_vk_resource_profile_select(0x1002, &strix) == both);
+    strix.memoryHeaps[1].size = DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES - 1;
+    assert(doe_vk_resource_profile_select(0x1002, &strix) == blocks);
+    windows.memoryHeaps[1].size = UINT64_C(1) << 40;
+    assert(doe_vk_resource_profile_select(0x1002, &windows) == blocks);
+    VkPhysicalDeviceMemoryProperties none = {0};
+    none.memoryHeapCount = 1;
+    none.memoryHeaps[0].size = UINT64_C(1) << 40;
+    add_type(&none, dl, 0); add_type(&none, hv | hc | cached, 0);
+    assert(doe_vk_resource_profile_select(0x1002, &none) == blocks);
+}
+
 int main(void) {
     acquisition_failures();
+    resource_profile_placement();
+    resource_profile_selection();
     async_lifetime();
     uncertain_and_loss();
     rejection_and_memory();
@@ -597,6 +684,7 @@ int main(void) {
     first_failure_detail();
     reusable_lifetime();
     reusable_queries();
+    puts("PASS resource profiles: DESCRIPTOR_BLOCKS for vendor 0x1002; DEVICE_LOCAL_HOST_WRITES only with a >= 4 GiB CPU-writable device-local heap (Strix Halo yes, 256 MiB window no); host-written placement follows the bit; HOST placement is profile-independent");
     puts("PASS host Vulkan boundary rollback, fence holder without resource uses, timeout, uncertain submission, device loss, bounds, poisoning");
     puts("PASS reusable recording: one native command buffer resubmitted with fence re-arm, buffer uses dropped between runs, pending-holder BUSY vs program drop, terminal reset/execution failure, one-shot retain rejected");
     puts("PASS reusable timestamp recording: self-contained reset/write/resolve sealed, pool ownership released at seal and at each accepted submission (published once, never overwritten by completion), BUSY under another owner without native submit, three runs publishing only recorded indices, unhealthy pool rejection, failed run poisoning, non-self-contained write/resolve rejected at seal");

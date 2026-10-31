@@ -108,11 +108,29 @@ typedef struct doe_vk_options {
     bool enable_external_fd;
 } doe_vk_options;
 
+/* Per-adapter resource policy bits, chosen once by doe_vk_resource_profile_select
+ * (device_selection.c) from the selected adapter's vendorID and memory
+ * properties. Zero is the DEFAULT path: one exact-size descriptor pool per
+ * dispatch use and host-written buffers in host-cached memory.
+ * DESCRIPTOR_BLOCKS (vendorID 0x1002, any driver): dispatch sets come from
+ * reusable FREE_DESCRIPTOR_SET context blocks.
+ * DEVICE_LOCAL_HOST_WRITES (vendorID 0x1002 and a large CPU-writable
+ * device-local heap: the first DEVICE_LOCAL|HOST_VISIBLE|HOST_COHERENT type's
+ * heap is at least DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES): buffers the host
+ * only writes prefer that device-local type. Owner decision 2026-10-31 and its
+ * evidence: the Vulkan backend AGENTS.md. */
+enum {
+    DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS = 1u << 0,
+    DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES = 1u << 1
+};
+#define DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES (UINT64_C(4) << 30)
+
 typedef struct doe_vk_caps {
     uint32_t api_version;
     uint32_t driver_version;
     uint32_t vendor_id;
     uint32_t device_id;
+    uint32_t resource_profile; /* DOE_VK_RESOURCE_* bits; see above. */
     uint32_t device_type;
     uint32_t adapter_ordinal; /* Actual enumeration index of the selected device. */
     uint32_t queue_family;
@@ -229,9 +247,14 @@ enum {
     DOE_VK_BUFFER_VERTEX = 128,
     DOE_VK_BUFFER_INDIRECT = 256
 };
+/* HOST prefers host-cached memory for host reads. HOST_DEVICE_LOCAL keeps the
+ * same persistent coherent mapping for buffers the host only writes; it prefers
+ * device-local memory with the DEVICE_LOCAL_HOST_WRITES profile bit and
+ * host-cached memory otherwise. DEVICE has no host mapping. */
 typedef enum doe_vk_memory_kind {
     DOE_VK_MEMORY_HOST,
-    DOE_VK_MEMORY_DEVICE
+    DOE_VK_MEMORY_DEVICE,
+    DOE_VK_MEMORY_HOST_DEVICE_LOCAL
 } doe_vk_memory_kind;
 doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
     uint32_t usage, doe_vk_memory_kind memory, doe_vk_buffer **out, doe_vk_error *error);

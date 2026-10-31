@@ -3,13 +3,16 @@
 #include "d3d12_frontend.h"
 
 native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
-    bool direct_readback)
+    bool direct_readback, bool host_mapped)
 {
     native_backend *backend = &buffer->device->backend;
     if (backend->kind == WGPUBackendType_Vulkan) {
+        /* Mappable buffers keep host-cached memory for host reads. The host only
+         * writes the others (queue writes, mapped-at-creation); the Vulkan owner
+         * places them by the adapter's resource profile (doe_vk.h). */
         doe_vk_error error = {0};
-        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context,
-            size, usage, DOE_VK_MEMORY_HOST, &buffer->handle.vulkan, &error);
+        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context, size, usage,
+            host_mapped ? DOE_VK_MEMORY_HOST : DOE_VK_MEMORY_HOST_DEVICE_LOCAL, &buffer->handle.vulkan, &error);
         return native_failure_vulkan(status, &error);
     }
     if (backend->kind == WGPUBackendType_Metal) {

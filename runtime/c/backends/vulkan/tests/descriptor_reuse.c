@@ -4,9 +4,17 @@
 #include <assert.h>
 #include <stdio.h>
 
+/* Built twice: the DEFAULT resource profile (exact per-use pool) and, with
+ * DOE_VK_TEST_PROFILE_AMD, DESCRIPTOR_BLOCKS (one free-able context block). */
+#ifdef DOE_VK_TEST_PROFILE_AMD
+#define TEST_PROFILE DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS
+#else
+#define TEST_PROFILE 0u
+#endif
+
 /* Native procedure boundary only: counts descriptor work per recorded dispatch. */
 static struct {
-    unsigned pools_created, pools_destroyed, sets_allocated, updates;
+    unsigned pools_created, pools_destroyed, sets_allocated, sets_freed, updates;
     unsigned barriers, dispatches, pipeline_binds, set_binds;
     uint64_t next_handle;
 } mock;
@@ -22,6 +30,12 @@ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocat
     (void)device; (void)allocator;
     assert(pool != 0);
     ++mock.pools_destroyed;
+}
+static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
+    (void)device; (void)sets;
+    assert(pool != 0 && count == 1);
+    ++mock.sets_freed;
+    return 0;
 }
 static VkResult allocate_sets(VkDevice device, const VkDescriptorSetAllocateInfo *info, VkDescriptorSet *sets) {
     (void)device;
@@ -72,12 +86,14 @@ static void release_uses(doe_vk_commands *commands) {
 
 int main(void) {
     doe_vk_context context = { .references = 1 };
+    context.caps.resource_profile = TEST_PROFILE;
     context.caps.max_workgroup_count[0] = context.caps.max_workgroup_count[1] = context.caps.max_workgroup_count[2] = 64;
     context.caps.storage_offset_alignment = 16;
     context.caps.max_storage_buffer_range = 1u << 20;
     context.vk = (doe_vk_functions){
         .vkCreateDescriptorPool = create_pool, .vkDestroyDescriptorPool = destroy_pool,
-        .vkAllocateDescriptorSets = allocate_sets, .vkUpdateDescriptorSets = update_sets,
+        .vkAllocateDescriptorSets = allocate_sets, .vkFreeDescriptorSets = free_sets,
+        .vkUpdateDescriptorSets = update_sets,
         .vkCmdPipelineBarrier = barrier, .vkCmdBindPipeline = bind_pipeline,
         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch
     };
@@ -103,7 +119,11 @@ int main(void) {
     assert(doe_vk_commands_dispatch_resources(&commands, &other, &binding, 1, 1, 1, 1) == DOE_VK_OK);
     binding.value.buffer.offset = 0;
     assert(doe_vk_commands_dispatch_resources(&commands, &pipeline, &binding, 1, 1, 1, 1) == DOE_VK_OK);
-    assert(mock.pools_created == 4 && mock.updates == 4 && mock.dispatches == 6);
+    /* Distinct uses get an exact pool each (DEFAULT) or allocate sets from the
+     * one context block (AMD). */
+    if (TEST_PROFILE != 0u)
+        assert(mock.pools_created == 1 && mock.sets_allocated == 4 && mock.updates == 4 && mock.dispatches == 6);
+    else assert(mock.pools_created == 4 && mock.sets_allocated == 4 && mock.updates == 4 && mock.dispatches == 6);
 
     /* Validation still runs for a shared use. */
     buffer.content_status = DOE_VK_OUT_OF_MEMORY;
@@ -112,8 +132,15 @@ int main(void) {
     buffer.content_status = DOE_VK_OK;
 
     release_uses(&commands);
-    assert(mock.pools_destroyed == mock.pools_created && pipeline.references == 1 && other.references == 1);
+    if (TEST_PROFILE != 0u) {
+        assert(mock.sets_freed == mock.sets_allocated && mock.pools_destroyed == 0);
+        doe_vk_descriptor_blocks_clear(&context);
+    } else assert(mock.sets_freed == 0);
+    assert(pipeline.references == 1 && other.references == 1);
+    assert(mock.pools_destroyed == mock.pools_created);
     assert(buffer.recorded_uses == 0 && buffer.references == 1);
-    puts("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch");
+    printf("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch; %s\n",
+        TEST_PROFILE != 0u ? "DESCRIPTOR_BLOCKS: sets come from and return to one context block" :
+        "DEFAULT: one exact pool per use, destroyed at release");
     return 0;
 }

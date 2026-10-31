@@ -81,7 +81,7 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
         DOE_VK_BUFFER_INDEX;
     if (context == NULL || out == NULL || size == 0 || size > SIZE_MAX ||
         usage == 0 || (usage & ~allowed) != 0 ||
-        (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE))
+        (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE && kind != DOE_VK_MEMORY_HOST_DEVICE_LOCAL))
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "buffer descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "buffer context", error);
     doe_vk_buffer *buffer = calloc(1, sizeof(*buffer));
@@ -108,9 +108,15 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
         status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "buffer memory requirements", error);
         goto failed;
     }
-    uint32_t required = kind == DOE_VK_MEMORY_HOST ?
+    const bool host = kind != DOE_VK_MEMORY_DEVICE;
+    uint32_t required = host ?
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    uint32_t preferred = kind == DOE_VK_MEMORY_HOST ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT : 0;
+    /* HOST_DEVICE_LOCAL prefers device-local memory only with the
+     * DEVICE_LOCAL_HOST_WRITES profile bit; otherwise it keeps HOST's
+     * host-cached preference. */
+    const bool device_local = kind == DOE_VK_MEMORY_HOST_DEVICE_LOCAL &&
+        (context->caps.resource_profile & DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES) != 0;
+    uint32_t preferred = !host ? 0 : device_local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     uint32_t index = 0;
     status = doe_vk_memory_type(&context->memory, requirements.memoryTypeBits, required, preferred, &index);
     if (status != DOE_VK_OK) {
@@ -126,7 +132,7 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
     if (status != DOE_VK_OK) goto failed;
     status = doe_vk_result(context, context->vk.vkBindBufferMemory(context->device, buffer->buffer, buffer->memory, 0), "vkBindBufferMemory", error);
     if (status != DOE_VK_OK) goto failed;
-    if (kind == DOE_VK_MEMORY_HOST) {
+    if (host) {
         status = doe_vk_result(context, context->vk.vkMapMemory(context->device, buffer->memory, 0, size, 0, &buffer->mapped), "vkMapMemory", error);
         if (status != DOE_VK_OK) goto failed;
         if (buffer->mapped == NULL) {
