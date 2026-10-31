@@ -92,6 +92,7 @@ typedef struct doe_mtl_objc {
     void *(*get_class)(const char *);
     void *(*selector)(const char *);
     void *(*create_device)(void);
+    void *(*copy_devices)(void); /* Optional MTLCopyAllDevices (macOS). */
     /* Typed views of the same native dispatcher, separately callable at the
      * private test boundary without an incompatible variadic C mock. */
     doe_objc_responds_call responds_call;
@@ -143,6 +144,8 @@ typedef struct doe_mtl_objc {
     void *alloc;
     void *retain;
     void *release;
+    void *count;
+    void *first_object;
     void *drain;
     void *new_queue;
     void *new_buffer;

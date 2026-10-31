@@ -103,6 +103,23 @@ bool doe_mtl_objc_limits(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps
 }
 
 #if !defined(_WIN32)
+/* The system default device, +1. When enumeration reports exactly one device,
+ * that device is the system default (the same native object), and enumeration
+ * avoids MTLCreateSystemDefaultDevice's display-GPU selection cost in a fresh
+ * process. Any other count keeps MTLCreateSystemDefaultDevice's selection. */
+static void *system_default_device(doe_mtl_objc *runtime) {
+    void *devices = runtime->copy_devices != NULL && runtime->count != NULL &&
+        runtime->first_object != NULL ? runtime->copy_devices() : NULL; /* Copy-family +1. */
+    void *only = NULL;
+    if (devices != NULL) {
+        if (doe_mtl_objc_size(runtime, devices, runtime->count) == 1)
+            only = doe_mtl_objc_object(runtime, devices, runtime->first_object);
+        if (only != NULL) only = doe_mtl_objc_object(runtime, only, runtime->retain);
+        doe_mtl_objc_void(runtime, devices, runtime->release);
+    }
+    return only != NULL ? only : runtime->create_device();
+}
+
 static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *caps,
     doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
@@ -110,7 +127,7 @@ static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *ca
     void *device;
     doe_mtl_caps result = {0};
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
-    device = runtime->create_device(); /* Create-family +1, non-ARC C caller. */
+    device = system_default_device(runtime); /* +1, non-ARC C caller. */
     if (device == NULL) {
         doe_mtl_objc_drain(runtime, pool);
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "MTLCreateSystemDefaultDevice", error);
@@ -202,6 +219,8 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->alloc = runtime->selector("alloc");
     runtime->retain = runtime->selector("retain");
     runtime->release = runtime->selector("release");
+    runtime->count = runtime->selector("count");
+    runtime->first_object = runtime->selector("firstObject");
     runtime->drain = runtime->selector("drain");
     runtime->new_queue = runtime->selector("newCommandQueue");
     runtime->new_buffer = runtime->selector("newBufferWithLength:options:");
@@ -274,6 +293,9 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
         !load_function(runtime->objc_library, "objc_msgSend", &message, sizeof(message)) ||
         !load_function(runtime->metal_library, "MTLCreateSystemDefaultDevice",
             &runtime->create_device, sizeof(runtime->create_device))) goto unavailable;
+    /* Optional: absent enumeration keeps MTLCreateSystemDefaultDevice. */
+    if (!load_function(runtime->metal_library, "MTLCopyAllDevices",
+            &runtime->copy_devices, sizeof(runtime->copy_devices))) runtime->copy_devices = NULL;
 #if !defined(__aarch64__) && !defined(__arm64__)
     if (!load_function(runtime->objc_library, "objc_msgSend_stret",
         &message_stret, sizeof(message_stret))) goto unavailable;
