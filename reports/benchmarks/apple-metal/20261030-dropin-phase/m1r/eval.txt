@@ -1,0 +1,58 @@
+== vector_scale_add_262k pairs=96 A/A warm.operation 1.006 [0.996,1.011]
+  setupNs            m1    18.1908  main    17.9536  ratio 1.005 [0.992,1.022]  faster 42/96
+  compileNs          m1     0.1186  main     0.1191  ratio 0.994 [0.984,1.001]  faster 56/96
+  pipelineNs         m1     1.8614  main     1.8634  ratio 1.008 [0.999,1.016]  faster 40/96
+  resourcesNs        m1     0.2289  main     0.2257  ratio 1.007 [0.992,1.024]  faster 43/96
+  teardownNs         m1     0.4540  main     0.4318  ratio 1.004 [0.970,1.029]  faster 46/96
+  first.operation    m1     2.0678  main     2.0982  ratio 0.975 [0.958,0.994]  faster 62/96
+  warm.upload        m1     0.0209  main     0.0207  ratio 0.953 [0.927,0.970]  faster 67/96
+  warm.encode        m1     0.0009  main     0.0010  ratio 0.999 [0.957,1.000]  faster 48/96
+  warm.submit        m1     0.0126  main     0.0127  ratio 0.993 [0.971,1.015]  faster 52/96
+  warm.completion    m1     0.2822  main     0.2832  ratio 1.001 [0.995,1.005]  faster 46/96
+  warm.map           m1     0.0173  main     0.0413  ratio 0.415 [0.412,0.420]  faster 96/96
+  warm.operation     m1     0.3371  main     0.3634  ratio 0.930 [0.925,0.935]  faster 89/96
+  warmP95.operation  m1     0.3997  main     0.4367  ratio 0.938 [0.919,0.958]  faster 75/96
+  complete           m1    17.6153  main    18.5458  ratio 0.951 [0.928,0.974]  faster 65/96
+  processWall        m1    50.4892  main    51.4154  ratio 0.987 [0.973,0.997]  faster 60/96
+  cpuMs              m1    29.5480  main    30.5035  ratio 0.971 [0.967,0.977]  faster 78/96
+  maxRssMiB          m1    29.4375  main    30.4375  ratio 0.967 [0.967,0.967]  faster 96/96
+  verdict {'improve': {'warm.map': True, 'warm.operation': True}, 'noRegress': {'setupNs': True, 'compileNs': True, 'pipelineNs': True, 'resourcesNs': True, 'teardownNs': True, 'first.operation': True, 'warm.upload': True, 'warm.encode': True, 'warm.submit': True, 'warm.completion': True, 'warmP95.operation': True, 'complete': True, 'processWall': True, 'cpuMs': True, 'maxRssMiB': True}, 'pass': True}
+== image_rgba_invert_1024 pairs=96 A/A warm.operation 0.997 [0.977,1.010]
+  setupNs            m1    16.7411  main    16.7192  ratio 1.004 [0.995,1.014]  faster 43/96
+  compileNs          m1     0.0964  main     0.0970  ratio 1.002 [0.987,1.008]  faster 46/96
+  pipelineNs         m1     1.7412  main     1.7357  ratio 1.007 [1.001,1.010]  faster 37/96
+  resourcesNs        m1     0.6424  main     0.6427  ratio 0.999 [0.995,1.007]  faster 49/96
+  teardownNs         m1     0.3884  main     0.4099  ratio 0.973 [0.943,0.993]  faster 59/96
+  first.operation    m1     2.3099  main     2.5423  ratio 0.904 [0.891,0.923]  faster 82/96
+  warm.upload        m1     0.0980  main     0.0917  ratio 1.069 [1.063,1.073]  faster 3/96
+  warm.encode        m1     0.0010  main     0.0010  ratio 0.958 [0.954,0.980]  faster 58/96
+  warm.submit        m1     0.0126  main     0.0130  ratio 0.969 [0.957,0.987]  faster 63/96
+  warm.completion    m1     0.4749  main     0.4734  ratio 1.006 [0.998,1.011]  faster 42/96
+  warm.map           m1     0.0791  main     0.1846  ratio 0.432 [0.427,0.435]  faster 96/96
+  warm.operation     m1     0.6696  main     0.7657  ratio 0.877 [0.869,0.880]  faster 96/96
+  warmP95.operation  m1     0.7693  main     0.8872  ratio 0.878 [0.863,0.889]  faster 88/96
+  complete           m1    29.1381  main    32.5593  ratio 0.896 [0.888,0.903]  faster 94/96
+  processWall        m1    62.0581  main    65.2778  ratio 0.950 [0.945,0.954]  faster 92/96
+  cpuMs              m1    35.3070  main    38.8245  ratio 0.910 [0.907,0.912]  faster 96/96
+  maxRssMiB          m1    59.4688  main    63.2500  ratio 0.940 [0.940,0.940]  faster 96/96
+  verdict {'improve': {'warm.map': True, 'warm.operation': True}, 'noRegress': {'setupNs': True, 'compileNs': True, 'pipelineNs': True, 'resourcesNs': True, 'teardownNs': True, 'first.operation': True, 'warm.upload': False, 'warm.encode': True, 'warm.submit': True, 'warm.completion': True, 'warmP95.operation': True, 'complete': True, 'processWall': True, 'cpuMs': True, 'maxRssMiB': True}, 'pass': False}
+== buffer_upload_readback_exact_1mb pairs=96 A/A warm.operation 0.999 [0.982,1.015]
+  setupNs            m1    24.2285  main    24.7429  ratio 0.997 [0.972,1.017]  faster 49/96
+  compileNs          m1     0.0000  main     0.0000  ratio 1.000 [0.976,1.000]  faster 31/64
+  pipelineNs         m1     0.0000  main     0.0000  ratio 1.000 [0.976,1.000]  faster 18/44
+  resourcesNs        m1     0.2086  main     0.2178  ratio 0.985 [0.969,1.019]  faster 53/96
+  teardownNs         m1     0.7553  main     0.7706  ratio 1.045 [0.996,1.151]  faster 40/96
+  first.operation    m1     4.3326  main     4.3842  ratio 0.964 [0.951,0.987]  faster 64/96
+  warm.upload        m1     0.0442  main     0.0465  ratio 0.934 [0.917,0.953]  faster 79/96
+  warm.encode        m1     0.0009  main     0.0009  ratio 0.997 [0.941,1.000]  faster 51/96
+  warm.submit        m1     0.0215  main     0.0220  ratio 0.997 [0.954,1.018]  faster 48/96
+  warm.completion    m1     0.2560  main     0.2619  ratio 0.998 [0.980,1.005]  faster 48/96
+  warm.map           m1     0.0307  main     0.0655  ratio 0.447 [0.436,0.459]  faster 96/96
+  warm.operation     m1     0.3685  main     0.4103  ratio 0.912 [0.900,0.925]  faster 74/96
+  warmP95.operation  m1     0.5029  main     0.5327  ratio 0.940 [0.913,0.976]  faster 64/96
+  complete           m1    19.1334  main    20.7599  ratio 0.936 [0.915,0.965]  faster 62/96
+  processWall        m1    58.5101  main    60.8110  ratio 0.964 [0.942,0.995]  faster 60/96
+  cpuMs              m1    33.8750  main    35.0820  ratio 0.960 [0.953,0.968]  faster 75/96
+  maxRssMiB          m1    26.4688  main    27.4688  ratio 0.964 [0.963,0.965]  faster 96/96
+  verdict {'improve': {'warm.map': True, 'warm.operation': True}, 'noRegress': {'setupNs': True, 'compileNs': True, 'pipelineNs': True, 'resourcesNs': True, 'teardownNs': True, 'first.operation': True, 'warm.upload': True, 'warm.encode': True, 'warm.submit': True, 'warm.completion': True, 'warmP95.operation': True, 'complete': True, 'processWall': True, 'cpuMs': True, 'maxRssMiB': True}, 'pass': True}
+MECHANISM FAIL

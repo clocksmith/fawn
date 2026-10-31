@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 18.590996958082542,
+  "foreignCpuSeconds": 12.26000000000375,
+  "foreignCpuFraction": 0.08243237323182959,
+  "topForeignCpu": [
+    [
+      1.889999999999418,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd"
+    ],
+    [
+      1.8300000000017462,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      1.0499999999992724,
+      "claude"
+    ],
+    [
+      1.0,
+      "/System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/MacOS/WallpaperAerialsExtension"
+    ],
+    [
+      0.5299999999997453,
+      "/System/Library/PrivateFrameworks/TCC.framework/Support/tccd"
+    ],
+    [
+      0.4199999999999946,
+      "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/XPCServices/VTDecoderXPCService.xpc/Contents/MacOS/VTDecoderXPCService"
+    ],
+    [
+      0.3999999999998636,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.34999999999990905,
+      "/usr/libexec/trustd"
+    ]
+  ],
+  "idleGpuMedianBefore": 10,
+  "idleGpuMedianAfter": 10,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T03:51:00Z",
+    "monotonic": 1177044.40645275,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "80%; AC attached; not charging present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      10,
+      10,
+      11,
+      10,
+      10
+    ],
+    "loadAverage": [
+      3.345703125,
+      3.30078125,
+      3.1845703125
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T03:51:24Z",
+    "monotonic": 1177068.178250708,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "80%; AC attached; not charging present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      22,
+      10,
+      10,
+      10,
+      10
+    ],
+    "loadAverage": [
+      3.37841796875,
+      3.30859375,
+      3.18896484375
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/harness-doe",
+    "--provider",
+    "m2=<work>/bin/harness-doe-m2",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "vector_scale_add_262k",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/m2r/vector_scale_add_262k/attempt1-raw.jsonl"
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 13.264723500004038,
+  "foreignCpuSeconds": 8.199999999999159,
+  "foreignCpuFraction": 0.07727262464231409,
+  "topForeignCpu": [
+    [
+      1.319999999992433,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      0.9599999999991269,
+      "/System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/MacOS/WallpaperAerialsExtension"
+    ],
+    [
+      0.5,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      0.4600000000000364,
+      "/System/Library/PrivateFrameworks/TCC.framework/Support/tccd"
+    ],
+    [
+      0.32999999999992724,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.3199999999999932,
+      "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/XPCServices/VTDecoderXPCService.xpc/Contents/MacOS/VTDecoderXPCService"
+    ],
+    [
+      0.31999999999970896,
+      "/usr/libexec/opendirectoryd"
+    ],
+    [
+      0.3000000000000682,
+      "/usr/sbin/cfprefsd"
+    ]
+  ],
+  "idleGpuMedianBefore": 11,
+  "idleGpuMedianAfter": 11,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T05:00:34Z",
+    "monotonic": 1181218.7284975,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "80%; AC attached; not charging present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      11,
+      10,
+      11,
+      11,
+      11
+    ],
+    "loadAverage": [
+      2.53076171875,
+      3.94873046875,
+      4.46435546875
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T05:00:53Z",
+    "monotonic": 1181237.324384041,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "80%; AC attached; not charging present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      21,
+      10,
+      10,
+      11,
+      11
+    ],
+    "loadAverage": [
+      2.23681640625,
+      3.7890625,
+      4.39453125
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/harness-doe",
+    "--provider",
+    "m2=<work>/bin/harness-doe-m2",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "buffer_upload_readback_exact_1mb",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/m2r/buffer_upload_readback_exact_1mb/attempt1-raw.jsonl"
+  ]
+}

@@ -1,0 +1,122 @@
+--- a/runtime/c/native/src/stages.c
++++ b/runtime/c/native/src/stages.c
+@@ -1,5 +1,8 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "internal.h"
++#include <stdio.h>
++#include <mach/mach_time.h>
++static double diag_us(void){static mach_timebase_info_data_t tb; if(!tb.denom) mach_timebase_info(&tb); return (double)mach_absolute_time()*tb.numer/tb.denom/1000.0;}
+ #include "../../shader/include/doe_shader_artifact.h"
+ #include "shader_disk_cache.h"
+ #include "shader_cache_identity.h"
+@@ -108,6 +111,7 @@
+         else if (!constant_values(constants,count,values))
+             valid = reject(error,WGPUErrorType_Validation,"pipeline constant chain or key string is invalid");
+     }
++    double dt0 = diag_us();
+     if (valid) {
+         DoeCompilerEntrySelectionV5 selection = {.mode=DOE_COMPILER_SELECT_NAME,
+             .name=result.name,.name_length=strlen(result.name)};
+@@ -127,6 +131,7 @@
+         /* Locates embedder pipeline blobs; WGSL semantics never come from it. */
+         if (blob_key && !doe_shader_artifact_key(payload->module,&selection,values,count,pipeline,result.source_key))
+             memset(result.source_key,0,sizeof(result.source_key));
++        double dt1 = diag_us();
+         if (!result.compiled) {
+             /* A worker result counts as this call's one identity attempt; a
+              * failed one disables persistence for this call, as inline failure does. */
+@@ -140,14 +145,17 @@
+                 native_unlock(device);
+                 have_identity = true;
+             }
++            fprintf(stderr,"DIAGP identity %.1f mem_hit=%d use_disk=%d\n",diag_us()-dt1,result.compiled!=NULL,use_disk); dt1=diag_us();
+             if (have_identity) {
+                 result.compiled = native_shader_disk_lookup(image_identity,payload->module,&selection,values,count,pipeline);
+             }
+         }
++        fprintf(stderr,"DIAGP disk_lookup %.1f hit=%d\n",diag_us()-dt1,result.compiled!=NULL); dt1=diag_us();
+         const bool compile_needed = result.compiled == NULL;
+         const doe_shader_status status = result.compiled ? DOE_SHADER_OK : pipeline ?
+             doe_shader_specialize_metal_pipeline(payload->module,&selection,values,count,pipeline,&result.compiled,&detail) :
+             doe_shader_specialize(payload->module,&selection,values,count,&result.compiled,&detail);
++        fprintf(stderr,"DIAGP specialize %.1f\n",diag_us()-dt1); dt1=diag_us();
+         if (status == DOE_SHADER_OK && have_identity && compile_needed)
+             native_shader_disk_store(image_identity,payload->module,&selection,values,count,pipeline,result.compiled);
+         if (status == DOE_SHADER_OK && native_shader_cache_admits(payload->module)) {
+@@ -156,6 +164,7 @@
+             native_unlock(device);
+             doe_shader_release(displaced);
+         }
++        fprintf(stderr,"DIAGP disk_store_insert %.1f\n",diag_us()-dt1);
+         if (status != DOE_SHADER_OK)
+             valid = reject(error,status == DOE_SHADER_OUT_OF_MEMORY ? WGPUErrorType_OutOfMemory :
+                 WGPUErrorType_Validation,detail.diagnostic.message[0] ? detail.diagnostic.message :
+@@ -177,6 +186,7 @@
+         if (valid) result.name = result.view.names + result.entry->name.offset;
+         if (!valid) reject(error,WGPUErrorType_Validation,"specialized entry identity or native capability admission failed");
+     }
++    fprintf(stderr,"DIAGP stage_total %.1f\n",diag_us()-dt0);
+     free(values);
+     doe_resource_shader_release((doe_resource_shader *)module);
+     native_device_release(device);
+--- a/runtime/c/native/src/pipelines.c
++++ b/runtime/c/native/src/pipelines.c
+@@ -1,5 +1,8 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "internal.h"
++#include <stdio.h>
++#include <mach/mach_time.h>
++static double diag_us(void){static mach_timebase_info_data_t tb; if(!tb.denom) mach_timebase_info(&tb); return (double)mach_absolute_time()*tb.numer/tb.denom/1000.0;}
+ #include "d3d12_frontend.h"
+ #include "doe_vk_cache.h"
+ #include <stdlib.h>
+@@ -284,7 +287,7 @@
+     WGPUComputePipeline pipeline = NULL;
+     if (native_stage_load(device,descriptor->compute.module,descriptor->compute.entryPoint,
+         DOE_COMPILER_STAGE_COMPUTE,descriptor->compute.constants,descriptor->compute.constantCount,&stage,error))
+-        pipeline = create_compute_pipeline(device,descriptor,&stage,error);
++        { double c0=diag_us(); pipeline = create_compute_pipeline(device,descriptor,&stage,error); fprintf(stderr,"DIAGP create_compute_pipeline %.1f\n",diag_us()-c0); }
+     native_stage_release(&stage);
+     native_device_release(device);
+     return pipeline;
+--- a/runtime/c/backends/metal/src/objc_pipeline.c
++++ b/runtime/c/backends/metal/src/objc_pipeline.c
+@@ -1,5 +1,8 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "objc_abi.h"
++#include <stdio.h>
++#include <mach/mach_time.h>
++static double diag_us(void){static mach_timebase_info_data_t tb; if(!tb.denom) mach_timebase_info(&tb); return (double)mach_absolute_time()*tb.numer/tb.denom/1000.0;}
+ 
+ /* One constructor owns source encoding, native errors and library creation.
+  * Both early native-module validation and actual stage compilation use it. */
+@@ -12,7 +15,9 @@
+     char *snapshot = doe_mtl_objc_library_source(runtime,msl,length);
+     void *source=doe_mtl_objc_string(runtime,snapshot ? snapshot : msl,length), *native_error=NULL;
+     if (!source) { free(snapshot); return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT,"MSL UTF-8 encoding",error); }
++    double l0=diag_us();
+     void *library=runtime->library_call(device,runtime->new_library,source,NULL,&native_error);
++    fprintf(stderr,"DIAGP newLibraryWithSource %.1f msl_bytes=%zu\n",diag_us()-l0,length);
+     doe_mtl_objc_void(runtime,source,runtime->release);
+     if (library && snapshot) doe_mtl_objc_library_store(runtime,device,snapshot,length,library);
+     free(snapshot);
+@@ -44,7 +49,9 @@
+         status=doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT,"MSL entry UTF-8 encoding",error);
+         goto cleanup;
+     }
++    double f0=diag_us();
+     function=runtime->named_call(library,runtime->new_function,name);
++    fprintf(stderr,"DIAGP newFunctionWithName %.1f\n",diag_us()-f0);
+     if (!function) {
+         status=doe_mtl_fail(DOE_MTL_NATIVE_FAILURE,"newFunctionWithName:",error);
+         goto cleanup;
+@@ -78,7 +85,9 @@
+     /* Optional cache lookup cannot turn a valid ordinary pipeline into a failure. */
+     if (!pipeline) {
+         native_error = NULL;
++        double p0=diag_us();
+         pipeline = runtime->pipeline_call(device, runtime->new_pipeline, function, &native_error);
++        fprintf(stderr,"DIAGP newComputePipelineState %.1f\n",diag_us()-p0);
+     }
+     if (pipeline == NULL) {
+         status = doe_mtl_objc_error(runtime, native_error, "newComputePipelineStateWithFunction:error:", error);
