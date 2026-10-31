@@ -2,7 +2,7 @@ diff --git a/include/dawn/native/DawnNative.h b/include/dawn/native/DawnNative.h
 index 3b12d481a..6863031f7 100644
 --- a/include/dawn/native/DawnNative.h
 +++ b/include/dawn/native/DawnNative.h
-@@ -117,6 +117,8 @@ struct DAWN_NATIVE_EXPORT DawnInstanceDescriptor : wgpu::ChainedStruct {
+@@ -117,6 +117,8 @@
      DawnInstanceDescriptor();
      std::span<std::string_view> additionalRuntimeSearchPaths;
      dawn::platform::Platform* platform = nullptr;
@@ -12,6 +12,7 @@ index 3b12d481a..6863031f7 100644
      BackendValidationLevel backendValidationLevel = BackendValidationLevel::Disabled;
      bool beginCaptureOnStartup = false;
 diff --git a/src/dawn/native/BUILD.gn b/src/dawn/native/BUILD.gn
+index df48386e6..90f5deaf0 100644
 --- a/src/dawn/native/BUILD.gn
 +++ b/src/dawn/native/BUILD.gn
 @@ -784,6 +784,9 @@
@@ -25,6 +26,7 @@ diff --git a/src/dawn/native/BUILD.gn b/src/dawn/native/BUILD.gn
        "webgpu/PhysicalDeviceWGPU.cpp",
        "webgpu/PhysicalDeviceWGPU.h",
 diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+index ff24f89e0..902638cee 100644
 --- a/src/dawn/native/CMakeLists.txt
 +++ b/src/dawn/native/CMakeLists.txt
 @@ -612,6 +612,9 @@
@@ -38,12 +40,13 @@ diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
          "webgpu/PhysicalDeviceWGPU.h"
          "webgpu/PipelineLayoutWGPU.h"
 diff --git a/src/dawn/native/Device.cpp b/src/dawn/native/Device.cpp
+index 992a1b37c..ac4b79ae3 100644
 --- a/src/dawn/native/Device.cpp
 +++ b/src/dawn/native/Device.cpp
 @@ -146,6 +146,13 @@
-
+ 
  namespace {
-
+ 
 +InternalErrorType ExternalRuntimeAllowedErrors(InstanceBase* instance) {
 +    return instance->IsWebGPUExternalRuntimeRequired()
 +        ? InternalErrorType::OutOfMemory | InternalErrorType::PipelineUncategorized
@@ -65,12 +68,12 @@ diff --git a/src/dawn/native/Device.cpp b/src/dawn/native/Device.cpp
 +        mMutex = AcquireRef(new DeviceMutex(GetPlatform()));
 +    }
  }
-
+ 
  DeviceBase::~DeviceBase() {
 @@ -441,10 +454,12 @@
                          CreateShaderModule(&shaderDesc, /* internalExtensions */ {}));
      }
-
+ 
 -    if (HasFeature(Feature::ImplicitDeviceSynchronization)) {
 -        mMutex = AcquireRef(new DeviceMutex(GetPlatform()));
 -    } else {
@@ -82,7 +85,7 @@ diff --git a/src/dawn/native/Device.cpp b/src/dawn/native/Device.cpp
 +            mMutex = nullptr;
 +        }
      }
-
+ 
      GetInstance()->AddDevice(this);
 @@ -1197,7 +1212,7 @@
  BindGroupBase* DeviceBase::APICreateBindGroup(const BindGroupDescriptor* descriptor) {
@@ -104,7 +107,7 @@ diff --git a/src/dawn/native/Device.cpp b/src/dawn/native/Device.cpp
              BindGroupLayoutBase::MakeError(this, descriptor ? descriptor->label : nullptr));
 @@ -1303,7 +1318,7 @@
      }
-
+ 
      Ref<ComputePipelineBase> result;
 -    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized,
 +    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized | ExternalRuntimeAllowedErrors(GetInstance()),
@@ -122,7 +125,7 @@ diff --git a/src/dawn/native/Device.cpp b/src/dawn/native/Device.cpp
      }
 @@ -1452,7 +1467,7 @@
      }
-
+ 
      Ref<RenderPipelineBase> result;
 -    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized,
 +    if (ConsumedError(std::move(resultOrError), &result, InternalErrorType::PipelineUncategorized | ExternalRuntimeAllowedErrors(GetInstance()),
@@ -133,7 +136,7 @@ diff --git a/src/dawn/native/Instance.cpp b/src/dawn/native/Instance.cpp
 index 54520ef46..2eb4ec165 100644
 --- a/src/dawn/native/Instance.cpp
 +++ b/src/dawn/native/Instance.cpp
-@@ -320,6 +320,8 @@ MaybeError InstanceBase::Initialize(const UnpackedPtr<InstanceDescriptor>& descr
+@@ -320,6 +320,8 @@
              mRuntimeSearchPaths.push_back(std::string(path));
          }
          SetPlatform(dawnDesc->platform);
@@ -142,7 +145,7 @@ index 54520ef46..2eb4ec165 100644
  
          mBackendValidationLevel = dawnDesc->backendValidationLevel;
          mBeginCaptureOnStartup = dawnDesc->beginCaptureOnStartup;
-@@ -691,6 +693,14 @@ wgpu::WaitStatus InstanceBase::APIWaitAny(Span<FutureWaitInfo> futures, uint64_t
+@@ -691,6 +693,14 @@
      return mEventManager.WaitAny(futures, Nanoseconds(timeoutNS));
  }
  
@@ -161,7 +164,7 @@ diff --git a/src/dawn/native/Instance.h b/src/dawn/native/Instance.h
 index 7d5e1972c..50fe30140 100644
 --- a/src/dawn/native/Instance.h
 +++ b/src/dawn/native/Instance.h
-@@ -158,6 +158,8 @@ class InstanceBase final : public ErrorSink, public RefCounted {
+@@ -158,6 +158,8 @@
      bool HasFeature(wgpu::WGSLLanguageFeatureName feature) const;
  
      const std::vector<std::string>& GetRuntimeSearchPaths() const;
@@ -170,7 +173,7 @@ index 7d5e1972c..50fe30140 100644
  
      const Ref<CallbackTaskManager>& GetCallbackTaskManager() const;
      EventManager* GetEventManager();
-@@ -215,6 +217,8 @@ class InstanceBase final : public ErrorSink, public RefCounted {
+@@ -215,6 +217,8 @@
      absl::flat_hash_set<std::string> mWarningMessages;
  
      std::vector<std::string> mRuntimeSearchPaths;
@@ -180,12 +183,13 @@ index 7d5e1972c..50fe30140 100644
      bool mBeginCaptureOnStartup = false;
      BackendValidationLevel mBackendValidationLevel = BackendValidationLevel::Disabled;
 diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
+index 665dea721..ba0867903 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.cpp
 +++ b/src/dawn/native/webgpu/BackendWGPU.cpp
 @@ -27,21 +27,34 @@
-
+ 
  #include "src/dawn/native/webgpu/BackendWGPU.h"
-
+ 
 +#include <cstring>
 +#include <type_traits>
 +
@@ -195,9 +199,9 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
  #include "src/dawn/native/Instance.h"
 +#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
  #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
-
+ 
  namespace dawn::native::webgpu {
-
+ 
  Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
      : BackendConnection(instance, backendType) {
 -    mDawnProcs = dawn::native::GetProcs();
@@ -208,25 +212,25 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    } else {
 +        mDawnProcs = dawn::native::GetProcs();
 +    }
-
+ 
      // Enable all instance features and limits.
      WGPUInstanceDescriptor instanceDesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
-
+ 
      WGPUDawnTogglesDescriptor toggleDescriptor = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
 -    instanceDesc.nextInChain = &toggleDescriptor.chain;
 +    instanceDesc.nextInChain = InnerRuntimeDescriptorChain(
 +        &toggleDescriptor, &toggleDescriptor.chain, instance->IsWebGPUExternalRuntimeRequired());
-
+ 
      auto toggles = instance->GetTogglesState();
      auto enabledTogglesName = toggles.GetEnabledToggleNames();
-@@ -61,10 +74,502 @@
+@@ -61,10 +74,509 @@
      instanceDesc.requiredLimits = &limits;
-
+ 
      mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
 +    if (!mInnerInstance) {
 +        dawn::ErrorLog() << "runtime_initialization_failed: wgpuCreateInstance returned null";
 +    }
-
+ 
 +    if (instance->IsWebGPUExternalRuntimeRequired()) {
 +        dawn::InfoLog() << "runtime_instance_result: created=" << (mInnerInstance != nullptr)
 +                        << " required_feature_count=" << instanceDesc.requiredFeatureCount
@@ -234,7 +238,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    }
      mDawnProcs.supportedInstanceFeaturesFreeMembers(features);
  }
-
+ 
 +bool Backend::LoadDoeWireProcTable() {
 +    const auto& path = GetInstance()->GetWebGPUExternalRuntimeLibraryPath();
 +    std::string error;
@@ -653,6 +657,9 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    if (!load(&mDawnProcs.shaderModuleRelease, "wgpuShaderModuleRelease")) {
 +        return false;
 +    }
++    if (!load(&mDawnProcs.sharedFenceAddRef, "wgpuSharedFenceAddRef")) {
++        return false;
++    }
 +    if (!load(&mDawnProcs.sharedFenceExportInfo, "wgpuSharedFenceExportInfo")) {
 +        return false;
 +    }
@@ -670,6 +677,10 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +        return false;
 +    }
 +    if (!load(&mDawnProcs.sharedTextureMemoryEndAccess, "wgpuSharedTextureMemoryEndAccess")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.sharedTextureMemoryEndAccessStateFreeMembers,
++              "wgpuSharedTextureMemoryEndAccessStateFreeMembers")) {
 +        return false;
 +    }
 +    if (!load(&mDawnProcs.sharedTextureMemoryGetProperties,
@@ -722,8 +733,8 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
  Backend::~Backend() {
      if (mInnerInstance) {
          mDawnProcs.instanceRelease(mInnerInstance);
-@@ -74,42 +579,94 @@
-
+@@ -74,42 +586,94 @@
+ 
  std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
      const UnpackedPtr<RequestAdapterOptions>& options) {
 +    if (!mInnerInstance) {
@@ -731,7 +742,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    }
      // TODO(crbug.com/413053623): Expose Instance::EnumerateAdapters in DawnProcTable
      // So that we can discover multiple WebGPU physical devices.
-
+ 
      // Pass through all of the core options. Note if backendType=WebGPU,
      // RequestAdapter will return null since it's not enabled by default.
      WGPURequestAdapterOptions innerAdapterOption = *ToAPI(*options);
@@ -739,7 +750,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
      // Get rid of the request adapter WebGPU backend options extension.
      // TODO(crbug.com/462137660): Implement for various extensions.
      innerAdapterOption.nextInChain = nullptr;
-
+ 
      // Keep DawnTogglesDescriptor.
      WGPUDawnTogglesDescriptor innerToggles = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
 +    WGPUDawnTogglesDescriptor* nativeToggles = nullptr;
@@ -759,7 +770,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +    innerAdapterOption.nextInChain = InnerRuntimeDescriptorChain(
 +        nativeToggles, outerRequiredChain, GetInstance()->IsWebGPUExternalRuntimeRequired());
 +#endif
-
+ 
 +    if (GetInstance()->IsWebGPUExternalRuntimeRequired()) {
 +        dawn::InfoLog() << "runtime_adapter_request: backend_type="
 +                        << static_cast<uint32_t>(innerAdapterOption.backendType)
@@ -789,7 +800,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +        }
 +    }
      WGPUAdapter innerAdapter = nullptr;
-
+ 
      WGPURequestAdapterCallbackInfo callbackInfo = {};
      callbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
      callbackInfo.callback = [](WGPURequestAdapterStatus status, WGPUAdapter adapter,
@@ -806,7 +817,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 -    callbackInfo.userdata1 = nullptr;
 +    callbackInfo.userdata1 = GetInstance()->IsWebGPUExternalRuntimeRequired() ? this : nullptr;
      callbackInfo.userdata2 = static_cast<void*>(&innerAdapter);
-
+ 
      WGPUFutureWaitInfo waitInfo = {};
      waitInfo.future =
          mDawnProcs.instanceRequestAdapter(mInnerInstance, &innerAdapterOption, callbackInfo);
@@ -817,13 +828,13 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
 +        dawn::InfoLog() << "runtime_adapter_wait: status=" << static_cast<uint32_t>(waitStatus)
 +                        << " completed=" << waitInfo.completed;
 +    }
-
+ 
      if (innerAdapter == nullptr) {
          return {};
-@@ -126,6 +683,18 @@
+@@ -126,6 +690,18 @@
      return mInnerInstance;
  }
-
+ 
 +DisablePersistentCacheProc Backend::GetExternalCacheDisableProc() const {
 +    return mExternalCacheDisableProc;
 +}
@@ -840,26 +851,27 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/Bac
      return new Backend(instance, wgpu::BackendType::WebGPU);
  }
 diff --git a/src/dawn/native/webgpu/BackendWGPU.h b/src/dawn/native/webgpu/BackendWGPU.h
+index 399d42a2e..a34ae2f0f 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.h
 +++ b/src/dawn/native/webgpu/BackendWGPU.h
 @@ -30,7 +30,9 @@
-
+ 
  #include <vector>
-
+ 
 +#include "src/dawn/common/DynamicLib.h"
  #include "src/dawn/native/BackendConnection.h"
 +#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
-
+ 
  namespace dawn::native::webgpu {
-
+ 
 @@ -46,8 +48,16 @@
-
+ 
      const DawnProcTable& GetFunctions() const;
      WGPUInstance GetInnerInstance() const;
 +    DisablePersistentCacheProc GetExternalCacheDisableProc() const;
 +    ConfigurePipelineBlobStoreProc GetExternalPipelineBlobProc() const;
 +    PipelineCacheInfoProc GetExternalPipelineCacheInfoProc() const;
-
+ 
    private:
 +    bool LoadDoeWireProcTable();
 +    dawn::DynamicLib mExternalRuntimeLib;
@@ -870,6 +882,7 @@ diff --git a/src/dawn/native/webgpu/BackendWGPU.h b/src/dawn/native/webgpu/Backe
      // backend. This is different from the static global gProcTable.
      DawnProcTable mDawnProcs;
 diff --git a/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp b/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp
+index 915117cd4..a1a64f8e9 100644
 --- a/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp
 +++ b/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp
 @@ -57,7 +57,10 @@
@@ -882,18 +895,19 @@ diff --git a/src/dawn/native/webgpu/BindGroupLayoutWGPU.cpp b/src/dawn/native/we
 +    DAWN_TRY(errors.Check(layout->GetInnerHandle() != nullptr, "CreateBindGroupLayout"));
 +    return layout;
  }
-
+ 
  BindGroupLayout::BindGroupLayout(Device* device,
 @@ -104,7 +107,7 @@
      desc.entries = entries.data();
-
+ 
      mInnerHandle = device->wgpu->deviceCreateBindGroupLayout(device->GetInnerHandle(), &desc);
 -    DAWN_ASSERT(mInnerHandle);
 +
  }
-
+ 
  Ref<BindGroup> BindGroupLayout::AllocateBindGroup(
 diff --git a/src/dawn/native/webgpu/BindGroupWGPU.cpp b/src/dawn/native/webgpu/BindGroupWGPU.cpp
+index cc71a5ffe..e5213da6b 100644
 --- a/src/dawn/native/webgpu/BindGroupWGPU.cpp
 +++ b/src/dawn/native/webgpu/BindGroupWGPU.cpp
 @@ -114,9 +114,11 @@
@@ -907,7 +921,7 @@ diff --git a/src/dawn/native/webgpu/BindGroupWGPU.cpp b/src/dawn/native/webgpu/B
 +    DAWN_TRY(errors.Check(bindGroup->GetInnerHandle() != nullptr, "CreateBindGroup"));
      return bindGroup;
  }
-
+ 
 @@ -128,7 +130,7 @@
      mInnerHandle =
          ToBackend(GetDevice())
@@ -915,23 +929,25 @@ diff --git a/src/dawn/native/webgpu/BindGroupWGPU.cpp b/src/dawn/native/webgpu/B
 -    DAWN_ASSERT(mInnerHandle);
 +
  }
-
+ 
  MaybeError BindGroup::InitializeImpl() {
 diff --git a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp b/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
+index 03842c139..4dcba683d 100644
 --- a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
 +++ b/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
 @@ -76,8 +76,9 @@
      desc.compute.constantCount = constants.size();
-
+ 
      auto device = ToBackend(GetDevice());
 +    Device::ExternalErrorScope errors(device);
      mInnerHandle = device->wgpu->deviceCreateComputePipeline(device->GetInnerHandle(), &desc);
 -    DAWN_ASSERT(mInnerHandle);
 +    DAWN_TRY(errors.Check(mInnerHandle != nullptr, "CreateComputePipeline"));
-
+ 
      // Shader reflection after the application of overrides is required by the frontend for the
      // workgroup size.
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
+index 8af48f595..ec84694b5 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.cpp
 +++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
 @@ -33,6 +33,8 @@
@@ -955,7 +971,7 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
  #include "src/dawn/native/webgpu/QuerySetWGPU.h"
 @@ -72,6 +77,15 @@
  #include "tint/tint.h"
-
+ 
  namespace dawn::native::webgpu {
 +namespace {
 +InnerRuntimeCallbackRegistry<Device>& ExternalCallbacks() {
@@ -966,9 +982,9 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +}
 +}  // namespace
 +
-
+ 
  namespace {
-
+ 
 @@ -130,7 +144,14 @@
      Ref<Device> device =
          AcquireRef(new Device(adapter, innerAdapter, descriptor, outerDeviceToggles, deviceToggles,
@@ -984,19 +1000,19 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +    DAWN_TRY(std::move(initialized));
      return device;
  }
-
+ 
 @@ -146,6 +167,7 @@
      DAWN_ASSERT(adapter->GetPhysicalDevice()->GetBackendType() == wgpu::BackendType::WebGPU);
-
+ 
      WGPUDeviceDescriptor apiDesc = *(ToAPI(*descriptor));
 +    WGPUChainedStruct* outerRequiredChain = apiDesc.nextInChain;
      std::string label = "Inner Device on " + adapter->GetPhysicalDevice()->GetName();
      apiDesc.label = ToOutputStringView(label);
-
+ 
 @@ -162,43 +184,159 @@
      apiToggleDescriptor.disabledToggleCount = disabledTogglesName.size();
      apiToggleDescriptor.disabledToggles = disabledTogglesName.data();
-
+ 
 -    apiDesc.nextInChain = &apiToggleDescriptor.chain;
 -
 -    // Acquire a Ref to the outer webgpu::Device to avoid possible dangling pointer in the callback.
@@ -1101,7 +1117,7 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +            },
 +            nullptr, reinterpret_cast<void*>(outerDeviceRef)};
 +    }
-
+ 
      // TODO(crbug.com/413053623): use adapterRequestDevice instead as dawn_wire doesn't support
      // adapterCreateDevice.
      mInnerHandle = wgpu->adapterCreateDevice(innerAdapter, &apiDesc);
@@ -1183,12 +1199,12 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +    device->GetBlobCache()->Store(device->ExternalPipelineBlobKey(key, keySize),
 +                                  std::span(static_cast<const std::byte*>(value), size));
  }
-
+ 
  Device::~Device() {
 @@ -209,10 +347,95 @@
      return ToBackend(GetPhysicalDevice())->GetBackend()->GetInnerInstance();
  }
-
+ 
 +bool Device::IsExternalRuntime() const {
 +    return GetInstance()->IsWebGPUExternalRuntimeRequired();
 +}
@@ -1280,17 +1296,54 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
 +    }
 +    return {};
  }
-
+ 
  ResultOrError<Ref<BindGroupBase>> Device::CreateBindGroupImpl(
-@@ -380,10 +603,29 @@
+@@ -309,8 +532,9 @@
+         return DAWN_UNIMPLEMENTED_ERROR(
+             "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
+     } else if (unpacked.Get<SharedTextureMemoryOpaqueFDDescriptor>()) {
+-        return DAWN_UNIMPLEMENTED_ERROR(
+-            "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
++        // Forwarded to the inner runtime, which owns the Vulkan import.
++        auto feature = Feature::SharedTextureMemoryOpaqueFD;
++        DAWN_INVALID_IF(!HasFeature(feature), "%s is not enabled.", ToCppAPI(feature));
+     } else if (unpacked.Get<SharedTextureMemoryVkDedicatedAllocationDescriptor>()) {
+         return DAWN_UNIMPLEMENTED_ERROR(
+             "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
+@@ -348,11 +572,11 @@
+         return DAWN_UNIMPLEMENTED_ERROR(
+             "SharedFence in WebGPU backend has not been implemented for all platforms.");
+     } else if (unpacked.Get<SharedFenceSyncFDDescriptor>()) {
+-        return DAWN_UNIMPLEMENTED_ERROR(
+-            "SharedFence in WebGPU backend has not been implemented for all platforms.");
++        auto feature = Feature::SharedFenceSyncFD;
++        DAWN_INVALID_IF(!HasFeature(feature), "%s is not enabled.", ToCppAPI(feature));
+     } else if (unpacked.Get<SharedFenceVkSemaphoreOpaqueFDDescriptor>()) {
+-        return DAWN_UNIMPLEMENTED_ERROR(
+-            "SharedFence in WebGPU backend has not been implemented for all platforms.");
++        auto feature = Feature::SharedFenceVkSemaphoreOpaqueFD;
++        DAWN_INVALID_IF(!HasFeature(feature), "%s is not enabled.", ToCppAPI(feature));
+     } else if (unpacked.Get<SharedFenceVkSemaphoreZirconHandleDescriptor>()) {
+         return DAWN_UNIMPLEMENTED_ERROR(
+             "SharedFence in WebGPU backend has not been implemented for all platforms.");
+@@ -364,7 +588,7 @@
+     DAWN_TRY((
+         unpacked.ValidateSubset<SharedFenceMTLSharedEventDescriptor,
+                                 SharedFenceDXGISharedHandleDescriptor, SharedFenceEGLSyncDescriptor,
+-                                SharedFenceVkSemaphoreOpaqueFDDescriptor,
++                                SharedFenceSyncFDDescriptor, SharedFenceVkSemaphoreOpaqueFDDescriptor,
+                                 SharedFenceVkSemaphoreZirconHandleDescriptor>()));
+ 
+     return SharedFence::Create(this, unpacked);
+@@ -380,10 +604,29 @@
      //   is implicitly destroyed. This case is thread-safe because there are no
      //   other threads using the device since there are no other live refs.
-
+ 
 -    if (ToBackend(GetQueue())->IsCapturing()) {
 +    if (GetQueue() && ToBackend(GetQueue())->IsCapturing()) {
          EndCapture();
      }
-
+ 
 +    Ref<Device> retired;
 +    if (IsExternalRuntime()) {
 +        mExternalPublication.Retire();
@@ -1313,25 +1366,26 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/Devi
      if (mInnerHandle) {
          wgpu->deviceDestroy(mInnerHandle);
      }
-@@ -433,6 +675,7 @@
+@@ -433,6 +676,7 @@
  }
-
+ 
  MaybeError Device::TickImpl() {
 +    wgpu->instanceProcessEvents(GetInnerInstance());
      wgpu->deviceTick(mInnerHandle);
      return {};
  }
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/DeviceWGPU.h
+index ac3c2414e..0c7201268 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.h
 +++ b/src/dawn/native/webgpu/DeviceWGPU.h
 @@ -29,15 +29,19 @@
  #define SRC_DAWN_NATIVE_WEBGPU_DEVICEWGPU_H_
-
+ 
  #include <memory>
 +#include <optional>
  #include <string>
  #include <vector>
-
+ 
  #include "dawn/native/WebGPUBackend.h"
  #include "partition_alloc/pointers/raw_ptr.h"
 +#include "src/dawn/common/StackAllocated.h"
@@ -1343,11 +1397,11 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/Device
 +#include "src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h"
  #include "src/dawn/native/webgpu/ObjectWGPU.h"
  #include "src/dawn/native/webgpu/QueueWGPU.h"
-
+ 
 @@ -54,6 +58,19 @@
-
+ 
      MaybeError Initialize(const UnpackedPtr<DeviceDescriptor>& descriptor);
-
+ 
 +    class ExternalErrorScope : public StackAllocated {
 +      public:
 +        explicit ExternalErrorScope(Device* device);
@@ -1363,10 +1417,10 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/Device
 +
      uint32_t GetOptimalBytesPerRowAlignment() const override;
      uint64_t GetOptimalBufferToTextureCopyOffsetAlignment() const override;
-
+ 
 @@ -80,6 +97,26 @@
      const raw_ref<const DawnProcTable> wgpu;
-
+ 
    private:
 +    void HandleInnerRuntimeError(WGPUErrorType type, WGPUStringView message);
 +    void HandleInnerRuntimeLoss(WGPUDeviceLostReason reason, WGPUStringView message);
@@ -1393,6 +1447,7 @@ diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/Device
             const UnpackedPtr<DeviceDescriptor>& descriptor,
 diff --git a/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h b/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h
 new file mode 100644
+index 000000000..6221d5ad1
 --- /dev/null
 +++ b/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h
 @@ -0,0 +1,97 @@
@@ -1495,6 +1550,7 @@ new file mode 100644
 +#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMECALLBACKREGISTRY_H_
 diff --git a/src/dawn/native/webgpu/InnerRuntimeDescriptor.h b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
 new file mode 100644
+index 000000000..b1a66cadd
 --- /dev/null
 +++ b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
 @@ -0,0 +1,183 @@
@@ -1683,6 +1739,7 @@ new file mode 100644
 +#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
 diff --git a/src/dawn/native/webgpu/InnerRuntimeError.h b/src/dawn/native/webgpu/InnerRuntimeError.h
 new file mode 100644
+index 000000000..f6cce21ec
 --- /dev/null
 +++ b/src/dawn/native/webgpu/InnerRuntimeError.h
 @@ -0,0 +1,64 @@
@@ -1751,11 +1808,12 @@ new file mode 100644
 +}  // namespace dawn::native::webgpu
 +#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEERROR_H_
 diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp b/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
+index 965a7bc4c..8925e30d3 100644
 --- a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
 +++ b/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
 @@ -40,10 +40,13 @@
  namespace dawn::native::webgpu {
-
+ 
  // static
 -Ref<PipelineLayout> PipelineLayout::Create(
 +ResultOrError<Ref<PipelineLayout>> PipelineLayout::Create(
@@ -1767,18 +1825,19 @@ diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp b/src/dawn/native/web
 +    DAWN_TRY(errors.Check(layout->GetInnerHandle() != nullptr, "CreatePipelineLayout"));
 +    return layout;
  }
-
+ 
  PipelineLayout::PipelineLayout(Device* device,
 @@ -71,7 +74,7 @@
      desc.immediateSize = GetImmediateDataRangeByteSize();
-
+ 
      mInnerHandle = device->wgpu->deviceCreatePipelineLayout(device->GetInnerHandle(), &desc);
 -    DAWN_ASSERT(mInnerHandle);
 +
  }
-
+ 
  void PipelineLayout::SetLabelImpl() {
 diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.h b/src/dawn/native/webgpu/PipelineLayoutWGPU.h
+index eca5a2f31..b0bbe972b 100644
 --- a/src/dawn/native/webgpu/PipelineLayoutWGPU.h
 +++ b/src/dawn/native/webgpu/PipelineLayoutWGPU.h
 @@ -40,7 +40,7 @@
@@ -1788,5 +1847,271 @@ diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.h b/src/dawn/native/webgp
 -    static Ref<PipelineLayout> Create(Device* device,
 +    static ResultOrError<Ref<PipelineLayout>> Create(Device* device,
                                        const UnpackedPtr<PipelineLayoutDescriptor>& descriptor);
-
+ 
      MaybeError AddReferenced(CaptureContext& captureContext) override;
+diff --git a/src/dawn/native/webgpu/SharedFenceWGPU.cpp b/src/dawn/native/webgpu/SharedFenceWGPU.cpp
+index 7b2817703..2615ab14c 100644
+--- a/src/dawn/native/webgpu/SharedFenceWGPU.cpp
++++ b/src/dawn/native/webgpu/SharedFenceWGPU.cpp
+@@ -44,10 +44,20 @@
+     // For now we only handle Metal.
+     WGPUSharedFenceMTLSharedEventDescriptor mtlEventDesc =
+         WGPU_SHARED_FENCE_MTL_SHARED_EVENT_DESCRIPTOR_INIT;
++    // The inner runtime duplicates a borrowed sync file; -1 is already signaled.
++    WGPUSharedFenceSyncFDDescriptor syncFDDesc = WGPU_SHARED_FENCE_SYNC_FD_DESCRIPTOR_INIT;
++    WGPUSharedFenceVkSemaphoreOpaqueFDDescriptor opaqueFDDesc =
++        WGPU_SHARED_FENCE_VK_SEMAPHORE_OPAQUE_FD_DESCRIPTOR_INIT;
+     if (auto* mtlEventChain = descriptor.Get<SharedFenceMTLSharedEventDescriptor>()) {
+         DAWN_INVALID_IF(mtlEventChain->sharedEvent == nullptr, "MTLSharedEvent is missing.");
+         mtlEventDesc.sharedEvent = mtlEventChain->sharedEvent;
+         innerDesc.nextInChain = &mtlEventDesc.chain;
++    } else if (auto* syncFDChain = descriptor.Get<SharedFenceSyncFDDescriptor>()) {
++        syncFDDesc.handle = syncFDChain->handle;
++        innerDesc.nextInChain = &syncFDDesc.chain;
++    } else if (auto* opaqueFDChain = descriptor.Get<SharedFenceVkSemaphoreOpaqueFDDescriptor>()) {
++        opaqueFDDesc.handle = opaqueFDChain->handle;
++        innerDesc.nextInChain = &opaqueFDDesc.chain;
+     } else {
+         DAWN_UNREACHABLE();
+     }
+@@ -56,8 +66,10 @@
+ 
+     WGPUSharedFence innerHandle =
+         wgpu.deviceImportSharedFence(device->GetInnerHandle(), &innerDesc);
+-    // APIImportSharedFence always returns a shared fence. Either a valid object or an error one.
+-    DAWN_ASSERT(innerHandle);
++    // An external runtime reports a rejected import as null after its device error.
++    if (innerHandle == nullptr) {
++        return DAWN_VALIDATION_ERROR("The inner runtime rejected the shared fence import.");
++    }
+ 
+     Ref<SharedFence> fence = AcquireRef(new SharedFence(device, descriptor->label, innerHandle));
+     if (auto* mtlEventChain = descriptor.Get<SharedFenceMTLSharedEventDescriptor>()) {
+@@ -83,11 +95,15 @@
+ 
+     // TODO(crbug.com/483147423): Handle all possible chained structures in SharedFenceExportInfo.
+     // For now we only handle Metal.
+-    DAWN_TRY(info.ValidateSubset<SharedFenceMTLSharedEventExportInfo>());
++    DAWN_TRY((info.ValidateSubset<SharedFenceMTLSharedEventExportInfo,
++                                  SharedFenceSyncFDExportInfo>()));
+     WGPUSharedFenceMTLSharedEventExportInfo mtlExportInfo =
+         WGPU_SHARED_FENCE_MTL_SHARED_EVENT_EXPORT_INFO_INIT;
++    WGPUSharedFenceSyncFDExportInfo syncFDExportInfo = WGPU_SHARED_FENCE_SYNC_FD_EXPORT_INFO_INIT;
+     if (info.Get<SharedFenceMTLSharedEventExportInfo>()) {
+         innerInfo.nextInChain = &mtlExportInfo.chain;
++    } else if (info.Get<SharedFenceSyncFDExportInfo>()) {
++        innerInfo.nextInChain = &syncFDExportInfo.chain;
+     }
+ 
+     const DawnProcTable& wgpu = ToBackend(GetDevice())->wgpu.get();
+@@ -98,6 +114,12 @@
+     if (auto* mtlExportInfoChain = info.Get<SharedFenceMTLSharedEventExportInfo>()) {
+         mtlExportInfoChain->sharedEvent = mtlExportInfo.sharedEvent;
+     }
++    if (auto* syncFDExportInfoChain = info.Get<SharedFenceSyncFDExportInfo>()) {
++        // Borrowed: the inner fence keeps the sync file until it is released.
++        DAWN_INVALID_IF(innerInfo.type != WGPUSharedFenceType_SyncFD,
++                        "The inner fence is not a sync file.");
++        syncFDExportInfoChain->handle = syncFDExportInfo.handle;
++    }
+ 
+     return {};
+ }
+diff --git a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
+index 56c645a39..a94b46bce 100644
+--- a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
++++ b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
+@@ -30,6 +30,7 @@
+ #include <utility>
+ #include <vector>
+ 
++#include "src/dawn/common/Enumerator.h"
+ #include "src/dawn/common/StringViewUtils.h"
+ #include "src/dawn/native/ChainUtils.h"
+ #include "src/dawn/native/Instance.h"
+@@ -54,10 +55,22 @@
+     // SharedTextureMemoryDescriptor. For now we only handle Metal.
+     WGPUSharedTextureMemoryIOSurfaceDescriptor ioSurfaceDesc =
+         WGPU_SHARED_TEXTURE_MEMORY_IO_SURFACE_DESCRIPTOR_INIT;
++    WGPUSharedTextureMemoryOpaqueFDDescriptor opaqueFDDesc =
++        WGPU_SHARED_TEXTURE_MEMORY_OPAQUE_FD_DESCRIPTOR_INIT;
+     if (auto* ioSurfaceChain = descriptor.Get<SharedTextureMemoryIOSurfaceDescriptor>()) {
+         ioSurfaceDesc.ioSurface = ioSurfaceChain->ioSurface;
+         ioSurfaceDesc.allowStorageBinding = ioSurfaceChain->allowStorageBinding;
+         innerDesc.nextInChain = &ioSurfaceDesc.chain;
++    } else if (auto* opaqueFDChain = descriptor.Get<SharedTextureMemoryOpaqueFDDescriptor>()) {
++        // Borrowed for the call: the inner runtime validates the producer's
++        // VkImageCreateInfo and imports a duplicate of the memory descriptor.
++        DAWN_INVALID_IF(opaqueFDChain->vkImageCreateInfo == nullptr, "vkImageCreateInfo is missing.");
++        opaqueFDDesc.vkImageCreateInfo = opaqueFDChain->vkImageCreateInfo;
++        opaqueFDDesc.memoryFD = opaqueFDChain->memoryFD;
++        opaqueFDDesc.memoryTypeIndex = opaqueFDChain->memoryTypeIndex;
++        opaqueFDDesc.allocationSize = opaqueFDChain->allocationSize;
++        opaqueFDDesc.dedicatedAllocation = opaqueFDChain->dedicatedAllocation;
++        innerDesc.nextInChain = &opaqueFDDesc.chain;
+     } else {
+         DAWN_UNREACHABLE();
+     }
+@@ -66,9 +79,10 @@
+ 
+     WGPUSharedTextureMemory innerHandle =
+         wgpu.deviceImportSharedTextureMemory(device->GetInnerHandle(), &innerDesc);
+-    // APIImportSharedTextureMemory always returns a shared texture memory. Either a valid object or
+-    // an error one.
+-    DAWN_ASSERT(innerHandle);
++    // An external runtime reports a rejected import as null after its device error.
++    if (innerHandle == nullptr) {
++        return DAWN_VALIDATION_ERROR("The inner runtime rejected the shared texture memory import.");
++    }
+ 
+     WGPUSharedTextureMemoryProperties innerProperties = WGPU_SHARED_TEXTURE_MEMORY_PROPERTIES_INIT;
+     WGPUStatus status = wgpu.sharedTextureMemoryGetProperties(innerHandle, &innerProperties);
+@@ -84,6 +98,7 @@
+         stm->mIOSurfaceDesc.ioSurface = ioSurfaceChain->ioSurface;
+         stm->mIOSurfaceDesc.allowStorageBinding = ioSurfaceChain->allowStorageBinding;
+     }
++    stm->mOpaqueFD = descriptor.Get<SharedTextureMemoryOpaqueFDDescriptor>() != nullptr;
+ 
+     stm->Initialize();
+     return stm;
+@@ -107,6 +122,9 @@
+     TextureBase* texture,
+     ExecutionSerial lastUsageSerial,
+     UnpackedPtr<EndAccessState>& state) {
++    if (mOpaqueFD) {
++        return EndAccessOpaqueFD(texture, state);
++    }
+     WGPUSharedTextureMemoryEndAccessState innerState =
+         WGPU_SHARED_TEXTURE_MEMORY_END_ACCESS_STATE_INIT;
+ 
+@@ -168,10 +186,85 @@
+     return FenceAndSignalValue{std::move(fence), static_cast<uint64_t>(lastUsageSerial)};
+ }
+ 
++ResultOrUnknownError<FenceAndSignalValue> SharedTextureMemory::EndAccessOpaqueFD(
++    TextureBase* texture,
++    UnpackedPtr<EndAccessState>& state) {
++    DAWN_TRY(state.ValidateSubset<SharedTextureMemoryVkImageLayoutEndState>());
++    WGPUSharedTextureMemoryEndAccessState innerState =
++        WGPU_SHARED_TEXTURE_MEMORY_END_ACCESS_STATE_INIT;
++    WGPUSharedTextureMemoryVkImageLayoutEndState innerLayout =
++        WGPU_SHARED_TEXTURE_MEMORY_VK_IMAGE_LAYOUT_END_STATE_INIT;
++    innerState.nextInChain = &innerLayout.chain;
++
++    const DawnProcTable& wgpu = ToBackend(GetDevice())->wgpu.get();
++    DAWN_TRY(CheckWGPUSuccess(wgpu.sharedTextureMemoryEndAccess(
++                                  mInnerHandle, ToBackend(texture)->GetInnerHandle(), &innerState),
++                              "sharedTextureMemoryEndAccess"));
++    if (innerState.initialized) {
++        texture->SetIsSubresourceContentInitialized(true, texture->GetAllSubresources());
++    }
++    if (auto* layout = state.Get<SharedTextureMemoryVkImageLayoutEndState>()) {
++        layout->oldLayout = innerLayout.oldLayout;
++        layout->newLayout = innerLayout.newLayout;
++    }
++    // The inner release exports exactly one new SYNC_FD fence signaled after
++    // every earlier inner queue use; wrap a new reference before the inner
++    // state frees its own.
++    if (innerState.fenceCount != 1 || innerState.signaledValueCount != 1) {
++        wgpu.sharedTextureMemoryEndAccessStateFreeMembers(innerState);
++        return DAWN_UNRECOVERABLE_ERROR("The inner runtime did not export one release fence.");
++    }
++    WGPUSharedFence innerFence = innerState.fences[0];
++    uint64_t signaledValue = innerState.signaledValues[0];
++    wgpu.sharedFenceAddRef(innerFence);
++    wgpu.sharedTextureMemoryEndAccessStateFreeMembers(innerState);
++    Ref<SharedFence> fence = SharedFence::CreateFromHandle(ToBackend(GetDevice()),
++                                                           "WebGPU SyncFD release", innerFence);
++    return FenceAndSignalValue{std::move(fence), signaledValue};
++}
++
+ MaybeValError SharedTextureMemory::BeginAccessImpl(
+     TextureBase* textureBase,
+     const UnpackedPtr<BeginAccessDescriptor>& descriptor) {
+     Texture* texture = ToBackend(textureBase);
++    if (mOpaqueFD) {
++        // Begin the inner access now with the producer's fences and layouts, and
++        // mark the texture used so EndAccess always releases it: an access that
++        // records no work still ends with one inner release fence, which follows
++        // the producer fences it waited. Those fences, which the frontend also
++        // returns for an unused texture, are implied by it.
++        DAWN_TRY(descriptor.ValidateSubset<SharedTextureMemoryVkImageLayoutBeginState>());
++        auto* layout = descriptor.Get<SharedTextureMemoryVkImageLayoutBeginState>();
++        DAWN_INVALID_IF(layout == nullptr,
++                        "OPAQUE_FD access requires SharedTextureMemoryVkImageLayoutBeginState.");
++        WGPUSharedTextureMemoryVkImageLayoutBeginState innerLayout =
++            WGPU_SHARED_TEXTURE_MEMORY_VK_IMAGE_LAYOUT_BEGIN_STATE_INIT;
++        innerLayout.oldLayout = layout->oldLayout;
++        innerLayout.newLayout = layout->newLayout;
++        WGPUSharedTextureMemoryBeginAccessDescriptor innerDesc =
++            WGPU_SHARED_TEXTURE_MEMORY_BEGIN_ACCESS_DESCRIPTOR_INIT;
++        innerDesc.nextInChain = &innerLayout.chain;
++        innerDesc.concurrentRead = descriptor->concurrentRead;
++        innerDesc.initialized = descriptor->initialized;
++        std::vector<WGPUSharedFence> innerFences;
++        std::vector<uint64_t> signaledValues;
++        for (auto [i, fence] : Enumerate(descriptor->fences)) {
++            innerFences.push_back(ToBackend(fence)->GetInnerHandle());
++            signaledValues.push_back(descriptor->signaledValues[i]);
++        }
++        innerDesc.fenceCount = innerFences.size();
++        innerDesc.fences = innerFences.data();
++        innerDesc.signaledValueCount = signaledValues.size();
++        innerDesc.signaledValues = signaledValues.data();
++        const DawnProcTable& wgpu = ToBackend(GetDevice())->wgpu.get();
++        // BeginAccess reports validation only; the inner device records its own
++        // native failure detail before rejecting.
++        DAWN_INVALID_IF(wgpu.sharedTextureMemoryBeginAccess(mInnerHandle, texture->GetInnerHandle(),
++                                                            &innerDesc) != WGPUStatus_Success,
++                        "The inner runtime rejected the OPAQUE_FD access.");
++        texture->MarkSharedTextureMemoryAccessUsed();
++        return {};
++    }
+     texture->SetPendingBeginAccess(descriptor->concurrentRead, descriptor->initialized);
+     return {};
+ }
+diff --git a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.h b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.h
+index 5de1754db..b2cc72f71 100644
+--- a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.h
++++ b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.h
+@@ -66,6 +66,12 @@
+     // TODO(crbug.com/483147423): Handle all possible chained structures in EndAccessState.
+     // For now we only handle Metal.
+     wgpu::SharedTextureMemoryIOSurfaceDescriptor mIOSurfaceDesc = {};
++    // Vulkan OPAQUE_FD memory: accesses carry VkImageLayout states and the
++    // inner runtime exports one new SYNC_FD fence per EndAccess.
++    bool mOpaqueFD = false;
++
++    ResultOrUnknownError<FenceAndSignalValue> EndAccessOpaqueFD(TextureBase* texture,
++                                                                UnpackedPtr<EndAccessState>& state);
+ };
+ 
+ }  // namespace dawn::native::webgpu
+diff --git a/src/dawn/native/webgpu/TextureWGPU.cpp b/src/dawn/native/webgpu/TextureWGPU.cpp
+index 118f14b1f..16435429c 100644
+--- a/src/dawn/native/webgpu/TextureWGPU.cpp
++++ b/src/dawn/native/webgpu/TextureWGPU.cpp
+@@ -211,6 +211,10 @@
+     mLastSharedTextureMemoryUsageSerial = GetDevice()->GetQueue()->GetPendingCommandSerial();
+ }
+ 
++void Texture::MarkSharedTextureMemoryAccessUsed() {
++    mLastSharedTextureMemoryUsageSerial = GetDevice()->GetQueue()->GetPendingCommandSerial();
++}
++
+ void Texture::SetPendingBeginAccess(bool concurrentRead, bool initialized) {
+     mPendingBeginAccess = true;
+     mPendingConcurrentRead = concurrentRead;
+diff --git a/src/dawn/native/webgpu/TextureWGPU.h b/src/dawn/native/webgpu/TextureWGPU.h
+index e3a3e5783..1d16d1e53 100644
+--- a/src/dawn/native/webgpu/TextureWGPU.h
++++ b/src/dawn/native/webgpu/TextureWGPU.h
+@@ -51,6 +51,8 @@
+     void SynchronizeTextureBeforeUse();
+ 
+     void SetPendingBeginAccess(bool concurrentRead, bool initialized);
++    // The inner access already began: EndAccess must release it even if unused.
++    void MarkSharedTextureMemoryAccessUsed();
+ 
+     MaybeError AddReferenced(CaptureContext& captureContext) override;
+     MaybeError CaptureCreationParameters(CaptureContext& context) override;
