@@ -198,6 +198,22 @@ static void component_mapping(void)
     span.swizzle[0]=span.swizzle[1]=span.swizzle[2]=span.swizzle[3]=DOE_DX_SWIZZLE_IDENTITY;
     doe_dx_texture_srv(&texture,&span,&view);
     assert(view.Shader4ComponentMapping==D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+    /* Stencil plane formats hold stencil in G; the view reads it from R as (s,0,0,1). */
+    const doe_dx_format stencil_formats[2]={DOE_DX_D24_UNORM_S8_UINT,DOE_DX_D32_FLOAT_S8_UINT};
+    for (size_t i=0;i<2;++i) {
+        texture.format=stencil_formats[i];
+        span=(doe_dx_texture_view_desc){.format=stencil_formats[i],.dimension=2,.mip_count=1,.layer_count=1,.aspect=2};
+        doe_dx_texture_srv(&texture,&span,&view);
+        assert(view.Format==(i ? DXGI_FORMAT_X32_TYPELESS_G8X24_UINT : DXGI_FORMAT_X24_TYPELESS_G8_UINT));
+        assert(view.Shader4ComponentMapping==D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(1,4,4,5));
+        span.swizzle[0]=DOE_DX_SWIZZLE_A; span.swizzle[3]=DOE_DX_SWIZZLE_R;
+        doe_dx_texture_srv(&texture,&span,&view);
+        assert(view.Shader4ComponentMapping==D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(5,4,4,1));
+        span.swizzle[0]=span.swizzle[3]=DOE_DX_SWIZZLE_IDENTITY;
+        span.aspect=1;
+        doe_dx_texture_srv(&texture,&span,&view);
+        assert(view.Shader4ComponentMapping==D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+    }
 }
 int main(void)
 {

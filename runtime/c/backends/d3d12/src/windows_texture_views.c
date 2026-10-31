@@ -30,13 +30,21 @@ static DXGI_FORMAT sampled_format(const doe_dx_native_texture *texture,const doe
 void doe_dx_texture_srv(const doe_dx_native_texture *texture,const doe_dx_texture_view_desc *span,D3D12_SHADER_RESOURCE_VIEW_DESC *out)
 {
     *out=(D3D12_SHADER_RESOURCE_VIEW_DESC){0};
+    /* The stencil plane SRV formats (X24_TYPELESS_G8_UINT, X32_TYPELESS_G8X24_UINT)
+     * return stencil in memory component 1 (G). WebGPU reads a stencil aspect's
+     * value from R, so the view's channels start from (G, 0, 0, 1). */
+    const bool stencil=span->dimension && span->aspect==2 &&
+        (texture->format==DOE_DX_D24_UNORM_S8_UINT || texture->format==DOE_DX_D32_FLOAT_S8_UINT);
+    const UINT base[4]={stencil ? 1u : 0u,stencil ? (UINT)D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0 : 1u,
+        stencil ? (UINT)D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0 : 2u,
+        stencil ? (UINT)D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1 : 3u};
     UINT components[4];
     for (UINT i=0;i<4;++i) {
         switch (span->swizzle[i]) {
-        case DOE_DX_SWIZZLE_IDENTITY: components[i]=i; break;
+        case DOE_DX_SWIZZLE_IDENTITY: components[i]=base[i]; break;
         case DOE_DX_SWIZZLE_ZERO: components[i]=D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0; break;
         case DOE_DX_SWIZZLE_ONE: components[i]=D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1; break;
-        default: components[i]=(UINT)span->swizzle[i]-(UINT)DOE_DX_SWIZZLE_R; break;
+        default: components[i]=base[(UINT)span->swizzle[i]-(UINT)DOE_DX_SWIZZLE_R]; break;
         }
     }
     out->Shader4ComponentMapping=D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(components[0],components[1],components[2],components[3]);
