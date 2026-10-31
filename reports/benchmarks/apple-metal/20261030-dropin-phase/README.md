@@ -6,7 +6,11 @@ diagnostic on apple-host**. It is not an application win and does not qualify
 Metal support. RADV and ANV evidence does not transfer here, and none of this
 transfers back.
 
-**Status (2026-10-31): first valid baseline; M2 passes; M1 fails its rule.**
+**Status (2026-10-31, later): the Metal completed-handler decision passed its
+contract and landed; the identity-worker decision failed on compile time; the M1
+upload regression was traced without a Doe-side fix** ([section](#owner-decisions-of-2026-10-31-completion-handler-identity-worker-revised-m1)).
+
+**Earlier status (2026-10-31): first valid baseline; M2 passes; M1 fails its rule.**
 The b3, m1r and m2r contracts were frozen on reproducible rebuilds and run
 under the shared GPU lock; every verdict uses only valid windows (see
 [the results](#valid-results-b3-m1r-m2r-2026-10-31)). The b3 baseline
@@ -68,6 +72,8 @@ windows and are not verdicts.
 | [`contract-m1r.json`](contract-m1r.json) | M1 rules on rebuilt binaries | 3 valid | **fail** (image warm.upload 1.069) |
 | [`contract-m2r.json`](contract-m2r.json) | M2 rules on rebuilt binaries | 3 valid (image on its rerun) | **pass** |
 | [`contract-msl-clamp.json`](contract-msl-clamp.json) | MSL buffer clamp vs main and Dawn | image valid; vector x2, both invalid | image: pipelineNs regression (1.011); vector none |
+| [`contract-completion.json`](contract-completion.json) | Metal completed handler replaces the worker wake (owner decision 1) | 3 valid (upload/readback on its rerun) | **pass**; landed |
+| [`contract-identity.json`](contract-identity.json) | Identity worker at Metal device creation (owner decision 2) | 3 valid | **fail** (compileNs 1.077, 1.087) |
 
 **Why b3, m1r and m2r exist.** The scratch tree holding the frozen binaries
 was deleted. A rebuild of the same sources reproduced the harness binaries, the
@@ -285,6 +291,88 @@ transfer to Vulkan or D3D12). The image window passed with foreign CPU 0.04
 points under its limit. The raw samples and gate commands had the absolute work
 directory replaced by `<work>/`; the `rawFiles` hashes inside the summaries are
 of the unsanitized bytes.
+
+## Owner decisions of 2026-10-31: completion handler, identity worker, revised M1
+
+Both contracts compare a candidate (`cand`) against main `1c585a5cc` and Dawn
+`d04f88359`, with the b3/m1r gate, 96 pairs of 32 iterations per workload and the
+byte-identical Dawn A/A control. They were frozen before timing; build receipts are
+in [`builds/completion-identity-build.json`](builds/completion-identity-build.json)
+and the run script in [`runs/run-completion-identity.sh`](runs/run-completion-identity.sh).
+Seven windows ran between 12:50Z and 13:10Z under the shared GPU lock, on battery
+at 84-86% with low-power mode off and no power-source change; idle GPU was 7-9%
+before and after, and foreign CPU 6.4-13.7%. Completion upload/readback attempt 1
+passed its gate but failed the A/A rule (0.995 [0.992,0.999]); it is retained and
+its single rerun was valid. Before freezing, all 81 Metal physical clients gave the
+same per-client result on main and both candidates
+([main](correctness/physical-main-1c585a5cc.tsv), [completion](correctness/physical-p1-1c585a5cc.tsv),
+[identity](correctness/physical-p2-1c585a5cc.tsv); 61 pass, 13 abort on main too,
+1 needs checker arguments, 6 GNU-only), and `backends/metal` `check`, `sdk-abi`,
+`native-check` and `native-graphics-check` passed on both trees.
+
+### Decision 1: Metal completion through the completed handler (pass, landed)
+
+Mechanism ([patch](completion/candidate.patch)): every committed command registers
+`addCompletedHandler:` after its last fallible encode (`backends/metal/src/commands.c:240-252`,
+`objc_commands.c:136`), as Dawn does (`QueueMTL.mm:234-240`). A live device's
+`link_pending` and lease drops no longer wake the progress worker
+(`native/src/queue.c:305`, `lifecycle.c:290`), and the worker does not service
+Metal records until the device is destroyed (`pending_progress.c:29-33`). The
+handler never takes the device mutex and never retires state; it counts and, once
+`wgpuDeviceDestroy` has armed it (`lifecycle.c:527`), wakes the worker through a
+refcounted record that outlives the device (`metal_progress.c:40-99`). Live devices
+retire records on their next public call, which every submit, write, map and work
+done already settles. Charter text recording the 2026-10-24 worker approval now
+records this decision as superseding it for Metal (`native/AGENTS.md`,
+`native/README.md`, `backends/metal/README.md`, `backends/metal/CATSCAN.md`).
+
+| cand/main | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| warm submit (improve) | 0.883 [0.865,0.898] | 0.850 [0.829,0.868] | 0.691 [0.682,0.701] |
+| warm map | 0.956 [0.954,0.959] | 0.957 [0.947,0.965] | 0.965 [0.961,0.969] |
+| warm operation | 0.987 [0.982,0.989] | 0.985 [0.978,0.991] | 0.988 [0.973,0.996] |
+| warm completion | 0.999 [0.995,1.001] | 1.002 [0.994,1.008] | 0.999 [0.990,1.005] |
+
+**Verdict: PASS** ([evaluator output](completion/eval.txt)); every no-regression
+metric is within 1.05 on every workload. Against Dawn (diagnostic, from
+[`summary-vs-dawn.json`](completion/summary-vs-dawn.json)), warm submit moves from
+1.311 to 1.162 [1.119,1.194] on vector (+2.8 us to +1.5 us), from 2.147 to 1.479
+[1.453,1.493] on upload/readback (+3.5 us to +1.5 us) and from 1.049 to 0.906 on
+image. Warm operation against Dawn is 1.018 [1.014,1.021], 0.683 and 0.985
+[0.976,0.993]. The claim boundary applies: Metal C runtime on apple-host only.
+
+### Decision 2: identity worker at Metal device creation (fail, not landed)
+
+Mechanism ([patch](identity/candidate.patch)): `lifecycle.c:334` also starts the
+worker for Metal. A diagnostic build compared the worker digest with an inline
+recomputation in the same process: equal in 4 of 4 processes, same digest across
+processes. The worker digest is per device and joined on teardown, as for D3D12.
+
+| cand/main | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| pipelineNs (improve) | 0.885 [0.878,0.892] | 0.886 [0.878,0.891] | (no pipeline) |
+| compileNs | **1.077 [1.061,1.083]** | **1.087 [1.072,1.098]** | (no shader) |
+| setupNs | 1.005 [1.001,1.010] | 1.004 [0.998,1.010] | 1.003 [0.997,1.007] |
+| cpuMs | 1.003 | 1.000 | 1.025 [1.021,1.033] |
+
+**Verdict: FAIL** ([evaluator output](identity/eval.txt)). Pipeline creation falls
+by 0.20 ms (Dawn ratio 1.17 to 1.03-1.06), but shader-module compilation, which
+runs while the worker is still hashing, rises by 7-9 us and breaks the 1.05 bound.
+Device creation takes about 0.2 ms, shorter than the 0.49 ms hash, so the worker
+overlaps compile rather than only device open. The verdict stands and the change
+is not landed. A changed start point or a changed rule needs an owner decision and
+a new prospective contract.
+
+### Decision 3: revised M1 (traced; no fix found; not frozen)
+
+The [trace](diagnostics/m1_upload_trace.txt) localizes the m1r image warm-upload
+regression to the first CPU read of the caller's 4 MiB source array inside
+`wgpuQueueWriteBuffer` (+3.6% on that read); Doe's own lock, settle, unlock and copy
+are unchanged. It depends on whether the harness memcpy read the lent shared
+allocation or a malloc shadow, survives cache flushes, extra Doe-side traffic,
+spins and the completion change, and does not reproduce in a
+[standalone Metal probe](diagnostics/m1_upload_probe.m). With no Doe-side cause
+found there was nothing to fix, so no revised M1 was frozen or timed.
 
 ## Remaining owners (after b3, m1r, m2r)
 

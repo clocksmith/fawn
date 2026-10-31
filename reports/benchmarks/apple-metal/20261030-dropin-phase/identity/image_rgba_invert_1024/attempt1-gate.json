@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 24.656524416990578,
+  "foreignCpuSeconds": 12.639999999993012,
+  "foreignCpuFraction": 0.06408040213933654,
+  "topForeignCpu": [
+    [
+      3.0200000000040745,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      2.8799999999973807,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)"
+    ],
+    [
+      0.6399999999998727,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.5900000000001455,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      0.5100000000020373,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd"
+    ],
+    [
+      0.44999999999999574,
+      "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/XPCServices/VTDecoderXPCService.xpc/Contents/MacOS/VTDecoderXPCService"
+    ],
+    [
+      0.36000000000012733,
+      "/usr/libexec/opendirectoryd"
+    ],
+    [
+      0.3599999999987631,
+      "claude"
+    ]
+  ],
+  "idleGpuMedianBefore": 8,
+  "idleGpuMedianAfter": 8,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T13:02:16Z",
+    "monotonic": 1210120.786267208,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "84%; discharging; 4:07 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      8,
+      7,
+      7,
+      8,
+      8
+    ],
+    "loadAverage": [
+      1.45166015625,
+      1.9150390625,
+      2.541015625
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T13:02:46Z",
+    "monotonic": 1210150.84907175,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "84%; discharging; 4:07 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      23,
+      7,
+      8,
+      8,
+      7
+    ],
+    "loadAverage": [
+      1.5185546875,
+      1.888671875,
+      2.5087890625
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/harness-main",
+    "--provider",
+    "cand=<work>/bin/harness-p2",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "image_rgba_invert_1024",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/identity/image_rgba_invert_1024/attempt1-raw.jsonl"
+  ]
+}

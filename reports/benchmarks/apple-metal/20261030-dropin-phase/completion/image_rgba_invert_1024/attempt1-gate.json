@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 25.874216415919363,
+  "foreignCpuSeconds": 28.309999999992726,
+  "foreignCpuFraction": 0.13676742681265666,
+  "topForeignCpu": [
+    [
+      13.349999999998545,
+      "/Applications/ChatGPT.app/Contents/Frameworks/Codex Framework.framework/Versions/156.0.8078.48/Helpers/Codex (Renderer).app/Contents/MacOS/Codex (Renderer)"
+    ],
+    [
+      3.110000000000582,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      2.959999999999127,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)"
+    ],
+    [
+      1.3199999999999363,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      0.680000000000291,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.6200000000001182,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      0.5299999999988358,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd"
+    ],
+    [
+      0.480000000000004,
+      "/System/Library/Frameworks/VideoToolbox.framework/Versions/A/XPCServices/VTDecoderXPCService.xpc/Contents/MacOS/VTDecoderXPCService"
+    ]
+  ],
+  "idleGpuMedianBefore": 8,
+  "idleGpuMedianAfter": 9,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T12:57:38Z",
+    "monotonic": 1209842.297076333,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "85%; discharging; 3:17 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      8,
+      8,
+      8,
+      8,
+      9
+    ],
+    "loadAverage": [
+      1.89453125,
+      2.44775390625,
+      2.9140625
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T12:58:09Z",
+    "monotonic": 1209873.545039416,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "85%; discharging; 3:17 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      22,
+      9,
+      9,
+      7,
+      8
+    ],
+    "loadAverage": [
+      2.29638671875,
+      2.49755859375,
+      2.9150390625
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/harness-main",
+    "--provider",
+    "cand=<work>/bin/harness-p1",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "image_rgba_invert_1024",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/completion/image_rgba_invert_1024/attempt1-raw.jsonl"
+  ]
+}

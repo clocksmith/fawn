@@ -1,0 +1,1 @@
+{"valid": true, "checks": {"runExitedZero": true, "powerSourceUnchanged": true, "lowPowerModeOff": true, "noThermalWarning": true, "idleGpuBefore": true, "idleGpuAfter": true, "foreignCpu": true}, "foreignCpuFraction": 0.13676742681265666, "idleGpuMedianBefore": 8, "idleGpuMedianAfter": 9}

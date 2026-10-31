@@ -1,0 +1,49 @@
+diff --git a/runtime/c/native/README.md b/runtime/c/native/README.md
+index cc999048d..630d4e4e6 100644
+--- a/runtime/c/native/README.md
++++ b/runtime/c/native/README.md
+@@ -1686,9 +1686,10 @@ own storage. Files are isolated from retained Zig and native-driver caches in
+ `cache/doe/c_shader_translation_cache_v1` without HOME).
+ `DOE_SHADER_CACHE_DIR` chooses another directory; an explicitly empty value
+ disables persistence.
+-D3D12 device creation starts one per-device worker thread before the backend
+-opens; it computes the same loaded-image identity (byte-identical digest), so the
+-hash overlaps descriptor-ring, UPLOAD-heap and compiler-module creation. The first
++D3D12 and Metal device creation start one per-device worker thread before the
++backend opens; it computes the same loaded-image identity (byte-identical digest),
++so the hash overlaps device opening (D3D12 descriptor rings, UPLOAD heaps and
++compiler modules; the Metal device, queue and completion event). The first
+ pipeline needing the identity claims it under the device mutex and joins outside
+ it; any other caller keeps the inline computation. A failed worker identity
+ disables persistence for that call exactly as an inline failure does, and later
+diff --git a/runtime/c/native/src/lifecycle.c b/runtime/c/native/src/lifecycle.c
+index 5d268199b..de81a4373 100644
+--- a/runtime/c/native/src/lifecycle.c
++++ b/runtime/c/native/src/lifecycle.c
+@@ -332,7 +332,8 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
+         return NULL;
+     }
+     /* First, so the image hash overlaps the backend open below. */
+-    if (adapter->backend.kind == WGPUBackendType_D3D12) native_identity_worker_start(&device->identity_worker);
++    if (adapter->backend.kind == WGPUBackendType_D3D12 || adapter->backend.kind == WGPUBackendType_Metal)
++        native_identity_worker_start(&device->identity_worker);
+     doe_error_scope_requirements requirements;
+     doe_error_scope_result result = doe_error_scope_storage_requirements(DOE_ERROR_SCOPES_ABI_VERSION,
+         &requirements);
+diff --git a/runtime/c/native/src/shader_identity_worker.h b/runtime/c/native/src/shader_identity_worker.h
+index 1536cb5a5..d4678dd5a 100644
+--- a/runtime/c/native/src/shader_identity_worker.h
++++ b/runtime/c/native/src/shader_identity_worker.h
+@@ -5,9 +5,9 @@
+ #include <stdbool.h>
+ #include <stdint.h>
+ 
+-/* One per device. D3D12 device open starts a worker computing the exact
+- * native_shader_cache_identity digest before the backend opens, so the hash
+- * overlaps descriptor-ring, UPLOAD-heap and compiler-module creation. The
++/* One per device. D3D12 and Metal device open start a worker computing the
++ * exact native_shader_cache_identity digest before the backend opens, so the
++ * hash overlaps the backend's device, queue and helper creation. The
+  * worker writes only its own result; thread join publishes it. The first
+  * pipeline that needs the identity claims and joins it under the device mutex
+  * protocol; every other caller keeps the existing inline computation. */
