@@ -12,8 +12,10 @@ static doe_dx_status attachment_view(doe_dx_commands *commands,doe_dx_texture *t
     doe_dx_texture_view_desc normalized;
     doe_dx_status status=doe_dx_texture_view_validate(texture,view,&normalized);
     if (status!=DOE_DX_OK) return status;
-    if (normalized.mip_count!=1 || normalized.layer_count!=1 ||
-        (normalized.dimension!=1 && normalized.dimension!=2 && normalized.dimension!=6)) return DOE_DX_INVALID_ARGUMENT;
+    /* WebGPU renders a 2D, single-layer 2D-array or 3D-slice view; one layer of a
+     * 2D array is the same native Texture2DArray RTV/DSV as a 2D view of it. */
+    if (normalized.mip_count!=1 || normalized.layer_count!=1 || (normalized.dimension!=1 &&
+        normalized.dimension!=2 && normalized.dimension!=3 && normalized.dimension!=6)) return DOE_DX_INVALID_ARGUMENT;
     if (normalized.dimension==6 ? slice>=mip_extent(texture->shape.depth_or_layers,normalized.base_mip) : slice!=0)
         return DOE_DX_RANGE;
     const doe_dx_texture_use *use=doe_dx_find_texture(commands,texture);

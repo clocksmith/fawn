@@ -22,7 +22,8 @@ static native_texture *attachment_texture(doe_resource_view *view,doe_dx_texture
     const doe_resource_texture_desc *desc=doe_resource_texture_description(texture);
     native_texture *native=doe_resource_texture_native(texture);
     if (!doe_resource_view_native(view) || !span || !desc || !native || !native->d3d12 ||
-        (span->dimension!=WGPUTextureViewDimension_2D && span->dimension!=WGPUTextureViewDimension_3D) ||
+        (span->dimension!=WGPUTextureViewDimension_2D && span->dimension!=WGPUTextureViewDimension_2DArray &&
+         span->dimension!=WGPUTextureViewDimension_3D) ||
         span->mip_count!=1 || span->layer_count!=1 || !native_d3d12_view_descriptor(span,desc,out)) return NULL;
     return native;
 }
@@ -151,7 +152,8 @@ native_failure native_d3d12_render(native_command_handle *commands,
         const doe_resource_view_desc *depth_span=doe_resource_view_description(depth_view);
         native_texture *depth=doe_resource_texture_native(doe_resource_view_texture(depth_view));
         if (!depth_span || !depth || !depth->d3d12 ||
-            depth_span->dimension!=WGPUTextureViewDimension_2D || depth_span->mip_count!=1 || depth_span->layer_count!=1 ||
+            (depth_span->dimension!=WGPUTextureViewDimension_2D && depth_span->dimension!=WGPUTextureViewDimension_2DArray) ||
+            depth_span->mip_count!=1 || depth_span->layer_count!=1 ||
             !native_d3d12_view_descriptor(depth_span,doe_resource_texture_description(doe_resource_view_texture(depth_view)),&pass.depth_view))
             failure=native_failure_status(NATIVE_UNSUPPORTED);
         else {
