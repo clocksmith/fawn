@@ -1,0 +1,18 @@
+== image_rgba_invert_1024: failed processes main-summary 0 dawn-summary 0; A/A warm.operation 1.005 [0.991,1.056] ok
+   pipelineNs       cand/main 0.998 [0.986,1.004] no detectable difference | cand/dawn 1.078 [1.071,1.085] regression | main/dawn 1.081 [1.070,1.091] regression
+   warm.completion  cand/main 1.003 [0.936,1.162] no detectable difference | cand/dawn 1.370 [1.247,1.477] regression | main/dawn 1.299 [1.105,1.454] regression
+   compileNs        cand/main 1.012 [0.989,1.035] no detectable difference | cand/dawn 0.300 [0.294,0.303] improvement | main/dawn 0.298 [0.293,0.304] improvement
+   setupNs          cand/main 0.999 [0.992,1.014] no detectable difference | cand/dawn 1.003 [0.996,1.011] no detectable difference | main/dawn 1.007 [1.002,1.013] regression
+   warm.operation   cand/main 1.014 [0.931,1.120] no detectable difference | cand/dawn 1.022 [0.923,1.079] no detectable difference | main/dawn 0.991 [0.841,1.049] no detectable difference
+   complete         cand/main 0.982 [0.933,1.061] no detectable difference | cand/dawn 0.911 [0.875,0.943] improvement | main/dawn 0.894 [0.839,0.928] improvement
+   processWall      cand/main 0.982 [0.942,1.049] no detectable difference | cand/dawn 0.942 [0.917,0.983] improvement | main/dawn 0.927 [0.892,0.972] improvement
+   cpuMs            cand/main 0.960 [0.936,1.015] no detectable difference | cand/dawn 0.749 [0.725,0.791] improvement | main/dawn 0.765 [0.729,0.779] improvement
+== vector_scale_add_262k: failed processes main-summary 0 dawn-summary 0; A/A warm.operation 0.991 [0.964,1.022] ok
+   pipelineNs       cand/main 1.002 [0.999,1.010] no detectable difference | cand/dawn 1.069 [1.066,1.074] regression | main/dawn 1.068 [1.062,1.074] regression
+   warm.completion  cand/main 1.004 [0.994,1.010] no detectable difference | cand/dawn 0.731 [0.722,0.742] improvement | main/dawn 0.729 [0.721,0.741] improvement
+   compileNs        cand/main 1.005 [0.999,1.013] no detectable difference | cand/dawn 0.354 [0.351,0.359] improvement | main/dawn 0.355 [0.351,0.359] improvement
+   setupNs          cand/main 1.003 [0.960,1.044] no detectable difference | cand/dawn 1.044 [1.025,1.058] regression | main/dawn 1.037 [1.017,1.053] regression
+   warm.operation   cand/main 1.013 [0.994,1.044] no detectable difference | cand/dawn 0.744 [0.736,0.758] improvement | main/dawn 0.730 [0.714,0.751] improvement
+   complete         cand/main 1.007 [0.996,1.028] no detectable difference | cand/dawn 0.751 [0.744,0.765] improvement | main/dawn 0.742 [0.727,0.757] improvement
+   processWall      cand/main 1.024 [0.988,1.055] no detectable difference | cand/dawn 0.799 [0.782,0.820] improvement | main/dawn 0.779 [0.763,0.801] improvement
+   cpuMs            cand/main 1.073 [0.984,1.135] no detectable difference | cand/dawn 0.916 [0.870,0.956] improvement | main/dawn 0.864 [0.831,0.927] improvement

@@ -1,0 +1,93 @@
+{
+ "schemaVersion": 1,
+ "cohortId": "intel-vulkan-spirv-clamp-20261030",
+ "frozenAtUtc": "2026-10-31T02:35:53Z",
+ "experiment": "SPIR-V storage/uniform index clamp (1dfd5e009) against its parent main (fac2bc042) and source-built Dawn on intel-host ANV. Scoped native drop-in phase diagnostic; separate backend evidence.",
+ "host": {
+  "label": "intel-host",
+  "adapter": "Intel UHD Graphics (TGL GT2), Mesa 24.2 ANV",
+  "cpu": "i3-1115G4 (2 cores, 4 threads)",
+  "sharedUse": "resident desktop app paused with SIGSTOP per window and resumed with SIGCONT; Reploid contributor disabled"
+ },
+ "sourceCommits": {
+  "main": "fac2bc042",
+  "candidate": "1dfd5e009",
+  "harnessAndTool": "fac2bc042"
+ },
+ "providers": {
+  "main": "libwebgpu_doe_c.so from git archive of fac2bc042 (runtime/c/native default flags, gcc)",
+  "cand": "libwebgpu_doe_c.so from git archive of 1dfd5e009",
+  "dawn": "source-built Dawn d04f88359391a12375c1a3e948a0b2dcb4c97a18, CMake Release monolithic SHARED, intel-host options of the 20261030 campaign (X11 off, C++ modules off), rebuilt because the earlier binaries were deleted",
+  "dawn-aa": "byte-identical copy of the dawn harness (A/A)"
+ },
+ "workloads": [
+  "vector_scale_add_262k",
+  "image_rgba_invert_1024"
+ ],
+ "workloadNote": "the two workloads with a shader; buffer_upload_readback_exact_1mb compiles no shader and is excluded",
+ "sampling": {
+  "pairs": 48,
+  "orders": "all 24 permutations of the 4 providers, each twice",
+  "iterationsPerProcess": 32,
+  "warmIterations": "1..31"
+ },
+ "statistics": "dropin_phase_cohort summarize: per-pair ratio medians with bootstrap 95% CI (10000 resamples, seed 20261029); summarized against control main and control dawn",
+ "rules": {
+  "primaryMetrics": [
+   "pipelineNs",
+   "warm.completion"
+  ],
+  "reportedMetrics": [
+   "compileNs",
+   "setupNs",
+   "warm.operation",
+   "complete",
+   "processWall",
+   "cpuMs"
+  ],
+  "comparisons": [
+   "cand/main",
+   "cand/dawn",
+   "main/dawn"
+  ],
+  "classification": "per metric and workload: improvement if ratio CI95 upper < 1.0; regression if CI95 lower > 1.0; otherwise no detectable difference",
+  "aa": {
+   "provider": "dawn-aa",
+   "control": "dawn",
+   "metric": "warm.operation",
+   "window": [
+    0.95,
+    1.05
+   ],
+   "ciContainsOne": true
+  }
+ },
+ "acceptance": {
+  "validity": [
+   "every process status ok with all 32 iterations oracle-checked",
+   "every provider reports the Intel ANV Vulkan adapter",
+   "A/A rule above per workload",
+   "window gate (tools/intel_window_gate.py): foreign GPU <= 2% of window time, foreign CPU <= 5% of capacity (4 CPUs), no make -C runtime/c process at any sample"
+  ],
+  "invalidWindows": "gated-window.sh reruns a gate-invalid window fresh, at most 4 attempts; invalid attempts are retained and never used",
+  "claimBoundary": "A result is scoped to these two drop-in workloads on intel-host ANV with these frozen binaries. It is not an application win, does not qualify Intel or RADV support and does not transfer to Metal or D3D12."
+ },
+ "hashes": {
+  "src-fac2bc042/bench/drop-in/dropin_phase_harness.c": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+  "src-fac2bc042/bench/tools/dropin_phase_cohort.py": "55586b5c154908d40640559289bb8357063a3d6d064c7abfe8cc42e9ae9475d8",
+  "tools/intel_window_gate.py": "51ef9224fa16e801bfa14be99cca7195c18ff6193f87c11b2ed7819896901e8a",
+  "tools/timed-window.sh": "1a55697143ac7fe5ada83f9252c081c000f85bb7b3f2bfad609c73a7295472a7",
+  "tools/gated-window.sh": "a1ce7501caf5245104fa82b534f5336f4639460a058903beb8d70f6cf029aae9",
+  "run-window.sh": "7dc342f45365bb3304fb9db089b76028b8f3b6c6d049463156ae8634a7a21e67",
+  "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+  "bin/harness-main": "c2d718d6fd3f33622598d22e1235443b5f7c9f2f20e6fdc5fdaddc5dfc13b081",
+  "bin/harness-cand": "e3508439c1a08f4b26c6a2e7e3f164b309b55223bc536169ec548206f0f18ca7",
+  "bin/harness-dawn": "3ca6cd0b48daa10868f19274fd271761ae6ba6e86f4e29c65f1b028e79751cfe",
+  "bin/harness-dawn-aa": "3ca6cd0b48daa10868f19274fd271761ae6ba6e86f4e29c65f1b028e79751cfe",
+  "build-fac2bc042/native/libwebgpu_doe_c.so": "fec82def038c3f62af3659ef2bc237e671767d7928b2cdbc28b48d9c149ddf3e",
+  "build-fac2bc042/native/libdoe_compiler.so": "8f66bb4cf518aa2e57f13b1ca18e39a0c51ef4cd0dfdf9e303aa285ad1a4cd60",
+  "build-1dfd5e009/native/libwebgpu_doe_c.so": "4a8fb01d5d81800839e98ac0056f8b64bbb251e19f82d608c0808be2b6ff4925",
+  "build-1dfd5e009/native/libdoe_compiler.so": "a0e63936150c8f4e84527f2168131e7edd3cbc98ae6c8001bd44ab6bf547f6de",
+  "dawn-lib/libwebgpu_dawn.so": "e878fe161b8bdf9bc7cbdc5de7863ce61be7d54e4132f7b12324b436d8b79272"
+ }
+}

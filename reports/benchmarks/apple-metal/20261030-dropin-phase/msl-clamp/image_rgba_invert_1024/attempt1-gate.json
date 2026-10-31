@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 13.338460833067074,
+  "foreignCpuSeconds": 21.300000000003514,
+  "foreignCpuFraction": 0.1996107371998946,
+  "topForeignCpu": [
+    [
+      13.360000000000014,
+      "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python"
+    ],
+    [
+      2.0500000000029104,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      1.3099999999976717,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)"
+    ],
+    [
+      0.5,
+      "/System/Library/PrivateFrameworks/TCC.framework/Support/tccd"
+    ],
+    [
+      0.3400000000001455,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.30999999999994543,
+      "/usr/libexec/trustd"
+    ],
+    [
+      0.2700000000002092,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      0.25,
+      "claude"
+    ]
+  ],
+  "idleGpuMedianBefore": 0,
+  "idleGpuMedianAfter": 0,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T02:59:27Z",
+    "monotonic": 1173951.466303708,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "80%; AC attached; not charging present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      5,
+      0,
+      3,
+      0,
+      0
+    ],
+    "loadAverage": [
+      2.8740234375,
+      5.62744140625,
+      6.61181640625
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T02:59:45Z",
+    "monotonic": 1173969.976728583,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "80%; AC attached; not charging present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      19,
+      0,
+      0,
+      0,
+      0
+    ],
+    "loadAverage": [
+      2.84130859375,
+      5.4404296875,
+      6.52099609375
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/harness-main",
+    "--provider",
+    "cand=<work>/bin/harness-cand",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "image_rgba_invert_1024",
+    "--pairs",
+    "48",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/windows/image_rgba_invert_1024/attempt1-raw.jsonl"
+  ]
+}
