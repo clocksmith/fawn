@@ -534,8 +534,10 @@ contract. Landing either one also changes the control the other passed
 against. Choosing which mechanism lands, if any, is an owner decision, and
 both patches stay as receipts. Under the
 [C migration rules](../../../../docs/c-migration/MIGRATION.md), a landed
-mechanism would enter only the Doe C Vulkan backend. Retained Zig remains the
-production default until the migration's default-switch gates pass. This
+mechanism would enter only the Doe C Vulkan backend, which the source package,
+compiler build and runtime CLI already select by default
+([README](../../../../README.md)); retained Zig requires explicit legacy
+selection. This
 record is a scoped native drop-in diagnostic, not the GOALS application win.
 
 ### Remaining owners of loss against Dawn
