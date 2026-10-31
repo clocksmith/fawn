@@ -1120,7 +1120,10 @@ retained Zig provider exports, listed separately in `EXTENSION_SYMBOLS.txt` (nev
 webgpu.h names, never resolved by `wgpuGetProcAddress`; `tests/audit-exports.py`
 checks both inventories). The contract version is
 `config/compute-program.schema.json` `$defs.nativeContractVersion`, read at build time.
-Reusable GPU recordings require Vulkan. Host replay uses the selected backend's
+Reusable GPU recordings require Vulkan. `doeNativeComputeProgramSupported(device)`
+reports them per device from its backend: a Vulkan device on any OS. NULL,
+Metal, D3D12 and unknown backends report 0, the same refusal
+`doeNativeComputeProgramPrepare` applies. Host replay uses the selected backend's
 existing native lowering; Metal compute/buffer packets are composed too.
 
 - `doeNativeComputeProgramPrepare` (gpu-recorded) claims a finished, never-submitted

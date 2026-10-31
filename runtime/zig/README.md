@@ -270,7 +270,9 @@ each `doeNativeComputeProgramSubmit` on that handle revalidates its retained
 resources and replays it through the backend submission path on Vulkan, Metal or
 D3D12 without consuming it again (the C provider's host-replay contract,
 `runtime/c/native/include/doe_native_programs.h`). Handles from
-`doeNativeComputeProgramPrepare` stay GPU-recorded Vulkan programs.
+`doeNativeComputeProgramPrepare` stay GPU-recorded Vulkan programs, and
+`doeNativeComputeProgramSupported(device)` reports them per device: here, a
+Vulkan device on Linux; NULL or another backend reports 0.
 
 `tests/d3d12_command_consumption.c` checks duplicate and repeated submission on
 physical D3D12 with exact unchanged readback and fresh-command recovery. Build it

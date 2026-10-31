@@ -177,7 +177,13 @@ build time from the schema's `nativeContractVersion` definition. Native version
 2 accepts descriptor versions 1, 2, and 3; version 3's additional state-update
 policy runs in the package. Older libraries reject resident declarations before
 allocation. The native command ABI has not changed.
-`gpu-recorded` requires Vulkan support advertised by both the addon and library.
+`gpu-recorded` requires the library to report support for the program's device:
+`doeNativeComputeProgramSupported(device)` answers from that device's backend.
+The C library reports a Vulkan device on any OS. The retained Zig provider
+reports a Vulkan device on Linux. Metal, D3D12, unknown backends and a missing
+device report no support, and a missing symbol in an older library reads as
+unsupported. The addon and library ship as one package build: an addon older
+than this per-device signature must not load a newer library.
 It owns a compiled GPU command buffer, retained pipelines, and descriptor pools.
 Buffer identities and extents are checked before submission; mapping or changing
 an allocation invalidates the recording. Programs own private descriptor state;

@@ -363,12 +363,14 @@ but not pushed. On this tuple it fails that rule: `complete` against main is
     It uses Linux as a stand-in for "the backend is Vulkan".
   - On Windows it reports 0 even for a Vulkan device, while the client asserts 1
     unconditionally (`native/tests/compute_programs.c:198`).
-  - Two ways to resolve it, for the owner:
-    - Advertise programs per device. The export has no device parameter, so
-      this is an ABI/contract change.
-    - Have the client assert the platform's advertised value and skip (exit 77)
-      when it is 0.
-  - Not changed here.
+  - **Resolved** by an owner-approved ABI change (2026-10-31):
+    `doeNativeComputeProgramSupported(device)` reports support per device from
+    its backend. C reports a Vulkan device on any OS; retained Zig reports a
+    Vulkan device on Linux; NULL and other backends report 0.
+  - With that change, `compute-programs` runs its full GPU-recording suite and
+    passes on windows-amd-host Vulkan, where all 71 public-ABI clients now pass.
+    On D3D12 it passes the fail-closed path. The nine other D3D12 failures (depth, rendering,
+    limits and WGSL-feature assertions) are identical on main.
 
 ## Remaining owners on windows-amd-host (baseline)
 

@@ -16,8 +16,10 @@ extern "C" {
 
 /* config/compute-program.schema.json $defs.nativeContractVersion at build time. */
 DOE_NATIVE_EXTENSION uint32_t doeNativeComputeProgramContractVersion(void);
-/* Nonzero when GPU-recorded programs can be prepared on this platform (Vulkan). */
-DOE_NATIVE_EXTENSION uint32_t doeNativeComputeProgramSupported(void);
+/* Nonzero when GPU-recorded programs can be prepared on this device: a Vulkan
+ * device on any OS. 0 for NULL, Metal, D3D12 and every other backend. Host
+ * replay is separate (doeNativeComputeProgramPrepareHostReplay). */
+DOE_NATIVE_EXTENSION uint32_t doeNativeComputeProgramSupported(void *device);
 /* Timestamp queries resolve to GPU nanoseconds in-command: period 1, 64 valid
  * bits, only for a Vulkan device created with TimestampQuery. Returns 0 otherwise. */
 DOE_NATIVE_EXTENSION uint32_t doeNativeComputeProgramTimestampNanoseconds(void *device,

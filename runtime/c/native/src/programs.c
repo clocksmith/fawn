@@ -21,13 +21,12 @@ uint32_t doeNativeComputeProgramContractVersion(void)
     return DOE_COMPUTE_PROGRAM_CONTRACT;
 }
 
-uint32_t doeNativeComputeProgramSupported(void)
+uint32_t doeNativeComputeProgramSupported(void *handle)
 {
-#if defined(__linux__)
-    return 1;
-#else
-    return 0; /* Reusable GPU recordings require Vulkan; host replay is separate. */
-#endif
+    const native_device *device = handle;
+    /* The same backend test prepare() applies to GPU recording: Vulkan on any OS.
+     * Every other or unknown backend, and a NULL device, fail closed. */
+    return device && device->backend.kind == WGPUBackendType_Vulkan;
 }
 
 uint32_t doeNativeComputeProgramTimestampNanoseconds(void *handle, double *period_ns, uint32_t *valid_bits)

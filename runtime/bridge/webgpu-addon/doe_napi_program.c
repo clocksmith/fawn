@@ -26,12 +26,15 @@ napi_value doe_compute_program_timestamp_info(napi_env env, napi_callback_info i
     return result;
 }
 
+/* GPU-recorded program support for one device (the library decides from its
+ * backend). A missing symbol or device reports false. */
 napi_value doe_compute_program_supported(napi_env env, napi_callback_info info) {
-    (void)info;
+    NAPI_ASSERT_ARGC(env, info, 1);
     CHECK_LIB_LOADED(env);
-    uint32_t (*supported)(void) = (uint32_t (*)(void))LIB_SYM(g_lib, "doeNativeComputeProgramSupported");
+    uint32_t (*supported)(void*) = (uint32_t (*)(void*))LIB_SYM(g_lib, "doeNativeComputeProgramSupported");
+    void* device = unwrap_ptr(env, _args[0]);
     napi_value result;
-    napi_get_boolean(env, supported && supported() != 0, &result);
+    napi_get_boolean(env, supported && device && supported(device) != 0, &result);
     return result;
 }
 

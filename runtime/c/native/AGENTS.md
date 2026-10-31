@@ -136,6 +136,10 @@ compiler-owned MSL entry/slot/size metadata; do not parse source or substitute a
 SPIR-V artifact. Distinguish chosen frontend limits from queried device and actual
 per-pipeline limits. Host native-call ledgers are not GPU execution evidence.
 
+GPU-recorded program support is reported per device by the backend test that
+prepare applies: Vulkan on any OS. NULL and every other or unknown backend
+report 0. Never gate it on the host OS or a process-wide flag.
+
 The advertised host-replay program entrypoint lowers through the same tagged
 backend, resource replay references and pending command owner. Keep reusable GPU
 recordings Vulkan-only; do not impose that restriction on fresh host replay.

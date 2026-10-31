@@ -2842,7 +2842,7 @@ const fullSurfaceBackend = {
     deviceReleases?.register(device, { device: native, queue: device.queue?._native ?? null }, device);
     registerNativeProgramProvider(device, {
       contractVersion: addon.nativeComputeProgramContractVersion?.() ?? 0,
-      gpuRecorded: addon.computeProgramSupported?.() ?? false,
+      gpuRecorded: addon.computeProgramSupported?.(native) ?? false,
       timestampInfo: () => addon.computeProgramTimestampInfo?.(device._native) ?? null,
       isLost: () => device._destroyed || device._lostInfo !== null,
       materializeEncoder: ensureNodeCommandEncoderNative,

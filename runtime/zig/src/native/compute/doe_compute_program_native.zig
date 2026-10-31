@@ -17,8 +17,13 @@ const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 
 const alloc = helpers.alloc;
 
-pub export fn doeNativeComputeProgramSupported() callconv(.c) u32 {
-    return @intFromBool(builtin.os.tag == .linux);
+/// Per device, matching doeNativeComputeProgramPrepare: the retained Zig provider
+/// records GPU programs only for a Vulkan device on Linux. NULL or a foreign
+/// handle fails closed.
+pub export fn doeNativeComputeProgramSupported(device_raw: ?*anyopaque) callconv(.c) u32 {
+    if (comptime builtin.os.tag != .linux) return 0;
+    const device = helpers.cast(objects.DoeDevice, device_raw) orelse return 0;
+    return @intFromBool(device.backend == .vulkan);
 }
 
 pub export fn doeNativeComputeProgramTimestampInfo(device_raw: ?*anyopaque, period_ns: *f64, valid_bits: *u32) callconv(.c) u32 {

@@ -195,7 +195,27 @@ int main(void)
     state s = {0};
     consumer_init(&s);
     assert(doeNativeComputeProgramContractVersion() == DOE_COMPUTE_PROGRAM_CONTRACT);
-    assert(doeNativeComputeProgramSupported() == 1);
+    /* Support is per device and read from its backend: GPU recording needs Vulkan
+     * on any OS; NULL and every other backend fail closed. */
+    assert(doeNativeComputeProgramSupported(NULL) == 0);
+    const bool gpu_recording = adapter_class_backend() == WGPUBackendType_Vulkan;
+    assert(doeNativeComputeProgramSupported(s.device) == (gpu_recording ? 1u : 0u));
+    if (!gpu_recording) {
+        /* The advertised refusal holds: a recordable buffer program still fails
+         * GPU preparation with a validation error and claims nothing. */
+        program_fixture unsupported = create_fixture(&s);
+        WGPUCommandBuffer commands = record(&s, &unsupported, true);
+        expect_null_prepare(&s, doeNativeComputeProgramPrepare, s.queue, commands);
+        wgpuCommandBufferRelease(commands);
+        release_fixture(&unsupported);
+        assert(doeNativeComputeProgramPrepare(NULL, NULL) == NULL);
+        assert(doeNativeComputeProgramSubmit(NULL) == 0);
+        doeNativeComputeProgramRelease(NULL);
+        consumer_finish(&s);
+        printf("PASS Doe compute programs: GPU recording reported unsupported for this non-Vulkan device and refused with a validation error; null handles %s\n",
+            adapter_class_scope());
+        return 0;
+    }
     double period = -1.0;
     uint32_t bits = 0;
     assert(doeNativeComputeProgramTimestampNanoseconds(s.device, &period, &bits) == 0 && period == -1.0);
