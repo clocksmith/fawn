@@ -553,7 +553,7 @@ static void concurrency(void)
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     session s;
     if (!open_session(&s)) {
         fprintf(stderr, "SKIP surface faults: no reachable X display (DISPLAY unset or connection refused)\n");

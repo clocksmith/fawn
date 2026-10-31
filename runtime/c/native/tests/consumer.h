@@ -9,6 +9,20 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Flush each PASS/diagnostic line before a later abort can lose it. glibc and
+ * Darwin line-buffer with a NULL buffer of size 0; the Windows UCRT has no line
+ * buffering (_IOLBF means full) and rejects size 0 for _IOLBF/_IOFBF through its
+ * invalid-parameter handler, which fast-fails the process with 0xC0000409 before
+ * any output, so Windows clients run unbuffered instead. */
+static inline void consumer_line_output(void)
+{
+#if defined(_WIN32)
+    setvbuf(stdout, NULL, _IONBF, 0);
+#else
+    setvbuf(stdout, NULL, _IOLBF, 0);
+#endif
+}
+
 typedef struct state {
     WGPUInstance instance;
     WGPUAdapter adapter;

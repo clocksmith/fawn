@@ -5,7 +5,7 @@
 #include "../../runtime-cli/src/surface_platform.h"
 int main(void)
 {
-    setvbuf(stdout,NULL,_IOLBF,0);
+    consumer_line_output();
     if(!getenv("DOE_C_TEST_BACKEND"))assert(_putenv_s("DOE_C_TEST_BACKEND","d3d12")==0);
     assert(adapter_class_backend()==WGPUBackendType_D3D12);
     state s={.instance=wgpuCreateInstance(NULL)};

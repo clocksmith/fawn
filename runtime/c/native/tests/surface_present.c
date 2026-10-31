@@ -93,7 +93,7 @@ static void default_adapter_device(state *s, WGPUSurface surface, WGPUTextureFor
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     window w = {0};
     if (!open_window(&w)) {
         fprintf(stderr, "SKIP surface presentation: no reachable X display (DISPLAY unset or connection refused)\n");

@@ -121,7 +121,7 @@ static bool run_wayland(void)
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     bool xlib = run_xlib();
     bool wayland = run_wayland();
     if (!xlib && !wayland) {
