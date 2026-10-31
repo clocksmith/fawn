@@ -19,7 +19,7 @@ import json
 import sys
 
 ROWS = ["setupNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "first.operation", "warm.upload",
-        "warm.encode", "warm.submit", "warm.completion", "warm.map", "warm.operation", "warmP95.operation",
+        "warm.uploadSource", "warm.uploadDoe", "warm.encode", "warm.submit", "warm.completion", "warm.map", "warm.operation", "warmP95.operation",
         "complete", "processWall", "cpuMs", "maxRssMiB"]
 
 

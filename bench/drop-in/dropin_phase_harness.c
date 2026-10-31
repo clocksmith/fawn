@@ -53,8 +53,19 @@
 #endif
 #define WAIT_NS 10000000000ull
 #define MAX_ITERATIONS 4096
+/* DOE_PHASE_UPLOAD_SPLIT (build --upload-split): before wgpuQueueWriteBuffer the
+ * harness reads its own source array once, timed as uploadSource, so uploadDoe
+ * is the provider's call with a warm source; upload stays their sum. Off by
+ * default, which keeps the original phases and timing. */
+#if defined(DOE_PHASE_UPLOAD_SPLIT)
+enum { P_UPLOAD, P_ENCODE, P_SUBMIT, P_COMPLETION, P_MAP, P_OPERATION, P_UPLOAD_SOURCE, P_UPLOAD_DOE, P_COUNT };
+static const char *const PHASE_NAMES[P_COUNT] = {"upload", "encode", "submit", "completion", "map", "operation",
+    "uploadSource", "uploadDoe"};
+static volatile uint64_t source_sink;
+#else
 enum { P_UPLOAD, P_ENCODE, P_SUBMIT, P_COMPLETION, P_MAP, P_OPERATION, P_COUNT };
 static const char *const PHASE_NAMES[P_COUNT] = {"upload", "encode", "submit", "completion", "map", "operation"};
+#endif
 
 static uint64_t now_ns(void)
 {
@@ -315,6 +326,18 @@ int main(int argc, char **argv)
     for (long it = 0; it < iterations; it++) {
         const int set = (int)(it & 1);
         uint64_t a = now_ns();
+#if defined(DOE_PHASE_UPLOAD_SPLIT)
+        {
+            uint64_t sum = 0;
+            for (size_t offset = 0; offset + sizeof(uint64_t) <= bytes; offset += 64) {
+                uint64_t word;
+                memcpy(&word, input[set] + offset, sizeof(word));
+                sum += word;
+            }
+            source_sink = sum;
+        }
+        const uint64_t a2 = now_ns();
+#endif
         wgpuQueueWriteBuffer(queue, in_buffer, 0, input[set], bytes);
         uint64_t b = now_ns();
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
@@ -358,6 +381,10 @@ int main(int argc, char **argv)
         wgpuBufferUnmap(readback);
         uint64_t f = now_ns();
         samples[P_UPLOAD][it] = b - a;
+#if defined(DOE_PHASE_UPLOAD_SPLIT)
+        samples[P_UPLOAD_SOURCE][it] = a2 - a;
+        samples[P_UPLOAD_DOE][it] = b - a2;
+#endif
         samples[P_ENCODE][it] = c - b;
         samples[P_SUBMIT][it] = d - c;
         samples[P_COMPLETION][it] = e - d;

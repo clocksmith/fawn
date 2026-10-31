@@ -61,6 +61,8 @@ WORKLOADS = {
 SECOND_SET_SEED_OFFSET = 1000
 ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "teardownReleaseNs", "teardownDeviceNs", "processInMainNs")
 LOOP_PHASES = ("upload", "encode", "submit", "completion", "map", "operation")
+# Present only in harnesses built with --upload-split.
+SPLIT_PHASES = ("uploadSource", "uploadDoe")
 BOOTSTRAP_RESAMPLES = 10000
 BOOTSTRAP_SEED = 20261029
 
@@ -146,7 +148,7 @@ def prepare(out: Path, oracle_plans: Path | None) -> None:
 BACKEND_DEFINES = {"vulkan": [], "metal": ["-DDOE_PHASE_BACKEND_METAL"]}
 
 
-def build(library: Path, output: Path, compiler: str, backend: str) -> None:
+def build(library: Path, output: Path, compiler: str, backend: str, upload_split: bool = False) -> None:
     if os.name == "nt":
         # clang-cl links the provider's import library. The DLL must sit beside the
         # harness: Windows resolves it from the executable directory first, so no
@@ -156,10 +158,12 @@ def build(library: Path, output: Path, compiler: str, backend: str) -> None:
             raise SystemExit("Windows build: --output must be beside the DLL, with its import library")
         argv = [compiler, "--target=x86_64-pc-windows-msvc", "/nologo", "/O2", "/MD", "/WX", "/clang:-std=c11",
                 "/clang:-Wall", "/clang:-Wextra", "/D_CRT_SECURE_NO_WARNINGS", *BACKEND_DEFINES[backend],
+                *(["/DDOE_PHASE_UPLOAD_SPLIT"] if upload_split else []),
                 f"/I{HEADERS}", str(HARNESS), f"/Fe{output}", f"/Fo{output.with_suffix('.obj')}",
                 "/link", str(imports.resolve()), "psapi.lib"]
     else:
-        argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", *BACKEND_DEFINES[backend], f"-I{HEADERS}",
+        argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", *BACKEND_DEFINES[backend],
+                *(["-DDOE_PHASE_UPLOAD_SPLIT"] if upload_split else []), f"-I{HEADERS}",
                 str(HARNESS), str(library.resolve()), f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
     subprocess.run(argv, check=True)
     print(json.dumps({"binary": str(output), "sha256": sha256(output), "library": str(library), "backend": backend,
@@ -256,7 +260,7 @@ def process_metrics(row: dict) -> dict[str, float]:
     metrics["processWall"] = row["processWallNs"] / 1e6
     metrics["cpuMs"] = row["childCpuMs"]
     metrics["maxRssMiB"] = result["maxRssKiB"] / 1024
-    for phase in LOOP_PHASES:
+    for phase in LOOP_PHASES + tuple(p for p in SPLIT_PHASES if p in result["phases"]):
         series = result["phases"][phase]
         metrics[f"first.{phase}"] = series[0] / 1e6
         warm = series[1:] or series
@@ -325,6 +329,8 @@ def main() -> None:
     b.add_argument("--output", required=True)
     b.add_argument("--cc", default="gcc")
     b.add_argument("--backend", choices=sorted(BACKEND_DEFINES), default="vulkan")
+    b.add_argument("--upload-split", action="store_true",
+                   help="time the harness's own source read apart from the provider's queue write")
     r = sub.add_parser("run")
     r.add_argument("--inputs", required=True)
     r.add_argument("--provider", action="append", required=True, help="name=harness-binary")
@@ -341,7 +347,7 @@ def main() -> None:
     if args.command == "prepare":
         prepare(Path(args.out), Path(args.oracle_plans) if args.oracle_plans else None)
     elif args.command == "build":
-        build(Path(args.library), Path(args.output), args.cc, args.backend)
+        build(Path(args.library), Path(args.output), args.cc, args.backend, args.upload_split)
     elif args.command == "run":
         run(args)
     else:

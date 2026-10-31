@@ -49,14 +49,14 @@ class DropinPhaseCohortTest(unittest.TestCase):
 
 
 class BackendBuildTest(unittest.TestCase):
-    def build_argv(self, backend: str) -> list[str]:
+    def build_argv(self, backend: str, upload_split: bool = False) -> list[str]:
         with tempfile.TemporaryDirectory() as directory:
             library = Path(directory) / "libwebgpu.so"
             library.write_bytes(b"library")
             output = Path(directory) / "harness"
             output.write_bytes(b"binary")
             with mock.patch.object(cohort.subprocess, "run") as run, mock.patch("builtins.print"):
-                cohort.build(library, output, "cc", backend)
+                cohort.build(library, output, "cc", backend, upload_split)
             return run.call_args.args[0]
 
     def test_vulkan_default_adds_no_define(self) -> None:
@@ -64,6 +64,10 @@ class BackendBuildTest(unittest.TestCase):
 
     def test_metal_selects_the_metal_backend(self) -> None:
         self.assertIn("-DDOE_PHASE_BACKEND_METAL", self.build_argv("metal"))
+
+    def test_upload_split_is_opt_in(self) -> None:
+        self.assertNotIn("-DDOE_PHASE_UPLOAD_SPLIT", self.build_argv("metal"))
+        self.assertIn("-DDOE_PHASE_UPLOAD_SPLIT", self.build_argv("metal", True))
 
 
 class WindowsBuildTest(unittest.TestCase):
@@ -102,6 +106,15 @@ class CompleteMetricTest(unittest.TestCase):
                   "teardownNs": 250_000, "processInMainNs": 1, "maxRssKiB": 1024, "phases": phases}
         metrics = cohort.process_metrics({"processWallNs": 1, "childCpuMs": 1.0, "result": result})
         self.assertAlmostEqual(metrics["complete"], 7.75)
+        self.assertNotIn("warm.uploadDoe", metrics)
+
+    def test_split_upload_phases_become_metrics(self) -> None:
+        phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}
+        phases["uploadSource"], phases["uploadDoe"] = [400, 300], [600, 700]
+        result = {"maxRssKiB": 1024, "phases": phases}
+        metrics = cohort.process_metrics({"processWallNs": 1, "childCpuMs": 1.0, "result": result})
+        self.assertAlmostEqual(metrics["warm.uploadSource"], 0.0003)
+        self.assertAlmostEqual(metrics["warm.uploadDoe"], 0.0007)
 
 
 if __name__ == "__main__":
