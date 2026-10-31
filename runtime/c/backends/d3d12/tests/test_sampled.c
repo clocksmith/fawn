@@ -46,9 +46,48 @@ static void disjoint_storage_views(void)
     doe_dx_texture_release(texture); doe_dx_pipeline_release(pipeline); doe_dx_commands_release(commands);
     assert(doe_dx_context_destroy(context)==DOE_DX_OK); mock_reset();
 }
+/* A depth or combined-depth aspect binds to a float-class (texture_2d<f32>) handle,
+ * as WebGPU's unfilterable-float layout admits; integer classes and the stencil
+ * aspect do not. */
+static void depth_float_class(void)
+{
+    mock_reset(); doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(NULL,&context,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_texture_binding_layout image={.format=DOE_DX_R32_FLOAT,.access=DOE_DX_READ_ONLY};
+    doe_dx_texture_contract contract={.sample_class=DOE_DX_SAMPLE_FLOAT,.dimension=2};
+    doe_dx_dynamic_pipeline_desc desc={.resources={.buffers={&code,1,NULL,0},.textures=&image,.texture_count=1},
+        .texture_contracts=&contract};
+    doe_dx_pipeline *floats=NULL,*uints=NULL;
+    assert(doe_dx_pipeline_create_dynamic(context,&desc,&floats,NULL)==DOE_DX_OK);
+    contract.sample_class=DOE_DX_SAMPLE_UINT;
+    assert(doe_dx_pipeline_create_dynamic(context,&desc,&uints,NULL)==DOE_DX_OK);
+    const doe_dx_format formats[2]={DOE_DX_D32_FLOAT,DOE_DX_D24_UNORM_S8_UINT};
+    for (size_t i=0;i<2;++i) {
+        doe_dx_texture_shape shape={.image={4,4,formats[i],DOE_DX_TEXTURE_SAMPLED|DOE_DX_TEXTURE_DEPTH_ATTACHMENT},
+            .dimension=2,.depth_or_layers=1,.mip_levels=1,.samples=1};
+        doe_dx_texture *depth=NULL;
+        assert(doe_dx_texture_create_shape(context,&shape,&depth,NULL)==DOE_DX_OK);
+        doe_dx_commands *commands=NULL; assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+        assert(doe_dx_commands_initialize_texture(commands,depth,NULL)==DOE_DX_OK);
+        doe_dx_texture_view_desc view={.format=formats[i],.dimension=2,.mip_count=1,.layer_count=1,.aspect=1};
+        doe_dx_dynamic_resources values={.resources={.textures=&depth,.texture_count=1},.texture_views=&view};
+        assert(doe_dx_commands_dispatch_dynamic(commands,floats,&values,1,1,1,NULL)==DOE_DX_OK);
+        assert(doe_dx_commands_dispatch_dynamic(commands,uints,&values,1,1,1,NULL)==DOE_DX_INVALID_ARGUMENT);
+        if (i) {
+            view.aspect=2;
+            assert(doe_dx_commands_dispatch_dynamic(commands,floats,&values,1,1,1,NULL)==DOE_DX_INVALID_ARGUMENT);
+            assert(doe_dx_commands_dispatch_dynamic(commands,uints,&values,1,1,1,NULL)==DOE_DX_OK);
+        }
+        doe_dx_commands_release(commands); doe_dx_texture_release(depth);
+    }
+    doe_dx_pipeline_release(floats); doe_dx_pipeline_release(uints);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK); mock_reset();
+}
 int main(void)
 {
     disjoint_storage_views();
+    depth_float_class();
     mock_reset();
     doe_dx_context *context = NULL;
     assert(doe_dx_context_create(NULL,&context,NULL) == DOE_DX_OK);

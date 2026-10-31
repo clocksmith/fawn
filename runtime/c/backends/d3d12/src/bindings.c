@@ -110,8 +110,10 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
         doe_dx_format_info info;
         if (!doe_dx_format_properties(view.format,&info)) return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"commands.texture_format",error);
         if (view.aspect==2) info.kind=2;
+        /* WebGPU binds a depth aspect through an unfilterable-float layout to a
+         * texture_2d<f32>-class shader handle; its float SRV reads the depth value. */
         bool matches = contract->sample_class == DOE_DX_SAMPLE_EXACT ? view.format == layout->format :
-            (contract->sample_class == DOE_DX_SAMPLE_FLOAT || contract->sample_class == DOE_DX_SAMPLE_FLOAT_MS) ? info.kind==1 :
+            (contract->sample_class == DOE_DX_SAMPLE_FLOAT || contract->sample_class == DOE_DX_SAMPLE_FLOAT_MS) ? info.kind==1 || info.kind>=4 :
             (contract->sample_class == DOE_DX_SAMPLE_UINT || contract->sample_class == DOE_DX_SAMPLE_UINT_MS) ? info.kind==2 :
             (contract->sample_class == DOE_DX_SAMPLE_SINT || contract->sample_class == DOE_DX_SAMPLE_SINT_MS) ? info.kind==3 : info.kind>=4;
         if (!matches) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.bindings.texture_format_class",error);
