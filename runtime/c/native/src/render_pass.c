@@ -39,9 +39,10 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
             valid = !color->nextInChain && parent &&
                 (color->storeOp == WGPUStoreOp_Store || color->storeOp == WGPUStoreOp_Discard);
             const bool sliced = color->depthSlice != WGPU_DEPTH_SLICE_UNDEFINED;
-            /* Only the Vulkan backend renders 3D slices; Metal and D3D12 keep
-             * rejecting a defined depthSlice as unsupported. */
-            if (valid && sliced && device->backend.kind != WGPUBackendType_Vulkan) {
+            /* Vulkan and D3D12 render 3D slices (D3D12 through a Texture3D RTV
+             * with FirstWSlice); Metal keeps rejecting a defined depthSlice. */
+            if (valid && sliced && device->backend.kind != WGPUBackendType_Vulkan &&
+                device->backend.kind != WGPUBackendType_D3D12) {
                 valid = false;
                 rejected = DOE_RESOURCE_UNSUPPORTED;
             }
