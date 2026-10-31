@@ -1,0 +1,115 @@
+{
+ "schemaVersion": 1,
+ "host": {
+  "label": "apple-host",
+  "machine": "Apple M3 (8 CPU cores, 10 GPU cores), 24 GiB unified memory",
+  "os": "macOS 26.6.2 (25G83)",
+  "gpu": "Apple M3 integrated, Metal 4",
+  "power": "Battery Power, 99% at freeze (it had been on AC, finishing charge, minutes earlier), low-power mode off; the power source must stay unchanged within a window; every window's gate.json records the power source and battery level before and after",
+  "sharedUse": "desktop session with the external display, browser, terminal and agent sessions; no computer-use or screen-capture session. 30 s idle measurement just before freeze with no GPU run of this campaign: idle GPU utilization median 1.5% (max 51%, one spike); summed ps %cpu median 72 of 800 (max 341). Another session's one-core Python analysis job ran earlier and had exited; windows are scheduled by the run script's settle loop and tools/wait_quiet.sh."
+ },
+ "surface": "dropin (public webgpu.h ABI); one harness source linked per provider, compiled with -DDOE_PHASE_BACKEND_METAL",
+ "workloads": [
+  "vector_scale_add_262k",
+  "image_rgba_invert_1024",
+  "buffer_upload_readback_exact_1mb"
+ ],
+ "workloadOrigin": "unchanged amd-host C1 workloads; inputs manifest byte-identical to the amd-host and intel-host manifests (afe4e1d3...); independent CPU oracle on every iteration outside the timed interval",
+ "sampling": {
+  "pairs": 96,
+  "orders": "all 24 permutations of the 4 providers, cycled",
+  "iterationsPerProcess": 32,
+  "warmIterations": "iterations 1..31",
+  "processesPerWorkload": 384
+ },
+ "timing": "CLOCK_UPTIME_RAW (Darwin CLOCK_MONOTONIC is quantized to 1 us); host clock, not GPU timestamps",
+ "phases": "identical to amd-host contract-c1.json; complete = compile + pipeline + resources + sum of every iteration's operation + teardown",
+ "statistics": "per-pair ratio provider/control; median ratio, bootstrap 95% CI (10000 resamples, seed 20261029), provider-faster pair count",
+ "gateLimits": "Unchanged from b2/b3/m1r/m2r: idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity (tools/mac_window.py, hash below).",
+ "gpuLock": "Every timed window runs under `flock /tmp/doe-gpu-timing.lock`, the host-wide lock shared with other agents' Metal correctness and timing runs, held for that window only; scheduling (settle loop, tools/wait_quiet.sh) runs outside the lock.",
+ "rebuild": "Libraries built with ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-<name>/native CC=clang from a git archive of main 1c585a5cc, the candidate patch applied with patch -p1. Dawn d04f88359 was rebuilt from a git archive with the b3 command (CMake Release, monolithic shared, Metal only); its bytes differ from the b3 receipt (c9e5faf8...) because the source path differs, and this contract names the rebuilt hash.",
+ "cohortId": "apple-metal-dropin-phase-identity",
+ "frozenAtUtc": "2026-10-31T12:19:39Z",
+ "experiment": "Owner decision 2: start the shader-cache identity worker at Metal device creation, the policy chosen for D3D12 in d57ab2877 (identity-candidate.patch: lifecycle.c:334 admits Metal). The worker computes the unchanged native_shader_cache_identity (shader_cache_identity.c:258-330) that stages.c:136 otherwise runs inline in the first pipeline. One mechanism; control is main 1c585a5cc.",
+ "sourceCommit": "1c585a5cc (main) and 1c585a5cc + identity-candidate.patch (cand)",
+ "providers": {
+  "main": "libwebgpu_doe_c.dylib from 1c585a5cc (control)",
+  "cand": "1c585a5cc + identity-candidate.patch, built the same way",
+  "dawn": "source-built Dawn d04f88359391a12375c1a3e948a0b2dcb4c97a18, CMake Release, DAWN_BUILD_MONOLITHIC_LIBRARY=SHARED, Metal only",
+  "dawn-aa": "byte-identical copy of the dawn harness binary (A/A control)"
+ },
+ "rules": {
+  "kind": "mechanism",
+  "control": "main",
+  "provider": "cand",
+  "aaProvider": "dawn-aa",
+  "aaControl": "dawn",
+  "aaWindow": [
+   0.95,
+   1.05
+  ],
+  "workloads": [
+   "vector_scale_add_262k",
+   "image_rgba_invert_1024",
+   "buffer_upload_readback_exact_1mb"
+  ],
+  "improve": {
+   "vector_scale_add_262k": [
+    "pipelineNs"
+   ],
+   "image_rgba_invert_1024": [
+    "pipelineNs"
+   ]
+  },
+  "noRegress": [
+   "setupNs",
+   "compileNs",
+   "pipelineNs",
+   "resourcesNs",
+   "teardownNs",
+   "first.operation",
+   "warm.upload",
+   "warm.encode",
+   "warm.submit",
+   "warm.completion",
+   "warm.map",
+   "warm.operation",
+   "warmP95.operation",
+   "complete",
+   "processWall",
+   "cpuMs",
+   "maxRssMiB"
+  ],
+  "noRegressBound": 1.05
+ },
+ "acceptance": {
+  "validity": [
+   "every process status ok with all 32 iterations oracle-checked",
+   "every provider reports a Metal adapter that is not a CPU adapter",
+   "A/A: dawn-aa/dawn warm.operation median ratio within [0.95,1.05] and its CI95 contains 1, per workload",
+   "window gate (tools/mac_window.py) valid: power source and low-power mode unchanged, no thermal warning, idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity"
+  ],
+  "mechanismRule": "cand/main: pipelineNs CI95 upper < 1.0 on vector_scale_add_262k and image_rgba_invert_1024 (upload/readback creates no pipeline), and every noRegress metric (pipelineNs included) CI95 lower <= 1.05 on every workload. Correctness recorded before freezing on these exact libraries: all 81 Metal physical clients give the same per-client result as main; backends/metal check, sdk-abi, native-check and native-graphics-check pass. Identity: a diagnostic build (worker digest compared with an inline recomputation in the same process) gave equal=1 in 4 of 4 processes with the same digest across processes.",
+  "invalidWindows": "an invalid window is retained, never used for the verdict, and rerun fresh once under the unchanged contract",
+  "claimBoundary": "A pass accepts the mechanism for the Metal C runtime on apple-host only; it does not by itself make a scoped win against Dawn and says nothing about Vulkan or D3D12."
+ },
+ "hashes": {
+  "bench/drop-in/dropin_phase_harness.c": "bcd22b6a5c5c8626e60210b78a3c2825fcdaf9326a1c89c33b66a593efa18d32",
+  "bench/tools/dropin_phase_cohort.py": "7a181fabbc08508add4a62104be62751062371452ea0865cd8a1f99f6922d8ab",
+  "tools/mac_window.py": "fc7022d1787375356540db245202339e6bb85838e12d1f52bd70e4e70b3955c8",
+  "tools/evaluate.py": "e7aed73abf182b875c19bbe3098b664c422b3bd8505a60489c7e0ef793cc75d7",
+  "tools/wait_quiet.sh": "41dbeb80bca95c2cf0beee73d9e2ba1eec26fabb42716eda8f517a6966e5c4b5",
+  "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+  "dawn-build/src/dawn/native/libwebgpu_dawn.dylib": "92dfad094e253c489a1963681f0beb444d474d66d7492dd038a93c136ddd63c0",
+  "bin/harness-dawn": "c125ab508ec48497c9e6182c1857cbe51fa49d3b7a2aaea3465bf01d53b3dd70",
+  "bin/harness-dawn-aa": "c125ab508ec48497c9e6182c1857cbe51fa49d3b7a2aaea3465bf01d53b3dd70",
+  "build-main/native/libwebgpu_doe_c.dylib": "d0a60dbe52c20b78266d4c92f50ac4f029240a3ea8bf92b256150d3f41187a72",
+  "build-main/native/libdoe_compiler.dylib": "fc1cd022cec308fee8846a6242fa7daf3818071980265a107fda12754aeeb488",
+  "bin/harness-main": "43de9918a13278c5f7cf4de0431e7e0fa164e5732d56ce9b4dd8399a909b5b0b",
+  "build-p2/native/libwebgpu_doe_c.dylib": "49e36ebbbd3d7f7397e1f30555ea828c16ffd8fba45235de9e47cd65d1d0e8c0",
+  "build-p2/native/libdoe_compiler.dylib": "fc1cd022cec308fee8846a6242fa7daf3818071980265a107fda12754aeeb488",
+  "bin/harness-p2": "cf25a0391654d16707402555c632b4567d290ed544bf971fe18b288bd39adb63",
+  "identity-candidate.patch": "402c6d8ee069eb4691ea90a550f9b6e0ad1ba74932841b9d913e25eefc005abf"
+ },
+ "relation": "New prospective experiment. It does not reinterpret b3, m1r, m2r or the D3D12 receipt in d57ab2877."
+}

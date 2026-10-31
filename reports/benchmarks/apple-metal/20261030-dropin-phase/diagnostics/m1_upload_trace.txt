@@ -1,0 +1,33 @@
+M1 warm-upload trace (diagnostic only, untimed, not a verdict), 2026-10-31, apple-host.
+Image workload (4 MiB wgpuQueueWriteBuffer). Each row: per-process mean of the
+instrumented interval over iterations 3..96, median over 12-14 interleaved
+processes under the GPU lock, ratio against main in the same run.
+
+1. Split of wgpuQueueWriteBuffer (buffers.c:415-454 instrumented at lock, settle,
+   write, unlock, release): only the write (validate + CPU memmove into the shared
+   allocation, resources.c:79-97) differs. main 116.5 us, M1 120.3 us. Lock,
+   settle_for_buffer and unlock are equal (<0.1 us). The trailing device release
+   costs about 1 us on main and M1 (worker wake) and 0.02 us with the completion
+   change.
+2. Pre-reading the caller's source array before the memmove: source read main
+   54.8 us vs M1 56.8 us (+3.6%); the memmove from the warmed source is equal
+   (about 62.3 us both). The extra time is the first read of the application's
+   input array, not Doe's copy.
+3. Variants that did not remove it (ratio to main): M1 1.031-1.064; flush the
+   upload destination at map 1.040; flush the lent range at unmap 1.038; Doe-side
+   read of the lent range at map 1.040; write a 4 MiB scratch at map 1.064; read
+   and write 1.058; malloc+memset+free 1.053; copy into a malloc shadow and free
+   at unmap while still lending 1.057; spin 130 us at map 1.032 or at unmap 1.021
+   (rules out DVFS and time-since-completion); completion handler change plus M1
+   1.044 (rules out the worker wake).
+4. main plus an extra CPU read of the readback buffer at unmap 1.006; main plus an
+   extra read of the shadow at unmap 0.976.
+5. m1_upload_probe.m reproduces the buffer sizes and order without WebGPU (blit
+   or compute pass, lend vs malloc shadow): no difference (lend 57.4-61.8 us,
+   shadow 59.1-62.0 us source read).
+
+Reading: the regression is in the CPU's first read of the caller-owned source
+array, it depends on whether the harness's own memcpy read the shared readback
+allocation or a malloc shadow, and it is not reproduced outside Doe. No Doe-side
+cost in the upload path was found, so no fix was made and no revised M1 contract
+was frozen. In m1r the 1 MiB workloads moved the other way (upload 0.953, 0.934).

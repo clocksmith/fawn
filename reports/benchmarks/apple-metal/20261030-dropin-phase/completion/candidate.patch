@@ -1,0 +1,924 @@
+diff --git a/runtime/c/backends/metal/CATSCAN.md b/runtime/c/backends/metal/CATSCAN.md
+index ccb9fba6d..5e7819914 100644
+--- a/runtime/c/backends/metal/CATSCAN.md
++++ b/runtime/c/backends/metal/CATSCAN.md
+@@ -18,7 +18,8 @@ Capability discovery checks loaded APIs and selected device selectors.
+ ## Contracts
+ MSL and workgroup/slot facts enter the
+ [compute boundary](include/doe_metal.h); stage/render facts enter the
+-[graphics boundary](include/doe_metal_render.h). Outputs: statuses and completion-backed buffer access. Device capabilities bound workgroups and formats; pipelines
++[graphics boundary](include/doe_metal_render.h). Outputs: statuses, completion-backed buffer access
++and optional completed-handler notification, which never retires. Device capabilities bound workgroups and formats; pipelines
+ check maxTotalThreadsPerThreadgroup. Indirect compute guards GPU arguments in scratch,
+ under [invariants](../../../../INTENT.md).
+ Presentation borrows CAMetalLayer; texture/command leases retain drawables. presentDrawable schedules presentation; GPU completion permits caller-lease
+diff --git a/runtime/c/backends/metal/README.md b/runtime/c/backends/metal/README.md
+index 5ffe2ecda..226323cb3 100644
+--- a/runtime/c/backends/metal/README.md
++++ b/runtime/c/backends/metal/README.md
+@@ -184,6 +184,13 @@ padding without widening logical ranges. Atomic cancellation suppresses unsafe
+ fetches while valid caller indices/arguments stay unchanged. Common WGSL, SDK and
+ call-ledger controls do not establish physical indexed rendering.
+ 
++A context may carry one completion sink, set before any command escapes it.
++Each submission then registers one native completed handler after its last
++fallible encode, so a command that is never committed never owns one; a failed
++registration reports to the sink at once and poisons the command uncommitted.
++Metal runs the handler once, on its own thread, after Completed or Error. It
++only reports: status, errors and every retirement still come from observation.
++
+ Only native Completed or Error status retires obligations. Pending/unknown
+ command release returns BUSY without consuming the handle. Callers must keep the
+ command, observe again, and release it after terminal status. A blocking wait
+diff --git a/runtime/c/backends/metal/src/commands.c b/runtime/c/backends/metal/src/commands.c
+index 6a808ecbb..79efc7628 100644
+--- a/runtime/c/backends/metal/src/commands.c
++++ b/runtime/c/backends/metal/src/commands.c
+@@ -237,6 +237,19 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
+         commands->timeline_value = value;
+         commands->context->timeline_next = value;
+     }
++    /* Registered last: a command that is never committed never runs its
++     * handler, so nothing fallible may follow a successful registration. */
++    const doe_mtl_completion_sink *sink = &commands->context->completion;
++    if (sink->notify) {
++        doe_mtl_error detail = {0};
++        sink->acquire(sink->data);
++        status = native->completed_handler(native->userdata, commands->native,
++            sink->notify, sink->data, &detail);
++        if (status != DOE_MTL_OK) {
++            sink->notify(sink->data);
++            return doe_mtl_native_record_result(commands, status, &detail, error);
++        }
++    }
+     commands->state = DOE_MTL_SUBMITTED;
+     native->commit(native->userdata, commands->native);
+     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);
+diff --git a/runtime/c/backends/metal/src/internal.h b/runtime/c/backends/metal/src/internal.h
+index 9799b7baa..6010651f2 100644
+--- a/runtime/c/backends/metal/src/internal.h
++++ b/runtime/c/backends/metal/src/internal.h
+@@ -2,6 +2,7 @@
+ #ifndef DOE_MTL_INTERNAL_H
+ #define DOE_MTL_INTERNAL_H
+ #include "native.h"
++#include "progress.h"
+ #include <stdlib.h>
+ #include <string.h>
+ #include <limits.h>
+@@ -13,6 +14,7 @@ struct doe_mtl_context {
+     void *queue;
+     void *timeline;
+     uint64_t timeline_next;
++    doe_mtl_completion_sink completion; /* notify == NULL: none configured. */
+     doe_mtl_caps caps;
+ };
+ struct doe_mtl_buffer {
+diff --git a/runtime/c/backends/metal/src/native.h b/runtime/c/backends/metal/src/native.h
+index 5149d828a..546827524 100644
+--- a/runtime/c/backends/metal/src/native.h
++++ b/runtime/c/backends/metal/src/native.h
+@@ -152,6 +152,10 @@ typedef struct doe_mtl_native {
+     doe_mtl_status (*timeline_signal)(void *, void *, void *, uint64_t, doe_mtl_error *);
+     uint64_t (*timeline_value)(void *, void *);
+     void (*commit)(void *userdata, void *command);
++    /* Optional. Registers one completed handler on an uncommitted command; the
++     * handler calls notify(data) once on a Metal-owned thread. */
++    doe_mtl_status (*completed_handler)(void *userdata, void *command,
++        void (*notify)(void *), void *data, doe_mtl_error *error);
+     /* Returns native MTLCommandBufferStatus. Terminal NSError operation/code/text
+      * are copied before its autorelease pool drains; no borrowed string escapes. */
+     size_t (*observe)(void *userdata, void *command, bool wait, doe_mtl_error *error);
+diff --git a/runtime/c/backends/metal/src/objc_abi.h b/runtime/c/backends/metal/src/objc_abi.h
+index 3e53a88f2..a1a3ac9df 100644
+--- a/runtime/c/backends/metal/src/objc_abi.h
++++ b/runtime/c/backends/metal/src/objc_abi.h
+@@ -174,6 +174,9 @@ typedef struct doe_mtl_objc {
+     void *dispatch;
+     void *dispatch_indirect;
+     void *commit;
++    void *add_completed_handler;
++    /* objc_msgSend, cast at the call to take the block argument. */
++    doe_objc_message handler_message;
+     void *wait;
+     void *status;
+     void *error;
+@@ -271,5 +274,7 @@ doe_mtl_status doe_mtl_objc_dispatch_indirect(void *userdata, void *command, voi
+     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
+     void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error);
+ void doe_mtl_objc_commit(void *userdata, void *command);
++doe_mtl_status doe_mtl_objc_completed_handler(void *userdata, void *command,
++    void (*notify)(void *), void *data, doe_mtl_error *error);
+ size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error);
+ #endif
+diff --git a/runtime/c/backends/metal/src/objc_commands.c b/runtime/c/backends/metal/src/objc_commands.c
+index 7e1e38699..6ceee6876 100644
+--- a/runtime/c/backends/metal/src/objc_commands.c
++++ b/runtime/c/backends/metal/src/objc_commands.c
+@@ -129,6 +129,27 @@ void doe_mtl_objc_commit(void *userdata, void *command) {
+     doe_mtl_objc_drain(runtime, pool);
+ }
+ 
++/* addCompletedHandler: copies the block before returning. Metal runs it once,
++ * on its own completion thread, after the command completes or fails; it is
++ * never run for a command that is not committed. The block captures only the
++ * caller's notify/data; it never touches the command or our owners. */
++doe_mtl_status doe_mtl_objc_completed_handler(void *userdata, void *command,
++    void (*notify)(void *), void *data, doe_mtl_error *error) {
++#if defined(__BLOCKS__)
++    doe_mtl_objc *runtime = userdata;
++    typedef void (*handler_call)(void *, void *, void (^)(void *));
++    void *pool = doe_mtl_objc_pool(runtime);
++    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
++    ((handler_call)runtime->handler_message)(command, runtime->add_completed_handler,
++        ^(void *buffer) { (void)buffer; notify(data); });
++    doe_mtl_objc_drain(runtime, pool);
++    return doe_mtl_fail(DOE_MTL_OK, "addCompletedHandler:", error);
++#else
++    (void)userdata; (void)command; (void)notify; (void)data;
++    return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "addCompletedHandler: requires block support", error);
++#endif
++}
++
+ size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error) {
+     doe_mtl_objc *runtime = userdata;
+     void *pool = doe_mtl_objc_pool(runtime);
+diff --git a/runtime/c/backends/metal/src/objc_runtime.c b/runtime/c/backends/metal/src/objc_runtime.c
+index e15fc716a..7c9d867cc 100644
+--- a/runtime/c/backends/metal/src/objc_runtime.c
++++ b/runtime/c/backends/metal/src/objc_runtime.c
+@@ -250,6 +250,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
+     runtime->dispatch_indirect = runtime->selector(
+         "dispatchThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerThreadgroup:");
+     runtime->commit = runtime->selector("commit");
++    runtime->add_completed_handler = runtime->selector("addCompletedHandler:");
+     runtime->wait = runtime->selector("waitUntilCompleted");
+     runtime->status = runtime->selector("status");
+     runtime->error = runtime->selector("error");
+@@ -268,7 +269,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
+         runtime->fill_buffer != NULL && runtime->end_encoding != NULL &&
+         runtime->set_pipeline != NULL && runtime->set_buffer != NULL &&
+         runtime->set_bytes != NULL && runtime->dispatch != NULL && runtime->dispatch_indirect != NULL &&
+-        runtime->commit != NULL &&
++        runtime->commit != NULL && runtime->add_completed_handler != NULL &&
+         runtime->wait != NULL && runtime->status != NULL && runtime->error != NULL;
+ }
+ 
+@@ -332,6 +333,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
+     runtime->upload_image_call = (doe_objc_upload_image_call)message;
+     runtime->read_image_call = (doe_objc_read_image_call)message;
+     runtime->copy_image_call = (doe_objc_copy_image_call)message;
++    runtime->handler_message = message;
+     if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime) ||
+         !doe_mtl_objc_load_render(runtime, message)) goto unavailable;
+     doe_mtl_objc_load_queries(runtime, message);
+@@ -383,6 +385,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
+     native.timeline_signal = doe_mtl_objc_timeline_signal;
+     native.timeline_value = doe_mtl_objc_timeline_value;
+     native.commit = doe_mtl_objc_commit;
++    native.completed_handler = doe_mtl_objc_completed_handler;
+     native.observe = doe_mtl_objc_observe;
+     doe_mtl_objc_library_cache_open(runtime);
+     *out = native;
+diff --git a/runtime/c/backends/metal/src/progress.c b/runtime/c/backends/metal/src/progress.c
+index bef0000e1..c05297feb 100644
+--- a/runtime/c/backends/metal/src/progress.c
++++ b/runtime/c/backends/metal/src/progress.c
+@@ -2,6 +2,16 @@
+ #include "internal.h"
+ #include "progress.h"
+ 
++doe_mtl_status doe_mtl_context_set_completion(doe_mtl_context *context,
++    doe_mtl_completion_sink sink)
++{
++    if (!context || context->references != 1 || context->completion.notify ||
++        !sink.acquire || !sink.notify) return DOE_MTL_INVALID_STATE;
++    if (!context->native.completed_handler) return DOE_MTL_UNSUPPORTED;
++    context->completion = sink;
++    return DOE_MTL_OK;
++}
++
+ bool doe_mtl_commands_in_flight(const doe_mtl_commands *commands)
+ {
+     return commands && commands->state == DOE_MTL_SUBMITTED;
+diff --git a/runtime/c/backends/metal/src/progress.h b/runtime/c/backends/metal/src/progress.h
+index 12e413d44..6c1c451c2 100644
+--- a/runtime/c/backends/metal/src/progress.h
++++ b/runtime/c/backends/metal/src/progress.h
+@@ -3,6 +3,16 @@
+ #define DOE_MTL_PROGRESS_H
+ #include "../include/doe_metal.h"
+ 
++/* Completion notification sink (owner decision 2026-10-31). acquire runs once
++ * per registration under context serialization; notify runs exactly once per
++ * acquire, from a Metal-owned thread after the command completes or fails, or
++ * synchronously when registration fails. It observes; it never retires. */
++typedef struct doe_mtl_completion_sink {
++    void *data;
++    void (*acquire)(void *data);
++    void (*notify)(void *data);
++} doe_mtl_completion_sink;
++
+ /* Acquired/dropped under context serialization. Only block may run unlocked.
+  * This owns native-handle/code residency, never resources or completion state. */
+ typedef struct doe_mtl_wait_lease {
+@@ -11,6 +21,11 @@ typedef struct doe_mtl_wait_lease {
+     void *event; /* Borrowed through the retained context. */
+     uint64_t value;
+ } doe_mtl_wait_lease;
++/* Before any command escapes the new context: every later submission registers
++ * a native completed handler that reports to sink (see native.h). UNSUPPORTED
++ * when the native boundary has no completed-handler registration. */
++doe_mtl_status doe_mtl_context_set_completion(doe_mtl_context *context,
++    doe_mtl_completion_sink sink);
+ bool doe_mtl_commands_in_flight(const doe_mtl_commands *commands);
+ doe_mtl_commands *doe_mtl_commands_conflict(const doe_mtl_commands *commands);
+ doe_mtl_commands *doe_mtl_buffer_owner(const doe_mtl_buffer *buffer);
+diff --git a/runtime/c/backends/metal/tests/mock_native.c b/runtime/c/backends/metal/tests/mock_native.c
+index d6ef38412..4f959f981 100644
+--- a/runtime/c/backends/metal/tests/mock_native.c
++++ b/runtime/c/backends/metal/tests/mock_native.c
+@@ -14,8 +14,18 @@ struct mock_object {
+     unsigned char *bytes;
+     atomic_size_t status;
+     atomic_int_fast64_t code;
++    /* Completed handler: Metal runs it once after completion or failure. */
++    void (*notify)(void *);
++    void *notify_data;
++    bool committed;
+ };
+ 
++static void complete_handler(mock_object *command) {
++    void (*notify)(void *) = command->notify;
++    command->notify = NULL;
++    if (notify) notify(command->notify_data);
++}
++
+ static doe_mtl_status failure(doe_mtl_error *error) {
+     doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "injected native failure", error);
+     if (error != NULL) {
+@@ -57,8 +67,11 @@ static void release_object(void *userdata, void *handle) {
+     assert(object != NULL && object->kind < MOCK_KIND_COUNT && mock->live > 0);
+     assert(object->references != 0);
+     if (--object->references != 0) return;
+-    if (object->kind == MOCK_KIND_COMMAND)
++    if (object->kind == MOCK_KIND_COMMAND) {
+         assert(object->status != 2 && object->status != 3);
++        /* Metal keeps a committed buffer until its handlers have run. */
++        if (object->committed) complete_handler(object);
++    }
+     mock->released++;
+     mock->releases_by_kind[object->kind]++;
+     mock->live--;
+@@ -390,9 +403,23 @@ static void commit(void *userdata, void *handle) {
+     mock_object *command = handle;
+     assert(command->kind == MOCK_KIND_COMMAND && command->status == 0);
+     mock->commits++;
++    command->committed = true;
+     command->status = mock->unknown_commit ? 0 : 2;
+ }
+ 
++static doe_mtl_status completed_handler(void *userdata, void *handle,
++    void (*notify)(void *), void *data, doe_mtl_error *error) {
++    mock_native *mock = userdata;
++    mock_object *command = handle;
++    assert(command->kind == MOCK_KIND_COMMAND && command->status == 0 && !command->committed);
++    assert(notify != NULL && command->notify == NULL);
++    ++mock->handlers;
++    if (mock->fail == MOCK_HANDLER) return failure(error);
++    command->notify = notify;
++    command->notify_data = data;
++    return doe_mtl_fail(DOE_MTL_OK, "mock addCompletedHandler", error);
++}
++
+ static size_t observe(void *userdata, void *handle, bool wait, doe_mtl_error *error) {
+     mock_native *mock = userdata;
+     mock_object *command = handle;
+@@ -455,6 +482,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
+     native.timestamp_boundary = timestamp_boundary;
+     native.resolve_timestamps = resolve_timestamps;
+     native.commit = commit;
++    native.completed_handler = completed_handler;
+     native.observe = observe;
+     return native;
+ }
+@@ -470,12 +498,12 @@ void mock_command_result(void *handle, size_t status, int64_t code) {
+     assert(command && command->kind == MOCK_KIND_COMMAND);
+     command->code = code;
+     command->status = status;
++    if (command->committed && (status == 4 || status == 5)) complete_handler(command);
+ }
+ 
+ void mock_result(mock_native *mock, size_t status, int64_t code) {
+     assert(mock->last_command != NULL);
+-    mock->last_command->status = status;
+-    mock->last_command->code = code;
++    mock_command_result(mock->last_command, status, code);
+ }
+ 
+ void mock_assert_closed(const mock_native *mock) {
+diff --git a/runtime/c/backends/metal/tests/mock_native.h b/runtime/c/backends/metal/tests/mock_native.h
+index 71563b4ad..7a745801b 100644
+--- a/runtime/c/backends/metal/tests/mock_native.h
++++ b/runtime/c/backends/metal/tests/mock_native.h
+@@ -9,7 +9,7 @@ typedef enum mock_operation {
+     MOCK_PIPELINE, MOCK_COMMAND, MOCK_COPY, MOCK_FILL, MOCK_DISPATCH, MOCK_INDIRECT,
+     MOCK_TEXTURE, MOCK_VIEW, MOCK_SAMPLER, MOCK_UPLOAD_IMAGE, MOCK_READ_IMAGE, MOCK_COPY_IMAGE,
+     MOCK_RENDER_PIPELINE, MOCK_DEPTH_STATE, MOCK_RENDER, MOCK_TIMESTAMPS, MOCK_TIMESTAMP, MOCK_RESOLVE_TIMESTAMPS,
+-    MOCK_SHADER_SOURCE
++    MOCK_SHADER_SOURCE, MOCK_HANDLER
+ } mock_operation;
+ /* Shared ledger bound: the old 11-element array omitted event kind11,
+  * so releasing a test event wrote past its own bookkeeping. */
+@@ -42,6 +42,7 @@ typedef struct mock_native {
+     size_t indirect_offset;
+     void *indirect_pipeline;
+     unsigned commits;
++    unsigned handlers;
+     unsigned polls;
+     unsigned waits;
+     atomic_uint blocks;
+diff --git a/runtime/c/backends/metal/tests/sdk_abi.m b/runtime/c/backends/metal/tests/sdk_abi.m
+index 5861d03d7..4feca92cc 100644
+--- a/runtime/c/backends/metal/tests/sdk_abi.m
++++ b/runtime/c/backends/metal/tests/sdk_abi.m
+@@ -21,6 +21,9 @@
+ _Static_assert(__builtin_types_compatible_p(doe_objc_bool, BOOL), "BOOL call ABI");
+ _Static_assert(__builtin_types_compatible_p(doe_objc_event_wait_call,
+     BOOL (*)(void *, void *, uint64_t, uint64_t)), "shared event wait call ABI");
++/* doe_mtl_objc_completed_handler passes void (^)(void *): one object argument. */
++_Static_assert(__builtin_types_compatible_p(MTLCommandBufferHandler, void (^)(id<MTLCommandBuffer>)),
++    "addCompletedHandler: block ABI");
+ SAME_LAYOUT(doe_mtl_size, MTLSize);
+ SAME_FIELD(doe_mtl_size, MTLSize, width);
+ SAME_FIELD(doe_mtl_size, MTLSize, height);
+diff --git a/runtime/c/backends/metal/tests/test_objc_progress.c b/runtime/c/backends/metal/tests/test_objc_progress.c
+index 8312be451..e7d12a292 100644
+--- a/runtime/c/backends/metal/tests/test_objc_progress.c
++++ b/runtime/c/backends/metal/tests/test_objc_progress.c
+@@ -3,6 +3,9 @@
+ #include "../src/objc_abi.h"
+ #include <assert.h>
+ #include <stdio.h>
++#if defined(__BLOCKS__)
++#include <Block.h>
++#endif
+ 
+ typedef struct wait_fixture {
+     doe_mtl_objc runtime;
+@@ -45,8 +48,64 @@ static doe_mtl_status block(wait_fixture *fixture, uint64_t timeout)
+         &fixture->event,UINT64_C(0x123456789abcdef0),timeout);
+ }
+ 
++/* addCompletedHandler: receives the command, its exact selector and a block
++ * that reports once to the caller's notify/data; nothing runs at registration. */
++typedef struct handler_fixture {
++    doe_mtl_objc runtime;
++    int command, selector, pool_class, new_object, drain, pool;
++    unsigned registrations, notified, pools, drains;
++#if defined(__BLOCKS__)
++    void (^handler)(void *);
++#endif
++} handler_fixture;
++static handler_fixture *handlers;
++static void *pool_new(void *receiver, void *selector)
++{
++    assert(receiver == &handlers->pool_class && selector == &handlers->new_object);
++    ++handlers->pools;
++    return &handlers->pool;
++}
++static void pool_drain(void *receiver, void *selector)
++{
++    assert(receiver == &handlers->pool && selector == &handlers->drain);
++    ++handlers->drains;
++}
++#if defined(__BLOCKS__)
++static void add_handler(void *receiver, void *selector, void (^handler)(void *))
++{
++    assert(receiver == &handlers->command && selector == &handlers->selector);
++    ++handlers->registrations;
++    handlers->handler = Block_copy(handler); /* As Metal does: the argument is a stack block. */
++}
++#endif
++static void notified(void *data) { ++((handler_fixture *)data)->notified; }
++
++static void completed_handler(void)
++{
++    handler_fixture fixture = {0};
++    handlers = &fixture;
++    fixture.runtime.pool_class = &fixture.pool_class;
++    fixture.runtime.new_object = &fixture.new_object;
++    fixture.runtime.drain = &fixture.drain;
++    fixture.runtime.object_call = pool_new;
++    fixture.runtime.void_call = pool_drain;
++    fixture.runtime.add_completed_handler = &fixture.selector;
++#if defined(__BLOCKS__)
++    fixture.runtime.handler_message = (doe_objc_message)add_handler;
++    assert(doe_mtl_objc_completed_handler(&fixture.runtime,&fixture.command,notified,&fixture,NULL) == DOE_MTL_OK);
++    assert(fixture.registrations == 1 && fixture.notified == 0 && fixture.pools == 1 && fixture.drains == 1);
++    fixture.handler(&fixture.command);
++    assert(fixture.notified == 1);
++    Block_release(fixture.handler);
++#else
++    assert(doe_mtl_objc_completed_handler(&fixture.runtime,&fixture.command,notified,&fixture,NULL) == DOE_MTL_UNSUPPORTED);
++    assert(fixture.notified == 0);
++#endif
++}
++
+ int main(void)
+ {
++    completed_handler();
+     wait_fixture fixture = {.status=2,.after_wait=2,.supported=true};
+     fixture.runtime.status = &fixture.status_selector;
+     fixture.runtime.size_call = command_status;
+@@ -84,6 +143,6 @@ int main(void)
+     assert(doe_mtl_objc_command_block(&fixture.runtime,&fixture.command,&fixture.event,0,1000000) == DOE_MTL_UNSUPPORTED);
+     fixture.runtime.queries.event_wait = NULL;
+     assert(block(&fixture,1000000) == DOE_MTL_UNSUPPORTED && fixture.waits == waits);
+-    puts("PASS bounded Metal event wait: exact handles/u64/BOOL, budgets, timeout, signal, terminal failure, unknown and unavailable selector");
++    puts("PASS bounded Metal event wait: exact handles/u64/BOOL, budgets, timeout, signal, terminal failure, unknown and unavailable selector; completed-handler registration");
+     return 0;
+ }
+diff --git a/runtime/c/backends/metal/tests/test_progress.c b/runtime/c/backends/metal/tests/test_progress.c
+index 710efde21..84767217d 100644
+--- a/runtime/c/backends/metal/tests/test_progress.c
++++ b/runtime/c/backends/metal/tests/test_progress.c
+@@ -64,9 +64,76 @@ static void rollback_groups(void)
+     mock_assert_closed(&mock);
+ }
+ 
++typedef struct completion_ledger { unsigned acquired, notified; } completion_ledger;
++static void ledger_acquire(void *data) { ++((completion_ledger *)data)->acquired; }
++static void ledger_notify(void *data)
++{
++    completion_ledger *ledger = data;
++    assert(ledger->notified < ledger->acquired);
++    ++ledger->notified;
++}
++
++/* Every committed command registers exactly one completed handler, after its
++ * last fallible encode; Metal reports success and failure through it, and a
++ * failed registration reports synchronously without committing. */
++static void completion_handlers(void)
++{
++    mock_native mock;
++    completion_ledger ledger = {0};
++    const doe_mtl_completion_sink sink = {&ledger, ledger_acquire, ledger_notify};
++    doe_mtl_native bare = mock_driver(&mock);
++    bare.completed_handler = NULL;
++    doe_mtl_context *context = NULL;
++    assert(doe_mtl_context_open(bare,&context,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_context_set_completion(context,sink) == DOE_MTL_UNSUPPORTED);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++
++    assert(doe_mtl_context_open(mock_driver(&mock),&context,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_context_set_completion(context,sink) == DOE_MTL_OK);
++    assert(doe_mtl_context_set_completion(context,sink) == DOE_MTL_INVALID_STATE);
++    doe_mtl_buffer *buffer = NULL;
++    assert(doe_mtl_buffer_create(context,64,DOE_MTL_SHARED,&buffer,NULL) == DOE_MTL_OK);
++    doe_mtl_commands *ok = NULL, *failed = NULL, *refused = NULL;
++    assert(doe_mtl_commands_create(context,&ok,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_fill(ok,buffer,0,64,1,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_submit(ok,NULL) == DOE_MTL_OK);
++    assert(mock.handlers == 1 && ledger.acquired == 1 && ledger.notified == 0);
++    assert(doe_mtl_commands_poll(ok,NULL) == DOE_MTL_PENDING && ledger.notified == 0);
++    mock_command_result(ok->native,4,0);
++    assert(ledger.notified == 1);
++    assert(doe_mtl_commands_poll(ok,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_release(ok) == DOE_MTL_OK);
++
++    assert(doe_mtl_commands_create(context,&failed,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_fill(failed,buffer,0,64,2,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_submit(failed,NULL) == DOE_MTL_OK);
++    mock_command_result(failed->native,5,-31);
++    assert(ledger.acquired == 2 && ledger.notified == 2);
++    assert(doe_mtl_commands_poll(failed,NULL) == DOE_MTL_EXECUTION_FAILED);
++    assert(doe_mtl_commands_release(failed) == DOE_MTL_OK);
++
++    doe_mtl_buffer *spare = NULL; /* buffer is poisoned by the failed command. */
++    assert(doe_mtl_buffer_create(context,64,DOE_MTL_SHARED,&spare,NULL) == DOE_MTL_OK);
++    mock.fail = MOCK_HANDLER;
++    assert(doe_mtl_commands_create(context,&refused,NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_fill(refused,spare,0,64,3,NULL) == DOE_MTL_OK);
++    doe_mtl_error error = {0};
++    assert(doe_mtl_commands_submit(refused,&error) == DOE_MTL_NATIVE_FAILURE && error.native_code == -71);
++    assert(mock.commits == 2 && ledger.acquired == 3 && ledger.notified == 3);
++    assert(!doe_mtl_commands_in_flight(refused) && doe_mtl_commands_release(refused) == DOE_MTL_OK);
++    mock.fail = MOCK_NONE;
++    assert(!spare->owner && spare->initialized);
++    doe_mtl_buffer_release(spare);
++    doe_mtl_buffer_release(buffer);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
+ int main(void)
+ {
+     rollback_groups();
++    completion_handlers();
+     mock_native mock;
+     doe_mtl_context *context = NULL;
+     assert(doe_mtl_context_open(mock_driver(&mock),&context,NULL) == DOE_MTL_OK);
+diff --git a/runtime/c/native/AGENTS.md b/runtime/c/native/AGENTS.md
+index 91349d12f..8a9b6af83 100644
+--- a/runtime/c/native/AGENTS.md
++++ b/runtime/c/native/AGENTS.md
+@@ -41,6 +41,14 @@ under that mutex. Routine settlement polls, and
+ running work is never a failure (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Host buffer access waits only for
+ submissions using that buffer; work done waits each record's fence. Idle final
+ release joins the worker.
++For Metal, owner decision 2026-10-31 supersedes that worker wake and fence wait:
++each committed command registers a native completed handler, as Dawn does. Neither
++submission nor a lease drop wakes the worker of a live Metal device; public calls
++retire its records through routine settlement. The handler runs on a Metal thread,
++never takes the device mutex and never retires state. Device destruction arms it
++to wake the worker, which retires what remains under its ordinary lease. The
++handler's refcounted completion record outlives the device; detach precedes
++destruction of the worker condition.
+ Settle oldest first and preserve the first background terminal error for a
+ public operation to observe.
+ 
+diff --git a/runtime/c/native/README.md b/runtime/c/native/README.md
+index cc999048d..693643036 100644
+--- a/runtime/c/native/README.md
++++ b/runtime/c/native/README.md
+@@ -376,7 +376,13 @@ and exact exports; absent platform loaders remain explicitly unavailable.
+   Foreign callbacks run only after unlocking, with required full-call leases.
+ 
+ - Each published device owns one progress worker and an ordinary device lease.
+-  It polls the existing pending list without waiting for queue idle. Unknown
++  It polls the existing pending list without waiting for queue idle. On Metal
++  (owner decision 2026-10-31, superseding the 2026-10-24 worker wake there),
++  every committed command buffer carries a completed handler instead: submission
++  and lease drops do not wake the worker of a live device, whose records retire
++  on later public calls (submit, write, map and work done all settle first). The
++  handler never takes the device mutex. Destroying the device, which the last
++  external device release does, arms the handler to wake the worker. Unknown
+   completion retains every submission/resource lease even after all public
+   handles disappear; terminal success or failure retires them. The first retired
+   failure remains observable by a later public operation. An idle last release
+diff --git a/runtime/c/native/src/internal.h b/runtime/c/native/src/internal.h
+index dbd1d8bf4..9aac02c0d 100644
+--- a/runtime/c/native/src/internal.h
++++ b/runtime/c/native/src/internal.h
+@@ -75,6 +75,7 @@ typedef struct native_device {
+     doe_mtl_draw_guard *metal_draw_guard;
+     doe_vk_draw_validator *draw_validator;
+     native_pending *pending;
++    struct native_metal_completion *metal_completion; /* Metal devices; see metal_progress.c. */
+     native_failure retired_failure;
+     /* Vulkan: unsubmitted zero initialization of newly created textures,
+      * flushed ahead of the next recording that may touch them. */
+@@ -331,6 +332,13 @@ native_queue_settlement native_settle_routine(native_device *device);
+ native_failure native_settle_for_buffer(native_device *device, const native_buffer *buffer);
+ /* Caller owns the device mutex at depth one and its ordinary call lease. */
+ native_failure native_metal_wait_owner(native_device *, doe_mtl_commands *, const struct timespec *);
++/* Metal completion notification: attach before any submission, detach before
++ * the device's progress condition is destroyed. */
++bool native_metal_completion_attach(native_device *);
++void native_metal_completion_detach(native_device *);
++void native_metal_completion_arm(native_device *);
++bool native_metal_completion_armed(const native_device *);
++uint64_t native_metal_completion_count(const native_device *);
+ native_failure native_metal_record_batch(native_device *, native_command_handle *, doe_resource_commands **, size_t);
+ /* Lowers a resource command list into native commands (the one recorder for
+  * queue submission and compute-program recording/replay). */
+diff --git a/runtime/c/native/src/lifecycle.c b/runtime/c/native/src/lifecycle.c
+index 5d268199b..699364253 100644
+--- a/runtime/c/native/src/lifecycle.c
++++ b/runtime/c/native/src/lifecycle.c
+@@ -285,7 +285,11 @@ void native_device_release(void *identity)
+         return;
+     }
+     bool last = native_release_count(&device->references);
+-    if (!last) native_pending_progress_wake(device);
++    /* A live Metal worker sleeps until only its own lease remains: completed
++     * handlers, not lease drops, report Metal completion (metal_progress.c). */
++    if (!last && (device->backend.kind != WGPUBackendType_Metal || native_metal_completion_armed(device) ||
++            atomic_load_explicit(&device->references, memory_order_acquire) == 1))
++        native_pending_progress_wake(device);
+     native_unlock(device);
+     if (!last) return;
+     /* Pending resource submissions hold device leases, so finalization cannot
+@@ -293,6 +297,7 @@ void native_device_release(void *identity)
+     if (device->pending) abort();
+     native_identity_worker_finish(&device->identity_worker);
+     native_release_initialization(device);
++    native_metal_completion_detach(device);
+     native_pending_progress_destroy(device);
+     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
+     free(device->error_storage);
+@@ -367,6 +372,11 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
+      * the adapter's; every frontend check reads the resolved device limits. */
+     device->backend.limits = limits;
+     device->features = features;
++    /* Before any submission (timestamp initialization below may submit). */
++    if (device->backend.kind == WGPUBackendType_Metal && !native_metal_completion_attach(device)) {
++        native_backend_close(&device->backend);
++        goto failed_errors;
++    }
+     if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) &&
+         (device->backend.kind == WGPUBackendType_D3D12 ?
+             native_d3d12_timestamp_initialize(device).status != NATIVE_OK :
+@@ -419,6 +429,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
+     native_loss_bind(loss, device);
+     return device;
+ failed_errors:
++    native_metal_completion_detach(device);
+     if (doe_label_store_destroy(device->labels) != DOE_LABEL_OK) abort();
+     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
+ failed_storage:
+@@ -511,6 +522,10 @@ void wgpuDeviceDestroy(WGPUDevice handle)
+          * its receipt; a later work-done callback must retain the first detail. */
+         native_progress_pending(device);
+         device->destroyed = true;
++        /* No public call is obliged to observe what remains: Metal handlers now
++         * wake the worker, which owns that retirement from here on. */
++        native_metal_completion_arm(device);
++        if (device->backend.kind == WGPUBackendType_Metal) native_pending_progress_wake(device);
+         if (doe_error_scope_set_handler(device->errors, NULL, NULL, NULL).status != DOE_ERROR_SCOPE_OK) abort();
+     }
+     native_unlock(device);
+diff --git a/runtime/c/native/src/metal_progress.c b/runtime/c/native/src/metal_progress.c
+index 2e30cc8e8..332ca2fb5 100644
+--- a/runtime/c/native/src/metal_progress.c
++++ b/runtime/c/native/src/metal_progress.c
+@@ -1,8 +1,107 @@
+ /* SPDX-License-Identifier: MIT */
+ #include "surface.h"
+ #include "../../backends/metal/src/progress.h"
++#include <limits.h>
+ #include <stdlib.h>
+ 
++/* Owner decision 2026-10-31, superseding the 2026-10-24 worker wake for Metal:
++ * Metal reports completion through each command buffer's completed handler, as
++ * Dawn does (QueueMTL.mm:234-240). Submission no longer wakes the progress
++ * worker under the device mutex. The handler runs on a Metal-owned thread, never
++ * takes the device mutex and never retires anything: public calls keep retiring
++ * through routine settlement, and once the device is destroyed (no external
++ * device reference remains) the handler wakes the worker, which retires what is
++ * left under its ordinary device lease. Its own references (device plus one per
++ * registered handler) let a late handler outlive the device. */
++typedef struct native_metal_completion {
++    atomic_uint references;
++    atomic_bool armed;
++    atomic_uint_fast64_t count; /* Handlers run so far. */
++    doe_mutex mutex;            /* Orders a wake against device detach. */
++    native_device *device;      /* Guarded by mutex; NULL once detached. */
++} native_metal_completion;
++
++static void completion_release(native_metal_completion *completion)
++{
++    if (atomic_fetch_sub_explicit(&completion->references, 1, memory_order_acq_rel) != 1) return;
++    if (doe_mutex_destroy(&completion->mutex).status != DOE_HOST_OK) abort();
++    free(completion);
++}
++
++static void completion_acquire(void *data)
++{
++    native_metal_completion *completion = data;
++    if (atomic_fetch_add_explicit(&completion->references, 1, memory_order_relaxed) == UINT_MAX) abort();
++}
++
++/* Metal's completion thread, once per committed command (or synchronously when
++ * registration failed). The device condition outlives every wake: detach takes
++ * this mutex before the device destroys it. */
++static void completion_notify(void *data)
++{
++    native_metal_completion *completion = data;
++    atomic_fetch_add_explicit(&completion->count, 1, memory_order_release);
++    if (atomic_load_explicit(&completion->armed, memory_order_acquire)) {
++        if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
++        if (completion->device &&
++            doe_condition_signal(&completion->device->pending_changed).status != DOE_HOST_OK) abort();
++        if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
++    }
++    completion_release(completion);
++}
++
++bool native_metal_completion_attach(native_device *device)
++{
++    native_metal_completion *completion = calloc(1, sizeof(*completion));
++    if (!completion) return false;
++    if (doe_mutex_init(&completion->mutex, false).status != DOE_HOST_OK) {
++        if (doe_mutex_destroy(&completion->mutex).status != DOE_HOST_OK) abort();
++        free(completion);
++        return false;
++    }
++    atomic_init(&completion->references, 1);
++    atomic_init(&completion->armed, false);
++    atomic_init(&completion->count, 0);
++    completion->device = device;
++    const doe_mtl_completion_sink sink = {completion, completion_acquire, completion_notify};
++    if (doe_mtl_context_set_completion(device->backend.value.metal.context, sink) != DOE_MTL_OK) {
++        completion_release(completion);
++        return false;
++    }
++    device->metal_completion = completion;
++    return true;
++}
++
++void native_metal_completion_detach(native_device *device)
++{
++    native_metal_completion *completion = device->metal_completion;
++    if (!completion) return;
++    if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
++    completion->device = NULL;
++    if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
++    device->metal_completion = NULL;
++    completion_release(completion);
++}
++
++/* Device mutex held. From now on handlers wake the worker. */
++void native_metal_completion_arm(native_device *device)
++{
++    if (device->metal_completion)
++        atomic_store_explicit(&device->metal_completion->armed, true, memory_order_release);
++}
++
++bool native_metal_completion_armed(const native_device *device)
++{
++    return device->metal_completion &&
++        atomic_load_explicit(&device->metal_completion->armed, memory_order_acquire);
++}
++
++uint64_t native_metal_completion_count(const native_device *device)
++{
++    return device->metal_completion ?
++        (uint64_t)atomic_load_explicit(&device->metal_completion->count, memory_order_acquire) : 0;
++}
++
+ /* Only the existing pending owner can authorize waiting/retrying a conflict.
+  * An unsubmitted foreign owner is BUSY, never a reason to wait or dispatch. */
+ static bool accepted_owner(native_device *device, doe_mtl_commands *owner)
+diff --git a/runtime/c/native/src/pending_progress.c b/runtime/c/native/src/pending_progress.c
+index c837dbc79..3185fb0d9 100644
+--- a/runtime/c/native/src/pending_progress.c
++++ b/runtime/c/native/src/pending_progress.c
+@@ -24,6 +24,14 @@ static native_command_handle *oldest_in_flight(native_device *device)
+ /* Bounds one unlocked fence wait so join requests and new records are seen. */
+ #define PROGRESS_FENCE_WAIT_NS UINT64_C(100000000)
+ 
++/* Live Metal devices retire through public calls; their completed handlers
++ * report completion without this thread (metal_progress.c). */
++static bool progress_needed(const native_device *device)
++{
++    return device->pending && (device->backend.kind != WGPUBackendType_Metal ||
++        native_metal_completion_armed(device));
++}
++
+ static void pending_progress(void *identity)
+ {
+     native_device *device = identity;
+@@ -32,7 +40,7 @@ static void pending_progress(void *identity)
+     uintptr_t signalled = 0;
+     native_lock(device);
+     for (;;) {
+-        while (!device->pending && !device->pending_progress_join &&
++        while (!progress_needed(device) && !device->pending_progress_join &&
+                 atomic_load_explicit(&device->references, memory_order_acquire) > 1) {
+             if (doe_condition_wait(&device->pending_changed, &device->mutex).status != DOE_HOST_OK) abort();
+         }
+@@ -46,6 +54,7 @@ static void pending_progress(void *identity)
+             native_device_release(device);
+             return;
+         }
++        const uint64_t completions = native_metal_completion_count(device);
+         native_progress_pending(device);
+         native_surface *surface = native_surface_retirement_peek(device);
+         if (surface) {
+@@ -75,7 +84,8 @@ static void pending_progress(void *identity)
+          * mutex (owner authorized 2026-10-24: async submit A+B, D2,
+          * fence-wait completion; futures later; reconfirmed after the section 7 risk review). The hold keeps its fence alive
+          * through a concurrent settle; completion is observed under the
+-         * mutex on the next iteration. */
++         * mutex on the next iteration. Metal no longer waits here (owner
++         * decision 2026-10-31): its completed handler signals pending_changed. */
+         native_command_handle *oldest = oldest_in_flight(device);
+         if (oldest && oldest->kind == WGPUBackendType_Vulkan &&
+             (uintptr_t)oldest->value.vulkan != signalled && doe_vk_commands_hold(oldest->value.vulkan) == DOE_VK_OK) {
+@@ -88,20 +98,12 @@ static void pending_progress(void *identity)
+             doe_vk_commands_unhold(command);
+             continue;
+         }
+-        if (oldest && oldest->kind == WGPUBackendType_Metal && (uintptr_t)oldest->value.metal != signalled) {
+-            doe_mtl_commands *command = oldest->value.metal;
+-            const uintptr_t command_identity = (uintptr_t)command;
+-            doe_mtl_wait_lease lease = {0};
+-            if (doe_mtl_commands_hold(command,&lease) == DOE_MTL_OK) {
+-                native_unlock(device);
+-                doe_mtl_status waited = doe_mtl_commands_block(&lease,PROGRESS_FENCE_WAIT_NS);
+-                native_lock(device);
+-                /* The shell may have retired while unlocked. Never dereference
+-                 * command here; only ordinary locked polling owns retirement. */
+-                signalled = waited == DOE_MTL_PENDING ? 0 : command_identity;
+-                doe_mtl_commands_unhold(&lease);
+-                continue;
+-            }
++        uint64_t wait_ns = UINT64_C(10000000);
++        if (oldest && oldest->kind == WGPUBackendType_Metal) {
++            /* A handler that ran since the poll above is not lost; one that
++             * signals between this check and the wait is bounded by wait_ns. */
++            if (native_metal_completion_count(device) != completions) continue;
++            wait_ns = PROGRESS_FENCE_WAIT_NS;
+         }
+ #if defined(_WIN32)
+         if (oldest && oldest->kind == WGPUBackendType_D3D12 &&
+@@ -127,7 +129,7 @@ static void pending_progress(void *identity)
+         if (device->pending) {
+             struct timespec now, deadline;
+             doe_host_result clock = doe_monotonic_now(&now);
+-            if (clock.status == DOE_HOST_OK) clock = doe_time_add(&now, UINT64_C(10000000), &deadline);
++            if (clock.status == DOE_HOST_OK) clock = doe_time_add(&now, wait_ns, &deadline);
+             if (clock.status != DOE_HOST_OK) {
+                 /* Clock failure cannot discard live work or spin with its
+                  * mutex held. Poll again after a real bounded host sleep. */
+diff --git a/runtime/c/native/src/queue.c b/runtime/c/native/src/queue.c
+index 9a42ea4dc..3e4e62bed 100644
+--- a/runtime/c/native/src/queue.c
++++ b/runtime/c/native/src/queue.c
+@@ -301,7 +301,9 @@ static void link_pending(native_device *device, native_pending *pending)
+     while (*cursor) cursor = &(*cursor)->next;
+     pending->next = NULL;
+     *cursor = pending;
+-    native_pending_progress_wake(device);
++    /* Metal completion arrives through the command's completed handler. */
++    if (pending->native.kind != WGPUBackendType_Metal || native_metal_completion_armed(device))
++        native_pending_progress_wake(device);
+ }
+ 
+ void native_progress_pending(native_device *device)
+diff --git a/runtime/c/native/tests/metal_async_submit.c b/runtime/c/native/tests/metal_async_submit.c
+index f32d756cb..8a430acb9 100644
+--- a/runtime/c/native/tests/metal_async_submit.c
++++ b/runtime/c/native/tests/metal_async_submit.c
+@@ -9,7 +9,7 @@ static mock_native mocks[2];
+ static doe_mtl_native originals[2];
+ static unsigned opened, physical_identity;
+ static atomic_bool automatic_terminal, complete_conflict;
+-static atomic_bool hold_worker, worker_entered, release_worker, second_submitted;
++static atomic_bool second_submitted;
+ static atomic_uint closed;
+ static doe_thread_id caller_thread;
+ static atomic_uint race_action;
+@@ -28,10 +28,8 @@ native_failure __wrap_native_record_resource_commands(native_command_handle *nat
+ static void block_hook(mock_native *mock, void *command, uint64_t timeout)
+ {
+     (void)mock;
+-    if (atomic_exchange(&hold_worker,false)) {
+-        atomic_store(&worker_entered,true);
+-        while (!atomic_load(&release_worker)) assert(doe_sleep_for(UINT64_C(1000000)).status == DOE_HOST_OK);
+-    }
++    /* Only public waits block on a Metal command; the worker never does. */
++    assert(doe_thread_equal(doe_thread_current(),caller_thread));
+     if (doe_thread_equal(doe_thread_current(),caller_thread)) {
+         unsigned action = atomic_exchange(&race_action,0);
+         if (action) {
+@@ -172,19 +170,20 @@ int main(void)
+     WGPUBuffer target_b = buffer(&s,16,WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead);
+     WGPUBuffer scratch = buffer(&s,16,WGPUBufferUsage_CopyDst);
+     WGPUCommandBuffer a = copy(&s,source_a,target_a,NULL), b = copy(&s,source_b,target_b,NULL);
+-    atomic_store(&hold_worker,true);
++    /* A live device's submissions wake no worker (owner decision 2026-10-31):
++     * each commit registers one completed handler, and pending records wait
++     * for a public call. Another thread submits while the first is pending. */
+     wgpuQueueSubmit(s.queue,1,&a);
+     assert(!s.errors); /* Accepted pending work is not an execution error. */
+-    assert(await_flag(&worker_entered));
+     submit_call call = {s.queue,b};
+     doe_thread thread = {0};
+     assert(doe_thread_create(&thread,submit_second,&call).status == DOE_HOST_OK);
+     bool submitted_unlocked = await_flag(&second_submitted);
+-    atomic_store(&release_worker,true);
+     assert(doe_thread_join(&thread).status == DOE_HOST_OK);
+-    assert(submitted_unlocked); /* No dependency on polling/timing luck. */
++    assert(submitted_unlocked);
+     native_lock(device);
+-    assert(pending_count(device) == 2 && mocks[1].commits == 2 && mocks[1].waits == 0 && !s.errors);
++    assert(pending_count(device) == 2 && mocks[1].commits == 2 && mocks[1].handlers == 2 &&
++        mocks[1].waits == 0 && atomic_load(&mocks[1].blocks) == 0 && !s.errors);
+     native_unlock(device);
+     wgpuCommandBufferRelease(a); wgpuCommandBufferRelease(b);
+ 
+@@ -223,8 +222,9 @@ int main(void)
+     mocks[1].unknown_commit = false;
+     native_unlock(device);
+ 
+-    /* Fresh disjoint resources survive all public handles going away. The
+-     * pending worker/native wait lease alone may retire them when terminal. */
++    /* Fresh disjoint resources survive all public handles going away. Device
++     * destruction arms the worker; the command's completed handler wakes it,
++     * and its device lease alone retires them when terminal. */
+     WGPUBuffer last_source = buffer(&s,16,WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
+     WGPUBuffer last_target = buffer(&s,16,WGPUBufferUsage_CopyDst);
+     WGPUCommandBuffer last = copy(&s,last_source,last_target,NULL);
+@@ -241,7 +241,7 @@ int main(void)
+      * run. Its status is held pending until this explicit controller signal;
+      * that pending record still pins device storage while we take its mutex. */
+     native_lock(device);
+-    assert(pending_count(device) == 1);
++    assert(pending_count(device) == 1 && native_metal_completion_armed(device));
+     mock_command_result(device->pending->native.value.metal->native,4,0);
+     native_unlock(device);
+     struct timespec now, deadline;
