@@ -18,7 +18,9 @@ int main() {
     uint sizes[31] = {68, 28, 24, 48, 32};
     doe_entry0(reinterpret_cast<uchar*>(output), reinterpret_cast<const uchar*>(input),
         reinterpret_cast<uchar*>(matrices), padded, padded_output, sizes);
-    const float expected[] = {22, 28, 8, 18, 28, 35, 44, 56, -1, 0, 0, 1, 9, 12, 4, 6, 15};
+    /* matrices binds one 24-byte matrix: matrices[2] clamps to matrices[0],
+     * which holds a (= 2a - a), so word 9 reads a[0][0] = 1. */
+    const float expected[] = {22, 28, 8, 18, 28, 35, 44, 56, -1, 1, 0, 1, 9, 12, 4, 6, 15};
     for (unsigned i = 0; i < 17; ++i) {
         if (output[i] != expected[i])
             std::printf("mismatch%u got%g expected%g\n", i, output[i], expected[i]);

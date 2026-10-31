@@ -171,11 +171,11 @@ int main(void)
     assert(result.maps == 1 && result.map_status == WGPUMapAsyncStatus_Success);
     const uint32_t *actual = wgpuBufferGetConstMappedRange(readback, 0, WGPU_WHOLE_MAP_SIZE);
     assert(actual);
-    /* Invocations 64..71 are out of range. A guard drops them; a clamp
-     * (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c) makes each
-     * read-modify-write a[63] in any interleaving with invocation 63, so a[63] is
-     * f applied k times for some k in 1..9, where f(x) = x*3+7. Words 0..62 and
-     * every word outside the binding stay exact. */
+    /* Invocations 64..71 are out of range and clamp to a[63] on every target
+     * (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c,
+     * compiler/targets/metal/AGENTS.md): each read-modify-writes a[63] in any
+     * interleaving with invocation 63, so a[63] is f applied k times for some k
+     * in 1..9, where f(x) = x*3+7. Words 0..62 stay exact. */
     for (uint32_t i = 0; i < 63; ++i) assert(actual[i] == input[i]*3u+7u);
     {
         uint32_t applied = input[63];
@@ -351,6 +351,6 @@ int main(void)
     wgpuDeviceRelease(device);
     wgpuAdapterRelease(result.adapter);
     wgpuInstanceRelease(instance);
-    printf("PASS public ABI: compute/readback, OOB indices per target contract, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation %s\n", adapter_class_scope());
+    printf("PASS public ABI: compute/readback, clamped OOB indices, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation %s\n", adapter_class_scope());
     return 0;
 }

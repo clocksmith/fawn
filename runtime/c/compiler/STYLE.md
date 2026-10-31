@@ -160,10 +160,10 @@ baseline physical lowering, preserve the default, and publish the selected profi
 Compact uniforms use the existing exact-byte raw uniform owner, including tail-only
 blocks below 16 bytes; never infer a Vulkan feature requirement or emit zero arrays.
 Minimum extents are distinct from
-storage robustness. A clamping target (see the README robustness paragraph) clamps
-each indexed step of a storage/uniform path to its own last element; a guarding
-root guards each array access before even forming an element pointer, and its OOB
-load zero can be a valid outer index. No combined-length shortcut suppresses an
+storage robustness. Every target clamps each indexed step of a storage/uniform
+path to its own last element (see the README robustness paragraph); other roots
+guard each array access before even forming an element pointer, and an OOB load
+zero there can be a valid outer index. No combined-length shortcut suppresses an
 otherwise valid outer operation.
 
 SPIR-V Workgroup arrays/structs use separate undecorated target declarations,

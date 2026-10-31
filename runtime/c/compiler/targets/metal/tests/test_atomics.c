@@ -33,7 +33,7 @@ static void dense_ordering(Fixture *fixture, const char *prefix) {
     assert(doe_metal_emit_dense(&fixture->source, fixture->module, 0, fixture->scratch, &plan,
                                text, result.required_bytes, &result) == DOE_COMPILER_OK);
     text[result.written_bytes] = '\0';
-    has(text, "ulong(ctx.r0_bytes)");
+    has(text, "(max((ctx.r0_bytes - min(ctx.r0_bytes, 16u)) / 4u, 1u) - 1u)");
     has(text, "r0 [[buffer(0)]]");
     assert(!strstr(text, "r0 [[buffer(18)]]"));
     uint32_t operations[3], count = 0;
@@ -88,7 +88,8 @@ static void all_operations(const char *prefix, bool workgroup, bool signed_value
     has(text, "atomic_fetch_add_explicit(");
     has(text, "atomic_exchange_explicit(");
     has(text, "atomic_compare_exchange_weak_explicit(");
-    has(text, " >= 0)");
+    /* Storage indices clamp (no signed guard); workgroup indices keep it. */
+    assert((strstr(text, " >= 0)") != NULL) == workgroup);
     has(text, signed_value ? "atomic_int* target" : "atomic_uint* target");
     has(text, "memory_order_relaxed, memory_order_relaxed");
     has(text, ".m1 && expected == comparison)");
@@ -97,9 +98,10 @@ static void all_operations(const char *prefix, bool workgroup, bool signed_value
         has(text, "doe_wzero");
         has(text, "threadgroup_barrier(mem_flags::mem_threadgroup)");
     } else {
-        const char *guard = strstr(text, "offset % 4ul == 0ul && offset <= bytes && 4ul <= bytes - offset");
+        /* The clamped offset precedes the unconditional atomic pointer. */
+        const char *clamp = strstr(text, "ulong offset = 0ul + ulong(min(uint(");
         const char *pointer = strstr(text, "reinterpret_cast<device atomic_");
-        assert(guard && pointer && guard < pointer);
+        assert(clamp && pointer && clamp < pointer && !strstr(text, "offset <= bytes"));
     }
     save(prefix, workgroup ? signed_value ? "signed_shared" : "unsigned_shared" :
         signed_value ? "signed_storage" : "unsigned_storage", text);
@@ -153,12 +155,12 @@ int main(int argc, char **argv) {
         "let old=atomicAdd(&data.tail[atomicAdd(&effects,1u)],i32(atomicAdd(&effects,2u)));"
         "let result=atomicCompareExchangeWeak(&data.tail[0],old,5i);}");
     char *text = emit(fixture, 0);
-    has(text, "ulong(ctx.sizes[18]) >= 16ul");
+    has(text, "(max((ctx.sizes[18] - min(ctx.sizes[18], 16u)) / 4u, 1u) - 1u)");
     save(prefix, "effects", text);
     free(text);
     dense_ordering(fixture, prefix);
     release(fixture);
     selected_initializers(prefix);
-    puts("MSL atomics: all11 signed/unsigned storage/shared mappings, guarded pointers, ordered operands and failed publication controls passed.");
+    puts("MSL atomics: all11 signed/unsigned storage/shared mappings, clamped storage and guarded shared pointers, ordered operands and failed publication controls passed.");
     return 0;
 }

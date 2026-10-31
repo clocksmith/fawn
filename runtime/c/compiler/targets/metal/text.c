@@ -63,8 +63,19 @@ TypeId metal_value_type(MetalEmitter *e, uint32_t id) {
     metal_error(e, "operand has no typed value identity");
     return IR_VOID;
 }
+bool metal_inline_constant(const IrInstruction *ir) {
+    return ir->opcode == IR_CONSTANT && ir->operands.scalar.left == 0u;
+}
 void metal_value(MetalEmitter *e, uint32_t id) {
     (void)metal_value_type(e, id);
+    metal_assignment_use(e, id);
+    if (id != 0u && id <= e->module->instruction_count &&
+        metal_inline_constant(&e->module->instructions[id - 1u])) {
+        /* An immutable literal: inlining preserves every value snapshot. */
+        const IrInstruction *ir = &e->module->instructions[id - 1u];
+        metal_constant(e, ir->type, ir->operands.scalar.literal, false, 0u);
+        return;
+    }
     if (id != 0u && id <= e->module->instruction_count &&
         e->module->instructions[id - 1u].opcode == IR_HANDLE) {
         const IrInstruction *handle = &e->module->instructions[id - 1u];

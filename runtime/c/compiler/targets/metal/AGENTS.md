@@ -2,9 +2,38 @@
 
 Use the common C guidance; do not fork WGSL parsing, validation or layout here.
 This directory consumes the private typed module after whole-module validation.
-Keep type/resource/local/value IDs distinct. Emit byte-addressed buffer access
-only inside independent bounds guards, and derive offsets/strides from shared
+Keep type/resource/local/value IDs distinct. Derive offsets/strides from shared
 layout records. Do not use native C++ structure layout as WGSL buffer layout.
+
+- Storage and uniform buffer accesses, including runtime-array tails and atomics,
+  clamp every index: `min(uint(index), last)`, where last is a fixed array's or
+  vector's extent minus one, or for a runtime tail (bytes - tail) / stride - 1 when
+  at least one element is bound and 0 otherwise, emitted branch-free as
+  `max((bytes - min(bytes, tail)) / stride, 1u) - 1u` over the slot-30 size table
+  (`ctx.rN_bytes` in ABI12, `ctx.sizes[slot]` in ABI10). A negative i32 index
+  reinterprets as a large uint and clamps to last. A clamped access lies inside
+  the declared extent and runs unconditionally: no zero load, no dropped store, no
+  access guard; each storage atomic forms its pointer in its own scope. Metal has
+  no hardware buffer bounds, so this relies on admission: the runtime rejects a
+  dispatch whose binding is below the reflected minimum (the fixed size, plus one
+  tail element), as fixed-size paths already required. WGSL robustness permits
+  any in-bounds element.
+- Workgroup, private, function, pointer and value roots keep one guard per access:
+  guard signed indices and each indexed subobject before forming the access;
+  loads initialize zero and invalid stores discard.
+- Direct 32-bit scalar (i32/u32/f32) storage/uniform accesses are one statement at
+  the access site that indexes the buffer as words (each byte term divided by
+  four); a term that is not a whole number of words keeps a byte-offset pointer.
+  Their scalar helpers are emitted only when an aggregate helper reaches them.
+- A scalar IR constant has no value local: every use writes its literal
+  (`as_type<float>(0x...u)`, `0x...u`). Composite constants keep their
+  constructors.
+- A value local drops its zero initializer only when `assignment.c` proves it:
+  its first assignment is unconditional at its own statement (`metal_define`) and
+  every reference follows it in the same structured region or one nested inside.
+  Branch arms, cases, short-circuit sides and loop header/body/continuing are
+  separate regions. Any other value, and any function past the bounded state,
+  keeps its zero initializer. Never drop an initializer by pattern or opcode alone.
 
 Keep image handles as resolved resource/formal identities. Writable MSL textures
 must pass as parameters, not local copies. Integer coordinates, array layers,
@@ -48,9 +77,9 @@ Charge all new plan/selection work to existing budgets; no repeated uncharged
 closure scans or additional allocator/work pool is permitted.
 
 
-Atomic access uses the same typed path guards and immutable ordered operands as
-ordinary memory. Form device/threadgroup atomic pointers only inside those guards;
-storage also proves four-byte extent/alignment. Keep native signed/unsigned atomic
+Atomic access uses the same path policy and immutable ordered operands as
+ordinary memory: storage atomics clamp their indices; threadgroup atomic pointers
+are formed only inside their guards. Keep native signed/unsigned atomic
 types and relaxed ordering. A weak compare-exchange may retry a spurious failure
 only while its observed value still equals the saved comparison; never replay
 operands. Initialize selected workgroup atomic trees in place before the existing

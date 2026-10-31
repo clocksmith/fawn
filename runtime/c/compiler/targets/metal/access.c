@@ -30,6 +30,8 @@ static const ResourceRecord *resource_root(MetalEmitter *e, const IrInstruction 
     }
     return &e->module->resources[ir->operands.access.root];
 }
+/* Guards of a non-resource path; resource paths clamp instead. Runtime arrays
+ * exist only at storage resource roots, so they never reach a guard. */
 static void bounds(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path) {
     metal_text(e, "true");
     if (ir->operands.access.category == ROOT_POINTER)
@@ -39,6 +41,10 @@ static void bounds(MetalEmitter *e, const IrInstruction *ir, const MetalPath *pa
         if (step->kind == ACCESS_MEMBER || step->kind == ACCESS_COMPONENT) continue;
         const TypeRecord *input = path_input(e, step);
         if (input == NULL) return;
+        if (input->kind == TYPE_RUNTIME_ARRAY) {
+            metal_error(e, "Metal runtime array has no valid sized resource root");
+            return;
+        }
         if (step->kind == ACCESS_INDEX_I32) {
             metal_text(e, " && (");
             metal_value(e, step->index);
@@ -49,32 +55,59 @@ static void bounds(MetalEmitter *e, const IrInstruction *ir, const MetalPath *pa
         }
         metal_text(e, " && (ulong(uint(");
         metal_value(e, step->index);
-        metal_text(e, ")) < ");
-        if (input->kind == TYPE_RUNTIME_ARRAY) {
-            const ResourceRecord *r = resource_root(e, ir);
-            if (r == NULL || r->tail_stride == 0u) {
-                metal_error(e, "Metal runtime array has no valid sized resource root");
-                return;
-            }
-            if (e->metadata != NULL) {
-                const uint32_t resource = ir->operands.access.root;
-                metal_format(e, "(ulong(ctx.r%u_bytes) >= %" PRIu64 "ul ? "
-                    "(ulong(ctx.r%u_bytes) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
-                    resource, r->tail_offset, resource, r->tail_offset, r->tail_stride);
-            } else {
-                uint32_t slot;
-                if (!doe_metal_binding_slot(r->group, r->binding, &slot)) {
-                    metal_error(e, "Metal runtime array has no valid sized resource root"); return;
-                }
-                metal_format(e, "(ulong(ctx.sizes[%u]) >= %" PRIu64 "ul ? "
-                    "(ulong(ctx.sizes[%u]) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
-                    slot, r->tail_offset, slot, r->tail_offset, r->tail_stride);
-            }
-        } else metal_format(e, "%uul", input->count);
-        metal_text(e, ")");
+        metal_format(e, ")) < %uul)", input->count);
     }
 }
-static void byte_offset(MetalEmitter *e, const MetalPath *path) {
+/* The bound range bytes of a runtime-tail resource, from the size table. */
+static void binding_bytes(MetalEmitter *e, const IrInstruction *ir, const ResourceRecord *r) {
+    if (e->metadata != NULL) {
+        metal_format(e, "ctx.r%u_bytes", ir->operands.access.root);
+        return;
+    }
+    uint32_t slot;
+    if (!doe_metal_binding_slot(r->group, r->binding, &slot)) {
+        metal_error(e, "Metal runtime array has no valid sized resource root");
+        return;
+    }
+    metal_format(e, "ctx.sizes[%u]", slot);
+}
+/* Largest in-range index of one indexed step of a resource path: count - 1 for
+ * a fixed array or vector; for a runtime tail (bytes - tail) / stride - 1 when
+ * at least one element is bound and 0 otherwise, written branch-free as
+ * max((bytes - min(bytes, tail)) / stride, 1u) - 1u. */
+static void last_index(MetalEmitter *e, const IrInstruction *ir, const AccessStep *step) {
+    const TypeRecord *input = path_input(e, step);
+    if (input == NULL) return;
+    if (input->kind != TYPE_RUNTIME_ARRAY) {
+        if (input->count == 0u) metal_error(e, "Metal indexed access has an empty extent");
+        else metal_format(e, "%uu", input->count - 1u);
+        return;
+    }
+    const ResourceRecord *r = resource_root(e, ir);
+    if (r == NULL || r->tail_stride == 0u || r->tail_stride > UINT32_MAX || r->tail_offset > UINT32_MAX) {
+        metal_error(e, "Metal runtime array has no valid sized resource root");
+        return;
+    }
+    metal_text(e, "(max(");
+    if (r->tail_offset == 0u) binding_bytes(e, ir, r);
+    else {
+        metal_text(e, "(");
+        binding_bytes(e, ir, r);
+        metal_text(e, " - min(");
+        binding_bytes(e, ir, r);
+        metal_format(e, ", %" PRIu64 "u))", r->tail_offset);
+    }
+    metal_format(e, " / %" PRIu64 "u, 1u) - 1u)", r->tail_stride);
+}
+static void clamped_index(MetalEmitter *e, const IrInstruction *ir, const AccessStep *step) {
+    metal_text(e, "min(uint(");
+    metal_value(e, step->index);
+    metal_text(e, "), ");
+    last_index(e, ir, step);
+    metal_text(e, ")");
+}
+/* Resource paths (ir non-NULL) clamp each index to its last valid element. */
+static void byte_offset(MetalEmitter *e, const MetalPath *path, const IrInstruction *ir) {
     metal_text(e, "0ul");
     for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
         const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
@@ -91,11 +124,60 @@ static void byte_offset(MetalEmitter *e, const MetalPath *path) {
             metal_format(e, " + %uul", step->index * (uint32_t)type_size(e->module, input->element));
         } else {
             const uint64_t stride = input->kind == TYPE_VECTOR ? type_size(e->module, input->element) : input->state.layout.stride;
-            metal_text(e, " + ulong(uint(");
-            metal_value(e, step->index);
-            metal_format(e, ")) * %" PRIu64 "ul", stride);
+            metal_text(e, " + ulong(");
+            if (ir != NULL) clamped_index(e, ir, step);
+            else {
+                metal_text(e, "uint(");
+                metal_value(e, step->index);
+                metal_text(e, ")");
+            }
+            metal_format(e, ") * %" PRIu64 "ul", stride);
         }
     }
+}
+/* The clamped byte offset of a 32-bit scalar divided by four term by term, as a
+ * uint word index. Returns false (emitting nothing) when a term is not a whole
+ * number of words or the resource's fixed extent exceeds the uint word range;
+ * that access keeps the byte-offset form. */
+static bool word_terms(MetalEmitter *e, const MetalPath *path, bool emit, const IrInstruction *ir,
+                       const ResourceRecord *resource) {
+    if (resource->minimum > UINT32_MAX) return false;
+    bool any = false;
+    for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
+        const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
+        const TypeRecord *input = path_input(e, step);
+        if (input == NULL) return false;
+        uint64_t words = 0u;
+        if (step->kind == ACCESS_MEMBER) {
+            if (input->kind != TYPE_STRUCT || step->index >= input->count ||
+                input->element >= e->module->member_count || step->index >= e->module->member_count - input->element) {
+                metal_error(e, "Metal member access identity is invalid");
+                return false;
+            }
+            const uint64_t offset = e->module->members[input->element + step->index].offset;
+            if (offset % 4u != 0u) return false;
+            words = offset / 4u;
+        } else if (step->kind == ACCESS_COMPONENT) {
+            const uint64_t size = type_size(e->module, input->element);
+            if (size % 4u != 0u) return false;
+            words = (uint64_t)step->index * (size / 4u);
+        } else {
+            const uint64_t stride = input->kind == TYPE_VECTOR ? type_size(e->module, input->element) : input->state.layout.stride;
+            if (stride % 4u != 0u || stride / 4u > UINT32_MAX) return false;
+            if (emit) {
+                if (any) metal_text(e, " + ");
+                clamped_index(e, ir, step);
+                if (stride != 4u) metal_format(e, " * %" PRIu64 "u", stride / 4u);
+            }
+            any = true;
+            continue;
+        }
+        if (words == 0u) continue;
+        if (emit) metal_format(e, any ? " + %" PRIu64 "u" : "%" PRIu64 "u", words);
+        any = true;
+    }
+    if (emit && !any) metal_text(e, "0u");
+    return !e->failed;
 }
 static void object_path(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path) {
     const uint32_t root = ir->operands.access.root;
@@ -159,23 +241,13 @@ static void atomic_input(MetalEmitter *e, const IrInstruction *ir, uint32_t inde
 static void atomic_operation(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path,
                              const ResourceRecord *resource, TypeId scalar) {
     if (resource != NULL) {
+        /* One scope per atomic: its clamped offset and pointer are local. */
+        metal_line(e, "{");
+        ++e->indent;
         metal_indent(e);
         metal_text(e, "ulong offset = ");
-        byte_offset(e, path);
+        byte_offset(e, path, ir);
         metal_text(e, ";\n");
-        metal_indent(e);
-        metal_text(e, "ulong bytes = ");
-        if ((resource->flags & DOE_COMPILER_RESOURCE_RUNTIME_TAIL) != 0u) {
-            if (e->metadata != NULL) metal_format(e, "ulong(ctx.r%u_bytes)", ir->operands.access.root);
-            else {
-                uint32_t slot;
-                if (!metal_resource_slot(e, resource, &slot)) return;
-                metal_format(e, "ulong(ctx.sizes[%u])", slot);
-            }
-        } else metal_format(e, "%" PRIu64 "ul", resource->minimum);
-        metal_text(e, ";\n");
-        metal_line(e, "if (offset % 4ul == 0ul && offset <= bytes && 4ul <= bytes - offset) {");
-        ++e->indent;
     }
     metal_indent(e);
     metal_format(e, "%s atomic_%s* target = ", resource != NULL ? "device" : "threadgroup",
@@ -251,6 +323,7 @@ void metal_address(MetalEmitter *e, const IrInstruction *ir) {
     MetalPath path;
     if (!collect_path(e, ir->operands.access.path, &path)) return;
     metal_indent(e);
+    metal_define(e, ir->result); /* The null address precedes the guard. */
     metal_value(e, ir->result);
     metal_text(e, " = nullptr;\n");
     metal_indent(e);
@@ -267,6 +340,74 @@ void metal_address(MetalEmitter *e, const IrInstruction *ir) {
     metal_line(e, "}");
 }
 
+bool metal_direct_scalar(TypeId type) {
+    return type == IR_I32 || type == IR_U32 || type == IR_F32;
+}
+/* A 32-bit scalar storage/uniform access is one statement at its site with no
+ * helper: a word index when every term is whole words, else the byte pointer. */
+static void direct_scalar(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path,
+                          const ResourceRecord *resource, bool store) {
+    const char *space = resource->kind == DOE_COMPILER_UNIFORM_BUFFER ? "constant" : store ? "device" : "device const";
+    metal_indent(e);
+    if (!store) {
+        metal_define(e, ir->result);
+        metal_value(e, ir->result);
+        metal_text(e, " = ");
+    }
+    if (word_terms(e, path, false, ir, resource)) {
+        metal_format(e, "((%s ", space);
+        metal_type(e, ir->type);
+        metal_format(e, "*)ctx.r%u)[", ir->operands.access.root);
+        (void)word_terms(e, path, true, ir, resource);
+        metal_text(e, "]");
+    } else {
+        metal_format(e, "*(%s ", space);
+        metal_type(e, ir->type);
+        metal_format(e, "*)(ctx.r%u + (", ir->operands.access.root);
+        byte_offset(e, path, ir);
+        metal_text(e, "))");
+    }
+    if (store) {
+        metal_text(e, " = ");
+        metal_value(e, ir->operands.access.value);
+    }
+    metal_text(e, ";\n");
+}
+/* Storage and uniform resources clamp every index to its last valid element
+ * (WGSL robustness permits any in-bounds element), so the access executes
+ * unconditionally inside the declared extent: a runtime tail is bounded by its
+ * binding's size, a fixed path by its type, whose size the admitted binding
+ * covers. No zero load, dropped store or access guard. */
+static void resource_access(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path,
+                            const ResourceRecord *resource, bool atomic, bool store, TypeId scalar) {
+    if (store && (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE)) {
+        metal_error(e, "Metal store targets a read-only resource");
+        return;
+    }
+    if (atomic) {
+        atomic_operation(e, ir, path, resource, scalar);
+        return;
+    }
+    if (metal_direct_scalar(ir->type)) {
+        direct_scalar(e, ir, path, resource, store);
+        return;
+    }
+    metal_indent(e);
+    if (store) metal_format(e, "doe_store%u(", ir->type);
+    else {
+        metal_define(e, ir->result);
+        metal_value(e, ir->result);
+        metal_format(e, " = doe_%s%u(", resource->kind == DOE_COMPILER_UNIFORM_BUFFER ? "uniform" : "load", ir->type);
+    }
+    metal_format(e, "ctx.r%u + (", ir->operands.access.root);
+    byte_offset(e, path, ir);
+    metal_text(e, ")");
+    if (store) {
+        metal_text(e, ", ");
+        metal_value(e, ir->operands.access.value);
+    }
+    metal_text(e, ");\n");
+}
 void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     MetalPath path = {0};
     if (!collect_path(e, ir->operands.access.path, &path)) return;
@@ -275,8 +416,15 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     const ResourceRecord *resource = resource_root(e, ir);
     const TypeId scalar = atomic ? atomic_scalar(e, ir, &path, resource) : IR_VOID;
     if (e->failed) return;
+    if (resource != NULL) {
+        resource_access(e, ir, &path, resource, atomic, store, scalar);
+        return;
+    }
+    /* Workgroup, private, function, pointer and value roots keep one guard per
+     * access: invalid loads stay zero and invalid stores drop. */
     if (!store) {
         metal_indent(e);
+        metal_define(e, ir->result); /* The zero load precedes the guard. */
         metal_value(e, ir->result);
         metal_text(e, " = ");
         metal_zero(e, ir->type);
@@ -294,28 +442,8 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
         if (store) { metal_error(e,"immediate data cannot be written"); return; }
         metal_value(e,ir->result);
         metal_format(e," = doe_uniform%u(ctx.w%u + (",ir->type,ir->operands.access.root);
-        byte_offset(e,&path);
+        byte_offset(e,&path,NULL);
         metal_text(e,"));\n");
-    }
-    else if (resource != NULL) {
-        if (store) {
-            if (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE) {
-                metal_error(e, "Metal store targets a read-only resource");
-                return;
-            }
-            metal_format(e, "doe_store%u(", ir->type);
-        } else {
-            metal_value(e, ir->result);
-            metal_format(e, " = doe_%s%u(", resource->kind == DOE_COMPILER_UNIFORM_BUFFER ? "uniform" : "load", ir->type);
-        }
-        metal_format(e, "ctx.r%u + (", ir->operands.access.root);
-        byte_offset(e, &path);
-        metal_text(e, ")");
-        if (store) {
-            metal_text(e, ", ");
-            metal_value(e, ir->operands.access.value);
-        }
-        metal_text(e, ");\n");
     } else if (ir->operands.access.category == ROOT_WORKGROUP &&
                e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_WORKGROUP) {
         if (store) metal_format(e, "doe_wstore%u(&(", ir->type);

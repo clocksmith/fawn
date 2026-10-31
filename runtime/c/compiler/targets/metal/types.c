@@ -223,6 +223,27 @@ static void memory_body(MetalEmitter *e, TypeId type, unsigned mode) {
     }
     metal_text(e, "}\n");
 }
+/* A 32-bit scalar resource helper is needed only when an aggregate helper's
+ * recursion reaches it; direct accesses of that scalar are written at their site. */
+static bool resource_helper_used(MetalEmitter *e, uint32_t resource, TypeId type, bool store, const char **error) {
+    const CompilerWorkspace *c = e->module;
+    if (!metal_direct_scalar(type))
+        return target_access_helper_used(c, &e->closure, ROOT_RESOURCE, resource, type, store, &e->traversal_left, error);
+    for (uint32_t function = 0u; function < c->function_count; ++function) {
+        if (!target_spend(&e->traversal_left, error)) return false;
+        if (!target_function_used(&e->closure, function)) continue;
+        const FunctionRecord *f = &c->functions[function];
+        for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
+            if (!target_spend(&e->traversal_left, error)) return false;
+            const IrInstruction *ir = &c->instructions[i];
+            if (ir->opcode != (store ? IR_ACCESS_STORE : IR_ACCESS_LOAD) || ir->type == type ||
+                ir->operands.access.category != ROOT_RESOURCE || ir->operands.access.root != resource) continue;
+            if (target_memory_dependency(c, &e->closure, ir->type, type, &e->traversal_left, error)) return true;
+            if (*error != NULL) return false;
+        }
+    }
+    return false;
+}
 static bool memory_helper_used(MetalEmitter *e, TypeId type, unsigned mode) {
     const CompilerWorkspace *c = e->module;
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
@@ -230,8 +251,7 @@ static bool memory_helper_used(MetalEmitter *e, TypeId type, unsigned mode) {
         if ((mode == 1u && kind != DOE_COMPILER_UNIFORM_BUFFER) ||
             (mode != 1u && kind != DOE_COMPILER_STORAGE_BUFFER)) continue;
         const char *error = NULL;
-        const bool used = target_access_helper_used(c, &e->closure, ROOT_RESOURCE,
-            i, type, mode == 2u, &e->traversal_left, &error);
+        const bool used = resource_helper_used(e, i, type, mode == 2u, &error);
         if (error != NULL) { metal_error(e, error); return false; }
         if (used) return true;
     }

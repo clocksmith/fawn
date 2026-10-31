@@ -116,6 +116,8 @@ static void function_body(MetalEmitter *e, uint32_t index) {
         metal_error(e, "Metal function IR or local range is invalid");
         return;
     }
+    MetalAssignment assignment;
+    metal_assignment_analyze(e, index, &assignment);
     signature(e, index);
     metal_text(e, " {\n");
     e->indent = 1u;
@@ -128,7 +130,7 @@ static void function_body(MetalEmitter *e, uint32_t index) {
     }
     for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
         const IrInstruction *ir = &c->instructions[i];
-        if (ir->result == 0u || ir->opcode == IR_HANDLE || (ir->opcode == IR_ADDRESS &&
+        if (ir->result == 0u || ir->opcode == IR_HANDLE || metal_inline_constant(ir) || (ir->opcode == IR_ADDRESS &&
             (ir->operands.access.category == ROOT_RESOURCE || ir->operands.access.category == ROOT_WORKGROUP))) continue;
         if (ir->result != i + 1u) {
             metal_error(e, "Metal value identity differs from its IR instruction slot");
@@ -136,8 +138,12 @@ static void function_body(MetalEmitter *e, uint32_t index) {
         }
         metal_indent(e);
         metal_type(e, ir->type);
-        metal_format(e, " v%u = ", ir->result);
-        metal_zero(e, ir->type);
+        metal_format(e, " v%u", ir->result);
+        /* Proven assigned before every use: no zero initializer. */
+        if (!metal_assigned(&assignment, ir->result)) {
+            metal_text(e, " = ");
+            metal_zero(e, ir->type);
+        }
         metal_text(e, ";\n");
     }
     e->current_function = index;
