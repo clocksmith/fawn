@@ -1,7 +1,106 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
 #include "../../backends/metal/src/progress.h"
+#include <limits.h>
 #include <stdlib.h>
+
+/* Owner decision 2026-10-31, superseding the 2026-10-24 worker wake for Metal:
+ * Metal reports completion through each command buffer's completed handler, as
+ * Dawn does (QueueMTL.mm:234-240). Submission no longer wakes the progress
+ * worker under the device mutex. The handler runs on a Metal-owned thread, never
+ * takes the device mutex and never retires anything: public calls keep retiring
+ * through routine settlement, and once the device is destroyed (no external
+ * device reference remains) the handler wakes the worker, which retires what is
+ * left under its ordinary device lease. Its own references (device plus one per
+ * registered handler) let a late handler outlive the device. */
+typedef struct native_metal_completion {
+    atomic_uint references;
+    atomic_bool armed;
+    atomic_uint_fast64_t count; /* Handlers run so far. */
+    doe_mutex mutex;            /* Orders a wake against device detach. */
+    native_device *device;      /* Guarded by mutex; NULL once detached. */
+} native_metal_completion;
+
+static void completion_release(native_metal_completion *completion)
+{
+    if (atomic_fetch_sub_explicit(&completion->references, 1, memory_order_acq_rel) != 1) return;
+    if (doe_mutex_destroy(&completion->mutex).status != DOE_HOST_OK) abort();
+    free(completion);
+}
+
+static void completion_acquire(void *data)
+{
+    native_metal_completion *completion = data;
+    if (atomic_fetch_add_explicit(&completion->references, 1, memory_order_relaxed) == UINT_MAX) abort();
+}
+
+/* Metal's completion thread, once per committed command (or synchronously when
+ * registration failed). The device condition outlives every wake: detach takes
+ * this mutex before the device destroys it. */
+static void completion_notify(void *data)
+{
+    native_metal_completion *completion = data;
+    atomic_fetch_add_explicit(&completion->count, 1, memory_order_release);
+    if (atomic_load_explicit(&completion->armed, memory_order_acquire)) {
+        if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
+        if (completion->device &&
+            doe_condition_signal(&completion->device->pending_changed).status != DOE_HOST_OK) abort();
+        if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
+    }
+    completion_release(completion);
+}
+
+bool native_metal_completion_attach(native_device *device)
+{
+    native_metal_completion *completion = calloc(1, sizeof(*completion));
+    if (!completion) return false;
+    if (doe_mutex_init(&completion->mutex, false).status != DOE_HOST_OK) {
+        if (doe_mutex_destroy(&completion->mutex).status != DOE_HOST_OK) abort();
+        free(completion);
+        return false;
+    }
+    atomic_init(&completion->references, 1);
+    atomic_init(&completion->armed, false);
+    atomic_init(&completion->count, 0);
+    completion->device = device;
+    const doe_mtl_completion_sink sink = {completion, completion_acquire, completion_notify};
+    if (doe_mtl_context_set_completion(device->backend.value.metal.context, sink) != DOE_MTL_OK) {
+        completion_release(completion);
+        return false;
+    }
+    device->metal_completion = completion;
+    return true;
+}
+
+void native_metal_completion_detach(native_device *device)
+{
+    native_metal_completion *completion = device->metal_completion;
+    if (!completion) return;
+    if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
+    completion->device = NULL;
+    if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
+    device->metal_completion = NULL;
+    completion_release(completion);
+}
+
+/* Device mutex held. From now on handlers wake the worker. */
+void native_metal_completion_arm(native_device *device)
+{
+    if (device->metal_completion)
+        atomic_store_explicit(&device->metal_completion->armed, true, memory_order_release);
+}
+
+bool native_metal_completion_armed(const native_device *device)
+{
+    return device->metal_completion &&
+        atomic_load_explicit(&device->metal_completion->armed, memory_order_acquire);
+}
+
+uint64_t native_metal_completion_count(const native_device *device)
+{
+    return device->metal_completion ?
+        (uint64_t)atomic_load_explicit(&device->metal_completion->count, memory_order_acquire) : 0;
+}
 
 /* Only the existing pending owner can authorize waiting/retrying a conflict.
  * An unsubmitted foreign owner is BUSY, never a reason to wait or dispatch. */

@@ -2,6 +2,7 @@
 #ifndef DOE_MTL_INTERNAL_H
 #define DOE_MTL_INTERNAL_H
 #include "native.h"
+#include "progress.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -13,6 +14,7 @@ struct doe_mtl_context {
     void *queue;
     void *timeline;
     uint64_t timeline_next;
+    doe_mtl_completion_sink completion; /* notify == NULL: none configured. */
     doe_mtl_caps caps;
 };
 struct doe_mtl_buffer {

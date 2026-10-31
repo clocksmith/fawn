@@ -21,6 +21,9 @@ _Static_assert(__builtin_types_compatible_p(intptr_t, NSInteger), "NSInteger cal
 _Static_assert(__builtin_types_compatible_p(doe_objc_bool, BOOL), "BOOL call ABI");
 _Static_assert(__builtin_types_compatible_p(doe_objc_event_wait_call,
     BOOL (*)(void *, void *, uint64_t, uint64_t)), "shared event wait call ABI");
+/* doe_mtl_objc_completed_handler passes void (^)(void *): one object argument. */
+_Static_assert(__builtin_types_compatible_p(MTLCommandBufferHandler, void (^)(id<MTLCommandBuffer>)),
+    "addCompletedHandler: block ABI");
 SAME_LAYOUT(doe_mtl_size, MTLSize);
 SAME_FIELD(doe_mtl_size, MTLSize, width);
 SAME_FIELD(doe_mtl_size, MTLSize, height);

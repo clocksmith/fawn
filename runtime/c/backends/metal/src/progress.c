@@ -2,6 +2,16 @@
 #include "internal.h"
 #include "progress.h"
 
+doe_mtl_status doe_mtl_context_set_completion(doe_mtl_context *context,
+    doe_mtl_completion_sink sink)
+{
+    if (!context || context->references != 1 || context->completion.notify ||
+        !sink.acquire || !sink.notify) return DOE_MTL_INVALID_STATE;
+    if (!context->native.completed_handler) return DOE_MTL_UNSUPPORTED;
+    context->completion = sink;
+    return DOE_MTL_OK;
+}
+
 bool doe_mtl_commands_in_flight(const doe_mtl_commands *commands)
 {
     return commands && commands->state == DOE_MTL_SUBMITTED;

@@ -174,6 +174,9 @@ typedef struct doe_mtl_objc {
     void *dispatch;
     void *dispatch_indirect;
     void *commit;
+    void *add_completed_handler;
+    /* objc_msgSend, cast at the call to take the block argument. */
+    doe_objc_message handler_message;
     void *wait;
     void *status;
     void *error;
@@ -271,5 +274,7 @@ doe_mtl_status doe_mtl_objc_dispatch_indirect(void *userdata, void *command, voi
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error);
 void doe_mtl_objc_commit(void *userdata, void *command);
+doe_mtl_status doe_mtl_objc_completed_handler(void *userdata, void *command,
+    void (*notify)(void *), void *data, doe_mtl_error *error);
 size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error);
 #endif

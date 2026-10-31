@@ -75,6 +75,7 @@ typedef struct native_device {
     doe_mtl_draw_guard *metal_draw_guard;
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;
+    struct native_metal_completion *metal_completion; /* Metal devices; see metal_progress.c. */
     native_failure retired_failure;
     /* Vulkan: unsubmitted zero initialization of newly created textures,
      * flushed ahead of the next recording that may touch them. */
@@ -331,6 +332,13 @@ native_queue_settlement native_settle_routine(native_device *device);
 native_failure native_settle_for_buffer(native_device *device, const native_buffer *buffer);
 /* Caller owns the device mutex at depth one and its ordinary call lease. */
 native_failure native_metal_wait_owner(native_device *, doe_mtl_commands *, const struct timespec *);
+/* Metal completion notification: attach before any submission, detach before
+ * the device's progress condition is destroyed. */
+bool native_metal_completion_attach(native_device *);
+void native_metal_completion_detach(native_device *);
+void native_metal_completion_arm(native_device *);
+bool native_metal_completion_armed(const native_device *);
+uint64_t native_metal_completion_count(const native_device *);
 native_failure native_metal_record_batch(native_device *, native_command_handle *, doe_resource_commands **, size_t);
 /* Lowers a resource command list into native commands (the one recorder for
  * queue submission and compute-program recording/replay). */

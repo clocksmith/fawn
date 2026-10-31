@@ -64,9 +64,76 @@ static void rollback_groups(void)
     mock_assert_closed(&mock);
 }
 
+typedef struct completion_ledger { unsigned acquired, notified; } completion_ledger;
+static void ledger_acquire(void *data) { ++((completion_ledger *)data)->acquired; }
+static void ledger_notify(void *data)
+{
+    completion_ledger *ledger = data;
+    assert(ledger->notified < ledger->acquired);
+    ++ledger->notified;
+}
+
+/* Every committed command registers exactly one completed handler, after its
+ * last fallible encode; Metal reports success and failure through it, and a
+ * failed registration reports synchronously without committing. */
+static void completion_handlers(void)
+{
+    mock_native mock;
+    completion_ledger ledger = {0};
+    const doe_mtl_completion_sink sink = {&ledger, ledger_acquire, ledger_notify};
+    doe_mtl_native bare = mock_driver(&mock);
+    bare.completed_handler = NULL;
+    doe_mtl_context *context = NULL;
+    assert(doe_mtl_context_open(bare,&context,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_context_set_completion(context,sink) == DOE_MTL_UNSUPPORTED);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+
+    assert(doe_mtl_context_open(mock_driver(&mock),&context,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_context_set_completion(context,sink) == DOE_MTL_OK);
+    assert(doe_mtl_context_set_completion(context,sink) == DOE_MTL_INVALID_STATE);
+    doe_mtl_buffer *buffer = NULL;
+    assert(doe_mtl_buffer_create(context,64,DOE_MTL_SHARED,&buffer,NULL) == DOE_MTL_OK);
+    doe_mtl_commands *ok = NULL, *failed = NULL, *refused = NULL;
+    assert(doe_mtl_commands_create(context,&ok,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_fill(ok,buffer,0,64,1,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_submit(ok,NULL) == DOE_MTL_OK);
+    assert(mock.handlers == 1 && ledger.acquired == 1 && ledger.notified == 0);
+    assert(doe_mtl_commands_poll(ok,NULL) == DOE_MTL_PENDING && ledger.notified == 0);
+    mock_command_result(ok->native,4,0);
+    assert(ledger.notified == 1);
+    assert(doe_mtl_commands_poll(ok,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_release(ok) == DOE_MTL_OK);
+
+    assert(doe_mtl_commands_create(context,&failed,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_fill(failed,buffer,0,64,2,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_submit(failed,NULL) == DOE_MTL_OK);
+    mock_command_result(failed->native,5,-31);
+    assert(ledger.acquired == 2 && ledger.notified == 2);
+    assert(doe_mtl_commands_poll(failed,NULL) == DOE_MTL_EXECUTION_FAILED);
+    assert(doe_mtl_commands_release(failed) == DOE_MTL_OK);
+
+    doe_mtl_buffer *spare = NULL; /* buffer is poisoned by the failed command. */
+    assert(doe_mtl_buffer_create(context,64,DOE_MTL_SHARED,&spare,NULL) == DOE_MTL_OK);
+    mock.fail = MOCK_HANDLER;
+    assert(doe_mtl_commands_create(context,&refused,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_fill(refused,spare,0,64,3,NULL) == DOE_MTL_OK);
+    doe_mtl_error error = {0};
+    assert(doe_mtl_commands_submit(refused,&error) == DOE_MTL_NATIVE_FAILURE && error.native_code == -71);
+    assert(mock.commits == 2 && ledger.acquired == 3 && ledger.notified == 3);
+    assert(!doe_mtl_commands_in_flight(refused) && doe_mtl_commands_release(refused) == DOE_MTL_OK);
+    mock.fail = MOCK_NONE;
+    assert(!spare->owner && spare->initialized);
+    doe_mtl_buffer_release(spare);
+    doe_mtl_buffer_release(buffer);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
+
 int main(void)
 {
     rollback_groups();
+    completion_handlers();
     mock_native mock;
     doe_mtl_context *context = NULL;
     assert(doe_mtl_context_open(mock_driver(&mock),&context,NULL) == DOE_MTL_OK);
