@@ -27,6 +27,10 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 - Unknown completion retains every resource; timeout is not completion.
 - State publishes at accepted `vkQueueSubmit`; refusal poisons it (owner-authorized 2026-10-24).
 - No interpreter, silent backend substitution or production default change.
+- Adapter-dependent resource policy is the one recorded rule
+  (`doe_vk_resource_profile_select`: AMD vendor for descriptor blocks; AMD plus a
+  >= 4 GiB CPU-writable device-local heap for device-local host writes; owner-authorized
+  2026-10-31); other adapters keep the DEFAULT path unchanged.
 - Pinned ABI verification, software execution and physical qualification remain distinct.
 - Caller serialization and ownership transfer remain explicit.
 - Acquisition and presentation fences are distinct from command completion; unsupported WSI never fabricates a surface.

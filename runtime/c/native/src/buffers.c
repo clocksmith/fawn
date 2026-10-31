@@ -78,7 +78,8 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
         NATIVE_UNSUPPORTED : native_device_result(device));
     if (failure.status == NATIVE_OK)
         failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage,
-            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation);
+            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation,
+            (descriptor->usage & (WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite)) != 0);
     doe_resource_status created = DOE_RESOURCE_OK;
     if (failure.status == NATIVE_OK) {
         created = doe_resource_buffer_create(&device->resources, &desc,

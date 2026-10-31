@@ -262,7 +262,7 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, 
     const unsigned char **out);
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
 native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
-    bool direct_readback);
+    bool direct_readback, bool host_mapped);
 void native_buffer_close(native_buffer *buffer);
 native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);

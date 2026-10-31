@@ -58,6 +58,9 @@ struct doe_vk_context {
     /* Compute pipelines by exact creation input, most recent first: live
      * ones and up to DOE_VK_RETAINED_PIPELINES released ones; see pipeline.c. */
     struct doe_vk_pipeline *compute_pipelines;
+    /* Free-able descriptor pools that dispatch uses allocate their sets from;
+     * see descriptors.c. Accessed only under the owning device's serialization. */
+    struct doe_vk_descriptor_block *descriptor_blocks;
     uint32_t retained_pipelines;
     VkPipelineCache driver_cache;
     char *driver_cache_path;
@@ -75,6 +78,10 @@ struct doe_vk_context {
 enum { DOE_VK_RETAINED_PIPELINES = 32 };
 /* Destroys released compute pipelines; the context is releasing its device. */
 void doe_vk_pipeline_cache_clear(doe_vk_context *context);
+/* Destroys every descriptor pool block; the context is releasing its device. */
+void doe_vk_descriptor_blocks_clear(doe_vk_context *context);
+/* DOE_VK_RESOURCE_* bits for an adapter (doe_vk.h); pure, so tests can pin the rule. */
+uint32_t doe_vk_resource_profile_select(uint32_t vendor_id, const VkPhysicalDeviceMemoryProperties *memory);
 void doe_vk_driver_cache_clear(doe_vk_context *context);
 void doe_vk_driver_cache_record(doe_vk_context *context, bool success);
 doe_vk_status doe_vk_pipeline_blob_open(doe_vk_context *context, const doe_vk_pipeline_blob *blob,

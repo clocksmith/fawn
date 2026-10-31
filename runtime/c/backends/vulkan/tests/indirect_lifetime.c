@@ -3,6 +3,14 @@
 #include <assert.h>
 #include <stdio.h>
 
+/* Built twice: the DEFAULT resource profile (exact per-use pool) and, with
+ * DOE_VK_TEST_PROFILE_AMD, DESCRIPTOR_BLOCKS (one free-able context block). */
+#ifdef DOE_VK_TEST_PROFILE_AMD
+#define TEST_PROFILE DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS
+#else
+#define TEST_PROFILE 0u
+#endif
+
 /* Native packet/lifetime observation only, not a CPU shader implementation. */
 static unsigned sequence, barriers, pipelines_destroyed, buffers_destroyed, pools_destroyed;
 static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
@@ -22,7 +30,9 @@ static void copy_buffer(VkCommandBuffer command, VkBuffer source, VkBuffer desti
 static VkResult create_pool(VkDevice device, const VkDescriptorPoolCreateInfo *info,
     const VkAllocationCallbacks *allocator, VkDescriptorPool *out) {
     (void)device; (void)allocator;
-    assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
+    if (TEST_PROFILE != 0u)
+        assert(info->flags == 1 && info->maxSets >= 1 && info->poolSizeCount == 5); /* One free-able context block. */
+    else assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
     *out = 9;
     return 0;
 }
@@ -77,6 +87,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
     assert(buffer == 3);
     ++buffers_destroyed;
 }
+static unsigned sets_freed;
+static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
+    (void)device;
+    assert(pool == 9 && count == 1 && sets[0] == 10);
+    ++sets_freed;
+    return 0;
+}
 static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocationCallbacks *allocator) {
     (void)device; (void)allocator;
     assert(pool == 9);
@@ -90,6 +107,7 @@ static VkResult wait_lost(VkDevice device, uint32_t count, const VkFence *fences
 }
 int main(void) {
     doe_vk_context context = {.references = 5}; /* Caller, two pipelines, scratch, commands. */
+    context.caps.resource_profile = TEST_PROFILE;
     context.caps.max_workgroup_count[0] = context.caps.max_workgroup_count[1] = context.caps.max_workgroup_count[2] = 1;
     context.caps.storage_offset_alignment = 16;
     context.caps.max_storage_buffer_range = 12;
@@ -99,7 +117,7 @@ int main(void) {
         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch, .vkCmdDispatchIndirect = dispatch_indirect,
         .vkDestroyPipeline = destroy_pipeline, .vkDestroyPipelineLayout = destroy_layout,
         .vkDestroyDescriptorSetLayout = destroy_set, .vkDestroyBuffer = destroy_buffer,
-        .vkDestroyDescriptorPool = destroy_pool, .vkWaitForFences = wait_lost};
+        .vkDestroyDescriptorPool = destroy_pool, .vkFreeDescriptorSets = free_sets, .vkWaitForFences = wait_lost};
     doe_vk_dispatch_validator *validator = calloc(1, sizeof(*validator));
     doe_vk_buffer *scratch = calloc(1, sizeof(*scratch));
     doe_vk_pipeline *sanitize = calloc(1, sizeof(*sanitize)), *target = calloc(1, sizeof(*target));
@@ -139,7 +157,11 @@ int main(void) {
     commands->state = DOE_VK_SUBMITTED;
     assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_DEVICE_LOST);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
-    assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && pools_destroyed == 1);
+    if (TEST_PROFILE != 0u) {
+        assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && sets_freed == 1 && pools_destroyed == 0);
+        doe_vk_descriptor_blocks_clear(&context); /* The context block outlives the recording. */
+    } else assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && sets_freed == 0);
+    assert(pools_destroyed == 1);
     assert(context.references == 1 && args.references == 1 && args.content_status == DOE_VK_DEVICE_LOST);
     puts("PASS indirect copy/guard/target-bind/dispatch ordering, exact12-byte scratch, barriers, last-byte and usage/type/late-target rejection before native work, early validator release and uncertain/failed retirement");
     return 0;

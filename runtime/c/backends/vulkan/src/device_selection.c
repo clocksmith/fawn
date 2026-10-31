@@ -180,6 +180,24 @@ doe_vk_status doe_vk_choose_device(doe_vk_context *context,
     context->vk.vkGetPhysicalDeviceMemoryProperties(context->physical, &context->memory);
     if (context->memory.memoryTypeCount > 32 || context->memory.memoryHeapCount > 16)
         return doe_vk_fail(DOE_VK_NATIVE_FAILURE, "invalid device memory properties", error);
+    /* The only adapter-dependent resource policy (doe_vk.h). */
+    caps->resource_profile = doe_vk_resource_profile_select(p->vendorID, &context->memory);
     return DOE_VK_OK;
 }
 
+uint32_t doe_vk_resource_profile_select(uint32_t vendor_id, const VkPhysicalDeviceMemoryProperties *memory) {
+    if (vendor_id != 0x1002) return 0;
+    uint32_t profile = DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS;
+    const uint32_t writable = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    /* The first such type is the one HOST_DEVICE_LOCAL placement selects. */
+    for (uint32_t i = 0; i < memory->memoryTypeCount && i < 32; ++i) {
+        const VkMemoryType *type = &memory->memoryTypes[i];
+        if ((type->propertyFlags & writable) != writable) continue;
+        if (type->heapIndex < memory->memoryHeapCount && type->heapIndex < 16 &&
+                memory->memoryHeaps[type->heapIndex].size >= DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES)
+            profile |= DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES;
+        break;
+    }
+    return profile;
+}

@@ -18,6 +18,26 @@ distinct from permitting CPU at an exact ordinal. Query the official ID-properti
 vendor/device numbers, pipeline-cache UUIDs or instance-local handles. Keep UUIDs
 as owned values and independent contexts under their existing serialization rule.
 
+Adapter-dependent resource policy is one pure rule, doe_vk_resource_profile_select
+in device_selection.c, run once from the selected adapter's vendorID and actual
+VkPhysicalDeviceMemoryProperties into caps.resource_profile (owner authorized
+2026-10-31). DESCRIPTOR_BLOCKS: vendorID 0x1002 (any driver) takes dispatch sets
+from reusable FREE_DESCRIPTOR_SET context blocks. DEVICE_LOCAL_HOST_WRITES:
+vendorID 0x1002 and the first DEVICE_LOCAL|HOST_VISIBLE|HOST_COHERENT type's heap
+is at least 4 GiB; host-only-written buffers then prefer that type. Every other
+adapter keeps the DEFAULT path (one exact pool per dispatch use, host-cached
+placement) call for call. Evidence: M7R passed on amd-host RADV (round 5) and on
+windows-amd-host; device-local placement passed on the Strix Halo 41.3 GiB UMA
+heap and failed on windows-amd-host, whose only such type is a 256 MiB window
+(host writes 4.6x slower, no GPU gain). 4 GiB lies between those measured heaps
+and equals RADV's maxMemoryAllocationSize; untested sizes stay excluded until
+measured. Reports: reports/benchmarks/amd-vulkan/20261029-dropin-phase and
+reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase. RADV confirmation of
+the landed combined profile is pending. Descriptor and placement code branch only
+on these bits, never on names, device IDs or drivers; no second vendor or heap
+test may appear elsewhere. Changing the vendor scope or threshold needs frozen
+evidence on the affected adapters.
+
 Keep buffer-only and mixed image/sampler dispatches on the same descriptor owner.
 Shader type/format/capability admission stays with the compiler/native consumer.
 Graphics packets must consume the existing resource render/bundle ordering. A

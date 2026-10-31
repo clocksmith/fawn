@@ -3,6 +3,14 @@
 #include <assert.h>
 #include <stdio.h>
 
+/* Built twice: the DEFAULT resource profile (exact per-use pool) and, with
+ * DOE_VK_TEST_PROFILE_AMD, DESCRIPTOR_BLOCKS (one free-able context block). */
+#ifdef DOE_VK_TEST_PROFILE_AMD
+#define TEST_PROFILE DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS
+#else
+#define TEST_PROFILE 0u
+#endif
+
 /* Native-boundary recording/lifetime injections only, never shader execution. */
 static unsigned sequence, destroyed_pipeline, destroyed_buffer, destroyed_pool;
 static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
@@ -32,7 +40,9 @@ static VkResult create_pool(VkDevice device, const VkDescriptorPoolCreateInfo *i
     const VkAllocationCallbacks *allocator, VkDescriptorPool *out) {
     (void)device;
     (void)allocator;
-    assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
+    if (TEST_PROFILE != 0u)
+        assert(info->flags == 1 && info->maxSets >= 1 && info->poolSizeCount == 5); /* One free-able context block. */
+    else assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
     *out = 9;
     return 0;
 }
@@ -93,6 +103,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
     assert(buffer == 3);
     ++destroyed_buffer;
 }
+static unsigned freed_sets;
+static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
+    (void)device;
+    assert(pool == 9 && count == 1 && sets[0] == 10);
+    ++freed_sets;
+    return 0;
+}
 static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocationCallbacks *allocator) {
     (void)device;
     (void)allocator;
@@ -111,6 +128,7 @@ static VkResult wait_failed(VkDevice device, uint32_t count, const VkFence *fenc
 
 int main(void) {
     doe_vk_context context = {.references = 4}; /* Caller, pipeline, scratch, commands. */
+    context.caps.resource_profile = TEST_PROFILE;
     context.caps.max_workgroup_count[0] = 8;
     context.caps.max_workgroup_count[1] = 1;
     context.caps.max_workgroup_count[2] = 1;
@@ -123,7 +141,7 @@ int main(void) {
         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch,
         .vkCmdCopyBuffer = copy_buffer, .vkDestroyPipeline = destroy_pipeline,
         .vkDestroyPipelineLayout = destroy_layout, .vkDestroyDescriptorSetLayout = destroy_set,
-        .vkDestroyBuffer = destroy_buffer, .vkDestroyDescriptorPool = destroy_pool,
+        .vkDestroyBuffer = destroy_buffer, .vkDestroyDescriptorPool = destroy_pool, .vkFreeDescriptorSets = free_sets,
         .vkWaitForFences = wait_failed};
     doe_vk_timestamp_normalizer *normalizer = calloc(1, sizeof(*normalizer));
     doe_vk_buffer *scratch = calloc(1, sizeof(*scratch));
@@ -170,7 +188,13 @@ int main(void) {
     commands->state = DOE_VK_SUBMITTED;
     assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_DEVICE_LOST);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
-    assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && destroyed_pool == 1);
+    /* Sets return to the context block at retirement; the block itself lives
+     * until the context releases its device. */
+    if (TEST_PROFILE != 0u) {
+        assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && freed_sets == 1 && destroyed_pool == 0);
+        doe_vk_descriptor_blocks_clear(&context);
+    } else assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && freed_sets == 0);
+    assert(destroyed_pool == 1);
     assert(context.references == 1 && destination.references == 1 && pool.references == 1);
     assert(destination.content_status == DOE_VK_DEVICE_LOST && pool.content_status == DOE_VK_DEVICE_LOST);
     puts("PASS timestamp native copy/zero/descriptor/dispatch/copy ordering, exact short binding, zero-count no-op, early normalizer release and uncertain/failure lifetime");

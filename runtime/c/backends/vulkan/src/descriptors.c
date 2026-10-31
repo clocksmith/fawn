@@ -80,9 +80,48 @@ static doe_vk_status validate_resources(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
-static doe_vk_status descriptor_pool(doe_vk_commands *commands,
+/* Descriptor sets follow the adapter's resource profile (doe_vk.h). Without
+ * DESCRIPTOR_BLOCKS each dispatch use creates an exact-size pool and destroys it
+ * at release. With it, uses allocate their sets from context-owned blocks created with
+ * FREE_DESCRIPTOR_SET and free them at release. A block that is exhausted or
+ * fragmented is skipped; a new block is created only when every block refuses.
+ * Either way a set is written once by its use and never updated while any
+ * recording holds it. */
+enum { DESCRIPTOR_BLOCK_SETS = 256, DESCRIPTOR_BLOCK_PER_TYPE = 1024 };
+enum { VK_ERROR_FRAGMENTED_POOL_VALUE = -12, VK_ERROR_OUT_OF_POOL_MEMORY_VALUE = -1000069000,
+    VK_DESCRIPTOR_POOL_FREE_SET = 0x1 };
+struct doe_vk_descriptor_block {
+    VkDescriptorPool pool;
+    struct doe_vk_descriptor_block *next;
+};
+
+static doe_vk_status descriptor_block(doe_vk_context *context, struct doe_vk_descriptor_block **out) {
+    struct doe_vk_descriptor_block *block = calloc(1, sizeof(*block));
+    if (block == NULL) return DOE_VK_OUT_OF_MEMORY;
+    VkDescriptorPoolSize sizes[5];
+    for (uint32_t i = 0; i < 5; ++i)
+        sizes[i] = (VkDescriptorPoolSize){ doe_vk_descriptor_type((doe_vk_binding_kind)i), DESCRIPTOR_BLOCK_PER_TYPE };
+    const VkDescriptorPoolCreateInfo pool = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_POOL_FREE_SET,
+        .maxSets = DESCRIPTOR_BLOCK_SETS,
+        .poolSizeCount = 5,
+        .pPoolSizes = sizes
+    };
+    doe_vk_status status = doe_vk_result(context, context->vk.vkCreateDescriptorPool(context->device,
+        &pool, NULL, &block->pool), "vkCreateDescriptorPool", NULL);
+    if (status != DOE_VK_OK) {
+        free(block);
+        return status;
+    }
+    block->next = context->descriptor_blocks;
+    context->descriptor_blocks = block;
+    *out = block;
+    return DOE_VK_OK;
+}
+
+static doe_vk_status use_pool(doe_vk_context *context,
     doe_vk_pipeline *pipeline, doe_vk_dispatch_use *use, VkDescriptorSet *sets) {
-    if (pipeline->group_count == 0) return DOE_VK_OK;
     uint32_t counts[5] = {0};
     for (uint32_t i = 0; i < pipeline->binding_count; ++i) ++counts[(uint32_t)pipeline->bindings[i].kind];
     VkDescriptorPoolSize sizes[5];
@@ -96,7 +135,6 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
         .poolSizeCount = size_count,
         .pPoolSizes = sizes
     };
-    doe_vk_context *context = commands->context;
     doe_vk_status status = doe_vk_result(context, context->vk.vkCreateDescriptorPool(context->device,
         &pool, NULL, &use->pool), "vkCreateDescriptorPool", NULL);
     if (status != DOE_VK_OK) return status;
@@ -108,6 +146,47 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
     };
     return doe_vk_result(context, context->vk.vkAllocateDescriptorSets(context->device,
         &allocate, sets), "vkAllocateDescriptorSets", NULL);
+}
+
+static doe_vk_status descriptor_pool(doe_vk_commands *commands,
+    doe_vk_pipeline *pipeline, doe_vk_dispatch_use *use, VkDescriptorSet *sets) {
+    if (pipeline->group_count == 0) return DOE_VK_OK;
+    doe_vk_context *context = commands->context;
+    if (!(context->caps.resource_profile & DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS))
+        return use_pool(context, pipeline, use, sets);
+    VkDescriptorSetAllocateInfo allocate = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorSetCount = pipeline->group_count,
+        .pSetLayouts = pipeline->sets
+    };
+    VkResult result = 0;
+    for (struct doe_vk_descriptor_block *block = context->descriptor_blocks; block != NULL; block = block->next) {
+        allocate.descriptorPool = block->pool;
+        result = context->vk.vkAllocateDescriptorSets(context->device, &allocate, sets);
+        if (result == 0) {
+            use->pool = block->pool;
+            return DOE_VK_OK;
+        }
+        if (result != VK_ERROR_FRAGMENTED_POOL_VALUE && result != VK_ERROR_OUT_OF_POOL_MEMORY_VALUE)
+            return doe_vk_result(context, result, "vkAllocateDescriptorSets", NULL);
+    }
+    struct doe_vk_descriptor_block *fresh = NULL;
+    doe_vk_status status = descriptor_block(context, &fresh);
+    if (status != DOE_VK_OK) return status;
+    allocate.descriptorPool = fresh->pool;
+    result = context->vk.vkAllocateDescriptorSets(context->device, &allocate, sets);
+    if (result == 0) use->pool = fresh->pool;
+    /* A refusal from a fresh block means the layout cannot fit: a failure. */
+    return result == 0 ? DOE_VK_OK : doe_vk_result(context, result, "vkAllocateDescriptorSets", NULL);
+}
+
+void doe_vk_descriptor_blocks_clear(doe_vk_context *context) {
+    while (context->descriptor_blocks != NULL) {
+        struct doe_vk_descriptor_block *block = context->descriptor_blocks;
+        context->descriptor_blocks = block->next;
+        context->vk.vkDestroyDescriptorPool(context->device, block->pool, NULL);
+        free(block);
+    }
 }
 
 static bool buffers_only(const doe_vk_binding_resource *bindings, size_t count) {
@@ -252,7 +331,10 @@ doe_vk_status doe_vk_commands_dispatch_resources(doe_vk_commands *commands,
 }
 
 void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use) {
-    if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
+    if (use->pool != 0 && (context->caps.resource_profile & DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS))
+        /* Freeing never fails for a FREE_DESCRIPTOR_SET pool. */
+        (void)context->vk.vkFreeDescriptorSets(context->device, use->pool, use->pipeline->group_count, use->sets);
+    else if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
     for (uint32_t i = 0; i < DOE_VK_MAX_BINDINGS; ++i) {
         doe_vk_texture_view_release(use->views[i]);
         doe_vk_sampler_release(use->samplers[i]);

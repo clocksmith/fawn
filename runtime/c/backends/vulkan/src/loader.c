@@ -91,6 +91,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCreateDescriptorPool) == sizeof(void *), "vkCreateDescriptorPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyDescriptorPool) == sizeof(void *), "vkDestroyDescriptorPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkAllocateDescriptorSets) == sizeof(void *), "vkAllocateDescriptorSets POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkFreeDescriptorSets) == sizeof(void *), "vkFreeDescriptorSets POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkUpdateDescriptorSets) == sizeof(void *), "vkUpdateDescriptorSets POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreatePipelineLayout) == sizeof(void *), "vkCreatePipelineLayout POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyPipelineLayout) == sizeof(void *), "vkDestroyPipelineLayout POSIX pointer size");
@@ -186,6 +187,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCreateDescriptorPool", &context->vk.vkCreateDescriptorPool, sizeof(context->vk.vkCreateDescriptorPool) },
         { "vkDestroyDescriptorPool", &context->vk.vkDestroyDescriptorPool, sizeof(context->vk.vkDestroyDescriptorPool) },
         { "vkAllocateDescriptorSets", &context->vk.vkAllocateDescriptorSets, sizeof(context->vk.vkAllocateDescriptorSets) },
+        { "vkFreeDescriptorSets", &context->vk.vkFreeDescriptorSets, sizeof(context->vk.vkFreeDescriptorSets) },
         { "vkUpdateDescriptorSets", &context->vk.vkUpdateDescriptorSets, sizeof(context->vk.vkUpdateDescriptorSets) },
         { "vkCreatePipelineLayout", &context->vk.vkCreatePipelineLayout, sizeof(context->vk.vkCreatePipelineLayout) },
         { "vkDestroyPipelineLayout", &context->vk.vkDestroyPipelineLayout, sizeof(context->vk.vkDestroyPipelineLayout) },
@@ -493,6 +495,7 @@ void doe_vk_context_release(doe_vk_context *context) {
     /* Every recording/submission/resource owns a reference, so no native work
      * can exist here. Unknown submissions cannot be released. */
     doe_vk_pipeline_cache_clear(context);
+    doe_vk_descriptor_blocks_clear(context);
     (void)doe_vk_context_pipeline_cache_flush(context, NULL);
     doe_vk_driver_cache_clear(context);
     doe_vk_command_spares_clear(context);
