@@ -82,6 +82,12 @@ bool spirv_matrix_construct(Emitter *, const IrInstruction *);
 bool spirv_matrix_arithmetic(Emitter *, const IrInstruction *);
 bool spirv_matrix_member(Emitter *, uint32_t, uint32_t, TypeId);
 bool spirv_runtime_length(Emitter *, uint32_t, uint32_t);
+bool spirv_literal_index(const CompilerWorkspace *, uint32_t, uint32_t *);
+bool spirv_index_below(const CompilerWorkspace *, uint32_t, uint32_t);
+/* Storage/uniform resource accesses clamp their indices (spirv_clamp.c). */
+bool spirv_clamped_access(const IrInstruction *);
+bool spirv_plan_clamps(Emitter *, const IrInstruction *);
+bool spirv_clamp_index(Emitter *, const IrInstruction *, const TypeRecord *, uint32_t, uint32_t *);
 bool spirv_emit_error(Emitter *e, uint32_t offset, const char *message);
 uint32_t spirv_reserve_ids(Emitter *e, uint32_t count);
 uint32_t spirv_scalar_type(TypeId type);

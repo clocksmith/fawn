@@ -119,9 +119,10 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     const native_stage stage = *selected;
     const doe_shader_view *view = &stage.view;
     const DoeCompilerEntryV5 *entry = stage.entry;
-    /* The C compiler emits guarded storage accesses, including OpArrayLength
-     * for runtime tails (compiler/src/spirv.c access_condition). This baseline
-     * Vulkan context also requires robustBufferAccess. No TranslationInfo
+    /* The C compiler clamps storage and uniform indices to their last element,
+     * reading runtime-tail lengths with OpArrayLength (compiler/src/spirv_clamp.c).
+     * This baseline Vulkan context also requires robustBufferAccess, which bounds a
+     * below-minimum empty tail. No TranslationInfo
      * metadata is fabricated; texture bounds use the compiler image guards; subgroup paths remain unprovided. */
     if (!entry || entry->stage != DOE_COMPILER_STAGE_COMPUTE || entry->workgroup_storage_bytes > device->backend.limits.maxComputeWorkgroupStorageSize) {
         pipeline_failure(error, WGPUErrorType_Validation,

@@ -10,8 +10,16 @@ static const uint32_t retained_expected[RETAINED_WORDS] = {3,CANARY,CANARY,CANAR
 /* Independent finite tables: no expected value comes from an emitter, shader
  * execution or a host WGSL evaluator. All four seed words remain unchanged.
  * Traces1234/5678 distinguish eager evaluation from short-circuit reduction;
- * counts1/2 distinguish one vector argument from repeated scalar arguments. */
+ * counts1/2 distinguish one vector argument from repeated scalar arguments.
+ * Words 16, 17 and 19 read data[32u] and data[0xffffffffu] past the 32-word
+ * binding: HLSL and SPIR-V clamp them to data[31] (seed 99), giving 1, 0, 1
+ * (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c); the MSL guard
+ * loads zero, giving 0, 1, 0. */
 static const uint32_t cases_expected[2][CASE_WORDS] = {
+    {0,1,0,1,0,0,0,0,0,1,1,0,0,1,0,1,1,0,1,1,5678,0,1234,1,5678,1,1,2,0,7,0,99},
+    {0,1,0,1,1,1,1,1,0,1,1,0,0,1,1,1,1,0,1,1,5678,0,1234,1,5678,1,1,2,1,7,0,99}
+};
+static const uint32_t cases_guarded[2][CASE_WORDS] = {
     {0,1,0,1,0,0,0,0,0,1,1,0,0,1,0,1,0,1,1,0,5678,0,1234,1,5678,1,1,2,0,7,0,99},
     {0,1,0,1,1,1,1,1,0,1,1,0,0,1,1,1,0,1,1,0,5678,0,1234,1,5678,1,1,2,1,7,0,99}
 };
@@ -68,7 +76,8 @@ static void run_case(state *s,const char *label,const char *source,bool retained
     wgpuBufferRelease(data);
     submit(s,encoder);
     const uint32_t *actual = map(s,readback,bytes);
-    const uint32_t *expected = retained ? retained_expected : cases_expected[flag];
+    const bool clamps = adapter_class_backend() != WGPUBackendType_Metal;
+    const uint32_t *expected = retained ? retained_expected : clamps ? cases_expected[flag] : cases_guarded[flag];
     for (size_t i = 0; i < total; ++i) {
         const uint32_t wanted = i < prefix || i >= prefix + count ? CANARY : expected[i - prefix];
         if (actual[i] != wanted)
@@ -97,7 +106,7 @@ int main(int argc,char **argv)
     free(retained);
     free(cases);
     consumer_finish(&s);
-    printf("PASS public all/any: unchanged retained/cases WGSL, scalar and bool-vector reductions, eager traces1234/5678, once-only operand counts, 68 exact words, descriptor-edge/max-u32 OOB, allocation prefix/suffix, early releases %s\n",
+    printf("PASS public all/any: unchanged retained/cases WGSL, scalar and bool-vector reductions, eager traces1234/5678, once-only operand counts, 68 exact words, descriptor-edge/max-u32 OOB per target contract, allocation prefix/suffix, early releases %s\n",
         adapter_class_scope());
     return 0;
 }

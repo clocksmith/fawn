@@ -69,7 +69,10 @@ class TestComputeExpressions(CompilerFixture):
                               (0, 1): [float_bits(99)] * 5}
                     for x in range(5):
                         execute(instructions, memory, 0, inputs={26: (x, 0, 0)})
-                    self.assertEqual(memory[(0, 1)], memory[(0, 0)] + [0] * (5 - size))
+                    # input[x] clamps to its last element (compiler/src/spirv_clamp.c); an empty range reads zero.
+                    source_values = memory[(0, 0)]
+                    self.assertEqual(memory[(0, 1)], [source_values[min(x, size - 1)] if size else 0
+                                                      for x in range(5)])
             else:
                 self.assertEqual(reflection["binding_count"], 0)
                 self.assertFalse(any(op == 62 for op, _ in instructions))
@@ -86,11 +89,13 @@ class TestComputeExpressions(CompilerFixture):
                 memory[(0, 3)] = [float_bits(99)] * 8
                 uniform = {(0, 0): struct.pack("<4I", 3, 2, 7, 11)}
                 expected = memory[(0, 3)][:]
+                # token_ids and embed_table indices clamp to their last element
+                # (compiler/src/spirv_clamp.c); an empty range reads zero.
                 for row in range(3):
                     for column in range(2):
-                        token = tokens[row] if row < len(tokens) else 0
+                        token = tokens[min(row, len(tokens) - 1)] if tokens else 0
                         index = (token * 2 + column) & 0xFFFFFFFF
-                        expected[row * 2 + column] = float_bits(table[index]) if index < len(table) else 0
+                        expected[row * 2 + column] = float_bits(table[min(index, len(table) - 1)]) if table else 0
                 for y in range(3):
                     for x in range(256):
                         execute(instructions, memory, (x, y, 0), uniform)
@@ -141,10 +146,11 @@ class TestComputeExpressions(CompilerFixture):
         for token in (0, 1, 0x80000000, 0xFFFFFFFF):
             for lane in (0, 1, 0xFFFFFFFF):
                 memory = {(0, 0): [token], (0, 1): [91, 92, 93, 94]}
-                selected = ((token if lane == 0 else 0) * 2 + 1) & 0xFFFFFFFF
+                # Every src index clamps to src[0] = token and the store to out[3]
+                # at most (compiler/src/spirv_clamp.c).
+                selected = (token * 2 + 1) & 0xFFFFFFFF
                 expected = memory[(0, 1)][:]
-                if selected < len(expected):
-                    expected[selected] = ((token if selected == 0 else 0) + 7) & 0xFFFFFFFF
+                expected[min(selected, 3)] = (token + 7) & 0xFFFFFFFF
                 execute(instructions, memory, lane)
                 self.assertEqual(memory[(0, 1)], expected)
                 self.assertEqual(memory[(0, 0)], [token])
@@ -152,10 +158,12 @@ class TestComputeExpressions(CompilerFixture):
         memory = {(0, 0): [37], (0, 1): [99]}
         execute(instructions, memory, 0)
         self.assertEqual(memory[(0, 1)], [37])
-        # A malformed Phi predecessor cannot silently select a fallback value.
-        bad = [(op, (*args[:3], 0, *args[4:])) if op == 245 else (op, args)
+        # The clamp is branch-free: no guard Phi. A clamp that always selects the
+        # raw index cannot silently form an out-of-range pointer.
+        self.assertFalse(any(op in (245, 247) for op, _ in instructions))
+        bad = [(op, (*args[:4], args[3])) if op == 169 else (op, args)
                for op, args in instructions]
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(AssertionError, "unclamped element pointer"):
             execute(bad, {(0, 0): [37], (0, 1): [99]}, 0)
 
     def test_general_comparisons_scopes_and_snapshot_order(self) -> None:
@@ -164,7 +172,9 @@ class TestComputeExpressions(CompilerFixture):
                 "if(out[0u]>src[9u]){out[1u]=old;}else{return;}}"
                 "else{out[1u]=77u;}out[2u]=out[1u];")
         instructions, _ = self.compile(STORAGE + ENTRY + body + "}")
-        for values, expected in (([2, 7], [9, 33, 33]), ([], [9, 33, 33]), ([8, 7], [9, 77, 77])):
+        # src[9u] clamps to the last word (compiler/src/spirv_clamp.c); an empty range reads zero.
+        for values, expected in (([2, 7], [9, 77, 77]), ([], [9, 33, 33]), ([8, 7], [9, 77, 77]),
+                                 ([0, 0], [9, 33, 33]), ([0, 20, 9], [9, 44, 55])):
             memory = {(0, 0): values[:], (0, 1): [33, 44, 55]}
             execute(instructions, memory, 0)
             self.assertEqual(memory[(0, 1)], expected)

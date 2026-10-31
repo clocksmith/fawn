@@ -456,6 +456,7 @@ bool spirv_plan_module(Emitter *e) {
     for (uint32_t i = 0u; i < c->instruction_count; ++i) {
         const IrInstruction *ir = &c->instructions[i];
         plan_scalar_guards(e, ir);
+        if (!spirv_plan_clamps(e, ir)) return false;
         if (ir->opcode == IR_CONSTANT) {
             if (ir->operands.scalar.left != 0u) {
                 if (!plan_constant(e, ir->operands.scalar.binding)) return false;
@@ -464,7 +465,7 @@ bool spirv_plan_module(Emitter *e) {
         } else if (atomic_opcode(ir->opcode)) {
             const uint32_t storage = ir->operands.access.category == ROOT_WORKGROUP ? 4u : 12u;
             if (spirv_pointer_type(e, atomic_element(c, ir), storage) == 0u ||
-                (ir->type != IR_VOID && spirv_zero_constant(e, ir->type) == 0u)) return false;
+                (ir->type != IR_VOID && !spirv_clamped_access(ir) && spirv_zero_constant(e, ir->type) == 0u)) return false;
             (void)spirv_unsigned_constant(e, ir->operands.access.category == ROOT_WORKGROUP ? 2u : 1u);
             (void)spirv_unsigned_constant(e, 0u);
         } else if (ir->opcode == IR_IMAGE) {
@@ -512,7 +513,11 @@ bool spirv_plan_module(Emitter *e) {
                 category == ROOT_WORKGROUP ? c->workgroups[ir->operands.access.root].state.resolved.address_space : 7u;
             if (ir->opcode != IR_VALUE_ACCESS || ir->operands.access.value != NO_ID)
                 if (spirv_pointer_type(e, ir->type, storage) == 0u) return false;
-            if (ir->opcode != IR_ACCESS_STORE && spirv_zero_constant(e, ir->type) == 0u) return false;
+            /* A guarded load merges a typed zero and a raw uniform load starts its
+             * composite from one; other clamped loads use none. */
+            const bool raw = category == ROOT_RESOURCE && spirv_uniform_raw(e, &c->resources[ir->operands.access.root]);
+            if (ir->opcode != IR_ACCESS_STORE && (raw || !spirv_clamped_access(ir)) &&
+                spirv_zero_constant(e, ir->type) == 0u) return false;
             if (category == ROOT_WORKGROUP && storage != MODULE_IMMEDIATE && spirv_workgroup_zero(e, ir->type) == 0u) return false;
         }
     }

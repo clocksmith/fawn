@@ -62,8 +62,10 @@ static void run(doe_vk_context *context, const char *directory, size_t index, bo
     if (index == 2) assert(actual[4] == 7); /* Final scalar lane at byte8, ending exactly at byte12. */
     assert(actual[0] == (mutant ? 7u : test->expected));
     if (mutant) assert(actual[0] != test->expected);
-    if (index == 3) assert(actual[1] == 0 && actual[2] == 23 && actual[3] == 41);
-    else if (index < 3) assert(actual[1] == 0 && actual[2] == 0 && actual[3] == 0);
+    /* Out-of-range indices (-1, N, UINT32_MAX) clamp to the last element
+     * (compiler/src/spirv_clamp.c): u[index] for the tiny arrays, values[2] = 7. */
+    if (index == 3) assert(actual[1] == 7 && actual[2] == 23 && actual[3] == 41);
+    else if (index < 3) assert(actual[1] == data[index] && actual[2] == data[index] && actual[3] == data[index]);
     else assert(actual[1] == 999 && actual[2] == 999 && actual[3] == 999);
     require(doe_vk_commands_release(commands));
     doe_vk_pipeline_release(pipeline);

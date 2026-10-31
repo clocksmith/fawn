@@ -271,12 +271,19 @@ A vec3 has size 12/alignment 16; array stride is 16. Uniform constraints validat
 layout rather than silently repacking it. Explicit @align/@size are owned values.
 Runtime arrays occur only at an admitted storage root or its direct final member.
 Uniform minimum binding extents remain host dispatch preconditions, not short-buffer
-zero-fill. In SPIR-V and MSL each access step guards before pointer formation;
-out-of-bounds loads produce typed zero and stores discard independently. An inner
-OOB load's zero may still be a valid outer index. The HLSL target instead clamps
-storage and uniform buffer indices to the last valid element (sizes from a
-runtime-supplied table) and guards only workgroup/private/function/value roots;
-see [its charter](targets/hlsl/AGENTS.md). Bounds do not establish descriptor overlap/race safety.
+zero-fill. SPIR-V and HLSL clamp every storage and uniform buffer index, including
+runtime-array tails and atomics, to the last valid element: min(uint(index), last),
+where last is count - 1 for a fixed array or vector and max(count, 1) - 1 for a
+runtime tail. WGSL robustness permits any in-bounds element, so the access runs
+unconditionally inside the declared extent, with no zero load, dropped store or
+access guard. SPIR-V forms the clamp branch-free with OpULessThan/OpSelect over
+OpArrayLength ([spirv_clamp.c](src/spirv_clamp.c)); Vulkan devices require
+robustBufferAccess, which bounds the empty-tail case below the reflected minimum.
+HLSL reads sizes from a runtime-supplied table ([its charter](targets/hlsl/AGENTS.md)).
+MSL buffer accesses, and every target's workgroup/private/function/value roots,
+guard each access step before pointer formation: out-of-bounds loads produce typed
+zero and stores discard independently, and an inner OOB load's zero may still be a
+valid outer index. Bounds do not establish descriptor overlap/race safety.
 
 Each helper emits actual target calls and fresh local state. Source evaluation
 order, local snapshots, termination, short circuit and robust Phi predecessors

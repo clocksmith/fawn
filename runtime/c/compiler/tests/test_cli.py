@@ -169,8 +169,9 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             else:
                 assert pointer[0] == "element"
                 buffer, index = memory[pointer[1]], pointer[2]
-                assert 0 <= index < len(buffer), "out of bounds read"
-                values[args[1]] = buffer[index]
+                assert 0 <= index < len(buffer) or (not buffer and index == 0), "out of bounds read"
+                # An empty range reads zero under robustBufferAccess (see op 65).
+                values[args[1]] = buffer[index] if buffer else 0
         elif op == 81:
             values[args[1]] = values[args[2]][args[3]]
         elif op == 68:
@@ -203,7 +204,13 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             else:
                 assert pointer[0] == "buffer" and values[args[3]] == 0
                 index = values[args[4]]
-                assert 0 <= index < len(memory[pointer[1]]), "unguarded element pointer"
+                # Storage indices clamp to the last element (compiler/src/spirv_clamp.c),
+                # so every admitted binding (at least the reflected one-element
+                # minimum) stays in range. An empty range is below that minimum:
+                # dispatch rejects it and the Vulkan device's required
+                # robustBufferAccess makes its loads zero and drops its stores.
+                buffer = memory[pointer[1]]
+                assert 0 <= index < len(buffer) or (not buffer and index == 0), "unclamped element pointer"
                 values[args[1]] = ("element", pointer[1], index, pointer[2])
         elif op == 128:
             values[args[1]] = (values[args[2]] + values[args[3]]) & 0xFFFFFFFF
@@ -223,8 +230,9 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             pointer = values[args[0]]
             assert pointer[0] == "element" and pointer[3] not in readonly
             buffer, index = memory[pointer[1]], pointer[2]
-            assert 0 <= index < len(buffer), "out of bounds write"
-            buffer[index] = values[args[1]]
+            assert 0 <= index < len(buffer) or (not buffer and index == 0), "out of bounds write"
+            if buffer:
+                buffer[index] = values[args[1]]
         elif op == 253:
             return
         elif op == 255:
@@ -281,9 +289,13 @@ class TestCompilerCli(CompilerFixture):
                             for invocation in range(dispatched):
                                 execute(instructions, memory, invocation)
                             execute(instructions, memory, 0xFFFFFFFF)
-                            expected = [(value + addend) & 0xFFFFFFFF
-                                        if i < dispatched else value
-                                        for i, value in enumerate(initial)]
+                            # Indices past the binding, including 0xFFFFFFFF, clamp to
+                            # the last element (compiler/src/spirv_clamp.c); an empty range is untouched.
+                            expected = initial[:]
+                            for invocation in [*range(dispatched), 0xFFFFFFFF]:
+                                if length:
+                                    j = min(invocation, length - 1)
+                                    expected[j] = (expected[j] + addend) & 0xFFFFFFFF
                             self.assertEqual(memory[(0, 0)], expected)
 
     def test_named_constants_and_literal_left_operand(self) -> None:
@@ -294,8 +306,9 @@ class TestCompilerCli(CompilerFixture):
                 memory = {(0, 0): [0, 1, 0xFFFFFFFF]}
                 for i in range(5):
                     execute(instructions, memory, i)
+                # Invocations 3 and 4 clamp to values[2] (compiler/src/spirv_clamp.c).
                 self.assertEqual(memory[(0, 0)], [value, (1 + value) & 0xFFFFFFFF,
-                                                 (0xFFFFFFFF + value) & 0xFFFFFFFF])
+                                                 (0xFFFFFFFF + 3 * value) & 0xFFFFFFFF])
         instructions, _ = self.compile(SEED.replace("values[id.x] + 1u", "42u + values[id.x]"))
         memory = {(0, 0): [0xFFFFFFFF]}
         execute(instructions, memory, 0)
@@ -342,10 +355,11 @@ class TestCompilerCli(CompilerFixture):
                     for invocation in range(dispatch):
                         execute(instructions, memory, invocation)
                     execute(instructions, memory, 0xFFFFFFFF)
-                    wanted = [0x7FC000A5 if i >= dispatch else
-                              0x40400000 if i < a_count and i < b_count else
-                              0x3F800000 if i < a_count else
-                              0x40000000 if i < b_count else 0
+                    # Each index clamps to its own binding's last element (compiler/src/spirv_clamp.c), so
+                    # every read sees 1.0/2.0 (an empty range reads zero) and
+                    # invocations past out, including 0xFFFFFFFF, write its last word.
+                    total = (1.0 if a_count else 0.0) + (2.0 if b_count else 0.0)
+                    wanted = [float_bits(total) if i < dispatch or i == out_count - 1 else 0x7FC000A5
                               for i in range(out_count)]
                     self.assertEqual(memory[(0, 2)], wanted)
 
@@ -368,7 +382,9 @@ class TestCompilerCli(CompilerFixture):
         memory[(0, 9)], memory[(2, 19)], memory[(3, 31)] = [0xFFFFFFFF, 5], [1], [99, 99, 99]
         for i in range(5):
             execute(instructions, memory, i)
-        self.assertEqual(memory[(3, 31)], [0, 5, 0])
+        # Each binding clamps its own index (compiler/src/spirv_clamp.c): rhs[i]
+        # reads rhs[0] = 1, lhs[i>1] reads lhs[1] = 5, result[i>2] writes result[2].
+        self.assertEqual(memory[(3, 31)], [0, 6, 6])
 
     def test_cli_failure_preserves_destinations(self) -> None:
         self.source.write_text(SEED, encoding="utf-8")

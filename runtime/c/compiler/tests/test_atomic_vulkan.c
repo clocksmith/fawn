@@ -47,8 +47,11 @@ static void expected_words(bool all_ops, size_t binding, uint32_t *words, size_t
         assert(count == 256);
         return;
     }
+    /* Six storage cells give every lane its own cell under the storage clamp
+     * (compiler/src/spirv_clamp.c): lanes 1..5 use cells 0..4 and lane 0's -1
+     * clamps to the last cell, 5. Each cell ends at 11. */
     if (binding < 2) {
-        assert(count == 4);
+        assert(count == 6);
         for (size_t i = 0; i < count; ++i) words[i] = 11;
         return;
     }
@@ -60,9 +63,11 @@ static void expected_words(bool all_ops, size_t binding, uint32_t *words, size_t
         for (size_t root = 0; root < 4; ++root) {
             size_t base = lane * 56 + root * 14;
             for (size_t item = 0; item < 14; ++item) words[base + item] = 0;
-            if (lane == 0 || lane == 5) continue;
-            if (root == 0) words[base] = (uint32_t)((int32_t)lane - 9);
-            if (root == 1) words[base] = (uint32_t)(lane + 9);
+            /* Workgroup indices keep their guard: -1 and 4 drop and read zero. */
+            if (root >= 2 && (lane == 0 || lane == 5)) continue;
+            const size_t cell = lane == 0 ? 5u : lane - 1u;
+            if (root == 0) words[base] = (uint32_t)((int32_t)cell - 8);
+            if (root == 1) words[base] = (uint32_t)(cell + 10u);
             for (size_t item = 0; item < 13; ++item)
                 words[base + 1 + item] = root % 2 == 0 ? (uint32_t)signed_values[item] : unsigned_values[item];
         }
@@ -149,8 +154,8 @@ static void execute(doe_vk_context *context, const char *path, bool all_ops) {
     uint32_t *words = compile_source(path, all_ops, &word_count);
     doe_vk_error error;
     const size_t count = all_ops ? 3u : 1u;
-    const size_t sizes[3] = {all_ops ? 16u : 1024u, 16u, 1344u};
-    const size_t total = all_ops ? 1376u : 1024u;
+    const size_t sizes[3] = {all_ops ? 24u : 1024u, 24u, 1344u};
+    const size_t total = all_ops ? 1392u : 1024u;
     doe_vk_buffer *buffers[3] = {NULL, NULL, NULL}, *readback = NULL;
     doe_vk_buffer_binding bindings[3];
     doe_vk_binding_layout layouts[3];
@@ -182,7 +187,7 @@ static void execute(doe_vk_context *context, const char *path, bool all_ops) {
     doe_vk_pipeline_release(pipeline);
     require(doe_vk_commands_submit(commands, &error), "submit");
     assert(doe_vk_commands_release(commands) == DOE_VK_BUSY);
-    uint32_t actual[348];
+    uint32_t actual[352];
     assert(total + 16 <= sizeof(actual));
     assert(doe_vk_buffer_read(readback, 0, actual, total + 16) == DOE_VK_BUSY);
     require(doe_vk_commands_wait(commands, UINT64_C(30000000000), &error), "wait");
@@ -206,7 +211,7 @@ static void execute(doe_vk_context *context, const char *path, bool all_ops) {
     require(doe_vk_commands_release(commands), "retire");
     doe_vk_buffer_release(readback);
     printf("PASS %s: %zu exact words, untouched padding, early release/pending guards\n",
-        all_ops ? "all11 signed/unsigned storage/workgroup atomics + per-access OOB" : "unchanged workgroup_atomic.wgsl", total / 4);
+        all_ops ? "all11 signed/unsigned storage/workgroup atomics + clamped storage/guarded workgroup OOB" : "unchanged workgroup_atomic.wgsl", total / 4);
 }
 
 int main(int argc, char **argv) {
