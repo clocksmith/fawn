@@ -260,6 +260,46 @@ class BrowserReleasePackageInputsTests(unittest.TestCase):
             self.assertEqual(report["overwrittenPackageMembers"][0]["role"], "dawnFallbackRuntime")
             self.assertEqual(browser.stat().st_mode & stat.S_IXUSR, stat.S_IXUSR)
 
+    def test_linux_dawn_may_be_embedded_in_the_browser_executable(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            package_dir = root / "fawn-linux"
+            browser = _write_file(package_dir / "chrome", b"chrome with dawn\n", 0o755)
+            foreign = _write_file(root / "libdawn_native.so", b"separate dawn\n", 0o755)
+            doe_runtime = _write_file(root / "libwebgpu_doe_c.so", b"doe c runtime\n", 0o755)
+            compiler = _write_file(root / "libdoe_compiler.so", b"compiler\n", 0o755)
+
+            def report_for(dawn: Path) -> dict:
+                return package_inputs.build_report(
+                    package_dir=str(package_dir),
+                    package_root_name="Fawn-Doe-linux-x64",
+                    browser_executable_package_path="chrome",
+                    doe_runtime=str(doe_runtime),
+                    doe_runtime_archive_path="Fawn-Doe-linux-x64/lib/doe/libwebgpu_doe_c.so",
+                    dawn_fallback_runtime=str(dawn),
+                    dawn_fallback_runtime_archive_path="Fawn-Doe-linux-x64/chrome",
+                    shader_compiler=str(compiler),
+                    root=root,
+                )
+
+            embedded = report_for(browser)
+            _validate(embedded)
+            self.assertEqual(embedded["status"], "pass", embedded["failures"])
+            self.assertEqual(
+                embedded["inputs"]["dawnFallbackRuntime"]["sha256"],
+                embedded["inputs"]["browserExecutable"]["sha256"],
+            )
+
+            mismatched = report_for(foreign)
+            _validate(mismatched)
+            self.assertEqual(mismatched["status"], "fail")
+            self.assertIn(
+                "embedded_dawn_fallback_mismatch",
+                [row["code"] for row in mismatched["failures"]],
+            )
+
     def test_macos_release_candidate_inputs_are_eligible(self) -> None:
         import tempfile
 

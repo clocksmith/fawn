@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from urllib.parse import quote
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +20,11 @@ SPEC = importlib.util.spec_from_file_location("linux_launcher_installer", INSTAL
 assert SPEC and SPEC.loader
 OWNER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(OWNER)
+
+
+def branding(package: Path) -> list[str]:
+    start = "file://" + quote(str(package / "fawn/fawn-start.html"), safe="/")
+    return ["--class=fawn", "--homepage=" + start, "--new-window", start]
 
 
 @unittest.skipUnless(sys.platform == "linux", "requires actual Linux ELF/exec and /proc")
@@ -40,6 +46,8 @@ class LinuxLauncherTests(unittest.TestCase):
             int main(int argc, char **argv) {
                 printf("%ld\n", (long)getpid());
                 for (int i = 0; i < argc; i++) printf("%s\n", argv[i]);
+                const char *desktop = getenv("CHROME_DESKTOP");
+                fprintf(stderr, "desktop=%s\n", desktop ? desktop : "");
                 const char *fd = getenv("FAWN_TEST_PIPE_FD");
                 if (fd && write(atoi(fd), "X", 1) != 1) return 9;
                 return 7;
@@ -63,6 +71,10 @@ class LinuxLauncherTests(unittest.TestCase):
     def test_relocated_default_preserves_pid_descriptors_and_arguments(self) -> None:
         receipt = self.install()
         self.assertIn("chrome-wrapper", receipt["artifacts"])
+        for member in ("fawn/fawn-start.html", "fawn/fawn-icon.svg", "fawn/fawn.desktop",
+                       "fawn/icons/hicolor/256x256/apps/fawn.png"):
+            self.assertEqual(receipt["artifacts"][member],
+                             hashlib.sha256((self.package / member).read_bytes()).hexdigest())
         relocated = self.root / "moved ü browser"
         shutil.move(self.package, relocated)
         read_fd, write_fd = os.pipe()
@@ -82,7 +94,8 @@ class LinuxLauncherTests(unittest.TestCase):
             self.assertTrue(lines[4].startswith("--user-data-dir=/"))
             self.assertTrue(lines[4].endswith("/fawn/doe-c"))
             self.assertEqual(lines[5], "--gpu-sandbox-start-early")
-            self.assertEqual(lines[6:], ["--remote-debugging-pipe", "https://example.test/a b"])
+            self.assertEqual(lines[6:], [*branding(relocated), "--remote-debugging-pipe", "https://example.test/a b"])
+            self.assertIn("desktop=fawn.desktop", stderr)
             self.assertEqual(os.read(read_fd, 1), b"X")
             self.assertNotIn("--no-sandbox", lines)
         finally:
@@ -133,7 +146,16 @@ class LinuxLauncherTests(unittest.TestCase):
         profile = "--user-data-dir=" + str(self.root / "explicit ü profile")
         process = subprocess.run([str(self.package / "chrome-wrapper"), profile], capture_output=True, text=True)
         self.assertEqual(process.returncode, 7, process.stderr)
-        self.assertEqual(process.stdout.splitlines()[4:], ["--gpu-sandbox-start-early", profile])
+        self.assertEqual(process.stdout.splitlines()[4:],
+                         ["--gpu-sandbox-start-early", *branding(self.package), profile])
+
+    def test_missing_start_page_fails_without_launch(self) -> None:
+        self.install()
+        (self.package / "fawn/fawn-start.html").unlink()
+        failed = subprocess.run([str(self.package / "chrome-wrapper")], capture_output=True, text=True)
+        self.assertEqual(failed.returncode, 1)
+        self.assertIn("start page", failed.stderr)
+        self.assertEqual(failed.stdout, "")
 
     def test_external_sandbox_ordering_is_canonical_before_user_arguments(self) -> None:
         self.install()
@@ -159,6 +181,7 @@ class LinuxLauncherTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "manifest"):
             self.install()
         self.assertFalse((self.package / "lib/doe").exists())
+        self.assertFalse((self.package / "fawn").exists())
         self.assertFalse((self.package / "chrome-wrapper").exists())
 
 

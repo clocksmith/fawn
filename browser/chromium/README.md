@@ -139,6 +139,18 @@ running stock or opposite-provider profile. An explicit absolute
 `--user-data-dir=/path` is preserved; use a fresh isolated profile for build
 verification and close it before changing the selected provider.
 
+The installer also stages Fawn branding under `fawn/`: the same
+`resources/fawn-*.{html,svg,js}` start-page set the macOS bundle carries, the
+compiled Linux icons from `assets/logo/compiled/linux` as
+`fawn/icons/hicolor/<size>x<size>/apps/fawn.png`, and `fawn/fawn.desktop`. Like
+the macOS wrapper, the launcher opens `fawn/fawn-start.html` as the homepage and
+a new window, and like `scripts/chromium.sh` it selects `CHROME_DESKTOP=fawn.desktop`
+and `--class=fawn`; it fails if the start page is missing. For a desktop entry,
+link `chrome-wrapper` as `fawn` on `PATH` and copy `fawn/fawn.desktop` and
+`fawn/icons/hicolor` into the user's XDG `applications` and `icons/hicolor`
+directories. Chromium links Dawn into `chrome`, so a Linux release package
+declares `chrome` as both its browser executable and its Dawn fallback runtime.
+
 
 The Linux C frontdoor requests early GPU sandbox startup. On X11 with ANGLE's
 GLX backend, the managed pre-sandbox hook maps the fixed GLVND/Mesa library

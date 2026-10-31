@@ -398,9 +398,18 @@ def check_unique_release_archive_member_paths(payload: dict[str, Any]) -> list[d
     )
     failures: list[dict[str, str]] = []
     seen: dict[str, tuple[str, str]] = {}
+    platform = payload.get("platform")
+    # Linux Chromium links Dawn into its browser image; no separate library exists.
+    embedded_dawn = (
+        isinstance(platform, dict)
+        and platform.get("os") == "linux"
+        and payload.get("dawnFallbackRuntimeArchivePath") == payload.get("browserExecutableArchivePath")
+    )
     for field, label in member_fields:
         member_path = payload.get(field)
         if not isinstance(member_path, str) or not member_path:
+            continue
+        if embedded_dawn and field == "dawnFallbackRuntimeArchivePath":
             continue
         previous = seen.get(member_path)
         if previous is not None:

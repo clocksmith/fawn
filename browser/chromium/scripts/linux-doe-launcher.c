@@ -56,6 +56,29 @@ static int readable_file(const char *path) {
     return stat(path, &metadata) == 0 && S_ISREG(metadata.st_mode) && access(path, R_OK) == 0;
 }
 
+/* Percent-encode an absolute path as a file URL, keeping RFC 3986 unreserved
+ * bytes and '/' literal. */
+static int file_url(char *out, size_t size, const char *prefix, const char *path) {
+    static const char hex[] = "0123456789ABCDEF";
+    size_t used = strlen(prefix);
+    if (used >= size) return 0;
+    memcpy(out, prefix, used);
+    for (const unsigned char *byte = (const unsigned char *)path; *byte; ++byte) {
+        int literal = (*byte >= 'A' && *byte <= 'Z') || (*byte >= 'a' && *byte <= 'z') ||
+                      (*byte >= '0' && *byte <= '9') || strchr("-._~/", *byte);
+        if (used + (literal ? 1 : 3) >= size) return 0;
+        if (literal) {
+            out[used++] = (char)*byte;
+        } else {
+            out[used++] = '%';
+            out[used++] = hex[*byte >> 4];
+            out[used++] = hex[*byte & 15];
+        }
+    }
+    out[used] = '\0';
+    return 1;
+}
+
 int main(int argc, char **argv) {
     char image[PATH_MAX];
     char browser[PATH_MAX];
@@ -63,6 +86,9 @@ int main(int argc, char **argv) {
     char compiler[PATH_MAX];
     char library_argument[PATH_MAX + 64];
     char profile_argument[PATH_MAX + 64];
+    char start_page[PATH_MAX];
+    char start_url[PATH_MAX * 3 + 16];
+    char homepage_argument[PATH_MAX * 3 + 32];
     char **forwarded = NULL;
     int result = 1;
     int dawn = 0;
@@ -81,7 +107,10 @@ int main(int argc, char **argv) {
     *separator = '\0';
     if (!package_path(browser, sizeof(browser), image, "chrome") ||
         !package_path(library, sizeof(library), image, "lib/doe/libwebgpu_doe_c.so") ||
-        !package_path(compiler, sizeof(compiler), image, "lib/doe/libdoe_compiler.so")) {
+        !package_path(compiler, sizeof(compiler), image, "lib/doe/libdoe_compiler.so") ||
+        !package_path(start_page, sizeof(start_page), image, "fawn/fawn-start.html") ||
+        !file_url(start_url, sizeof(start_url), "file://", start_page) ||
+        !file_url(homepage_argument, sizeof(homepage_argument), "--homepage=file://", start_page)) {
         fputs("Fawn: installed package path is too long\n", stderr);
         goto cleanup;
     }
@@ -116,7 +145,17 @@ int main(int argc, char **argv) {
         fputs("Fawn: bundled Doe C runtime/compiler is missing or unreadable; no fallback\n", stderr);
         goto cleanup;
     }
-    forwarded = calloc((size_t)argc + 5, sizeof(*forwarded));
+    if (!readable_file(start_page)) {
+        fprintf(stderr, "Fawn: bundled start page is unavailable: %s\n", start_page);
+        goto cleanup;
+    }
+    /* Match the macOS product wrapper and Linux lane launcher: Fawn's desktop
+     * identity, window class and start page. */
+    if (setenv("CHROME_DESKTOP", "fawn.desktop", 1) != 0) {
+        fputs("Fawn: cannot select the Fawn desktop entry\n", stderr);
+        goto cleanup;
+    }
+    forwarded = calloc((size_t)argc + 9, sizeof(*forwarded));
     if (!forwarded) { fputs("Fawn: cannot allocate launch arguments\n", stderr); goto cleanup; }
     forwarded[count++] = browser;
     forwarded[count++] = dawn ? "--use-webgpu-runtime=dawn" : "--use-webgpu-runtime=doe";
@@ -144,6 +183,10 @@ int main(int argc, char **argv) {
     /* Mesa may create threads during GL initialization. Start Chromium's
      * existing GPU sandbox before GL, while it can still seal one thread. */
     if (!dawn) forwarded[count++] = "--gpu-sandbox-start-early";
+    forwarded[count++] = "--class=fawn";
+    forwarded[count++] = homepage_argument;
+    forwarded[count++] = "--new-window";
+    forwarded[count++] = start_url;
     positional = 0;
     for (int index = 1; index < argc; ++index) {
         ArgumentView view = argument_view(argv[index]);

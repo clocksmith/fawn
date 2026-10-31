@@ -23,6 +23,41 @@ def header(path: Path) -> bytes:
         return stream.read(20)
 
 
+LANE = Path(__file__).resolve().parents[1]
+ICON_SIZES = (16, 32, 64, 128, 256, 512)
+DESKTOP_ENTRY = """[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Fawn
+GenericName=Web Browser
+Comment=Fawn browser with the Doe WebGPU runtime
+Exec=fawn %U
+TryExec=fawn
+Icon=fawn
+StartupWMClass=fawn
+StartupNotify=true
+Terminal=false
+Categories=Network;WebBrowser;
+"""
+
+
+def stage_branding(destination: Path) -> None:
+    """Stage the macOS bundle's start-page resources and the compiled Linux icons."""
+    destination.mkdir()
+    resources = sorted(path for suffix in ("html", "svg", "js")
+                       for path in (LANE / "resources").glob(f"fawn-*.{suffix}"))
+    if LANE / "resources/fawn-start.html" not in resources:
+        raise ValueError("Fawn start page is missing from browser resources")
+    for path in resources:
+        shutil.copy2(path, destination / path.name)
+    for size in ICON_SIZES:
+        icon = LANE / f"assets/logo/compiled/linux/fawn-icon-main-{size}.png"
+        target = destination / f"icons/hicolor/{size}x{size}/apps/fawn.png"
+        target.parent.mkdir(parents=True)
+        shutil.copy2(icon, target)
+    (destination / "fawn.desktop").write_text(DESKTOP_ENTRY, encoding="utf-8")
+
+
 def install(package: Path, stage: Path, cc: str, replace_wrapper: bool) -> dict:
     if platform.system() != "Linux":
         raise ValueError("Linux installation must compile and run on its target host")
@@ -32,8 +67,9 @@ def install(package: Path, stage: Path, cc: str, replace_wrapper: bool) -> dict:
     browser = package / "chrome"
     wrapper = package / "chrome-wrapper"
     private = package / "lib/doe"
-    if private.exists() or (wrapper.exists() and not replace_wrapper):
-        raise FileExistsError("private closure already exists or wrapper replacement was not explicit")
+    branding = package / "fawn"
+    if private.exists() or branding.exists() or (wrapper.exists() and not replace_wrapper):
+        raise FileExistsError("private closure or branding already exists, or wrapper replacement was not explicit")
     if not browser.is_file() or not os.access(browser, os.X_OK):
         raise ValueError("staged package must contain executable chrome")
     image_header = header(browser)
@@ -66,19 +102,25 @@ def install(package: Path, stage: Path, cc: str, replace_wrapper: bool) -> dict:
         shutil.copytree(stage / "licenses", closure / "licenses")
         if wrapper.exists():
             shutil.copy2(wrapper, closure / "chrome-wrapper.before-doe")
+        staged_branding = work / "fawn"
+        stage_branding(staged_branding)
         receipt = {"scope": "C-default launcher installation, not browser/release qualification",
                    "sourceCommit": manifest["source_commit"], "sourceTree": manifest["source_tree"],
                    "manifestSha256": digest(manifest_path), "launcherSourceSha256": digest(source),
                    "installerSha256": digest(Path(__file__)), "compilerCommand": command,
                    "artifacts": {"chrome": digest(browser), "chrome-wrapper": digest(executable),
-                                 **{"lib/doe/" + name: digest(closure / name) for name in libraries}}}
+                                 **{"lib/doe/" + name: digest(closure / name) for name in libraries},
+                                 **{"fawn/" + path.relative_to(staged_branding).as_posix(): digest(path)
+                                    for path in sorted(staged_branding.rglob("*")) if path.is_file()}}}
         (closure / "launcher-install.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         private.parent.mkdir(exist_ok=True)
         shutil.move(str(closure), private)
         try:
+            shutil.move(str(staged_branding), branding)
             os.replace(executable, wrapper)
         except BaseException:
             shutil.rmtree(private)
+            shutil.rmtree(branding, ignore_errors=True)
             raise
     return receipt
 

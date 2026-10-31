@@ -660,9 +660,13 @@ def check_package_root_identity(
 def check_duplicate_members(
     members: dict[str, str],
     failures: list[dict[str, str]],
+    platform_os: str = "macos",
 ) -> None:
     seen: dict[str, str] = {}
+    embedded = PACKER.dawn_embedded_in_browser(members, platform_os)
     for role, member_path in members.items():
+        if embedded and role == "dawnFallbackRuntime":
+            continue
         if member_path not in seen:
             seen[member_path] = role
             continue
@@ -1086,6 +1090,7 @@ def build_report(
             "dawnFallbackRuntime": dawn_member,
         },
         failures,
+        platform_os,
     )
 
     browser_source = package_source_path(package_dir_path, browser_package_path)
@@ -1125,6 +1130,16 @@ def build_report(
             failures=failures,
         ),
     }
+    if dawn_member == browser_member and inputs["dawnFallbackRuntime"].get("sha256") != inputs[
+        "browserExecutable"
+    ].get("sha256"):
+        failures.append(
+            failure(
+                "embedded_dawn_fallback_mismatch",
+                "inputs.dawnFallbackRuntime.path",
+                "an embedded Dawn fallback must be the packaged browser executable",
+            )
+        )
     if metadata_source is not None and metadata_source.is_file():
         inputs["appMetadata"] = file_input_record(
             role="appMetadata",

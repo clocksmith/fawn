@@ -750,6 +750,89 @@ class PackageBrowserReleaseArchiveTests(unittest.TestCase):
             self.assertFalse(archive.exists())
             self.assertFalse(manifest.exists())
 
+    def _run_linux_embedded_dawn(self, root: Path, dawn_runtime: Path) -> tuple[subprocess.CompletedProcess, Path, Path]:
+        package_dir = root / "fawn-linux"
+        package_dir.mkdir()
+        browser = package_dir / "chrome"
+        browser.write_bytes(b"linux chrome with built-in dawn\n")
+        browser.chmod(0o755)
+        (package_dir / "resources.pak").write_bytes(b"resources\n")
+        doe_runtime = root / "libwebgpu_doe_c.so"
+        doe_runtime.write_bytes(b"linux doe c runtime\n")
+        archive = root / "Fawn-Doe-linux-x64.zip"
+        manifest = root / "Fawn-Doe-linux-x64.manifest.json"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(PACKER),
+                "--package-dir",
+                str(package_dir),
+                "--package-root-name",
+                "Fawn-Doe-linux-x64",
+                "--out",
+                str(archive),
+                "--manifest-out",
+                str(manifest),
+                "--browser-executable-package-path",
+                "chrome",
+                "--doe-runtime",
+                str(doe_runtime),
+                "--doe-runtime-archive-path",
+                "Fawn-Doe-linux-x64/lib/doe/libwebgpu_doe_c.so",
+                "--dawn-fallback-runtime",
+                str(browser if dawn_runtime is None else dawn_runtime),
+                "--dawn-fallback-runtime-archive-path",
+                "Fawn-Doe-linux-x64/chrome",
+                "--product-version",
+                "0.0.0-test",
+                "--product-channel",
+                "diagnostic",
+                "--platform-os",
+                "linux",
+                "--platform-arch",
+                "x64",
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return result, archive, manifest
+
+    def test_packer_admits_linux_dawn_embedded_in_browser(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result, archive, manifest = self._run_linux_embedded_dawn(Path(temp_dir), None)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            jsonschema.validate(payload, json.loads(SCHEMA.read_text(encoding="utf-8")))
+            members = payload["members"]
+            self.assertEqual(members["dawnFallbackRuntime"], members["browserExecutable"])
+            self.assertEqual(
+                members["doeRuntime"]["archivePath"],
+                "Fawn-Doe-linux-x64/lib/doe/libwebgpu_doe_c.so",
+            )
+            with zipfile.ZipFile(archive) as package:
+                self.assertEqual(
+                    package.read("Fawn-Doe-linux-x64/chrome"),
+                    b"linux chrome with built-in dawn\n",
+                )
+
+    def test_packer_rejects_foreign_bytes_for_embedded_linux_dawn(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            foreign = root / "libdawn_native.so"
+            foreign.write_bytes(b"separate dawn\n")
+            result, archive, manifest = self._run_linux_embedded_dawn(root, foreign)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("embedded Dawn fallback must be the packaged Linux browser", result.stderr)
+            self.assertFalse(manifest.exists())
+
     def test_packer_rejects_product_identity_mismatch(self) -> None:
         import tempfile
 

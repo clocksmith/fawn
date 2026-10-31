@@ -230,9 +230,23 @@ def normalize_member_path(path: str) -> str:
     return "/".join(parts)
 
 
-def require_distinct_required_members(members: dict[str, str]) -> None:
+def dawn_embedded_in_browser(
+    members: dict[str, str],
+    platform_os: str,
+) -> bool:
+    """Linux Chromium links Dawn into its browser image; no separate library exists."""
+    return platform_os == "linux" and members["dawnFallbackRuntime"] == members["browserExecutable"]
+
+
+def require_distinct_required_members(
+    members: dict[str, str],
+    platform_os: str = "macos",
+) -> None:
     seen: dict[str, str] = {}
+    embedded = dawn_embedded_in_browser(members, platform_os)
     for role, member_path in members.items():
+        if embedded and role == "dawnFallbackRuntime":
+            continue
         normalized = normalize_member_path(member_path)
         previous_role = seen.get(normalized)
         if previous_role is not None:
@@ -543,7 +557,13 @@ def collect_member_sources(
             dawn_member=dawn_member,
         )
     member_sources[doe_member] = file_member_source(doe_runtime)
-    member_sources[dawn_member] = file_member_source(dawn_fallback_runtime)
+    if dawn_member == browser_member:
+        if platform_os != "linux" or not dawn_fallback_runtime.samefile(browser_source):
+            raise ValueError(
+                "an embedded Dawn fallback must be the packaged Linux browser executable"
+            )
+    else:
+        member_sources[dawn_member] = file_member_source(dawn_fallback_runtime)
     return member_sources
 
 
@@ -648,7 +668,8 @@ def main() -> int:
             "appMetadata": metadata_member,
             "doeRuntime": doe_member,
             "dawnFallbackRuntime": dawn_member,
-        }
+        },
+        platform_os,
     )
     require_product_identity(product["productId"], product["displayName"])
     member_sources = collect_member_sources(

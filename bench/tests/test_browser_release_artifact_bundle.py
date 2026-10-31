@@ -2207,6 +2207,28 @@ def test_browser_release_artifact_bundle_rejects_duplicate_required_member_paths
     } in bundle_check.check_bundle(payload, verify_files_root=tmp_path)
 
 
+def test_unique_member_paths_admit_only_linux_dawn_embedded_in_browser() -> None:
+    payload = {
+        "platform": {"os": "linux", "arch": "x64", "packageFormat": "zip"},
+        "browserExecutableArchivePath": "Fawn-Doe-linux-x64/chrome",
+        "browserAppMetadataArchivePath": "Fawn-Doe-linux-x64/browser-product.json",
+        "doeRuntimeArchivePath": "Fawn-Doe-linux-x64/lib/doe/libwebgpu_doe_c.so",
+        "dawnFallbackRuntimeArchivePath": "Fawn-Doe-linux-x64/chrome",
+    }
+    assert bundle_check.check_unique_release_archive_member_paths(payload) == []
+
+    payload["dawnFallbackRuntimeArchivePath"] = payload["doeRuntimeArchivePath"]
+    assert [row["code"] for row in bundle_check.check_unique_release_archive_member_paths(payload)] == [
+        "duplicate_release_archive_member_path"
+    ]
+
+    payload["platform"] = {"os": "macos", "arch": "arm64", "packageFormat": "zip"}
+    payload["dawnFallbackRuntimeArchivePath"] = payload["browserExecutableArchivePath"]
+    assert [row["code"] for row in bundle_check.check_unique_release_archive_member_paths(payload)] == [
+        "duplicate_release_archive_member_path"
+    ]
+
+
 def test_browser_release_artifact_bundle_rejects_app_metadata_product_mismatch(tmp_path: Path) -> None:
     bad_archive = _write_zip(tmp_path / "bad-app-metadata.zip", app_display_name="Wrong")
     payload = _build_test_bundle(tmp_path, release_status="release_candidate")
