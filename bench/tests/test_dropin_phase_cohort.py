@@ -66,6 +66,34 @@ class BackendBuildTest(unittest.TestCase):
         self.assertIn("-DDOE_PHASE_BACKEND_METAL", self.build_argv("metal"))
 
 
+class WindowsBuildTest(unittest.TestCase):
+    def test_links_the_import_library_beside_the_dll(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            library = Path(directory) / "webgpu_doe_c.dll"
+            library.write_bytes(b"library")
+            library.with_suffix(".lib").write_bytes(b"imports")
+            output = Path(directory) / "harness.exe"
+            output.write_bytes(b"binary")
+            with mock.patch.object(cohort.os, "name", "nt"), mock.patch.object(cohort.subprocess, "run") as run, \
+                    mock.patch("builtins.print"):
+                cohort.build(library, output, "clang-cl", "vulkan")
+            argv = run.call_args.args[0]
+        self.assertIn(str(library.with_suffix(".lib").resolve()), argv)
+        self.assertIn(f"/Fe{output}", argv)
+        self.assertNotIn("-Wl,-rpath", " ".join(argv))
+
+    def test_refuses_a_harness_away_from_its_dll(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as elsewhere:
+            library = Path(directory) / "webgpu_doe_c.dll"
+            library.write_bytes(b"library")
+            library.with_suffix(".lib").write_bytes(b"imports")
+            away = Path(elsewhere) / "harness.exe"
+            with mock.patch.object(cohort.os, "name", "nt"), mock.patch.object(cohort.subprocess, "run") as run:
+                with self.assertRaises(SystemExit):
+                    cohort.build(library, away, "clang-cl", "vulkan")
+            run.assert_not_called()
+
+
 class CompleteMetricTest(unittest.TestCase):
     def test_complete_sums_preparation_operations_and_teardown(self) -> None:
         phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}

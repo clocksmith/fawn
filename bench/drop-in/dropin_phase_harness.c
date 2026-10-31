@@ -6,7 +6,8 @@
  * and resource preparation, then repeated upload -> encode -> submit ->
  * completion -> map/readback operations. Every phase boundary is a host
  * monotonic host-clock reading, not a GPU timestamp (CLOCK_MONOTONIC; on Apple,
- * CLOCK_UPTIME_RAW, because Darwin quantizes CLOCK_MONOTONIC to 1 us). The
+ * CLOCK_UPTIME_RAW, because Darwin quantizes CLOCK_MONOTONIC to 1 us; on
+ * Windows, QueryPerformanceCounter). The
  * backend is fixed at compile time: Vulkan unless DOE_PHASE_BACKEND_METAL is
  * defined; the adapter must report that backend. Each iteration's output is
  * checked against an independent CPU oracle after the host-operation interval
@@ -23,8 +24,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <psapi.h>
+#else
 #include <sys/resource.h>
 #include <time.h>
+#endif
 
 #include "webgpu.h"
 
@@ -35,7 +42,9 @@
 #define PHASE_BACKEND WGPUBackendType_Vulkan
 #define PHASE_BACKEND_ERROR "adapter_not_physical_vulkan"
 #endif
-#ifdef __APPLE__
+#if defined(_WIN32)
+/* Peak working set and process CPU come from Win32; see now_ns and cpu_ms. */
+#elif defined(__APPLE__)
 #define PHASE_CLOCK CLOCK_UPTIME_RAW
 #define RSS_UNITS_PER_KIB 1024 /* Darwin ru_maxrss is bytes */
 #else
@@ -49,9 +58,18 @@ static const char *const PHASE_NAMES[P_COUNT] = {"upload", "encode", "submit", "
 
 static uint64_t now_ns(void)
 {
+#ifdef _WIN32
+    static LARGE_INTEGER frequency;
+    LARGE_INTEGER counter;
+    if (!frequency.QuadPart) QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&counter);
+    const uint64_t ticks = (uint64_t)counter.QuadPart, hz = (uint64_t)frequency.QuadPart;
+    return ticks / hz * 1000000000ull + ticks % hz * 1000000000ull / hz;
+#else
     struct timespec ts;
     clock_gettime(PHASE_CLOCK, &ts);
     return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+#endif
 }
 
 static void die(const char *what)
@@ -145,9 +163,30 @@ static void print_json_string(const char *key, WGPUStringView v)
 
 static double cpu_ms(void)
 {
+#ifdef _WIN32
+    FILETIME created, exited, kernel, user;
+    if (!GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user)) die("process_times");
+    const uint64_t k = ((uint64_t)kernel.dwHighDateTime << 32) | kernel.dwLowDateTime;
+    const uint64_t u = ((uint64_t)user.dwHighDateTime << 32) | user.dwLowDateTime;
+    return (double)(k + u) / 1e4; /* 100 ns units */
+#else
     struct rusage u;
     getrusage(RUSAGE_SELF, &u);
     return (u.ru_utime.tv_sec + u.ru_stime.tv_sec) * 1e3 + (u.ru_utime.tv_usec + u.ru_stime.tv_usec) / 1e3;
+#endif
+}
+
+static long max_rss_kib(void)
+{
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS counters = {.cb = sizeof(counters)};
+    if (!GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters))) die("process_memory");
+    return (long)(counters.PeakWorkingSetSize / 1024);
+#else
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    return usage.ru_maxrss / RSS_UNITS_PER_KIB;
+#endif
 }
 
 int main(int argc, char **argv)
@@ -350,8 +389,7 @@ int main(int argc, char **argv)
     wgpuDeviceRelease(s.device);
     uint64_t t_teardown = now_ns();
     double cpu_total = cpu_ms() - cpu_start;
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
+    const long rss_kib = max_rss_kib();
 
     printf("{\"status\":\"ok\",");
     print_json_string("adapterVendor", info.vendor);
@@ -369,7 +407,7 @@ int main(int argc, char **argv)
         (unsigned long long)(t_pipeline - t_compile), (unsigned long long)(t_resources - t_pipeline),
         (unsigned long long)(t_loop - t_resources), (unsigned long long)(t_teardown - t_loop),
         (unsigned long long)(t_released - t_loop), (unsigned long long)(t_teardown - t_released),
-        (unsigned long long)(t_teardown - process_start), cpu_total, usage.ru_maxrss / RSS_UNITS_PER_KIB);
+        (unsigned long long)(t_teardown - process_start), cpu_total, rss_kib);
     for (int p = 0; p < P_COUNT; p++) {
         printf("%s\"%s\":[", p ? "," : "", PHASE_NAMES[p]);
         for (long it = 0; it < iterations; it++) printf("%s%llu", it ? "," : "", (unsigned long long)samples[p][it]);
