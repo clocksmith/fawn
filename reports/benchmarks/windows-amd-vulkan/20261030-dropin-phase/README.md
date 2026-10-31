@@ -258,61 +258,117 @@ Twelve contract windows ran. Each attempt is retained with `gate.json` and
   - M2R image attempt 1: A/A CI [1.0008,1.0079] excluded 1.
   - M2R image attempt 2: pre-window foreign CPU was 5.10%.
 
-## Owner decision on landing c-direct for AMD: implemented and gated, not pushed
+## First landing proposal (2026-10-30): held, superseded
 
-The coordinator relayed the owner's decision: land c-direct selected per
-adapter for AMD only, under an explicit trade-off rule. The rule is written as
-[`landing-c-direct-amd.json`](../../amd-vulkan/20261029-dropin-phase/landing-c-direct-amd.json).
-It was frozen before any windows-amd-host candidate window, it references round
-5, and round 5 passes it.
+The first owner decision, c-direct for vendor `0x1002` under the
+[trade-off rule](../../amd-vulkan/20261029-dropin-phase/landing-c-direct-amd.json),
+was implemented and gated ([patch receipt](landing/per-adapter-resource-profile.patch))
+but not pushed. On this tuple it fails that rule: `complete` against main is
++1.7%, +4.1% and +2.8%. The owner then chose the split rule below.
 
-The implementation is [`landing/per-adapter-resource-profile.patch`](landing/per-adapter-resource-profile.patch),
-against `b558c1456`:
-- `doe_vk_caps.resource_profile` is chosen once in `device_selection.c` from the
-  selected adapter's `vendorID`: `0x1002` selects AMD; everything else selects
-  DEFAULT.
-- Descriptor and placement code branch only on that field.
-- DEFAULT keeps the per-use exact pool and host-cached placement, call for call.
-- The rule is recorded in the Vulkan backend `AGENTS.md` and `CATSCAN.md`.
-- New tests: `ownership.c` checks placement per profile, and the three
-  descriptor and lifetime mocks also build as `_amd` variants.
+## Landed rule (owner decision 2026-10-31)
 
-Correctness, landing against main on the same tree:
+- **M7R (descriptor blocks):** every adapter with vendorID `0x1002`, any driver.
+  It passed on amd-host RADV (round 5) and here.
+- **M2R (device-local host writes):** vendorID `0x1002` *and* a large
+  CPU-writable device-local heap. The test reads the first
+  `DEVICE_LOCAL|HOST_VISIBLE|HOST_COHERENT` memory type, which is the one
+  `HOST_DEVICE_LOCAL` placement uses, and requires its heap to be at least
+  **4 GiB** (`DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES`).
+  - Measured edges: this host's type 2 sits in a 256 MiB heap and M2R failed
+    (host writes 4.6x slower). Strix Halo's type sits in a 44,321,644,544-byte
+    (41.3 GiB) UMA heap ([host record](../../amd-vulkan/20261014-initial-qualification-target/host-record.json))
+    and M2R passed round 5.
+  - 4 GiB lies between the two and equals RADV's `maxMemoryAllocationSize`, so
+    a qualifying heap can hold any single allocation.
+  - Heap sizes between 256 MiB and 4 GiB are untested and excluded until
+    measured.
+- **Vendor scope kept on M2R (my reading, flagged).** The owner asked for a
+  capability rule rather than a driver name, and the first decision kept other
+  adapters on today's path. Without the vendor scope, the capability alone
+  would also select untested non-AMD adapters, such as a resizable-BAR discrete
+  GPU. On Intel ANV every type is device-local, so the capability alone would
+  select it, and Intel M2R showed no effect there.
+- **Implementation:** `doe_vk_resource_profile_select` in
+  `backends/vulkan/src/device_selection.c` runs once after the memory
+  properties query. It sets two bits in `caps.resource_profile` (`doe_vk.h`).
+  Descriptor and placement code branch only on those bits. The rule and its
+  evidence are recorded in the Vulkan `AGENTS.md` and `CATSCAN.md`.
+- **Tests:** `ownership.c` pins the selection rule on this host's, Strix Halo's
+  and ANV's memory layouts, the 4 GiB edges and a layout with no
+  CPU-writable device-local type. It also pins placement per bit. The three
+  descriptor and lifetime mocks build with and without `DESCRIPTOR_BLOCKS`.
 
-| Host | Checks | Result |
-| --- | --- | --- |
-| Intel Linux host (ANV), `cb7e56ecd` and `b558c1456` bases | `make -C runtime/c check`; all Vulkan owner contracts individually; 80 physical clients; `check-vulkan` and the native software check on lavapipe (process-local ICD); counting layer on all three workloads | Identical to main. Physical: 80/80 on both. Owner contracts: only `surface_features` and `feature_contract` segfault, on main too. `_amd` variants pass. Software: same 56 PASS and the same abort. Counting layer: call-for-call identical (per-dispatch pools, memory type 2 `0xf`), except fence-poll counts, which vary between runs of main itself (33-53 waits). |
-| windows-amd-host (AMD Vulkan), both bases | 71 public-ABI physical clients built with clang-cl, run with `DOE_C_TEST_BACKEND=vulkan` | Identical: 67 pass and the same 4 fail on main and landing (below) |
-| amd-host RADV | confirmation of the landed build | **Pending, not run** (that host is not used by this task) |
+### Verification on this host
 
-**Why it is not pushed:** on windows-amd-host, `vendorID 0x1002` selects
-c-direct, and c-direct is measurably worse than main there. `complete` is +1.7%,
-+4.1% and +2.8%. It fails the owner's rule on this tuple, and the cause is the
-M2R placement, not M7R. Pushing would ship a regression measured by the rule
-meant to accept it. The concrete options are for the owner:
+- **Mechanics, untimed** ([counts](diagnostics/landed-call-counts.jsonl)): the
+  landed build selects descriptor blocks only, matching the frozen M7R DLL call
+  for call on both bases. Per iteration: 0 pool create/destroy, 1 set
+  allocate/free, storage in type 3 `0xe`.
+- **[Equivalence contract](contract-landed.json)**, landed (same base as M7R)
+  against the frozen M7R DLL, 48 pairs: all three windows valid, verdict
+  **FAIL on CI width only** ([gate](landed/equiv-gate.out)).
+  - Every median is within 0.991-1.008.
+  - The image warm-operation CI [0.963,1.026] exceeds ±2%, and warm completion
+    [0.929,1.026] exceeds ±3%.
+  - The verdict stands. It was evaluated with [`equiv_gate-v1.py`](tools/equiv_gate-v1.py),
+    the hash bound in that contract.
+- **[Image-only contract](contract-landed-image.json)**, a new experiment at 192
+  pairs under the same thresholds: **PASS** ([gate](landed-image/equiv-gate.out)).
+  - The window was valid: foreign GPU 0.00%, foreign CPU 2.05%, A/A 1.001
+    [0.998,1.004].
+  - landed/m7r: complete 1.002 [0.998,1.008], warm operation 1.002
+    [0.998,1.006], submit 1.007 [1.000,1.017], upload 1.003 [0.999,1.009],
+    completion 1.004 [0.998,1.013].
+  - Against Dawn the landed build reaches complete 0.643 and warm operation
+    0.595 on image.
+  - With the vector and upload/readback windows of the 48-pair contract inside
+    their bounds, the landed build reproduces the M7R result on this host.
 
-1. **Push as decided** (vendor `0x1002` → M7R + M2R). RADV keeps its round-5
-   gains. Windows AMD Vulkan, which is not listed in the support matrix (and
-   is not the Windows default backend, D3D12), takes the regression above.
-2. **M7R for vendor `0x1002`; M2R only where its device-local host-visible
-   type is not a small window.** Example: require the selected type's heap to
-   exceed 256 MiB, the non-ReBAR window that a Dawn TODO names
-   (`MemoryTypeSelector.cpp:60-61`; Dawn does not yet apply it). Or select M2R by the RADV `driverID`.
-   This is a changed rule; it needs its own frozen evidence on each AMD tuple
-   before landing.
-3. **M7R only for vendor `0x1002`**, which passes on both AMD tuples measured so
-   far (amd-host round 5, windows-amd-host). M2R stays a receipt.
+### Correctness of the pushed tree
 
-## Windows Vulkan gaps found (not attributed, not fixed)
+| Host | Result |
+| --- | --- |
+| windows-amd-host, AMD Vulkan | Main and landing (on `1c585a5cc`) pass the same 67 of 71 public-ABI clients. With the client fix below, 70 of 71 pass; only `compute-programs` fails. |
+| Intel Linux host (ANV) | Identical to main: `make -C runtime/c check` passes, 81 of 81 physical clients pass, lavapipe `check-vulkan` and the same 56 PASS on the software check, and the Vulkan owner contracts match (both fail only `surface_features` and `feature_contract`). The counting layer is call-for-call identical on all 12 runs: per-dispatch pools, memory type 2 `0xf`. |
+| amd-host RADV | **Pending until that host is free.** The landed combined profile (both bits, Strix Halo) has not run as a build; its evidence is the round-5 c-direct patch. |
 
-On both main and landing, 4 of 71 public-ABI clients fail on this tuple:
-- `compute-programs`: `doeNativeComputeProgramSupported() == 1` fails at
-  `native/tests/compute_programs.c:198`.
-- `limits`, `occlusion` and `workgroups` exit with `0xC0000409` and print
-  nothing. That is the fast-fail status, not an `assert`, which would print.
+## Windows Vulkan client failures: root cause and fix
 
-`iosurface-metadata` and `iosurface-shared` are Darwin-only and do not build.
-These are first Windows Vulkan observations, outside this record's scope.
+- **`limits`, `occlusion` and `workgroups` (`0xC0000409`).** A Win32 debug-API
+  runner ([`dbgrun.py`](tools/dbgrun.py)) caught each one
+  ([trace](diagnostics/client-faults/debugger.txt)).
+  - Fast-fail code 5 is `FAST_FAIL_INVALID_ARG`, the UCRT invalid-parameter
+    handler. It is raised from the client's own `main`, at
+    `native/tests/limits.c:811`, `occlusion.c:41` and `workgroups.c:68`
+    (the symbolized return addresses are the following line).
+  - Each line was `setvbuf(stdout, NULL, _IOLBF, 0)`. glibc and Darwin accept
+    size 0 with a NULL buffer. The UCRT requires a size of 2 to `INT_MAX` for
+    `_IOLBF`/`_IOFBF` (it also treats `_IOLBF` as full buffering), so it
+    fast-fails before any output.
+  - Doe and its DLL are not involved. `windows_surface.c:8` had the same call;
+    it is built but never run, so it would have crashed when run.
+  - **Fix:** one helper, `consumer_line_output()` in `native/tests/consumer.h`.
+    It keeps `_IOLBF` on POSIX and uses `_IONBF` on Windows. All nine callers
+    use it.
+  - Verified: all three now pass on windows-amd-host (unfixed `main3` still
+    fails all three) and on the Intel host. The touched surface clients build
+    on Linux, except `surface-platforms`, which also fails on main for a missing
+    `wayland-client.h`.
+  - Two retained compiler originals under `compiler/independent_tests_m12/`
+    keep the call; they never run on Windows.
+- **`compute-programs` (code 7, `abort()` after its assertion).** Not a crash.
+  - `doeNativeComputeProgramSupported` (`native/src/programs.c:24-31`) is a
+    device-independent export that returns 1 only when `__linux__` is defined.
+    It uses Linux as a stand-in for "the backend is Vulkan".
+  - On Windows it reports 0 even for a Vulkan device, while the client asserts 1
+    unconditionally (`native/tests/compute_programs.c:198`).
+  - Two ways to resolve it, for the owner:
+    - Advertise programs per device. The export has no device parameter, so
+      this is an ABI/contract change.
+    - Have the client assert the platform's advertised value and skip (exit 77)
+      when it is 0.
+  - Not changed here.
 
 ## Remaining owners on windows-amd-host (baseline)
 

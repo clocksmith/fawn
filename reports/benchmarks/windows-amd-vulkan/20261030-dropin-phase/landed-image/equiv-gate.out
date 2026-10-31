@@ -1,0 +1,2 @@
+== image_rgba_invert_1024 complete 1.002 [0.998,1.008]  warm.operation 1.002 [0.998,1.006]  warm.submit 1.007 [1.000,1.017]  warm.upload 1.003 [0.999,1.009]  warm.completion 1.004 [0.998,1.013]
+GATES {'validity': True, 'primary': True, 'phases': True} VERDICT PASS

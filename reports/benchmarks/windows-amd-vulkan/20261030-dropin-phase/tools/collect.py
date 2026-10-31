@@ -26,11 +26,11 @@ for exp in sys.argv[3:]:
     for g in valid:
         plain = g.with_suffix('')  # summarize needs plain jsonl; keep it only transiently
         plain.write_text(gzip.open(g, 'rt').read()); raws.append(plain)
-    for control in ['dawn', 'main']:
+    for control in (['dawn', 'm7r'] if exp == 'landed' else ['dawn', 'main']):
         if control == 'main' and exp == 'baseline': continue
         args = [sys.executable, '-m', 'bench.tools.dropin_phase_cohort', 'summarize', '--control', control,
                 '--out', str((rep / exp / f'summary-vs-{control}.json').resolve())]
         for r in raws: args += ['--raw', str(r.relative_to(rep))]
-        subprocess.run(args, cwd=rep, check=True, capture_output=True, env={'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'winvk'), 'PATH': '/usr/bin:/bin'})
+        subprocess.run(args, cwd=rep, check=True, capture_output=True, env={'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'doe'), 'PATH': '/usr/bin:/bin'})
     for r in raws: r.unlink()
     print(exp, 'valid windows', len(valid))
