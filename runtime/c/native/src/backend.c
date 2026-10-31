@@ -91,6 +91,14 @@ native_result native_backend_device(const native_backend *adapter, native_backen
 native_result native_backend_device_policy(const native_backend *adapter, const DoeNativeDevicePolicy *policy,
     native_backend *out)
 {
+    return native_backend_device_select(adapter, policy, false, out);
+}
+
+native_result native_backend_device_select(const native_backend *adapter, const DoeNativeDevicePolicy *policy,
+    bool external_fd, native_backend *out)
+{
+    /* External fd interop is a Vulkan device extension selection only. */
+    if (external_fd && adapter->kind != WGPUBackendType_Vulkan) return NATIVE_UNSUPPORTED;
     if (policy && ((adapter->kind != WGPUBackendType_Vulkan && adapter->kind != WGPUBackendType_Metal && adapter->kind != WGPUBackendType_D3D12) || policy->queue_selection > 2 ||
         policy->synchronization > 1 || policy->upload_policy > DOE_NATIVE_UPLOAD_ALLOW_MAPPED || policy->subgroup_policy > 3 ||
         policy->reserved[0] || policy->reserved[1] || policy->reserved[2] || policy->reserved[3]))
@@ -132,6 +140,7 @@ native_result native_backend_device_policy(const native_backend *adapter, const 
                 result.value.vulkan.options.require_graphics_queue = false;
         }
         result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;
+        result.value.vulkan.options.enable_external_fd = external_fd;
         /* Share the adapter's loader and instance: identity selection still runs,
          * on that instance, without a second instance and driver enumeration. */
         result.value.vulkan.options.share_instance = adapter->value.vulkan.context;
@@ -145,6 +154,8 @@ native_result native_backend_device_policy(const native_backend *adapter, const 
                 sizeof(result.value.vulkan.caps.identity)) != 0 ||
              result.value.vulkan.caps.software_adapter != adapter->value.vulkan.caps.software_adapter))
             status = NATIVE_UNAVAILABLE;
+        /* A requested interop feature must be really enabled, never silently absent. */
+        if (status == NATIVE_OK && external_fd && !result.value.vulkan.caps.external_fd) status = NATIVE_UNSUPPORTED;
         if (status == NATIVE_OK && native_vulkan_limits(&result.value.vulkan.caps,
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (adapter->kind == WGPUBackendType_Metal) {

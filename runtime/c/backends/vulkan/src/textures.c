@@ -420,7 +420,7 @@ static void free_image(doe_vk_texture *texture) {
 
 doe_vk_status doe_vk_texture_evict(doe_vk_texture *texture) {
     if (texture == NULL) return DOE_VK_INVALID_ARGUMENT;
-    if (texture->borrowed_image || texture->external_owner != NULL) return DOE_VK_BUSY;
+    if (texture->borrowed_image || texture->imported || texture->external_owner != NULL) return DOE_VK_BUSY;
     if (texture->evicted) return DOE_VK_OK;
     if (texture->command_uses != 0) {
         texture->evict_requested = true;

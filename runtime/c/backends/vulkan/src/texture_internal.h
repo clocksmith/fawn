@@ -14,6 +14,8 @@ struct doe_vk_texture {
     doe_vk_status content_status;
     doe_vk_commands *recording_owner;
     bool borrowed_image, external_alive;
+    /* OPAQUE_FD import (external.c): usable only between acquire and release. */
+    bool imported, external_acquired;
     bool evicted; /* destroy() freed image and memory (doe_vk_texture_evict). */
     bool evict_requested; /* destroy() while command uses remained: evict at the last. */
     uint32_t command_uses; /* Commands holding a use (recording, queued or running). */

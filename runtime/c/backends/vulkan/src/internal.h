@@ -21,6 +21,10 @@ doe_vk_status doe_vk_select_queue(const VkQueueFamilyProperties *queues, uint32_
 doe_vk_status doe_vk_choose_device(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error);
 doe_vk_status doe_vk_load_symbol(void *library, const char *name,
     void *destination, size_t destination_size, doe_vk_error *error);
+/* External fd interop (external.c): adapter discovery and device entry points. */
+doe_vk_status doe_vk_external_probe(doe_vk_context *context, bool *available, doe_vk_error *error);
+doe_vk_status doe_vk_external_load_device(doe_vk_context *context, doe_vk_error *error);
+void doe_vk_external_commands_release(doe_vk_commands *commands);
 
 enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
 enum { DOE_VK_COMMAND_SPARES = 8 };
@@ -40,6 +44,7 @@ struct doe_vk_context {
     bool lost_drained; /* The queue was waited on once after loss; see commands.c. */
     void *library;
     doe_vk_functions vk;
+    doe_vk_external_functions external; /* Resolved only with caps.external_fd_available/external_fd. */
     VkInstance instance;
     VkPhysicalDevice physical;
     VkDevice device;
@@ -168,6 +173,11 @@ struct doe_vk_commands {
     struct doe_vk_query_use *queries;
     struct doe_vk_texture_use *textures;
     struct doe_vk_surface *surface;
+    /* External image synchronization (external.c): imported SYNC_FD waits and
+     * one exportable signal, owned until the recording is proven terminal. */
+    VkSemaphore external_waits[8];
+    uint32_t external_wait_count;
+    VkSemaphore external_signal;
 };
 doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
     const char *operation, doe_vk_error *error);

@@ -10,6 +10,7 @@
 #include "vk_abi_render.h"
 #include "vk_abi_surface.h"
 #include "vk_abi_timeline.h"
+#include "vk_abi_external.h"
 
 typedef struct VkPipelineCacheCreateInfo {
     VkStructureType sType; const void *pNext; VkFlags flags;

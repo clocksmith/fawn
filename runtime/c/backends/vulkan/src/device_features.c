@@ -157,6 +157,21 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
             selection.maintenance5_enabled = true;
         }
     }
+    /* External fd interop is discovered for every context and enabled only on
+     * explicit selection; discovery failure leaves it unavailable, not an error. */
+    const uint8_t *external_names[] = {(const uint8_t *)"VK_KHR_external_memory_fd",
+        (const uint8_t *)"VK_KHR_external_semaphore_fd"};
+    bool external_present[2] = {false, false};
+    doe_vk_status external_status = doe_vk_extensions_present(context, true, external_names, 2,
+        external_present, error);
+    if (external_status != DOE_VK_OK) return external_status;
+    if (external_present[0] && external_present[1]) {
+        bool available = false;
+        external_status = doe_vk_external_probe(context, &available, error);
+        if (external_status != DOE_VK_OK) return external_status;
+        context->caps.external_fd_available = available;
+        selection.external_fd = available && options->enable_external_fd;
+    }
     if (options->surface_platforms != 0) {
         const uint8_t *names[] = {(const uint8_t *)"VK_KHR_swapchain", (const uint8_t *)"VK_EXT_swapchain_maintenance1"};
         bool present[2];

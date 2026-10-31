@@ -1,36 +1,13 @@
 /* SPDX-License-Identifier: MIT
  * Retained IOSurface/shared-MTL-event ABI composed with the canonical texture,
  * device, label and pending-command owners. No parallel resource queue. */
-#include "internal.h"
+#include "shared_memory_internal.h"
 #include "metal_frontend.h"
-#include "doe_native_shared_memory.h"
 #include "doe_metal_shared.h"
 #include <stddef.h>
 #include <stdlib.h>
+#include "doe_vk_external.h"
 
-#define SHARED_MEMORY_MAGIC UINT32_C(0xD0E10020)
-#define SHARED_FENCE_MAGIC UINT32_C(0xD0E10021)
-typedef enum shared_access { SHARED_IDLE, SHARED_WAITING, SHARED_ACTIVE } shared_access;
-struct native_shared_texture_memory {
-    uint32_t magic;
-    atomic_uint references;
-    native_device *device;
-    void *surface;
-    uint32_t width, height;
-    WGPUTextureFormat format;
-    shared_access access;
-    doe_resource_texture *active_texture; /* Weak; texture finalization clears it. */
-};
-struct native_shared_fence {
-    uint32_t magic;
-    atomic_uint references;
-    native_device *device;
-    void *event;
-};
-typedef struct shared_texture_payload {
-    native_texture texture; /* Canonical payload prefix, never another resource. */
-    doe_resource_texture *identity;
-} shared_texture_payload;
 typedef struct shared_wait {
     WGPUSharedFence fence;
     uint64_t value;
@@ -62,7 +39,7 @@ static doe_mtl_context *metal_context(native_device *device)
 {
     return device->backend.value.metal.context;
 }
-static const WGPUChainedStruct *find_chain(const WGPUChainedStruct *chain, uint32_t type)
+const WGPUChainedStruct *native_shared_find_chain(const WGPUChainedStruct *chain, uint32_t type)
 {
     /* Find the first matching retained extension, but reject a cyclic chain
      * rather than traversing caller-controlled input forever. */
@@ -76,20 +53,21 @@ static const WGPUChainedStruct *find_chain(const WGPUChainedStruct *chain, uint3
     }
     return NULL;
 }
-static void shared_error(native_device *device, native_failure failure, const char *operation)
+void native_shared_error(native_device *device, native_failure failure, const char *operation)
 {
     if (failure.status == NATIVE_OK) return;
     char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
     native_failure_format(&failure, operation, message);
     native_error(device, native_result_error(failure.status), message);
 }
-static WGPUSharedFence allocate_fence(native_device *device)
+WGPUSharedFence native_shared_allocate_fence(native_device *device)
 {
     WGPUSharedFence fence = calloc(1, sizeof(*fence));
     if (!fence) return NULL;
     fence->magic = SHARED_FENCE_MAGIC;
     atomic_init(&fence->references, 1);
     fence->device = device;
+    fence->sync_fd = -1;
     native_device_retain(device);
     return fence;
 }
@@ -103,7 +81,8 @@ void wgpuSharedFenceRelease(WGPUSharedFence fence)
     native_device *device = fence->device;
     native_lock(device);
     if (doe_label_store_remove(device->labels, fence) != DOE_LABEL_OK) abort();
-    doe_mtl_shared_event_release(metal_context(device), fence->event);
+    if (device->backend.kind == WGPUBackendType_Metal) doe_mtl_shared_event_release(metal_context(device), fence->event);
+    else doe_vk_external_close_fd(fence->sync_fd);
     native_unlock(device);
     fence->magic = 0;
     free(fence);
@@ -120,11 +99,13 @@ WGPUSharedFence wgpuDeviceImportSharedFence(WGPUDevice handle,
     const WGPUSharedFenceDescriptor *descriptor)
 {
     native_device *device = (native_device *)handle;
+    if (device && device->backend.kind == WGPUBackendType_Vulkan && descriptor)
+        return native_vulkan_import_shared_fence(device, descriptor);
     if (!device || device->backend.kind != WGPUBackendType_Metal || !descriptor) return NULL;
-    const WGPUSharedFenceMTLSharedEventDescriptor *source = (const void *)find_chain(
+    const WGPUSharedFenceMTLSharedEventDescriptor *source = (const void *)native_shared_find_chain(
         descriptor->nextInChain, DOE_SHARED_STYPE_MTL_EVENT_DESCRIPTOR);
     if (!source || !source->sharedEvent) return NULL;
-    WGPUSharedFence fence = allocate_fence(device);
+    WGPUSharedFence fence = native_shared_allocate_fence(device);
     if (!fence) return NULL;
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
@@ -136,7 +117,7 @@ WGPUSharedFence wgpuDeviceImportSharedFence(WGPUDevice handle,
     }
     native_unlock(device);
     if (failure.status != NATIVE_OK) {
-        shared_error(device, failure, "shared fence import failed");
+        native_shared_error(device, failure, "shared fence import failed");
         wgpuSharedFenceRelease(fence);
         return NULL;
     }
@@ -146,8 +127,16 @@ WGPUSharedFence wgpuDeviceImportSharedFence(WGPUDevice handle,
 void wgpuSharedFenceExportInfo(WGPUSharedFence fence, WGPUSharedFenceExportInfo *info)
 {
     if (!valid_fence(fence) || !info) return;
+    if (fence->device->backend.kind == WGPUBackendType_Vulkan) {
+        /* Borrowed: the descriptor stays owned by the fence until its release. */
+        info->type = fence->opaque ? DOE_SHARED_FENCE_OPAQUE_SEMAPHORE : DOE_SHARED_FENCE_SYNC_FD;
+        WGPUSharedFenceSyncFDExportInfo *output = (void *)native_shared_find_chain(info->nextInChain,
+            fence->opaque ? DOE_SHARED_STYPE_OPAQUE_SEMAPHORE_EXPORT : DOE_SHARED_STYPE_SYNC_FD_EXPORT);
+        if (output) output->handle = fence->sync_fd;
+        return;
+    }
     info->type = DOE_SHARED_FENCE_MTL_EVENT;
-    WGPUSharedFenceMTLSharedEventExportInfo *output = (void *)find_chain(
+    WGPUSharedFenceMTLSharedEventExportInfo *output = (void *)native_shared_find_chain(
         info->nextInChain, DOE_SHARED_STYPE_MTL_EVENT_EXPORT);
     if (output) output->sharedEvent = fence->event;
 }
@@ -162,7 +151,8 @@ void wgpuSharedTextureMemoryRelease(WGPUSharedTextureMemory memory)
     native_device *device = memory->device;
     native_lock(device);
     if (doe_label_store_remove(device->labels, memory) != DOE_LABEL_OK) abort();
-    doe_mtl_shared_surface_release(metal_context(device), memory->surface);
+    if (device->backend.kind == WGPUBackendType_Metal) doe_mtl_shared_surface_release(metal_context(device), memory->surface);
+    else doe_vk_texture_release(memory->vulkan);
     native_unlock(device);
     memory->magic = 0;
     free(memory);
@@ -179,8 +169,10 @@ WGPUSharedTextureMemory wgpuDeviceImportSharedTextureMemory(WGPUDevice handle,
     const WGPUSharedTextureMemoryDescriptor *descriptor)
 {
     native_device *device = (native_device *)handle;
+    if (device && device->backend.kind == WGPUBackendType_Vulkan && descriptor)
+        return native_vulkan_import_shared_memory(device, descriptor);
     if (!device || device->backend.kind != WGPUBackendType_Metal || !descriptor) return NULL;
-    const WGPUSharedTextureMemoryIOSurfaceDescriptor *source = (const void *)find_chain(
+    const WGPUSharedTextureMemoryIOSurfaceDescriptor *source = (const void *)native_shared_find_chain(
         descriptor->nextInChain, DOE_SHARED_STYPE_IOSURFACE);
     if (!source || !source->ioSurface) return NULL;
     WGPUSharedTextureMemory memory = calloc(1, sizeof(*memory));
@@ -206,7 +198,7 @@ WGPUSharedTextureMemory wgpuDeviceImportSharedTextureMemory(WGPUDevice handle,
     }
     native_unlock(device);
     if (failure.status != NATIVE_OK) {
-        shared_error(device, failure, "shared IOSurface import failed");
+        native_shared_error(device, failure, "shared IOSurface import failed");
         wgpuSharedTextureMemoryRelease(memory);
         return NULL;
     }
@@ -214,7 +206,7 @@ WGPUSharedTextureMemory wgpuDeviceImportSharedTextureMemory(WGPUDevice handle,
     return memory;
 }
 
-static void release_shared_texture(void *userdata, void *handle)
+void native_shared_texture_finalize(void *userdata, void *handle)
 {
     (void)userdata;
     shared_texture_payload *payload = handle;
@@ -244,6 +236,8 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
     const WGPUTextureDescriptor *descriptor)
 {
     if (!valid_memory(memory) || !descriptor) return NULL;
+    if (memory->device->backend.kind == WGPUBackendType_Vulkan)
+        return native_vulkan_shared_create_texture(memory, descriptor);
     wgpuSharedTextureMemoryAddRef(memory);
     native_device *device = memory->device;
     doe_resource_texture *texture = NULL;
@@ -284,22 +278,22 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
         failure = native_failure_metal(status, &detail);
         if (failure.status == NATIVE_OK)
             valid = doe_resource_texture_create(&device->resources, &desc, &limits,
-                (doe_resource_native){payload,NULL,release_shared_texture}, &texture);
+                (doe_resource_native){payload,NULL,native_shared_texture_finalize}, &texture);
         if (texture) {
             payload->identity = texture;
         }
     }
     native_unlock(device);
     if (!texture) {
-        if (payload) release_shared_texture(NULL, payload);
-        if (failure.status != NATIVE_OK) shared_error(device, failure, "shared IOSurface texture creation failed");
+        if (payload) native_shared_texture_finalize(NULL, payload);
+        if (failure.status != NATIVE_OK) native_shared_error(device, failure, "shared IOSurface texture creation failed");
         else native_error(device, native_resource_error(valid), "shared IOSurface texture descriptor rejected");
     } else native_label(device, texture, descriptor->label);
     wgpuSharedTextureMemoryRelease(memory);
     return (WGPUTexture)texture;
 }
 
-static bool matches_texture(WGPUSharedTextureMemory memory, doe_resource_texture *texture)
+bool native_shared_matches_texture(WGPUSharedTextureMemory memory, doe_resource_texture *texture)
 {
     if (!texture || doe_resource_texture_device(texture) != memory->device ||
         !doe_resource_texture_available(texture)) return false;
@@ -310,6 +304,8 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     const WGPUSharedTextureMemoryBeginAccessDescriptor *descriptor)
 {
     if (!valid_memory(memory) || !handle) return WGPUStatus_Error;
+    if (memory->device->backend.kind == WGPUBackendType_Vulkan)
+        return native_vulkan_shared_begin(memory, (doe_resource_texture *)handle, descriptor);
     size_t count = descriptor ? descriptor->fenceCount : 0;
     if (descriptor && count != descriptor->signaledValueCount) return WGPUStatus_Error;
     if (count && (!descriptor->fences || !descriptor->signaledValues || count > SIZE_MAX / sizeof(shared_wait)))
@@ -328,7 +324,7 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     doe_resource_texture_retain(texture);
     native_device *device = memory->device;
     native_lock(device);
-    bool admitted = retained == count && memory->access == SHARED_IDLE && matches_texture(memory, texture) &&
+    bool admitted = retained == count && memory->access == SHARED_IDLE && native_shared_matches_texture(memory, texture) &&
         native_device_result(device) == NATIVE_OK;
     if (admitted) memory->access = SHARED_WAITING;
     native_unlock(device);
@@ -343,7 +339,7 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
         failure = native_failure_metal(status, &detail);
     }
     native_lock(device);
-    bool success = admitted && failure.status == NATIVE_OK && matches_texture(memory, texture) &&
+    bool success = admitted && failure.status == NATIVE_OK && native_shared_matches_texture(memory, texture) &&
         native_device_result(device) == NATIVE_OK;
     if (admitted) {
         memory->access = success ? SHARED_ACTIVE : SHARED_IDLE;
@@ -352,7 +348,7 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     native_unlock(device);
     for (size_t i = 0; i < retained; ++i) wgpuSharedFenceRelease(waits[i].fence);
     free(waits);
-    shared_error(device, failure, "shared IOSurface producer wait failed");
+    native_shared_error(device, failure, "shared IOSurface producer wait failed");
     doe_resource_texture_release(texture);
     wgpuSharedTextureMemoryRelease(memory);
     return success ? WGPUStatus_Success : WGPUStatus_Error;
@@ -380,16 +376,18 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
     WGPUSharedTextureMemoryEndAccessState *state)
 {
     if (!valid_memory(memory) || !handle) return WGPUStatus_Error;
+    if (memory->device->backend.kind == WGPUBackendType_Vulkan)
+        return native_vulkan_shared_end(memory, (doe_resource_texture *)handle, state);
     wgpuSharedTextureMemoryAddRef(memory);
     doe_resource_texture *texture = (doe_resource_texture *)handle;
     doe_resource_texture_retain(texture);
     native_device *device = memory->device;
     WGPUSharedFence *fences = state ? calloc(1, sizeof(*fences)) : NULL;
     uint64_t *values = state ? calloc(1, sizeof(*values)) : NULL;
-    WGPUSharedFence fence = state && fences && values ? allocate_fence(device) : NULL;
+    WGPUSharedFence fence = state && fences && values ? native_shared_allocate_fence(device) : NULL;
     native_lock(device);
     bool admitted = memory->access == SHARED_ACTIVE && memory->active_texture == texture &&
-        matches_texture(memory, texture) && (!state || fence);
+        native_shared_matches_texture(memory, texture) && (!state || fence);
     native_failure failure = native_failure_status(NATIVE_OK);
     if (admitted && state) {
         failure = native_failure_status(native_device_result(device));
@@ -416,7 +414,7 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
         free(values);
         free(fences);
     }
-    shared_error(device, failure, "shared IOSurface completion fence failed");
+    native_shared_error(device, failure, "shared IOSurface completion fence failed");
     doe_resource_texture_release(texture);
     wgpuSharedTextureMemoryRelease(memory);
     return success ? WGPUStatus_Success : WGPUStatus_Error;
@@ -427,7 +425,7 @@ WGPUStatus wgpuSharedTextureMemoryGetProperties(WGPUSharedTextureMemory memory,
     if (!valid_memory(memory)) return WGPUStatus_Error;
     native_lock(memory->device);
     if (properties) {
-        properties->usage = shared_usage;
+        properties->usage = memory->device->backend.kind == WGPUBackendType_Vulkan ? memory->usage : shared_usage;
         properties->size = (WGPUExtent3D){memory->width,memory->height,1};
         properties->format = memory->format;
     }

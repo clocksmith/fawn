@@ -102,6 +102,10 @@ typedef struct doe_vk_options {
      * loading and creating its own; device selection still runs on that
      * instance. The surface platforms must match the source's. */
     doe_vk_context *share_instance;
+    /* Explicit selection: enable VK_KHR_external_memory_fd and
+     * VK_KHR_external_semaphore_fd when caps.external_fd_available; see
+     * doe_vk_external.h. Unavailable leaves caps.external_fd false. */
+    bool enable_external_fd;
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -199,6 +203,12 @@ typedef struct doe_vk_caps {
     bool sample_rate_shading;
     /* Enabled depthBiasClamp: pipelines may clamp a nonzero depth bias. */
     bool depth_bias_clamp;
+    /* Both fd extensions exist, SYNC_FD semaphores are importable and exportable,
+     * and an optimal BGRA8 attachment image is importable from OPAQUE_FD memory.
+     * Discovery only; no extension is enabled by it. */
+    bool external_fd_available;
+    /* Selected (enable_external_fd) and successfully enabled with resolved entry points. */
+    bool external_fd;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

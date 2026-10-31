@@ -261,7 +261,28 @@
       "DOE_VK_FORMAT_ASTC_12x10_UNORM": 181,
       "DOE_VK_FORMAT_ASTC_12x10_SRGB": 182,
       "DOE_VK_FORMAT_ASTC_12x12_UNORM": 183,
-      "DOE_VK_FORMAT_ASTC_12x12_SRGB": 184
+      "DOE_VK_FORMAT_ASTC_12x12_SRGB": 184,
+      "VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2": 1000059003,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2": 1000059004,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO": 1000071000,
+      "VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES": 1000071001,
+      "VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO": 1000072001,
+      "VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR": 1000074000,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO": 1000076000,
+      "VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES": 1000076001,
+      "VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO": 1000077000,
+      "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR": 1000079000,
+      "VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR": 1000079001,
+      "VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO": 1000127001,
+      "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT": 1,
+      "VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT": 1,
+      "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT": 4,
+      "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT": 16,
+      "VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT": 1,
+      "VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT": 2,
+      "VK_SEMAPHORE_IMPORT_TEMPORARY_BIT": 1,
+      "VK_QUEUE_FAMILY_EXTERNAL": 4294967294,
+      "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT": 1
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
@@ -285,6 +306,30 @@
       "verified_utc": "2026-10-23",
       "signature": "VkResult(VkPhysicalDevice, VkFormat, VkImageType, VkImageTiling, VkImageUsageFlags, VkImageCreateFlags, VkImageFormatProperties*)",
       "scope": "Core1.0, positive enum values represented by the existing native 32-bit enum ABI; VkFlags32 and VkDeviceSize64 remain independently asserted."
+    },
+    "vkGetPhysicalDeviceImageFormatProperties2": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "signature": "VkResult(VkPhysicalDevice, const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*)",
+      "scope": "Core1.1 loader export; external import admission."
+    },
+    "vkGetPhysicalDeviceExternalSemaphoreProperties": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "signature": "void(VkPhysicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo*, VkExternalSemaphoreProperties*)",
+      "scope": "Core1.1 loader export; SYNC_FD capability discovery."
+    },
+    "vkImportSemaphoreFdKHR": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "signature": "VkResult(VkDevice, const VkImportSemaphoreFdInfoKHR*)",
+      "scope": "VK_KHR_external_semaphore_fd via vkGetDeviceProcAddr when selected."
+    },
+    "vkGetSemaphoreFdKHR": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "signature": "VkResult(VkDevice, const VkSemaphoreGetFdInfoKHR*, int*)",
+      "scope": "VK_KHR_external_semaphore_fd via vkGetDeviceProcAddr when selected."
     }
   },
   "official_structs": {
@@ -536,6 +581,291 @@
         [
           "shaderInt8",
           "VkBool32"
+        ]
+      ]
+    },
+    "VkPhysicalDeviceExternalImageFormatInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "handleType",
+          "u32"
+        ]
+      ],
+      "scope": "Core1.1 query input for OPAQUE_FD image import admission."
+    },
+    "VkPhysicalDeviceImageFormatInfo2": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "format",
+          "u32"
+        ],
+        [
+          "type",
+          "u32"
+        ],
+        [
+          "tiling",
+          "u32"
+        ],
+        [
+          "usage",
+          "VkFlags"
+        ],
+        [
+          "flags",
+          "VkFlags"
+        ]
+      ]
+    },
+    "VkExternalMemoryProperties": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "externalMemoryFeatures",
+          "VkFlags"
+        ],
+        [
+          "exportFromImportedHandleTypes",
+          "VkFlags"
+        ],
+        [
+          "compatibleHandleTypes",
+          "VkFlags"
+        ]
+      ]
+    },
+    "VkExternalImageFormatProperties": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "externalMemoryProperties",
+          "VkExternalMemoryProperties"
+        ]
+      ]
+    },
+    "VkImageFormatProperties2": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "imageFormatProperties",
+          "VkImageFormatProperties"
+        ]
+      ]
+    },
+    "VkPhysicalDeviceExternalSemaphoreInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "handleType",
+          "u32"
+        ]
+      ]
+    },
+    "VkExternalSemaphoreProperties": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "exportFromImportedHandleTypes",
+          "VkFlags"
+        ],
+        [
+          "compatibleHandleTypes",
+          "VkFlags"
+        ],
+        [
+          "externalSemaphoreFeatures",
+          "VkFlags"
+        ]
+      ]
+    },
+    "VkExportSemaphoreCreateInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "handleTypes",
+          "VkFlags"
+        ]
+      ]
+    },
+    "VkImportSemaphoreFdInfoKHR": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "semaphore",
+          "u64"
+        ],
+        [
+          "flags",
+          "VkFlags"
+        ],
+        [
+          "handleType",
+          "u32"
+        ],
+        [
+          "fd",
+          "i32"
+        ]
+      ],
+      "scope": "VK_KHR_external_semaphore_fd; SYNC_FD temporary imports only."
+    },
+    "VkSemaphoreGetFdInfoKHR": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "semaphore",
+          "u64"
+        ],
+        [
+          "handleType",
+          "u32"
+        ]
+      ]
+    },
+    "VkExternalMemoryImageCreateInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "handleTypes",
+          "VkFlags"
+        ]
+      ]
+    },
+    "VkImportMemoryFdInfoKHR": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "handleType",
+          "u32"
+        ],
+        [
+          "fd",
+          "i32"
+        ]
+      ],
+      "scope": "VK_KHR_external_memory_fd; OPAQUE_FD imports only."
+    },
+    "VkMemoryDedicatedAllocateInfo": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-10-30",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "image",
+          "u64"
+        ],
+        [
+          "buffer",
+          "u64"
         ]
       ]
     }

@@ -6,7 +6,7 @@ OUT ?= $(DOE_C_TMP)/vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
-SOURCES = src/immediates.c src/driver_cache.c src/cache_file.c src/timeline.c src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
+SOURCES = src/external.c src/immediates.c src/driver_cache.c src/cache_file.c src/timeline.c src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(wildcard $(REPO)/runtime/c/common/include/*.h)
 .PHONY: all check abi surface-probe native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean
@@ -45,6 +45,13 @@ $(OUT)/depth_contract: tests/depth_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/feature_contract: tests/feature_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+$(OUT)/external_import: tests/external_import.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) -D_POSIX_C_SOURCE=200809L $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: external-import
+# Physical two-device OPAQUE_FD/SYNC_FD round trip; exit 77 when unavailable.
+external-import: $(OUT)/external_import
+	$(OUT)/external_import
+	$(OUT)/external_import --opaque
 $(OUT)/native_features: tests/native_features.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 .PHONY: native-features
