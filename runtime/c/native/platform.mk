@@ -4,7 +4,8 @@ ifeq ($(SHARED_PLATFORM),Darwin)
 SHARED_SUFFIX = dylib
 NATIVE_SHARED_FLAGS = -dynamiclib -Wl,-undefined,error \
  '-Wl,-install_name,@rpath/$(notdir $(NATIVE_LIBRARY))' \
- -Wl,-exported_symbols_list,$(BUILD)/native.exports
+ -Wl,-exported_symbols_list,$(BUILD)/native.exports \
+ -Wl,-oso_prefix,$(abspath $(BUILD))/
 NATIVE_EXPORTS = $(BUILD)/native.exports
 PLATFORM_LIBS =
 COMPILER_NAME_LINK = -l$(patsubst lib%,%,$(basename $(notdir $(COMPILER_LIBRARY))))
