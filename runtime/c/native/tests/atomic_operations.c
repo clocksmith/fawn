@@ -7,18 +7,15 @@ enum { RESULT_WORDS = 336, TOTAL_WORDS = 348, READBACK_BYTES = 1408, PREFIX_WORD
 
 /* Retained all_ops oracle from compiler/tests/test_atomic_vulkan.c. These
  * finite old-value/result tables are independent of every shader emitter.
- * Six storage cells give every lane its own cell. HLSL and SPIR-V clamp storage
- * indices (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c): lanes
- * 1..5 use cells 0..4 and lane 0's -1 clamps to the last cell, 5. The MSL guard
- * drops lane 0's storage operations, leaving cell 5's seed. Workgroup indices
- * keep their guard on every target. */
+ * Six storage cells give every lane its own cell under the storage clamp on
+ * every target (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c,
+ * compiler/targets/metal/AGENTS.md): lanes 1..5 use cells 0..4 and lane 0's -1
+ * clamps to the last cell, 5. Workgroup indices keep their guard. */
 static void expected_words(size_t binding,uint32_t *words,size_t count)
 {
-    const bool clamps = adapter_class_backend() != WGPUBackendType_Metal;
     if (binding < 2) {
         assert(count == 6);
         for (size_t i = 0; i < count; ++i) words[i] = 11;
-        if (!clamps) words[5] = binding == 0 ? (uint32_t)-3 : 15u;
         return;
     }
     assert(count == RESULT_WORDS);
@@ -29,8 +26,7 @@ static void expected_words(size_t binding,uint32_t *words,size_t count)
         for (size_t root = 0; root < 4; ++root) {
             size_t base = lane * 56 + root * 14;
             for (size_t item = 0; item < 14; ++item) words[base + item] = 0;
-            if ((root >= 2 || !clamps) && lane == 0) continue;
-            if (root >= 2 && lane == 5) continue;
+            if (root >= 2 && (lane == 0 || lane == 5)) continue;
             const size_t cell = lane == 0 ? 5u : lane - 1u;
             if (root == 0) words[base] = (uint32_t)((int32_t)cell - 8);
             if (root == 1) words[base] = (uint32_t)(cell + 10u);

@@ -4,4 +4,4 @@ METAL_SOURCE_NAMES = bindings.c text.c zero.c types.c numeric.c access.c control
 
 METAL_SOURCE_NAMES += float_pack.c
 
-METAL_SOURCE_NAMES += subgroup.c
+METAL_SOURCE_NAMES += subgroup.c assignment.c

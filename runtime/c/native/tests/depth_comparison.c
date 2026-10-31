@@ -16,9 +16,9 @@ enum { CASES = 4, RESULT_WORDS = 21, SUFFIX_WORDS = 2 };
  * Nearest filtering makes every comparison exactly zero or one. No expected
  * value comes from a shader/compiler evaluator or another target's output. */
 /* Words 16 and 20: output[0xffffffffu]=99u clamps to the last bound word, 20
- * (overwriting the 134 trace), and output[16] reads it back where buffer indices
- * clamp (HLSL, SPIR-V: compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c).
- * The MSL guard drops the store and loads zero: words 16/20 are 0/134 there. */
+ * (overwriting the 134 trace), and output[16] reads it back on every target
+ * (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c,
+ * compiler/targets/metal/AGENTS.md). Word 15 keeps the earlier 134 snapshot. */
 static const uint32_t expected[CASES][RESULT_WORDS] = {
     {QUARTER,THREE_QUARTERS,HALF,0,ONE,0,ONE,THREE_QUARTERS,ONE,
         THREE_QUARTERS,THREE_QUARTERS,0,0,12,QUARTER,134,99,CANARY,CANARY,CANARY,99},
@@ -223,9 +223,7 @@ int main(int argc,char **argv)
     for (uint32_t c = 0; c < CASES; ++c) {
         const uint32_t *actual = map(&s,readbacks[c],bytes);
         for (size_t i = 0; i < total; ++i) {
-            uint32_t wanted = i < prefix || i >= prefix + RESULT_WORDS ? CANARY : expected[c][i - prefix];
-            if (adapter_class_backend() == WGPUBackendType_Metal && i == prefix + 16) wanted = 0;
-            if (adapter_class_backend() == WGPUBackendType_Metal && i == prefix + 20) wanted = 134;
+            const uint32_t wanted = i < prefix || i >= prefix + RESULT_WORDS ? CANARY : expected[c][i - prefix];
             if (actual[i] != wanted)
                 fprintf(stderr,"depth comparison %s allocation word%zu: %08x != %08x\n",cases[c].name,i,actual[i],wanted);
             assert(actual[i] == wanted);

@@ -24,6 +24,7 @@ using ulong = unsigned long;
 using std::array;
 using std::clamp;
 using std::isnan;
+using std::max;
 using std::min;
 
 template<class To, class From> To as_type(From input) {

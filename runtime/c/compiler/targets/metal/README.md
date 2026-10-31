@@ -24,8 +24,11 @@ integer formatting and bit-pattern floating constants, not host float evaluation
 - Storage/uniform resources with original typed member identity and shared
   byte offsets, explicit align/size padding, vector-three packed transfers and
   nested array strides. Aggregate copy helpers read/write members, not padding.
-- Independent signed/fixed/runtime index guards before any pointer formation;
-  out-of-bounds loads return zero and stores discard. Runtime sizes are bytes.
+- Storage/uniform indices, including runtime tails and atomics, clamp branch-free
+  to the last valid element and access unconditionally; runtime sizes are bytes
+  from the slot-30 table. Workgroup/private/function/pointer/value roots keep
+  independent signed/fixed index guards before pointer formation: out-of-bounds
+  loads return zero and stores discard.
 - Multiple compute entry closures; source entry names are exposed with Metal
   host_name attributes. Selection filters kernel wrappers, not module validation.
   All five compute input builtins are mapped; helpers receive a thread context.

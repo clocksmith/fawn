@@ -1,8 +1,7 @@
 // Binding0 contains exactly32 u32 words. Seed[28..31] = [flag,7,0,99], with flag0 or1.
-// Literal result[0..27] for flag0, with buffer indices clamped (HLSL, SPIR-V):
+// Literal result[0..27] for flag0 (buffer indices clamp on every target):
 // [0,1,0,1,0,0,0,0,0,1,1,0,0,1,0,1,1,0,1,1,5678,0,1234,1,5678,1,1,2].
-// Words16/17/19 read data[32u] and data[0xffffffffu]: a clamp reads data[31]=99;
-// the MSL guard reads zero, giving 0/1/0 there.
+// Words16/17/19 read data[32u] and data[0xffffffffu], which clamp to data[31]=99.
 // flag1 changes only words4..7 and14 to1; the four seed words stay untouched.
 @group(0) @binding(0) var<storage,read_write> data:array<u32>;
 fn effect(tag:u32,value:bool)->bool {

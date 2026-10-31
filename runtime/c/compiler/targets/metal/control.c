@@ -83,6 +83,7 @@ static void short_circuit(MetalEmitter *e, uint32_t *cursor, unsigned depth, uin
     if (!marker(e, finish, IR_SHORT_END)) return;
     const IrInstruction *end = &e->module->instructions[finish];
     metal_indent(e);
+    metal_define(e, end->result);
     metal_value(e, end->result);
     metal_text(e, " = ");
     metal_value(e, begin->operands.scalar.left);
@@ -136,7 +137,13 @@ static void loop_body(MetalEmitter *e, uint32_t *cursor, unsigned depth) {
     --e->indent;
     metal_line(e, "}");
 }
+static void block_walk(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing);
 void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing) {
+    const bool entered = metal_assignment_enter(e); /* One structured region. */
+    block_walk(e, cursor, depth, loop, continuing);
+    if (entered) metal_assignment_leave(e);
+}
+static void block_walk(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing) {
     if (depth > DOE_METAL_MAX_DEPTH) {
         metal_error(e, "Metal structured control exceeds target traversal budget");
         return;
@@ -164,6 +171,7 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
             continue;
         }
         ++*cursor;
+        if (metal_inline_constant(ir)) continue; /* Constants: written at each use. */
         if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS ||
             atomic_opcode(ir->opcode)) {
             metal_access(e, ir);
@@ -240,6 +248,7 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
             case IR_SHIFT_LEFT: case IR_SHIFT_RIGHT: case IR_CONVERT: case IR_BITCAST: case IR_CALL:
             case IR_BUILTIN: case IR_COMPOSITE: case IR_SWIZZLE: case IR_SELECT:
                 if (ir->result != 0u) {
+                    metal_define(e, ir->result);
                     metal_value(e, ir->result);
                     metal_text(e, " = ");
                 } else if (ir->opcode != IR_CALL) {

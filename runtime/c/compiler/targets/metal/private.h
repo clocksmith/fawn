@@ -6,6 +6,16 @@
 #include "../closure.h"
 #include "../ir_view.h"
 #include "../../include/doe_compiler_translation.h"
+/* Definite assignment of one function's values over its structured regions
+ * (assignment.c). Bounded storage: larger functions keep zero initialization. */
+enum { METAL_ASSIGNMENT_VALUES = 512 };
+typedef struct {
+    uint32_t first, count, sequence, regions, depth;
+    bool valid;
+    uint32_t stack[DOE_METAL_MAX_DEPTH + 2u];
+    uint32_t region[METAL_ASSIGNMENT_VALUES], defined[METAL_ASSIGNMENT_VALUES];
+    bool unsafe[METAL_ASSIGNMENT_VALUES];
+} MetalAssignment;
 typedef struct {
     Source *source;
     TargetClosure closure;
@@ -18,7 +28,21 @@ typedef struct {
     uint32_t current_entry;
     unsigned indent;
     bool failed, needs_sizes;
+    MetalAssignment *assignment; /* Non-NULL only during a function's analysis walk. */
 } MetalEmitter;
+/* Records value id's first assignment, written unconditionally where it stands. */
+void metal_define(MetalEmitter *, uint32_t id);
+void metal_assignment_use(MetalEmitter *, uint32_t id);
+bool metal_assignment_enter(MetalEmitter *);
+void metal_assignment_leave(MetalEmitter *);
+/* Walks the function body without output; true when value id needs no zero initializer. */
+void metal_assignment_analyze(MetalEmitter *, uint32_t function, MetalAssignment *);
+bool metal_assigned(const MetalAssignment *, uint32_t id);
+/* A scalar (non-composite) IR constant is written at each use, never as a local. */
+bool metal_inline_constant(const IrInstruction *);
+/* 32-bit scalar storage/uniform accesses are written at the access site, not
+ * through a doe_load/store/uniform helper; aggregate helpers still call scalar ones. */
+bool metal_direct_scalar(TypeId);
 void metal_text(MetalEmitter *, const char *);
 void metal_format(MetalEmitter *, const char *, ...);
 void metal_line(MetalEmitter *, const char *);

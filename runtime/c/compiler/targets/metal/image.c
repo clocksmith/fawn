@@ -314,7 +314,10 @@ void metal_image(MetalEmitter *e, const IrInstruction *ir) {
     metal_line(e, "{");
     ++e->indent;
     if (ir->result != 0u) {
-        assign_result(e, ir);
+        metal_indent(e);
+        metal_define(e, ir->result); /* The zero result precedes every guard. */
+        metal_value(e, ir->result);
+        metal_text(e, " = ");
         metal_type(e, ir->type);
         metal_text(e, "{};\n");
     }
