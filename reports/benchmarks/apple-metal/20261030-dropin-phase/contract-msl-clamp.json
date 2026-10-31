@@ -1,0 +1,94 @@
+{
+ "schemaVersion": 1,
+ "cohortId": "apple-metal-msl-clamp-20261030",
+ "frozenAtUtc": "2026-10-31T02:37:12Z",
+ "experiment": "MSL buffer clamp, direct word access, inline scalar constants and proven zero-init removal (591fde1ee, on top of the SPIR-V-only 1dfd5e009) against main (fac2bc042) and Dawn on apple-host Metal. Scoped native drop-in phase diagnostic; separate backend evidence.",
+ "host": {
+  "label": "apple-host",
+  "machine": "Apple M3 (8 CPU, 10 GPU cores), 24 GiB",
+  "os": "macOS 26.6.2 (25G83)",
+  "sharedUse": "desktop session; the coordinator reports the computer-use sessions closed; a separate Metal campaign agent shares the GPU through /tmp/doe-gpu-timing.lock"
+ },
+ "sourceCommits": {
+  "main": "fac2bc042",
+  "candidate": "591fde1ee",
+  "harnessAndTool": "fac2bc042"
+ },
+ "providers": {
+  "main": "libwebgpu_doe_c.dylib from git archive of fac2bc042 (runtime/c/native default flags, Apple clang)",
+  "cand": "libwebgpu_doe_c.dylib from git archive of 591fde1ee",
+  "dawn": "Dawn 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), GN is_debug=false, Metal only, the repository's existing vendor build (its working tree changes only tint bench sources outside the library); not the d04f88359 revision of the apple-metal 20261030 campaign",
+  "dawn-aa": "byte-identical copy of the dawn harness (A/A)"
+ },
+ "workloads": [
+  "vector_scale_add_262k",
+  "image_rgba_invert_1024"
+ ],
+ "workloadNote": "the two workloads with a shader; buffer_upload_readback_exact_1mb compiles no shader and is excluded",
+ "sampling": {
+  "pairs": 48,
+  "orders": "all 24 permutations of the 4 providers, each twice",
+  "iterationsPerProcess": 32,
+  "warmIterations": "1..31"
+ },
+ "warmup": "before each window, inside the same lock hold, one untimed pass (1 pair, 4 iterations, all providers) so every provider's MSL is in the Metal compiler cache; cold compiles measured 36-60 ms (Doe) before warm-up and about 2 ms after",
+ "timing": "CLOCK_UPTIME_RAW host clock (harness), not GPU timestamps",
+ "statistics": "dropin_phase_cohort summarize: per-pair ratio medians with bootstrap 95% CI (10000 resamples, seed 20261029); summarized against control main and control dawn",
+ "rules": {
+  "primaryMetrics": [
+   "pipelineNs",
+   "warm.completion"
+  ],
+  "reportedMetrics": [
+   "compileNs",
+   "setupNs",
+   "warm.operation",
+   "complete",
+   "processWall",
+   "cpuMs"
+  ],
+  "comparisons": [
+   "cand/main",
+   "cand/dawn",
+   "main/dawn"
+  ],
+  "classification": "per metric and workload: improvement if ratio CI95 upper < 1.0; regression if CI95 lower > 1.0; otherwise no detectable difference",
+  "aa": {
+   "provider": "dawn-aa",
+   "control": "dawn",
+   "metric": "warm.operation",
+   "window": [
+    0.95,
+    1.05
+   ],
+   "ciContainsOne": true
+  }
+ },
+ "acceptance": {
+  "validity": [
+   "every process status ok with all 32 iterations oracle-checked",
+   "every provider reports the Apple M3 Metal adapter",
+   "A/A rule above per workload",
+   "window gate tools/mac_window.py (apple-metal 20261030 b2 tool): power source and low-power mode unchanged, no thermal warning, idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity"
+  ],
+  "invalidWindows": "at most two fresh attempts per workload; invalid attempts are retained and never used",
+  "claimBoundary": "A result is scoped to these two drop-in workloads on apple-host with these frozen binaries. It is not an application win, does not qualify Metal support and does not transfer to Vulkan or D3D12."
+ },
+ "hashes": {
+  "src-fac2bc042/bench/drop-in/dropin_phase_harness.c": "15f44e042c13be1b1b794fddf47567274dfd23f0f8cd730026cae0554b4f3f90",
+  "src-fac2bc042/bench/tools/dropin_phase_cohort.py": "55586b5c154908d40640559289bb8357063a3d6d064c7abfe8cc42e9ae9475d8",
+  "tools/mac_window.py": "fc7022d1787375356540db245202339e6bb85838e12d1f52bd70e4e70b3955c8",
+  "tools/wait_quiet.sh": "41dbeb80bca95c2cf0beee73d9e2ba1eec26fabb42716eda8f517a6966e5c4b5",
+  "run-metal.sh": "5dbd532bb885b19456c442d1d31f7ca7f2cf7584d0f4b337e9cbbae1702d271d",
+  "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+  "bin/harness-main": "c45656c6fe1efe5a2d762266901618df651dfc6439efae15382fefb6c293a09b",
+  "bin/harness-cand": "26427039b8d9cb1488cc0b1452d6cdaad961c39d3faeaec48aa4e172fe73d4f3",
+  "bin/harness-dawn": "9333dabbc123c8b0dae582a6af5cb4c4c0774ac14fb31e76324b3530f9641501",
+  "bin/harness-dawn-aa": "9333dabbc123c8b0dae582a6af5cb4c4c0774ac14fb31e76324b3530f9641501",
+  "build-fac2bc042/native/libwebgpu_doe_c.dylib": "f3bf168e50eccd32503646e7a8168eeb5fad09cb6e443849602e5b8d3aed3f85",
+  "build-fac2bc042/native/libdoe_compiler.dylib": "310c6c21d26c56bb8b0af662bc85bbe1a20176e3267ec2bda09cde7889a24cef",
+  "build-591fde1ee/native/libwebgpu_doe_c.dylib": "9823efe3fc26bd73367ce644cdd01823b9f66de4e892107517116cca355c185a",
+  "build-591fde1ee/native/libdoe_compiler.dylib": "fc1cd022cec308fee8846a6242fa7daf3818071980265a107fda12754aeeb488",
+  "dawn-lib/libwebgpu_dawn.dylib": "34b19ce165999cae0bb504e91e1251f590187bfd5655415b25192eef75a230f3"
+ }
+}

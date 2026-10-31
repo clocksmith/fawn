@@ -302,6 +302,43 @@ asserted something false on this adapter or stale against current native code.
 
 RADV was not rerun, because its GPU is reserved for other work.
 
+## SPIR-V buffer clamp (`1dfd5e009`), 2026-10-30: no detectable difference
+
+Contract [`contract-spirv-clamp.json`](contract-spirv-clamp.json) (frozen
+2026-10-31T02:35:53Z) compares the SPIR-V storage/uniform index clamp
+`1dfd5e009` (`cand`) against its parent `fac2bc042` (`main`) and source-built
+Dawn `d04f88359` (`dawn`, rebuilt because the earlier binaries were deleted),
+with a byte-identical Dawn harness as A/A. 48 pairs of 32 iterations per
+workload; the two workloads that compile a shader. Window tools are the
+[`tools/`](tools/) copies above (the contract's hashes match them); the run
+command is [`spirv-clamp/run-window.sh`](spirv-clamp/run-window.sh).
+
+Both windows were valid on attempt 1, with no failed process: foreign GPU 0%,
+foreign CPU 1.5% (vector) and 2.4% (image) of capacity against a 5% limit.
+A/A warm operation was 0.991 [0.964,1.022] (vector) and 1.005 [0.991,1.056]
+(image). Per-metric classifications are in
+[`spirv-clamp/verdict.txt`](spirv-clamp/verdict.txt); the summaries are
+[vs main](spirv-clamp/summary-vs-main.json) and
+[vs Dawn](spirv-clamp/summary-vs-dawn.json).
+
+| cand / main | pipelineNs | warm completion | compile | setup | warm operation | complete | cpuMs |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| vector | 1.002 [0.999,1.010] | 1.004 [0.994,1.010] | 1.005 | 1.003 | 1.013 | 1.007 [0.996,1.028] | 1.073 [0.984,1.135] |
+| image | 0.998 [0.986,1.004] | 1.003 [0.936,1.162] | 1.012 | 0.999 | 1.014 | 0.982 [0.933,1.061] | 0.960 [0.936,1.015] |
+
+Every cand/main confidence interval contains 1.0: under the contract's rule
+there is no detectable difference in either primary metric or any reported
+metric. Against Dawn, cand and main match each other: pipeline creation is
+slower (cand/dawn 1.069 vector, 1.078 image) and compile is faster (0.354,
+0.300). Image warm completion against Dawn stays above 1 (1.370), as in the
+frequency diagnostic above.
+
+Evidence limits: the contract's claim boundary applies (these two drop-in
+workloads, intel-host ANV, these frozen binaries; no Intel or RADV support
+claim and no transfer to Metal or D3D12). The raw samples had the absolute work
+directory replaced by `<work>/`; the `rawFiles` hashes inside the summaries are
+of the unsanitized bytes.
+
 ## Remaining owners on intel-host
 
 1. **Image warm completion (1.21x against Dawn):** owned by i915 frequency

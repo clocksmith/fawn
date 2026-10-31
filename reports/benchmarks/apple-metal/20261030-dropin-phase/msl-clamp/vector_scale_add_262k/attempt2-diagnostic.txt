@@ -1,0 +1,9 @@
+== vector_scale_add_262k: failed processes main-summary 0 dawn-summary 0; A/A warm.operation 0.999 [0.994,1.005] ok
+   pipelineNs       cand/main 1.003 [0.999,1.017] no detectable difference | cand/dawn 1.108 [1.095,1.119] regression | main/dawn 1.091 [1.080,1.106] regression
+   warm.completion  cand/main 1.001 [0.995,1.005] no detectable difference | cand/dawn 0.934 [0.931,0.939] improvement | main/dawn 0.935 [0.930,0.941] improvement
+   compileNs        cand/main 0.985 [0.975,0.995] improvement | cand/dawn 0.425 [0.418,0.429] improvement | main/dawn 0.432 [0.428,0.438] improvement
+   setupNs          cand/main 1.001 [0.997,1.010] no detectable difference | cand/dawn 2.131 [2.107,2.159] regression | main/dawn 2.123 [2.098,2.145] regression
+   warm.operation   cand/main 0.998 [0.994,1.006] no detectable difference | cand/dawn 1.023 [1.014,1.028] regression | main/dawn 1.025 [1.015,1.030] regression
+   complete         cand/main 1.005 [0.999,1.010] no detectable difference | cand/dawn 0.986 [0.980,1.004] no detectable difference | main/dawn 0.990 [0.982,0.999] improvement
+   processWall      cand/main 1.006 [0.996,1.010] no detectable difference | cand/dawn 1.175 [1.168,1.184] regression | main/dawn 1.168 [1.158,1.177] regression
+   cpuMs            cand/main 1.002 [0.996,1.008] no detectable difference | cand/dawn 1.019 [1.014,1.024] regression | main/dawn 1.023 [1.016,1.028] regression

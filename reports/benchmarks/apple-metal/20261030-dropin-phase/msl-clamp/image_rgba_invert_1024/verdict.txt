@@ -1,0 +1,9 @@
+== image_rgba_invert_1024: failed processes main-summary 0 dawn-summary 0; A/A warm.operation 0.997 [0.993,1.003] ok
+   pipelineNs       cand/main 1.011 [1.003,1.021] regression | cand/dawn 1.122 [1.105,1.134] regression | main/dawn 1.107 [1.090,1.114] regression
+   warm.completion  cand/main 0.998 [0.989,1.004] no detectable difference | cand/dawn 0.756 [0.750,0.761] improvement | main/dawn 0.756 [0.749,0.759] improvement
+   compileNs        cand/main 0.983 [0.969,1.000] no detectable difference | cand/dawn 0.361 [0.353,0.366] improvement | main/dawn 0.368 [0.360,0.371] improvement
+   setupNs          cand/main 1.004 [0.993,1.013] no detectable difference | cand/dawn 2.082 [2.062,2.121] regression | main/dawn 2.083 [2.065,2.108] regression
+   warm.operation   cand/main 0.998 [0.995,0.999] improvement | cand/dawn 0.724 [0.720,0.728] improvement | main/dawn 0.725 [0.720,0.728] improvement
+   complete         cand/main 0.997 [0.990,1.003] no detectable difference | cand/dawn 0.764 [0.756,0.775] improvement | main/dawn 0.766 [0.760,0.773] improvement
+   processWall      cand/main 1.002 [0.992,1.009] no detectable difference | cand/dawn 0.969 [0.960,0.974] improvement | main/dawn 0.970 [0.961,0.975] improvement
+   cpuMs            cand/main 1.003 [0.998,1.007] no detectable difference | cand/dawn 0.866 [0.863,0.870] improvement | main/dawn 0.866 [0.860,0.870] improvement

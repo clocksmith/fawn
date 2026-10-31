@@ -64,6 +64,7 @@ are not verdicts.
 | [`contract-b3.json`](contract-b3.json) | B2 rules on rebuilt binaries | frozen, not yet run | none |
 | [`contract-m1r.json`](contract-m1r.json) | M1 rules on rebuilt binaries | frozen, not yet run | none |
 | [`contract-m2r.json`](contract-m2r.json) | M2 rules on rebuilt binaries | frozen, not yet run | none |
+| [`contract-msl-clamp.json`](contract-msl-clamp.json) | MSL buffer clamp vs main and Dawn | image valid; vector x2, both invalid | image: pipelineNs regression (1.011); vector none |
 
 **Why b3, m1r and m2r exist.** The scratch tree holding the frozen binaries
 was deleted. A rebuild of the same sources reproduced the harness binaries, the
@@ -146,6 +147,52 @@ Physical-client totals, identical on main, M1 and M2:
 
 The Makefile's Darwin `PHYSICAL_CLIENTS` list holds only the 8 late appends, so
 the full list was run with [`runs/physical.sh`](runs/physical.sh).
+
+## MSL buffer clamp (`591fde1ee`), 2026-10-30: image pipeline regression, vector invalid
+
+Contract [`contract-msl-clamp.json`](contract-msl-clamp.json) (frozen
+2026-10-31T02:37:12Z) compares the MSL clamp, direct word access, inline scalar
+constants and zero-init removal `591fde1ee` (`cand`, on top of the SPIR-V-only
+`1dfd5e009`) against `fac2bc042` (`main`) and Dawn `200d6641a` (`dawn`, the
+repository's existing vendor build, not this campaign's `d04f88359`), with a
+byte-identical Dawn harness as A/A. 48 pairs of 32 iterations per workload.
+Each window ran under `flock /tmp/doe-gpu-timing.lock` after an untimed warm-up
+pass ([`msl-clamp/run-metal.sh`](msl-clamp/run-metal.sh)); the window tools are
+the [`tools/`](tools/) copies above (the contract's hashes match them).
+
+- **Image: valid on attempt 1.** Foreign CPU was 19.96% against the 20%
+  limit, idle GPU 0%, on AC power. No process failed; A/A warm operation was
+  0.997 [0.993,1.003]. Per-metric classifications are in
+  [`msl-clamp/image_rgba_invert_1024/verdict.txt`](msl-clamp/image_rgba_invert_1024/verdict.txt).
+- **Vector: invalid twice; no verdict.** Foreign CPU was 25.8% and 22.3%. The
+  top foreign process in both was a Python interpreter (about 9 CPU-seconds),
+  then Chrome and WindowServer. The contract allows two attempts, so vector has
+  no result. Both gates and raw samples are retained; the attempt 2 summaries
+  and [classification](msl-clamp/vector_scale_add_262k/attempt2-diagnostic.txt)
+  are diagnostic only.
+
+| image, cand / main | median | CI95 | classification |
+| --- | --- | --- | --- |
+| pipelineNs (primary) | 1.011 | [1.003,1.021] | regression |
+| warm completion (primary) | 0.998 | [0.989,1.004] | no detectable difference |
+| compileNs | 0.983 | [0.969,1.000] | no detectable difference |
+| setupNs | 1.004 | [0.993,1.013] | no detectable difference |
+| warm operation | 0.998 | [0.995,0.999] | improvement |
+| complete | 0.997 | [0.990,1.003] | no detectable difference |
+| processWall | 1.002 | [0.992,1.009] | no detectable difference |
+| cpuMs | 1.003 | [0.998,1.007] | no detectable difference |
+
+Under the contract's rule, image pipeline creation regressed by about 1.1%
+(CI lower bound 1.003), and warm operation improved by about 0.2%. The other
+metrics show no detectable difference. Against Dawn, cand and main match each
+other: pipeline 1.122 and 1.107, setup 2.08, warm completion 0.756.
+
+Evidence limits: the contract's claim boundary applies (these drop-in
+workloads, apple-host, these frozen binaries; no Metal support claim and no
+transfer to Vulkan or D3D12). The image window passed with foreign CPU 0.04
+points under its limit. The raw samples and gate commands had the absolute work
+directory replaced by `<work>/`; the `rawFiles` hashes inside the summaries are
+of the unsanitized bytes.
 
 ## Remaining owners and open items
 
