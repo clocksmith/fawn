@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 12.195521542103961,
+  "foreignCpuSeconds": 4.050000000007033,
+  "foreignCpuFraction": 0.04151113982727969,
+  "topForeignCpu": [
+    [
+      0.3900000000012369,
+      "claude"
+    ],
+    [
+      0.3000000000001819,
+      "/usr/libexec/opendirectoryd"
+    ],
+    [
+      0.2999999999999545,
+      "/usr/sbin/cfprefsd"
+    ],
+    [
+      0.2400000000000091,
+      "/usr/sbin/notifyd"
+    ],
+    [
+      0.23999999999978172,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.23999999999796273,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd"
+    ],
+    [
+      0.1999999999998181,
+      "/usr/libexec/logd"
+    ],
+    [
+      0.18000000000000682,
+      "/System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd"
+    ]
+  ],
+  "idleGpuMedianBefore": 0,
+  "idleGpuMedianAfter": 0,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T16:47:20Z",
+    "monotonic": 1223624.76676775,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      5,
+      0,
+      0,
+      0,
+      0
+    ],
+    "loadAverage": [
+      1.2392578125,
+      1.818359375,
+      1.744140625
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T16:47:38Z",
+    "monotonic": 1223642.252477458,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "loadAverage": [
+      1.32080078125,
+      1.8095703125,
+      1.7421875
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/split-main",
+    "--provider",
+    "cand=<work>/bin/split-m1",
+    "--provider",
+    "dawn=<work>/bin/split-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/split-dawn-aa",
+    "--workload",
+    "buffer_upload_readback_exact_1mb",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/m1s/buffer_upload_readback_exact_1mb/attempt1-raw.jsonl"
+  ]
+}

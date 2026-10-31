@@ -6,6 +6,10 @@ diagnostic on apple-host**. It is not an application win and does not qualify
 Metal support. RADV and ANV evidence does not transfer here, and none of this
 transfers back.
 
+**Status (2026-10-31, evening): M1 under the revised upload rule and the
+adapter-owned identity worker both passed and landed**
+([section](#owner-decisions-of-2026-10-31-evening-m1-revised-rule-adapter-identity)).
+
 **Status (2026-10-31, later): the Metal completed-handler decision passed its
 contract and landed; the identity-worker decision failed on compile time; the M1
 upload regression was traced without a Doe-side fix** ([section](#owner-decisions-of-2026-10-31-completion-handler-identity-worker-revised-m1)).
@@ -74,6 +78,8 @@ windows and are not verdicts.
 | [`contract-msl-clamp.json`](contract-msl-clamp.json) | MSL buffer clamp vs main and Dawn | image valid; vector x2, both invalid | image: pipelineNs regression (1.011); vector none |
 | [`contract-completion.json`](contract-completion.json) | Metal completed handler replaces the worker wake (owner decision 1) | 3 valid (upload/readback on its rerun) | **pass**; landed |
 | [`contract-identity.json`](contract-identity.json) | Identity worker at Metal device creation (owner decision 2) | 3 valid | **fail** (compileNs 1.077, 1.087) |
+| [`contract-m1s.json`](contract-m1s.json) | M1 under the revised rule: Doe-owned upload bounded apart from the caller's source read | 3 valid | **pass**; landed |
+| [`contract-identity2.json`](contract-identity2.json) | Identity worker at Metal adapter request, digest shared by the adapter's devices | 3 valid | **pass**; landed |
 
 **Why b3, m1r and m2r exist.** The scratch tree holding the frozen binaries
 was deleted. A rebuild of the same sources reproduced the harness binaries, the
@@ -373,6 +379,80 @@ allocation or a malloc shadow, survives cache flushes, extra Doe-side traffic,
 spins and the completion change, and does not reproduce in a
 [standalone Metal probe](diagnostics/m1_upload_probe.m). With no Doe-side cause
 found there was nothing to fix, so no revised M1 was frozen or timed.
+
+## Owner decisions of 2026-10-31 (evening): M1 revised rule, adapter identity
+
+Both contracts compare against main `e76522a50`, which includes the
+completed-handler change, and Dawn `d04f88359`, under the same gate, 96 pairs of 32
+iterations and the Dawn A/A control. Six windows ran between 16:43Z and 16:53Z under
+the shared GPU lock, on AC power with the battery at 100% (charged), low-power mode
+off and no power-source change. Idle GPU was 0-8% before and after, and foreign CPU
+3.6-7.5%. Every window was valid on attempt 1. Before freezing, all 81 Metal
+physical clients gave the same per-client result on main, both candidates and the
+combined tree ([main](correctness/physical-main-e76522a50.tsv),
+[M1](correctness/physical-m1-e76522a50.tsv), [identity](correctness/physical-id2-e76522a50.tsv),
+[combined](correctness/physical-final-e76522a50.tsv)), and `backends/metal` `check`,
+`sdk-abi`, `native-check` and `native-graphics-check` passed on both trees. Build
+receipts: [`builds/m1s-identity2-build.json`](builds/m1s-identity2-build.json); run
+script: [`runs/run-m1s-identity2.sh`](runs/run-m1s-identity2.sh).
+
+### M1 under the revised rule (pass, landed)
+
+Rule change (recorded in [`contract-m1s.json`](contract-m1s.json), `ruleChange`):
+m1r bounded `warm.upload`, which mixed the caller's first read of its own source
+array with Doe's work. The [trace](diagnostics/m1_upload_trace.txt) put the whole
+m1r image regression in that read. The harness now has an opt-in split (`build
+--upload-split`, `-DDOE_PHASE_UPLOAD_SPLIT`, `bench/drop-in/dropin_phase_harness.c`):
+it reads its source array once (`uploadSource`) and then times
+`wgpuQueueWriteBuffer` (`uploadDoe`); `upload` stays their sum. The 1.05 bound
+applies to `uploadDoe`; `upload` and `uploadSource` are reported only. Without the
+define the harness and its binaries are unchanged (the Dawn harness hash matches
+contract-completion's). The mechanism is the m1 patch unchanged
+([patch](m1s/candidate.patch)).
+
+| cand/main | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| warm map (improve) | 0.436 [0.435,0.437] | 0.450 [0.439,0.459] | 0.433 [0.432,0.434] |
+| warm operation (improve) | 0.922 [0.918,0.924] | 0.875 [0.865,0.882] | 0.923 [0.922,0.925] |
+| warm uploadDoe (bounded) | 1.000 [1.000,1.000] | 1.000 [1.000,1.000] | 1.000 [1.000,1.000] |
+| warm uploadSource (reported) | 0.661 | **1.060 [1.048,1.067]** | 0.755 |
+| warm upload, combined (reported) | 0.845 | 1.027 [1.022,1.032] | 0.896 |
+| process CPU | 0.969 | 0.912 | 0.954 |
+
+**Verdict: PASS** ([evaluator output](m1s/eval.txt)). The image regression reappears
+only in the caller's source read (1.060), as the trace predicted. Doe's own queue
+write is identical: the medians fall on the same 41.7 ns clock ticks; per-pair
+ratios span 0.94-1.06 and 19-25 of 96 pairs are exactly equal. Against Dawn
+(diagnostic, [summary](m1s/summary-vs-dawn.json)), warm map goes from about 2.3x to
+about 1.0x.
+
+### Identity worker at adapter request (pass, landed)
+
+Mechanism ([patch](identity2/candidate.patch)): a Metal adapter request starts the
+worker before the adapter opens (`native/src/lifecycle.c:150`). The adapter owns the
+digest (`native_shared_identity`, `shader_identity_worker.c`; no process-wide
+state). The first pipeline of any device of that adapter joins it under the
+identity's own mutex, and later devices reuse the published digest
+(`stages.c:134-136`). Final adapter release, or a request that produced no
+adapter, joins a never-joined worker (`lifecycle.c:97,210`). D3D12 keeps its
+device-start worker. A diagnostic build found the adapter digest equal to an
+inline recomputation in 4 of 4 harness processes and for both devices of one
+adapter ([probe](diagnostics/identity2_two_devices.c)); the second device took the
+already-joined result.
+
+| cand/main | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| pipelineNs (improve) | 0.723 [0.719,0.730] | 0.729 [0.719,0.737] | (no pipeline) |
+| compileNs (bounded) | 0.839 [0.832,0.848] | 0.812 [0.805,0.822] | (no shader) |
+| setupNs (bounded) | 1.007 [1.001,1.014] | 1.010 [1.005,1.018] | 1.004 [0.994,1.011] |
+| process CPU | 1.004 | 1.007 | 1.029 [1.025,1.036] |
+
+**Verdict: PASS** ([evaluator output](identity2/eval.txt)). Pipeline creation
+falls from 1.69-1.72 ms to 1.23-1.25 ms. Against Dawn (diagnostic,
+[summary](identity2/summary-vs-dawn.json)), pipeline goes from about 1.17x to
+about 0.85x. The hash now runs during the roughly 8 ms adapter open, so setup stays
+within 1.01. Shader-module compile is also faster than main here (0.81-0.84);
+that gain is measured but its cause has not been traced.
 
 ## Remaining owners (after b3, m1r, m2r)
 

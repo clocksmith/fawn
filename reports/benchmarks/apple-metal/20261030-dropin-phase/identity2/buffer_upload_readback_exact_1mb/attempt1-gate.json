@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 11.74171350011602,
+  "foreignCpuSeconds": 4.3499999999925505,
+  "foreignCpuFraction": 0.04630925460697844,
+  "topForeignCpu": [
+    [
+      0.3099999999999987,
+      "/usr/libexec/networkserviceproxy"
+    ],
+    [
+      0.3000000000001819,
+      "/usr/libexec/opendirectoryd"
+    ],
+    [
+      0.2999999999999545,
+      "/usr/sbin/cfprefsd"
+    ],
+    [
+      0.25,
+      "/usr/sbin/notifyd"
+    ],
+    [
+      0.23999999999978172,
+      "/Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper (Renderer).app/Contents/MacOS/Antigravity Helper (Renderer)"
+    ],
+    [
+      0.23999999999796273,
+      "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd"
+    ],
+    [
+      0.1999999999998181,
+      "/usr/libexec/logd"
+    ],
+    [
+      0.19000000000005457,
+      "/System/Library/PrivateFrameworks/CoreAnalytics.framework/Support/analyticsd"
+    ]
+  ],
+  "idleGpuMedianBefore": 0,
+  "idleGpuMedianAfter": 0,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T16:51:49Z",
+    "monotonic": 1223893.17568,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      6,
+      0,
+      0,
+      0,
+      0
+    ],
+    "loadAverage": [
+      1.2744140625,
+      1.64013671875,
+      1.6904296875
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T16:52:06Z",
+    "monotonic": 1223910.217235666,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "loadAverage": [
+      1.7080078125,
+      1.7119140625,
+      1.7138671875
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<work>/inputs",
+    "--provider",
+    "main=<work>/bin/harness-main",
+    "--provider",
+    "cand=<work>/bin/harness-id2",
+    "--provider",
+    "dawn=<work>/bin/harness-dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/harness-dawn-aa",
+    "--workload",
+    "buffer_upload_readback_exact_1mb",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/identity2/buffer_upload_readback_exact_1mb/attempt1-raw.jsonl"
+  ]
+}

@@ -1,0 +1,166 @@
+diff --git a/runtime/c/native/README.md b/runtime/c/native/README.md
+index 693643036..fb2fa3cf9 100644
+--- a/runtime/c/native/README.md
++++ b/runtime/c/native/README.md
+@@ -1699,7 +1699,11 @@ pipeline needing the identity claims it under the device mutex and joins outside
+ it; any other caller keeps the inline computation. A failed worker identity
+ disables persistence for that call exactly as an inline failure does, and later
+ calls retry inline. Final device release (and failed construction) joins a
+-never-claimed worker. The digest is held per device: no process-wide state, and
++never-claimed worker. Metal instead starts the worker when the adapter is
++requested, before the adapter opens (owner decision 2026-10-31); the adapter owns
++the digest and every device of that adapter shares it. The first pipeline that
++needs it joins under the adapter identity's own mutex; a failed result disables
++persistence for that call only. Final adapter release joins a never-joined worker. The digest is held per device: no process-wide state, and
+ the adapter/instance owners do not cache it. Each artifact is at most one MiB. The checksum detects
+ corruption; it is not authentication against an actor who can rewrite the
+ user's cache and digest.
+diff --git a/runtime/c/native/src/internal.h b/runtime/c/native/src/internal.h
+index f3088715d..231bc1cc1 100644
+--- a/runtime/c/native/src/internal.h
++++ b/runtime/c/native/src/internal.h
+@@ -33,6 +33,7 @@ typedef struct native_adapter {
+     doe_mutex mutex; /* Serializes surface queries on the adapter's own context. */
+     doe_instance *instance;
+     native_backend backend;
++    native_shared_identity *identity; /* Metal; see shader_identity_worker.h. */
+ } native_adapter;
+ 
+ typedef struct native_pending native_pending;
+diff --git a/runtime/c/native/src/lifecycle.c b/runtime/c/native/src/lifecycle.c
+index 699364253..7c2f659cc 100644
+--- a/runtime/c/native/src/lifecycle.c
++++ b/runtime/c/native/src/lifecycle.c
+@@ -94,6 +94,7 @@ void wgpuAdapterRelease(WGPUAdapter handle)
+     if (!adapter || !native_release_count(&adapter->references)) return;
+     doe_instance *instance = adapter->instance;
+     native_backend_close(&adapter->backend);
++    native_shared_identity_finish(adapter->identity);
+     if (doe_mutex_destroy(&adapter->mutex).status != DOE_HOST_OK) abort();
+     free(adapter);
+     doe_instance_release(instance);
+@@ -145,6 +146,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
+ #endif
+     }
+     const bool valid = native_adapter_request_decode(kind, options, &selection);
++    /* First, so the image hash overlaps the adapter open below. */
++    native_shared_identity *identity = valid && kind == WGPUBackendType_Metal ? native_shared_identity_start() : NULL;
+     if (valid) {
+         native_backend backend = {0};
+         const bool force_fallback = options && options->forceFallbackAdapter;
+@@ -189,6 +192,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
+                 adapter->instance = instance;
+                 doe_instance_retain(instance);
+                 adapter->backend = backend;
++                adapter->identity = identity;
++                identity = NULL;
+                 delivery.adapter = adapter;
+                 delivery.status = WGPURequestAdapterStatus_Success;
+                 delivery.message = "";
+@@ -202,6 +207,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
+             delivery.message = "requested backend initialization failed";
+         }
+     } else delivery.message = "requested adapter extension is unsupported";
++    native_shared_identity_finish(identity); /* No adapter adopted it. */
+     doe_callback_status admitted;
+     WGPUFuture future = native_callback_admit(instance, callback.mode, &delivery,
+         sizeof(delivery), _Alignof(adapter_delivery), copy_adapter, deliver_adapter, &admitted);
+diff --git a/runtime/c/native/src/shader_identity_worker.c b/runtime/c/native/src/shader_identity_worker.c
+index 1aea15a03..b33a65c4c 100644
+--- a/runtime/c/native/src/shader_identity_worker.c
++++ b/runtime/c/native/src/shader_identity_worker.c
+@@ -33,6 +33,44 @@ native_identity_take native_identity_worker_join(native_identity_worker *worker,
+     return NATIVE_IDENTITY_TAKE_READY;
+ }
+ 
++native_shared_identity *native_shared_identity_start(void)
++{
++    native_shared_identity *identity = calloc(1, sizeof(*identity));
++    if (!identity) return NULL;
++    if (doe_mutex_init(&identity->mutex, false).status != DOE_HOST_OK) {
++        if (doe_mutex_destroy(&identity->mutex).status != DOE_HOST_OK) abort();
++        free(identity);
++        return NULL;
++    }
++    native_identity_worker_start(&identity->worker);
++    return identity;
++}
++
++native_identity_take native_shared_identity_take(native_shared_identity *identity, uint8_t digest[32])
++{
++    native_identity_take taken = NATIVE_IDENTITY_TAKE_NONE;
++    if (doe_mutex_lock(&identity->mutex).status != DOE_HOST_OK) abort();
++    if (!identity->joined) {
++        identity->joined = true;
++        if (native_identity_worker_claim(&identity->worker)) {
++            taken = native_identity_worker_join(&identity->worker, identity->digest);
++            identity->valid = taken == NATIVE_IDENTITY_TAKE_READY;
++            identity->worker.state = NATIVE_IDENTITY_WORKER_NONE;
++        }
++    } else if (identity->valid) taken = NATIVE_IDENTITY_TAKE_READY;
++    if (taken == NATIVE_IDENTITY_TAKE_READY) memcpy(digest, identity->digest, sizeof(identity->digest));
++    if (doe_mutex_unlock(&identity->mutex).status != DOE_HOST_OK) abort();
++    return taken;
++}
++
++void native_shared_identity_finish(native_shared_identity *identity)
++{
++    if (!identity) return;
++    native_identity_worker_finish(&identity->worker);
++    if (doe_mutex_destroy(&identity->mutex).status != DOE_HOST_OK) abort();
++    free(identity);
++}
++
+ void native_identity_worker_finish(native_identity_worker *worker)
+ {
+     /* A CLAIMED worker was joined by its claimer before any device release
+diff --git a/runtime/c/native/src/shader_identity_worker.h b/runtime/c/native/src/shader_identity_worker.h
+index 1536cb5a5..092f8d213 100644
+--- a/runtime/c/native/src/shader_identity_worker.h
++++ b/runtime/c/native/src/shader_identity_worker.h
+@@ -36,4 +36,23 @@ bool native_identity_worker_claim(native_identity_worker *worker);
+ native_identity_take native_identity_worker_join(native_identity_worker *worker, uint8_t digest[32]);
+ /* Device finalization and failed construction: join a never-claimed worker. */
+ void native_identity_worker_finish(native_identity_worker *worker);
++
++/* One per Metal adapter (owner decision 2026-10-31): the worker starts when the
++ * adapter is requested, so the hash overlaps adapter opening, and every device
++ * of that adapter shares its digest. The adapter owns it; its final release
++ * joins the worker. No process-wide state. */
++typedef struct native_shared_identity {
++    doe_mutex mutex;              /* Serializes the one join and its publication. */
++    native_identity_worker worker;
++    bool joined;
++    bool valid;
++    uint8_t digest[32];
++} native_shared_identity;
++/* NULL when allocation fails; callers then keep the inline computation. */
++native_shared_identity *native_shared_identity_start(void);
++/* The first caller joins (blocking any concurrent caller until it publishes)
++ * and receives READY or FAILED. Later callers receive READY with the same
++ * digest, or NONE after a failure so they retry inline as before. */
++native_identity_take native_shared_identity_take(native_shared_identity *identity, uint8_t digest[32]);
++void native_shared_identity_finish(native_shared_identity *identity);
+ #endif
+diff --git a/runtime/c/native/src/stages.c b/runtime/c/native/src/stages.c
+index c07a16374..6a3f6e775 100644
+--- a/runtime/c/native/src/stages.c
++++ b/runtime/c/native/src/stages.c
+@@ -123,6 +123,7 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
+         bool have_identity = use_disk && device->shaders.image_identity_ready;
+         if (have_identity) memcpy(image_identity,device->shaders.image_identity,sizeof(image_identity));
+         const bool join_worker = use_disk && !have_identity && native_identity_worker_claim(&device->identity_worker);
++        native_shared_identity *shared = use_disk && !have_identity && !join_worker ? device->adapter->identity : NULL;
+         native_unlock(device);
+         /* Locates embedder pipeline blobs; WGSL semantics never come from it. */
+         if (blob_key && !doe_shader_artifact_key(payload->module,&selection,values,count,pipeline,result.source_key))
+@@ -131,7 +132,8 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
+             /* A worker result counts as this call's one identity attempt; a
+              * failed one disables persistence for this call, as inline failure does. */
+             const native_identity_take taken = join_worker ?
+-                native_identity_worker_join(&device->identity_worker,image_identity) : NATIVE_IDENTITY_TAKE_NONE;
++                native_identity_worker_join(&device->identity_worker,image_identity) :
++                shared ? native_shared_identity_take(shared,image_identity) : NATIVE_IDENTITY_TAKE_NONE;
+             if (use_disk && !have_identity && taken != NATIVE_IDENTITY_TAKE_FAILED &&
+                 (taken == NATIVE_IDENTITY_TAKE_READY || native_shader_cache_identity(image_identity))) {
+                 native_lock(device);

@@ -1,0 +1,125 @@
+{
+ "schemaVersion": 1,
+ "surface": "dropin (public webgpu.h ABI); one harness source linked per provider, compiled with -DDOE_PHASE_BACKEND_METAL",
+ "workloads": [
+  "vector_scale_add_262k",
+  "image_rgba_invert_1024",
+  "buffer_upload_readback_exact_1mb"
+ ],
+ "workloadOrigin": "unchanged amd-host C1 workloads; inputs manifest byte-identical to the amd-host and intel-host manifests (afe4e1d3...); independent CPU oracle on every iteration outside the timed interval",
+ "sampling": {
+  "pairs": 96,
+  "orders": "all 24 permutations of the 4 providers, cycled",
+  "iterationsPerProcess": 32,
+  "warmIterations": "iterations 1..31",
+  "processesPerWorkload": 384
+ },
+ "timing": "CLOCK_UPTIME_RAW (Darwin CLOCK_MONOTONIC is quantized to 1 us); host clock, not GPU timestamps",
+ "phases": "identical to amd-host contract-c1.json; complete = compile + pipeline + resources + sum of every iteration's operation + teardown",
+ "statistics": "per-pair ratio provider/control; median ratio, bootstrap 95% CI (10000 resamples, seed 20261029), provider-faster pair count",
+ "gateLimits": "Unchanged from b2/b3/m1r/m2r: idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity (tools/mac_window.py, hash below).",
+ "gpuLock": "Every timed window runs under `flock /tmp/doe-gpu-timing.lock`, the host-wide lock shared with other agents' Metal correctness and timing runs, held for that window only; scheduling (settle loop, tools/wait_quiet.sh) runs outside the lock.",
+ "host": {
+  "label": "apple-host",
+  "machine": "Apple M3 (8 CPU cores, 10 GPU cores), 24 GiB unified memory",
+  "os": "macOS 26.6.2 (25G83)",
+  "gpu": "Apple M3 integrated, Metal 4",
+  "power": "AC power, battery 100% charged at freeze, low-power mode off; the power source must stay unchanged within a window; every window's gate.json records the power source and battery level before and after",
+  "sharedUse": "desktop session with the external display, browser, terminal and agent sessions; no computer-use or screen-capture session; at freeze the top processes were this agent (9%) and WindowServer (5%). Earlier the same day another session's one-core Python jobs and a busy Chrome renderer ran; windows are scheduled by the run script's settle loop and tools/wait_quiet.sh."
+ },
+ "rebuild": "Libraries built with ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-<name>/native CC=clang from a git archive of main e76522a50, candidate patch applied with patch -p1. Dawn d04f88359 is the same rebuilt library as contract-completion.",
+ "cohortId": "apple-metal-dropin-phase-m1s",
+ "frozenAtUtc": "2026-10-31T16:43:49Z",
+ "experiment": "Owner decision 2026-10-31: M1 (lend the shared Metal allocation to read mappings, m1s-candidate.patch, byte-identical to m1/candidate.patch) re-run fresh under a revised rule that bounds Doe-owned upload time separately from the caller's source read. Control is main e76522a50, which includes the completed-handler change.",
+ "sourceCommit": "e76522a50 (main) and e76522a50 + m1s-candidate.patch (cand)",
+ "providers": {
+  "main": "libwebgpu_doe_c.dylib from e76522a50 (control)",
+  "cand": "e76522a50 + m1s-candidate.patch, built the same way",
+  "dawn": "source-built Dawn d04f88359391a12375c1a3e948a0b2dcb4c97a18, CMake Release, monolithic shared, Metal only",
+  "dawn-aa": "byte-identical copy of the dawn harness binary (A/A control)"
+ },
+ "harness": "Every provider's harness is built with dropin_phase_cohort build --upload-split (-DDOE_PHASE_UPLOAD_SPLIT). Each iteration first reads the harness's own source array once (one 8-byte load per 64-byte line), timed as uploadSource; wgpuQueueWriteBuffer is then timed as uploadDoe (lock, settle, validate, copy from a warm source, unlock, release); upload is their sum and operation includes both. Without the define the harness compiles to the same phases as before (the unsplit Dawn harness binary is byte-identical to contract-completion's).",
+ "ruleChange": "m1r applied the 1.05 no-regression bound to warm.upload, which mixed the caller's first read of its own 4 MiB source array with Doe's work. The trace (diagnostics/m1_upload_trace.txt) found the m1r image regression entirely in that first read (+3.6%); Doe's lock, settle, unlock and copy from a warmed source were equal on main and M1, and a standalone Metal probe without Doe did not reproduce it. By owner decision the bound now applies to warm.uploadDoe; warm.upload (the combined value, which now also includes the harness's read pass) and warm.uploadSource are reported, not bounded. Every other m1r rule is unchanged.",
+ "rules": {
+  "kind": "mechanism",
+  "control": "main",
+  "provider": "cand",
+  "aaProvider": "dawn-aa",
+  "aaControl": "dawn",
+  "aaWindow": [
+   0.95,
+   1.05
+  ],
+  "workloads": [
+   "vector_scale_add_262k",
+   "image_rgba_invert_1024",
+   "buffer_upload_readback_exact_1mb"
+  ],
+  "improve": {
+   "vector_scale_add_262k": [
+    "warm.map",
+    "warm.operation"
+   ],
+   "image_rgba_invert_1024": [
+    "warm.map",
+    "warm.operation"
+   ],
+   "buffer_upload_readback_exact_1mb": [
+    "warm.map",
+    "warm.operation"
+   ]
+  },
+  "noRegress": [
+   "setupNs",
+   "compileNs",
+   "pipelineNs",
+   "resourcesNs",
+   "teardownNs",
+   "first.operation",
+   "warm.uploadDoe",
+   "warm.encode",
+   "warm.submit",
+   "warm.completion",
+   "warm.map",
+   "warm.operation",
+   "warmP95.operation",
+   "complete",
+   "processWall",
+   "cpuMs",
+   "maxRssMiB"
+  ],
+  "noRegressBound": 1.05,
+  "reportedNotBounded": [
+   "warm.upload",
+   "warm.uploadSource"
+  ]
+ },
+ "acceptance": {
+  "validity": [
+   "every process status ok with all 32 iterations oracle-checked",
+   "every provider reports a Metal adapter that is not a CPU adapter",
+   "A/A: dawn-aa/dawn warm.operation median ratio within [0.95,1.05] and its CI95 contains 1, per workload",
+   "window gate (tools/mac_window.py) valid: power source and low-power mode unchanged, no thermal warning, idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity"
+  ],
+  "mechanismRule": "cand/main: warm.map and warm.operation CI95 upper < 1.0 on every workload, and every noRegress metric (warm.uploadDoe in place of warm.upload) CI95 lower <= 1.05 on every workload. Correctness recorded before freezing on these exact libraries: all 81 Metal physical clients give the same per-client result as main (61 pass, 13 abort on main too, 1 needs checker arguments, 6 GNU-only); backends/metal check, sdk-abi, native-check and native-graphics-check pass.",
+  "invalidWindows": "an invalid window is retained, never used for the verdict, and rerun fresh once under the unchanged contract",
+  "claimBoundary": "A pass accepts the mechanism for the Metal C runtime on apple-host only; it does not by itself make a scoped win against Dawn and says nothing about Vulkan or D3D12."
+ },
+ "hashes": {
+  "bench/drop-in/dropin_phase_harness.c": "f4c43eb961d8eddfbabcd0702d6c13c0003ace0444a861c9ed340c6b503fe447",
+  "bench/tools/dropin_phase_cohort.py": "cf86d60610441a9584521881a788b50f1b53833cc08234e0c5a86409ee500eb2",
+  "tools/mac_window.py": "fc7022d1787375356540db245202339e6bb85838e12d1f52bd70e4e70b3955c8",
+  "tools/evaluate.py": "3202f38ead6aa3bf396da5bcdced4d1ad4f88d7505b369f1e0108ef8093a3845",
+  "tools/wait_quiet.sh": "41dbeb80bca95c2cf0beee73d9e2ba1eec26fabb42716eda8f517a6966e5c4b5",
+  "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+  "dawn-build/src/dawn/native/libwebgpu_dawn.dylib": "92dfad094e253c489a1963681f0beb444d474d66d7492dd038a93c136ddd63c0",
+  "bin/split-dawn": "cf13c8c49e66b129d1e382b88deaabc6f7de6a8dda116bbb7a2d6312d19ed5d7",
+  "bin/split-dawn-aa": "cf13c8c49e66b129d1e382b88deaabc6f7de6a8dda116bbb7a2d6312d19ed5d7",
+  "build-main/native/libwebgpu_doe_c.dylib": "7f23c33f9a5f5cb3de412009fd2c6420df01d45a0ab1789f2230185a9cced903",
+  "bin/split-main": "ce157349bfe7b55058f349467c75eee19da8746a7100eeb68106d7797277e318",
+  "build-m1/native/libwebgpu_doe_c.dylib": "7e85d7d4a87d04f82ccba638de486105e6a589cb58c0e645f8e572469a230ce9",
+  "bin/split-m1": "24ef1e293b9f2b1a276cdef6cbe8ad5a65f0dd7172b911afda759aac10182abc",
+  "m1s-candidate.patch": "9eb4753a85e1d13cf9ecb1e009585fbb21496a57cfe9ddccc8719b6ff89ab221"
+ },
+ "relation": "New prospective experiment with a changed rule. It does not reinterpret contract-m1r.json, which keeps its FAIL verdict."
+}
