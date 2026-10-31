@@ -19,7 +19,7 @@ index e41489d4c9..ebce50ab41 100644
 @@ -369,6 +369,10 @@ source_set("common") {
      sources -= [ "cursors/webcursor_aura.cc" ]
    }
-
+ 
 +  if (use_ozone) {
 +    deps += [ "//ui/ozone" ]
 +  }
@@ -40,19 +40,19 @@ index 2e53794fa3..49c904e82a 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
 @@ -6,8 +6,10 @@
-
+ 
  #include <dlfcn.h>
  #include <errno.h>
 +#include <fcntl.h>
  #include <stdlib.h>
  #include <sys/stat.h>
 +#include <sys/sysmacros.h>
-
+ 
  #include <array>
  #include <memory>
 @@ -16,18 +18,25 @@
  #include <vector>
-
+ 
  #include "base/base_paths.h"
 +#include "base/command_line.h"
  #include "base/files/file_enumerator.h"
@@ -85,12 +85,12 @@ index 2e53794fa3..49c904e82a 100644
 +#if BUILDFLAG(IS_OZONE)
 +#include "ui/ozone/public/ozone_platform.h"
 +#endif
-
+ 
  #if BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
 @@ -46,6 +60,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
  using sandbox::syscall_broker::BrokerProcess;
-
+ 
  namespace content {
 +
 +// Only the early external-runtime X11 GLX route needs desktop resources after
@@ -122,12 +122,12 @@ index 2e53794fa3..49c904e82a 100644
 +
 +
  namespace {
-
+ 
  inline bool IsChromeOS() {
 @@ -224,11 +267,174 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
    permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
  }
-
+ 
 -void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
 -                             const std::string& path) {
 +
@@ -291,7 +291,7 @@ index 2e53794fa3..49c904e82a 100644
 +    const std::string& path,
 +    const sandbox::policy::SandboxSeccompBPF::Options* external_glx = nullptr) {
    struct stat st;
-
+ 
 -  if (stat(path.c_str(), &st) == 0) {
 +  if ((external_glx ? lstat(path.c_str(), &st) : stat(path.c_str(), &st)) ==
 +      0) {
@@ -300,12 +300,12 @@ index 2e53794fa3..49c904e82a 100644
 +      return;
 +    }
      permissions->push_back(BrokerFilePermission::ReadWrite(path));
-
+ 
      uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
 @@ -240,13 +446,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
    }
  }
-
+ 
 -void AddDrmGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
 +void AddDrmGpuPermissions(
 +    std::vector<BrokerFilePermission>* permissions,
@@ -322,11 +322,11 @@ index 2e53794fa3..49c904e82a 100644
 +                            external_glx);
    }
  }
-
+ 
 @@ -592,6 +801,37 @@ void LoadVulkanLibraries() {
    dlopen("libvulkan_freedreno.so", dlopen_flag);
  }
-
+ 
 +// Register the loader's own ICD manifest spellings while its existing retained
 +// SONAME handles keep drivers resident. On usr-merged hosts the JSON may name
 +// /usr/lib while dlopen(SONAME) mapped /lib; a post-seal lookup cannot reopen
@@ -363,7 +363,7 @@ index 2e53794fa3..49c904e82a 100644
      const std::string library_path(std::string(path) +
 @@ -604,23 +844,26 @@ void LoadChromecastV4L2Libraries() {
  }  // namespace
-
+ 
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
 -    const sandbox::policy::SandboxLinux::Options& options) {
 +    const sandbox::policy::SandboxLinux::Options& options,
@@ -387,7 +387,7 @@ index 2e53794fa3..49c904e82a 100644
    }
    return command_set;
  }
-
+ 
  std::vector<BrokerFilePermission> FilePermissionsForGpu(
 -    const sandbox::policy::SandboxSeccompBPF::Options& options) {
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
@@ -397,7 +397,7 @@ index 2e53794fa3..49c904e82a 100644
    std::vector<BrokerFilePermission> permissions = {
 @@ -669,12 +912,37 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
    }
-
+ 
    AddStandardGpuPermissions(&permissions);
 +  if (UsesEarlyExternalGlxResources(early_sandbox)) {
 +    AddDrmGpuPermissions(&permissions, &options);
@@ -406,7 +406,7 @@ index 2e53794fa3..49c904e82a 100644
 +  }
    return permissions;
  }
-
+ 
  bool LoadLibrariesForGpu(
 -    const sandbox::policy::SandboxSeccompBPF::Options& options) {
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
@@ -436,7 +436,7 @@ index 2e53794fa3..49c904e82a 100644
    }
 @@ -696,11 +964,39 @@ bool LoadLibrariesForGpu(
  }
-
+ 
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
 +  return GpuPreSandboxHookWithEarlyGlxResources(false, options);
 +}
@@ -468,14 +468,14 @@ index 2e53794fa3..49c904e82a 100644
 +  if (UsesEarlyExternalGlxResources(early_sandbox)) {
 +    PreopenExternalGlxRenderNodes(options);
 +  }
-
+ 
 -  if (!LoadLibrariesForGpu(options))
 +  if (!LoadLibrariesForGpu(options, early_sandbox)) {
      return false;
 +  }
-
+ 
    // TODO(tsepez): enable namspace sandbox here once crashes are understood.
-
+ 
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.h b/content/common/gpu_pre_sandbox_hook_linux.h
 index 764a5502ba..5088f458a3 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.h
@@ -483,7 +483,7 @@ index 764a5502ba..5088f458a3 100644
 @@ -19,23 +19,34 @@ namespace content {
  // require general GPU usage.
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options);
-
+ 
 +// One owner for the actual early external-runtime X11 GLX route.
 +bool UsesEarlyExternalGlxResources(bool early_sandbox);
 +
@@ -494,14 +494,14 @@ index 764a5502ba..5088f458a3 100644
 +
  // These functions can be used by other pre-sandbox hooks that need GPU access
  // in addition to their other permissions.
-
+ 
  // Returns the set of commands (open, stat, unlink, rename, etc...) that are
  // needed for a process to use the GPU.
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
 -    const sandbox::policy::SandboxLinux::Options& options);
 +    const sandbox::policy::SandboxLinux::Options& options,
 +    bool early_sandbox = false);
-
+ 
  // Returns a list of file permissions that are needed for a process to use
  // the GPU. These will include the libraries that make up the graphics driver.
  std::vector<sandbox::syscall_broker::BrokerFilePermission>
@@ -509,15 +509,15 @@ index 764a5502ba..5088f458a3 100644
 -    const sandbox::policy::SandboxSeccompBPF::Options& options);
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
 +    bool early_sandbox = false);
-
+ 
  // Loads the libraries needed for a process to use the GPU.
  bool LoadLibrariesForGpu(
 -    const sandbox::policy::SandboxSeccompBPF::Options& options);
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
 +    bool early_sandbox = false);
-
+ 
  }  // namespace content
-
+ 
 diff --git a/content/gpu/gpu_main.cc b/content/gpu/gpu_main.cc
 index 543e347e14..863b1aac9f 100644
 --- a/content/gpu/gpu_main.cc
@@ -525,18 +525,18 @@ index 543e347e14..863b1aac9f 100644
 @@ -85,6 +85,10 @@
  #include "ui/gl/gl_switches.h"
  #include "ui/gl/init/gl_factory.h"
-
+ 
 +#if BUILDFLAG(IS_OZONE)
 +#include "ui/ozone/public/ozone_platform.h"
 +#endif
 +
  #if BUILDFLAG(IS_WIN)
  #include <windows.h>
-
+ 
 @@ -197,6 +201,17 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
      webnn::PreSandboxWebNNInitialization(/*is_gpu_process=*/true);
  #endif
-
+ 
 +#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE)
 +    // Both GPU startup paths use this resource-preparation hook. Ozone's X11
 +    // connections must exist before an early sandbox seals socket/connect;
@@ -554,7 +554,7 @@ index 543e347e14..863b1aac9f 100644
 @@ -565,10 +580,23 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
    base::IncreaseFdLimitTo(new_max_fds);
  #endif
-
+ 
 +  // Mesa's optional worker scheduling and affinity remain denied for nonself
 +  // targets; report EPERM instead of terminating this early GLX route.
 +  sandbox_options.gpu_sched_target_failure =
@@ -573,7 +573,7 @@ index 543e347e14..863b1aac9f 100644
 +      base::BindOnce(GpuPreSandboxHookWithEarlyGlxResources,
 +                     gpu_prefs.gpu_sandbox_start_early),
 +      sandbox_options);
-
+ 
    if (watchdog_thread) {
      watchdog_thread->Start();
 diff --git a/gpu/command_buffer/service/BUILD.gn b/gpu/command_buffer/service/BUILD.gn
@@ -588,7 +588,7 @@ index d686d2d81a..67e171d528 100644
 +      "webgpu_skia_fallback.h",
      ]
    }
-
+ 
 diff --git a/gpu/command_buffer/service/dawn_instance.cc b/gpu/command_buffer/service/dawn_instance.cc
 index 1b77642ce9..c5bcd0ebdb 100644
 --- a/gpu/command_buffer/service/dawn_instance.cc
@@ -623,12 +623,404 @@ index 1b77642ce9..c5bcd0ebdb 100644
  
    std::string_view dawn_search_path_view = dawn_search_path;
    if (!dawn_search_path.empty()) {
+diff --git a/gpu/command_buffer/service/shared_image/external_vk_image_backing.cc b/gpu/command_buffer/service/shared_image/external_vk_image_backing.cc
+index 09e1dc437c..a627dfbb6a 100644
+--- a/gpu/command_buffer/service/shared_image/external_vk_image_backing.cc
++++ b/gpu/command_buffer/service/shared_image/external_vk_image_backing.cc
+@@ -798,6 +798,26 @@ std::unique_ptr<DawnImageRepresentation> ExternalVkImageBacking::ProduceDawn(
+ #endif
+ 
+   DCHECK_EQ(vk_textures_.size(), 1u);
++  if (backend_type == wgpu::BackendType::WebGPU) {
++    // An external runtime behind Dawn's WebGPU backend has no Vulkan-backend
++    // wrap API; it imports the memory through SharedTextureMemory only when
++    // the device enabled OPAQUE_FD memory, SYNC_FD and OPAQUE_FD fences.
++    if (!wgpuDevice.HasFeature(
++            wgpu::FeatureName::SharedTextureMemoryOpaqueFD) ||
++        !wgpuDevice.HasFeature(wgpu::FeatureName::SharedFenceSyncFD) ||
++        !wgpuDevice.HasFeature(
++            wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD)) {
++      return nullptr;
++    }
++    wgpu::SharedTextureMemory memory =
++        GetOrImportDawnSharedTextureMemory(wgpuDevice);
++    if (!memory) {
++      return nullptr;
++    }
++    return std::make_unique<ExternalVkImageSharedMemoryDawnRepresentation>(
++        manager, this, tracker, wgpuDevice, wgpu_format,
++        std::move(view_formats), std::move(memory));
++  }
+   auto memory_fd = vk_textures_[0].vulkan_image->GetMemoryFd();
+   if (!memory_fd.is_valid()) {
+     return nullptr;
+@@ -812,6 +832,56 @@ std::unique_ptr<DawnImageRepresentation> ExternalVkImageBacking::ProduceDawn(
+ #endif
+ }
+ 
++wgpu::SharedTextureMemory
++ExternalVkImageBacking::GetOrImportDawnSharedTextureMemory(
++    const wgpu::Device& device) {
++#if BUILDFLAG(IS_LINUX) && BUILDFLAG(USE_DAWN)
++  if (dawn_shared_memory_ && dawn_shared_memory_device_.Get() == device.Get() &&
++      !dawn_shared_memory_.IsDeviceLost()) {
++    return dawn_shared_memory_;
++  }
++  dawn_shared_memory_ = nullptr;
++  dawn_shared_memory_device_ = nullptr;
++  if (vk_textures_.size() != 1u) {
++    return nullptr;
++  }
++  VulkanImage* vulkan_image = vk_textures_[0].vulkan_image.get();
++  base::ScopedFD memory_fd = vulkan_image->GetMemoryFd();
++  if (!memory_fd.is_valid()) {
++    return nullptr;
++  }
++  // The importer recreates the image from these exact parameters; the stored
++  // create info has no chain, so restore the external memory declaration.
++  VkExternalMemoryImageCreateInfo external_info = {
++      .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
++      .handleTypes = vulkan_image->handle_types(),
++  };
++  VkImageCreateInfo create_info = vulkan_image->create_info();
++  create_info.pNext = &external_info;
++  wgpu::SharedTextureMemoryOpaqueFDDescriptor opaque_fd_desc;
++  opaque_fd_desc.vkImageCreateInfo = &create_info;
++  opaque_fd_desc.memoryFD = memory_fd.get();
++  opaque_fd_desc.memoryTypeIndex = vulkan_image->memory_type_index();
++  opaque_fd_desc.allocationSize = vulkan_image->device_size();
++  // VulkanImage binds external memory with a dedicated allocation.
++  opaque_fd_desc.dedicatedAllocation = true;
++  wgpu::SharedTextureMemoryDescriptor desc;
++  desc.nextInChain = &opaque_fd_desc;
++  wgpu::SharedTextureMemory memory = device.ImportSharedTextureMemory(&desc);
++  wgpu::SharedTextureMemoryProperties properties;
++  if (!memory ||
++      memory.GetProperties(&properties) != wgpu::Status::Success) {
++    LOG(ERROR) << "OPAQUE_FD SharedTextureMemory import failed";
++    return nullptr;
++  }
++  dawn_shared_memory_device_ = device;
++  dawn_shared_memory_ = memory;
++  return memory;
++#else
++  return nullptr;
++#endif
++}
++
+ bool ExternalVkImageBacking::MakeGLContextCurrent() {
+   if (gl::GLContext::GetCurrent()) {
+     return true;
+diff --git a/gpu/command_buffer/service/shared_image/external_vk_image_backing.h b/gpu/command_buffer/service/shared_image/external_vk_image_backing.h
+index 23724ea845..bd5564882a 100644
+--- a/gpu/command_buffer/service/shared_image/external_vk_image_backing.h
++++ b/gpu/command_buffer/service/shared_image/external_vk_image_backing.h
+@@ -109,6 +109,11 @@ class GPU_GLES2_EXPORT ExternalVkImageBacking final
+   bool enable_webgpu_on_vk_via_gl_interop() const {
+     return enable_webgpu_on_vk_via_gl_interop_;
+   }
++  // External WebGPU runtimes (Dawn's WebGPU backend) import this image's
++  // OPAQUE_FD memory once per device; reimported after device loss.
++  wgpu::SharedTextureMemory GetOrImportDawnSharedTextureMemory(
++      const wgpu::Device& device);
++
+   bool HasLatestContentInVkImage() const {
+     return (latest_content_ & kInVkImage) != 0;
+   }
+@@ -235,6 +240,9 @@ class GPU_GLES2_EXPORT ExternalVkImageBacking final
+   const bool use_separate_gl_texture_;
+   const bool enable_webgpu_on_vk_via_gl_interop_;
+ 
++  wgpu::Device dawn_shared_memory_device_;
++  wgpu::SharedTextureMemory dawn_shared_memory_;
++
+   ExternalSemaphore write_semaphore_;
+   std::vector<ExternalSemaphore> read_semaphores_;
+ 
+diff --git a/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.cc b/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.cc
+index f2c17c69bc..20733a4a13 100644
+--- a/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.cc
++++ b/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.cc
+@@ -5,12 +5,16 @@
+ #include "gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.h"
+ 
+ #include <dawn/native/VulkanBackend.h>
++#include <sync/sync.h>
++#include <unistd.h>
+ 
+ #include <utility>
+ #include <vector>
+ 
+ #include "base/check.h"
+ #include "base/check_op.h"
++#include "base/compiler_specific.h"
++#include "base/files/scoped_file.h"
+ #include "base/logging.h"
+ #include "base/posix/eintr_wrapper.h"
+ #include "gpu/config/gpu_finch_features.h"
+@@ -174,4 +178,206 @@ void ExternalVkImageDawnImageRepresentation::EndAccess() {
+   begin_access_semaphores_.clear();
+ }
+ 
++ExternalVkImageSharedMemoryDawnRepresentation::
++    ExternalVkImageSharedMemoryDawnRepresentation(
++        SharedImageManager* manager,
++        SharedImageBacking* backing,
++        MemoryTypeTracker* tracker,
++        wgpu::Device device,
++        wgpu::TextureFormat wgpu_format,
++        std::vector<wgpu::TextureFormat> view_formats,
++        wgpu::SharedTextureMemory shared_texture_memory)
++    : DawnImageRepresentation(manager, backing, tracker),
++      device_(std::move(device)),
++      wgpu_format_(wgpu_format),
++      view_formats_(std::move(view_formats)),
++      shared_texture_memory_(std::move(shared_texture_memory)) {
++  DCHECK(device_);
++  DCHECK(shared_texture_memory_);
++}
++
++ExternalVkImageSharedMemoryDawnRepresentation::
++    ~ExternalVkImageSharedMemoryDawnRepresentation() {
++  EndAccess();
++}
++
++void ExternalVkImageSharedMemoryDawnRepresentation::AbandonBeginAccess() {
++  if (texture_) {
++    texture_.Destroy();
++    texture_ = nullptr;
++  }
++  // Nothing was submitted against the begin semaphores.
++  backing_impl()->EndAccess(false, ExternalSemaphore(), /*is_gl=*/false);
++  backing_impl()->ReleaseSemaphoresWithFenceHelper(
++      std::move(begin_access_semaphores_));
++  begin_access_semaphores_.clear();
++}
++
++wgpu::Texture ExternalVkImageSharedMemoryDawnRepresentation::BeginAccess(
++    wgpu::TextureUsage usage,
++    wgpu::TextureUsage internal_usage) {
++  DCHECK(!texture_);
++  DCHECK(begin_access_semaphores_.empty());
++  if (!backing_impl()->BeginAccess(false, &begin_access_semaphores_,
++                                   /*is_gl=*/false)) {
++    return nullptr;
++  }
++
++  GrVkImageInfo image_info;
++  GrBackendTextures::GetVkImageInfo(backing_impl()->backend_texture(),
++                                    &image_info);
++  wgpu::DawnTextureInternalUsageDescriptor internal_desc;
++  internal_desc.internalUsage = internal_usage;
++  if (image_info.fImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
++    // As for the Vulkan-backend representation: an attachment-layout image
++    // needs RenderAttachment usage (crbug.com/339171225).
++    internal_desc.internalUsage |= wgpu::TextureUsage::RenderAttachment;
++  }
++  wgpu::TextureDescriptor texture_desc;
++  texture_desc.nextInChain = &internal_desc;
++  texture_desc.format = wgpu_format_;
++  texture_desc.usage = usage;
++  texture_desc.dimension = wgpu::TextureDimension::e2D;
++  texture_desc.size = {static_cast<uint32_t>(size().width()),
++                       static_cast<uint32_t>(size().height()), 1};
++  texture_desc.mipLevelCount = 1;
++  texture_desc.sampleCount = 1;
++  texture_desc.viewFormatCount = view_formats_.size();
++  texture_desc.viewFormats = view_formats_.data();
++  texture_ = shared_texture_memory_.CreateTexture(&texture_desc);
++  if (!texture_) {
++    AbandonBeginAccess();
++    return nullptr;
++  }
++
++  // Producer semaphores are the pool's OPAQUE_FD semaphores (their signal is
++  // already submitted) or sync files; the device duplicates each descriptor.
++  std::vector<wgpu::SharedFence> fences;
++  std::vector<uint64_t> signaled_values;
++  for (auto& external_semaphore : begin_access_semaphores_) {
++    SemaphoreHandle handle = external_semaphore.handle();
++    const VkExternalSemaphoreHandleTypeFlagBits type = handle.vk_handle_type();
++    base::ScopedFD fd = handle.TakeHandle();
++    wgpu::SharedFenceVkSemaphoreOpaqueFDDescriptor opaque_fd_desc;
++    wgpu::SharedFenceSyncFDDescriptor sync_fd_desc;
++    wgpu::SharedFenceDescriptor fence_desc;
++    if (type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT) {
++      opaque_fd_desc.handle = fd.get();
++      fence_desc.nextInChain = &opaque_fd_desc;
++    } else if (type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
++      sync_fd_desc.handle = fd.get();
++      fence_desc.nextInChain = &sync_fd_desc;
++    } else {
++      LOG(ERROR) << "OPAQUE_FD access requires OPAQUE_FD or SYNC_FD semaphores";
++      AbandonBeginAccess();
++      return nullptr;
++    }
++    fences.push_back(device_.ImportSharedFence(&fence_desc));
++    signaled_values.push_back(1);
++  }
++
++  // Skia saved the image's layout without a transition, after releasing it
++  // to VK_QUEUE_FAMILY_EXTERNAL; the acquire repeats that layout pair.
++  wgpu::SharedTextureMemoryVkImageLayoutBeginState begin_layout;
++  begin_layout.oldLayout = image_info.fImageLayout;
++  begin_layout.newLayout = image_info.fImageLayout;
++  wgpu::SharedTextureMemoryBeginAccessDescriptor begin_desc;
++  begin_desc.nextInChain = &begin_layout;
++  begin_desc.initialized =
++      IsCleared() && backing_impl()->HasLatestContentInVkImage();
++  begin_desc.concurrentRead = false;
++  begin_desc.fenceCount = fences.size();
++  begin_desc.fences = fences.data();
++  begin_desc.signaledValueCount = signaled_values.size();
++  begin_desc.signaledValues = signaled_values.data();
++  // Xlib (via the Vulkan backend header) defines `Status`; compare C values.
++  if (static_cast<WGPUStatus>(shared_texture_memory_.BeginAccess(
++          texture_, &begin_desc)) != WGPUStatus_Success) {
++    LOG(ERROR) << "OPAQUE_FD SharedTextureMemory BeginAccess failed";
++    AbandonBeginAccess();
++    return nullptr;
++  }
++  return texture_;
++}
++
++void ExternalVkImageSharedMemoryDawnRepresentation::EndAccess() {
++  if (!texture_) {
++    return;
++  }
++  wgpu::SharedTextureMemoryVkImageLayoutEndState end_layout;
++  // The device begins every access eagerly and always writes these.
++  end_layout.oldLayout = -1;
++  end_layout.newLayout = -1;
++  wgpu::SharedTextureMemoryEndAccessState end_state;
++  end_state.nextInChain = &end_layout;
++  if (static_cast<WGPUStatus>(shared_texture_memory_.EndAccess(
++          texture_, &end_state)) != WGPUStatus_Success) {
++    // Completion is unknown: keep the backing's access open so no other
++    // representation can touch memory the device may still use.
++    LOG(ERROR) << "OPAQUE_FD SharedTextureMemory EndAccess failed";
++    texture_.Destroy();
++    texture_ = nullptr;
++    return;
++  }
++  if (end_state.initialized) {
++    SetCleared();
++  }
++  if (end_layout.newLayout >= 0) {
++    GrBackendTexture backend_texture = backing_impl()->backend_texture();
++    backend_texture.setMutableState(skgpu::MutableTextureStates::MakeVulkan(
++        static_cast<VkImageLayout>(end_layout.newLayout),
++        VK_QUEUE_FAMILY_EXTERNAL));
++  }
++
++  // The device's SYNC_FD release fence follows every producer fence its
++  // acquire waited; those begin fences, which Dawn also returns when the
++  // texture recorded no work, are implied by it. Merge the release sync files
++  // into the backing's single end-access semaphore. -1 is already signaled.
++  base::ScopedFD merged;
++  bool released = false;
++  for (size_t i = 0; i < end_state.fenceCount; ++i) {
++    const wgpu::SharedFence& fence = UNSAFE_TODO(end_state.fences[i]);
++    wgpu::SharedFenceExportInfo type_info;
++    fence.ExportInfo(&type_info);
++    if (type_info.type != wgpu::SharedFenceType::SyncFD) {
++      continue;
++    }
++    wgpu::SharedFenceSyncFDExportInfo sync_fd_info;
++    wgpu::SharedFenceExportInfo export_info;
++    export_info.nextInChain = &sync_fd_info;
++    sync_fd_info.handle = -1;
++    fence.ExportInfo(&export_info);
++    released = true;
++    if (sync_fd_info.handle < 0) {
++      continue;
++    }
++    merged = merged.is_valid()
++                 ? base::ScopedFD(
++                       sync_merge("", merged.get(), sync_fd_info.handle))
++                 : base::ScopedFD(HANDLE_EINTR(dup(sync_fd_info.handle)));
++    CHECK(merged.is_valid());
++  }
++  if (!released || end_layout.newLayout < 0) {
++    // Without the release, completion is unknown: keep the access open.
++    LOG(ERROR) << "OPAQUE_FD EndAccess exported no release fence";
++    texture_.Destroy();
++    texture_ = nullptr;
++    return;
++  }
++  ExternalSemaphore end_semaphore;
++  if (merged.is_valid()) {
++    end_semaphore = ExternalSemaphore::CreateFromHandle(
++        backing_impl()->context_provider(),
++        SemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
++                        std::move(merged)));
++  }
++  backing_impl()->EndAccess(false, std::move(end_semaphore), /*is_gl=*/false);
++
++  texture_.Destroy();
++  texture_ = nullptr;
++  backing_impl()->AddSemaphoresToPendingListOrRelease(
++      std::move(begin_access_semaphores_));
++  begin_access_semaphores_.clear();
++}
++
+ }  // namespace gpu
+diff --git a/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.h b/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.h
+index 55c0b1bd55..04102ed18c 100644
+--- a/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.h
++++ b/gpu/command_buffer/service/shared_image/external_vk_image_dawn_representation.h
+@@ -45,6 +45,45 @@ class ExternalVkImageDawnImageRepresentation : public DawnImageRepresentation {
+   std::vector<ExternalSemaphore> begin_access_semaphores_;
+ };
+ 
++// Presents the backing's VkImage to an external runtime behind Dawn's WebGPU
++// backend (forced Doe) with no copy: the device imports the OPAQUE_FD memory
++// once, accesses carry SYNC_FD fences and VkImageLayout states, and the
++// release fence becomes the backing's end-access semaphore.
++class ExternalVkImageSharedMemoryDawnRepresentation
++    : public DawnImageRepresentation {
++ public:
++  ExternalVkImageSharedMemoryDawnRepresentation(
++      SharedImageManager* manager,
++      SharedImageBacking* backing,
++      MemoryTypeTracker* tracker,
++      wgpu::Device device,
++      wgpu::TextureFormat dawn_format,
++      std::vector<wgpu::TextureFormat> view_formats,
++      wgpu::SharedTextureMemory shared_texture_memory);
++  ExternalVkImageSharedMemoryDawnRepresentation(
++      const ExternalVkImageSharedMemoryDawnRepresentation&) = delete;
++  ExternalVkImageSharedMemoryDawnRepresentation& operator=(
++      const ExternalVkImageSharedMemoryDawnRepresentation&) = delete;
++  ~ExternalVkImageSharedMemoryDawnRepresentation() override;
++
++  wgpu::Texture BeginAccess(wgpu::TextureUsage usage,
++                            wgpu::TextureUsage internal_usage) override;
++  void EndAccess() override;
++
++ private:
++  ExternalVkImageBacking* backing_impl() const {
++    return static_cast<ExternalVkImageBacking*>(backing());
++  }
++  void AbandonBeginAccess();
++
++  const wgpu::Device device_;
++  const wgpu::TextureFormat wgpu_format_;
++  std::vector<wgpu::TextureFormat> view_formats_;
++  wgpu::SharedTextureMemory shared_texture_memory_;
++  wgpu::Texture texture_;
++  std::vector<ExternalSemaphore> begin_access_semaphores_;
++};
++
+ }  // namespace gpu
+ 
+ #endif  // GPU_COMMAND_BUFFER_SERVICE_SHARED_IMAGE_EXTERNAL_VK_IMAGE_DAWN_REPRESENTATION_H_
 diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
-index 6030a9f57c..fcfe5a5b15 100644
+index 6030a9f57c..972a18e389 100644
 --- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
 +++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
 @@ -13,6 +13,7 @@
-
+ 
  #include "base/auto_reset.h"
  #include "base/bits.h"
 +#include "base/command_line.h"
@@ -651,7 +1043,7 @@ index 6030a9f57c..fcfe5a5b15 100644
 @@ -233,6 +237,11 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        return;
      }
-
+ 
 +    if (use_doe_runtime_) {
 +      for (const auto& entry : known_device_metadata_) {
 +        dawn::native::DeviceTick(entry.first.Get());
@@ -659,10 +1051,35 @@ index 6030a9f57c..fcfe5a5b15 100644
 +    }
      has_polling_work_ =
          dawn::native::InstanceProcessEvents(dawn_instance_->Get());
-
-@@ -435,6 +444,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+ 
+@@ -399,6 +408,24 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+       wgpu::TextureUsage internal_usage,
+       std::vector<wgpu::TextureFormat> view_formats);
+ 
++  // Begins Dawn access on an already produced representation.
++  std::unique_ptr<SharedImageRepresentationAndAccess> BeginAssociatedDawnAccess(
++      std::unique_ptr<DawnImageRepresentation> shared_image,
++      MailboxFlags flags,
++      wgpu::TextureUsage usage,
++      wgpu::TextureUsage internal_usage);
++
++  // Forced Doe: zero-copy when the device enabled Doe's Vulkan OPAQUE_FD and
++  // SYNC_FD interop and the backing exports its memory, else Skia staging.
++  std::unique_ptr<SharedImageRepresentationAndAccess> AssociateMailboxForDoe(
++      const Mailbox& mailbox,
++      MailboxFlags flags,
++      const wgpu::Device& device,
++      wgpu::BackendType backendType,
++      wgpu::TextureUsage usage,
++      wgpu::TextureUsage internal_usage,
++      std::vector<wgpu::TextureFormat> view_formats);
++
+   std::unique_ptr<SharedImageRepresentationAndAccess>
+   AssociateMailboxUsingSkiaFallback(
+       const Mailbox& mailbox,
+@@ -435,6 +462,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
    std::unique_ptr<DawnServiceMemoryTransferService> memory_transfer_service_;
-
+ 
    webgpu::SafetyLevel safety_level_ = webgpu::SafetyLevel::kSafe;
 +  bool use_doe_runtime_ =
 +      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
@@ -670,7 +1087,7 @@ index 6030a9f57c..fcfe5a5b15 100644
    WebGPUAdapterName use_webgpu_adapter_ = WebGPUAdapterName::kDefault;
    WebGPUPowerPreference use_webgpu_power_preference_ =
        WebGPUPowerPreference::kNone;
-@@ -514,10 +526,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -514,10 +544,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        // Include list of formats this is tested to work with.
        // See gpu/command_buffer/tests/webgpu_mailbox_unittest.cc
        if (format != viz::SinglePlaneFormat::kBGRA_8888 &&
@@ -681,10 +1098,10 @@ index 6030a9f57c..fcfe5a5b15 100644
            format != viz::SinglePlaneFormat::kRGBA_F16) {
          return nullptr;
        }
-@@ -687,12 +696,18 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -687,12 +714,18 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
          success = false;
        }
-
+ 
 +      // Staging memory uses the Dawn texture's declared format, which can
 +      // differ from the backing SkImage's native channel order.
 +      const SkImageInfo staging_info =
@@ -701,7 +1118,7 @@ index 6030a9f57c..fcfe5a5b15 100644
                                    bytes_per_row, 0, 0)) {
            DLOG(ERROR) << "Failed to read from SkImage";
            success = false;
-@@ -703,7 +718,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -703,7 +736,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
          if (success && !GraphiteReadPixelsSync(
                             shared_context_state_->graphite_shared_context(),
                             shared_context_state_->gpu_main_graphite_recorder(),
@@ -710,18 +1127,42 @@ index 6030a9f57c..fcfe5a5b15 100644
                             bytes_per_row, 0, 0)) {
            DLOG(ERROR) << "Failed to read from SkImage";
            success = false;
-@@ -867,7 +882,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -867,7 +900,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        }
-
+ 
        WaitForSemaphores(std::move(begin_semaphores));
 -      surface->writePixels(SkPixmap(surface->imageInfo(), data, bytes_per_row),
 +      const SkImageInfo staging_info = MakeWebGPUFallbackStagingInfo(
 +          surface->imageInfo(), representation_->format());
 +      surface->writePixels(SkPixmap(staging_info, data, bytes_per_row),
                             /*x*/ 0, /*y*/ 0);
-
+ 
        // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
-@@ -1666,10 +1683,15 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1545,6 +1580,23 @@ WGPUFuture WebGPUDecoderImpl::RequestDeviceImpl(
+     }
+   }
+ 
++#if BUILDFLAG(IS_LINUX)
++  // Forced Doe imports ExternalVkImage canvas memory zero-copy only with all
++  // three interop features: OPAQUE_FD memory, the compositor's OPAQUE_FD
++  // semaphores and SYNC_FD release fences. A subset is not an admitted import.
++  if (use_doe_runtime_ &&
++      adapter_obj.HasFeature(wgpu::FeatureName::SharedTextureMemoryOpaqueFD) &&
++      adapter_obj.HasFeature(wgpu::FeatureName::SharedFenceSyncFD) &&
++      adapter_obj.HasFeature(
++          wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD)) {
++    required_features.push_back(
++        wgpu::FeatureName::SharedTextureMemoryOpaqueFD);
++    required_features.push_back(wgpu::FeatureName::SharedFenceSyncFD);
++    required_features.push_back(
++        wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD);
++  }
++#endif
++
+   // Require platform-specific SharedBufferMemory feature to support
+   // importing transfer buffer into Dawn as shared buffer memory in dawn
+   // wire.
+@@ -1666,10 +1718,15 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      bool force_fallback,
      wgpu::FeatureLevel feature_level,
      bool webgpu_on_vk_gl_interop) const {
@@ -738,7 +1179,7 @@ index 6030a9f57c..fcfe5a5b15 100644
    if (force_fallback && !allow_fallback_adapter) {
      return nullptr;
    }
-@@ -1732,6 +1754,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1732,6 +1789,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
    dawn_adapter_toggles.disabledToggleCount =
        require_adapter_disabled_toggles.size();
    ChainStruct(adapter_options, &dawn_adapter_toggles);
@@ -746,18 +1187,18 @@ index 6030a9f57c..fcfe5a5b15 100644
 +  if (use_doe_runtime_) {
 +    ChainStruct(adapter_options, &doe_backend_options);
 +  }
-
+ 
  #if BUILDFLAG(IS_WIN)
    // On Windows, query the LUID of ANGLE's adapter.
-@@ -1772,7 +1798,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1772,7 +1833,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      adapter_options_get_gl_proc.display = EGL_NO_DISPLAY;
    }
-
+ 
 -  ChainStruct(adapter_options, &adapter_options_get_gl_proc);
  #endif
-
+ 
    // Build a list of backend types we will search for, in order of preference.
-@@ -1793,9 +1818,13 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1793,9 +1853,13 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
  #elif BUILDFLAG(IS_APPLE)
        backend_types = {wgpu::BackendType::Metal};
  #elif BUILDFLAG(IS_LINUX)
@@ -774,10 +1215,10 @@ index 6030a9f57c..fcfe5a5b15 100644
          backend_types = {wgpu::BackendType::Vulkan};
        } else {
          // Deliberately disable compat on linux.
-@@ -1808,6 +1837,16 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1808,6 +1872,16 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      }
    }
-
+ 
 +#if BUILDFLAG(USE_DAWN) && BUILDFLAG(DAWN_ENABLE_BACKEND_OPENGLES)
 +  // GL loader callbacks belong only to a selected GL backend. They are not a
 +  // requirement on an external Vulkan/Metal/D3D adapter, and cannot be passed
@@ -791,10 +1232,10 @@ index 6030a9f57c..fcfe5a5b15 100644
    // `CanUseAdapter` is a helper to determine if an adapter is not blocklisted,
    // supports all required features, and matches the requested adapter options
    // (some of which may be set by command-line flags).
-@@ -1817,7 +1856,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1817,7 +1891,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      wgpu::AdapterInfo adapter_info = {};
      adapter.GetInfo(&adapter_info);
-
+ 
 -    if (use_blocklist() && IsWebGPUAdapterBlocklisted(adapter).blocked) {
 +    const auto denylist = IsWebGPUAdapterBlocklisted(adapter);
 +    if (use_blocklist() && denylist.blocked) {
@@ -809,8 +1250,8 @@ index 6030a9f57c..fcfe5a5b15 100644
 +      }
        return false;
      }
-
-@@ -1859,7 +1908,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+ 
+@@ -1859,7 +1943,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      // SharedTextureMemory.
      supports_external_textures = native_adapter.SupportsExternalImages();
  #endif
@@ -818,8 +1259,8 @@ index 6030a9f57c..fcfe5a5b15 100644
 +    if (!(supports_external_textures || is_swiftshader || use_doe_runtime_)) {
        return false;
      }
-
-@@ -1881,6 +1930,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+ 
+@@ -1881,6 +1965,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
    // Enumerate adapters in order of the preferred backend type.
    for (wgpu::BackendType backend_type : backend_types) {
      adapter_options.backendType = backend_type;
@@ -837,10 +1278,64 @@ index 6030a9f57c..fcfe5a5b15 100644
      for (dawn::native::Adapter& native_adapter :
           dawn_instance_->EnumerateAdapters(&adapter_options)) {
        native_adapter.SetUseTieredLimits(tiered_adapter_limits_);
-@@ -2164,6 +2224,14 @@ WebGPUDecoderImpl::AssociateMailboxUsingSkiaFallback(
+@@ -2114,11 +2209,51 @@ WebGPUDecoderImpl::AssociateMailboxDawn(
+     wgpu::TextureUsage usage,
+     wgpu::TextureUsage internal_usage,
+     std::vector<wgpu::TextureFormat> view_formats) {
+-  std::unique_ptr<DawnImageRepresentation> shared_image =
++  return BeginAssociatedDawnAccess(
+       shared_image_representation_factory_->ProduceDawn(
+           mailbox, device, backendType, std::move(view_formats),
+-          shared_context_state_);
++          shared_context_state_),
++      flags, usage, internal_usage);
++}
+ 
++std::unique_ptr<WebGPUDecoderImpl::SharedImageRepresentationAndAccess>
++WebGPUDecoderImpl::AssociateMailboxForDoe(
++    const Mailbox& mailbox,
++    MailboxFlags flags,
++    const wgpu::Device& device,
++    wgpu::BackendType backendType,
++    wgpu::TextureUsage usage,
++    wgpu::TextureUsage internal_usage,
++    std::vector<wgpu::TextureFormat> view_formats) {
++  // The route is chosen before any import: an admitted device whose backing
++  // exports its memory never falls back after a failed import or access; that
++  // failure yields the error texture like any Dawn representation.
++  const char* reason = "interop_not_enabled";
++  if (device.HasFeature(wgpu::FeatureName::SharedTextureMemoryOpaqueFD) &&
++      device.HasFeature(wgpu::FeatureName::SharedFenceSyncFD) &&
++      device.HasFeature(wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD)) {
++    std::unique_ptr<DawnImageRepresentation> shared_image =
++        shared_image_representation_factory_->ProduceDawn(
++            mailbox, device, backendType, view_formats, shared_context_state_);
++    if (shared_image) {
++      VLOG(1) << "runtime_canvas_route: zero_copy";
++      return BeginAssociatedDawnAccess(std::move(shared_image), flags, usage,
++                                       internal_usage);
++    }
++    reason = "backing_not_exportable";
++  }
++  VLOG(1) << "runtime_canvas_route: skia_staging reason=" << reason;
++  return AssociateMailboxUsingSkiaFallback(mailbox, flags, device, usage,
++                                           internal_usage,
++                                           std::move(view_formats));
++}
++
++std::unique_ptr<WebGPUDecoderImpl::SharedImageRepresentationAndAccess>
++WebGPUDecoderImpl::BeginAssociatedDawnAccess(
++    std::unique_ptr<DawnImageRepresentation> shared_image,
++    MailboxFlags flags,
++    wgpu::TextureUsage usage,
++    wgpu::TextureUsage internal_usage) {
+   if (!ValidateAssociateMailboxAndSetSharedImageClearState(
+           shared_image.get(), flags, usage, internal_usage)) {
+     return nullptr;
+@@ -2164,6 +2299,14 @@ WebGPUDecoderImpl::AssociateMailboxUsingSkiaFallback(
        shared_image_representation_factory_->ProduceSkia(
            mailbox, shared_context_state_.get());
-
+ 
 +  if (use_doe_runtime_) {
 +    VLOG(1) << "runtime_skia_fallback_mailbox: present=" << !!shared_image
 +            << " format="
@@ -852,16 +1347,18 @@ index 6030a9f57c..fcfe5a5b15 100644
    if (!ValidateAssociateMailboxAndSetSharedImageClearState(
            shared_image.get(), flags, usage, internal_usage)) {
      return nullptr;
-@@ -2246,7 +2314,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
-   std::unique_ptr<SharedImageRepresentationAndAccess> representation_and_access;
-   auto it = known_device_metadata_.find(device);
-   CHECK(it != known_device_metadata_.end());
--  if (it->second.adapterType == wgpu::AdapterType::CPU) {
-+  if (it->second.adapterType == wgpu::AdapterType::CPU || use_doe_runtime_) {
+@@ -2249,6 +2392,10 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
+   if (it->second.adapterType == wgpu::AdapterType::CPU) {
      representation_and_access = AssociateMailboxUsingSkiaFallback(
          mailbox, flags, device, usage, internal_usage, std::move(view_formats));
++  } else if (use_doe_runtime_) {
++    representation_and_access = AssociateMailboxForDoe(
++        mailbox, flags, device, it->second.backendType, usage, internal_usage,
++        std::move(view_formats));
    } else {
-@@ -2348,6 +2416,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
+     representation_and_access =
+         AssociateMailboxDawn(mailbox, flags, device, it->second.backendType,
+@@ -2348,6 +2495,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
                                                const wgpu::Device& device,
                                                wgpu::BackendType backendType,
                                                wgpu::BufferUsage usage) {
@@ -910,6 +1407,7 @@ index 0000000000..e2dc24cbe6
 +#endif  // GPU_COMMAND_BUFFER_SERVICE_WEBGPU_LINUX_BACKEND_POLICY_H_
 diff --git a/gpu/command_buffer/service/webgpu_skia_fallback.h b/gpu/command_buffer/service/webgpu_skia_fallback.h
 new file mode 100644
+index 0000000000..bf6c4ad494
 --- /dev/null
 +++ b/gpu/command_buffer/service/webgpu_skia_fallback.h
 @@ -0,0 +1,24 @@
@@ -983,10 +1481,10 @@ index 3882967d4b..cb1c10bf61 100644
 +      }
        break;
    }
-
+ 
 @@ -434,7 +440,13 @@ bpf_dsl::ResultExpr CrashSIGSYSSockopt() {
  }
-
+ 
  bpf_dsl::ResultExpr RewriteSchedSIGSYS() {
 -  return bpf_dsl::Trap(SIGSYSSchedHandler, nullptr);
 +  return RewriteSchedSIGSYS(SchedTargetFailurePolicy::kCrash);
@@ -997,16 +1495,16 @@ index 3882967d4b..cb1c10bf61 100644
 +  return bpf_dsl::Trap(SIGSYSSchedHandler,
 +                      reinterpret_cast<void*>(static_cast<uintptr_t>(failure_policy)));
  }
-
+ 
  bpf_dsl::ResultExpr RewriteFstatatSIGSYS(int fs_denied_errno) {
 diff --git a/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h b/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h
 index 5fca3fdaf6..e6af56fd31 100644
 --- a/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h
 +++ b/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h
 @@ -20,6 +20,13 @@ struct arch_seccomp_data;
-
+ 
  namespace sandbox {
-
+ 
 +// An unauthorized scheduler target remains denied. Some optional driver
 +// requests can observe EPERM instead of deliberately crashing the process.
 +enum class SchedTargetFailurePolicy {
@@ -1024,7 +1522,7 @@ index 5fca3fdaf6..e6af56fd31 100644
 +SANDBOX_EXPORT bpf_dsl::ResultExpr RewriteSchedSIGSYS(
 +    SchedTargetFailurePolicy failure_policy);
  SANDBOX_EXPORT bpf_dsl::ResultExpr RewriteFstatatSIGSYS(int fs_denied_errno);
-
+ 
  #if defined(__NR_socketcall)
 diff --git a/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
 index 88e6b30e29..1a3eaade1a 100644
@@ -1032,7 +1530,7 @@ index 88e6b30e29..1a3eaade1a 100644
 +++ b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
 @@ -396,6 +396,11 @@ ResultExpr RestrictGetSetpriority(pid_t target_pid) {
  }
-
+ 
  ResultExpr RestrictSchedTarget(pid_t target_pid, int sysno) {
 +  return RestrictSchedTarget(target_pid, sysno, SchedTargetFailurePolicy::kCrash);
 +}
@@ -1056,12 +1554,12 @@ index 0d58ffa8e5..f367a5ace6 100644
 --- a/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h
 +++ b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h
 @@ -10,6 +10,7 @@
-
+ 
  #include "build/build_config.h"
  #include "sandbox/linux/bpf_dsl/bpf_dsl_forward.h"
 +#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
  #include "sandbox/sandbox_export.h"
-
+ 
  // These are helpers to build seccomp-bpf policies, i.e. policies for a
 @@ -88,6 +89,8 @@ SANDBOX_EXPORT bpf_dsl::ResultExpr RestrictGetSetpriority(pid_t target_pid);
  // sched_setparam(), sched_setscheduler()
@@ -1069,7 +1567,7 @@ index 0d58ffa8e5..f367a5ace6 100644
                                                         int sysno);
 +SANDBOX_EXPORT bpf_dsl::ResultExpr RestrictSchedTarget(
 +    pid_t target_pid, int sysno, SchedTargetFailurePolicy failure_policy);
-
+ 
  // Restricts the |pid| argument of prlimit64 to 0 (meaning the calling process)
  // or target_pid.
 diff --git a/sandbox/linux/syscall_broker/broker_client.cc b/sandbox/linux/syscall_broker/broker_client.cc
@@ -1081,15 +1579,15 @@ index 1e33e31407..7f230e1988
 @@ -12,6 +12,7 @@
  #include <sys/socket.h>
  #include <sys/stat.h>
-
+ 
 +#include <string_view>
  #include <utility>
-
+ 
  #include "base/check.h"
 @@ -36,7 +37,39 @@ BrokerClient::BrokerClient(const BrokerSandboxConfig& policy,
        ipc_channel_(std::move(ipc_channel)),
        fast_check_in_client_(fast_check_in_client) {}
-
+ 
 -BrokerClient::~BrokerClient() = default;
 +BrokerClient::~BrokerClient() {
 +  for (const auto& file : preopened_files_) {
@@ -1124,7 +1622,7 @@ index 1e33e31407..7f230e1988
 +  }
 +  return -1;
 +}
-
+ 
  int BrokerClient::Access(const char* pathname, int mode) const {
    if (!pathname)
 @@ -72,6 +105,10 @@ int BrokerClient::Open(const char* pathname, int flags) const {
@@ -1137,7 +1635,7 @@ index 1e33e31407..7f230e1988
 +  }
    return PathAndFlagsSyscallReturningFD(COMMAND_OPEN, pathname, flags);
  }
-
+ 
 diff --git a/sandbox/linux/syscall_broker/broker_client.h b/sandbox/linux/syscall_broker/broker_client.h
 index 3d530c7800..66e0de8e26 100644
 --- a/sandbox/linux/syscall_broker/broker_client.h
@@ -1145,7 +1643,7 @@ index 3d530c7800..66e0de8e26 100644
 @@ -9,6 +9,11 @@
  #include <sys/types.h>
  #include <unistd.h>
-
+ 
 +#include <atomic>
 +#include <memory>
 +#include <string>
@@ -1155,9 +1653,9 @@ index 3d530c7800..66e0de8e26 100644
  #include "sandbox/linux/syscall_broker/broker_channel.h"
  #include "sandbox/linux/syscall_broker/broker_command.h"
 @@ -47,6 +52,20 @@ class SANDBOX_EXPORT BrokerClient : public SyscallDispatcher {
-
+ 
    ~BrokerClient() override;
-
+ 
 +  // An independent open file that the sandboxed process created itself
 +  // before its sandbox started.
 +  struct PreopenedFile {
@@ -1174,11 +1672,11 @@ index 3d530c7800..66e0de8e26 100644
 +
    // Get the file descriptor used for IPC.
    int GetIPCDescriptorForTesting() const { return ipc_channel_.get(); }
-
+ 
 @@ -79,6 +98,9 @@ class SANDBOX_EXPORT BrokerClient : public SyscallDispatcher {
   private:
    int PathOnlySyscall(BrokerCommand syscall_type, const char* pathname) const;
-
+ 
 +  // Returns an adopted descriptor for this admitted request, or -1.
 +  int TakePreopenedFile(const char* pathname, int flags) const;
 +
@@ -1186,7 +1684,7 @@ index 3d530c7800..66e0de8e26 100644
                            const char* pathname,
                            int flags) const;
 @@ -99,6 +121,7 @@ class SANDBOX_EXPORT BrokerClient : public SyscallDispatcher {
-
+ 
    const raw_ref<const BrokerSandboxConfig> policy_;
    const BrokerChannel::EndPoint ipc_channel_;
 +  std::vector<std::unique_ptr<PreopenedFile>> preopened_files_;
@@ -1199,7 +1697,7 @@ index 74333b96d1..4f533d8b5a 100644
 +++ b/sandbox/policy/linux/bpf_gpu_policy_linux.cc
 @@ -35,7 +35,15 @@ namespace sandbox {
  namespace policy {
-
+ 
  GpuProcessPolicy::GpuProcessPolicy(MremapPolicy mremap_policy)
 -    : mremap_policy_(mremap_policy) {}
 +    : GpuProcessPolicy(mremap_policy, SchedTargetFailurePolicy::kCrash) {}
@@ -1211,9 +1709,9 @@ index 74333b96d1..4f533d8b5a 100644
 +    : mremap_policy_(mremap_policy),
 +      sched_target_failure_(sched_target_failure),
 +      allow_file_description_query_(allow_file_description_query) {}
-
+ 
  GpuProcessPolicy::~GpuProcessPolicy() {}
-
+ 
 @@ -65,6 +73,12 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
            F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW;
        BoolExpr add_seals =
@@ -1224,7 +1722,7 @@ index 74333b96d1..4f533d8b5a 100644
 +        return If(AnyOf(add_seals, cmd == kDupfdQuery), Allow())
 +            .Else(BPFBasePolicy::EvaluateSyscall(sysno));
 +      }
-
+ 
        return If(add_seals, Allow()).Else(BPFBasePolicy::EvaluateSyscall(sysno));
      }
 @@ -104,8 +118,15 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
@@ -1250,12 +1748,12 @@ index cf02752619..0e46396dcc 100644
 +++ b/sandbox/policy/linux/bpf_gpu_policy_linux.h
 @@ -6,6 +6,7 @@
  #define SANDBOX_POLICY_LINUX_BPF_GPU_POLICY_LINUX_H_
-
+ 
  #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 +#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
  #include "sandbox/policy/export.h"
  #include "sandbox/policy/linux/bpf_base_policy_linux.h"
-
+ 
 @@ -20,6 +21,9 @@ enum class MremapPolicy {
  class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
   public:
@@ -1263,17 +1761,17 @@ index cf02752619..0e46396dcc 100644
 +  GpuProcessPolicy(MremapPolicy mremap_policy,
 +                   SchedTargetFailurePolicy sched_target_failure,
 +                   bool allow_file_description_query = false);
-
+ 
    GpuProcessPolicy(const GpuProcessPolicy&) = delete;
    GpuProcessPolicy& operator=(const GpuProcessPolicy&) = delete;
 @@ -30,6 +34,8 @@ class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
-
+ 
   private:
    MremapPolicy mremap_policy_;
 +  const SchedTargetFailurePolicy sched_target_failure_;
 +  const bool allow_file_description_query_;
  };
-
+ 
  }  // namespace policy
 diff --git a/sandbox/policy/linux/sandbox_linux.h b/sandbox/policy/linux/sandbox_linux.h
 index 76e20d21b7..1dac050715 100644
@@ -1282,7 +1780,7 @@ index 76e20d21b7..1dac050715 100644
 @@ -242,6 +242,11 @@ class SANDBOX_POLICY_EXPORT SandboxLinux {
    // Only usable if StartBrokerProcess() was already called.
    bpf_dsl::ResultExpr HandleViaBroker(int sysno) const;
-
+ 
 +  // Only usable if StartBrokerProcess() was already called.
 +  syscall_broker::BrokerProcess* broker_process() const {
 +    return broker_process_;
@@ -1290,7 +1788,7 @@ index 76e20d21b7..1dac050715 100644
 +
   private:
    friend struct base::DefaultSingletonTraits<SandboxLinux>;
-
+ 
 diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
 index 50b2478e6c..9c883ba66b 100644
 --- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
@@ -1305,7 +1803,7 @@ index 50b2478e6c..9c883ba66b 100644
 +      options.gpu_allow_file_description_query);
  }
  #endif  // !defined(IN_NACL_HELPER)
-
+ 
 diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
 index 7fe9953416..f347840547 100644
 --- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
@@ -1333,7 +1831,7 @@ index 7fe9953416..f347840547 100644
 +    // compares two of the caller's own descriptors and opens nothing.
 +    bool gpu_allow_file_description_query = false;
    };
-
+ 
    SandboxSeccompBPF() = delete;
 diff --git a/ui/ozone/platform/x11/ozone_platform_x11.cc b/ui/ozone/platform/x11/ozone_platform_x11.cc
 index 33d4a4a084..3b4e757bf0 100644

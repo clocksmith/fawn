@@ -206,9 +206,19 @@ No path, device or access is added to the policy, and unused files stay open
 until the GPU process exits.
 
 Forced Doe's default Linux WebGPU backend uses the provider's Vulkan adapter
-independently of Chromium's compositor API. Shared images travel through the
+independently of Chromium's compositor API. When the provider's adapter offers
+`SharedTextureMemoryOpaqueFD` with `SharedFenceSyncFD`, the decoder requests both
+and an `ExternalVkImageBacking` canvas is presented without a copy: the device
+imports the VkImage's OPAQUE_FD memory once per backing (reimported after device
+loss), each access imports the Skia semaphores' sync files as fences and repeats
+the saved layout, and the provider's release fence becomes the backing's
+end-access semaphore with the released layout. The route is chosen before any
+import from the device features and whether the backing exports memory; an
+admitted import or access that fails yields the error texture, never a copy.
+Devices without both features and backings that cannot export memory keep the
 Skia staging owner, including its synchronization, format conversion and access
-lifetimes. Chromium keeps its existing compositor; adapter blocklists and device
+lifetimes. Dawn's forwarding backend passes these descriptors, layout states and
+sync files through; its other import types still report unimplemented. Chromium keeps its existing compositor; adapter blocklists and device
 requirements still apply. Native Dawn retains its Vulkan-context/interop gate,
 and explicit backend requests keep their existing selection.
 
