@@ -140,6 +140,9 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
             doe_resource_pipeline_layout_device(layout)!=device || !native_pipeline_bindings(payload,stages,count,layout)))
             status=DOE_RESOURCE_LAYOUT;
         resource.immediate_required_bytes=payload->immediate_required_bytes;
+        doe_resource_binding_minimum minimums[NATIVE_MAX_PIPELINE_BINDINGS];
+        resource.minimums=minimums;
+        resource.minimum_count=native_pipeline_minimums(payload,minimums);
         native_d3d12_layout layouts[2];
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK &&
             !native_d3d12_graphics_maps_count(payload,stages,count,layouts,payload->d3d12_graphics)) status=DOE_RESOURCE_UNSUPPORTED;

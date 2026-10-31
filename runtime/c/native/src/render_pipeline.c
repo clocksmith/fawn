@@ -119,6 +119,9 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
     resource.immediate_required_bytes = payload->immediate_required_bytes;
+    doe_resource_binding_minimum minimums[NATIVE_MAX_PIPELINE_BINDINGS];
+    resource.minimums = minimums;
+    resource.minimum_count = native_pipeline_minimums(payload, minimums);
     if (status == DOE_RESOURCE_OK && backend == DOE_VK_OK) {
         doe_vk_binding_layout native_bindings[NATIVE_MAX_PIPELINE_BINDINGS];
         if (!native_vulkan_binding_layout(payload,native_bindings)) abort();

@@ -316,12 +316,88 @@ static void test_frontend_rejection(void)
     empty(&f);
 }
 
+/* A render pipeline's shader buffer minimums bind each pass and bundle draw:
+ * a 32-byte uniform binding satisfies a 32-byte minimum and fails a 64-byte
+ * one at encoding, and the creation copy outlives the caller's array. */
+static void test_render_minimums(void)
+{
+    for (unsigned bundled = 0; bundled < 2; bundled++) for (uint64_t minimum = 32; minimum <= 64; minimum += 32) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token buffer_token = {0}, pipeline_token = {0};
+        doe_resource_buffer *data = buffer(&f, &buffer_token, 64, WGPUBufferUsage_Uniform);
+        doe_resource_layout_entry entry = {.binding = 0, .visibility = WGPUShaderStage_Fragment,
+            .kind = DOE_BIND_BUFFER, .buffer_type = WGPUBufferBindingType_Uniform};
+        doe_resource_layout *layout;
+        assert(doe_resource_layout_create(&c, &entry, 1, false, &layout) == DOE_RESOURCE_OK);
+        doe_resource_binding binding = {.binding = 0, .kind = DOE_BIND_BUFFER, .resource.buffer = {data, 0, 32}};
+        doe_resource_binding_limits limits = {16, 16, 64, 64};
+        doe_resource_bind_group *group;
+        assert(doe_resource_bind_group_create(layout, &binding, 1, &limits, &group) == DOE_RESOURCE_OK);
+        doe_resource_pipeline_layout *pipeline_layout;
+        assert(doe_resource_pipeline_layout_create(&c, &layout, 1, 0, &pipeline_layout) == DOE_RESOURCE_OK);
+        doe_resource_binding_minimum required = {0, 0, minimum};
+        doe_resource_render_pipeline_desc desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1,
+            .minimum_count = 1};
+        doe_resource_render_pipeline *pipeline;
+        assert(doe_resource_render_pipeline_create(&c, pipeline_layout, &desc, native(&f, &pipeline_token),
+            &pipeline) == DOE_RESOURCE_INVALID_ARGUMENT);
+        desc.minimums = &required;
+        assert(doe_resource_render_pipeline_create(&c, pipeline_layout, &desc, native(&f, &pipeline_token),
+            &pipeline) == DOE_RESOURCE_OK);
+        required.size = 0; /* The pipeline keeps its own copy. */
+        const doe_resource_status expected = minimum == 32 ? DOE_RESOURCE_OK : DOE_RESOURCE_RANGE;
+        const doe_resource_dispatch_group set = {group, NULL, 0};
+        native_token attachment_tokens[2] = {{0}};
+        doe_resource_view *view = attachment(&f, attachment_tokens);
+        doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
+            .color_store = WGPUStoreOp_Store};
+        doe_resource_encoder *encoder;
+        doe_resource_render_pass *pass;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+        if (bundled) {
+            doe_resource_render_bundle_desc signature = {.color_format = desc.color_format, .samples = 1};
+            doe_resource_bundle_encoder *builder;
+            assert(doe_resource_bundle_encoder_create(&c, &signature, &builder) == DOE_RESOURCE_OK);
+            assert(doe_resource_bundle_encoder_set_pipeline(builder, pipeline) == DOE_RESOURCE_OK);
+            assert(doe_resource_bundle_encoder_set_group(builder, 0, &set) == DOE_RESOURCE_OK);
+            assert(doe_resource_bundle_encoder_draw(builder, false, 3, 1, 0, 0, 0) == expected);
+            doe_resource_render_bundle *bundle = NULL;
+            assert(doe_resource_bundle_encoder_finish(builder, &bundle) == expected);
+            doe_resource_bundle_encoder_release(builder);
+            if (bundle) assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+            doe_resource_render_bundle_release(bundle);
+            if (expected != DOE_RESOURCE_OK) assert(doe_resource_render_pass_invalidate(pass, expected) == expected);
+        } else {
+            assert(doe_resource_render_pass_set_pipeline(pass, pipeline) == DOE_RESOURCE_OK);
+            assert(doe_resource_render_pass_set_group(pass, 0, &set) == DOE_RESOURCE_OK);
+            assert(doe_resource_render_pass_draw(pass, 3, 1, 0, 0) == expected);
+        }
+        assert(doe_resource_render_pass_end(pass) == expected);
+        doe_resource_commands *commands = NULL;
+        assert(doe_resource_encoder_finish(encoder, &commands) == expected);
+        doe_resource_render_pass_release(pass);
+        doe_resource_encoder_release(encoder);
+        doe_resource_commands_release(commands);
+        doe_resource_view_release(view);
+        doe_resource_render_pipeline_release(pipeline);
+        doe_resource_pipeline_layout_release(pipeline_layout);
+        doe_resource_bind_group_release(group);
+        doe_resource_layout_release(layout);
+        doe_resource_buffer_release(data);
+        assert(buffer_token.releases == 1 && pipeline_token.releases == 1);
+        empty(&f);
+    }
+}
+
 int main(void)
 {
     test_draw_boundaries();
     test_pipeline_topology();
     test_frontend_rejection();
     test_index_binding();
-    puts("draw admission owner: 4 host suites passed; no GPU execution claimed");
+    test_render_minimums();
+    puts("draw admission owner: 5 host suites passed; no GPU execution claimed");
     return 0;
 }

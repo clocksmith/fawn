@@ -656,11 +656,11 @@ static bool bound_buffer_size(const doe_resource_bind_group *group, uint32_t bin
     return false;
 }
 
-doe_resource_status resource_pipeline_minimums_check(const doe_resource_pipeline *pipeline,
-    const doe_resource_dispatch_group *groups, size_t group_count)
+doe_resource_status resource_binding_minimums_check(const doe_resource_binding_minimum *minimums,
+    size_t minimum_count, const doe_resource_dispatch_group *groups, size_t group_count)
 {
-    for (size_t i = 0; i < pipeline->minimum_count; i++) {
-        const doe_resource_binding_minimum *minimum = &pipeline->minimums[i];
+    for (size_t i = 0; i < minimum_count; i++) {
+        const doe_resource_binding_minimum *minimum = &minimums[i];
         /* A missing group or binding is reported by the bindings check. */
         if (minimum->group >= group_count || !groups[minimum->group].group) continue;
         uint64_t size;

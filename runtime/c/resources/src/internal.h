@@ -68,8 +68,8 @@ struct doe_resource_pipeline {
     doe_resource_binding_minimum *minimums;
     size_t minimum_count;
 };
-doe_resource_status resource_pipeline_minimums_check(const doe_resource_pipeline *pipeline,
-    const doe_resource_dispatch_group *groups, size_t group_count);
+doe_resource_status resource_binding_minimums_check(const doe_resource_binding_minimum *minimums,
+    size_t minimum_count, const doe_resource_dispatch_group *groups, size_t group_count);
 /* Bind groups a compute pass set, whether or not a dispatch used them: every
  * setBindGroup is part of the command buffer's usage, so submission checks
  * them (a destroyed buffer or texture fails it). Each is retained once. */

@@ -48,9 +48,11 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   groups validate before allocating, and dispatch/draw usage scratch stays on
   the stack up to `RESOURCE_STACK_USES` uses, so ordinary failures never touch
   the allocator. `doe_resource_pipeline_require_minimums` records the buffer
-  sizes a compute pipeline's shader requires; each dispatch rejects a bound
-  buffer binding below them at encoding (WebGPU checks these when the layout's
-  minBindingSize is 0), without consulting liveness, which submission checks.
+  sizes a compute pipeline's shader requires, and a render pipeline copies its
+  stages' sizes from `doe_resource_render_pipeline_desc.minimums` at creation;
+  each dispatch, pass draw and bundle draw rejects a bound buffer binding below
+  them at encoding (WebGPU checks these when the layout's minBindingSize is 0),
+  without consulting liveness, which submission checks.
   Float32 textures require the explicit device-enabled `float32_filterable` policy
   for Float bindings; default admission is UnfilterableFloat regardless of driver
   capability. Features are copied for later resolve/submit revalidation. Normalized

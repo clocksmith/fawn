@@ -388,4 +388,8 @@ doe_resource_status native_automatic_layout(native_device *device,
     const native_stage *stages, size_t stage_count, doe_resource_pipeline_layout **out);
 bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stages,
     size_t stage_count, doe_resource_pipeline_layout *layout);
+/* The buffer minimums native_pipeline_bindings reflected from every stage, for
+ * the resource owner to enforce per dispatch or draw. Returns the count. */
+size_t native_pipeline_minimums(const native_pipeline *payload,
+    doe_resource_binding_minimum out[NATIVE_MAX_PIPELINE_BINDINGS]);
 #endif

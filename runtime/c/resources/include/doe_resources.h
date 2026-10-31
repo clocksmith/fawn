@@ -361,8 +361,8 @@ doe_resource_status doe_resource_pipeline_create(const doe_resource_config *conf
 doe_resource_status doe_resource_pipeline_require_immediates(doe_resource_pipeline *pipeline, uint64_t mask);
 uint32_t doe_resource_pipeline_layout_immediate_size(const doe_resource_pipeline_layout *layout);
 /* A buffer binding the pipeline's shader requires at least `size` bytes of.
- * Each dispatch checks the bound buffer binding against it (WebGPU's minimum
- * buffer binding size, needed when the layout's minBindingSize is 0). */
+ * Each dispatch or draw checks the bound buffer binding against it (WebGPU's
+ * minimum buffer binding size, needed when the layout's minBindingSize is 0). */
 typedef struct doe_resource_binding_minimum {
     uint32_t group, binding;
     uint64_t size;
