@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "windows-amd-vulkan-dropin-phase-combined",
+  "experiment": "New prospective contract: c-direct (M7R + M2R) on windows-amd-host, a second AMD Vulkan host (AMD proprietary driver on Windows). The candidate patch is the frozen amd-host receipt, unchanged, applied to cb7e56ecd. The acceptance rule is copied unchanged from reports/benchmarks/amd-vulkan/20261029-dropin-phase/round4/frozen-combined.json; pair count differs (96, from this host's own timing budget, not a power simulation). This is separate evidence for the owner's c-direct decision, not a rerun of any amd-host contract.",
+  "host": {
+    "label": "windows-amd-host",
+    "cpu": "AMD Ryzen 7 6800H (8 cores, 16 threads)",
+    "gpu": "AMD Radeon(TM) Graphics, integrated RDNA2, vendor 0x1002 device 0x1681",
+    "driver": "AMD proprietary 25.10.30.02, Vulkan 1.4.315, driverVersion 2.0.353",
+    "loader": "Vulkan loader 1.4.309 (System32 vulkan-1.dll); a second ICD (Microsoft Dozen, vulkan_dzn.dll) fails vkEnumeratePhysicalDevices with -3 on this host; implicit layers: AMD switchable graphics, Steam fossilize, Steam overlay",
+    "os": "Windows 10.0.26300 x64",
+    "memory": "heap 0 11.42 GiB DEVICE_LOCAL, heap 1 5.71 GiB system, heap 2 256 MiB DEVICE_LOCAL (host-visible window); 16 memory types"
+  },
+  "control": "main (Doe C cb7e56ecd)",
+  "candidate": "cb7e56ecd + reports/benchmarks/amd-vulkan/20261029-dropin-phase/round4/candidates/c-direct.patch (sha256 2a2af8f05aaf1a5a9399a3073e0af845b20fecc3938f4523f303e56f8e19bc8b); the patch applies without conflict",
+  "providers": {
+    "main": "Doe C at cb7e56ecd (Windows SDK clang-cl build, Vulkan owner), webgpu_doe_c.dll",
+    "combined": "c-direct (M7R + M2R)",
+    "dawn": "Dawn d04f88359 Release, MSVC, monolithic SHARED, Vulkan + Null only, DAWN_FORCE_SYSTEM_COMPONENT_LOAD=ON",
+    "dawn-aa": "byte-identical Dawn harness copy"
+  },
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "sampling": {
+    "pairs": 96,
+    "orders": "all permutations of 4 providers, cycled (96 is a multiple of their count)",
+    "iterationsPerProcess": 32,
+    "inputs": "frozen inputs; manifest afe4e1d3... (byte-identical to the amd-host and intel-host manifests), independent CPU oracle on every iteration outside the timed interval"
+  },
+  "metric": "complete = compileNs + pipelineNs + resourcesNs + sum of every iteration's operation interval + teardownNs (CPU oracle excluded). Paired ratios per balanced pair; bootstrap 95% CI, 10000 resamples, seed 20261029. Host clock: QueryPerformanceCounter.",
+  "acceptance": {
+    "primaryGate": "complete CI95 upper < 1.0 on all three workloads",
+    "statedPhaseAllowances": "warm.upload median ratio <= 1.15 and resourcesNs median ratio <= 1.15 on each workload; every other warm phase, first.operation, setupNs, compileNs, pipelineNs and teardownNs ratio CI95 lower <= 1.05",
+    "uploadLatencyPhaseGate": "separate: warm.upload CI95 upper <= 1.02 on all three workloads. Recorded; does not change the primary verdict.",
+    "verdict": "primary pass only if every workload window is valid and primaryGate and statedPhaseAllowances hold",
+    "secondEvaluationOwnerTradeoffRule": "Also evaluated, declared before timing, under the owner's AMD c-direct trade-off rule (reports/benchmarks/amd-vulkan/20261029-dropin-phase/landing-c-direct-amd.json, tools/tradeoff_gate.py). The two verdicts are reported separately; neither replaces the other."
+  },
+  "gateCommand": "tools/gate.py m2r, then tools/tradeoff_gate.py combined",
+  "validity": {
+    "perWindowGate": "Each workload runs in its own window under the shared GPU lock directory (mkdir/rmdir, held only for the window). Before any harness starts, a 15 s pre-window sample under the lock must show all GPU engine time, including System (PID 4), <= 2% and foreign CPU <= 5%. During the window: foreign GPU <= 2% of wall time, where foreign = PDH 'GPU Engine(*)\\Utilization Percentage' summed per engine (max engine per 1 s sample, averaged) for processes whose image is neither harness-*.exe nor System (PID 4). System GPU time is WDDM video-memory paging/zeroing done for every process; it is 0.0% idle and about 7.5% on the Copy engine while harness processes run (diag/tool-check-3), so it is recorded as systemGpuPct and excluded from foreign during the window. Foreign CPU <= 5% of window CPU capacity (wall x 16 logical CPUs): GetSystemTimes busy minus the window tree (window script, cohort process, every harness child by GetProcessTimes). Zero failed processes and zero oracle misses. A/A: dawn-aa/dawn warm.operation median within [0.95,1.05] with CI95 containing 1, on every workload.",
+    "windowsBackground": "Background processes are left running and are measured, not stopped: two idle codex.exe daemons, a node process and a desktop app belong to other owners. Windows Search indexing and Defender scanning are counted as foreign CPU; a 60 s idle probe after they settled measured foreign CPU 0.22% and GPU 0.0% (diag/idle-probe-2).",
+    "invalidWindows": "An invalid window is rerun fresh under the unchanged contract, up to 4 attempts per workload; invalid data are retained and never used or reinterpreted.",
+    "tooling": "tools/window.py (wvk/window.py on the host)"
+  },
+  "frozenAtUtc": "2026-10-31T02:10:51Z",
+  "hashes": {
+    "wvk/src-cb7e56ecd/bench/drop-in/dropin_phase_harness.c": "bcd22b6a5c5c8626e60210b78a3c2825fcdaf9326a1c89c33b66a593efa18d32",
+    "wvk/src-cb7e56ecd/bench/tools/dropin_phase_cohort.py": "7a181fabbc08508add4a62104be62751062371452ea0865cd8a1f99f6922d8ab",
+    "wvk/inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "wvk/window.py": "94784fb36b5d8833892560e039eec82cac96abec9d4aae11faa7abc619c92f24",
+    "wvk/gate.py": "7ee9054983d25b8fa4f2a689a74b140b97a0a3502a141bb148fe4f9bc925a56f",
+    "wvk/tradeoff_gate.py": "73d6fdec90f594544d7985a0f5466a7e1c6512a26657a9e57c212d25bb5f1530",
+    "wvk/doe-main/webgpu_doe_c.dll": "c2da72af2c23bb261c10e4fb9518cd93e3a85b799c6bd989091fc56d6ab76585",
+    "wvk/doe-main/doe_compiler.dll": "a5a07b4454da058d1da1778c56568d3b20e41452fec190ad3ec94265e52bbacd",
+    "wvk/doe-main/harness-doe.exe": "c07d0b122f579100566ecf8b995417164a13646743e3b1394da66c070919baf5",
+    "wvk/dawn-bin/webgpu_dawn.dll": "f650f0b44856b7c63b08ff0dd6835a2df34354b1e35835e77cd64d302511f925",
+    "wvk/dawn-bin/harness-dawn.exe": "47dfefdce3139a3ae8b3be700eda086a90ad682d4823efbf6ce7190f75130ae9",
+    "wvk/dawn-bin/harness-dawn-aa.exe": "47dfefdce3139a3ae8b3be700eda086a90ad682d4823efbf6ce7190f75130ae9",
+    "wvk/doe-cdirect/webgpu_doe_c.dll": "4d13b7d83be4b2ea19cdf0dd9197ffe923f02dbbaa3ef4caa99f1777ab08afc2",
+    "wvk/doe-cdirect/doe_compiler.dll": "a129d822534894e7aa818128aa0f847c3a4bf644a2b0f9ff58ead527405e7491",
+    "wvk/doe-cdirect/harness-doe-cdirect.exe": "c9b3bb0be8735fbe37e5c5eb1ed67024c299475bb84c968e8fea642d615623d4"
+  }
+}

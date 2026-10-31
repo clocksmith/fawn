@@ -1,0 +1,242 @@
+{
+ "doe-main": {
+  "nativeDllSha256": "c2da72af2c23bb261c10e4fb9518cd93e3a85b799c6bd989091fc56d6ab76585",
+  "compilerDllSha256": "a5a07b4454da058d1da1778c56568d3b20e41452fec190ad3ec94265e52bbacd",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {
+   "harness-doe.exe": "c07d0b122f579100566ecf8b995417164a13646743e3b1394da66c070919baf5"
+  }
+ },
+ "doe-m7r": {
+  "nativeDllSha256": "a02907473d66eaaeae656f853a2cd4c19e0f41af9c72d8e68b0b00e0f981a57d",
+  "compilerDllSha256": "e55d13205f4338406fccda03367a71fc1997eadd702907a1350fc950b46c28ac",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {
+   "harness-doe-m7r.exe": "795ea531f6b753a62861f5aab0b49847861e2a8aadbcfdeb69836d267aa3d052"
+  }
+ },
+ "doe-m2r": {
+  "nativeDllSha256": "31ee316d5e873f53a44499b32574a1154014803f82d68e360d7a59dfbc37b01c",
+  "compilerDllSha256": "17f1485c7b2d0f85f888af085e66d0bd0417963a20208fd19bb3489da631fc9f",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {
+   "harness-doe-m2r.exe": "3c7ab99ff431619c5a48541ab814da0fbd467bfa7f0458c7371aba912ce7d293"
+  }
+ },
+ "doe-cdirect": {
+  "nativeDllSha256": "4d13b7d83be4b2ea19cdf0dd9197ffe923f02dbbaa3ef4caa99f1777ab08afc2",
+  "compilerDllSha256": "a129d822534894e7aa818128aa0f847c3a4bf644a2b0f9ff58ead527405e7491",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {
+   "harness-doe-cdirect.exe": "c9b3bb0be8735fbe37e5c5eb1ed67024c299475bb84c968e8fea642d615623d4"
+  }
+ },
+ "doe-landed": {
+  "nativeDllSha256": "ae3f713e0e02c11a71c50b0db4ef4ac8a1a6d6b56fa3e3bd2c1c2300e1a607bf",
+  "compilerDllSha256": "9c009eacd4d449ecb222d118d7989e64177911e817e76cda177de043e8836551",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {}
+ },
+ "doe-main2": {
+  "nativeDllSha256": "475db1f799fea654705447d99ccaed54a1bc7b31ac099e380bbc2e3bdaff7a13",
+  "compilerDllSha256": "d66cc16bfaaa56e60707747384c309186d93106eab87993ed135a3afeb15695a",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {}
+ },
+ "doe-landed2": {
+  "nativeDllSha256": "ad9632bc43ef27f886716776aae723a114b2f05cda24bad65fa1aa0e86bcca20",
+  "compilerDllSha256": "464f72a86cec688f902e0baae32adfefcd4e671b9e4b38333069d06f7eb571d2",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {}
+ },
+ "doe-m6": {
+  "nativeDllSha256": "b568ba3fe85d97c2e8c4e05cfa20305a8b46471ca83d3e16b8f1dbfe765c2cdf",
+  "compilerDllSha256": "e76feddb79ad772c140c62d8651da0bfc0a2afcc7cb0ea22cb7194b05d6e2975",
+  "windowsSdk": "10.0.28000.0\\",
+  "vcTools": "14.51.36231",
+  "compiler": "clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)",
+  "owners": [
+   "instance",
+   "futures",
+   "callbacks",
+   "resources",
+   "labels",
+   "error-scopes",
+   "shader",
+   "backends/vulkan",
+   "backends/metal",
+   "platform",
+   "backends/d3d12"
+  ],
+  "inputSha256Count": 435,
+  "harness": {}
+ },
+ "dawn": {
+  "rev": "d04f88359391a12375c1a3e948a0b2dcb4c97a18",
+  "dllSha256": "f650f0b44856b7c63b08ff0dd6835a2df34354b1e35835e77cd64d302511f925",
+  "compiler": [
+   "CMAKE_CXX_COMPILER:UNINITIALIZED=cl"
+  ],
+  "options": [
+   "CMAKE_BUILD_TYPE:STRING=Release",
+   "DAWN_BUILD_MONOLITHIC_LIBRARY-STRINGS:INTERNAL=SHARED;SHARED;STATIC",
+   "DAWN_BUILD_MONOLITHIC_LIBRARY:STRING=SHARED",
+   "DAWN_ENABLE_ASAN:BOOL=OFF",
+   "DAWN_ENABLE_D3D11:BOOL=OFF",
+   "DAWN_ENABLE_D3D12:BOOL=OFF",
+   "DAWN_ENABLE_DESKTOP_GL:BOOL=OFF",
+   "DAWN_ENABLE_INSTALL:BOOL=OFF",
+   "DAWN_ENABLE_METAL:BOOL=OFF",
+   "DAWN_ENABLE_MSAN:BOOL=OFF",
+   "DAWN_ENABLE_NULL:BOOL=ON",
+   "DAWN_ENABLE_OPENGLES:BOOL=OFF",
+   "DAWN_ENABLE_PIC:BOOL=ON",
+   "DAWN_ENABLE_RTTI:BOOL=OFF",
+   "DAWN_ENABLE_SPIRV_VALIDATION:BOOL=ON",
+   "DAWN_ENABLE_SWIFTSHADER:BOOL=OFF",
+   "DAWN_ENABLE_TSAN:BOOL=OFF",
+   "DAWN_ENABLE_UBSAN:BOOL=OFF",
+   "DAWN_ENABLE_VULKAN:BOOL=ON",
+   "DAWN_ENABLE_WEBGPU_ON_WEBGPU:BOOL=OFF",
+   "DAWN_USE_AGILITY_SDK:BOOL=OFF",
+   "DAWN_USE_BUILT_DXC:BOOL=OFF",
+   "DAWN_USE_GLFW:BOOL=OFF",
+   "DAWN_USE_WAYLAND:BOOL=OFF",
+   "DAWN_USE_WINDOWS_UI:BOOL=ON",
+   "DAWN_USE_X11:BOOL=OFF",
+   "TINT_BUILD_AS_OTHER_OS:BOOL=OFF",
+   "TINT_BUILD_BENCHMARKS:BOOL=OFF",
+   "TINT_BUILD_CMD_TOOLS:BOOL=OFF",
+   "TINT_BUILD_FUZZERS:BOOL=OFF",
+   "TINT_BUILD_FUZZER_VULKAN_SUPPORT:BOOL=OFF",
+   "TINT_BUILD_GLSL_VALIDATOR:BOOL=ON",
+   "TINT_BUILD_GLSL_WRITER:BOOL=OFF",
+   "TINT_BUILD_HLSL_WRITER:BOOL=OFF",
+   "TINT_BUILD_IR_BINARY:BOOL=ON",
+   "TINT_BUILD_MESA:BOOL=OFF",
+   "TINT_BUILD_MSL_WRITER:BOOL=OFF",
+   "TINT_BUILD_NULL_WRITER:BOOL=ON",
+   "TINT_BUILD_SPV_READER:BOOL=ON",
+   "TINT_BUILD_SPV_WRITER:BOOL=ON",
+   "TINT_BUILD_TESTS:BOOL=OFF",
+   "TINT_BUILD_WGSL_READER:BOOL=ON",
+   "TINT_BUILD_WGSL_WRITER:BOOL=ON"
+  ],
+  "harness": {
+   "harness-dawn-aa.exe": "47dfefdce3139a3ae8b3be700eda086a90ad682d4823efbf6ce7190f75130ae9",
+   "harness-dawn.exe": "47dfefdce3139a3ae8b3be700eda086a90ad682d4823efbf6ce7190f75130ae9"
+  }
+ }
+}
