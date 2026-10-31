@@ -118,7 +118,7 @@ static HRESULT STDMETHODCALLTYPE create_heap(ID3D12Device *raw,const D3D12_DESCR
     assert(desc->Flags == D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     UINT index = desc->Type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER ? 1u : 0u;
     assert(desc->Type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER || desc->Type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    assert(desc->NumDescriptors == (index ? 2u : 3u));
+    assert(desc->NumDescriptors == (index ? 2u : 4096u));
     sdk_heap *heap = &device->heaps[index];
     assert(!heap->references);
     heap->iface.lpVtbl = &heap_methods;
@@ -252,8 +252,10 @@ int main(void)
     device.fail_heap = 2;
     doe_dx_error error = {0};
     assert(doe_dx_prepare_descriptors(&commands,pipeline,&values,&use,&error) == DOE_DX_OUT_OF_MEMORY && !use);
-    assert(!device.heaps[0].references && !device.views && !device.samplers && !list.heaps && !list.tables);
+    assert(device.heaps[0].references==1 && !device.views && !device.samplers && !list.heaps && !list.tables);
     assert(error.native_code == (int32_t)E_OUTOFMEMORY);
+    doe_dx_descriptor_rings_close(&context);
+    assert(!device.heaps[0].references);
     device.fail_heap = 0;
     assert(doe_dx_prepare_descriptors(&commands,pipeline,&values,&use,NULL) == DOE_DX_OK);
     assert(device.views == 3 && device.samplers == 2);
@@ -274,7 +276,7 @@ int main(void)
         list.transitions[1].Transition.StateAfter == D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     doe_dx_release_descriptors(use);
     doe_dx_native_pipeline_destroy(pipeline);
-    assert(!device.root.references && !device.state.references && !device.heaps[0].references && !device.heaps[1].references);
+    assert(!device.root.references && !device.state.references && device.heaps[0].references==1 && !device.heaps[1].references);
     device.resources = 0;
     desc.resources.texture_count = 0;
     assert(doe_dx_native_pipeline_create_dynamic(&context,&desc,&pipeline,NULL) == DOE_DX_OK);
@@ -287,5 +289,7 @@ int main(void)
     assert(list.heaps == 1 && list.tables == 1 && list.table_indices[0] == 0 && list.handles[0].ptr == 11000);
     doe_dx_release_descriptors(use);
     doe_dx_native_pipeline_destroy(pipeline);
+    doe_dx_descriptor_rings_close(&context);
+    assert(!device.heaps[0].references && !device.heaps[1].references);
     puts("PASS actual SDK CPU root serialization, sampled/storage SRVs, dynamic sampler heaps, exact fields/table handles, alias barriers, heap OOM rollback and release; no device/GPU");
 }

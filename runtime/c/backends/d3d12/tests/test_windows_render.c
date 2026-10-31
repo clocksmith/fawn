@@ -109,7 +109,8 @@ static HRESULT STDMETHODCALLTYPE create_state(ID3D12Device *raw,const D3D12_GRAP
             blend->DestBlendAlpha==D3D12_BLEND_INV_SRC_ALPHA && blend->BlendOpAlpha==D3D12_BLEND_OP_ADD);
     }
     assert(desc->SampleMask==device->expected_sample_mask &&
-        desc->BlendState.RenderTarget[0].RenderTargetWriteMask==device->expected_write_mask &&
+        desc->BlendState.RenderTarget[0].RenderTargetWriteMask==
+            (device->expected_fragment_absent ? D3D12_COLOR_WRITE_ENABLE_ALL : device->expected_write_mask) &&
         desc->PrimitiveTopologyType==device->expected_topology);
     assert(desc->DepthStencilState.DepthEnable==device->expected_depth && desc->SampleDesc.Count==1 &&
         desc->NumRenderTargets==(device->expected_fragment_absent ? 0u : 1u) &&
@@ -137,7 +138,7 @@ static HRESULT STDMETHODCALLTYPE create_heap(ID3D12Device *raw,const D3D12_DESCR
         desc->Type==D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER ? 1u : 2u;
     assert(desc->Type==D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV || desc->Type==D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER ||
         desc->Type==D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    assert(desc->NumDescriptors==(kind==0 ? 128u : kind==1 ? 32u : 1u));
+    assert(desc->NumDescriptors==(kind==0 ? 4096u : kind==1 ? 32u : 1u));
     assert(desc->Flags==(kind==2 ? D3D12_DESCRIPTOR_HEAP_FLAG_NONE : D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE));
     cpu_heap *heap=&device->heaps[kind];
     assert(!heap->refs);
@@ -390,6 +391,8 @@ int main(void)
     device.fail_heap=3;
     assert(doe_dx_native_render(commands,&color,true,clear_color,true,NULL,&packet,1,NULL)==DOE_DX_OUT_OF_MEMORY);
     assert(!list.mutations && !device.srvs && !device.samplers && !commands->descriptors);
+    assert(device.heaps[0].refs==1); /* Context ring survives use rollback/retirement. */
+    doe_dx_descriptor_rings_close(&context);
     for (size_t i=0;i<3;++i) assert(!device.heaps[i].refs);
     device.fail_heap=0;
     assert(doe_dx_native_render(commands,&color,true,clear_color,true,NULL,&packet,1,NULL)==DOE_DX_OK);
@@ -399,6 +402,8 @@ int main(void)
     for (UINT i=0;i<4;++i) assert(list.table_indices[i]==i && list.table_handles[i]==expected[i]);
     doe_dx_native_commands_destroy(commands);
     assert(list.releases==1);
+    assert(device.heaps[0].refs==1); /* Context ring survives use rollback/retirement. */
+    doe_dx_descriptor_rings_close(&context);
     for (size_t i=0;i<3;++i) assert(!device.heaps[i].refs);
     doe_dx_native_pipeline_destroy(pipeline);
     assert(!device.root.refs && !device.state.refs);

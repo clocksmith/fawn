@@ -190,7 +190,7 @@ static void caps_controls(void) {
     assert(!caps.depth32float_stencil8);
     device=device_defaults(); device.no_rg11_msaa=true;
     assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
-    assert(!caps.rg11b10ufloat_renderable && !caps.texture_formats_tier2 && caps.texture_formats_tier1);
+    assert(!caps.rg11b10ufloat_renderable && !caps.texture_formats_tier2 && !caps.texture_formats_tier1);
     device=device_defaults(); device.no_typed_load=true;
     assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
     assert(caps.texture_formats_tier1 && caps.bgra8unorm_storage && !caps.texture_formats_tier2);
