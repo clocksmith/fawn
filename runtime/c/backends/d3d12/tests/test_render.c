@@ -493,10 +493,18 @@ int main(void)
     assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_NATIVE_FAILURE);
     assert(pipeline->references==1 && !commands->pipeline_count && !color->owner);
     mock.failure=MOCK_NONE;
-    packet.viewport[2]=5;
+    /* Only the SDK viewport bounds limit a viewport; nothing is recorded past them. */
+    packet.viewport[0]=-32769;
     assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_UNSUPPORTED);
-    packet.viewport[2]=4;
+    packet.viewport[0]=32760; packet.viewport[2]=8;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_UNSUPPORTED);
+    packet.viewport[0]=0; packet.viewport[3]=-1;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_UNSUPPORTED);
+    assert(pipeline->references==1 && !commands->pipeline_count);
+    /* WebGPU admits a viewport extending past the 4x4 attachment. */
+    packet.viewport[0]=-4; packet.viewport[1]=-4; packet.viewport[2]=16; packet.viewport[3]=16;
     assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(mock.last_render_draw.viewport[0]==-4 && mock.last_render_draw.viewport[3]==16);
     assert(mock.render_clear && mock.render_discard && mock.render_draws==1);
     assert(commands->buffer_count==STAGES*ROWS && commands->pipeline_count==1 && pipeline->references==2);
     assert(mock.last_render_draw.stages[0].buffer_count==ROWS && mock.last_render_draw.stages[1].sampler_count==SAMPLERS);

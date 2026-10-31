@@ -2,6 +2,9 @@
 #include "windows_internal.h"
 #ifdef _WIN32
 
+_Static_assert(DOE_DX_VIEWPORT_BOUNDS_MIN==D3D12_VIEWPORT_BOUNDS_MIN && DOE_DX_VIEWPORT_BOUNDS_MAX==D3D12_VIEWPORT_BOUNDS_MAX,
+    "portable viewport admission must use the SDK viewport bounds");
+
 typedef struct exact_clear_view {
     ID3D12DescriptorHeap *heap;
     D3D12_GPU_DESCRIPTOR_HANDLE gpu;

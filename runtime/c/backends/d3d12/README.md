@@ -719,7 +719,8 @@ interstage projection for a missing fragment, and keeps a genuinely absent PS in
 the SDK PSO. No synthesized fragment shader is substituted. Fragment-present,
 color-absent depth shaders remain distinct from vertex-only pipelines.
 
-Depth-only viewport/scissor bounds use the depth extent. Empty draws and passes
+Depth-only scissor bounds use the depth extent. Viewports may extend past the
+attachment, as WebGPU admits; only the SDK viewport bounds range limits them. Empty draws and passes
 still execute depth clear/load/discard, with the same DSV preparation and ordinary
 texture/pipeline leases. Portable tests exercise explicit absence, contradictory
 rows, missing-stage rejection, depth-only draws and discard; actual-compiler map

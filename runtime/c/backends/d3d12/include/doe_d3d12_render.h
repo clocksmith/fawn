@@ -23,6 +23,8 @@ typedef enum doe_dx_cull { DOE_DX_CULL_NONE, DOE_DX_CULL_FRONT, DOE_DX_CULL_BACK
  * subtract, reverse-subtract, minimum, maximum are 0..4. */
 typedef struct doe_dx_blend_component { uint32_t source, destination, operation; } doe_dx_blend_component;
 enum { DOE_DX_MAX_COLOR_TARGETS=8 };
+/* SDK D3D12_VIEWPORT_BOUNDS_MIN/MAX; windows_render_commands.c checks the values. */
+enum { DOE_DX_VIEWPORT_BOUNDS_MIN=-32768, DOE_DX_VIEWPORT_BOUNDS_MAX=32767 };
 typedef struct doe_dx_render_target {
     doe_dx_format format;
     bool absent, blend_enabled;

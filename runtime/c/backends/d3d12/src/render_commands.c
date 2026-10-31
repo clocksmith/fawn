@@ -102,9 +102,13 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
     for (size_t i=0;i<6;++i) if (!isfinite(draw->viewport[i]))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.viewport.finite",error);
     uint32_t width=mip_extent(extent->desc.width,mip),height=mip_extent(extent->desc.height,mip);
+    /* A WebGPU viewport may extend past the attachment (x,y >= -2*maxTextureDimension2D);
+     * rasterization is still clipped to the render target and scissor. The native
+     * limit is the SDK viewport bounds range, not the attachment extent. */
     const float *v=draw->viewport;
-    if (v[0]<0 || v[1]<0 || v[2]<0 || v[3]<0 || v[0]+v[2]>(float)width ||
-        v[1]+v[3]>(float)height || v[4]<0 || v[5]>1 || v[4]>v[5])
+    if (v[2]<0 || v[3]<0 || v[0]<(float)DOE_DX_VIEWPORT_BOUNDS_MIN || v[1]<(float)DOE_DX_VIEWPORT_BOUNDS_MIN ||
+        (double)v[0]+v[2]>(double)DOE_DX_VIEWPORT_BOUNDS_MAX || (double)v[1]+v[3]>(double)DOE_DX_VIEWPORT_BOUNDS_MAX ||
+        v[4]<0 || v[5]>1 || v[4]>v[5])
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.viewport.bounds",error);
     const uint32_t *s=draw->scissor;
     if (s[0]>width || s[2]>width-s[0] ||
