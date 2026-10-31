@@ -7,7 +7,7 @@ retains every raw process result, ``summarize`` reports per-phase medians, p95,
 paired ratios with bootstrap confidence intervals and sample counts.
 
 Timing is a host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on
-Apple), not GPU timestamps. ``build --backend`` fixes the adapter backend the
+Apple; QueryPerformanceCounter on Windows), not GPU timestamps. ``build --backend`` fixes the adapter backend the
 harness requests and asserts (Vulkan by default, or Metal). The oracle check
 runs after each iteration's host-operation interval closes and is mandatory.
 """
@@ -18,8 +18,8 @@ import argparse
 import hashlib
 import itertools
 import json
+import os
 import random
-import resource
 import statistics
 import struct
 import subprocess
@@ -28,6 +28,12 @@ import time
 from pathlib import Path
 
 from bench.lib import synthetic_assets
+
+if os.name == "nt":
+    import ctypes
+    from ctypes import wintypes
+else:
+    import resource
 
 REPO = Path(__file__).resolve().parents[2]
 HARNESS = REPO / "bench/drop-in/dropin_phase_harness.c"
@@ -141,11 +147,49 @@ BACKEND_DEFINES = {"vulkan": [], "metal": ["-DDOE_PHASE_BACKEND_METAL"]}
 
 
 def build(library: Path, output: Path, compiler: str, backend: str) -> None:
-    argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", *BACKEND_DEFINES[backend], f"-I{HEADERS}", str(HARNESS),
-            str(library.resolve()), f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
+    if os.name == "nt":
+        # clang-cl links the provider's import library. The DLL must sit beside the
+        # harness: Windows resolves it from the executable directory first, so no
+        # PATH or working-directory search can substitute another provider.
+        imports = library.with_suffix(".lib")
+        if output.resolve().parent != library.resolve().parent or not imports.is_file():
+            raise SystemExit("Windows build: --output must be beside the DLL, with its import library")
+        argv = [compiler, "--target=x86_64-pc-windows-msvc", "/nologo", "/O2", "/MD", "/WX", "/clang:-std=c11",
+                "/clang:-Wall", "/clang:-Wextra", "/D_CRT_SECURE_NO_WARNINGS", *BACKEND_DEFINES[backend],
+                f"/I{HEADERS}", str(HARNESS), f"/Fe{output}", f"/Fo{output.with_suffix('.obj')}",
+                "/link", str(imports.resolve()), "psapi.lib"]
+    else:
+        argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", *BACKEND_DEFINES[backend], f"-I{HEADERS}",
+                str(HARNESS), str(library.resolve()), f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
     subprocess.run(argv, check=True)
     print(json.dumps({"binary": str(output), "sha256": sha256(output), "library": str(library), "backend": backend,
                       "librarySha256": sha256(library), "harnessSha256": sha256(HARNESS), "argv": argv}))
+
+
+def run_process(argv: list[str], timeout: float) -> tuple[int, str, str, int, float]:
+    """Returns (code, stdout, stderr, wall ns, child CPU ms)."""
+    if os.name != "nt":
+        before = resource.getrusage(resource.RUSAGE_CHILDREN)
+        start = time.monotonic_ns()
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+        wall = time.monotonic_ns() - start
+        after = resource.getrusage(resource.RUSAGE_CHILDREN)
+        cpu = ((after.ru_utime - before.ru_utime) + (after.ru_stime - before.ru_stime)) * 1e3
+        return result.returncode, result.stdout, result.stderr, wall, cpu
+    start = time.monotonic_ns()
+    with subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            raise
+        wall = time.monotonic_ns() - start
+        # The exited process handle stays open until Popen closes it.
+        times = [wintypes.FILETIME() for _ in range(4)]
+        if not ctypes.WinDLL("kernel32", use_last_error=True).GetProcessTimes(wintypes.HANDLE(int(process._handle)), *map(ctypes.byref, times)):
+            raise OSError(ctypes.get_last_error(), "GetProcessTimes")
+        ticks = [(t.dwHighDateTime << 32) | t.dwLowDateTime for t in times[2:]]
+        return process.returncode, stdout, stderr, wall, sum(ticks) / 1e4
 
 
 def harness_args(inputs: Path, name: str, iterations: int) -> list[str]:
@@ -173,23 +217,16 @@ def run(args: argparse.Namespace) -> None:
             for pair in range(args.pairs):
                 order = orders[pair % len(orders)]
                 for position, provider in enumerate(order):
-                    before = resource.getrusage(resource.RUSAGE_CHILDREN)
-                    start = time.monotonic_ns()
-                    result = subprocess.run([providers[provider], *argv_tail], capture_output=True, text=True,
-                                            timeout=args.timeout)
-                    wall = time.monotonic_ns() - start
-                    after = resource.getrusage(resource.RUSAGE_CHILDREN)
+                    code, stdout, stderr, wall, cpu = run_process([providers[provider], *argv_tail], args.timeout)
                     try:
-                        payload = json.loads(result.stdout.strip().splitlines()[-1])
+                        payload = json.loads(stdout.strip().splitlines()[-1])
                     except (IndexError, ValueError):
                         payload = {"status": "failed", "error": "unparseable_stdout"}
-                    if result.returncode != 0 or payload.get("status") != "ok":
+                    if code != 0 or payload.get("status") != "ok":
                         failures += 1
                     row = {"workload": workload, "pair": pair, "position": position, "order": list(order),
-                           "provider": provider, "binary": providers[provider], "returnCode": result.returncode,
-                           "processWallNs": wall,
-                           "childCpuMs": ((after.ru_utime - before.ru_utime) + (after.ru_stime - before.ru_stime)) * 1e3,
-                           "stderr": result.stderr[-2000:], "result": payload}
+                           "provider": provider, "binary": providers[provider], "returnCode": code,
+                           "processWallNs": wall, "childCpuMs": cpu, "stderr": stderr[-2000:], "result": payload}
                     stream.write(json.dumps(row) + "\n")
                     stream.flush()
     print(json.dumps({"status": "complete" if failures == 0 else "failures", "failures": failures, "out": str(out)}))
@@ -234,7 +271,7 @@ def summarize(args: argparse.Namespace) -> None:
     ok = [r for r in rows if r not in failed]
     report = {"schemaVersion": 1, "rawFiles": {p: sha256(Path(p)) for p in args.raw}, "failedProcesses": len(failed),
               "bootstrap": {"resamples": BOOTSTRAP_RESAMPLES, "seed": BOOTSTRAP_SEED, "interval": 0.95},
-              "timing": "host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on Apple); not GPU timestamps",
+              "timing": "host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on Apple; QueryPerformanceCounter on Windows); not GPU timestamps",
               "workloads": {}}
     for workload in sorted({r["workload"] for r in rows}):
         by_pair: dict[int, dict[str, dict]] = {}
