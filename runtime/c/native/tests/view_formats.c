@@ -80,6 +80,26 @@ static void copy_out(WGPUCommandEncoder encoder, WGPUTexture texture, WGPUBuffer
     WGPUExtent3D size = {WIDTH,HEIGHT,1};
     wgpuCommandEncoderCopyTextureToBuffer(encoder,&source,&destination,&size);
 }
+/* Storage usage with a listed srgb view format: WebGPU's createTexture admits it
+ * (viewFormats need only be view-compatible; a storage *view* must still use a
+ * storage-capable format). The Vulkan owner lacks per-view usage, so its
+ * documented limitation rejects the texture. D3D12 creates the typeless
+ * resource, so the texture exists and a rgba8unorm storage write must land. */
+static WGPUTexture srgb_listed_storage(state *s)
+{
+    const WGPUTextureUsage usage = WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding |
+        WGPUTextureUsage_CopySrc;
+    if (adapter_class_backend() == WGPUBackendType_D3D12) {
+        /* Any error here reaches the uncaptured callback that consumer_finish checks. */
+        WGPUTexture texture = image(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureFormat_RGBA8UnormSrgb,usage);
+        assert(texture);
+        return texture;
+    }
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!image(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureFormat_RGBA8UnormSrgb,usage));
+    expect_validation(s);
+    return NULL;
+}
 static void controls(state *s, WGPURenderPipeline unorm_writer)
 {
     /* Only the srgb/unorm pair of the format may be listed. */
@@ -107,12 +127,6 @@ static void controls(state *s, WGPURenderPipeline unorm_writer)
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureViewRelease(srgb);
     wgpuTextureRelease(listed);
-    /* Documented limitation: storage usage with an srgb view format is
-     * unsupported (it would need a per-view usage restriction). */
-    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-    assert(!image(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureFormat_RGBA8UnormSrgb,
-        WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding));
-    expect_validation(s);
 }
 int main(void)
 {
@@ -122,6 +136,7 @@ int main(void)
     WGPURenderPipeline unorm_writer = writer(&s,WGPUTextureFormat_RGBA8Unorm,false);
     WGPURenderPipeline bgra_writer = writer(&s,WGPUTextureFormat_BGRA8UnormSrgb,true);
     controls(&s,unorm_writer);
+    WGPUTexture storable = srgb_listed_storage(&s);
     const WGPUTextureUsage usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc |
         WGPUTextureUsage_TextureBinding;
     WGPUTexture unorm = image(&s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureFormat_RGBA8UnormSrgb,usage);
@@ -133,7 +148,7 @@ int main(void)
     WGPUTextureView srgb_as_unorm = view_as(srgb,WGPUTextureFormat_RGBA8Unorm);
     WGPUTextureView bgra_as_srgb = view_as(bgra,WGPUTextureFormat_BGRA8UnormSrgb);
     assert(unorm_as_srgb && unorm_default && srgb_as_unorm && bgra_as_srgb);
-    WGPUBuffer readback = buffer(&s,4 * SLOT,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUBuffer readback = buffer(&s,5 * SLOT,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
     WGPUBuffer output = buffer(&s,256,WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
     WGPUComputePipeline reader = pipeline(&s,
         "@group(0) @binding(0) var t:texture_2d<f32>;@group(0) @binding(1) var<storage,read_write> o:array<vec4f>;"
@@ -150,6 +165,25 @@ int main(void)
     copy_out(encoder,bgra,readback,2);
     dispatch(encoder,reader,group_entry);
     wgpuCommandEncoderCopyBufferToBuffer(encoder,output,0,readback,3 * SLOT,16);
+    if (storable) {
+        char code[256];
+        int length = snprintf(code,sizeof(code),
+            "@group(0) @binding(0) var t:texture_storage_2d<rgba8unorm,write>;"
+            "@compute @workgroup_size(%d,%d) fn main(@builtin(local_invocation_id) i:vec3u){"
+            "textureStore(t,vec2i(i.xy),vec4f(%d.0,%d.0,%d.0,%d.0)/255.0);}",WIDTH,HEIGHT,codes[0],codes[1],codes[2],codes[3]);
+        assert(length > 0 && (size_t)length < sizeof(code));
+        WGPUComputePipeline writer_program = pipeline(&s,code);
+        WGPUTextureView storage_view = view_as(storable,WGPUTextureFormat_Undefined);
+        assert(storage_view);
+        WGPUBindGroupEntry storage_entry = {.binding=0,.textureView=storage_view};
+        WGPUBindGroup storage_group = group(&s,writer_program,&storage_entry,1);
+        dispatch(encoder,writer_program,storage_group);
+        copy_out(encoder,storable,readback,4);
+        wgpuBindGroupRelease(storage_group);
+        wgpuTextureViewRelease(storage_view);
+        wgpuComputePipelineRelease(writer_program);
+        wgpuTextureRelease(storable);
+    }
     WGPUTextureView views[] = {unorm_as_srgb,unorm_default,srgb_as_unorm,bgra_as_srgb};
     for (size_t i = 0; i < 4; ++i) wgpuTextureViewRelease(views[i]);
     wgpuTextureRelease(unorm);
@@ -170,6 +204,7 @@ int main(void)
         assert(!memcmp(bytes + at,codes,4));
         assert(!memcmp(bytes + SLOT + at,codes,4));
         assert(!memcmp(bytes + 2 * SLOT + at,bgra_codes,4));
+        if (storable) assert(!memcmp(bytes + 4 * SLOT + at,codes,4));
     }
     /* The unorm view decodes the stored encoded bytes, not the linear values. */
     const float *loaded = (const float *)(bytes + 3 * SLOT);
@@ -177,6 +212,7 @@ int main(void)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    printf("PASS public view formats: rgba8unorm rendered through its srgb view stores exact sRGB codes 64/128/200/255 (copy and unorm-view textureLoad), rgba8unorm-srgb rendered through its unorm view stores raw bytes, bgra8unorm srgb view keeps byte order, non-pair/unlisted/pipeline-mismatch controls and the srgb-storage limitation, early releases; exact 96 bytes and 4 decoded codes %s\n",
-        adapter_class_scope());
+    printf("PASS public view formats: rgba8unorm rendered through its srgb view stores exact sRGB codes 64/128/200/255 (copy and unorm-view textureLoad), rgba8unorm-srgb rendered through its unorm view stores raw bytes, bgra8unorm srgb view keeps byte order, non-pair/unlisted/pipeline-mismatch controls, storage usage with a listed srgb view format %s, early releases; exact %d bytes and 4 decoded codes %s\n",
+        storable ? "created with an exact rgba8unorm storage write" : "rejected (documented limitation)",
+        storable ? 128 : 96, adapter_class_scope());
 }
