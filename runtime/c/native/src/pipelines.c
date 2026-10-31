@@ -226,12 +226,8 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
         if (pipeline) {
             /* The shader's buffer sizes, enforced per dispatch by the resource owner. */
             doe_resource_binding_minimum minimums[NATIVE_MAX_PIPELINE_BINDINGS];
-            size_t minimum_count = 0;
-            for (size_t i = 0; i < payload->binding_count; ++i)
-                if (payload->bindings[i].kind == DOE_BIND_BUFFER && payload->minimum_sizes[i])
-                    minimums[minimum_count++] = (doe_resource_binding_minimum){payload->bindings[i].group,
-                        payload->bindings[i].binding, payload->minimum_sizes[i]};
-            resource_status = doe_resource_pipeline_require_minimums(pipeline, minimums, minimum_count);
+            resource_status = doe_resource_pipeline_require_minimums(pipeline, minimums,
+                native_pipeline_minimums(payload, minimums));
             if (resource_status == DOE_RESOURCE_OK)
                 resource_status = doe_resource_pipeline_require_immediates(pipeline, payload->immediate_required_bytes);
         }

@@ -136,6 +136,8 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
     bool has_dynamic;
     status = resource_shader_bindings_validate(pipeline->layout, groups, pipeline->layout->count,
         packet->indirect, &has_dynamic);
+    if (status == DOE_RESOURCE_OK) status = resource_binding_minimums_check(pipeline->desc.minimums,
+        pipeline->desc.minimum_count, groups, pipeline->layout->count);
     if (status != DOE_RESOURCE_OK) return status;
     for (size_t i = 0; i < pipeline->desc.vertex_count; i++) {
         if (!doe_resource_render_pipeline_vertex_required(pipeline, i)) continue;

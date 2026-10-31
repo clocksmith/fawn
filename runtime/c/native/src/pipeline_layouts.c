@@ -328,3 +328,14 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
     }
     return sampling_layout(stages, stage_count, layout);
 }
+
+size_t native_pipeline_minimums(const native_pipeline *payload,
+    doe_resource_binding_minimum out[NATIVE_MAX_PIPELINE_BINDINGS])
+{
+    size_t count = 0;
+    for (size_t i = 0; i < payload->binding_count; ++i)
+        if (payload->bindings[i].kind == DOE_BIND_BUFFER && payload->minimum_sizes[i])
+            out[count++] = (doe_resource_binding_minimum){payload->bindings[i].group,
+                payload->bindings[i].binding, payload->minimum_sizes[i]};
+    return count;
+}

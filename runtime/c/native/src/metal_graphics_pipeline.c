@@ -217,6 +217,9 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
         !vertices(payload, &descriptor->vertex, native.vertex.sizes_slot, &resource, &native, layouts, attributes)))
         status = DOE_RESOURCE_UNSUPPORTED;
     resource.immediate_required_bytes = payload->immediate_required_bytes;
+    doe_resource_binding_minimum minimums[NATIVE_MAX_PIPELINE_BINDINGS];
+    resource.minimums = minimums;
+    resource.minimum_count = native_pipeline_minimums(payload, minimums);
     if (status == DOE_RESOURCE_OK && failure.status == NATIVE_OK) {
         doe_mtl_error detail = {0};
         doe_mtl_status created = doe_mtl_render_pipeline_create(device->backend.value.metal.context,

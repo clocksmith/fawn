@@ -87,6 +87,10 @@ typedef struct doe_resource_render_pipeline_desc {
     uint64_t immediate_required_bytes;
     uint32_t color_count; /* Fragment target slots; Undefined entries are unused. */
     WGPUTextureFormat color_formats[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS];
+    /* Every stage's buffer minimums, as for compute pipelines. Creation copies
+     * them; each draw and bundle replay checks the bound binding sizes. */
+    const doe_resource_binding_minimum *minimums;
+    size_t minimum_count;
 } doe_resource_render_pipeline_desc;
 /* Also the pass layout signature. Equal layouts ignore trailing unused slots. */
 typedef struct doe_resource_render_bundle_desc {

@@ -310,7 +310,8 @@ static doe_resource_status record_dispatch(doe_resource_encoder *encoder,
     bool dynamic;
     doe_resource_status status = resource_shader_bindings_validate(pipeline->layout, groups,
         group_count, indirect, &dynamic);
-    if (status == DOE_RESOURCE_OK) status = resource_pipeline_minimums_check(pipeline, groups, group_count);
+    if (status == DOE_RESOURCE_OK)
+        status = resource_binding_minimums_check(pipeline->minimums, pipeline->minimum_count, groups, group_count);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     doe_resource_dispatch_offsets *offsets = NULL;
     if (dynamic) {

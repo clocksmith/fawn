@@ -174,10 +174,11 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
     doe_resource_pipeline_layout *layout, const doe_resource_render_pipeline_desc *desc,
     doe_resource_native native, doe_resource_render_pipeline **out)
 {
-    if (!resource_config_valid(config) || !layout || !desc || !out || !native.handle || !native.release)
-        return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_config_valid(config) || !layout || !desc || !out || !native.handle || !native.release ||
+        (desc->minimum_count && !desc->minimums)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (layout->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
+    if (desc->minimum_count > SIZE_MAX / sizeof(*desc->minimums)) return DOE_RESOURCE_OVERFLOW;
     const uint64_t allowed = layout->immediate_size >= 64 ? UINT64_MAX :
         ((UINT64_C(1) << layout->immediate_size) - 1u);
     if (desc->immediate_required_bytes & ~allowed) return DOE_RESOURCE_LAYOUT;
@@ -212,8 +213,19 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
     }
     for (size_t i = 0; i < layout->count; i++)
         if (doe_resource_pipeline_layout_group_required(layout, i) && layout->groups[i]->automatic && layout->groups[i]->automatic_claimed) return DOE_RESOURCE_LAYOUT;
+    const size_t minimum_bytes = desc->minimum_count * sizeof(*desc->minimums);
+    doe_resource_binding_minimum *minimums = NULL;
+    if (minimum_bytes) {
+        minimums = resource_allocate(config, minimum_bytes, _Alignof(doe_resource_binding_minimum));
+        if (!minimums) return DOE_RESOURCE_OUT_OF_MEMORY;
+        memcpy(minimums, desc->minimums, minimum_bytes);
+    }
     doe_resource_render_pipeline *pipeline = resource_allocate(config, sizeof(*pipeline), _Alignof(doe_resource_render_pipeline));
-    if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
+    if (!pipeline) {
+        resource_free(config, minimums, minimum_bytes, _Alignof(doe_resource_binding_minimum));
+        return DOE_RESOURCE_OUT_OF_MEMORY;
+    }
+    normalized.minimums = minimums;
     pipeline->layout = layout;
     pipeline->desc = normalized;
     resource_pipeline_layout_claim(layout);
@@ -232,6 +244,8 @@ void doe_resource_render_pipeline_release(doe_resource_render_pipeline *pipeline
 {
     if (!pipeline || !resource_last_reference(&pipeline->base)) return;
     doe_resource_pipeline_layout *layout = pipeline->layout;
+    resource_free(&pipeline->base.config, (void *)pipeline->desc.minimums,
+        pipeline->desc.minimum_count * sizeof(*pipeline->desc.minimums), _Alignof(doe_resource_binding_minimum));
     resource_finalize(&pipeline->base, sizeof(*pipeline), _Alignof(doe_resource_render_pipeline));
     doe_resource_pipeline_layout_release(layout);
 }
