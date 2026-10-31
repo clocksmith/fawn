@@ -33,6 +33,44 @@ native_identity_take native_identity_worker_join(native_identity_worker *worker,
     return NATIVE_IDENTITY_TAKE_READY;
 }
 
+native_shared_identity *native_shared_identity_start(void)
+{
+    native_shared_identity *identity = calloc(1, sizeof(*identity));
+    if (!identity) return NULL;
+    if (doe_mutex_init(&identity->mutex, false).status != DOE_HOST_OK) {
+        if (doe_mutex_destroy(&identity->mutex).status != DOE_HOST_OK) abort();
+        free(identity);
+        return NULL;
+    }
+    native_identity_worker_start(&identity->worker);
+    return identity;
+}
+
+native_identity_take native_shared_identity_take(native_shared_identity *identity, uint8_t digest[32])
+{
+    native_identity_take taken = NATIVE_IDENTITY_TAKE_NONE;
+    if (doe_mutex_lock(&identity->mutex).status != DOE_HOST_OK) abort();
+    if (!identity->joined) {
+        identity->joined = true;
+        if (native_identity_worker_claim(&identity->worker)) {
+            taken = native_identity_worker_join(&identity->worker, identity->digest);
+            identity->valid = taken == NATIVE_IDENTITY_TAKE_READY;
+            identity->worker.state = NATIVE_IDENTITY_WORKER_NONE;
+        }
+    } else if (identity->valid) taken = NATIVE_IDENTITY_TAKE_READY;
+    if (taken == NATIVE_IDENTITY_TAKE_READY) memcpy(digest, identity->digest, sizeof(identity->digest));
+    if (doe_mutex_unlock(&identity->mutex).status != DOE_HOST_OK) abort();
+    return taken;
+}
+
+void native_shared_identity_finish(native_shared_identity *identity)
+{
+    if (!identity) return;
+    native_identity_worker_finish(&identity->worker);
+    if (doe_mutex_destroy(&identity->mutex).status != DOE_HOST_OK) abort();
+    free(identity);
+}
+
 void native_identity_worker_finish(native_identity_worker *worker)
 {
     /* A CLAIMED worker was joined by its claimer before any device release

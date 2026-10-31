@@ -94,6 +94,7 @@ void wgpuAdapterRelease(WGPUAdapter handle)
     if (!adapter || !native_release_count(&adapter->references)) return;
     doe_instance *instance = adapter->instance;
     native_backend_close(&adapter->backend);
+    native_shared_identity_finish(adapter->identity);
     if (doe_mutex_destroy(&adapter->mutex).status != DOE_HOST_OK) abort();
     free(adapter);
     doe_instance_release(instance);
@@ -145,6 +146,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
 #endif
     }
     const bool valid = native_adapter_request_decode(kind, options, &selection);
+    /* First, so the image hash overlaps the adapter open below. */
+    native_shared_identity *identity = valid && kind == WGPUBackendType_Metal ? native_shared_identity_start() : NULL;
     if (valid) {
         native_backend backend = {0};
         const bool force_fallback = options && options->forceFallbackAdapter;
@@ -189,6 +192,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
                 adapter->instance = instance;
                 doe_instance_retain(instance);
                 adapter->backend = backend;
+                adapter->identity = identity;
+                identity = NULL;
                 delivery.adapter = adapter;
                 delivery.status = WGPURequestAdapterStatus_Success;
                 delivery.message = "";
@@ -202,6 +207,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
             delivery.message = "requested backend initialization failed";
         }
     } else delivery.message = "requested adapter extension is unsupported";
+    native_shared_identity_finish(identity); /* No adapter adopted it. */
     doe_callback_status admitted;
     WGPUFuture future = native_callback_admit(instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(adapter_delivery), copy_adapter, deliver_adapter, &admitted);

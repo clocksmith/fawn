@@ -36,4 +36,23 @@ bool native_identity_worker_claim(native_identity_worker *worker);
 native_identity_take native_identity_worker_join(native_identity_worker *worker, uint8_t digest[32]);
 /* Device finalization and failed construction: join a never-claimed worker. */
 void native_identity_worker_finish(native_identity_worker *worker);
+
+/* One per Metal adapter (owner decision 2026-10-31): the worker starts when the
+ * adapter is requested, so the hash overlaps adapter opening, and every device
+ * of that adapter shares its digest. The adapter owns it; its final release
+ * joins the worker. No process-wide state. */
+typedef struct native_shared_identity {
+    doe_mutex mutex;              /* Serializes the one join and its publication. */
+    native_identity_worker worker;
+    bool joined;
+    bool valid;
+    uint8_t digest[32];
+} native_shared_identity;
+/* NULL when allocation fails; callers then keep the inline computation. */
+native_shared_identity *native_shared_identity_start(void);
+/* The first caller joins (blocking any concurrent caller until it publishes)
+ * and receives READY or FAILED. Later callers receive READY with the same
+ * digest, or NONE after a failure so they retry inline as before. */
+native_identity_take native_shared_identity_take(native_shared_identity *identity, uint8_t digest[32]);
+void native_shared_identity_finish(native_shared_identity *identity);
 #endif

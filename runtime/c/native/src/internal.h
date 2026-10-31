@@ -33,6 +33,7 @@ typedef struct native_adapter {
     doe_mutex mutex; /* Serializes surface queries on the adapter's own context. */
     doe_instance *instance;
     native_backend backend;
+    native_shared_identity *identity; /* Metal; see shader_identity_worker.h. */
 } native_adapter;
 
 typedef struct native_pending native_pending;

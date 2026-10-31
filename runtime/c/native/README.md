@@ -1699,7 +1699,11 @@ pipeline needing the identity claims it under the device mutex and joins outside
 it; any other caller keeps the inline computation. A failed worker identity
 disables persistence for that call exactly as an inline failure does, and later
 calls retry inline. Final device release (and failed construction) joins a
-never-claimed worker. The digest is held per device: no process-wide state, and
+never-claimed worker. Metal instead starts the worker when the adapter is
+requested, before the adapter opens (owner decision 2026-10-31); the adapter owns
+the digest and every device of that adapter shares it. The first pipeline that
+needs it joins under the adapter identity's own mutex; a failed result disables
+persistence for that call only. Final adapter release joins a never-joined worker. The digest is held per device: no process-wide state, and
 the adapter/instance owners do not cache it. Each artifact is at most one MiB. The checksum detects
 corruption; it is not authentication against an actor who can rewrite the
 user's cache and digest.
