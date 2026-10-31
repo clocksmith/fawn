@@ -99,6 +99,7 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     e->uses_raw_storage = false;
     e->uses_draw_offsets = false;
     e->uses_storage_sizes = false;
+    e->uses_indexed_aggregate_loads = false;
     e->entry = entry;
     e->traversal_left = 4096u * ((uint64_t)e->module->type_count +
         e->module->member_count + e->module->instruction_count + 1u);

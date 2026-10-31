@@ -165,6 +165,8 @@ static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
         }
     } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) {
         const char *member = t->kind == TYPE_ARRAY ? ".elements" : "";
+        /* A load writes the local aggregate at the loop index; the profile owner reads this. */
+        if (!store) e->uses_indexed_aggregate_loads = true;
         hlsl_format(e, "    for (uint i = 0u; i < %uu; ++i) {\n", t->count);
         if (store) hlsl_format(e, "        doe_r%u_store%u(offset + %" PRIu64 "u * i, value%s[i]);\n",
                                resource, t->element, t->state.layout.stride, member);

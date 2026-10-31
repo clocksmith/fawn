@@ -87,6 +87,10 @@ uint32_t hlsl_profile(HlslEmitter *emitter)
     if (stage_kind(entry) != DOE_COMPILER_STAGE_COMPUTE || emitter->uses_subgroups ||
         emitter->uses_wave_counter || emitter->uses_array_views || emitter->uses_raw_storage ||
         emitter->uses_draw_offsets || module->workgroup_count != 0u) return 600u;
+    /* An aggregate load helper assigns value.elements[i] in a loop. FXC reports
+     * X3550 (array l-value not natively addressable, loop forced to unroll) as a
+     * warning that the retained strict WX flags reject. Keep such modules on DXC. */
+    if (emitter->uses_indexed_aggregate_loads) return 600u;
     /* Charge a conservative linear upper bound to the existing composed work
      * budget. Insufficient certification budget preserves the SM6 baseline. */
     const uint64_t items = (uint64_t)emitter->closure.type_count+module->type_count+
