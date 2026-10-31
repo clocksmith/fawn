@@ -28,14 +28,22 @@ static bool ordinary_type(const CompilerWorkspace *module, const TypeRecord *typ
     }
 }
 
+/* FXC constant folding drops the sign of an f32 -0.0 literal (asfloat(0x80000000u)
+ * reaches DXBC as 0), so a bit-exact negative zero is not certifiable on FXC. */
+static bool negative_zero(TypeId type, uint64_t bits)
+{
+    return type == IR_F32 && (uint32_t)bits == UINT32_C(0x80000000);
+}
+
 static bool ordinary_instruction(const CompilerWorkspace *module, const IrInstruction *ir)
 {
     if (!ordinary_type_id(module,ir->type)) return false;
     switch (ir->opcode) {
+    case IR_CONSTANT:
+        return ir->operands.scalar.left != 0u || !negative_zero(ir->type,ir->operands.scalar.literal);
     case IR_INPUT:
         return ir->operands.scalar.binding < module->entry_input_count &&
             module->entry_inputs[ir->operands.scalar.binding].kind <= INPUT_LOCAL_INDEX;
-    case IR_CONSTANT:
     case IR_ADD: case IR_SUBTRACT: case IR_MULTIPLY: case IR_COMPARE:
     case IR_IF: case IR_ELSE: case IR_END_IF: case IR_RETURN:
     case IR_NOT: case IR_SHORT_BEGIN: case IR_SHORT_END: case IR_LOCAL_LOAD:
@@ -114,8 +122,11 @@ uint32_t hlsl_profile(HlslEmitter *emitter)
         if (constant->kind == CONSTANT_ZERO) continue;
         if (constant->kind != CONSTANT_REPEAT && constant->kind != CONSTANT_COMPOSITE) return 600u;
         const uint32_t count = constant->kind == CONSTANT_REPEAT ? 1u : constant->count;
-        for (uint32_t j = 0u; j < count; ++j)
-            if (!ordinary_type_id(module,module->constant_edges[constant->first+j].type)) return 600u;
+        for (uint32_t j = 0u; j < count; ++j) {
+            const ConstantValue *value = &module->constant_edges[constant->first+j];
+            if (!ordinary_type_id(module,value->type) ||
+                ((value->flags & CONSTANT_AGGREGATE) == 0u && negative_zero(value->type,value->bits))) return 600u;
+        }
     }
     for (uint32_t i = 0u; i < module->resource_count; ++i) {
         const ResourceRecord *resource = &module->resources[i];

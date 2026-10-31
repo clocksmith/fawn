@@ -147,7 +147,19 @@ int main(void)
         "@compute @workgroup_size(1)fn main(){b[0]=1u;}","main",501u,DOE_COMPILER_STAGE_COMPUTE);
     run("@group(0)@binding(0)var<storage,read_write>b:array<f32>;"
         "@compute @workgroup_size(1)fn main(){b[0]=abs(b[1]);}","main",600u,DOE_COMPILER_STAGE_COMPUTE);
+    /* FXC folds an f32 -0.0 literal to +0.0: scalar and composite negative
+     * zeros stay on DXC; the same shapes with +0.0 remain certified. */
+    run("@group(0)@binding(0)var<storage,read_write>b:array<f32>;"
+        "@compute @workgroup_size(1)fn main(){b[0]=-0.0;}","main",600u,DOE_COMPILER_STAGE_COMPUTE);
+    run("@group(0)@binding(0)var<storage,read_write>b:array<f32>;"
+        "@compute @workgroup_size(1)fn main(){b[0]=0.0;}","main",501u,DOE_COMPILER_STAGE_COMPUTE);
+    run("@group(0)@binding(0)var<storage,read_write>b:array<f32>;"
+        "@compute @workgroup_size(1)fn main(){let v=select(vec2f(-0.0,1.5),vec2f(7.25,-2.5),b[1]>0.0);b[0]=v.x;}",
+        "main",600u,DOE_COMPILER_STAGE_COMPUTE);
+    run("@group(0)@binding(0)var<storage,read_write>b:array<f32>;"
+        "@compute @workgroup_size(1)fn main(){let v=select(vec2f(0.0,1.5),vec2f(7.25,-2.5),b[1]>0.0);b[0]=v.x;}",
+        "main",501u,DOE_COMPILER_STAGE_COMPUTE);
     run("@vertex fn main()->@builtin(position)vec4f{return vec4f(0,0,0,1);}","main",600u,DOE_COMPILER_STAGE_VERTEX);
-    puts("PASS explicit HLSL profile ABI19: closed typed subset, emitted unused half helpers, pruned functions, legacy bytes/workspace, measure/fill and failure publication");
+    puts("PASS explicit HLSL profile ABI19: closed typed subset, FXC negative-zero exclusion, emitted unused half helpers, pruned functions, legacy bytes/workspace, measure/fill and failure publication");
     return 0;
 }
