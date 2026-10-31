@@ -1,0 +1,157 @@
+{
+  "component": "C Metal native adapter",
+  "base": "7aba775e1418abbeaa07cfa6e2b61b7a3dcae248",
+  "candidate_root": "<work>/src-pools",
+  "patch": "pools-candidate.patch",
+  "patchSha256": "408e2499f3cb98d814326f7485ce8225f76de14dc4103b1a0f201840318c6298",
+  "intent": "preserved: existing per-call pool scopes, cleanup, native retention, NSError copy and failure exits",
+  "boundaryEffects": "private typed runtime loader fields only; two libobjc symbols now mandatory, unavailable uses existing loader rejection; no public ABI, provider selection, GPU owner or charter change",
+  "checks": {
+    "metal-check": {
+      "exit": 0,
+      "log": "pools-check.log"
+    },
+    "metal-sdk-abi": {
+      "exit": 0,
+      "architectures": [
+        "arm64-apple-macos13",
+        "x86_64-apple-macos13"
+      ],
+      "log": "pools-sdk-abi.log"
+    },
+    "C-style": {
+      "exit": 0,
+      "sources": 1578,
+      "failures": 0,
+      "inventory": "exact archived git ls-tree base manifest through unchanged check_style.run",
+      "receipt": "pools-style.json"
+    },
+    "nonGpuRuntimeAbiLifetime": {
+      "exit": 0,
+      "receipt": "pools-abi-check.json",
+      "source": "pools-lifetime.m",
+      "compilerAbi": [
+        "pools-compiler-abi-arm64.ll",
+        "pools-compiler-abi-x86_64.ll",
+        "pools-compiler-abi-arm64.s",
+        "pools-compiler-abi-x86_64.s"
+      ]
+    },
+    "patchApply": {
+      "exit": 0,
+      "command": "git apply --check --whitespace=error-all ../metal-work/pools-candidate.patch",
+      "against": "root working tree, no mutation"
+    }
+  },
+  "firstFailures": [
+    "pools-abi-first-failure.txt",
+    "pools-style-first-failure.txt",
+    "pools-patch-check-first-failure.txt"
+  ],
+  "readTrace": "pools-dawn-submit-trace.md",
+  "measurement": {
+    "sourceFilesChanged": 12,
+    "addedLines": 178,
+    "removedLines": 98,
+    "productionGlobalsAdded": 0,
+    "poolScopesMoved": 0,
+    "gpuRuns": 0,
+    "timingRuns": 0,
+    "fullRuntimeCCheck": "not run; no commit requested; focused owner checks only",
+    "performance": "unmeasured; no improvement claimed"
+  },
+  "files": [
+    {
+      "path": "runtime/c/backends/metal/src/objc_abi.h",
+      "sha256": "29086ea6957377ff2c545ba117a311ec590d6e9cd2d43236d86a856c639de18a",
+      "lines": 283,
+      "added": 5,
+      "removed": 2
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_runtime.c",
+      "sha256": "8141a7af5c35e8b6a30b357ab486241e256536f7ac9d8735f630d54a802538bf",
+      "lines": 419,
+      "added": 11,
+      "removed": 7
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/sdk_abi.m",
+      "sha256": "7df586ca31e3c05ec316b03dca0a52cf35ea1682c8b80cecd25ac57001201788",
+      "lines": 266,
+      "added": 6,
+      "removed": 0
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_archive.c",
+      "sha256": "adb49636f8738623b77d388a294f38b17dd05f24927660edec7edfefc64535db",
+      "lines": 229,
+      "added": 10,
+      "removed": 4
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_calls.c",
+      "sha256": "e64b053dd68c1a60cfce3416ca5957086bd069832ab7b0b55f9174c9915ac135",
+      "lines": 480,
+      "added": 53,
+      "removed": 16
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_external.c",
+      "sha256": "60ad056aaf5a421742d4fdab2c4ef78864a2d087eed9883db6678ce219cdad72",
+      "lines": 248,
+      "added": 17,
+      "removed": 15
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_images.c",
+      "sha256": "2279180868459079cfc810f1e112f3189fc9a1370cb798f7c00ed0e4439556ef",
+      "lines": 323,
+      "added": 13,
+      "removed": 9
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_progress.c",
+      "sha256": "2029fb1a9a45d0c8bfedbb05a97ced4520150fc29b9a887f311a6ad866107196",
+      "lines": 144,
+      "added": 6,
+      "removed": 10
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_queries.c",
+      "sha256": "9d3ebada1f6af2adefe90bfe89e39824493743cecde58d4490aabbe31789dfa7",
+      "lines": 319,
+      "added": 17,
+      "removed": 7
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_render_commands.c",
+      "sha256": "099007b815af7ca47c3b219620d98e12c02ad88d31e7f209f44052bee9c6f41d",
+      "lines": 342,
+      "added": 12,
+      "removed": 5
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_render_pipeline.c",
+      "sha256": "0be3dd77dee041a3aab2ebd6d8c410a2453c0a1223bc34f804ed105831f826cf",
+      "lines": 266,
+      "added": 15,
+      "removed": 12
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_objc_surface.c",
+      "sha256": "8a162091291c97b6432337d9db72847446a71fa297451545a2bd8801fcbf4231",
+      "lines": 96,
+      "added": 13,
+      "removed": 11
+    }
+  ],
+  "physicalValidation": {
+    "baseline": "7aba775e1",
+    "clients": 81,
+    "perClientStatusMatch": true,
+    "counts": "62 pass,12 same aborts,6 GNU-only unbuildable,1 checker arguments",
+    "backend": "host check, arm64/x86_64 sdk-abi, native compute and graphics PASS",
+    "timingVerdict": "pending; frozen CPU gate blocks windows"
+  }
+}

@@ -618,3 +618,34 @@ component index; the changed benchmark charter meets its 250-word limit.
 No unmeasured build-time or maintenance improvement is claimed. The storage
 trial reduced one allocation per public submit and up to ten resource-node
 allocations by construction, but that did not establish its required latency win.
+
+### Further prospective trials (frozen, awaiting valid windows)
+
+- [Sparse compute binding](contract-submit-sparse.json), frozen 19:33:39Z on
+  `125654e63`: omit empty buffer binds on each fresh encoder; preserve sparse
+  slot numbers and the complete size table. All 81 statuses match main and all
+  four backend gates pass. Vector attempt 1 failed the CPU gate (21.2%); its
+  permitted rerun is queued. No timing verdict or runtime acceptance.
+- [Lazy shared-buffer zeroing](contract-resource-lazy.json), frozen 22:34:13Z on
+  current main `7aba775e1`: eliminate an initial clear when a full first overwrite
+  makes it unnecessary. Reads/partial writes still establish zero contents;
+  earlier speculative GPU writes must survive. [Correctness](resource-lazy/correctness.json)
+  includes 81/81 status matches, host/SDK/native checks and hostile-storage tests.
+- [Runtime autorelease pools](contract-submit-pools.json), frozen 22:36:59Z on
+  `7aba775e1`: use exactly typed libobjc Push/Pop with all original scope and
+  cleanup boundaries preserved. [Correctness](submit-pools/correctness.json)
+  includes 81/81 status matches, host/SDK/native checks and a real Foundation
+  lifetime probe without GPU work.
+
+Each uses 96 balanced pairs and the same Dawn A/A, bootstrap and environmental
+rules. All pending windows are queued behind a busy compiler build; no limit was
+changed. Only the setup harness correction is accepted. Candidate patches are
+retained beside their contracts; unaccepted runtime code is excluded from source
+commits. [Run driver](runs/run-setup-submit.py); use the binaries/hashes named by
+the selected contract, and preserve both attempts when a window is invalid.
+
+The [actual submit-path read](diagnostics/submit-phase-boundary.md) corrects the
+older probe's accounting: Dawn's upload opens a blit encoder before submit and
+reuses it; Doe's CPU upload needs no blit, so submit opens one. The old probe also
+used `@autoreleasepool` in its Doe variant rather than the actual Foundation pool
+adapter. Those probe results cannot attribute the whole submit gap to bookkeeping.

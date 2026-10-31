@@ -1,0 +1,713 @@
+diff --git a/runtime/c/backends/metal/src/objc_abi.h b/runtime/c/backends/metal/src/objc_abi.h
+--- a/runtime/c/backends/metal/src/objc_abi.h
++++ b/runtime/c/backends/metal/src/objc_abi.h
+@@ -33,6 +33,9 @@
+ typedef struct doe_mtl_range_abi { size_t location, length; } doe_mtl_range_abi;
+ typedef struct doe_mtl_drawable_size { double width, height; } doe_mtl_drawable_size;
+ typedef void (*doe_objc_message)(void);
++/* Compiler-emitted autorelease-pool runtime ABI; tokens are opaque, not objects. */
++typedef void *(*doe_objc_pool_push_call)(void);
++typedef void (*doe_objc_pool_pop_call)(void *);
+ #if defined(__aarch64__) || defined(__arm64__)
+ typedef bool doe_objc_bool;
+ #else
+@@ -137,7 +140,8 @@
+     void *upload_image, *read_image, *copy_image, *set_texture, *set_sampler;
+     void *supports_family, *supports_bc, *supports_samples, *supports_depth24, *supports_float_filter;
+     void *read_write_texture_support;
+-    void *pool_class;
++    doe_objc_pool_push_call pool_push;
++    doe_objc_pool_pop_call pool_pop;
+     void *string_class;
+     void *responds;
+     void *new_object;
+@@ -146,7 +150,6 @@
+     void *release;
+     void *count;
+     void *first_object;
+-    void *drain;
+     void *new_queue;
+     void *new_buffer;
+     void *contents;
+diff --git a/runtime/c/backends/metal/src/objc_runtime.c b/runtime/c/backends/metal/src/objc_runtime.c
+--- a/runtime/c/backends/metal/src/objc_runtime.c
++++ b/runtime/c/backends/metal/src/objc_runtime.c
+@@ -16,12 +16,14 @@
+     return runtime->size_call(object, selector);
+ }
+ 
++/* A token belongs to this thread/scope, not Objective-C reference ownership.
++ * Keep every caller's existing drain point, including its error exits. */
+ void *doe_mtl_objc_pool(doe_mtl_objc *runtime) {
+-    return doe_mtl_objc_object(runtime, runtime->pool_class, runtime->new_object);
++    return runtime->pool_push();
+ }
+ 
+ void doe_mtl_objc_drain(doe_mtl_objc *runtime, void *pool) {
+-    if (pool != NULL) doe_mtl_objc_void(runtime, pool, runtime->drain);
++    if (pool != NULL) runtime->pool_pop(pool);
+ }
+ 
+ void doe_mtl_objc_release(void *userdata, void *object) {
+@@ -212,7 +214,6 @@
+ }
+ 
+ static bool load_selectors(doe_mtl_objc *runtime) {
+-    runtime->pool_class = runtime->get_class("NSAutoreleasePool");
+     runtime->string_class = runtime->get_class("NSString");
+     runtime->responds = runtime->selector("respondsToSelector:");
+     runtime->new_object = runtime->selector("new");
+@@ -221,7 +222,6 @@
+     runtime->release = runtime->selector("release");
+     runtime->count = runtime->selector("count");
+     runtime->first_object = runtime->selector("firstObject");
+-    runtime->drain = runtime->selector("drain");
+     runtime->new_queue = runtime->selector("newCommandQueue");
+     runtime->new_buffer = runtime->selector("newBufferWithLength:options:");
+     runtime->contents = runtime->selector("contents");
+@@ -254,9 +254,9 @@
+     runtime->wait = runtime->selector("waitUntilCompleted");
+     runtime->status = runtime->selector("status");
+     runtime->error = runtime->selector("error");
+-    return runtime->pool_class != NULL && runtime->string_class != NULL && runtime->responds != NULL &&
++    return runtime->string_class != NULL && runtime->responds != NULL &&
+         runtime->new_object != NULL && runtime->alloc != NULL &&
+-        runtime->retain != NULL && runtime->release != NULL && runtime->drain != NULL &&
++        runtime->retain != NULL && runtime->release != NULL &&
+         runtime->new_queue != NULL && runtime->new_buffer != NULL &&
+         runtime->contents != NULL && runtime->max_buffer_length != NULL &&
+         runtime->max_threads != NULL && runtime->max_threadgroup_memory != NULL &&
+@@ -287,7 +287,11 @@
+         "/System/Library/Frameworks/Metal.framework/Metal", RTLD_NOW | RTLD_LOCAL);
+     if (runtime->objc_library == NULL || runtime->foundation_library == NULL ||
+         runtime->metal_library == NULL) goto unavailable;
+-    if (!load_function(runtime->objc_library, "objc_getClass", &runtime->get_class,
++    if (!load_function(runtime->objc_library, "objc_autoreleasePoolPush", &runtime->pool_push,
++            sizeof(runtime->pool_push)) ||
++        !load_function(runtime->objc_library, "objc_autoreleasePoolPop", &runtime->pool_pop,
++            sizeof(runtime->pool_pop)) ||
++        !load_function(runtime->objc_library, "objc_getClass", &runtime->get_class,
+             sizeof(runtime->get_class)) ||
+         !load_function(runtime->objc_library, "sel_registerName", &runtime->selector,
+             sizeof(runtime->selector)) ||
+diff --git a/runtime/c/backends/metal/tests/sdk_abi.m b/runtime/c/backends/metal/tests/sdk_abi.m
+--- a/runtime/c/backends/metal/tests/sdk_abi.m
++++ b/runtime/c/backends/metal/tests/sdk_abi.m
+@@ -16,6 +16,12 @@
+ #define SAME_ENUM(local, sdk) \
+     _Static_assert((unsigned long)(local) == (unsigned long)(sdk), #local " differs from Apple SDK")
+ 
++/* These signatures match Clang's @autoreleasepool runtime calls, rather than
++ * an Objective-C method taking receiver/selector arguments. */
++_Static_assert(__builtin_types_compatible_p(doe_objc_pool_push_call, void *(*)(void)),
++    "autorelease pool push runtime ABI");
++_Static_assert(__builtin_types_compatible_p(doe_objc_pool_pop_call, void (*)(void *)),
++    "autorelease pool pop runtime ABI");
+ _Static_assert(__builtin_types_compatible_p(size_t, NSUInteger), "NSUInteger call ABI");
+ _Static_assert(__builtin_types_compatible_p(intptr_t, NSInteger), "NSInteger call ABI");
+ _Static_assert(__builtin_types_compatible_p(doe_objc_bool, BOOL), "BOOL call ABI");
+diff --git a/runtime/c/backends/metal/tests/test_objc_archive.c b/runtime/c/backends/metal/tests/test_objc_archive.c
+--- a/runtime/c/backends/metal/tests/test_objc_archive.c
++++ b/runtime/c/backends/metal/tests/test_objc_archive.c
+@@ -29,13 +29,19 @@
+     active->live += result->references;
+     return result;
+ }
++static void *pool_push(void) { return make(POOL, true); }
++static void pool_pop(void *token) {
++    object *o = token;
++    assert(o->type == POOL && o->references == 1 && active->live);
++    --o->references; --active->live;
++}
++
+ static void *name(const char *value) { return (void *)value; }
+ static void *object_call(void *receiver, void *sel) {
+     if (selector(sel, "retain")) {
+         object *o = receiver; ++o->references; ++active->live; return receiver;
+     }
+     if (selector(sel, "new")) {
+-        if (!strcmp(receiver, "Pool")) return make(POOL, true);
+         assert(!strcmp(receiver, "MTLBinaryArchiveDescriptor") || !strcmp(receiver, "MTLComputePipelineDescriptor"));
+         return make(DESCRIPTOR, true);
+     }
+@@ -46,7 +52,7 @@
+ }
+ static void void_call(void *receiver, void *sel) {
+     object *o = receiver;
+-    assert(selector(sel, "release") || (selector(sel, "drain") && o->type == POOL));
++    assert(selector(sel, "release"));
+     assert(o->references && active->live);
+     --o->references; --active->live;
+ }
+@@ -147,9 +153,9 @@
+     memset(f, 0, sizeof(*f)); active = f;
+     doe_mtl_objc *r = &f->runtime;
+     r->get_class = name; r->selector = name;
+-    r->pool_class = name("Pool"); r->string_class = name("NSString");
++    r->pool_push = pool_push; r->pool_pop = pool_pop; r->string_class = name("NSString");
+     r->new_object = name("new"); r->alloc = name("alloc"); r->retain = name("retain");
+-    r->release = name("release"); r->drain = name("drain"); r->responds = name("respondsToSelector:");
++    r->release = name("release"); r->responds = name("respondsToSelector:");
+     r->string_init = name("initWithBytes:length:encoding:"); r->utf8 = name("UTF8String");
+     r->localized_description = name("localizedDescription"); r->code = name("code");
+     r->new_library = name("newLibraryWithSource:options:error:"); r->new_function = name("newFunctionWithName:");
+diff --git a/runtime/c/backends/metal/tests/test_objc_calls.c b/runtime/c/backends/metal/tests/test_objc_calls.c
+--- a/runtime/c/backends/metal/tests/test_objc_calls.c
++++ b/runtime/c/backends/metal/tests/test_objc_calls.c
+@@ -11,7 +11,7 @@
+ } call_object;
+ 
+ typedef enum selector_index {
+-    SELECT_NEW, SELECT_ALLOC, SELECT_RETAIN, SELECT_RELEASE, SELECT_DRAIN,
++    SELECT_NEW, SELECT_ALLOC, SELECT_RETAIN, SELECT_RELEASE,
+     SELECT_UTF8, SELECT_STRING_INIT, SELECT_NEW_LIBRARY, SELECT_NEW_FUNCTION,
+     SELECT_NEW_PIPELINE, SELECT_PIPELINE_MAX, SELECT_DESCRIPTION, SELECT_CODE,
+     SELECT_NEW_COMMAND, SELECT_BLIT_ENCODER, SELECT_COMPUTE_ENCODER,
+@@ -22,7 +22,8 @@
+ struct call_fixture {
+     doe_mtl_objc runtime;
+     unsigned selector[SELECT_COUNT];
+-    call_object pool_class, string_class, pool, device, queue, command;
++    call_object string_class, device, queue, command;
++    unsigned pool_tokens[8], pool_depth;
+     call_object source, name, library, function, pipeline, encoder, source_buffer,
+         destination_buffer, error, description;
+     unsigned pools, drains, strings, releases, retain_calls, ends, pipeline_sets;
+@@ -30,7 +31,7 @@
+     size_t native_status, wait_status;
+     int64_t error_code;
+     char diagnostic[512];
+-    bool fail_pool, fail_encoder, fail_library, fail_function, fail_pipeline;
++    bool fail_pool, fail_encoder, fail_library, fail_function, fail_pipeline, expire_diagnostic;
+     doe_mtl_native_binding bound[DOE_MTL_BUFFER_SLOTS];
+     uint32_t sizes[DOE_MTL_BUFFER_SLOTS];
+     size_t bytes_length, bytes_slot;
+@@ -39,6 +40,22 @@
+     uint8_t value;
+ };
+ 
++/* The real runtime functions have no userdata/receiver. This pointer is confined
++ * to single-threaded host controls; production state remains runtime-owned. */
++static call_fixture *active;
++static void *pool_push(void) {
++    if (active->fail_pool) return NULL;
++    assert(active->pool_depth < 8);
++    active->pools++;
++    return &active->pool_tokens[active->pool_depth++];
++}
++static void pool_pop(void *token) {
++    assert(active->pool_depth > 0 && token == &active->pool_tokens[active->pool_depth - 1]);
++    --active->pool_depth;
++    active->drains++;
++    if (active->expire_diagnostic) strcpy(active->diagnostic, "expired at pool pop");
++}
++
+ static call_fixture *owner(void *object) {
+     assert(object != NULL);
+     return ((call_object *)object)->fixture;
+@@ -47,12 +64,6 @@
+ static void *object_call(void *receiver, void *selector) {
+     call_fixture *fixture = owner(receiver);
+     doe_mtl_objc *runtime = &fixture->runtime;
+-    if (selector == runtime->new_object) {
+-        assert(receiver == &fixture->pool_class);
+-        if (fixture->fail_pool) return NULL;
+-        fixture->pools++;
+-        return &fixture->pool;
+-    }
+     if (selector == runtime->alloc) {
+         call_object *result;
+         assert(receiver == &fixture->string_class);
+@@ -84,10 +95,7 @@
+ static void void_call(void *receiver, void *selector) {
+     call_fixture *fixture = owner(receiver);
+     doe_mtl_objc *runtime = &fixture->runtime;
+-    if (selector == runtime->drain) {
+-        assert(receiver == &fixture->pool);
+-        fixture->drains++;
+-    } else if (selector == runtime->release) {
++    if (selector == runtime->release) {
+         call_object *object = receiver;
+         assert(object->references > 0);
+         object->references--;
+@@ -241,7 +249,7 @@
+ 
+ static void fixture_init(call_fixture *fixture) {
+     doe_mtl_objc *runtime = &fixture->runtime;
+-    call_object *objects[] = {&fixture->pool_class, &fixture->string_class, &fixture->pool,
++    call_object *objects[] = {&fixture->string_class,
+         &fixture->device, &fixture->queue, &fixture->command, &fixture->source,
+         &fixture->name, &fixture->library, &fixture->function, &fixture->pipeline,
+         &fixture->encoder, &fixture->source_buffer, &fixture->destination_buffer,
+@@ -249,13 +257,14 @@
+     size_t i;
+     memset(fixture, 0, sizeof(*fixture));
+     for (i = 0; i < sizeof(objects) / sizeof(objects[0]); ++i) objects[i]->fixture = fixture;
+-    runtime->pool_class = &fixture->pool_class;
++    active = fixture;
++    runtime->pool_push = pool_push;
++    runtime->pool_pop = pool_pop;
+     runtime->string_class = &fixture->string_class;
+     runtime->new_object = &fixture->selector[SELECT_NEW];
+     runtime->alloc = &fixture->selector[SELECT_ALLOC];
+     runtime->retain = &fixture->selector[SELECT_RETAIN];
+     runtime->release = &fixture->selector[SELECT_RELEASE];
+-    runtime->drain = &fixture->selector[SELECT_DRAIN];
+     runtime->utf8 = &fixture->selector[SELECT_UTF8];
+     runtime->string_init = &fixture->selector[SELECT_STRING_INIT];
+     runtime->new_library = &fixture->selector[SELECT_NEW_LIBRARY];
+@@ -330,6 +339,29 @@
+     }
+ }
+ 
++static void pool_controls(void) {
++    call_fixture fixture;
++    fixture_init(&fixture);
++    void *outer = doe_mtl_objc_pool(&fixture.runtime);
++    void *inner = doe_mtl_objc_pool(&fixture.runtime);
++    assert(outer != inner && fixture.pool_depth == 2);
++    doe_mtl_objc_drain(&fixture.runtime, inner);
++    doe_mtl_objc_drain(&fixture.runtime, outer);
++    doe_mtl_objc_drain(&fixture.runtime, NULL);
++    assert(fixture.pools == 2 && fixture.drains == 2 && !fixture.pool_depth);
++    fixture.fail_pool = true;
++    void *command = &fixture.source;
++    doe_mtl_error error = {0};
++    assert(doe_mtl_objc_command(&fixture.runtime, &fixture.queue, &command, &error) == DOE_MTL_NATIVE_FAILURE);
++    assert(command == &fixture.source && !fixture.retain_calls && fixture.pools == fixture.drains);
++    assert(strcmp(error.operation, "autorelease pool") == 0);
++    fixture.fail_pool = false;
++    fixture.fail_encoder = true;
++    assert(doe_mtl_objc_copy(&fixture.runtime, &fixture.command, &fixture.source_buffer, 0,
++        &fixture.destination_buffer, 0, 4, &error) == DOE_MTL_NATIVE_FAILURE);
++    assert(!fixture.copies && !fixture.ends && !fixture.pool_depth && fixture.pools == fixture.drains);
++}
++
+ static void indirect_controls(void) {
+     call_fixture fixture;
+     fixture_init(&fixture);
+@@ -396,11 +428,15 @@
+     assert(fixture.waits == 0);
+     fixture.wait_status = 5;
+     fixture.error_code = -54321;
++    strcpy(fixture.diagnostic, "diagnostic preserved before draining autorelease pool");
++    fixture.expire_diagnostic = true;
+     assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, true, &error) == 5);
+     assert(fixture.waits == 1 && error.native_code == -54321);
+     assert(error.status == DOE_MTL_EXECUTION_FAILED);
+     assert(strcmp(error.operation, "MTLCommandBuffer.error") == 0);
+     assert(strcmp(error.message, "diagnostic preserved before draining autorelease pool") == 0);
++    assert(strcmp(fixture.diagnostic, "expired at pool pop") == 0);
++    fixture.expire_diagnostic = false;
+     memset(fixture.diagnostic, 'x', sizeof(fixture.diagnostic) - 1);
+     fixture.diagnostic[sizeof(fixture.diagnostic) - 1] = '\0';
+     assert(doe_mtl_objc_observe(&fixture.runtime, &fixture.command, false, &error) == 5);
+@@ -433,6 +469,7 @@
+ }
+ 
+ int main(void) {
++    pool_controls();
+     pipeline_controls();
+     encoding_controls();
+     immediate_controls();
+diff --git a/runtime/c/backends/metal/tests/test_objc_external.c b/runtime/c/backends/metal/tests/test_objc_external.c
+--- a/runtime/c/backends/metal/tests/test_objc_external.c
++++ b/runtime/c/backends/metal/tests/test_objc_external.c
+@@ -17,6 +17,17 @@
+     unsigned fail_plane, imported, descriptors, released_planes, drained, pools;
+     size_t properties[10], formats[2], native_widths[2], native_heights[2];
+ };
++static fixture *active;
++static void *pool_push(void) {
++    if (active->no_pool) return NULL;
++    ++active->pools;
++    return &active->objects[POOL];
++}
++static void pool_pop(void *token) {
++    assert(token == &active->objects[POOL] && active->drained < active->pools);
++    ++active->drained;
++}
++
+ static bool named(void *selector, const char *name) { return strcmp(selector, name) == 0; }
+ static fixture *owner(void *raw, unsigned kind)
+ {
+@@ -34,11 +45,6 @@
+         return raw;
+     }
+     assert(named(selector, "new"));
+-    if (handle->kind == POOL) {
+-        if (f->no_pool) return NULL;
+-        ++f->pools;
+-        return &f->objects[POOL];
+-    }
+     assert(handle->kind == CLASS);
+     if (f->no_descriptor) return NULL;
+     ++f->descriptors;
+@@ -48,14 +54,9 @@
+ {
+     object *handle = raw;
+     fixture *f = handle->owner;
+-    if (named(selector, "drain")) {
+-        assert(handle->kind == POOL);
+-        ++f->drained;
+-    } else {
+-        assert(named(selector, "release"));
+-        assert(handle->kind == DESCRIPTOR || handle->kind == PLANE0 || handle->kind == PLANE1);
+-        if (handle->kind != DESCRIPTOR) ++f->released_planes;
+-    }
++    assert(named(selector, "release"));
++    assert(handle->kind == DESCRIPTOR || handle->kind == PLANE0 || handle->kind == PLANE1);
++    if (handle->kind != DESCRIPTOR) ++f->released_planes;
+ }
+ static void set_size(void *raw, void *selector, size_t value)
+ {
+@@ -144,8 +145,9 @@
+ {
+     *f = (fixture){.expected_usage=1,.count=2,.widths={16,8},.heights={8,4},.format=0x34323076};
+     for (unsigned i = 0; i < OBJECTS; ++i) f->objects[i] = (object){f,i};
+-    f->runtime = (doe_mtl_objc){.pool_class=&f->objects[POOL],.texture_class=&f->objects[CLASS],
+-        .new_object="new",.retain="retain",.release="release",.drain="drain",.responds="responds",
++    active = f;
++    f->runtime = (doe_mtl_objc){.pool_push=pool_push,.pool_pop=pool_pop,.texture_class=&f->objects[CLASS],
++        .new_object="new",.retain="retain",.release="release",.responds="responds",
+         .set_type="type",.set_format="format",.set_width="width",.set_height="height",
+         .set_depth="depth",.set_layers="layers",.set_mips="mips",.set_samples="samples",
+         .set_storage="storage",.set_usage="usage",.object_call=object_call,.void_call=void_call,
+diff --git a/runtime/c/backends/metal/tests/test_objc_images.c b/runtime/c/backends/metal/tests/test_objc_images.c
+--- a/runtime/c/backends/metal/tests/test_objc_images.c
++++ b/runtime/c/backends/metal/tests/test_objc_images.c
+@@ -26,6 +26,16 @@
+     void *textures[DOE_MTL_TEXTURE_SLOTS], *samplers[DOE_MTL_SAMPLER_SLOTS];
+ } fixture;
+ static fixture *active;
++static void *pool_push(void) {
++    if (active->no_pool) return NULL;
++    active->pools++;
++    return &active->pool;
++}
++static void pool_pop(void *token) {
++    assert(token == &active->pool && active->drains < active->pools);
++    active->drains++;
++}
++
+ static bool named(void *selector, const char *name) { return strcmp(selector, name) == 0; }
+ static void *get_class(const char *name) {
+     if (strcmp(name, "MTLTextureDescriptor") == 0) return &active->texture_class;
+@@ -35,11 +45,6 @@
+ static void *selector(const char *name) { return (void *)name; }
+ static void *object_call(void *object, void *sel) {
+     fixture *f = active;
+-    if (object == &f->pool && named(sel, "new")) {
+-        if (f->no_pool) return NULL;
+-        f->pools++;
+-        return &f->pool;
+-    }
+     if (object == &f->texture_class || object == &f->sampler_class) {
+         assert(named(sel, "new"));
+         return f->no_descriptor ? NULL : &f->descriptor;
+@@ -48,8 +53,7 @@
+     return f->no_encoder ? NULL : &f->encoder;
+ }
+ static void void_call(void *object, void *sel) {
+-    if (named(sel, "drain")) { assert(object == &active->pool); active->drains++; }
+-    else if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
++    if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
+     else { assert(object == &active->encoder && named(sel, "endEncoding")); active->ends++; }
+ }
+ static void set_size(void *object, void *sel, size_t value) {
+@@ -166,8 +170,8 @@
+     doe_mtl_objc *r;
+     memset(f, 0, sizeof(*f)); active = f; r = &f->runtime;
+     r->get_class = get_class; r->selector = selector;
+-    r->pool_class = &f->pool; r->new_object = selector("new");
+-    r->release = selector("release"); r->drain = selector("drain"); r->responds = selector("respondsToSelector:");
++    r->pool_push = pool_push; r->pool_pop = pool_pop; r->new_object = selector("new");
++    r->release = selector("release"); r->responds = selector("respondsToSelector:");
+     r->blit_encoder = selector("blitCommandEncoder"); r->compute_encoder = selector("computeCommandEncoder");
+     r->end_encoding = selector("endEncoding"); r->set_pipeline = selector("setComputePipelineState:");
+     r->set_buffer = selector("setBuffer:offset:atIndex:"); r->dispatch = selector("dispatchThreadgroups:threadsPerThreadgroup:");
+diff --git a/runtime/c/backends/metal/tests/test_objc_progress.c b/runtime/c/backends/metal/tests/test_objc_progress.c
+--- a/runtime/c/backends/metal/tests/test_objc_progress.c
++++ b/runtime/c/backends/metal/tests/test_objc_progress.c
+@@ -52,22 +52,21 @@
+  * that reports once to the caller's notify/data; nothing runs at registration. */
+ typedef struct handler_fixture {
+     doe_mtl_objc runtime;
+-    int command, selector, pool_class, new_object, drain, pool;
++    int command, selector, pool;
+     unsigned registrations, notified, pools, drains;
+ #if defined(__BLOCKS__)
+     void (^handler)(void *);
+ #endif
+ } handler_fixture;
+ static handler_fixture *handlers;
+-static void *pool_new(void *receiver, void *selector)
++static void *pool_push(void)
+ {
+-    assert(receiver == &handlers->pool_class && selector == &handlers->new_object);
+     ++handlers->pools;
+     return &handlers->pool;
+ }
+-static void pool_drain(void *receiver, void *selector)
++static void pool_pop(void *token)
+ {
+-    assert(receiver == &handlers->pool && selector == &handlers->drain);
++    assert(token == &handlers->pool && handlers->drains < handlers->pools);
+     ++handlers->drains;
+ }
+ #if defined(__BLOCKS__)
+@@ -84,11 +83,8 @@
+ {
+     handler_fixture fixture = {0};
+     handlers = &fixture;
+-    fixture.runtime.pool_class = &fixture.pool_class;
+-    fixture.runtime.new_object = &fixture.new_object;
+-    fixture.runtime.drain = &fixture.drain;
+-    fixture.runtime.object_call = pool_new;
+-    fixture.runtime.void_call = pool_drain;
++    fixture.runtime.pool_push = pool_push;
++    fixture.runtime.pool_pop = pool_pop;
+     fixture.runtime.add_completed_handler = &fixture.selector;
+ #if defined(__BLOCKS__)
+     fixture.runtime.handler_message = (doe_objc_message)add_handler;
+diff --git a/runtime/c/backends/metal/tests/test_objc_queries.c b/runtime/c/backends/metal/tests/test_objc_queries.c
+--- a/runtime/c/backends/metal/tests/test_objc_queries.c
++++ b/runtime/c/backends/metal/tests/test_objc_queries.c
+@@ -8,7 +8,7 @@
+ typedef struct object { fixture *fixture; } object;
+ struct fixture {
+     doe_mtl_objc runtime;
+-    object pool_class, pool, device, descriptor_class, descriptor, sets, set, set_name,
++    object pool, device, descriptor_class, descriptor, sets, set, set_name,
+         counters, counter, counter_name, common_set, common_counter, samples,
+         command, encoder, destination, compute_class, compute_descriptor, attachments, attachment,
+         error, description, event;
+@@ -21,13 +21,23 @@
+         fail_buffer, fail_encoder, missing_selector, fail_attachment, fail_event;
+     size_t count, storage, sample_index, resolve_first, resolve_count, destination_offset, begin, end;
+ };
++static fixture *active;
++static void *pool_push(void) {
++    if (active->fail_pool) return NULL;
++    active->pools++;
++    return &active->pool;
++}
++static void pool_pop(void *token) {
++    assert(token == &active->pool && active->drains < active->pools);
++    active->drains++;
++}
++
+ static fixture *owner(void *receiver) { assert(receiver != NULL); return ((object *)receiver)->fixture; }
+ static void *object_call(void *receiver, void *selector) {
+     fixture *f = owner(receiver);
+     doe_mtl_objc *r = &f->runtime;
+     doe_mtl_objc_queries *q = &r->queries;
+     if (selector == r->new_object) {
+-        if (receiver == &f->pool_class) { if (f->fail_pool) return NULL; f->pools++; return &f->pool; }
+         if (f->fail_descriptor) return NULL;
+         if (receiver == &f->descriptor_class) return &f->descriptor;
+         assert(receiver == &f->compute_class);
+@@ -52,8 +62,7 @@
+ }
+ static void void_call(void *receiver, void *selector) {
+     fixture *f = owner(receiver);
+-    if (selector == f->runtime.drain) { assert(receiver == &f->pool); f->drains++; }
+-    else if (selector == f->runtime.release) { assert(receiver == &f->descriptor || receiver == &f->compute_descriptor); f->releases++; }
++    if (selector == f->runtime.release) { assert(receiver == &f->descriptor || receiver == &f->compute_descriptor); f->releases++; }
+     else { assert(selector == f->runtime.end_encoding && receiver == &f->encoder); f->ends++; }
+ }
+ static size_t size_call(void *receiver, void *selector) {
+@@ -166,21 +175,22 @@
+ static void init(fixture *f) {
+     doe_mtl_objc *r = &f->runtime;
+     doe_mtl_objc_queries *q = &r->queries;
+-    object *objects[] = {&f->pool_class, &f->pool, &f->device, &f->descriptor_class, &f->descriptor,
++    object *objects[] = {&f->pool, &f->device, &f->descriptor_class, &f->descriptor,
+         &f->sets, &f->set, &f->set_name, &f->counters, &f->counter, &f->counter_name, &f->common_set,
+         &f->common_counter, &f->samples, &f->command, &f->encoder, &f->destination,
+         &f->compute_class, &f->compute_descriptor, &f->attachments, &f->attachment, &f->error, &f->description, &f->event};
+     size_t i;
+     memset(f, 0, sizeof(*f));
+     for (i = 0; i < sizeof(objects) / sizeof(objects[0]); ++i) objects[i]->fixture = f;
+-    r->pool_class = &f->pool_class;
++    active = f;
++    r->pool_push = pool_push;
++    r->pool_pop = pool_pop;
+     q->descriptor_class = &f->descriptor_class;
+     q->compute_pass_class = &f->compute_class;
+     q->blit_pass_class = &f->compute_class;
+     q->common_timestamp_set = &f->common_set;
+     q->common_timestamp = &f->common_counter;
+     r->new_object = &f->tokens[0];
+-    r->drain = &f->tokens[1];
+     r->release = &f->tokens[2];
+     r->responds = &f->tokens[3];
+     r->name = &f->tokens[4];
+diff --git a/runtime/c/backends/metal/tests/test_objc_render_commands.c b/runtime/c/backends/metal/tests/test_objc_render_commands.c
+--- a/runtime/c/backends/metal/tests/test_objc_render_commands.c
++++ b/runtime/c/backends/metal/tests/test_objc_render_commands.c
+@@ -31,6 +31,15 @@
+     uint32_t sizes[2][DOE_MTL_BUFFER_SLOTS];
+ } fixture;
+ static fixture *active;
++static void *pool_push(void) {
++    active->pools++;
++    return &active->pool;
++}
++static void pool_pop(void *token) {
++    assert(token == &active->pool && active->drains < active->pools);
++    active->drains++;
++}
++
+ static bool named(void *sel, const char *name) { return strcmp(sel, name) == 0; }
+ static void *selector(const char *name) { return (void *)name; }
+ static void *get_class(const char *name) {
+@@ -41,7 +50,6 @@
+     assert(false); return NULL;
+ }
+ static void *object_call(void *object, void *sel) {
+-    if (object == &active->pool) { assert(named(sel, "new")); active->pools++; return &active->pool; }
+     if (object == &active->classes[2]) {
+         assert(named(sel, "new")); return active->no_descriptor ? NULL : &active->descriptor;
+     }
+@@ -51,8 +59,7 @@
+     assert(named(sel, "stencilAttachment")); return &active->stencil;
+ }
+ static void void_call(void *object, void *sel) {
+-    if (named(sel, "drain")) { assert(object == &active->pool); active->drains++; }
+-    else if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
++    if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
+     else { assert(object == &active->encoder && named(sel, "endEncoding")); active->ends++; }
+ }
+ static void *indexed(void *object, void *sel, size_t index) {
+@@ -192,8 +199,8 @@
+     r->get_class = get_class; r->selector = selector; assert(doe_mtl_objc_load_render(r, NULL));
+     for (i = 0; i < 8; ++i) f->attachments[i].index = i;
+     f->depth.index = 8; f->stencil.index = 9;
+-    r->pool_class = &f->pool; r->new_object = selector("new"); r->release = selector("release");
+-    r->drain = selector("drain"); r->end_encoding = selector("endEncoding");
++    r->pool_push = pool_push; r->pool_pop = pool_pop; r->new_object = selector("new"); r->release = selector("release");
++    r->end_encoding = selector("endEncoding");
+     r->object_call = object_call; r->void_call = void_call; r->named_call = named_call;
+     r->set_size_call = set_size; r->set_object_call = set_object; r->bind_buffer_call = bind_buffer;
+     r->bind_bytes_call = bind_bytes; r->bind_image_call = bind_image;
+diff --git a/runtime/c/backends/metal/tests/test_objc_render_pipeline.c b/runtime/c/backends/metal/tests/test_objc_render_pipeline.c
+--- a/runtime/c/backends/metal/tests/test_objc_render_pipeline.c
++++ b/runtime/c/backends/metal/tests/test_objc_render_pipeline.c
+@@ -8,7 +8,7 @@
+ typedef struct setting { object *receiver; const char *selector; uint64_t value; void *object_value; } setting;
+ typedef struct fixture {
+     doe_mtl_objc runtime;
+-    object pool_class, string_class, classes[5], pool, device, error, description;
++    object string_class, classes[5], pool, device, error, description;
+     object objects[128];
+     setting settings[160];
+     unsigned object_count, setting_count, pools, drains, libraries, functions, strings, stage;
+@@ -19,6 +19,15 @@
+     void *archive_descriptor;
+ } fixture;
+ static fixture *active;
++static void *pool_push(void) {
++    active->pools++;
++    return &active->pool;
++}
++static void pool_pop(void *token) {
++    assert(token == &active->pool && active->drains < active->pools);
++    active->drains++;
++}
++
+ static bool named(void *selector, const char *name) { return strcmp(selector, name) == 0; }
+ static void *selector(const char *name) { return (void *)name; }
+ static object *make_object(const char *kind, bool owned) {
+@@ -40,9 +49,6 @@
+ }
+ static void *object_call(void *receiver, void *sel) {
+     object *value = receiver;
+-    if (receiver == &active->pool_class) {
+-        assert(named(sel, "new")); active->pools++; return &active->pool;
+-    }
+     if (receiver == &active->string_class) {
+         assert(named(sel, "alloc")); active->strings++; return make_object("string", true);
+     }
+@@ -56,12 +62,9 @@
+     return make_object(sel, false);
+ }
+ static void void_call(void *receiver, void *sel) {
+-    if (named(sel, "drain")) { assert(receiver == &active->pool); active->drains++; }
+-    else {
+-        object *value = receiver;
+-        assert(named(sel, "release") && value->references == 1);
+-        value->references--;
+-    }
++    object *value = receiver;
++    assert(named(sel, "release") && value->references == 1);
++    value->references--;
+ }
+ static void *string_init(void *receiver, void *sel, const void *bytes, size_t length, size_t encoding) {
+     unsigned index = active->strings - 1;
+@@ -148,8 +151,8 @@
+     memset(f, 0, sizeof(*f)); active = f; r = &f->runtime;
+     r->get_class = get_class; r->selector = selector;
+     assert(doe_mtl_objc_load_render(r, NULL));
+-    r->pool_class = &f->pool_class; r->string_class = &f->string_class;
+-    r->new_object = selector("new"); r->alloc = selector("alloc"); r->release = selector("release"); r->drain = selector("drain");
++    r->pool_push = pool_push; r->pool_pop = pool_pop; r->string_class = &f->string_class;
++    r->new_object = selector("new"); r->alloc = selector("alloc"); r->release = selector("release");
+     r->string_init = selector("initWithBytes:length:encoding:"); r->new_library = selector("newLibraryWithSource:options:error:");
+     r->new_function = selector("newFunctionWithName:"); r->set_format = selector("setPixelFormat:");
+     r->localized_description = selector("localizedDescription"); r->code = selector("code"); r->utf8 = selector("UTF8String");
+diff --git a/runtime/c/backends/metal/tests/test_objc_surface.c b/runtime/c/backends/metal/tests/test_objc_surface.c
+--- a/runtime/c/backends/metal/tests/test_objc_surface.c
++++ b/runtime/c/backends/metal/tests/test_objc_surface.c
+@@ -8,26 +8,27 @@
+ typedef struct object { fixture *owner; } object;
+ struct fixture {
+     doe_mtl_objc runtime;
+-    object pool_class, pool, layer, device, drawable, texture, command;
++    object pool, layer, device, drawable, texture, command;
+     unsigned pools, drains, retains, configured, presentations;
+     bool available, missing_selector, wrong_width;
+     size_t status;
+ };
++static fixture *active;
++static void *pool_push(void) { ++active->pools; return &active->pool; }
++static void pool_pop(void *token) {
++    assert(token == &active->pool && active->drains < active->pools);
++    ++active->drains;
++}
++
+ static void *selector(const char *name) { return (void *)name; }
+ static bool is(void *token, const char *name) { return !strcmp(token, name); }
+ static fixture *owner(void *receiver) { assert(receiver); return ((object *)receiver)->owner; }
+ static void *object_call(void *receiver, void *token) {
+     fixture *f = owner(receiver);
+-    if (is(token, "new")) { assert(receiver == &f->pool_class); ++f->pools; return &f->pool; }
+     if (is(token, "retain")) { ++f->retains; return receiver; }
+     if (is(token, "nextDrawable")) { assert(receiver == &f->layer); return f->available ? &f->drawable : NULL; }
+     assert(is(token, "texture") && receiver == &f->drawable);
+     return &f->texture;
+-}
+-static void void_call(void *receiver, void *token) {
+-    fixture *f = owner(receiver);
+-    assert(is(token, "drain") && receiver == &f->pool);
+-    ++f->drains;
+ }
+ static doe_objc_bool responds(void *receiver, void *token, void *method) {
+     fixture *f = owner(receiver);
+@@ -64,11 +65,12 @@
+ }
+ int main(void) {
+     fixture f = {0};
+-    f.pool_class.owner = f.pool.owner = f.layer.owner = f.device.owner = f.drawable.owner =
++    active = &f;
++    f.pool.owner = f.layer.owner = f.device.owner = f.drawable.owner =
+         f.texture.owner = f.command.owner = &f;
+-    f.runtime = (doe_mtl_objc){.selector=selector,.pool_class=&f.pool_class,.new_object=selector("new"),
+-        .retain=selector("retain"),.drain=selector("drain"),.responds=selector("respondsToSelector:"),
+-        .status=selector("status"),.object_call=object_call,.void_call=void_call,.responds_call=responds,
++    f.runtime = (doe_mtl_objc){.selector=selector,.pool_push=pool_push,.pool_pop=pool_pop,
++        .retain=selector("retain"),.responds=selector("respondsToSelector:"),
++        .status=selector("status"),.object_call=object_call,.responds_call=responds,
+         .set_object_call=set_object,.set_size_call=set_size,.set_bool_call=set_bool,
+         .set_drawable_size_call=set_dimensions,.size_call=size_call};
+     doe_mtl_surface_desc desc = {8,4,DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_COPY_SRC,DOE_MTL_BGRA8_UNORM,true,true};

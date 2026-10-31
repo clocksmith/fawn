@@ -1,0 +1,69 @@
+{
+  "baseline": "125654e63",
+  "candidateTree": "<work>/src-lazy",
+  "component": "runtime/c/backends/metal",
+  "intent": "preserved",
+  "boundaryEffects": "Deferred shared-buffer zero initialization within existing resource/recording owner; public ABI, private-buffer policy and texture imports unchanged.",
+  "changedFiles": [
+    "runtime/c/backends/metal/Makefile",
+    "runtime/c/backends/metal/README.md",
+    "runtime/c/backends/metal/src/commands.c",
+    "runtime/c/backends/metal/src/compute_commands.c",
+    "runtime/c/backends/metal/src/indirect_commands.c",
+    "runtime/c/backends/metal/src/internal.h",
+    "runtime/c/backends/metal/src/render_attachments.c",
+    "runtime/c/backends/metal/src/render_commands.c",
+    "runtime/c/backends/metal/src/resources.c",
+    "runtime/c/backends/metal/src/texture_transfer.c",
+    "runtime/c/backends/metal/src/timestamps.c",
+    "runtime/c/backends/metal/tests/test_buffer_initialization.c",
+    "runtime/c/backends/metal/tests/test_indirect.c",
+    "runtime/c/backends/metal/tests/test_progress.c",
+    "runtime/c/native/tests/metal_indirect_cases.h"
+  ],
+  "linesAdded": 385,
+  "linesRemoved": 42,
+  "styleSourcesChecked": 13,
+  "styleFailures": [],
+  "sourceHashes": {
+    "runtime/c/backends/metal/Makefile": "884e9e8f5bad261dce99f88ebc26be1c0ac1e7a1a10ec5d070b82c35be555c07",
+    "runtime/c/backends/metal/README.md": "d935af1e55c88169bf53d232766065bfaa10ee601f37fc56d760b208a891156b",
+    "runtime/c/backends/metal/src/commands.c": "2c49ff233a171ab372388fa5f2d76955adb4a4682de182cf5f71adb2c7a09a9c",
+    "runtime/c/backends/metal/src/compute_commands.c": "117f2b192ef9958f8c30a2b0f65abba401b17b32852c9b29132b334cb31c1b10",
+    "runtime/c/backends/metal/src/indirect_commands.c": "ce7d011afe745c7c4a958dd49e0640e314b92a48981fceffd94ff5ab565489e1",
+    "runtime/c/backends/metal/src/internal.h": "b1c2f012dc07e6d035acbfe2a4ed1aa951c3e23df50bcd087048223f5beb5245",
+    "runtime/c/backends/metal/src/render_attachments.c": "fa72e309afcddea4804b58e7969fcb49632ac13b2f8adfbd3fbee995b0b05a45",
+    "runtime/c/backends/metal/src/render_commands.c": "59bf5394233c25f82affc84e42710289eb508587b73f9286ec7e06d6f8d6b9e2",
+    "runtime/c/backends/metal/src/resources.c": "b32c08f0a4273c8189f3fcfd4864eff696471fbfc6af3d8f678304d37c4b5188",
+    "runtime/c/backends/metal/src/texture_transfer.c": "b3ba0def27262ac3ac0a01a9f8a38ec2c81fe5e9a9b044ef9ad9c4d31023a93c",
+    "runtime/c/backends/metal/src/timestamps.c": "92f9b4ab82cc254f12b38acc52b90d034eb61d08a712d82f042642e83d208278",
+    "runtime/c/backends/metal/tests/test_buffer_initialization.c": "347e4970d480fe12aceaa0a89dab3d56cf4aa621d87e4d10ab6d434637c4c53b",
+    "runtime/c/backends/metal/tests/test_indirect.c": "4e10b0b69ce4cb4a14b6f82d76f7163a3efaeca828bed8973231e1df1bf2d11b",
+    "runtime/c/backends/metal/tests/test_progress.c": "7db4c747c9f21c14ee575b062a55d8b1ae07fd98c611b22ff63e230c61d13cf5",
+    "runtime/c/native/tests/metal_indirect_cases.h": "7eaf1336db2951d4880050134596dac81c5c5e3ef4cbf1aaeffeab99b34dc073"
+  },
+  "hostChecks": [
+    "check",
+    "sdk-abi (arm64, x86_64)",
+    "check-buffer-initialization"
+  ],
+  "logs": [
+    "lazy-first-check.log",
+    "lazy-second-check.log",
+    "lazy-third-check.log",
+    "lazy-buffer-check.log",
+    "lazy-buffer-second-check.log",
+    "lazy-final-check.log"
+  ],
+  "physicalRuns": false,
+  "performanceClaims": false,
+  "nativeFrontendHostTest": "metal_indirect_cases.h adjusted to verify readable zeros before existing no-host-argument-read check; full native bridge remains GNU --wrap only on this Darwin host.",
+  "physicalValidation": {
+    "baseline": "7aba775e1",
+    "clients": 81,
+    "perClientStatusMatch": true,
+    "counts": "62 pass,12 same aborts,6 GNU-only unbuildable,1 checker arguments",
+    "backend": "host check, arm64/x86_64 sdk-abi, native compute and graphics PASS",
+    "timingVerdict": "pending; frozen CPU gate blocks windows"
+  }
+}

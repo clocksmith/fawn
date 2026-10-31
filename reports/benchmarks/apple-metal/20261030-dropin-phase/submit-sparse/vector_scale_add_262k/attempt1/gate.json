@@ -1,0 +1,117 @@
+{
+  "valid": false,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": false
+  },
+  "windowWallSeconds": 15.472779290983453,
+  "foreignCpuSeconds": 26.20000000001092,
+  "foreignCpuFraction": 0.21166203811294754,
+  "topForeignCpu": [
+    [
+      18.360000000000582,
+      "/System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd"
+    ],
+    [
+      3.3700000000000045,
+      "/usr/libexec/textunderstandingd"
+    ],
+    [
+      0.5500000000029104,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      0.3899999999994179,
+      "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal"
+    ],
+    [
+      0.3499999999985448,
+      "claude"
+    ],
+    [
+      0.3200000000001637,
+      "/usr/libexec/opendirectoryd"
+    ],
+    [
+      0.2899999999999636,
+      "/usr/sbin/cfprefsd"
+    ],
+    [
+      0.2300000000000182,
+      "/usr/sbin/notifyd"
+    ]
+  ],
+  "idleGpuMedianBefore": 6,
+  "idleGpuMedianAfter": 4,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T19:34:56Z",
+    "monotonic": 1233680.41363675,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "98%; charging; 0:25 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      3,
+      6,
+      6,
+      4,
+      6
+    ],
+    "loadAverage": [
+      2.0595703125,
+      2.4853515625,
+      2.888671875
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T19:35:17Z",
+    "monotonic": 1233701.154817125,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "98%; charging; 0:25 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      16,
+      5,
+      4,
+      3,
+      3
+    ],
+    "loadAverage": [
+      2.91064453125,
+      2.6484375,
+      2.93701171875
+    ]
+  },
+  "command": [
+    "--inputs",
+    "/private/tmp/claude-501/-Users-xyz-deco/f7c6ca03-f1d7-40a6-9dbd-091c2291175b/scratchpad/ss/inputs",
+    "--provider",
+    "main=<work>/bin/main",
+    "--provider",
+    "cand=<work>/bin/cand",
+    "--provider",
+    "dawn=<work>/bin/dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/dawn-aa",
+    "--workload",
+    "vector_scale_add_262k",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/submit-sparse/vector_scale_add_262k/attempt1-raw.jsonl"
+  ]
+}

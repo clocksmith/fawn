@@ -1,0 +1,620 @@
+--- a/runtime/c/backends/metal/Makefile
++++ b/runtime/c/backends/metal/Makefile
+@@ -162,5 +162,12 @@
+ 	$(BUILD)/test_objc_progress
+ check: check-progress
+ 
++$(BUILD)/test_buffer_initialization: tests/test_buffer_initialization.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
++	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_buffer_initialization.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
++.PHONY: check-buffer-initialization
++check-buffer-initialization: $(BUILD)/test_buffer_initialization
++	$(BUILD)/test_buffer_initialization
++check: check-buffer-initialization
++
+ $(BUILD)/test_objc_progress: tests/test_objc_progress.c $(BUILD)/libdoe_metal.a
+ 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+--- a/runtime/c/backends/metal/README.md
++++ b/runtime/c/backends/metal/README.md
+@@ -82,13 +82,19 @@
+ cannot accidentally submit as partial success. This conservative boundary does
+ not yet admit concurrent recorded use of one allocation or tuned streaming reuse.
+ 
+-Shared allocations start zeroed. Private allocations require a full fill/copy
++Shared allocations read as zero before their first write. Their CPU clear is
++deferred until host access or recording needs existing contents; a full host
++overwrite or full recorded transfer/fill avoids that clear. A full GPU write is
++initialized only in its recording until successful completion, so abandonment
++still exposes zeros and a later use cannot CPU-clear over the recorded write.
++Private allocations require a full fill/copy
+ before reads/bindings; initialization is speculative inside a command and is
+ published only on successful completion. Terminal GPU failure poisons all
+ participating contents. A shared allocation recovers only with a full host write;
+ a private allocation is replaced. Partial writes do not make failed output safe.
+ `doe_mtl_buffer_host_range` lends a shared allocation's host range under exactly
+-a read's admission (not poisoned, initialized, no recorded or pending owner); the
++a read's admission (not poisoned, no recorded or pending owner), initializing
++untouched shared storage before returning it; the
+ native frontend lends it to read mappings and keeps it only while the mapping
+ forbids GPU use. Write mappings and mapped-at-creation keep their copies.
+ 
+--- a/runtime/c/backends/metal/src/commands.c
++++ b/runtime/c/backends/metal/src/commands.c
+@@ -73,7 +73,8 @@
+         return DOE_MTL_BUSY;
+     }
+     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
+-    if (readable && !doe_mtl_buffer_initialized(commands, buffer))
++    if (readable && buffer->memory == DOE_MTL_PRIVATE &&
++        !doe_mtl_buffer_initialized(commands, buffer))
+         return DOE_MTL_UNINITIALIZED;
+     return DOE_MTL_OK;
+ }
+@@ -88,27 +89,38 @@
+ }
+ 
+ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
+-    doe_mtl_buffer *buffer, doe_mtl_buffer_use **out) {
++    doe_mtl_buffer *buffer, bool needs_contents, doe_mtl_buffer_use **out) {
+     doe_mtl_buffer_use *use;
+     doe_mtl_status status;
+     for (use = commands->buffers; use != NULL; use = use->next) {
+         if (use->buffer == buffer) {
+-            *out = use;
+-            return DOE_MTL_OK;
+-        }
+-    }
+-    use = calloc(1, sizeof(*use));
+-    if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
+-    status = doe_mtl_buffer_retain(buffer);
+-    if (status != DOE_MTL_OK) {
+-        free(use);
+-        return status;
+-    }
+-    use->buffer = buffer;
+-    use->initialized = buffer->initialized;
+-    use->next = commands->buffers;
+-    commands->buffers = use;
+-    buffer->owner = commands;
++            break;
++        }
++    }
++    if (use == NULL) {
++        use = calloc(1, sizeof(*use));
++        if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
++        status = doe_mtl_buffer_retain(buffer);
++        if (status != DOE_MTL_OK) {
++            free(use);
++            return status;
++        }
++        use->buffer = buffer;
++        use->initialized = buffer->initialized;
++        use->next = commands->buffers;
++        commands->buffers = use;
++        buffer->owner = commands;
++    }
++    /* A full earlier GPU write is initialized in this recording only. Never
++     * clear over it merely because completion has not published the bit. */
++    if (needs_contents && !use->initialized && buffer->memory == DOE_MTL_SHARED) {
++        void *contents = buffer->context->native.contents(
++            buffer->context->native.userdata, buffer->native);
++        if (contents == NULL) return DOE_MTL_NATIVE_FAILURE;
++        memset(contents, 0, buffer->size);
++        buffer->initialized = true; /* The CPU clear is already complete. */
++        use->initialized = true;
++    }
+     *out = use;
+     return DOE_MTL_OK;
+ }
+@@ -133,9 +145,10 @@
+         source_offset < destination_offset + size && destination_offset < source_offset + size)
+         return doe_mtl_poison(commands, DOE_MTL_RANGE, "overlapping copy", error);
+     if (size == 0) return doe_mtl_fail(DOE_MTL_OK, "empty copy", error);
+-    status = doe_mtl_use_buffer(commands, source, &source_use);
++    status = doe_mtl_use_buffer(commands, source, true, &source_use);
+     if (status == DOE_MTL_OK)
+-        status = doe_mtl_use_buffer(commands, destination, &destination_use);
++        status = doe_mtl_use_buffer(commands, destination,
++            destination_offset != 0 || size != destination->size, &destination_use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "copy lease", error);
+     native = &commands->context->native;
+     status = native->copy(native->userdata, commands->native, source->native,
+@@ -161,7 +174,8 @@
+     if ((offset | size) % 4 != 0)
+         return doe_mtl_poison(commands, DOE_MTL_ALIGNMENT, "fill alignment", error);
+     if (size == 0) return doe_mtl_fail(DOE_MTL_OK, "empty fill", error);
+-    status = doe_mtl_use_buffer(commands, destination, &use);
++    status = doe_mtl_use_buffer(commands, destination,
++        offset != 0 || size != destination->size, &use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "fill lease", error);
+     native = &commands->context->native;
+     status = native->fill(native->userdata, commands->native, destination->native,
+--- a/runtime/c/backends/metal/src/compute_commands.c
++++ b/runtime/c/backends/metal/src/compute_commands.c
+@@ -82,7 +82,7 @@
+     status = doe_mtl_use_compute_pipeline(commands, pipeline);
+     for (i = 0; status == DOE_MTL_OK && i < count; ++i) {
+         doe_mtl_buffer_use *use;
+-        status = doe_mtl_use_buffer(commands, bindings[i].buffer, &use);
++        status = doe_mtl_use_buffer(commands, bindings[i].buffer, true, &use);
+     }
+     if (status == DOE_MTL_OK)
+         status = doe_mtl_image_bindings_retain(commands, textures, texture_count, samplers, sampler_count);
+--- a/runtime/c/backends/metal/src/indirect_commands.c
++++ b/runtime/c/backends/metal/src/indirect_commands.c
+@@ -67,7 +67,7 @@
+     status = doe_mtl_use_compute_pipeline(commands, pipeline);
+     for (size_t i = 0; status == DOE_MTL_OK && i < dispatch->buffer_count; ++i) {
+         doe_mtl_buffer_use *use;
+-        status = doe_mtl_use_buffer(commands, dispatch->buffers[i].buffer, &use);
++        status = doe_mtl_use_buffer(commands, dispatch->buffers[i].buffer, true, &use);
+     }
+     if (status == DOE_MTL_OK)
+         status = doe_mtl_image_bindings_retain(commands, dispatch->textures, dispatch->texture_count,
+--- a/runtime/c/backends/metal/src/internal.h
++++ b/runtime/c/backends/metal/src/internal.h
+@@ -76,7 +76,7 @@
+ doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,
+     const char *operation, doe_mtl_error *error);
+ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
+-    doe_mtl_buffer *buffer, doe_mtl_buffer_use **out);
++    doe_mtl_buffer *buffer, bool needs_contents, doe_mtl_buffer_use **out);
+ doe_mtl_status doe_mtl_use_compute_pipeline(doe_mtl_commands *commands, doe_mtl_pipeline *pipeline);
+ bool doe_mtl_buffer_initialized(const doe_mtl_commands *commands,
+     const doe_mtl_buffer *buffer);
+--- a/runtime/c/backends/metal/src/render_attachments.c
++++ b/runtime/c/backends/metal/src/render_attachments.c
+@@ -159,7 +159,7 @@
+     if (status == DOE_MTL_OK) status = attachment_retain(commands, &pass->stencil);
+     if (status == DOE_MTL_OK && pass->visibility_buffer != NULL) {
+         doe_mtl_buffer_use *use;
+-        status = doe_mtl_use_buffer(commands, pass->visibility_buffer, &use);
++        status = doe_mtl_use_buffer(commands, pass->visibility_buffer, true, &use);
+     }
+     return status;
+ }
+--- a/runtime/c/backends/metal/src/render_commands.c
++++ b/runtime/c/backends/metal/src/render_commands.c
+@@ -23,7 +23,7 @@
+     doe_mtl_buffer_use *use;
+     doe_mtl_status status = DOE_MTL_OK;
+     for (i = 0; i < bindings->buffer_count && status == DOE_MTL_OK; ++i)
+-        status = doe_mtl_use_buffer(commands, bindings->buffers[i].buffer, &use);
++        status = doe_mtl_use_buffer(commands, bindings->buffers[i].buffer, true, &use);
+     if (status == DOE_MTL_OK) status = doe_mtl_image_bindings_retain(commands,
+         bindings->textures, bindings->texture_count, bindings->samplers, bindings->sampler_count);
+     return status;
+@@ -33,7 +33,7 @@
+     doe_mtl_status status = retain_pipeline(commands, draw->pipeline);
+     if (status == DOE_MTL_OK) status = retain_bindings(commands, &draw->vertex);
+     if (status == DOE_MTL_OK) status = retain_bindings(commands, &draw->fragment);
+-    if (status == DOE_MTL_OK && draw->index_buffer != NULL) status = doe_mtl_use_buffer(commands, draw->index_buffer, &use);
++    if (status == DOE_MTL_OK && draw->index_buffer != NULL) status = doe_mtl_use_buffer(commands, draw->index_buffer, true, &use);
+     return status;
+ }
+ void doe_mtl_render_retire(doe_mtl_commands *commands) {
+--- a/runtime/c/backends/metal/src/resources.c
++++ b/runtime/c/backends/metal/src/resources.c
+@@ -29,9 +29,6 @@
+         contents = context->native.contents(context->native.userdata, buffer->native);
+         if (contents == NULL) {
+             status = doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "buffer contents", error);
+-        } else {
+-            memset(contents, 0, (size_t)size);
+-            buffer->initialized = true;
+         }
+     }
+     if (status != DOE_MTL_OK) {
+@@ -88,11 +85,10 @@
+     contents = buffer->context->native.contents(buffer->context->native.userdata,
+         buffer->native);
+     if (contents == NULL) return DOE_MTL_NATIVE_FAILURE;
++    if (!full && !buffer->initialized) memset(contents, 0, buffer->size);
+     memmove(contents + (size_t)offset, bytes, size);
+-    if (full) {
+-        buffer->initialized = true;
+-        buffer->poisoned = false;
+-    }
++    buffer->initialized = true;
++    if (full) buffer->poisoned = false;
+     return DOE_MTL_OK;
+ }
+ 
+@@ -101,13 +97,16 @@
+     static const unsigned char empty = 0;
+     doe_mtl_status status = out != NULL ? host_access(buffer, offset, &empty, size) :
+         DOE_MTL_INVALID_ARGUMENT;
+-    const unsigned char *contents;
++    unsigned char *contents;
+     if (status != DOE_MTL_OK) return status;
+     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
+-    if (!buffer->initialized) return DOE_MTL_UNINITIALIZED;
+     contents = buffer->context->native.contents(buffer->context->native.userdata,
+         buffer->native);
+     if (contents == NULL) return DOE_MTL_NATIVE_FAILURE;
++    if (!buffer->initialized) {
++        memset(contents, 0, buffer->size);
++        buffer->initialized = true;
++    }
+     *out = contents + (size_t)offset;
+     return DOE_MTL_OK;
+ }
+--- a/runtime/c/backends/metal/src/texture_transfer.c
++++ b/runtime/c/backends/metal/src/texture_transfer.c
+@@ -156,7 +156,7 @@
+     if (status == DOE_MTL_OK && (upload ? native->upload_texture == NULL : native->read_texture == NULL))
+         status = DOE_MTL_UNSUPPORTED;
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "texture transfer validation", error);
+-    status = doe_mtl_use_buffer(commands, buffer, &buffer_use);
++    status = doe_mtl_use_buffer(commands, buffer, upload || !covers_buffer, &buffer_use);
+     if (status == DOE_MTL_OK) status = doe_mtl_use_texture(commands, texture, &texture_use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "texture transfer lease", error);
+     status = encode_transfer(commands, buffer, texture, &format, &copy, upload, &detail);
+--- a/runtime/c/backends/metal/src/timestamps.c
++++ b/runtime/c/backends/metal/src/timestamps.c
+@@ -174,7 +174,8 @@
+     if (!doe_mtl_range(destination->size, offset, size))
+         return doe_mtl_poison(commands, DOE_MTL_RANGE, "timestamp destination range", error);
+     status = doe_mtl_use_timestamps(commands, timestamps, &query_use);
+-    if (status == DOE_MTL_OK) status = doe_mtl_use_buffer(commands, destination, &buffer_use);
++    if (status == DOE_MTL_OK) status = doe_mtl_use_buffer(commands, destination,
++        offset != 0 || size != destination->size, &buffer_use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "timestamp resolve lease", error);
+     if (query_use->resolve_value == UINT64_MAX)
+         return doe_mtl_poison(commands, DOE_MTL_RANGE, "timestamp resolve sequence", error);
+@@ -218,7 +219,7 @@
+     doe_mtl_buffer_use *buffer_use = NULL;
+     doe_mtl_error detail = {0};
+     if (stage) status = doe_mtl_buffer_create(commands->context, 4, DOE_MTL_PRIVATE, &scratch, &detail);
+-    if (status == DOE_MTL_OK && stage) status = doe_mtl_use_buffer(commands, scratch, &buffer_use);
++    if (status == DOE_MTL_OK && stage) status = doe_mtl_use_buffer(commands, scratch, false, &buffer_use);
+     if (status == DOE_MTL_OK) status = native->timestamp_boundary(native->userdata, commands->native,
+         timestamps->native, index, stage, scratch ? scratch->native : NULL, &query_use->resolve_event, ++query_use->resolve_value, &detail);
+     doe_mtl_buffer_release(scratch);
+--- /dev/null
++++ b/runtime/c/backends/metal/tests/test_buffer_initialization.c
+@@ -0,0 +1,303 @@
++/* SPDX-License-Identifier: MIT
++ * Host clears and recording ownership only; no simulated GPU execution. */
++#include "mock_native.h"
++#include "../src/query_internal.h"
++#include "../src/texture_internal.h"
++#include "../src/render_internal.h"
++#include "../include/doe_metal_indirect.h"
++#include <assert.h>
++#include <stdio.h>
++
++static doe_mtl_context *context_new(mock_native *mock) {
++    doe_mtl_context *context = NULL;
++    assert(doe_mtl_context_open(mock_driver(mock), &context, NULL) == DOE_MTL_OK);
++    return context;
++}
++static doe_mtl_buffer *buffer_new(doe_mtl_context *context, size_t size) {
++    doe_mtl_buffer *buffer = NULL;
++    assert(doe_mtl_buffer_create(context, size, DOE_MTL_SHARED, &buffer, NULL) == DOE_MTL_OK);
++    return buffer;
++}
++static doe_mtl_commands *commands_new(doe_mtl_context *context) {
++    doe_mtl_commands *commands = NULL;
++    assert(doe_mtl_commands_create(context, &commands, NULL) == DOE_MTL_OK);
++    return commands;
++}
++/* Inspect the existing hostile 0xa5 allocator fixture directly, without causing
++ * the host-read API to clear it and mask an early or missing clear. */
++static void bytes_are(doe_mtl_buffer *buffer, unsigned char value) {
++    doe_mtl_native *native = &buffer->context->native;
++    const unsigned char *bytes = native->contents(native->userdata, buffer->native);
++    assert(bytes != NULL);
++    for (size_t i = 0; i < buffer->size; ++i) assert(bytes[i] == value);
++}
++static void readable_zero(doe_mtl_buffer *buffer) {
++    unsigned char bytes[64];
++    assert(buffer->size == sizeof(bytes));
++    assert(doe_mtl_buffer_read(buffer, 0, bytes, sizeof(bytes)) == DOE_MTL_OK);
++    for (size_t i = 0; i < sizeof(bytes); ++i) assert(bytes[i] == 0);
++}
++
++static void host_access(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_buffer *read = buffer_new(context, 64), *partial = buffer_new(context, 64);
++    doe_mtl_buffer *full = buffer_new(context, 64);
++    bytes_are(read, 0xa5);
++    const void *range = NULL;
++    assert(doe_mtl_buffer_host_range(read, 16, 4, &range) == DOE_MTL_OK && range != NULL);
++    bytes_are(read, 0);
++    unsigned char input[64], output[64];
++    memset(input, 0x37, sizeof(input));
++    assert(doe_mtl_buffer_write(partial, 4, input, 4) == DOE_MTL_OK);
++    assert(doe_mtl_buffer_read(partial, 0, output, sizeof(output)) == DOE_MTL_OK);
++    for (size_t i = 0; i < sizeof(output); ++i) assert(output[i] == (i >= 4 && i < 8 ? 0x37 : 0));
++    assert(doe_mtl_buffer_write(full, 0, input, sizeof(input)) == DOE_MTL_OK);
++    bytes_are(full, 0x37);
++    doe_mtl_buffer_release(read);
++    doe_mtl_buffer_release(partial);
++    doe_mtl_buffer_release(full);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void fills_copies_and_abandonment(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_buffer *source = buffer_new(context, 64), *destination = buffer_new(context, 64);
++    doe_mtl_buffer *partial = buffer_new(context, 64);
++    doe_mtl_commands *commands = commands_new(context);
++    assert(doe_mtl_commands_copy(commands, source, 0, destination, 0, 64, NULL) == DOE_MTL_OK);
++    bytes_are(source, 0);
++    bytes_are(destination, 0xa5);
++    assert(!destination->initialized && doe_mtl_buffer_initialized(commands, destination));
++    /* A prior full overwrite is sufficient inside this command: later partial
++     * writes and reads must not CPU-clear over its future GPU result. */
++    unsigned queries = mock.content_queries;
++    mock.fail = MOCK_CONTENTS;
++    assert(doe_mtl_commands_fill(commands, destination, 4, 4, 0x42, NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_copy(commands, destination, 0, source, 0, 64, NULL) == DOE_MTL_OK);
++    assert(mock.content_queries == queries);
++    mock.fail = MOCK_NONE;
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    readable_zero(destination); /* Uncommitted copy never changed public bytes. */
++    commands = commands_new(context);
++    assert(doe_mtl_commands_fill(commands, partial, 4, 4, 1, NULL) == DOE_MTL_OK);
++    bytes_are(partial, 0);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    readable_zero(partial);
++    doe_mtl_buffer_release(source);
++    doe_mtl_buffer_release(destination);
++    doe_mtl_buffer_release(partial);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void pending_failure_and_recovery(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_buffer *buffer = buffer_new(context, 64);
++    doe_mtl_commands *commands = commands_new(context);
++    assert(doe_mtl_commands_fill(commands, buffer, 0, 64, 1, NULL) == DOE_MTL_OK);
++    bytes_are(buffer, 0xa5);
++    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
++    mock_command_result(commands->native, 0, 0);
++    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
++    assert(!buffer->initialized && buffer->owner == commands);
++    unsigned char output[64], input[64];
++    memset(output, 0x91, sizeof(output));
++    memset(input, 0x27, sizeof(input));
++    assert(doe_mtl_buffer_read(buffer, 0, output, sizeof(output)) == DOE_MTL_BUSY);
++    assert(doe_mtl_buffer_write(buffer, 0, input, sizeof(input)) == DOE_MTL_BUSY);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_BUSY);
++    bytes_are(buffer, 0xa5);
++    mock_command_result(commands->native, 5, -71);
++    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_EXECUTION_FAILED);
++    assert(doe_mtl_buffer_read(buffer, 0, output, sizeof(output)) == DOE_MTL_EXECUTION_FAILED);
++    for (size_t i = 0; i < sizeof(output); ++i) assert(output[i] == 0x91);
++    assert(doe_mtl_buffer_write(buffer, 4, input, 4) == DOE_MTL_EXECUTION_FAILED);
++    bytes_are(buffer, 0xa5);
++    assert(doe_mtl_buffer_write(buffer, 0, input, sizeof(input)) == DOE_MTL_OK);
++    bytes_are(buffer, 0x27);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    doe_mtl_buffer_release(buffer);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void compute_and_contents_failure(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_pipeline *pipeline = NULL;
++    const doe_mtl_pipeline_desc desc = {"kernel", 6, "main", {1, 1, 1}, UINT32_MAX};
++    assert(doe_mtl_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_OK);
++    doe_mtl_buffer *buffer = buffer_new(context, 64), *failed = buffer_new(context, 64);
++    doe_mtl_buffer_binding binding = {0, buffer, 0, 64};
++    doe_mtl_commands *commands = commands_new(context);
++    assert(doe_mtl_commands_dispatch(commands, pipeline, &binding, 1,
++        (doe_mtl_dimensions){1, 1, 1}, 1, NULL) == DOE_MTL_OK);
++    bytes_are(buffer, 0);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    commands = commands_new(context);
++    binding.buffer = failed;
++    mock.fail = MOCK_CONTENTS;
++    assert(doe_mtl_commands_dispatch(commands, pipeline, &binding, 1,
++        (doe_mtl_dimensions){1, 1, 1}, 1, NULL) == DOE_MTL_NATIVE_FAILURE);
++    assert(mock.dispatches == 1 && failed->owner == commands && !failed->initialized);
++    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_NATIVE_FAILURE);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    mock.fail = MOCK_NONE;
++    bytes_are(failed, 0xa5);
++    readable_zero(failed);
++    doe_mtl_pipeline_release(pipeline);
++    doe_mtl_buffer_release(buffer);
++    doe_mtl_buffer_release(failed);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void texture_transfers(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_texture *texture = NULL;
++    const doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D, DOE_MTL_RGBA8_UNORM,
++        4, 2, 1, 1, DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST, false, 1};
++    assert(doe_mtl_texture_create(context, &desc, &texture, NULL) == DOE_MTL_OK);
++    doe_mtl_buffer *source = buffer_new(context, 272), *full = buffer_new(context, 16);
++    doe_mtl_buffer *partial = buffer_new(context, 64), *padded = buffer_new(context, 272);
++    doe_mtl_commands *commands = commands_new(context);
++    const doe_mtl_texture_region region = {0, 0, 0, 0, 4, 1, 1};
++    const doe_mtl_texture_region two_rows = {0, 0, 0, 0, 4, 2, 1};
++    assert(doe_mtl_commands_upload_texture(commands, source, (doe_mtl_texture_buffer_layout){0},
++        texture, two_rows, NULL) == DOE_MTL_OK);
++    bytes_are(source, 0);
++    assert(doe_mtl_commands_read_texture(commands, texture, region, full,
++        (doe_mtl_texture_buffer_layout){0}, NULL) == DOE_MTL_OK);
++    bytes_are(full, 0xa5);
++    assert(!full->initialized && doe_mtl_buffer_initialized(commands, full));
++    assert(doe_mtl_commands_read_texture(commands, texture, region, partial,
++        (doe_mtl_texture_buffer_layout){.offset = 16}, NULL) == DOE_MTL_OK);
++    bytes_are(partial, 0);
++    /* The footprint ends exactly at the allocation end, but row gaps remain
++     * observable and must be zeroed before the GPU writes only texel bytes. */
++    assert(doe_mtl_commands_read_texture(commands, texture, two_rows, padded,
++        (doe_mtl_texture_buffer_layout){.bytes_per_row = 256}, NULL) == DOE_MTL_OK);
++    bytes_are(padded, 0);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    bytes_are(full, 0xa5);
++    doe_mtl_buffer_release(source);
++    doe_mtl_buffer_release(full);
++    doe_mtl_buffer_release(partial);
++    doe_mtl_buffer_release(padded);
++    doe_mtl_texture_release(texture);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void indirect_initial_contents(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_pipeline *pipeline = NULL;
++    const doe_mtl_pipeline_desc desc = {"kernel", 6, "main", {1, 1, 1}, UINT32_MAX};
++    assert(doe_mtl_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_OK);
++    doe_mtl_dispatch_guard *guard = NULL;
++    const doe_mtl_dispatch_guard_desc gd = {desc, 3, {65535, 65535, 65535}};
++    assert(doe_mtl_dispatch_guard_create(context, &gd, &guard, NULL) == DOE_MTL_OK);
++    doe_mtl_buffer *arguments = buffer_new(context, 64), *output = buffer_new(context, 64);
++    const doe_mtl_buffer_binding binding = {0, output, 0, 64};
++    const doe_mtl_indirect_dispatch dispatch = {.guard = guard, .pipeline = pipeline,
++        .buffers = &binding, .buffer_count = 1, .arguments = arguments};
++    doe_mtl_commands *commands = commands_new(context);
++    assert(doe_mtl_commands_dispatch_indirect(commands, &dispatch, NULL) == DOE_MTL_OK);
++    bytes_are(arguments, 0);
++    bytes_are(output, 0);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    doe_mtl_buffer_release(arguments);
++    doe_mtl_buffer_release(output);
++    doe_mtl_dispatch_guard_release(guard);
++    doe_mtl_pipeline_release(pipeline);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void render_initial_contents(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_texture *texture = NULL;
++    doe_mtl_texture_view *view = NULL;
++    const doe_mtl_texture_desc td = {DOE_MTL_TEXTURE_2D, DOE_MTL_RGBA8_UNORM,
++        4, 4, 1, 1, DOE_MTL_TEXTURE_RENDER_TARGET, false, 1};
++    const doe_mtl_texture_view_desc vd = {DOE_MTL_TEXTURE_2D, DOE_MTL_RGBA8_UNORM, 0, 1, 0, 1,
++        DOE_MTL_SWIZZLE_RED, DOE_MTL_SWIZZLE_GREEN, DOE_MTL_SWIZZLE_BLUE, DOE_MTL_SWIZZLE_ALPHA};
++    assert(doe_mtl_texture_create(context, &td, &texture, NULL) == DOE_MTL_OK);
++    assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_OK);
++    doe_mtl_render_pipeline_desc pd = {0};
++    pd.vertex = (doe_mtl_shader_stage){"vertex", 6, "v_main", UINT32_MAX};
++    pd.fragment = (doe_mtl_shader_stage){"fragment", 8, "f_main", UINT32_MAX};
++    pd.color_count = 1;
++    pd.colors[0].format = DOE_MTL_RGBA8_UNORM;
++    pd.colors[0].write_mask = 15;
++    pd.sample_count = 1;
++    doe_mtl_render_pipeline *pipeline = NULL;
++    assert(doe_mtl_render_pipeline_create(context, &pd, &pipeline, NULL) == DOE_MTL_OK);
++    doe_mtl_buffer *vertex = buffer_new(context, 64), *fragment = buffer_new(context, 64);
++    doe_mtl_buffer *index = buffer_new(context, 64), *visibility = buffer_new(context, 64);
++    const doe_mtl_buffer_binding vb = {0, vertex, 0, 64}, fb = {1, fragment, 0, 64};
++    const doe_mtl_render_pass_desc pass = {.color_count = 1,
++        .colors = {{.view = view, .load = DOE_MTL_CLEAR, .store = DOE_MTL_STORE}},
++        .visibility_buffer = visibility};
++    const doe_mtl_render_draw draw = {.pipeline = pipeline, .topology = 3,
++        .count = 3, .instance_count = 1, .vertex = {.buffers = &vb, .buffer_count = 1},
++        .fragment = {.buffers = &fb, .buffer_count = 1}, .index_buffer = index,
++        .visibility_mode = 1};
++    doe_mtl_commands *commands = commands_new(context);
++    assert(doe_mtl_commands_render(commands, &pass, &draw, 1, NULL) == DOE_MTL_OK);
++    bytes_are(vertex, 0);
++    bytes_are(fragment, 0);
++    bytes_are(index, 0);
++    bytes_are(visibility, 0);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    doe_mtl_buffer_release(vertex);
++    doe_mtl_buffer_release(fragment);
++    doe_mtl_buffer_release(index);
++    doe_mtl_buffer_release(visibility);
++    doe_mtl_render_pipeline_release(pipeline);
++    doe_mtl_texture_view_release(view);
++    doe_mtl_texture_release(texture);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++static void timestamp_resolves(void) {
++    mock_native mock;
++    doe_mtl_context *context = context_new(&mock);
++    doe_mtl_timestamps *timestamps = NULL;
++    assert(doe_mtl_timestamps_create(context, 1, &timestamps, NULL) == DOE_MTL_OK);
++    doe_mtl_buffer *full = buffer_new(context, 8), *partial = buffer_new(context, 64);
++    doe_mtl_commands *commands = commands_new(context);
++    assert(doe_mtl_commands_timestamp(commands, timestamps, 0, NULL) == DOE_MTL_OK);
++    assert(doe_mtl_commands_resolve_timestamps(commands, timestamps, 0, 1, full, 0, NULL) == DOE_MTL_OK);
++    bytes_are(full, 0xa5);
++    assert(!full->initialized && doe_mtl_buffer_initialized(commands, full));
++    assert(doe_mtl_commands_resolve_timestamps(commands, timestamps, 0, 1, partial, 16, NULL) == DOE_MTL_OK);
++    bytes_are(partial, 0);
++    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++    doe_mtl_buffer_release(full);
++    doe_mtl_buffer_release(partial);
++    doe_mtl_timestamps_release(timestamps);
++    doe_mtl_context_release(context);
++    mock_assert_closed(&mock);
++}
++
++int main(void) {
++    host_access();
++    fills_copies_and_abandonment();
++    pending_failure_and_recovery();
++    compute_and_contents_failure();
++    indirect_initial_contents();
++    render_initial_contents();
++    texture_transfers();
++    timestamp_resolves();
++    puts("PASS shared buffer initialization: hostile storage, host ranges/writes, recording use, overwrite/partial transfers, rollback, unknown, poisoning (host only)");
++    return 0;
++}
+--- a/runtime/c/backends/metal/tests/test_indirect.c
++++ b/runtime/c/backends/metal/tests/test_indirect.c
+@@ -28,6 +28,13 @@
+     doe_mtl_buffer *arguments = NULL, *output = NULL;
+     assert(doe_mtl_buffer_create(context,64,DOE_MTL_SHARED,&arguments,NULL) == DOE_MTL_OK);
+     assert(doe_mtl_buffer_create(context,64,DOE_MTL_SHARED,&output,NULL) == DOE_MTL_OK);
++    /* Establish real argument bytes and readable output before testing that
++     * dispatch never maps arguments or scratch to decode the GPU words. */
++    const uint32_t words[16] = {91, 2, 1, 1};
++    unsigned char zeros[64];
++    assert(doe_mtl_buffer_write(arguments,0,words,sizeof(words)) == DOE_MTL_OK);
++    assert(doe_mtl_buffer_read(output,0,zeros,sizeof(zeros)) == DOE_MTL_OK);
++    for (size_t i = 0; i < sizeof(zeros); ++i) assert(zeros[i] == 0);
+     void *argument_identity = doe_mtl_buffer_native(arguments);
+     void *output_identity = doe_mtl_buffer_native(output);
+     void *pipeline_identity = doe_mtl_pipeline_native(pipeline);
+--- a/runtime/c/backends/metal/tests/test_progress.c
++++ b/runtime/c/backends/metal/tests/test_progress.c
+@@ -123,7 +123,10 @@
+     assert(mock.commits == 2 && ledger.acquired == 3 && ledger.notified == 3);
+     assert(!doe_mtl_commands_in_flight(refused) && doe_mtl_commands_release(refused) == DOE_MTL_OK);
+     mock.fail = MOCK_NONE;
+-    assert(!spare->owner && spare->initialized);
++    assert(!spare->owner);
++    unsigned char readable[64];
++    assert(doe_mtl_buffer_read(spare,0,readable,sizeof(readable)) == DOE_MTL_OK);
++    for (size_t i = 0; i < sizeof(readable); ++i) assert(readable[i] == 0);
+     doe_mtl_buffer_release(spare);
+     doe_mtl_buffer_release(buffer);
+     doe_mtl_context_release(context);
+--- a/runtime/c/native/tests/metal_indirect_cases.h
++++ b/runtime/c/native/tests/metal_indirect_cases.h
+@@ -71,6 +71,9 @@
+     }
+     native_buffer *argument_payload = doe_resource_buffer_native((doe_resource_buffer *)arguments);
+     native_buffer *output_payload = doe_resource_buffer_native((doe_resource_buffer *)output);
++    unsigned char zeros[16];
++    assert(doe_mtl_buffer_read(output_payload->handle.metal,0,zeros,sizeof(zeros)) == DOE_MTL_OK);
++    for (size_t i = 0; i < sizeof(zeros); ++i) assert(zeros[i] == 0);
+     void *argument_identity = doe_mtl_buffer_native(argument_payload->handle.metal);
+     void *output_identity = doe_mtl_buffer_native(output_payload->handle.metal);
+     unsigned queries = mock->content_queries, copies = mock->copies, indirects = mock->indirects;
