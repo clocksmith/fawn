@@ -808,7 +808,7 @@ static void check_every_feature_and_limit(state *s, const WGPULimits *adapter)
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     state s = {0};
     consumer_init(&s);
     WGPULimits adapter;

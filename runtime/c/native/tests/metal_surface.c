@@ -6,7 +6,7 @@
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     state s = {.instance=wgpuCreateInstance(NULL)};
     doe_surface_host *host = NULL;
     WGPUSurface surface = NULL;

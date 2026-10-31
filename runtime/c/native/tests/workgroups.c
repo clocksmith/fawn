@@ -65,7 +65,7 @@ static void execute(state *s, uint32_t x, uint32_t y, uint32_t z)
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     state base = {0};
     consumer_init(&base);
     WGPULimits adapter = WGPU_LIMITS_INIT, defaults = WGPU_LIMITS_INIT;

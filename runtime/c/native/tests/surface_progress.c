@@ -363,7 +363,7 @@ static void unconfigure_preserves_failure(xcb_connection_t *connection, xcb_wind
 
 int main(void)
 {
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    consumer_line_output();
     if (!getenv("DISPLAY")) return 77;
     int screen_number = 0;
     xcb_connection_t *connection = xcb_connect(NULL, &screen_number);
