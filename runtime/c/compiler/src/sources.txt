@@ -43,7 +43,7 @@ src/sema_expression.c
 src/sema_call.c
 src/sema_select.c
 src/reflection.c
-src/spirv.c
+src/spirv.c src/spirv_clamp.c
 src/spirv_switch.c
 src/spirv_module.c
 src/spirv_subgroup.c

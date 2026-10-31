@@ -48,8 +48,9 @@ class TestControlFlow(CompilerFixture):
             memory = {(0, 0): [3, 5, 7, 11], (0, 1): [99] * 6}
             for lane in (0, 1, 3, 4, 0xFFFFFFFF):
                 execute(instructions, memory, (lane, 51, 93))
+            # Lane 4 and 0xFFFFFFFF clamp to input[3] and output[4]/[5] (compiler/src/spirv_clamp.c).
             self.assertEqual(memory, {(0, 0): [3, 5, 7, 11],
-                                      (0, 1): [3, 8, 99, 18, 11, 99]})
+                                      (0, 1): [3, 8, 99, 18, 22, 22]})
             memory = {(0, 0): [], (0, 1): [91, 92, 93]}
             execute(instructions, memory, 0)
             execute(instructions, memory, 1)
@@ -80,21 +81,23 @@ class TestControlFlow(CompilerFixture):
         memory = {(0, 0): [3, 5, 7], (0, 1): [99] * 4}
         for lane in (0, 1, 0xFFFFFFFF):
             execute(instructions, memory, lane)
-        self.assertEqual(memory, {(0, 0): [3, 5, 7], (0, 1): [7, 7, 10, 99]})
+        # Wrapped offsets clamp independently per binding (compiler/src/spirv_clamp.c): lane 0 reads
+        # src[2]+src[2]; 0xFFFFFFFF writes out[0] from src[2]+src[2].
+        self.assertEqual(memory, {(0, 0): [3, 5, 7], (0, 1): [14, 14, 10, 99]})
         instructions, _ = self.compile("const OFF:u32=1u;" + HEADER +
             "out[0u-OFF]=src[0u];out[4294967295u+OFF]=src[OFF]+42u;}")
         memory = {(0, 0): [3, 5, 7], (0, 1): [99, 98]}
         execute(instructions, memory, 0)
-        self.assertEqual(memory[(0, 1)], [47, 98])
+        self.assertEqual(memory[(0, 1)], [47, 3])  # out[0u-1u] clamps to out[1]
 
-    def test_return_survives_discarded_store(self) -> None:
+    def test_return_survives_clamped_store(self) -> None:
         instructions, _ = self.compile(HEADER +
             "if(gid.x==0u){out[99u]=src[0u];return;}out[0u]=9u;}")
         memory = {(0, 0): [3], (0, 1): [77, 88]}
         execute(instructions, memory, 0)
-        self.assertEqual(memory[(0, 1)], [77, 88])
+        self.assertEqual(memory[(0, 1)], [77, 3])  # out[99u] clamps to out[1]
         execute(instructions, memory, 1)
-        self.assertEqual(memory[(0, 1)], [9, 88])
+        self.assertEqual(memory[(0, 1)], [9, 3])
 
     def test_nested_return_merges_and_sequential_observation(self) -> None:
         source = HEADER + """if(gid.x==0u){
@@ -143,15 +146,19 @@ class TestControlFlow(CompilerFixture):
 
     def test_instruction_oracle_detects_deliberate_faults(self) -> None:
         instructions, _ = self.compile(HEADER + "out[gid.x]=src[gid.x-1u];}")
-        # Reversing a real robustness guard must fail at pointer formation.
-        bad_guard = [(174 if op == 176 else op, args) for op, args in instructions]
-        with self.assertRaisesRegex(AssertionError, "unguarded element pointer"):
-            execute(bad_guard, {(0, 0): [3], (0, 1): [77]}, 0)
-        # A subtraction mutation remains executable but violates expected bytes.
+        # Reversing a real clamp comparison (compiler/src/spirv_clamp.c) must fail at pointer formation.
+        bad_clamp = [(174 if op == 176 else op, args) for op, args in instructions]
+        with self.assertRaisesRegex(AssertionError, "unclamped element pointer"):
+            execute(bad_clamp, {(0, 0): [3], (0, 1): [77]}, 0)
+        # A subtraction mutation remains executable but violates expected bytes:
+        # src[0u-1u] clamps to src[2] = 7.
+        memory = {(0, 0): [3, 5, 7], (0, 1): [77]}
+        execute(instructions, memory, 0)
+        self.assertEqual(memory[(0, 1)], [7])
         bad_subtract = [(128 if op == 130 else op, args) for op, args in instructions]
-        memory = {(0, 0): [3, 5], (0, 1): [77]}
+        memory = {(0, 0): [3, 5, 7], (0, 1): [77]}
         execute(bad_subtract, memory, 0)
-        self.assertNotEqual(memory[(0, 1)], [0])
+        self.assertNotEqual(memory[(0, 1)], [7])
         instructions, _ = self.compile(HEADER +
             "if(gid.x==0u){return;}out[0u]=9u;}")
         outer_merge = next(args[0] for op, args in instructions if op == 247)

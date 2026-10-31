@@ -55,20 +55,16 @@ class Atomics(unittest.TestCase):
                 let zero=b.old_value;let no=b.exchanged;
                 atomicStore(&data.rows[id.x].values[id.y],a);
             }''')
+        # Storage atomics clamp (compiler/src/spirv_clamp.c): one OpArrayLength
+        # per access for its runtime rows step, two OpSelects for that step's
+        # last index and clamp plus one for the fixed values step, and no guard
+        # branch, zero Phi or OOB zero struct.
         self.assertEqual(sum(op == 68 for op, _ in code), 3)
-        self.assertEqual(sum(op == 247 for op, _ in code), 3)
-        self.assertEqual(sum(op == 245 for op, _ in code), 2)
-        self.assertTrue(any(op == 46 for op, _ in code))  # zero/false struct on OOB
-        # Every atomic pointer is constructed inside its guarded branch.
-        current_label = None
-        guarded = set()
-        for op, args in code:
-            if op == 250:
-                guarded.add(args[1])
-            elif op == 248:
-                current_label = args[0]
-            elif op in (228, 230, 234):
-                self.assertIn(current_label, guarded)
+        self.assertEqual(sum(op == 169 for op, _ in code), 9)
+        self.assertEqual(sum(op == 247 for op, _ in code), 0)
+        self.assertEqual(sum(op == 250 for op, _ in code), 0)
+        self.assertEqual(sum(op == 245 for op, _ in code), 0)
+        self.assertFalse(any(op == 46 for op, _ in code))
 
     def test_atomic_containing_types_are_not_by_value(self):
         for declaration in ['var<workgroup> a:atomic<u32>;',

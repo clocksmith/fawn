@@ -345,28 +345,11 @@ static bool access_walk(Emitter *e, uint32_t path) {
     }
     return true;
 }
-static bool literal_index(const CompilerWorkspace *c, uint32_t semantic, uint32_t *value) {
-    if (semantic == 0u || semantic > c->instruction_count) return false;
-    const IrInstruction *ir = &c->instructions[semantic - 1u];
-    if (ir->opcode != IR_CONSTANT || ir->operands.scalar.left != 0u || (ir->type != IR_U32 && ir->type != IR_I32)) return false;
-    if (ir->type == IR_I32 && ir->operands.scalar.literal > INT32_MAX) return false;
-    *value = ir->operands.scalar.literal;
-    return true;
-}
-/* A fixed-length index needs no guard when it is provably below the length:
- * a nonnegative literal, or a bitwise AND with a nonnegative literal mask below
- * the length (the result lies in [0, mask] for u32 and i32 alike). */
-static bool index_below(const CompilerWorkspace *c, uint32_t semantic, uint32_t length) {
-    uint32_t value;
-    if (literal_index(c, semantic, &value)) return value < length;
-    if (semantic == 0u || semantic > c->instruction_count) return false;
-    const IrInstruction *ir = &c->instructions[semantic - 1u];
-    if (ir->opcode != IR_BIT_AND || (ir->type != IR_U32 && ir->type != IR_I32)) return false;
-    return (literal_index(c, ir->operands.scalar.left, &value) && value < length) ||
-        (literal_index(c, ir->operands.scalar.right, &value) && value < length);
-}
+/* Resolves each indexed step's access-chain cursor. Resource roots clamp
+ * (spirv_clamp.c) and leave *condition 0; other roots AND one guard per step. */
 static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *condition) {
     CompilerWorkspace *c = e->program;
+    const bool clamped = spirv_clamped_access(ir);
     *condition = 0u;
     for (uint32_t i = c->walk_count; i != 0u; --i) {
         WalkItem *w = &c->walk[i - 1u];
@@ -376,12 +359,22 @@ static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *cond
         }
         const TypeRecord *input = &c->types[a->input_type - IR_PRIMITIVE_COUNT];
         uint32_t length;
+        if (input->kind == TYPE_RUNTIME_ARRAY && ir->operands.access.category != ROOT_RESOURCE)
+            return spirv_emit_error(e, a->source_offset, "runtime array access without resource root");
+        if (clamped && (input->kind == TYPE_RUNTIME_ARRAY || !spirv_index_below(c, a->index, input->count))) {
+            uint32_t index = e->values[a->index];
+            if (a->kind == ACCESS_INDEX_I32) {
+                const uint32_t converted = spirv_reserve_ids(e, 1u);
+                EMIT(OP_BITCAST, ID_U32, converted, index);
+                index = converted;
+            }
+            if (!spirv_clamp_index(e, ir, input, index, &w->cursor)) return false;
+            continue;
+        }
         if (input->kind == TYPE_RUNTIME_ARRAY) {
-            if (ir->operands.access.category != ROOT_RESOURCE)
-                return spirv_emit_error(e, a->source_offset, "runtime array access without resource root");
             length = spirv_reserve_ids(e, 1u);
             if (!spirv_runtime_length(e, ir->operands.access.root, length)) return false;
-        } else if (index_below(c, a->index, input->count)) {
+        } else if (spirv_index_below(c, a->index, input->count)) {
             uint32_t index = e->values[a->index];
             if (a->kind == ACCESS_INDEX_I32) {
                 const uint32_t converted = spirv_reserve_ids(e, 1u);
@@ -491,7 +484,7 @@ static bool emit_value_access(Emitter *e, const IrInstruction *ir) {
     for (uint32_t i = c->walk_count; i != 0u; --i) {
         const AccessStep *a = &c->accesses[c->walk[i - 1u].object];
         uint32_t index = a->index;
-        const bool literal = a->kind == ACCESS_MEMBER || a->kind == ACCESS_COMPONENT || literal_index(c, a->index, &index);
+        const bool literal = a->kind == ACCESS_MEMBER || a->kind == ACCESS_COMPONENT || spirv_literal_index(c, a->index, &index);
         const uint32_t result = i == 1u ? e->values[ir->result] : spirv_reserve_ids(e, 1u);
         if (literal) {
             EMIT(OP_COMPOSITE_EXTRACT, spirv_target_type(e, a->output_type), result, value, index);

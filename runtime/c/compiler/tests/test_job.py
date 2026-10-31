@@ -61,7 +61,8 @@ class JobTests(unittest.TestCase):
     def test_short_circuit_and_actual_phi_predecessor(self):
         self.check('var yes:bool=true; if((out[out[9u]]==0u && yes) || out[8u]!=0u){out[0]=7u;}', [7], [0])
         self.check('if(false && out[0]==0u){out[0]=9u;} if(true || out[0]==0u){out[0]=5u;}', [5])
-        self.check('var n:u32; while(n<3u && out[8u]==0u){n++;} out[0]=n;', [3])
+        # out[8u] clamps to out[0] on the one-word binding (compiler/src/spirv_clamp.c).
+        self.check('var n:u32; while(n<3u && out[8u]==0u){n++;} out[0]=n;', [3], [0])
 
     def test_robust_compound_wrap(self):
         self.check('var x:u32=4294967295u; x++; out[x]+=out[5u]+1u; out[9u]++; out[1]=0u-1u;', [4,4294967295], [3,0])
@@ -105,10 +106,12 @@ class JobTests(unittest.TestCase):
         for name in ('dot_product_forward_f32','dot_product_reverse_f32'):
             raw=(REPO/'bench/inference-pipeline/kernels'/f'{name}.wgsl').read_text()
             instructions=self.compile(raw)
-            for length in (0,3,5):
+            # length 5 reads lhs/rhs[3..4] past the 3-word bindings, which clamp to
+            # index 2 (compiler/src/spirv_clamp.c): 32 + 2*3*6 = 68.
+            for length,dot in ((0,0),(3,32),(5,68)):
                 memory={(0,1):bits([1,2,3]),(0,2):bits([4,5,6]),(0,3):bits([99])}
                 execute_job(instructions,memory,0,{(0,0):struct.pack('<4I',length,0,0,0)})
-                self.assertEqual(memory[(0,3)],bits([0 if length==0 else 32]))
+                self.assertEqual(memory[(0,3)],bits([dot]))
                 before={k:v[:] for k,v in memory.items()}
                 execute_job(instructions,memory,1,{(0,0):struct.pack('<4I',length,0,0,0)})
                 self.assertEqual(memory,before)

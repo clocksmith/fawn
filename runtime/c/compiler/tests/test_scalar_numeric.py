@@ -77,7 +77,8 @@ class ScalarTests(unittest.TestCase):
         self.check('out[0]=(1u+2u)&3u;out[1]=(1u|2u)^3u;out[2]=1u<<(2u+1u);',[3,0,8])
     def test_scope_attributes_and_signed_robust(self):
         self.check('const x=2;{const x=3;out[0]=u32(x);}out[1]=u32(x);',[3,2])
-        self.check('let i=bitcast<i32>(out[0]);out[1]=out[i];out[i]=7u;',[0xffffffff,0],[0xffffffff,99])
+        # i=-1 clamps to the last word (compiler/src/spirv_clamp.c): out[1]=out[1], then 7.
+        self.check('let i=bitcast<i32>(out[0]);out[1]=out[i];out[i]=7u;',[0xffffffff,7],[0xffffffff,99])
         source='@group(G) @binding(B) var<storage,read_write> out:array<u32>;@compute @workgroup_size(X,2) fn main(){out[0]=5u;}const G=0;const B=0;const X=128;'
         code=self.compile(source);memory={(0,0):[99]};execute_scalar(code,memory,0);self.assertEqual(memory[(0,0)],[5])
     def test_unchanged_six_witnesses(self):

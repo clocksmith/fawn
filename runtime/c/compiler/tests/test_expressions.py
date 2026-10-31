@@ -85,11 +85,13 @@ class TestScalarExpressions(CompilerFixture):
                 initial = [float_bits(x) for x in (-3.0, 0.0, 0.25, 17.0)]
                 if filename == "simple_scale_f32.wgsl":
                     memory = {(0, 0): initial[:]}
-                    expected = [float_bits(x) for x in (-6.0, 0.0, 0.5, 34.0)]
+                    # Lanes 4 and 0xFFFFFFFF clamp to data[3] (compiler/src/spirv_clamp.c): 17 * 2 * 2 * 2.
+                    expected = [float_bits(x) for x in (-6.0, 0.0, 0.5, 136.0)]
                     destination = (0, 0)
                 else:
                     memory = {(0, 0): initial[:], (0, 1): [float_bits(99.0)] * 6}
-                    expected = [float_bits(x) for x in (0.0, 0.0, 0.25, 17.0, 0.0, 99.0)]
+                    # Lane 4 reads input[3]; 0xFFFFFFFF clamps to input[3] and results[5].
+                    expected = [float_bits(x) for x in (0.0, 0.0, 0.25, 17.0, 17.0, 17.0)]
                     destination = (0, 1)
                 for lane in (0, 1, 2, 3, 4, 0xFFFFFFFF):
                     execute(instructions, memory, (lane, 19, 27))

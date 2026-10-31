@@ -23,9 +23,9 @@ typedef struct uniform_case {
 
 static const uniform_case cases[] = {
     /* Out-of-range uniform indices (-1, N, UINT32_MAX) follow the target's
-     * compiler contract: `expected` is the HLSL clamp to the last element
-     * (compiler/targets/hlsl/AGENTS.md); `guarded` is the SPIR-V/MSL guard that
-     * loads zero (compiler/src/spirv.c access_condition). */
+     * compiler contract: `expected` is the HLSL and SPIR-V clamp to the last
+     * element (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c);
+     * `guarded` is the MSL guard that loads zero. */
     {"tail4", TINY("1", "0"), 4, {3,3,3,3,3}, true, false, false, {3,0,0,0,3}},
     {"tail8", TINY("2", "1"), 8, {5,5,5,5,5}, true, false, false, {5,0,0,0,5}},
     {"tail12", TINY("3", "2"), 12, {7,7,7,7,7}, true, false, false, {7,0,0,0,7}},
@@ -90,7 +90,7 @@ static void run(state *s, const uniform_case *test, bool requirement)
     wgpuBufferRelease(output);
     submit(s, encoder);
     const uint32_t *actual = map(s, readback, sizeof(initial));
-    const uint32_t *expected = adapter_class_backend() == WGPUBackendType_D3D12 ? test->expected : test->guarded;
+    const uint32_t *expected = adapter_class_backend() != WGPUBackendType_Metal ? test->expected : test->guarded;
     for (size_t i = 0; i < 5; ++i) {
         if (actual[i] != expected[i]) fprintf(stderr, "%s requires=%d word%zu: %u != %u\n",
             test->name, requirement, i, actual[i], expected[i]);
@@ -120,6 +120,6 @@ int main(void)
     }
     consumer_finish(&s);
     printf("PASS public standard uniform layout: exact4/8/12/32/64-byte bindings, final scalar lane, "
-        "dynamic signed/unsigned OOB per target contract (HLSL clamp, SPIR-V/MSL guard), nested/attributed aggregates and narrow matrix, distinguishable "
+        "dynamic signed/unsigned OOB per target contract (HLSL/SPIR-V clamp, MSL guard), nested/attributed aggregates and narrow matrix, distinguishable "
         "typed wrong-index/layout controls, requires and early releases %s\n", adapter_class_scope());
 }

@@ -14,29 +14,31 @@ static void require(DoeCompilerStatus status, const DoeCompilerDiagnostic *diagn
     if (status != DOE_COMPILER_OK) fprintf(stderr, "%u: %s\n", (unsigned)status, diagnostic->message);
     assert(status == DOE_COMPILER_OK);
 }
-/* Tiny raw blocks have no internal prefix/tail branch. Every uniform pointer
- * must therefore be formed directly in the true body of its access bounds test. */
-static void tiny_guarded_pointers(const uint32_t *words, size_t count) {
+/* Tiny raw blocks have no internal prefix/tail branch, and uniform indices
+ * clamp (compiler/src/spirv_clamp.c): every uniform pointer is formed
+ * unconditionally, outside any conditional body, with no zero Phi, and each
+ * dynamic index passes through an OpULessThan/OpSelect clamp. */
+static void tiny_clamped_pointers(const uint32_t *words, size_t count, unsigned dynamic) {
     uint32_t bound = words[3], uniform = 0, label = 0;
     assert(bound < 65536);
     uint32_t *conditions = calloc(bound, sizeof(*conditions));
-    uint32_t *operations = calloc(bound, sizeof(*operations));
-    assert(conditions && operations);
-    unsigned pointers = 0;
+    assert(conditions);
+    unsigned pointers = 0, selects = 0;
     for (size_t j = 5; j < count; j += words[j] >> 16) {
         uint32_t op = words[j] & 65535u;
         assert((words[j] >> 16) > 0);
+        assert(op != 245); /* OpPhi: no guarded zero load */
         if (op == 59 && words[j + 3] == 2) uniform = words[j + 2];
-        if (op == 176 || op == 167) operations[words[j + 2]] = op;
-        if (op == 250) conditions[words[j + 2]] = words[j + 1];
+        if (op == 169) ++selects;
+        if (op == 250) conditions[words[j + 2]] = conditions[words[j + 3]] = words[j + 1];
         if (op == 248) label = words[j + 1];
         if (op == 65 && words[j + 3] == uniform) {
-            assert(conditions[label] && (operations[conditions[label]] == 176 || operations[conditions[label]] == 167));
+            assert(!conditions[label]);
             ++pointers;
         }
     }
-    assert(pointers >= 4);
-    free(operations); free(conditions);
+    assert(pointers >= 4 && selects >= dynamic);
+    free(conditions);
 }
 static size_t wrong_offset(uint32_t *words, size_t count) {
     uint32_t bound = words[3], scalar = 0;
@@ -172,7 +174,7 @@ int main(int argc, char **argv) {
         assert(result.resources.module.module.layout_profile == DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM);
         size_t word_count = result.resources.module.published.words;
         write_file(directory, test->name, "spv", words, word_count * sizeof(*words));
-        if (i < 3) tiny_guarded_pointers(words, word_count);
+        if (i < 3) tiny_clamped_pointers(words, word_count, 3u); /* u[i32(out[1])], u[out[2]], u[out[3]] */
         if (i == 2) {
             size_t mutant_count = wrong_offset(words, word_count);
             write_file(directory, "tail12-wrong-offset", "spv", words, mutant_count * sizeof(*words));

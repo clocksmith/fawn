@@ -34,7 +34,8 @@ from the retained [Zig builtin test](../../zig/tests/wgsl/emit_spirv_builtin_tes
 Dispatching one invocation writes the literal value 3 to its one-word binding.
 [all_any_cases.wgsl](tests/all_any_cases.wgsl) declares a 32-word input/output
 contract and a literal result table for two seed flags. It covers vector widths,
-OOB load-zero at the binding edge and a maximum index, traces 1234/5678 proving
+an OOB read at the binding edge and a maximum index (clamped to the last word,
+seed 99, by HLSL and SPIR-V; zero under the MSL guard), traces 1234/5678 proving
 all constructor effects occur, and once-only scalar/vector-producing helper
 calls. Allocation prefix/suffix guards belong to its eventual public consumer;
 compiler/SDK checks alone do not establish GPU pixel/data results or qualification.

@@ -19,11 +19,14 @@ They are developer checks, not the separate independent acceptance or GPU gates.
   for partial/failed/interrupted writes, close/temporary/link failures and
   competing file/symlink publication. No wrapper enters shipped artifacts.
 - `test_control.py`: unchanged neighbor shader plus renaming/declaration order,
-  six unsigned comparisons, empty arms, all-return merges, nested robust Phi
-  predecessors, discarded-store-then-return, sequential observations, offset wrap,
-  independent resource bounds, empty/unequal buffers, nonzero tails and y/z.
+  six unsigned comparisons, empty arms, all-return merges, nested Phi
+  predecessors, clamped-store-then-return, sequential observations, offset wrap,
+  independent per-resource clamps, empty/unequal buffers, nonzero tails and y/z.
+  The interpreter asserts every element pointer of a non-empty binding is in range;
+  an empty binding (below the reflected minimum, rejected at dispatch) reads zero
+  and drops stores, as Vulkan robustBufferAccess does for an empty range.
   Every admitted fixture passes external Vulkan 1.1 SPIR-V validation. Deliberate
-  guard, subtraction, return and unreachable faults exercise oracle sensitivity.
+  clamp, subtraction, return and unreachable faults exercise oracle sensitivity.
 - Native C/C++ consumers, ABI layout and export/interposition checks retain their
   ordinary standalone-library boundary.
 
@@ -154,8 +157,8 @@ outputs, UINT32_MAX tokens and coherent 256-wide global dispatch. Copy uses actu
 WorkgroupId input identity. No-op tests assert zero storage effects and only
 declared inputs. A race-free 3D dispatch exercises every builtin component,
 reordered parameters, scalar local index, 63-byte entry names and workgroup
-LocalSize reflection. Decoration/component/Phi mutation controls check oracle
-sensitivity. Synthetic uint32 injections separately exercise wrap and OOB-to-valid
+LocalSize reflection. Decoration/component/clamp-select mutation controls check
+oracle sensitivity. Synthetic uint32 injections separately exercise wrap and clamped
 nested reads/stores. Nested load-valued comparisons, snapshots, scope/type errors,
 320/321-node and 18/19-depth limits use the actual parser and emitter.
 

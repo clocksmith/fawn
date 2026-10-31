@@ -53,8 +53,9 @@ class TestUniforms(CompilerFixture):
                 for lane in (0, 1, 2, 3, 4, 0xFFFFFFFF):
                     execute(instructions, memory, (lane, 19, 23), uniform)
                 expected = [float_bits(99.0)] * 6
+                # input indices clamp to its last element (compiler/src/spirv_clamp.c); an empty range reads zero.
                 for i in range(min(count, 5)):
-                    value = (1.0, -2.0, 4.0)[i] if i < size else 0.0
+                    value = (1.0, -2.0, 4.0)[min(i, size - 1)] if size else 0.0
                     expected[i] = float_bits(value * 1.5 + 0.25)
                 self.assertEqual(memory[(0, 2)], expected)
                 self.assertEqual(memory[(0, 1)], initial[:size])

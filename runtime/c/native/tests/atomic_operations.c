@@ -3,15 +3,22 @@
 #include "consumer.h"
 #include "shader_fixture.h"
 
-enum { RESULT_WORDS = 336, TOTAL_WORDS = 344, READBACK_BYTES = 1392, PREFIX_WORDS = 2 };
+enum { RESULT_WORDS = 336, TOTAL_WORDS = 348, READBACK_BYTES = 1408, PREFIX_WORDS = 2 };
 
 /* Retained all_ops oracle from compiler/tests/test_atomic_vulkan.c. These
- * finite old-value/result tables are independent of every shader emitter. */
+ * finite old-value/result tables are independent of every shader emitter.
+ * Six storage cells give every lane its own cell. HLSL and SPIR-V clamp storage
+ * indices (compiler/targets/hlsl/AGENTS.md, compiler/src/spirv_clamp.c): lanes
+ * 1..5 use cells 0..4 and lane 0's -1 clamps to the last cell, 5. The MSL guard
+ * drops lane 0's storage operations, leaving cell 5's seed. Workgroup indices
+ * keep their guard on every target. */
 static void expected_words(size_t binding,uint32_t *words,size_t count)
 {
+    const bool clamps = adapter_class_backend() != WGPUBackendType_Metal;
     if (binding < 2) {
-        assert(count == 4);
+        assert(count == 6);
         for (size_t i = 0; i < count; ++i) words[i] = 11;
+        if (!clamps) words[5] = binding == 0 ? (uint32_t)-3 : 15u;
         return;
     }
     assert(count == RESULT_WORDS);
@@ -22,9 +29,11 @@ static void expected_words(size_t binding,uint32_t *words,size_t count)
         for (size_t root = 0; root < 4; ++root) {
             size_t base = lane * 56 + root * 14;
             for (size_t item = 0; item < 14; ++item) words[base + item] = 0;
-            if (lane == 0 || lane == 5) continue;
-            if (root == 0) words[base] = (uint32_t)((int32_t)lane - 9);
-            if (root == 1) words[base] = (uint32_t)(lane + 9);
+            if ((root >= 2 || !clamps) && lane == 0) continue;
+            if (root >= 2 && lane == 5) continue;
+            const size_t cell = lane == 0 ? 5u : lane - 1u;
+            if (root == 0) words[base] = (uint32_t)((int32_t)cell - 8);
+            if (root == 1) words[base] = (uint32_t)(cell + 10u);
             for (size_t item = 0; item < 13; ++item)
                 words[base + 1 + item] = root % 2 == 0 ? (uint32_t)signed_values[item] : unsigned_values[item];
         }
@@ -39,7 +48,7 @@ int main(int argc,char **argv)
     consumer_init(&s);
     WGPUComputePipeline program = pipeline(&s,source);
     free(source);
-    const size_t sizes[3] = {16,16,1344};
+    const size_t sizes[3] = {24,24,1344};
     WGPUBuffer buffers[3];
     WGPUBindGroupEntry entries[3];
     uint32_t expected[TOTAL_WORDS];
@@ -92,6 +101,6 @@ int main(int argc,char **argv)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    printf("PASS public all11 atomics: unchanged retained WGSL, signed/unsigned storage/workgroup old values, wrap, min/max, exchange success/failure, signed OOB, 344 exact words, prefix/suffix and early releases %s\n",adapter_class_scope());
+    printf("PASS public all11 atomics: unchanged retained WGSL, signed/unsigned storage/workgroup old values, wrap, min/max, exchange success/failure, clamped storage and guarded workgroup OOB, 348 exact words, prefix/suffix and early releases %s\n",adapter_class_scope());
     return 0;
 }

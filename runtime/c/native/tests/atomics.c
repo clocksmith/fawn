@@ -37,13 +37,13 @@ int main(void)
     submit(&s,encoder);
     const uint32_t *words = map(&s,readback,112);
     /* Storage out-of-range handling is the selected target's compiler contract.
-     * HLSL clamps (compiler/targets/hlsl/AGENTS.md): lanes -1 and 4 act on
-     * cells[3], so each of the four workgroups adds 1 to cells[0..2] and 3 to
-     * cells[3]. SPIR-V and MSL keep the access guard (compiler/src/spirv.c
-     * access_condition): the out-of-range atomics are dropped and every cell gets
-     * 4. Workgroup indices keep their guard on every target, so results below
+     * HLSL and SPIR-V clamp (compiler/targets/hlsl/AGENTS.md,
+     * compiler/src/spirv_clamp.c): lanes -1 and 4 act on cells[3], so each of
+     * the four workgroups adds 1 to cells[0..2] and 3 to cells[3]. MSL keeps the
+     * access guard: the out-of-range atomics are dropped and every cell gets 4.
+     * Workgroup indices keep their guard on every target, so results below
      * still see dropped out-of-range operations. */
-    const bool clamps = adapter_class_backend() == WGPUBackendType_D3D12;
+    const bool clamps = adapter_class_backend() != WGPUBackendType_Metal;
     for (size_t i = 0; i < 4; ++i) assert(words[i] == (clamps && i == 3 ? 12u : 4u));
     for (size_t i = 0; i < 12; ++i) {
         assert(words[4+i] == 0);
