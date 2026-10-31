@@ -9,7 +9,7 @@ typedef enum mock_operation {
     MOCK_PIPELINE, MOCK_COMMAND, MOCK_COPY, MOCK_FILL, MOCK_DISPATCH, MOCK_INDIRECT,
     MOCK_TEXTURE, MOCK_VIEW, MOCK_SAMPLER, MOCK_UPLOAD_IMAGE, MOCK_READ_IMAGE, MOCK_COPY_IMAGE,
     MOCK_RENDER_PIPELINE, MOCK_DEPTH_STATE, MOCK_RENDER, MOCK_TIMESTAMPS, MOCK_TIMESTAMP, MOCK_RESOLVE_TIMESTAMPS,
-    MOCK_SHADER_SOURCE
+    MOCK_SHADER_SOURCE, MOCK_HANDLER
 } mock_operation;
 /* Shared ledger bound: the old 11-element array omitted event kind11,
  * so releasing a test event wrote past its own bookkeeping. */
@@ -42,6 +42,7 @@ typedef struct mock_native {
     size_t indirect_offset;
     void *indirect_pipeline;
     unsigned commits;
+    unsigned handlers;
     unsigned polls;
     unsigned waits;
     atomic_uint blocks;

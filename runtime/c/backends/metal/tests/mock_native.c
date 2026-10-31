@@ -14,7 +14,17 @@ struct mock_object {
     unsigned char *bytes;
     atomic_size_t status;
     atomic_int_fast64_t code;
+    /* Completed handler: Metal runs it once after completion or failure. */
+    void (*notify)(void *);
+    void *notify_data;
+    bool committed;
 };
+
+static void complete_handler(mock_object *command) {
+    void (*notify)(void *) = command->notify;
+    command->notify = NULL;
+    if (notify) notify(command->notify_data);
+}
 
 static doe_mtl_status failure(doe_mtl_error *error) {
     doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "injected native failure", error);
@@ -57,8 +67,11 @@ static void release_object(void *userdata, void *handle) {
     assert(object != NULL && object->kind < MOCK_KIND_COUNT && mock->live > 0);
     assert(object->references != 0);
     if (--object->references != 0) return;
-    if (object->kind == MOCK_KIND_COMMAND)
+    if (object->kind == MOCK_KIND_COMMAND) {
         assert(object->status != 2 && object->status != 3);
+        /* Metal keeps a committed buffer until its handlers have run. */
+        if (object->committed) complete_handler(object);
+    }
     mock->released++;
     mock->releases_by_kind[object->kind]++;
     mock->live--;
@@ -390,7 +403,21 @@ static void commit(void *userdata, void *handle) {
     mock_object *command = handle;
     assert(command->kind == MOCK_KIND_COMMAND && command->status == 0);
     mock->commits++;
+    command->committed = true;
     command->status = mock->unknown_commit ? 0 : 2;
+}
+
+static doe_mtl_status completed_handler(void *userdata, void *handle,
+    void (*notify)(void *), void *data, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    mock_object *command = handle;
+    assert(command->kind == MOCK_KIND_COMMAND && command->status == 0 && !command->committed);
+    assert(notify != NULL && command->notify == NULL);
+    ++mock->handlers;
+    if (mock->fail == MOCK_HANDLER) return failure(error);
+    command->notify = notify;
+    command->notify_data = data;
+    return doe_mtl_fail(DOE_MTL_OK, "mock addCompletedHandler", error);
 }
 
 static size_t observe(void *userdata, void *handle, bool wait, doe_mtl_error *error) {
@@ -455,6 +482,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.timestamp_boundary = timestamp_boundary;
     native.resolve_timestamps = resolve_timestamps;
     native.commit = commit;
+    native.completed_handler = completed_handler;
     native.observe = observe;
     return native;
 }
@@ -470,12 +498,12 @@ void mock_command_result(void *handle, size_t status, int64_t code) {
     assert(command && command->kind == MOCK_KIND_COMMAND);
     command->code = code;
     command->status = status;
+    if (command->committed && (status == 4 || status == 5)) complete_handler(command);
 }
 
 void mock_result(mock_native *mock, size_t status, int64_t code) {
     assert(mock->last_command != NULL);
-    mock->last_command->status = status;
-    mock->last_command->code = code;
+    mock_command_result(mock->last_command, status, code);
 }
 
 void mock_assert_closed(const mock_native *mock) {

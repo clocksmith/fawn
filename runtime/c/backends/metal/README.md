@@ -184,6 +184,13 @@ padding without widening logical ranges. Atomic cancellation suppresses unsafe
 fetches while valid caller indices/arguments stay unchanged. Common WGSL, SDK and
 call-ledger controls do not establish physical indexed rendering.
 
+A context may carry one completion sink, set before any command escapes it.
+Each submission then registers one native completed handler after its last
+fallible encode, so a command that is never committed never owns one; a failed
+registration reports to the sink at once and poisons the command uncommitted.
+Metal runs the handler once, on its own thread, after Completed or Error. It
+only reports: status, errors and every retirement still come from observation.
+
 Only native Completed or Error status retires obligations. Pending/unknown
 command release returns BUSY without consuming the handle. Callers must keep the
 command, observe again, and release it after terminal status. A blocking wait

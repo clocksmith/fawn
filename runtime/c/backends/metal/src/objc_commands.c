@@ -129,6 +129,27 @@ void doe_mtl_objc_commit(void *userdata, void *command) {
     doe_mtl_objc_drain(runtime, pool);
 }
 
+/* addCompletedHandler: copies the block before returning. Metal runs it once,
+ * on its own completion thread, after the command completes or fails; it is
+ * never run for a command that is not committed. The block captures only the
+ * caller's notify/data; it never touches the command or our owners. */
+doe_mtl_status doe_mtl_objc_completed_handler(void *userdata, void *command,
+    void (*notify)(void *), void *data, doe_mtl_error *error) {
+#if defined(__BLOCKS__)
+    doe_mtl_objc *runtime = userdata;
+    typedef void (*handler_call)(void *, void *, void (^)(void *));
+    void *pool = doe_mtl_objc_pool(runtime);
+    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    ((handler_call)runtime->handler_message)(command, runtime->add_completed_handler,
+        ^(void *buffer) { (void)buffer; notify(data); });
+    doe_mtl_objc_drain(runtime, pool);
+    return doe_mtl_fail(DOE_MTL_OK, "addCompletedHandler:", error);
+#else
+    (void)userdata; (void)command; (void)notify; (void)data;
+    return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "addCompletedHandler: requires block support", error);
+#endif
+}
+
 size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
     void *pool = doe_mtl_objc_pool(runtime);

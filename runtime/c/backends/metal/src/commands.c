@@ -237,6 +237,19 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
         commands->timeline_value = value;
         commands->context->timeline_next = value;
     }
+    /* Registered last: a command that is never committed never runs its
+     * handler, so nothing fallible may follow a successful registration. */
+    const doe_mtl_completion_sink *sink = &commands->context->completion;
+    if (sink->notify) {
+        doe_mtl_error detail = {0};
+        sink->acquire(sink->data);
+        status = native->completed_handler(native->userdata, commands->native,
+            sink->notify, sink->data, &detail);
+        if (status != DOE_MTL_OK) {
+            sink->notify(sink->data);
+            return doe_mtl_native_record_result(commands, status, &detail, error);
+        }
+    }
     commands->state = DOE_MTL_SUBMITTED;
     native->commit(native->userdata, commands->native);
     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);

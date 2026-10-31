@@ -376,7 +376,13 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   Foreign callbacks run only after unlocking, with required full-call leases.
 
 - Each published device owns one progress worker and an ordinary device lease.
-  It polls the existing pending list without waiting for queue idle. Unknown
+  It polls the existing pending list without waiting for queue idle. On Metal
+  (owner decision 2026-10-31, superseding the 2026-10-24 worker wake there),
+  every committed command buffer carries a completed handler instead: submission
+  and lease drops do not wake the worker of a live device, whose records retire
+  on later public calls (submit, write, map and work done all settle first). The
+  handler never takes the device mutex. Destroying the device, which the last
+  external device release does, arms the handler to wake the worker. Unknown
   completion retains every submission/resource lease even after all public
   handles disappear; terminal success or failure retires them. The first retired
   failure remains observable by a later public operation. An idle last release

@@ -152,6 +152,10 @@ typedef struct doe_mtl_native {
     doe_mtl_status (*timeline_signal)(void *, void *, void *, uint64_t, doe_mtl_error *);
     uint64_t (*timeline_value)(void *, void *);
     void (*commit)(void *userdata, void *command);
+    /* Optional. Registers one completed handler on an uncommitted command; the
+     * handler calls notify(data) once on a Metal-owned thread. */
+    doe_mtl_status (*completed_handler)(void *userdata, void *command,
+        void (*notify)(void *), void *data, doe_mtl_error *error);
     /* Returns native MTLCommandBufferStatus. Terminal NSError operation/code/text
      * are copied before its autorelease pool drains; no borrowed string escapes. */
     size_t (*observe)(void *userdata, void *command, bool wait, doe_mtl_error *error);

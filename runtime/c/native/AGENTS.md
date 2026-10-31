@@ -41,6 +41,14 @@ under that mutex. Routine settlement polls, and
 running work is never a failure (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Host buffer access waits only for
 submissions using that buffer; work done waits each record's fence. Idle final
 release joins the worker.
+For Metal, owner decision 2026-10-31 supersedes that worker wake and fence wait:
+each committed command registers a native completed handler, as Dawn does. Neither
+submission nor a lease drop wakes the worker of a live Metal device; public calls
+retire its records through routine settlement. The handler runs on a Metal thread,
+never takes the device mutex and never retires state. Device destruction arms it
+to wake the worker, which retires what remains under its ordinary lease. The
+handler's refcounted completion record outlives the device; detach precedes
+destruction of the worker condition.
 Settle oldest first and preserve the first background terminal error for a
 public operation to observe.
 

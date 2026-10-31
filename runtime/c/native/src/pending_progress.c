@@ -24,6 +24,14 @@ static native_command_handle *oldest_in_flight(native_device *device)
 /* Bounds one unlocked fence wait so join requests and new records are seen. */
 #define PROGRESS_FENCE_WAIT_NS UINT64_C(100000000)
 
+/* Live Metal devices retire through public calls; their completed handlers
+ * report completion without this thread (metal_progress.c). */
+static bool progress_needed(const native_device *device)
+{
+    return device->pending && (device->backend.kind != WGPUBackendType_Metal ||
+        native_metal_completion_armed(device));
+}
+
 static void pending_progress(void *identity)
 {
     native_device *device = identity;
@@ -32,7 +40,7 @@ static void pending_progress(void *identity)
     uintptr_t signalled = 0;
     native_lock(device);
     for (;;) {
-        while (!device->pending && !device->pending_progress_join &&
+        while (!progress_needed(device) && !device->pending_progress_join &&
                 atomic_load_explicit(&device->references, memory_order_acquire) > 1) {
             if (doe_condition_wait(&device->pending_changed, &device->mutex).status != DOE_HOST_OK) abort();
         }
@@ -46,6 +54,7 @@ static void pending_progress(void *identity)
             native_device_release(device);
             return;
         }
+        const uint64_t completions = native_metal_completion_count(device);
         native_progress_pending(device);
         native_surface *surface = native_surface_retirement_peek(device);
         if (surface) {
@@ -75,7 +84,8 @@ static void pending_progress(void *identity)
          * mutex (owner authorized 2026-10-24: async submit A+B, D2,
          * fence-wait completion; futures later; reconfirmed after the section 7 risk review). The hold keeps its fence alive
          * through a concurrent settle; completion is observed under the
-         * mutex on the next iteration. */
+         * mutex on the next iteration. Metal no longer waits here (owner
+         * decision 2026-10-31): its completed handler signals pending_changed. */
         native_command_handle *oldest = oldest_in_flight(device);
         if (oldest && oldest->kind == WGPUBackendType_Vulkan &&
             (uintptr_t)oldest->value.vulkan != signalled && doe_vk_commands_hold(oldest->value.vulkan) == DOE_VK_OK) {
@@ -88,20 +98,12 @@ static void pending_progress(void *identity)
             doe_vk_commands_unhold(command);
             continue;
         }
-        if (oldest && oldest->kind == WGPUBackendType_Metal && (uintptr_t)oldest->value.metal != signalled) {
-            doe_mtl_commands *command = oldest->value.metal;
-            const uintptr_t command_identity = (uintptr_t)command;
-            doe_mtl_wait_lease lease = {0};
-            if (doe_mtl_commands_hold(command,&lease) == DOE_MTL_OK) {
-                native_unlock(device);
-                doe_mtl_status waited = doe_mtl_commands_block(&lease,PROGRESS_FENCE_WAIT_NS);
-                native_lock(device);
-                /* The shell may have retired while unlocked. Never dereference
-                 * command here; only ordinary locked polling owns retirement. */
-                signalled = waited == DOE_MTL_PENDING ? 0 : command_identity;
-                doe_mtl_commands_unhold(&lease);
-                continue;
-            }
+        uint64_t wait_ns = UINT64_C(10000000);
+        if (oldest && oldest->kind == WGPUBackendType_Metal) {
+            /* A handler that ran since the poll above is not lost; one that
+             * signals between this check and the wait is bounded by wait_ns. */
+            if (native_metal_completion_count(device) != completions) continue;
+            wait_ns = PROGRESS_FENCE_WAIT_NS;
         }
 #if defined(_WIN32)
         if (oldest && oldest->kind == WGPUBackendType_D3D12 &&
@@ -127,7 +129,7 @@ static void pending_progress(void *identity)
         if (device->pending) {
             struct timespec now, deadline;
             doe_host_result clock = doe_monotonic_now(&now);
-            if (clock.status == DOE_HOST_OK) clock = doe_time_add(&now, UINT64_C(10000000), &deadline);
+            if (clock.status == DOE_HOST_OK) clock = doe_time_add(&now, wait_ns, &deadline);
             if (clock.status != DOE_HOST_OK) {
                 /* Clock failure cannot discard live work or spin with its
                  * mutex held. Poll again after a real bounded host sleep. */

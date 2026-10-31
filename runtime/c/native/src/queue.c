@@ -301,7 +301,9 @@ static void link_pending(native_device *device, native_pending *pending)
     while (*cursor) cursor = &(*cursor)->next;
     pending->next = NULL;
     *cursor = pending;
-    native_pending_progress_wake(device);
+    /* Metal completion arrives through the command's completed handler. */
+    if (pending->native.kind != WGPUBackendType_Metal || native_metal_completion_armed(device))
+        native_pending_progress_wake(device);
 }
 
 void native_progress_pending(native_device *device)

@@ -285,7 +285,11 @@ void native_device_release(void *identity)
         return;
     }
     bool last = native_release_count(&device->references);
-    if (!last) native_pending_progress_wake(device);
+    /* A live Metal worker sleeps until only its own lease remains: completed
+     * handlers, not lease drops, report Metal completion (metal_progress.c). */
+    if (!last && (device->backend.kind != WGPUBackendType_Metal || native_metal_completion_armed(device) ||
+            atomic_load_explicit(&device->references, memory_order_acquire) == 1))
+        native_pending_progress_wake(device);
     native_unlock(device);
     if (!last) return;
     /* Pending resource submissions hold device leases, so finalization cannot
@@ -293,6 +297,7 @@ void native_device_release(void *identity)
     if (device->pending) abort();
     native_identity_worker_finish(&device->identity_worker);
     native_release_initialization(device);
+    native_metal_completion_detach(device);
     native_pending_progress_destroy(device);
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
     free(device->error_storage);
@@ -367,6 +372,11 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
      * the adapter's; every frontend check reads the resolved device limits. */
     device->backend.limits = limits;
     device->features = features;
+    /* Before any submission (timestamp initialization below may submit). */
+    if (device->backend.kind == WGPUBackendType_Metal && !native_metal_completion_attach(device)) {
+        native_backend_close(&device->backend);
+        goto failed_errors;
+    }
     if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) &&
         (device->backend.kind == WGPUBackendType_D3D12 ?
             native_d3d12_timestamp_initialize(device).status != NATIVE_OK :
@@ -419,6 +429,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     native_loss_bind(loss, device);
     return device;
 failed_errors:
+    native_metal_completion_detach(device);
     if (doe_label_store_destroy(device->labels) != DOE_LABEL_OK) abort();
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
 failed_storage:
@@ -511,6 +522,10 @@ void wgpuDeviceDestroy(WGPUDevice handle)
          * its receipt; a later work-done callback must retain the first detail. */
         native_progress_pending(device);
         device->destroyed = true;
+        /* No public call is obliged to observe what remains: Metal handlers now
+         * wake the worker, which owns that retirement from here on. */
+        native_metal_completion_arm(device);
+        if (device->backend.kind == WGPUBackendType_Metal) native_pending_progress_wake(device);
         if (doe_error_scope_set_handler(device->errors, NULL, NULL, NULL).status != DOE_ERROR_SCOPE_OK) abort();
     }
     native_unlock(device);

@@ -3,6 +3,9 @@
 #include "../src/objc_abi.h"
 #include <assert.h>
 #include <stdio.h>
+#if defined(__BLOCKS__)
+#include <Block.h>
+#endif
 
 typedef struct wait_fixture {
     doe_mtl_objc runtime;
@@ -45,8 +48,64 @@ static doe_mtl_status block(wait_fixture *fixture, uint64_t timeout)
         &fixture->event,UINT64_C(0x123456789abcdef0),timeout);
 }
 
+/* addCompletedHandler: receives the command, its exact selector and a block
+ * that reports once to the caller's notify/data; nothing runs at registration. */
+typedef struct handler_fixture {
+    doe_mtl_objc runtime;
+    int command, selector, pool_class, new_object, drain, pool;
+    unsigned registrations, notified, pools, drains;
+#if defined(__BLOCKS__)
+    void (^handler)(void *);
+#endif
+} handler_fixture;
+static handler_fixture *handlers;
+static void *pool_new(void *receiver, void *selector)
+{
+    assert(receiver == &handlers->pool_class && selector == &handlers->new_object);
+    ++handlers->pools;
+    return &handlers->pool;
+}
+static void pool_drain(void *receiver, void *selector)
+{
+    assert(receiver == &handlers->pool && selector == &handlers->drain);
+    ++handlers->drains;
+}
+#if defined(__BLOCKS__)
+static void add_handler(void *receiver, void *selector, void (^handler)(void *))
+{
+    assert(receiver == &handlers->command && selector == &handlers->selector);
+    ++handlers->registrations;
+    handlers->handler = Block_copy(handler); /* As Metal does: the argument is a stack block. */
+}
+#endif
+static void notified(void *data) { ++((handler_fixture *)data)->notified; }
+
+static void completed_handler(void)
+{
+    handler_fixture fixture = {0};
+    handlers = &fixture;
+    fixture.runtime.pool_class = &fixture.pool_class;
+    fixture.runtime.new_object = &fixture.new_object;
+    fixture.runtime.drain = &fixture.drain;
+    fixture.runtime.object_call = pool_new;
+    fixture.runtime.void_call = pool_drain;
+    fixture.runtime.add_completed_handler = &fixture.selector;
+#if defined(__BLOCKS__)
+    fixture.runtime.handler_message = (doe_objc_message)add_handler;
+    assert(doe_mtl_objc_completed_handler(&fixture.runtime,&fixture.command,notified,&fixture,NULL) == DOE_MTL_OK);
+    assert(fixture.registrations == 1 && fixture.notified == 0 && fixture.pools == 1 && fixture.drains == 1);
+    fixture.handler(&fixture.command);
+    assert(fixture.notified == 1);
+    Block_release(fixture.handler);
+#else
+    assert(doe_mtl_objc_completed_handler(&fixture.runtime,&fixture.command,notified,&fixture,NULL) == DOE_MTL_UNSUPPORTED);
+    assert(fixture.notified == 0);
+#endif
+}
+
 int main(void)
 {
+    completed_handler();
     wait_fixture fixture = {.status=2,.after_wait=2,.supported=true};
     fixture.runtime.status = &fixture.status_selector;
     fixture.runtime.size_call = command_status;
@@ -84,6 +143,6 @@ int main(void)
     assert(doe_mtl_objc_command_block(&fixture.runtime,&fixture.command,&fixture.event,0,1000000) == DOE_MTL_UNSUPPORTED);
     fixture.runtime.queries.event_wait = NULL;
     assert(block(&fixture,1000000) == DOE_MTL_UNSUPPORTED && fixture.waits == waits);
-    puts("PASS bounded Metal event wait: exact handles/u64/BOOL, budgets, timeout, signal, terminal failure, unknown and unavailable selector");
+    puts("PASS bounded Metal event wait: exact handles/u64/BOOL, budgets, timeout, signal, terminal failure, unknown and unavailable selector; completed-handler registration");
     return 0;
 }

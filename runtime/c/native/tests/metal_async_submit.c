@@ -9,7 +9,7 @@ static mock_native mocks[2];
 static doe_mtl_native originals[2];
 static unsigned opened, physical_identity;
 static atomic_bool automatic_terminal, complete_conflict;
-static atomic_bool hold_worker, worker_entered, release_worker, second_submitted;
+static atomic_bool second_submitted;
 static atomic_uint closed;
 static doe_thread_id caller_thread;
 static atomic_uint race_action;
@@ -28,10 +28,8 @@ native_failure __wrap_native_record_resource_commands(native_command_handle *nat
 static void block_hook(mock_native *mock, void *command, uint64_t timeout)
 {
     (void)mock;
-    if (atomic_exchange(&hold_worker,false)) {
-        atomic_store(&worker_entered,true);
-        while (!atomic_load(&release_worker)) assert(doe_sleep_for(UINT64_C(1000000)).status == DOE_HOST_OK);
-    }
+    /* Only public waits block on a Metal command; the worker never does. */
+    assert(doe_thread_equal(doe_thread_current(),caller_thread));
     if (doe_thread_equal(doe_thread_current(),caller_thread)) {
         unsigned action = atomic_exchange(&race_action,0);
         if (action) {
@@ -172,19 +170,20 @@ int main(void)
     WGPUBuffer target_b = buffer(&s,16,WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead);
     WGPUBuffer scratch = buffer(&s,16,WGPUBufferUsage_CopyDst);
     WGPUCommandBuffer a = copy(&s,source_a,target_a,NULL), b = copy(&s,source_b,target_b,NULL);
-    atomic_store(&hold_worker,true);
+    /* A live device's submissions wake no worker (owner decision 2026-10-31):
+     * each commit registers one completed handler, and pending records wait
+     * for a public call. Another thread submits while the first is pending. */
     wgpuQueueSubmit(s.queue,1,&a);
     assert(!s.errors); /* Accepted pending work is not an execution error. */
-    assert(await_flag(&worker_entered));
     submit_call call = {s.queue,b};
     doe_thread thread = {0};
     assert(doe_thread_create(&thread,submit_second,&call).status == DOE_HOST_OK);
     bool submitted_unlocked = await_flag(&second_submitted);
-    atomic_store(&release_worker,true);
     assert(doe_thread_join(&thread).status == DOE_HOST_OK);
-    assert(submitted_unlocked); /* No dependency on polling/timing luck. */
+    assert(submitted_unlocked);
     native_lock(device);
-    assert(pending_count(device) == 2 && mocks[1].commits == 2 && mocks[1].waits == 0 && !s.errors);
+    assert(pending_count(device) == 2 && mocks[1].commits == 2 && mocks[1].handlers == 2 &&
+        mocks[1].waits == 0 && atomic_load(&mocks[1].blocks) == 0 && !s.errors);
     native_unlock(device);
     wgpuCommandBufferRelease(a); wgpuCommandBufferRelease(b);
 
@@ -223,8 +222,9 @@ int main(void)
     mocks[1].unknown_commit = false;
     native_unlock(device);
 
-    /* Fresh disjoint resources survive all public handles going away. The
-     * pending worker/native wait lease alone may retire them when terminal. */
+    /* Fresh disjoint resources survive all public handles going away. Device
+     * destruction arms the worker; the command's completed handler wakes it,
+     * and its device lease alone retires them when terminal. */
     WGPUBuffer last_source = buffer(&s,16,WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
     WGPUBuffer last_target = buffer(&s,16,WGPUBufferUsage_CopyDst);
     WGPUCommandBuffer last = copy(&s,last_source,last_target,NULL);
@@ -241,7 +241,7 @@ int main(void)
      * run. Its status is held pending until this explicit controller signal;
      * that pending record still pins device storage while we take its mutex. */
     native_lock(device);
-    assert(pending_count(device) == 1);
+    assert(pending_count(device) == 1 && native_metal_completion_armed(device));
     mock_command_result(device->pending->native.value.metal->native,4,0);
     native_unlock(device);
     struct timespec now, deadline;

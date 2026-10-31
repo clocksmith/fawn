@@ -250,6 +250,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->dispatch_indirect = runtime->selector(
         "dispatchThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerThreadgroup:");
     runtime->commit = runtime->selector("commit");
+    runtime->add_completed_handler = runtime->selector("addCompletedHandler:");
     runtime->wait = runtime->selector("waitUntilCompleted");
     runtime->status = runtime->selector("status");
     runtime->error = runtime->selector("error");
@@ -268,7 +269,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
         runtime->fill_buffer != NULL && runtime->end_encoding != NULL &&
         runtime->set_pipeline != NULL && runtime->set_buffer != NULL &&
         runtime->set_bytes != NULL && runtime->dispatch != NULL && runtime->dispatch_indirect != NULL &&
-        runtime->commit != NULL &&
+        runtime->commit != NULL && runtime->add_completed_handler != NULL &&
         runtime->wait != NULL && runtime->status != NULL && runtime->error != NULL;
 }
 
@@ -332,6 +333,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->upload_image_call = (doe_objc_upload_image_call)message;
     runtime->read_image_call = (doe_objc_read_image_call)message;
     runtime->copy_image_call = (doe_objc_copy_image_call)message;
+    runtime->handler_message = message;
     if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime) ||
         !doe_mtl_objc_load_render(runtime, message)) goto unavailable;
     doe_mtl_objc_load_queries(runtime, message);
@@ -383,6 +385,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.timeline_signal = doe_mtl_objc_timeline_signal;
     native.timeline_value = doe_mtl_objc_timeline_value;
     native.commit = doe_mtl_objc_commit;
+    native.completed_handler = doe_mtl_objc_completed_handler;
     native.observe = doe_mtl_objc_observe;
     doe_mtl_objc_library_cache_open(runtime);
     *out = native;
