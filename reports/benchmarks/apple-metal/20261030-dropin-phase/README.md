@@ -6,13 +6,16 @@ diagnostic on apple-host**. It is not an application win and does not qualify
 Metal support. RADV and ANV evidence does not transfer here, and none of this
 transfers back.
 
-**Status: no valid timed window yet.** The B1 windows were invalid. Two B2
-vector windows were invalid because another agent's desktop session (screen
-capture and computer use) raised the idle GPU utilization from 13-14% to 22-28%.
-Timing then stopped. The M1 and M2 candidates passed their correctness gates and
-their contracts are frozen and hashed, but **neither has been timed**. The
-tables below come from invalid windows. They show the shape of the losses and
-are not verdicts.
+**Status (2026-10-31): first valid baseline; M2 passes; M1 fails its rule.**
+The b3, m1r and m2r contracts were frozen on reproducible rebuilds and run
+under the shared GPU lock; every verdict uses only valid windows (see
+[the results](#valid-results-b3-m1r-m2r-2026-10-31)). The b3 baseline
+against Dawn meets the scoped warm-operation rule on image only, and records
+one-time regressions in setup (all three) and pipeline (vector and image). M2
+passes its mechanism rule. M1 improves warm map and warm operation on every
+workload, but fails one no-regression bound: image warm upload is 1.069
+[1.063,1.073]. B1 and B2 below are unchanged. Their tables come from invalid
+windows and are not verdicts.
 
 ## Method
 
@@ -61,9 +64,9 @@ are not verdicts.
 | [`contract-b2.json`](contract-b2.json) | B1 rules; gate defect fixed, CPU limit amended before timing | vector x2, both invalid; image and upload/readback not run | none |
 | [`contract-m1.json`](contract-m1.json) | M1 vs main | not run | none |
 | [`contract-m2.json`](contract-m2.json) | M2 vs main | not run | none |
-| [`contract-b3.json`](contract-b3.json) | B2 rules on rebuilt binaries | frozen, not yet run | none |
-| [`contract-m1r.json`](contract-m1r.json) | M1 rules on rebuilt binaries | frozen, not yet run | none |
-| [`contract-m2r.json`](contract-m2r.json) | M2 rules on rebuilt binaries | frozen, not yet run | none |
+| [`contract-b3.json`](contract-b3.json) | B2 rules on rebuilt binaries | 3 valid (vector on its rerun) | image scoped warm-operation win; vector and upload/readback no win; setup and pipeline one-time regressions |
+| [`contract-m1r.json`](contract-m1r.json) | M1 rules on rebuilt binaries | 3 valid | **fail** (image warm.upload 1.069) |
+| [`contract-m2r.json`](contract-m2r.json) | M2 rules on rebuilt binaries | 3 valid (image on its rerun) | **pass** |
 | [`contract-msl-clamp.json`](contract-msl-clamp.json) | MSL buffer clamp vs main and Dawn | image valid; vector x2, both invalid | image: pipelineNs regression (1.011); vector none |
 
 **Why b3, m1r and m2r exist.** The scratch tree holding the frozen binaries
@@ -148,6 +151,95 @@ Physical-client totals, identical on main, M1 and M2:
 The Makefile's Darwin `PHYSICAL_CLIENTS` list holds only the 8 late appends, so
 the full list was run with [`runs/physical.sh`](runs/physical.sh).
 
+## Valid results (b3, m1r, m2r), 2026-10-31
+
+Ten windows ran between 02:15Z and 05:06Z, each under the shared GPU lock. The
+Mac was on battery at freeze (34%), was plugged in before the first window, and
+stayed on AC with the battery at 52-80% for every window. No window changed
+power source. Idle GPU was 0% (b3) and 10-11% (m1r, m2r) before and after each
+window, and foreign CPU in the valid windows was 6.3-12.9%. Gates, raw samples,
+run logs, summaries and evaluator output are in [`b3/`](b3/), [`m1r/`](m1r/)
+and [`m2r/`](m2r/).
+
+- **Invalid windows (retained, not used).** b3 vector attempt 1 had foreign CPU
+  of 25.0%, all of it another session's one-core Python job. m2r image attempt 1
+  passed its gate but failed the A/A rule: 0.982 [0.964,0.998] does not contain
+  1. Each workload's single permitted rerun was valid.
+- **Scheduling change (not a validity rule).** `wait_quiet.sh` reads the
+  decaying `ps %cpu`, so it admitted the fresh one-core job that invalidated b3
+  vector attempt 1. From then on the run script also waits for 20 consecutive
+  1 s samples in which no process exceeds 50% of a core and the total stays
+  under 120% ([run script](runs/run-b3-m1r-m2r.sh)). Validity still comes only
+  from `tools/mac_window.py` and the A/A rule.
+
+### b3: Doe C `d57ab2877` against Dawn `d04f88359` (baseline)
+
+Medians are in ms, then Doe/Dawn [95% CI], with 96 pairs per workload. A/A
+warm operation was 0.998 [0.996,1.003], 1.002 [0.992,1.014] and 1.003
+[0.999,1.006].
+
+| Phase | vector 262k | image invert 1024 | upload/readback 1 MiB |
+| --- | --- | --- | --- |
+| setup | 16.67 / 8.16, 2.055 [2.013,2.087] | 17.03 / 8.45, 2.020 [2.006,2.028] | 16.40 / 7.71, 2.144 [2.124,2.161] |
+| compile | 0.119 / 0.288, 0.409 [0.403,0.414] | 0.100 / 0.286, 0.351 [0.347,0.353] | (none) |
+| pipeline | 1.761 / 1.433, 1.221 [1.213,1.228] | 1.790 / 1.451, 1.228 [1.216,1.236] | (none) |
+| resources | 0.226 / 0.432, 0.520 [0.509,0.524] | 0.752 / 0.450, 1.670 [1.639,1.686] | 0.133 / 0.015, 8.97 [8.77,9.09] |
+| first operation | 2.254 / 2.097, 1.079 [1.065,1.090] | 3.048 / 3.333, 0.923 [0.912,0.930] | 2.441 / 2.699, 0.910 [0.895,0.918] |
+| warm upload | 0.969 [0.946,1.000] | 0.094 / 0.342, 0.277 [0.275,0.279] | 0.997 [0.966,1.026] |
+| warm submit | 0.0123 / 0.0090, 1.361 [1.319,1.390] | 0.992 [0.963,1.021] | 0.0071 / 0.0033, 2.107 [2.076,2.139] |
+| warm completion | 0.952 [0.947,0.954] | 0.472 / 0.713, 0.663 [0.660,0.670] | 0.917 [0.915,0.920] |
+| warm map | 0.0403 / 0.0171, 2.337 [2.310,2.351] | 0.192 / 0.086, 2.219 [2.172,2.273] | 0.0375 / 0.0166, 2.261 [2.249,2.272] |
+| **warm operation** | 0.364 / 0.355, **1.025 [1.022,1.031]** | 0.777 / 1.168, **0.669 [0.662,0.682]** | 0.313 / 0.310, **1.013 [1.006,1.015]** |
+| warm p95 operation | 1.028 [1.003,1.051] | 0.682 [0.678,0.690] | 1.146 [1.054,1.237] |
+| complete | 1.023 [1.010,1.026] | 0.744 [0.739,0.750] | 1.015 [1.001,1.025] |
+| process wall | 47.97 / 44.50, 1.070 [1.064,1.081] | 65.52 / 73.05, 0.895 [0.891,0.903] | 37.00 / 33.74, 1.109 [1.099,1.117] |
+| process CPU | 0.905 [0.901,0.915] | 0.804 [0.802,0.808] | 0.854 [0.850,0.860] |
+| peak RSS | 0.868 | 0.946 | 0.886 |
+
+Verdict ([evaluator output](b3/eval.txt)):
+- Image meets the scoped warm-operation rule: warm and p95 CI upper bounds are
+  below 1, CPU is 0.80 and RSS is 0.95.
+- Vector (1.025) and upload/readback (1.013) do not.
+- One-time regressions are recorded for setup on all three workloads and for
+  pipeline on vector and image.
+
+This is a scoped native drop-in phase result on apple-host only. It is not an
+application win, does not qualify Metal support and does not transfer to Vulkan.
+
+### m1r: lend Shared memory to read mappings (M1/main)
+
+| M1/main | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| warm map | 0.415 [0.412,0.420] | 0.432 [0.427,0.435] | 0.447 [0.436,0.459] |
+| warm operation | 0.930 [0.925,0.935] | 0.877 [0.869,0.880] | 0.912 [0.900,0.925] |
+| warm p95 operation | 0.938 [0.919,0.958] | 0.878 [0.863,0.889] | 0.940 [0.913,0.976] |
+| warm upload | 0.953 [0.927,0.970] | **1.069 [1.063,1.073]** | 0.934 [0.917,0.953] |
+| complete | 0.951 [0.928,0.974] | 0.896 [0.888,0.903] | 0.936 [0.915,0.965] |
+| process CPU | 0.971 | 0.910 | 0.960 |
+
+**Verdict: FAIL** ([evaluator output](m1r/eval.txt)). Every improve metric
+passes on every workload. Image warm upload (`wgpuQueueWriteBuffer` of 4 MiB)
+breaks the 1.05 no-regression bound: its CI lower bound is 1.063, about +6 us
+on 92 us. Every other no-regression metric passes. The verdict stands, and M1
+is not landed. The upload regression has not been attributed. A changed or
+re-measured M1 needs a new prospective contract. Diagnostic only: M1/Dawn warm
+operation was 0.949, 0.641 and 0.927.
+
+### m2r: single-device enumeration (M2/main)
+
+| M2/main | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| setup | 0.539 [0.535,0.545] | 0.551 [0.546,0.553] | 0.509 [0.500,0.533] |
+| process wall | 0.833 [0.816,0.845] | 0.878 [0.872,0.882] | 0.799 [0.787,0.815] |
+| warm operation | 0.998 [0.994,1.003] | 0.994 [0.989,1.001] | 0.994 [0.988,1.000] |
+
+**Verdict: PASS** ([evaluator output](m2r/eval.txt)). Setup and process wall
+have CI upper bounds below 1 on every workload, and every no-regression metric
+stays within 1.05. Setup falls from 16.4-17.7 ms to 8.6-9.4 ms. The claim
+boundary applies: this accepts the mechanism for the Metal C runtime on
+apple-host only, and is not a scoped win against Dawn. Diagnostic only: M2/Dawn
+setup is still 1.14-1.16, while process wall is 0.81-0.91.
+
 ## MSL buffer clamp (`591fde1ee`), 2026-10-30: image pipeline regression, vector invalid
 
 Contract [`contract-msl-clamp.json`](contract-msl-clamp.json) (frozen
@@ -194,26 +286,78 @@ points under its limit. The raw samples and gate commands had the absolute work
 directory replaced by `<work>/`; the `rawFiles` hashes inside the summaries are
 of the unsanitized bytes.
 
-## Remaining owners and open items
+## Remaining owners (after b3, m1r, m2r)
 
-1. **Warm map** (M1, frozen, not timed).
-2. **Adapter setup** (M2, frozen, not timed). After M2, about 3 ms of adapter
-   request remains against Dawn's 7.75 ms. Dawn pays about 5.9 ms more before
-   `main`.
-3. **Warm submit, about +4 us.** The split is above. Part of it is the
-   device-mutex hand-off to the owner-authorized pending worker. Changing when
-   the worker wakes would change that design, so it is left for the owner.
-4. **Warm pipeline, +0.3 ms one time.** Not split.
-5. **Resources on upload/readback**: an accounting split, not a net loss.
+These rows compare Doe `d57ab2877` with Dawn `d04f88359` side by side. Each
+mechanism is labelled measured, diagnostic or read.
+
+1. **Adapter setup.** M2 passed and landed in `85ceeb1a4`. On that main, all 81 physical clients matched unpatched `e0220ddcf` client by client ([main](correctness/physical-main-e0220ddcf.tsv), [M2](correctness/physical-m2-on-e0220ddcf.tsv)). It removes about
+   7.6-8.4 ms per process. Diagnostic only: M2/Dawn setup is still 1.14-1.16 and
+   adapter request 1.24-1.26. Dawn pays more before `main`, and on process wall
+   Doe with M2 is ahead (0.81-0.91).
+2. **Warm map, 2.22-2.34x Dawn (measured).** Read mappings copy into a
+   `malloc` shadow (`native/src/buffers.c:322-329`; Metal is not lendable at
+   `backend_buffers.c:53-58`). Dawn returns `contents` (`BufferMTL.mm:205-229`).
+   M1 removes 55-59% of warm map but failed its frozen rule on image warm
+   upload. That regression is unattributed, so the owner stays open.
+3. **Pipeline, +0.33-0.34 ms (1.22-1.23x, measured; split diagnostic).** The
+   [pipeline split](diagnostics/pipeline_split_diag.txt) (fresh process, warm
+   caches, six runs per workload, [patch](diagnostics/pipeline_split_diag.patch))
+   gives Doe's 1.67-1.74 ms as:
+   - **0.48-0.50 ms hashing the loaded images** for the persistent translation
+     cache key. `stages.c:121` reserves the disk cache, and `stages.c:136`
+     calls `native_shader_cache_identity` inline. That function streams SHA-256
+     over every originally read-only mapped segment of both Doe images
+     (`shader_cache_identity.c:258-330`). The background identity worker that
+     overlaps this starts only for D3D12 (`lifecycle.c:334`).
+   - 0.04 ms for the disk lookup (`stages.c:144`). On a hit it replaces
+     specialization, which costs 0.15 ms on a miss (`stages.c:149`).
+   - Metal calls: `newLibraryWithSource` 0.51-0.56 ms with `options:nil`
+     (`objc_pipeline.c:15`), `newFunctionWithName` 0.007 ms and
+     `newComputePipelineStateWithFunction` 0.58-0.64 ms (`objc_pipeline.c:81`).
+   - Dawn spends 1.43-1.45 ms on Tint MSL generation (`ShaderModuleMTL.mm:525`),
+     `newLibraryWithSource` with `MTLCompileOptions` (`ShaderModuleMTL.mm:538-578`)
+     and `newComputePipelineStateWithDescriptor` (`ComputePipelineMTL.mm:82`).
+     This standalone build has no persistent translation cache.
+
+   On these shaders the cache key costs about 0.5 ms per process to save
+   0.15 ms. Without the hash, Doe's split sums to about 1.2 ms. That figure is
+   an inference from the split, not a measured pipeline phase. Options include
+   starting the identity worker for Metal, deferring the key, or skipping the
+   persistent cache for small modules. Each changes cache policy, so the
+   choice belongs to the owner. No candidate is frozen.
+4. **Warm submit, +3.3 us (vector) and +3.8 us (upload/readback); image 0.99
+   (measured).** The probe in the side-by-side read above found the native
+   call sequences equal: Doe shape 4.5 us, Dawn shape 4.7-4.9 us. Read side by
+   side, the remaining difference is in how completion is wired:
+   - Doe holds the device mutex for the whole submit. It records the batch into
+     a new command buffer (`metal_progress.c:58-72`, `objc_commands.c:4-17`)
+     and links the pending record. That signals the progress worker before
+     commit (`queue.c:295-301,361-362`, `pending_progress.c:170-175`). After
+     commit and a locked poll (`queue.c:378`) it unlocks. The woken worker has
+     been blocked on that mutex (`pending_progress.c:33-49`), then settles and
+     waits on the shared event outside it (`pending_progress.c:91-103`).
+   - Dawn encodes, then adds scheduled and completed handlers
+     (`QueueMTL.mm:224,234`), encodes the event signal and commits
+     (`QueueMTL.mm:247-250`), then prepares the next command buffer
+     (`QueueMTL.mm:253`). Metal's own handler thread delivers completion, and
+     no Dawn thread is woken per submit.
+   - The earlier split puts about 0.7-2.3 us in the unlock hand-off to the
+     woken worker, plus about 0.5-0.7 us of record bookkeeping. Changing the
+     wake would change the owner-authorized worker design (2026-10-24), so no
+     candidate is frozen.
+5. **Resources on upload/readback, 8.97x (measured).** Creation-time memset
+   zeroing (`backends/metal/src/resources.c:28-35`) moves cost into resources.
+   Dawn clears lazily on the GPU (`BufferMTL.mm:247-307`), so its first
+   operation is slower (Doe/Dawn 0.91). This is an accounting split, not a net
+   loss.
 
 ## To resume
 
-Restore a quiet desktop: idle GPU at the 13-14% measured at freeze, with no
-screen capture or computer-use session. Then rebuild exactly the hashed
-binaries and run [`runs/run-b2-m1.sh`](runs/run-b2-m1.sh) and
-[`runs/run-m2.sh`](runs/run-m2.sh), whose paths are relative to a work root.
-
-B2 vector has used its one rerun, so its baseline verdict needs either a new
-frozen baseline contract or an owner decision. B2 image and upload/readback,
-M1 and M2 have not used any attempt. Admitting a busier desktop needs a new
-contract and an owner decision; it is not an amendment.
+The binaries are reproducible from [the rebuild receipt](builds/b3-rebuild.json).
+Use `ZERO_AR_DATE=1`; the run script is
+[`runs/run-b3-m1r-m2r.sh`](runs/run-b3-m1r-m2r.sh), with `<repo>` and `<work>`
+substituted. B3, M1R and M2R have used their attempts and have verdicts. A
+changed M1, any pipeline or submit candidate, or a baseline that includes M2
+needs a new prospective contract. B1, B2, M1 and M2 keep the status recorded
+above.

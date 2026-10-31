@@ -1,0 +1,134 @@
+# Doe d57ab2877 + pipeline_split_diag.patch (diagnostic only, not committed as code).
+# Fresh process per run, warm Metal and Doe disk caches after run 1; times in us; 2026-10-30, under the host GPU lock.
+RUN vector_scale_add_262k 1
+DIAGP identity 1000.7 mem_hit=0 use_disk=1
+DIAGP disk_lookup 736.6 hit=0
+DIAGP specialize 147.3
+DIAGP disk_store_insert 237.8
+DIAGP stage_total 2134.8
+DIAGP newLibraryWithSource 1915.2 msl_bytes=3002
+DIAGP newFunctionWithName 7.2
+DIAGP newComputePipelineState 1789.2
+DIAGP create_compute_pipeline 3735.4
+HARNESS compileNs 1208.167 pipelineNs 5882.208
+RUN vector_scale_add_262k 2
+DIAGP identity 486.0 mem_hit=0 use_disk=1
+DIAGP disk_lookup 43.4 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 538.0
+DIAGP newLibraryWithSource 547.5 msl_bytes=3002
+DIAGP newFunctionWithName 7.2
+DIAGP newComputePipelineState 593.0
+DIAGP create_compute_pipeline 1164.5
+HARNESS compileNs 114.542 pipelineNs 1705.958
+RUN vector_scale_add_262k 3
+DIAGP identity 488.5 mem_hit=0 use_disk=1
+DIAGP disk_lookup 43.0 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 539.7
+DIAGP newLibraryWithSource 520.1 msl_bytes=3002
+DIAGP newFunctionWithName 6.6
+DIAGP newComputePipelineState 600.3
+DIAGP create_compute_pipeline 1145.3
+HARNESS compileNs 116.708 pipelineNs 1688.125
+RUN vector_scale_add_262k 4
+DIAGP identity 484.6 mem_hit=0 use_disk=1
+DIAGP disk_lookup 40.2 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 531.6
+DIAGP newLibraryWithSource 514.0 msl_bytes=3002
+DIAGP newFunctionWithName 7.0
+DIAGP newComputePipelineState 597.4
+DIAGP create_compute_pipeline 1133.7
+HARNESS compileNs 114.5 pipelineNs 1668.583
+RUN vector_scale_add_262k 5
+DIAGP identity 485.7 mem_hit=0 use_disk=1
+DIAGP disk_lookup 41.6 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 534.9
+DIAGP newLibraryWithSource 528.7 msl_bytes=3002
+DIAGP newFunctionWithName 7.0
+DIAGP newComputePipelineState 634.9
+DIAGP create_compute_pipeline 1186.8
+HARNESS compileNs 117.584 pipelineNs 1725.0
+RUN vector_scale_add_262k 6
+DIAGP identity 486.9 mem_hit=0 use_disk=1
+DIAGP disk_lookup 41.0 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 535.6
+DIAGP newLibraryWithSource 527.4 msl_bytes=3002
+DIAGP newFunctionWithName 6.8
+DIAGP newComputePipelineState 581.5
+DIAGP create_compute_pipeline 1131.8
+HARNESS compileNs 119.25 pipelineNs 1670.416
+RUN image_rgba_invert_1024 1
+DIAGP identity 494.7 mem_hit=0 use_disk=1
+DIAGP disk_lookup 212.5 hit=0
+DIAGP specialize 117.5
+DIAGP disk_store_insert 729.4
+DIAGP stage_total 1562.8
+DIAGP newLibraryWithSource 478.8 msl_bytes=2860
+DIAGP newFunctionWithName 7.0
+DIAGP newComputePipelineState 565.9
+DIAGP create_compute_pipeline 1066.6
+HARNESS compileNs 96.292 pipelineNs 2633.25
+RUN image_rgba_invert_1024 2
+DIAGP identity 482.9 mem_hit=0 use_disk=1
+DIAGP disk_lookup 44.8 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 536.5
+DIAGP newLibraryWithSource 542.4 msl_bytes=2860
+DIAGP newFunctionWithName 7.0
+DIAGP newComputePipelineState 632.1
+DIAGP create_compute_pipeline 1197.6
+HARNESS compileNs 117.5 pipelineNs 1737.292
+RUN image_rgba_invert_1024 3
+DIAGP identity 499.4 mem_hit=0 use_disk=1
+DIAGP disk_lookup 37.2 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 544.2
+DIAGP newLibraryWithSource 558.1 msl_bytes=2860
+DIAGP newFunctionWithName 7.2
+DIAGP newComputePipelineState 592.1
+DIAGP create_compute_pipeline 1173.8
+HARNESS compileNs 98.5 pipelineNs 1721.208
+RUN image_rgba_invert_1024 4
+DIAGP identity 488.0 mem_hit=0 use_disk=1
+DIAGP disk_lookup 44.0 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 540.5
+DIAGP newLibraryWithSource 558.1 msl_bytes=2860
+DIAGP newFunctionWithName 6.7
+DIAGP newComputePipelineState 595.2
+DIAGP create_compute_pipeline 1176.5
+HARNESS compileNs 96.041 pipelineNs 1720.125
+RUN image_rgba_invert_1024 5
+DIAGP identity 489.8 mem_hit=0 use_disk=1
+DIAGP disk_lookup 42.2 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 544.2
+DIAGP newLibraryWithSource 540.9 msl_bytes=2860
+DIAGP newFunctionWithName 7.2
+DIAGP newComputePipelineState 576.1
+DIAGP create_compute_pipeline 1140.0
+HARNESS compileNs 97.542 pipelineNs 1687.458
+RUN image_rgba_invert_1024 6
+DIAGP identity 487.9 mem_hit=0 use_disk=1
+DIAGP disk_lookup 42.3 hit=1
+DIAGP specialize 0.0
+DIAGP disk_store_insert 0.1
+DIAGP stage_total 538.0
+DIAGP newLibraryWithSource 535.8 msl_bytes=2860
+DIAGP newFunctionWithName 7.3
+DIAGP newComputePipelineState 635.0
+DIAGP create_compute_pipeline 1195.5
+HARNESS compileNs 97.625 pipelineNs 1736.666
