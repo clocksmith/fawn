@@ -1,0 +1,15 @@
+{
+  "wallS": 60.0,
+  "logicalCpus": 16,
+  "systemBusyMs": 143703.125,
+  "windowTreeCpuMs": 15.625,
+  "harnessChildCpuMs": 0,
+  "foreignCpuPct": 14.967447916666666,
+  "gpuSamples": 0,
+  "foreignGpuPct": 0.0,
+  "harnessGpuPct": 0.0,
+  "failedProcesses": 0,
+  "cohortReturnCode": 0,
+  "processes": 0,
+  "gateValid": false
+}

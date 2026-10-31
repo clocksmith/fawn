@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "contractId": "amd-vulkan-c-direct-landing-tradeoff",
+  "decision": "Owner decision, relayed by the coordinator on 2026-10-30: land c-direct (M7R reusable descriptor-pool blocks + M2R per-usage device-local placement) in the Doe C Vulkan backend, selected per adapter for AMD (vendorID 0x1002) only, under this explicit trade-off rule. Intel and every other adapter keep the existing path.",
+  "basis": "round5/combined (contract round4/frozen-combined.json, 192 pairs, valid) failed its own frozen phase allowance only on image teardownNs 1.107 [1.086,1.143] and its separate upload-latency gate on vector warm.upload 1.114 [1.108,1.122]. Those frozen verdicts stand unchanged; this file is a new rule, not a reinterpretation.",
+  "candidate": "round4/candidates/c-direct.patch (sha256 2a2af8f05aaf1a5a9399a3073e0af845b20fecc3938f4523f303e56f8e19bc8b) behind the per-adapter selection",
+  "rule": {
+    "acceptedTradeoff": "against main: teardownNs and warm.upload median ratio <= 1.12 on every workload (the owner's 'up to about 1.11x'; round-5 medians 1.107 and 1.114)",
+    "requiredGains": [
+      "against main: complete CI95 upper < 1.0 on all three workloads",
+      "against main: warm.submit CI95 upper < 1.0 on vector and image",
+      "against main: warm.completion CI95 upper < 1.0 on all three workloads",
+      "against Dawn: complete CI95 upper < 1.0 on all three workloads"
+    ],
+    "phaseGuard": "against main: warm.encode, warm.map, warm.operation, warmP95.operation, first.operation, setupNs, compileNs, pipelineNs and resourcesNs CI95 lower <= 1.05 on every workload",
+    "validity": "every workload window valid under the host's frozen window gate, zero failed processes, Dawn A/A warm.operation median in [0.95,1.05] with CI95 containing 1",
+    "evaluator": "../../windows-amd-vulkan/20261030-dropin-phase/tools/tradeoff_gate.py (sha256 73d6fdec90f594544d7985a0f5466a7e1c6512a26657a9e57c212d25bb5f1530)"
+  },
+  "round5Evaluation": "PASS: complete vs main 0.832/0.843/0.915 and vs Dawn 0.784/0.528/0.846 (CI uppers < 1); submit vs main 0.569/0.545; completion vs main 0.717/0.675/0.850; teardown medians 1.082/1.107/1.017; upload medians 1.114/1.008/0.997; no phase-guard violation.",
+  "scope": "AMD Vulkan adapters selected by vendorID 0x1002 through the Vulkan owner's adapter properties. Evidence per tuple: amd-host RADV (round 5; a RADV confirmation of the landed per-adapter build is pending and has not run), windows-amd-host AMD proprietary driver (../../windows-amd-vulkan/20261030-dropin-phase). Intel ANV evidence (../../intel-vulkan/20261030-dropin-phase) showed c-direct failing there, which is why the selection excludes non-AMD adapters.",
+  "nonClaims": "Not the GOALS Vulkan application win, not a public performance claim, not qualification of any tuple.",
+  "frozenAtUtc": "2026-10-31T02:11:00Z"
+}

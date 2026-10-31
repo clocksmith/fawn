@@ -1,0 +1,760 @@
+diff --git a/runtime/c/backends/vulkan/AGENTS.md b/runtime/c/backends/vulkan/AGENTS.md
+index cda6e4dbf..faa97e2c1 100644
+--- a/runtime/c/backends/vulkan/AGENTS.md
++++ b/runtime/c/backends/vulkan/AGENTS.md
+@@ -18,6 +18,17 @@ distinct from permitting CPU at an exact ordinal. Query the official ID-properti
+ vendor/device numbers, pipeline-cache UUIDs or instance-local handles. Keep UUIDs
+ as owned values and independent contexts under their existing serialization rule.
+ 
++Adapter-dependent resource policy is one rule in device_selection.c: the selected
++adapter's vendorID chooses caps.resource_profile (0x1002 AMD, any driver: AMD;
++every other adapter: DEFAULT). AMD takes descriptor sets from reusable
++FREE_DESCRIPTOR_SET context blocks and places host-written buffers in
++device-local memory; DEFAULT keeps one exact pool per dispatch use and
++host-cached placement, call for call (owner authorized 2026-10-30 under the
++trade-off rule in reports/benchmarks/amd-vulkan/20261029-dropin-phase/landing-c-direct-amd.json).
++Descriptor and placement code branch only on that field, never on names, device
++IDs or drivers, and no second vendor test may appear elsewhere. Adding a vendor
++to a profile needs its own frozen evidence on that adapter.
++
+ Keep buffer-only and mixed image/sampler dispatches on the same descriptor owner.
+ Shader type/format/capability admission stays with the compiler/native consumer.
+ Graphics packets must consume the existing resource render/bundle ordering. A
+diff --git a/runtime/c/backends/vulkan/CATSCAN.md b/runtime/c/backends/vulkan/CATSCAN.md
+index a893925a9..d3b40349e 100644
+--- a/runtime/c/backends/vulkan/CATSCAN.md
++++ b/runtime/c/backends/vulkan/CATSCAN.md
+@@ -27,6 +27,8 @@ Execute admitted native Vulkan work through an independently usable C owner whil
+ - Unknown completion retains every resource; timeout is not completion.
+ - State publishes at accepted `vkQueueSubmit`; refusal poisons it (owner-authorized 2026-10-24).
+ - No interpreter, silent backend substitution or production default change.
++- Adapter-dependent resource policy is the one recorded vendor rule
++  (`caps.resource_profile`, owner-authorized 2026-10-30); other adapters keep the DEFAULT path unchanged.
+ - Pinned ABI verification, software execution and physical qualification remain distinct.
+ - Caller serialization and ownership transfer remain explicit.
+ - Acquisition and presentation fences are distinct from command completion; unsupported WSI never fabricates a surface.
+diff --git a/runtime/c/backends/vulkan/Makefile b/runtime/c/backends/vulkan/Makefile
+index d848d6bc4..5c48cf1de 100644
+--- a/runtime/c/backends/vulkan/Makefile
++++ b/runtime/c/backends/vulkan/Makefile
+@@ -63,6 +63,9 @@ $(OUT)/pipeline_sharing: tests/pipeline_sharing.c $(OUT)/libdoe_vk.a $(HEADERS)
+ 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+ $(OUT)/descriptor_reuse: tests/descriptor_reuse.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+ 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
++# The same descriptor clients under the AMD resource profile (see doe_vk.h).
++$(OUT)/%_amd: tests/%.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
++	$(CC) $(STRICT) $(CFLAGS) -DDOE_VK_TEST_PROFILE_AMD $< $(OUT)/libdoe_vk.a -ldl -o $@
+ $(OUT)/command_spares: tests/command_spares.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+ 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+ $(OUT)/native_compute: tests/native_compute.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+@@ -107,7 +110,7 @@ $(OUT)/descriptor_contract: tests/descriptor_contract.c $(OUT)/libdoe_vk.a $(HEA
+ 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+ $(OUT)/texture_contract: tests/texture_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+ 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+-check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/depth_copy_contract $(OUT)/block_copy_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/command_spares
++check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/depth_copy_contract $(OUT)/block_copy_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/command_spares $(OUT)/descriptor_reuse_amd $(OUT)/indirect_lifetime_amd $(OUT)/timestamp_lifetime_amd
+ 	$(OUT)/color_targets_contract
+ 	$(OUT)/surface_features
+ 	$(OUT)/surface_contract
+@@ -133,6 +136,9 @@ check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_f
+ 	$(OUT)/pipeline_sharing
+ 	$(OUT)/descriptor_reuse
+ 	$(OUT)/command_spares
++	$(OUT)/descriptor_reuse_amd
++	$(OUT)/indirect_lifetime_amd
++	$(OUT)/timestamp_lifetime_amd
+ 	printf '#include "include/doe_vk.h"\n#include "include/doe_vk_texture.h"\n#include "include/doe_vk_bindings.h"\n#include "include/doe_vk_render.h"\n#include "include/doe_vk_queries.h"\n#include "include/doe_vk_timestamp.h"\n#include "include/doe_vk_indirect.h"\n#include "include/doe_vk_surface.h"\n' | $(CXX) -std=c++17 -Wall -Wextra -Werror -Wpedantic -I. -x c++ -c -o $(OUT)/header-cxx.o -
+ surface-probe: $(OUT)/surface_probe
+ 	$(OUT)/surface_probe $(NATIVE_ARGS)
+@@ -193,7 +199,7 @@ sanitize: | $(OUT)
+ 	ASAN_OPTIONS=detect_leaks=0 $(OUT)/descriptor_contract-sanitize
+ clean:
+ 	rm -f $(OUT)/adapter_identity $(OUT)/adapter_identity-sanitize
+-	rm -f $(OUT)/indexed_contract $(OUT)/indexed_contract-sanitize $(OUT)/depth_copy_contract $(OUT)/depth_copy_contract-sanitize $(OUT)/block_copy_contract $(OUT)/surface_contract $(OUT)/surface_contract-sanitize $(OUT)/surface_features $(OUT)/surface_features-sanitize $(OUT)/surface_probe $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/indirect_contract-sanitize $(OUT)/indirect_lifetime-sanitize $(OUT)/depth_pipeline_contract $(OUT)/depth_pipeline_contract-sanitize $(OUT)/image_format_contract $(OUT)/image_format_contract-sanitize $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/command_spares $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize $(OUT)/native_matrix $(OUT)/feature_contract $(OUT)/native_features $(OUT)/depth_contract $(OUT)/depth_contract-sanitize
++	rm -f $(OUT)/indexed_contract $(OUT)/indexed_contract-sanitize $(OUT)/depth_copy_contract $(OUT)/depth_copy_contract-sanitize $(OUT)/block_copy_contract $(OUT)/surface_contract $(OUT)/surface_contract-sanitize $(OUT)/surface_features $(OUT)/surface_features-sanitize $(OUT)/surface_probe $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/indirect_contract-sanitize $(OUT)/indirect_lifetime-sanitize $(OUT)/depth_pipeline_contract $(OUT)/depth_pipeline_contract-sanitize $(OUT)/image_format_contract $(OUT)/image_format_contract-sanitize $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/descriptor_reuse_amd $(OUT)/indirect_lifetime_amd $(OUT)/timestamp_lifetime_amd $(OUT)/command_spares $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize $(OUT)/native_matrix $(OUT)/feature_contract $(OUT)/native_features $(OUT)/depth_contract $(OUT)/depth_contract-sanitize
+ 
+ # Compiler/shader dependencies belong only to this optional integration test.
+ SHADER_ROOT ?= $(REPO)/runtime/c/shader
+diff --git a/runtime/c/backends/vulkan/include/doe_vk.h b/runtime/c/backends/vulkan/include/doe_vk.h
+index 9e8ce3e0e..6bb2dad8e 100644
+--- a/runtime/c/backends/vulkan/include/doe_vk.h
++++ b/runtime/c/backends/vulkan/include/doe_vk.h
+@@ -108,11 +108,24 @@ typedef struct doe_vk_options {
+     bool enable_external_fd;
+ } doe_vk_options;
+ 
++/* Per-adapter resource policy, selected once from the selected adapter's
++ * VkPhysicalDeviceProperties.vendorID by device_selection.c. DEFAULT: one
++ * exact-size descriptor pool per dispatch use; host-written buffers in
++ * host-cached memory. AMD (vendorID 0x1002, any driver): descriptor sets from
++ * reusable context blocks; host-written buffers prefer device-local memory.
++ * Owner decision and trade-off rule: reports/benchmarks/amd-vulkan/
++ * 20261029-dropin-phase/landing-c-direct-amd.json. */
++typedef enum doe_vk_resource_profile {
++    DOE_VK_RESOURCE_PROFILE_DEFAULT = 0,
++    DOE_VK_RESOURCE_PROFILE_AMD
++} doe_vk_resource_profile;
++
+ typedef struct doe_vk_caps {
+     uint32_t api_version;
+     uint32_t driver_version;
+     uint32_t vendor_id;
+     uint32_t device_id;
++    doe_vk_resource_profile resource_profile; /* Chosen from vendor_id; see above. */
+     uint32_t device_type;
+     uint32_t adapter_ordinal; /* Actual enumeration index of the selected device. */
+     uint32_t queue_family;
+@@ -229,9 +242,14 @@ enum {
+     DOE_VK_BUFFER_VERTEX = 128,
+     DOE_VK_BUFFER_INDIRECT = 256
+ };
++/* HOST prefers host-cached memory for host reads. HOST_DEVICE_LOCAL keeps the
++ * same persistent coherent mapping for buffers the host only writes; it prefers
++ * device-local memory under the AMD resource profile and host-cached memory
++ * otherwise. DEVICE has no host mapping. */
+ typedef enum doe_vk_memory_kind {
+     DOE_VK_MEMORY_HOST,
+-    DOE_VK_MEMORY_DEVICE
++    DOE_VK_MEMORY_DEVICE,
++    DOE_VK_MEMORY_HOST_DEVICE_LOCAL
+ } doe_vk_memory_kind;
+ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+     uint32_t usage, doe_vk_memory_kind memory, doe_vk_buffer **out, doe_vk_error *error);
+diff --git a/runtime/c/backends/vulkan/src/descriptors.c b/runtime/c/backends/vulkan/src/descriptors.c
+index e63a35e30..02ec00215 100644
+--- a/runtime/c/backends/vulkan/src/descriptors.c
++++ b/runtime/c/backends/vulkan/src/descriptors.c
+@@ -80,9 +80,48 @@ static doe_vk_status validate_resources(doe_vk_commands *commands,
+     return DOE_VK_OK;
+ }
+ 
+-static doe_vk_status descriptor_pool(doe_vk_commands *commands,
++/* Descriptor sets follow the adapter's resource profile (doe_vk.h). DEFAULT:
++ * each dispatch use creates an exact-size pool and destroys it at release.
++ * AMD: uses allocate their sets from context-owned blocks created with
++ * FREE_DESCRIPTOR_SET and free them at release. A block that is exhausted or
++ * fragmented is skipped; a new block is created only when every block refuses.
++ * Either way a set is written once by its use and never updated while any
++ * recording holds it. */
++enum { DESCRIPTOR_BLOCK_SETS = 256, DESCRIPTOR_BLOCK_PER_TYPE = 1024 };
++enum { VK_ERROR_FRAGMENTED_POOL_VALUE = -12, VK_ERROR_OUT_OF_POOL_MEMORY_VALUE = -1000069000,
++    VK_DESCRIPTOR_POOL_FREE_SET = 0x1 };
++struct doe_vk_descriptor_block {
++    VkDescriptorPool pool;
++    struct doe_vk_descriptor_block *next;
++};
++
++static doe_vk_status descriptor_block(doe_vk_context *context, struct doe_vk_descriptor_block **out) {
++    struct doe_vk_descriptor_block *block = calloc(1, sizeof(*block));
++    if (block == NULL) return DOE_VK_OUT_OF_MEMORY;
++    VkDescriptorPoolSize sizes[5];
++    for (uint32_t i = 0; i < 5; ++i)
++        sizes[i] = (VkDescriptorPoolSize){ doe_vk_descriptor_type((doe_vk_binding_kind)i), DESCRIPTOR_BLOCK_PER_TYPE };
++    const VkDescriptorPoolCreateInfo pool = {
++        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
++        .flags = VK_DESCRIPTOR_POOL_FREE_SET,
++        .maxSets = DESCRIPTOR_BLOCK_SETS,
++        .poolSizeCount = 5,
++        .pPoolSizes = sizes
++    };
++    doe_vk_status status = doe_vk_result(context, context->vk.vkCreateDescriptorPool(context->device,
++        &pool, NULL, &block->pool), "vkCreateDescriptorPool", NULL);
++    if (status != DOE_VK_OK) {
++        free(block);
++        return status;
++    }
++    block->next = context->descriptor_blocks;
++    context->descriptor_blocks = block;
++    *out = block;
++    return DOE_VK_OK;
++}
++
++static doe_vk_status use_pool(doe_vk_context *context,
+     doe_vk_pipeline *pipeline, doe_vk_dispatch_use *use, VkDescriptorSet *sets) {
+-    if (pipeline->group_count == 0) return DOE_VK_OK;
+     uint32_t counts[5] = {0};
+     for (uint32_t i = 0; i < pipeline->binding_count; ++i) ++counts[(uint32_t)pipeline->bindings[i].kind];
+     VkDescriptorPoolSize sizes[5];
+@@ -96,7 +135,6 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
+         .poolSizeCount = size_count,
+         .pPoolSizes = sizes
+     };
+-    doe_vk_context *context = commands->context;
+     doe_vk_status status = doe_vk_result(context, context->vk.vkCreateDescriptorPool(context->device,
+         &pool, NULL, &use->pool), "vkCreateDescriptorPool", NULL);
+     if (status != DOE_VK_OK) return status;
+@@ -110,6 +148,47 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
+         &allocate, sets), "vkAllocateDescriptorSets", NULL);
+ }
+ 
++static doe_vk_status descriptor_pool(doe_vk_commands *commands,
++    doe_vk_pipeline *pipeline, doe_vk_dispatch_use *use, VkDescriptorSet *sets) {
++    if (pipeline->group_count == 0) return DOE_VK_OK;
++    doe_vk_context *context = commands->context;
++    if (context->caps.resource_profile != DOE_VK_RESOURCE_PROFILE_AMD)
++        return use_pool(context, pipeline, use, sets);
++    VkDescriptorSetAllocateInfo allocate = {
++        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
++        .descriptorSetCount = pipeline->group_count,
++        .pSetLayouts = pipeline->sets
++    };
++    VkResult result = 0;
++    for (struct doe_vk_descriptor_block *block = context->descriptor_blocks; block != NULL; block = block->next) {
++        allocate.descriptorPool = block->pool;
++        result = context->vk.vkAllocateDescriptorSets(context->device, &allocate, sets);
++        if (result == 0) {
++            use->pool = block->pool;
++            return DOE_VK_OK;
++        }
++        if (result != VK_ERROR_FRAGMENTED_POOL_VALUE && result != VK_ERROR_OUT_OF_POOL_MEMORY_VALUE)
++            return doe_vk_result(context, result, "vkAllocateDescriptorSets", NULL);
++    }
++    struct doe_vk_descriptor_block *fresh = NULL;
++    doe_vk_status status = descriptor_block(context, &fresh);
++    if (status != DOE_VK_OK) return status;
++    allocate.descriptorPool = fresh->pool;
++    result = context->vk.vkAllocateDescriptorSets(context->device, &allocate, sets);
++    if (result == 0) use->pool = fresh->pool;
++    /* A refusal from a fresh block means the layout cannot fit: a failure. */
++    return result == 0 ? DOE_VK_OK : doe_vk_result(context, result, "vkAllocateDescriptorSets", NULL);
++}
++
++void doe_vk_descriptor_blocks_clear(doe_vk_context *context) {
++    while (context->descriptor_blocks != NULL) {
++        struct doe_vk_descriptor_block *block = context->descriptor_blocks;
++        context->descriptor_blocks = block->next;
++        context->vk.vkDestroyDescriptorPool(context->device, block->pool, NULL);
++        free(block);
++    }
++}
++
+ static bool buffers_only(const doe_vk_binding_resource *bindings, size_t count) {
+     for (size_t i = 0; i < count; ++i)
+         if (bindings[i].kind != DOE_VK_BINDING_UNIFORM && bindings[i].kind != DOE_VK_BINDING_STORAGE) return false;
+@@ -252,7 +331,10 @@ doe_vk_status doe_vk_commands_dispatch_resources(doe_vk_commands *commands,
+ }
+ 
+ void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use) {
+-    if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
++    if (use->pool != 0 && context->caps.resource_profile == DOE_VK_RESOURCE_PROFILE_AMD)
++        /* Freeing never fails for a FREE_DESCRIPTOR_SET pool. */
++        (void)context->vk.vkFreeDescriptorSets(context->device, use->pool, use->pipeline->group_count, use->sets);
++    else if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
+     for (uint32_t i = 0; i < DOE_VK_MAX_BINDINGS; ++i) {
+         doe_vk_texture_view_release(use->views[i]);
+         doe_vk_sampler_release(use->samplers[i]);
+diff --git a/runtime/c/backends/vulkan/src/device_selection.c b/runtime/c/backends/vulkan/src/device_selection.c
+index c2fbf5c05..d611f9004 100644
+--- a/runtime/c/backends/vulkan/src/device_selection.c
++++ b/runtime/c/backends/vulkan/src/device_selection.c
+@@ -143,6 +143,10 @@ doe_vk_status doe_vk_choose_device(doe_vk_context *context,
+     caps->driver_version = p->driverVersion;
+     caps->vendor_id = p->vendorID;
+     caps->device_id = p->deviceID;
++    /* The only adapter-dependent resource policy: AMD hardware takes the c-direct
++     * profile under the owner's trade-off rule (doe_vk.h); all others keep DEFAULT. */
++    caps->resource_profile = p->vendorID == 0x1002 ?
++        DOE_VK_RESOURCE_PROFILE_AMD : DOE_VK_RESOURCE_PROFILE_DEFAULT;
+     caps->device_type = p->deviceType;
+     caps->adapter_ordinal = selected_ordinal;
+     caps->identity = identity;
+diff --git a/runtime/c/backends/vulkan/src/internal.h b/runtime/c/backends/vulkan/src/internal.h
+index ce49b2a72..83cceab33 100644
+--- a/runtime/c/backends/vulkan/src/internal.h
++++ b/runtime/c/backends/vulkan/src/internal.h
+@@ -58,6 +58,9 @@ struct doe_vk_context {
+     /* Compute pipelines by exact creation input, most recent first: live
+      * ones and up to DOE_VK_RETAINED_PIPELINES released ones; see pipeline.c. */
+     struct doe_vk_pipeline *compute_pipelines;
++    /* Free-able descriptor pools that dispatch uses allocate their sets from;
++     * see descriptors.c. Accessed only under the owning device's serialization. */
++    struct doe_vk_descriptor_block *descriptor_blocks;
+     uint32_t retained_pipelines;
+     VkPipelineCache driver_cache;
+     char *driver_cache_path;
+@@ -75,6 +78,8 @@ struct doe_vk_context {
+ enum { DOE_VK_RETAINED_PIPELINES = 32 };
+ /* Destroys released compute pipelines; the context is releasing its device. */
+ void doe_vk_pipeline_cache_clear(doe_vk_context *context);
++/* Destroys every descriptor pool block; the context is releasing its device. */
++void doe_vk_descriptor_blocks_clear(doe_vk_context *context);
+ void doe_vk_driver_cache_clear(doe_vk_context *context);
+ void doe_vk_driver_cache_record(doe_vk_context *context, bool success);
+ doe_vk_status doe_vk_pipeline_blob_open(doe_vk_context *context, const doe_vk_pipeline_blob *blob,
+diff --git a/runtime/c/backends/vulkan/src/loader.c b/runtime/c/backends/vulkan/src/loader.c
+index 7b00b1cf0..c7875408e 100644
+--- a/runtime/c/backends/vulkan/src/loader.c
++++ b/runtime/c/backends/vulkan/src/loader.c
+@@ -91,6 +91,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
+     _Static_assert(sizeof(context->vk.vkCreateDescriptorPool) == sizeof(void *), "vkCreateDescriptorPool POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkDestroyDescriptorPool) == sizeof(void *), "vkDestroyDescriptorPool POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkAllocateDescriptorSets) == sizeof(void *), "vkAllocateDescriptorSets POSIX pointer size");
++    _Static_assert(sizeof(context->vk.vkFreeDescriptorSets) == sizeof(void *), "vkFreeDescriptorSets POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkUpdateDescriptorSets) == sizeof(void *), "vkUpdateDescriptorSets POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkCreatePipelineLayout) == sizeof(void *), "vkCreatePipelineLayout POSIX pointer size");
+     _Static_assert(sizeof(context->vk.vkDestroyPipelineLayout) == sizeof(void *), "vkDestroyPipelineLayout POSIX pointer size");
+@@ -186,6 +187,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
+         { "vkCreateDescriptorPool", &context->vk.vkCreateDescriptorPool, sizeof(context->vk.vkCreateDescriptorPool) },
+         { "vkDestroyDescriptorPool", &context->vk.vkDestroyDescriptorPool, sizeof(context->vk.vkDestroyDescriptorPool) },
+         { "vkAllocateDescriptorSets", &context->vk.vkAllocateDescriptorSets, sizeof(context->vk.vkAllocateDescriptorSets) },
++        { "vkFreeDescriptorSets", &context->vk.vkFreeDescriptorSets, sizeof(context->vk.vkFreeDescriptorSets) },
+         { "vkUpdateDescriptorSets", &context->vk.vkUpdateDescriptorSets, sizeof(context->vk.vkUpdateDescriptorSets) },
+         { "vkCreatePipelineLayout", &context->vk.vkCreatePipelineLayout, sizeof(context->vk.vkCreatePipelineLayout) },
+         { "vkDestroyPipelineLayout", &context->vk.vkDestroyPipelineLayout, sizeof(context->vk.vkDestroyPipelineLayout) },
+@@ -493,6 +495,7 @@ void doe_vk_context_release(doe_vk_context *context) {
+     /* Every recording/submission/resource owns a reference, so no native work
+      * can exist here. Unknown submissions cannot be released. */
+     doe_vk_pipeline_cache_clear(context);
++    doe_vk_descriptor_blocks_clear(context);
+     (void)doe_vk_context_pipeline_cache_flush(context, NULL);
+     doe_vk_driver_cache_clear(context);
+     doe_vk_command_spares_clear(context);
+diff --git a/runtime/c/backends/vulkan/src/resources.c b/runtime/c/backends/vulkan/src/resources.c
+index 914a40742..cc44e93a7 100644
+--- a/runtime/c/backends/vulkan/src/resources.c
++++ b/runtime/c/backends/vulkan/src/resources.c
+@@ -81,7 +81,7 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+         DOE_VK_BUFFER_INDEX;
+     if (context == NULL || out == NULL || size == 0 || size > SIZE_MAX ||
+         usage == 0 || (usage & ~allowed) != 0 ||
+-        (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE))
++        (kind != DOE_VK_MEMORY_HOST && kind != DOE_VK_MEMORY_DEVICE && kind != DOE_VK_MEMORY_HOST_DEVICE_LOCAL))
+         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "buffer descriptor", error);
+     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "buffer context", error);
+     doe_vk_buffer *buffer = calloc(1, sizeof(*buffer));
+@@ -108,9 +108,14 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+         status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "buffer memory requirements", error);
+         goto failed;
+     }
+-    uint32_t required = kind == DOE_VK_MEMORY_HOST ?
++    const bool host = kind != DOE_VK_MEMORY_DEVICE;
++    uint32_t required = host ?
+         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+-    uint32_t preferred = kind == DOE_VK_MEMORY_HOST ? VK_MEMORY_PROPERTY_HOST_CACHED_BIT : 0;
++    /* HOST_DEVICE_LOCAL prefers device-local memory only under the AMD resource
++     * profile; every other adapter keeps HOST's host-cached preference. */
++    const bool device_local = kind == DOE_VK_MEMORY_HOST_DEVICE_LOCAL &&
++        context->caps.resource_profile == DOE_VK_RESOURCE_PROFILE_AMD;
++    uint32_t preferred = !host ? 0 : device_local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+     uint32_t index = 0;
+     status = doe_vk_memory_type(&context->memory, requirements.memoryTypeBits, required, preferred, &index);
+     if (status != DOE_VK_OK) {
+@@ -126,7 +131,7 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
+     if (status != DOE_VK_OK) goto failed;
+     status = doe_vk_result(context, context->vk.vkBindBufferMemory(context->device, buffer->buffer, buffer->memory, 0), "vkBindBufferMemory", error);
+     if (status != DOE_VK_OK) goto failed;
+-    if (kind == DOE_VK_MEMORY_HOST) {
++    if (host) {
+         status = doe_vk_result(context, context->vk.vkMapMemory(context->device, buffer->memory, 0, size, 0, &buffer->mapped), "vkMapMemory", error);
+         if (status != DOE_VK_OK) goto failed;
+         if (buffer->mapped == NULL) {
+diff --git a/runtime/c/backends/vulkan/src/vk_abi_functions.h b/runtime/c/backends/vulkan/src/vk_abi_functions.h
+index abb640c99..aa7487685 100644
+--- a/runtime/c/backends/vulkan/src/vk_abi_functions.h
++++ b/runtime/c/backends/vulkan/src/vk_abi_functions.h
+@@ -91,6 +91,7 @@ typedef struct doe_vk_functions {
+     VkResult (*vkCreateDescriptorPool)(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool);
+     void (*vkDestroyDescriptorPool)(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks *pAllocator);
+     VkResult (*vkAllocateDescriptorSets)(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo, VkDescriptorSet *pDescriptorSets);
++    VkResult (*vkFreeDescriptorSets)(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets);
+     void (*vkUpdateDescriptorSets)(VkDevice device, uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount, const void *pDescriptorCopies);
+     VkResult (*vkCreatePipelineLayout)(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout);
+     void (*vkDestroyPipelineLayout)(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks *pAllocator);
+diff --git a/runtime/c/backends/vulkan/tests/descriptor_reuse.c b/runtime/c/backends/vulkan/tests/descriptor_reuse.c
+index addbce20f..e4b213b46 100644
+--- a/runtime/c/backends/vulkan/tests/descriptor_reuse.c
++++ b/runtime/c/backends/vulkan/tests/descriptor_reuse.c
+@@ -4,9 +4,17 @@
+ #include <assert.h>
+ #include <stdio.h>
+ 
++/* Built twice: the DEFAULT resource profile (exact per-use pool) and, with
++ * DOE_VK_TEST_PROFILE_AMD, the AMD profile (one free-able context block). */
++#ifdef DOE_VK_TEST_PROFILE_AMD
++#define TEST_PROFILE DOE_VK_RESOURCE_PROFILE_AMD
++#else
++#define TEST_PROFILE DOE_VK_RESOURCE_PROFILE_DEFAULT
++#endif
++
+ /* Native procedure boundary only: counts descriptor work per recorded dispatch. */
+ static struct {
+-    unsigned pools_created, pools_destroyed, sets_allocated, updates;
++    unsigned pools_created, pools_destroyed, sets_allocated, sets_freed, updates;
+     unsigned barriers, dispatches, pipeline_binds, set_binds;
+     uint64_t next_handle;
+ } mock;
+@@ -23,6 +31,12 @@ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocat
+     assert(pool != 0);
+     ++mock.pools_destroyed;
+ }
++static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
++    (void)device; (void)sets;
++    assert(pool != 0 && count == 1);
++    ++mock.sets_freed;
++    return 0;
++}
+ static VkResult allocate_sets(VkDevice device, const VkDescriptorSetAllocateInfo *info, VkDescriptorSet *sets) {
+     (void)device;
+     for (uint32_t i = 0; i < info->descriptorSetCount; ++i) sets[i] = ++mock.next_handle;
+@@ -72,12 +86,14 @@ static void release_uses(doe_vk_commands *commands) {
+ 
+ int main(void) {
+     doe_vk_context context = { .references = 1 };
++    context.caps.resource_profile = TEST_PROFILE;
+     context.caps.max_workgroup_count[0] = context.caps.max_workgroup_count[1] = context.caps.max_workgroup_count[2] = 64;
+     context.caps.storage_offset_alignment = 16;
+     context.caps.max_storage_buffer_range = 1u << 20;
+     context.vk = (doe_vk_functions){
+         .vkCreateDescriptorPool = create_pool, .vkDestroyDescriptorPool = destroy_pool,
+-        .vkAllocateDescriptorSets = allocate_sets, .vkUpdateDescriptorSets = update_sets,
++        .vkAllocateDescriptorSets = allocate_sets, .vkFreeDescriptorSets = free_sets,
++        .vkUpdateDescriptorSets = update_sets,
+         .vkCmdPipelineBarrier = barrier, .vkCmdBindPipeline = bind_pipeline,
+         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch
+     };
+@@ -103,7 +119,11 @@ int main(void) {
+     assert(doe_vk_commands_dispatch_resources(&commands, &other, &binding, 1, 1, 1, 1) == DOE_VK_OK);
+     binding.value.buffer.offset = 0;
+     assert(doe_vk_commands_dispatch_resources(&commands, &pipeline, &binding, 1, 1, 1, 1) == DOE_VK_OK);
+-    assert(mock.pools_created == 4 && mock.updates == 4 && mock.dispatches == 6);
++    /* Distinct uses get an exact pool each (DEFAULT) or allocate sets from the
++     * one context block (AMD). */
++    if (TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD)
++        assert(mock.pools_created == 1 && mock.sets_allocated == 4 && mock.updates == 4 && mock.dispatches == 6);
++    else assert(mock.pools_created == 4 && mock.sets_allocated == 4 && mock.updates == 4 && mock.dispatches == 6);
+ 
+     /* Validation still runs for a shared use. */
+     buffer.content_status = DOE_VK_OUT_OF_MEMORY;
+@@ -112,8 +132,15 @@ int main(void) {
+     buffer.content_status = DOE_VK_OK;
+ 
+     release_uses(&commands);
+-    assert(mock.pools_destroyed == mock.pools_created && pipeline.references == 1 && other.references == 1);
++    if (TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD) {
++        assert(mock.sets_freed == mock.sets_allocated && mock.pools_destroyed == 0);
++        doe_vk_descriptor_blocks_clear(&context);
++    } else assert(mock.sets_freed == 0);
++    assert(pipeline.references == 1 && other.references == 1);
++    assert(mock.pools_destroyed == mock.pools_created);
+     assert(buffer.recorded_uses == 0 && buffer.references == 1);
+-    puts("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch");
++    printf("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch; %s\n",
++        TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD ? "AMD: sets come from and return to one context block" :
++        "DEFAULT: one exact pool per use, destroyed at release");
+     return 0;
+ }
+diff --git a/runtime/c/backends/vulkan/tests/indirect_lifetime.c b/runtime/c/backends/vulkan/tests/indirect_lifetime.c
+index ea8aeb8fd..e174801a3 100644
+--- a/runtime/c/backends/vulkan/tests/indirect_lifetime.c
++++ b/runtime/c/backends/vulkan/tests/indirect_lifetime.c
+@@ -3,6 +3,14 @@
+ #include <assert.h>
+ #include <stdio.h>
+ 
++/* Built twice: the DEFAULT resource profile (exact per-use pool) and, with
++ * DOE_VK_TEST_PROFILE_AMD, the AMD profile (one free-able context block). */
++#ifdef DOE_VK_TEST_PROFILE_AMD
++#define TEST_PROFILE DOE_VK_RESOURCE_PROFILE_AMD
++#else
++#define TEST_PROFILE DOE_VK_RESOURCE_PROFILE_DEFAULT
++#endif
++
+ /* Native packet/lifetime observation only, not a CPU shader implementation. */
+ static unsigned sequence, barriers, pipelines_destroyed, buffers_destroyed, pools_destroyed;
+ static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
+@@ -22,7 +30,9 @@ static void copy_buffer(VkCommandBuffer command, VkBuffer source, VkBuffer desti
+ static VkResult create_pool(VkDevice device, const VkDescriptorPoolCreateInfo *info,
+     const VkAllocationCallbacks *allocator, VkDescriptorPool *out) {
+     (void)device; (void)allocator;
+-    assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
++    if (TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD)
++        assert(info->flags == 1 && info->maxSets >= 1 && info->poolSizeCount == 5); /* One free-able context block. */
++    else assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
+     *out = 9;
+     return 0;
+ }
+@@ -77,6 +87,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
+     assert(buffer == 3);
+     ++buffers_destroyed;
+ }
++static unsigned sets_freed;
++static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
++    (void)device;
++    assert(pool == 9 && count == 1 && sets[0] == 10);
++    ++sets_freed;
++    return 0;
++}
+ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocationCallbacks *allocator) {
+     (void)device; (void)allocator;
+     assert(pool == 9);
+@@ -90,6 +107,7 @@ static VkResult wait_lost(VkDevice device, uint32_t count, const VkFence *fences
+ }
+ int main(void) {
+     doe_vk_context context = {.references = 5}; /* Caller, two pipelines, scratch, commands. */
++    context.caps.resource_profile = TEST_PROFILE;
+     context.caps.max_workgroup_count[0] = context.caps.max_workgroup_count[1] = context.caps.max_workgroup_count[2] = 1;
+     context.caps.storage_offset_alignment = 16;
+     context.caps.max_storage_buffer_range = 12;
+@@ -99,7 +117,7 @@ int main(void) {
+         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch, .vkCmdDispatchIndirect = dispatch_indirect,
+         .vkDestroyPipeline = destroy_pipeline, .vkDestroyPipelineLayout = destroy_layout,
+         .vkDestroyDescriptorSetLayout = destroy_set, .vkDestroyBuffer = destroy_buffer,
+-        .vkDestroyDescriptorPool = destroy_pool, .vkWaitForFences = wait_lost};
++        .vkDestroyDescriptorPool = destroy_pool, .vkFreeDescriptorSets = free_sets, .vkWaitForFences = wait_lost};
+     doe_vk_dispatch_validator *validator = calloc(1, sizeof(*validator));
+     doe_vk_buffer *scratch = calloc(1, sizeof(*scratch));
+     doe_vk_pipeline *sanitize = calloc(1, sizeof(*sanitize)), *target = calloc(1, sizeof(*target));
+@@ -139,7 +157,11 @@ int main(void) {
+     commands->state = DOE_VK_SUBMITTED;
+     assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_DEVICE_LOST);
+     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+-    assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && pools_destroyed == 1);
++    if (TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD) {
++        assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && sets_freed == 1 && pools_destroyed == 0);
++        doe_vk_descriptor_blocks_clear(&context); /* The context block outlives the recording. */
++    } else assert(buffers_destroyed == 1 && pipelines_destroyed == 2 && sets_freed == 0);
++    assert(pools_destroyed == 1);
+     assert(context.references == 1 && args.references == 1 && args.content_status == DOE_VK_DEVICE_LOST);
+     puts("PASS indirect copy/guard/target-bind/dispatch ordering, exact12-byte scratch, barriers, last-byte and usage/type/late-target rejection before native work, early validator release and uncertain/failed retirement");
+     return 0;
+diff --git a/runtime/c/backends/vulkan/tests/ownership.c b/runtime/c/backends/vulkan/tests/ownership.c
+index 19831c993..a69aebed2 100644
+--- a/runtime/c/backends/vulkan/tests/ownership.c
++++ b/runtime/c/backends/vulkan/tests/ownership.c
+@@ -20,6 +20,7 @@ static struct {
+     int32_t reset_result;
+     unsigned resets;
+     bool reusable_begin;
++    uint32_t type_bits, expected_type; /* Zero: the single-type default context. */
+     unsigned char bytes[256];
+ } mock;
+ 
+@@ -45,13 +46,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
+ static void requirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements *out) {
+     (void)device;
+     assert(buffer == 11);
+-    *out = (VkMemoryRequirements){256, 64, 1};
++    *out = (VkMemoryRequirements){256, 64, mock.type_bits ? mock.type_bits : 1};
+ }
+ static VkResult allocate_memory(VkDevice device, const VkMemoryAllocateInfo *info,
+     const VkAllocationCallbacks *allocator, VkDeviceMemory *out) {
+     (void)device;
+     (void)allocator;
+-    assert(info->allocationSize == 256 && info->memoryTypeIndex == 0);
++    assert(info->allocationSize == 256 && info->memoryTypeIndex == mock.expected_type);
+     VkResult result = step();
+     if (result == 0) *out = 12;
+     return result;
+@@ -588,8 +589,42 @@ static void reusable_queries(void) {
+     assert(ctx.references == 1);
+ }
+ 
++/* HOST_DEVICE_LOCAL keeps HOST's host-cached placement under the DEFAULT
++ * resource profile and prefers device-local memory under AMD. Types mirror an
++ * AMD APU: DEVICE_LOCAL; HOST_VISIBLE|COHERENT; DEVICE_LOCAL|HOST_VISIBLE|
++ * COHERENT; HOST_VISIBLE|COHERENT|CACHED. HOST never changes with the profile. */
++static void resource_profile_placement(void) {
++    const struct { doe_vk_resource_profile profile; doe_vk_memory_kind kind; uint32_t type; } cases[] = {
++        {DOE_VK_RESOURCE_PROFILE_DEFAULT, DOE_VK_MEMORY_HOST, 3},
++        {DOE_VK_RESOURCE_PROFILE_DEFAULT, DOE_VK_MEMORY_HOST_DEVICE_LOCAL, 3},
++        {DOE_VK_RESOURCE_PROFILE_AMD, DOE_VK_MEMORY_HOST, 3},
++        {DOE_VK_RESOURCE_PROFILE_AMD, DOE_VK_MEMORY_HOST_DEVICE_LOCAL, 2},
++    };
++    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
++        memset(&mock, 0, sizeof(mock));
++        mock.type_bits = 0xf;
++        mock.expected_type = cases[i].type;
++        doe_vk_context ctx = context();
++        ctx.caps.resource_profile = cases[i].profile;
++        ctx.memory.memoryTypeCount = 4;
++        ctx.memory.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
++        ctx.memory.memoryTypes[1].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
++        ctx.memory.memoryTypes[2].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
++            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
++        ctx.memory.memoryTypes[3].propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
++            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
++        doe_vk_buffer *buffer = NULL;
++        assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, cases[i].kind, &buffer, NULL) == DOE_VK_OK);
++        assert(buffer->mapped != NULL);
++        doe_vk_buffer_release(buffer);
++        assert(mock.memory_freed == 1 && ctx.references == 1);
++    }
++    memset(&mock, 0, sizeof(mock));
++}
++
+ int main(void) {
+     acquisition_failures();
++    resource_profile_placement();
+     async_lifetime();
+     uncertain_and_loss();
+     rejection_and_memory();
+@@ -597,6 +632,7 @@ int main(void) {
+     first_failure_detail();
+     reusable_lifetime();
+     reusable_queries();
++    puts("PASS resource profiles: host-written buffers stay host-cached under DEFAULT and prefer device-local under AMD; HOST placement is profile-independent");
+     puts("PASS host Vulkan boundary rollback, fence holder without resource uses, timeout, uncertain submission, device loss, bounds, poisoning");
+     puts("PASS reusable recording: one native command buffer resubmitted with fence re-arm, buffer uses dropped between runs, pending-holder BUSY vs program drop, terminal reset/execution failure, one-shot retain rejected");
+     puts("PASS reusable timestamp recording: self-contained reset/write/resolve sealed, pool ownership released at seal and at each accepted submission (published once, never overwritten by completion), BUSY under another owner without native submit, three runs publishing only recorded indices, unhealthy pool rejection, failed run poisoning, non-self-contained write/resolve rejected at seal");
+diff --git a/runtime/c/backends/vulkan/tests/timestamp_lifetime.c b/runtime/c/backends/vulkan/tests/timestamp_lifetime.c
+index 4eb97b463..a563e533a 100644
+--- a/runtime/c/backends/vulkan/tests/timestamp_lifetime.c
++++ b/runtime/c/backends/vulkan/tests/timestamp_lifetime.c
+@@ -3,6 +3,14 @@
+ #include <assert.h>
+ #include <stdio.h>
+ 
++/* Built twice: the DEFAULT resource profile (exact per-use pool) and, with
++ * DOE_VK_TEST_PROFILE_AMD, the AMD profile (one free-able context block). */
++#ifdef DOE_VK_TEST_PROFILE_AMD
++#define TEST_PROFILE DOE_VK_RESOURCE_PROFILE_AMD
++#else
++#define TEST_PROFILE DOE_VK_RESOURCE_PROFILE_DEFAULT
++#endif
++
+ /* Native-boundary recording/lifetime injections only, never shader execution. */
+ static unsigned sequence, destroyed_pipeline, destroyed_buffer, destroyed_pool;
+ static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
+@@ -32,7 +40,9 @@ static VkResult create_pool(VkDevice device, const VkDescriptorPoolCreateInfo *i
+     const VkAllocationCallbacks *allocator, VkDescriptorPool *out) {
+     (void)device;
+     (void)allocator;
+-    assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
++    if (TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD)
++        assert(info->flags == 1 && info->maxSets >= 1 && info->poolSizeCount == 5); /* One free-able context block. */
++    else assert(info->maxSets == 1 && info->poolSizeCount == 1 && info->pPoolSizes[0].descriptorCount == 1);
+     *out = 9;
+     return 0;
+ }
+@@ -93,6 +103,13 @@ static void destroy_buffer(VkDevice device, VkBuffer buffer, const VkAllocationC
+     assert(buffer == 3);
+     ++destroyed_buffer;
+ }
++static unsigned freed_sets;
++static VkResult free_sets(VkDevice device, VkDescriptorPool pool, uint32_t count, const VkDescriptorSet *sets) {
++    (void)device;
++    assert(pool == 9 && count == 1 && sets[0] == 10);
++    ++freed_sets;
++    return 0;
++}
+ static void destroy_pool(VkDevice device, VkDescriptorPool pool, const VkAllocationCallbacks *allocator) {
+     (void)device;
+     (void)allocator;
+@@ -111,6 +128,7 @@ static VkResult wait_failed(VkDevice device, uint32_t count, const VkFence *fenc
+ 
+ int main(void) {
+     doe_vk_context context = {.references = 4}; /* Caller, pipeline, scratch, commands. */
++    context.caps.resource_profile = TEST_PROFILE;
+     context.caps.max_workgroup_count[0] = 8;
+     context.caps.max_workgroup_count[1] = 1;
+     context.caps.max_workgroup_count[2] = 1;
+@@ -123,7 +141,7 @@ int main(void) {
+         .vkCmdBindDescriptorSets = bind_sets, .vkCmdDispatch = dispatch,
+         .vkCmdCopyBuffer = copy_buffer, .vkDestroyPipeline = destroy_pipeline,
+         .vkDestroyPipelineLayout = destroy_layout, .vkDestroyDescriptorSetLayout = destroy_set,
+-        .vkDestroyBuffer = destroy_buffer, .vkDestroyDescriptorPool = destroy_pool,
++        .vkDestroyBuffer = destroy_buffer, .vkDestroyDescriptorPool = destroy_pool, .vkFreeDescriptorSets = free_sets,
+         .vkWaitForFences = wait_failed};
+     doe_vk_timestamp_normalizer *normalizer = calloc(1, sizeof(*normalizer));
+     doe_vk_buffer *scratch = calloc(1, sizeof(*scratch));
+@@ -170,7 +188,13 @@ int main(void) {
+     commands->state = DOE_VK_SUBMITTED;
+     assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_DEVICE_LOST);
+     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+-    assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && destroyed_pool == 1);
++    /* Sets return to the context block at retirement; the block itself lives
++     * until the context releases its device. */
++    if (TEST_PROFILE == DOE_VK_RESOURCE_PROFILE_AMD) {
++        assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && freed_sets == 1 && destroyed_pool == 0);
++        doe_vk_descriptor_blocks_clear(&context);
++    } else assert(destroyed_buffer == 1 && destroyed_pipeline == 1 && freed_sets == 0);
++    assert(destroyed_pool == 1);
+     assert(context.references == 1 && destination.references == 1 && pool.references == 1);
+     assert(destination.content_status == DOE_VK_DEVICE_LOST && pool.content_status == DOE_VK_DEVICE_LOST);
+     puts("PASS timestamp native copy/zero/descriptor/dispatch/copy ordering, exact short binding, zero-count no-op, early normalizer release and uncertain/failure lifetime");
+diff --git a/runtime/c/native/src/backend_buffers.c b/runtime/c/native/src/backend_buffers.c
+index f8172d868..0f61e12fd 100644
+--- a/runtime/c/native/src/backend_buffers.c
++++ b/runtime/c/native/src/backend_buffers.c
+@@ -3,13 +3,16 @@
+ #include "d3d12_frontend.h"
+ 
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+-    bool direct_readback)
++    bool direct_readback, bool host_mapped)
+ {
+     native_backend *backend = &buffer->device->backend;
+     if (backend->kind == WGPUBackendType_Vulkan) {
++        /* Mappable buffers keep host-cached memory for host reads. The host only
++         * writes the others (queue writes, mapped-at-creation); the Vulkan owner
++         * places them by the adapter's resource profile (doe_vk.h). */
+         doe_vk_error error = {0};
+-        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context,
+-            size, usage, DOE_VK_MEMORY_HOST, &buffer->handle.vulkan, &error);
++        doe_vk_status status = doe_vk_buffer_create(backend->value.vulkan.context, size, usage,
++            host_mapped ? DOE_VK_MEMORY_HOST : DOE_VK_MEMORY_HOST_DEVICE_LOCAL, &buffer->handle.vulkan, &error);
+         return native_failure_vulkan(status, &error);
+     }
+     if (backend->kind == WGPUBackendType_Metal) {
+diff --git a/runtime/c/native/src/buffers.c b/runtime/c/native/src/buffers.c
+index a70fd87a2..31a8d9ec7 100644
+--- a/runtime/c/native/src/buffers.c
++++ b/runtime/c/native/src/buffers.c
+@@ -78,7 +78,8 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
+         NATIVE_UNSUPPORTED : native_device_result(device));
+     if (failure.status == NATIVE_OK)
+         failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage,
+-            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation);
++            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation,
++            (descriptor->usage & (WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite)) != 0);
+     doe_resource_status created = DOE_RESOURCE_OK;
+     if (failure.status == NATIVE_OK) {
+         created = doe_resource_buffer_create(&device->resources, &desc,
+diff --git a/runtime/c/native/src/internal.h b/runtime/c/native/src/internal.h
+index 0916f5281..7e45ad447 100644
+--- a/runtime/c/native/src/internal.h
++++ b/runtime/c/native/src/internal.h
+@@ -261,7 +261,7 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset,
+     const unsigned char **out);
+ native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
+ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
+-    bool direct_readback);
++    bool direct_readback, bool host_mapped);
+ void native_buffer_close(native_buffer *buffer);
+ native_result native_device_result(native_device *device);
+ void native_pipeline_release(void *userdata, void *handle);
+diff --git a/runtime/c/native/tests/program_prepare.c b/runtime/c/native/tests/program_prepare.c
+index 3a02d3d55..1779d9290 100644
+--- a/runtime/c/native/tests/program_prepare.c
++++ b/runtime/c/native/tests/program_prepare.c
+@@ -70,6 +70,15 @@ static VkResult descriptor_failure(VkDevice device, const VkDescriptorPoolCreate
+     return -1;
+ }
+ 
++/* Descriptor sets come from long-lived context blocks: set allocation is the
++ * recording-time native allocation whenever a block already exists. */
++static VkResult set_failure(VkDevice device, const VkDescriptorSetAllocateInfo *info, VkDescriptorSet *out)
++{
++    (void)device; (void)info; (void)out;
++    atomic_fetch_add(&faults, 1);
++    return -1;
++}
++
+ static VkResult sealing_failure(VkCommandBuffer command)
+ {
+     (void)command;
+@@ -94,9 +103,13 @@ doe_vk_status __wrap_doe_vk_commands_dispatch_resources(doe_vk_commands *command
+ {
+     doe_vk_context *context = commands->context;
+     doe_vk_functions saved = context->vk;
+-    if (fault == FAULT_RECORD) context->vk.vkCreateDescriptorPool = descriptor_failure;
++    if (fault == FAULT_RECORD) {
++        context->vk.vkCreateDescriptorPool = descriptor_failure;
++        context->vk.vkAllocateDescriptorSets = set_failure;
++    }
+     doe_vk_status status = __real_doe_vk_commands_dispatch_resources(commands, pipeline, bindings, count, x, y, z);
+     context->vk.vkCreateDescriptorPool = saved.vkCreateDescriptorPool;
++    context->vk.vkAllocateDescriptorSets = saved.vkAllocateDescriptorSets;
+     return status;
+ }
+ 

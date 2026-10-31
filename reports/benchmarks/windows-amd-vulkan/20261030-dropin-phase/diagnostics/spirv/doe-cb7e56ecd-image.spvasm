@@ -1,0 +1,94 @@
+; SPIR-V
+; Version: 1.3
+; Generator: Khronos; 0
+; Bound: 69
+; Schema: 0
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gid
+               OpExecutionMode %main LocalSize 64 1 1
+               OpName %main "main"
+               OpName %gid "gid"
+               OpName %params "params"
+               OpName %input_pixels "input_pixels"
+               OpName %output_pixels "output_pixels"
+               OpMemberDecorate %_struct_31 0 Offset 0
+               OpMemberDecorate %_struct_31 1 Offset 4
+               OpMemberDecorate %_struct_31 2 Offset 8
+               OpMemberDecorate %_struct_31 3 Offset 12
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %_struct_36 Block
+               OpMemberDecorate %_struct_36 0 Offset 0
+               OpDecorate %_struct_39 Block
+               OpMemberDecorate %_struct_39 0 Offset 0
+               OpDecorate %_struct_42 Block
+               OpMemberDecorate %_struct_42 0 Offset 0
+               OpDecorate %params DescriptorSet 0
+               OpDecorate %params Binding 0
+               OpDecorate %input_pixels DescriptorSet 0
+               OpDecorate %input_pixels Binding 1
+               OpDecorate %input_pixels NonWritable
+               OpDecorate %output_pixels DescriptorSet 0
+               OpDecorate %output_pixels Binding 2
+               OpDecorate %gid BuiltIn GlobalInvocationId
+       %void = OpTypeVoid
+       %bool = OpTypeBool
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %float = OpTypeFloat 32
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%_ptr_Input_uint = OpTypePointer Input %uint
+          %9 = OpTypeFunction %void
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+     %uint_0 = OpConstant %uint 0
+ %_struct_31 = OpTypeStruct %uint %uint %uint %uint
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+ %_struct_36 = OpTypeStruct %_struct_31
+%_ptr_Uniform__struct_36 = OpTypePointer Uniform %_struct_36
+ %_struct_39 = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer__struct_39 = OpTypePointer StorageBuffer %_struct_39
+ %_struct_42 = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer__struct_42 = OpTypePointer StorageBuffer %_struct_42
+%uint_16777215 = OpConstant %uint 16777215
+     %params = OpVariable %_ptr_Uniform__struct_36 Uniform
+%input_pixels = OpVariable %_ptr_StorageBuffer__struct_39 StorageBuffer
+%output_pixels = OpVariable %_ptr_StorageBuffer__struct_42 StorageBuffer
+        %gid = OpVariable %_ptr_Input_v3uint Input
+       %main = OpFunction %void None %9
+         %34 = OpLabel
+         %49 = OpLoad %v3uint %gid
+         %48 = OpCompositeExtract %uint %49 0
+         %51 = OpAccessChain %_ptr_Uniform_uint %params %uint_0 %uint_0
+         %50 = OpLoad %uint %51
+         %52 = OpUGreaterThanEqual %bool %48 %50
+               OpSelectionMerge %55 None
+               OpBranchConditional %52 %53 %54
+         %53 = OpLabel
+               OpReturn
+         %54 = OpLabel
+               OpBranch %55
+         %55 = OpLabel
+         %57 = OpArrayLength %uint %input_pixels 0
+         %58 = OpULessThan %bool %48 %57
+               OpSelectionMerge %60 None
+               OpBranchConditional %58 %59 %60
+         %59 = OpLabel
+         %62 = OpAccessChain %_ptr_StorageBuffer_uint %input_pixels %uint_0 %48
+         %61 = OpLoad %uint %62
+               OpBranch %60
+         %60 = OpLabel
+         %56 = OpPhi %uint %61 %59 %uint_0 %55
+         %63 = OpBitwiseXor %uint %56 %uint_16777215
+         %64 = OpArrayLength %uint %output_pixels 0
+         %65 = OpULessThan %bool %48 %64
+               OpSelectionMerge %67 None
+               OpBranchConditional %65 %66 %67
+         %66 = OpLabel
+         %68 = OpAccessChain %_ptr_StorageBuffer_uint %output_pixels %uint_0 %48
+               OpStore %68 %63
+               OpBranch %67
+         %67 = OpLabel
+               OpReturn
+               OpFunctionEnd

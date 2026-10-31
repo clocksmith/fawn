@@ -1,0 +1,35 @@
+{
+ "gate": {
+  "wallS": 1414.5939999999828,
+  "logicalCpus": 16,
+  "systemBusyMs": 1764734.375,
+  "windowTreeCpuMs": 1185515.625,
+  "harnessChildCpuMs": 1184328.125,
+  "foreignCpuPct": 2.5591209827696457,
+  "gpuSamples": 1400,
+  "foreignGpuPct": 0.0005367702988546717,
+  "harnessGpuPct": 0.057921492770850236,
+  "systemGpuPct": 7.858910010311834,
+  "preWindow": {
+   "wallS": 15,
+   "allGpuPct": 0.40639471196573373,
+   "foreignCpuPct": 0.4296875
+  },
+  "failedProcesses": 0,
+  "cohortReturnCode": 0,
+  "processes": 384,
+  "gateValid": true
+ },
+ "aa": {
+  "median": 0.9978162252569959,
+  "ci95": [
+   0.9927797833935018,
+   1.004020908725372
+  ],
+  "n": 96,
+  "providerFasterPairs": 50
+ },
+ "aaOk": true,
+ "valid": true,
+ "stderr": ""
+}
