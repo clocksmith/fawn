@@ -1,0 +1,99 @@
+PID 22096
+BUILD 0 61.8
+DLL 6342983b34e440db8041da2217c054bf9d586db6fc6e3595216a8b674ee082e7
+CLANG clang version 24.0.0git (https://chromium.googlesource.com/a/external/github.com/llvm/llvm-project 86922d51225db089fffb99475eefc4904f79e3c8)
+ 
+limits 0 
+occlusion 0 
+workgroups 0 
+compute_programs 0 
+['compute_programs.pdb', 'limits.pdb', 'loader_win32.pdb', 'occlusion.pdb', 'shader_fxc.pdb', 'webgpu_doe_c.pdb', 'workgroups.pdb']
+ 
+===== limits 
+ exception 0xc0000409 firstChance 0 fastFailCode 5
+address ('ucrtbase.dll', '0x11858', '')
+rip ('ucrtbase.dll', '0x11858', '')
+  rsp+0x0028 ucrtbase.dll+0x12aa1 
+  rsp+0x0078 ucrtbase.dll+0x60f1c 
+  rsp+0x00f8 ucrtbase.dll+0x60e96 
+  rsp+0x0100 ucrtbase.dll+0x138c98 
+  rsp+0x0148 ucrtbase.dll+0x1380b0 
+  rsp+0x0178 limits.exe+0x1474 main ~\wvk\src-dbg\runtime\c\native\tests\limits.c:812:0
+  rsp+0x0808 ucrtbase.dll+0x1fec4 
+  rsp+0x0810 ucrtbase.dll+0x13a2b0 
+  rsp+0x0858 ucrtbase.dll+0x34ca2 
+  rsp+0x0860 ucrtbase.dll+0x74d00 
+  rsp+0x0880 limits.exe+0x1000 ??:0:0
+  rsp+0x0888 limits.exe+0x0 ??:0:0
+  rsp+0x08e0 limits.exe+0x100f ??:0:0
+  rsp+0x0900 limits.exe+0x12110 __xc_a ??:0:0
+  rsp+0x0bc8 limits.exe+0xd45f invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78:0 __scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288:0
+ 
+===== occlusion 
+ exception 0xc0000409 firstChance 0 fastFailCode 5
+address ('ucrtbase.dll', '0x11858', '')
+rip ('ucrtbase.dll', '0x11858', '')
+  rsp+0x0028 ucrtbase.dll+0x12aa1 
+  rsp+0x0048 ucrtbase.dll+0x1fec4 
+  rsp+0x0078 ucrtbase.dll+0x60f1c 
+  rsp+0x00c0 occlusion.exe+0x1000 ??:0:0
+  rsp+0x00c8 occlusion.exe+0x0 ??:0:0
+  rsp+0x00f8 ucrtbase.dll+0x60e96 
+  rsp+0x0100 ucrtbase.dll+0x138c98 
+  rsp+0x0128 occlusion.exe+0x1019 ??:0:0
+  rsp+0x0140 occlusion.exe+0x9101 __xc_a ??:0:0
+  rsp+0x0148 ucrtbase.dll+0x1380b0 
+  rsp+0x0160 occlusion.exe+0x1 ??:0:0
+  rsp+0x0178 occlusion.exe+0x1441 main ~\wvk\src-dbg\runtime\c\native\tests\occlusion.c:42:0
+  rsp+0x0378 ucrtbase.dll+0x9341 
+  rsp+0x0398 ucrtbase.dll+0x74d00 
+  rsp+0x03a0 occlusion.exe+0x9220 __xc_z ??:0:0
+  rsp+0x0408 occlusion.exe+0x434f invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78:0 __scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288:0
+ 
+===== workgroups 
+ exception 0xc0000409 firstChance 0 fastFailCode 5
+address ('ucrtbase.dll', '0x11858', '')
+rip ('ucrtbase.dll', '0x11858', '')
+  rsp+0x0028 ucrtbase.dll+0x12aa1 
+  rsp+0x0078 ucrtbase.dll+0x60f1c 
+  rsp+0x00f8 ucrtbase.dll+0x60e96 
+  rsp+0x0100 ucrtbase.dll+0x138c98 
+  rsp+0x0148 ucrtbase.dll+0x1380b0 
+  rsp+0x0178 workgroups.exe+0x143d main ~\wvk\src-dbg\runtime\c\native\tests\workgroups.c:69:0
+  rsp+0x01b8 ucrtbase.dll+0x1fec4 
+  rsp+0x01c0 ucrtbase.dll+0x13a2b0 
+  rsp+0x0208 ucrtbase.dll+0x34ca2 
+  rsp+0x0210 ucrtbase.dll+0x74d00 
+  rsp+0x0230 workgroups.exe+0x1000 ??:0:0
+  rsp+0x0238 workgroups.exe+0x0 ??:0:0
+  rsp+0x0290 workgroups.exe+0x1019 ??:0:0
+  rsp+0x02b0 workgroups.exe+0x9110 __xc_a ??:0:0
+  rsp+0x04e8 ucrtbase.dll+0x9341 
+  rsp+0x0510 workgroups.exe+0x9220 __xc_z ??:0:0
+  rsp+0x0518 ucrtbase.dll+0x31942 
+  rsp+0x0578 workgroups.exe+0x446f invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78:0 __scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288:0
+ 
+===== compute_programs 
+ exception 0xc0000409 firstChance 0 fastFailCode 7
+address ('ucrtbase.dll', '0xa527e', '')
+rip ('ucrtbase.dll', '0xa527e', '')
+  rsp+0x0008 compute_programs.exe+0xbe20 L"doeNativeComputeProgramSupported"... ??:0:0
+  rsp+0x0010 compute_programs.exe+0xbc00 __xmm@000003e8000003e8000003e8000003e8 ??:0:0
+  rsp+0x0028 ucrtbase.dll+0xc3136 
+  rsp+0x0048 compute_programs.exe+0xbcb0 L"~\\wvk\\src-dbg\\"... ??:0:0
+  rsp+0x0068 ucrtbase.dll+0xc3311 
+  rsp+0x0098 compute_programs.exe+0x1b53 main ~\wvk\src-dbg\runtime\c\native\tests\compute_programs.c:199:0
+  rsp+0x00b8 compute_programs.exe+0xcdec "Vulkan" ??:0:0
+  rsp+0x00d8 ucrtbase.dll+0x34ca2 
+  rsp+0x00e0 ucrtbase.dll+0x74d00 
+  rsp+0x0100 compute_programs.exe+0x1000 ??:0:0
+  rsp+0x0108 compute_programs.exe+0x0 ??:0:0
+  rsp+0x0190 compute_programs.exe+0x48d0 device_reply ~\wvk\src-dbg\runtime\c\native\tests\consumer.h:29:0
+  rsp+0x0308 compute_programs.exe+0x4880 error_reply ~\wvk\src-dbg\runtime\c\native\tests\consumer.h:36:0
+  rsp+0x0448 compute_programs.exe+0x63bf invoke_main D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78:0 __scrt_common_main_seh D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288:0
+ Assertion failed: doeNativeComputeProgramSupported() == 1, file ~\wvk\src-dbg\runtime\c\native\tests\compute_programs.c, line 198
+
+DBG-DONE
+
+
+[exited with code 0]

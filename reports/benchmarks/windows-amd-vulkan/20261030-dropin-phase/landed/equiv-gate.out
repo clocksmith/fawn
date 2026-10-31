@@ -1,0 +1,4 @@
+== vector_scale_add_262k complete 0.991 [0.987,1.003]  warm.operation 0.994 [0.983,0.999]  warm.submit 0.993 [0.982,1.006]  warm.upload 0.996 [0.987,1.007]  warm.completion 0.994 [0.979,1.003]
+== image_rgba_invert_1024 complete 0.993 [0.982,1.012]  warm.operation 0.992 [0.963,1.026]  warm.submit 0.998 [0.975,1.020]  warm.upload 0.998 [0.983,1.010]  warm.completion 0.994 [0.929,1.026]
+== buffer_upload_readback_exact_1mb complete 1.003 [0.990,1.017]  warm.operation 1.006 [0.995,1.012]  warm.submit 1.002 [0.995,1.008]  warm.upload 1.005 [0.998,1.008]  warm.completion 1.008 [0.995,1.018]
+GATES {'validity': True, 'primary': False, 'phases': False} VERDICT FAIL

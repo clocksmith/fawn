@@ -5,7 +5,7 @@ h = Path.home(); wv = h / 'wvk'; log = (wv / 'runs').mkdir(exist_ok=True) or ope
 def say(*a): log.write(time.strftime('%Y-%m-%dT%H:%M:%S ') + ' '.join(map(str, a)) + '\n')
 PROV = {'doe': 'doe-main/harness-doe.exe', 'main': 'doe-main/harness-doe.exe', 'dawn': 'dawn-bin/harness-dawn.exe',
         'dawn-aa': 'dawn-bin/harness-dawn-aa.exe', 'm7r': 'doe-m7r/harness-doe-m7r.exe', 'm2r': 'doe-m2r/harness-doe-m2r.exe',
-        'combined': 'doe-cdirect/harness-doe-cdirect.exe'}
+        'combined': 'doe-cdirect/harness-doe-cdirect.exe', 'landed': 'doe-landed3b/harness-doe-landed3b.exe'}
 order = sys.argv[1:] or ['baseline', 'combined', 'm7r', 'm2r']
 for exp in order:
     c = json.loads((wv / f'contract-{exp}.json').read_text())
