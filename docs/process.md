@@ -28,6 +28,45 @@ for their fields and values.
   Report exactly what was checked; focused development checks do not establish
   numerical qualification, performance, multi-device support, or full acceptance.
 
+## Continuous integration
+
+Ordinary pushes to `main` and pull requests run one Linux build/smoke in
+[CI](../.github/workflows/ci.yml): build the C compiler shared library with the
+owner's strict GCC flags, link the existing native consumer against it, and
+compile the unchanged residual WGSL kernel. The consumer asserts successful
+compilation, SPIR-V header/size, entry point, workgroup size, and all three
+bindings' names, access modes and layout. Reproduce it from the repository root:
+
+```sh
+make -C runtime/c/compiler -j2 build/native_consumer
+runtime/c/compiler/build/native_consumer bench/inference-pipeline/kernels/residual.wgsl
+```
+
+This is a host-side shared-library/ABI smoke, not GPU execution, full WGSL
+semantics, production promotion or release qualification. There is no matrix,
+external SDK download, model call, or service credential in this build job.
+The separate [publication hygiene](../.github/workflows/publication-hygiene.yml)
+guard rejects newly added ignored files and newly added private-home-path
+lines against the PR base or the actual push-before commit. It fetches complete
+history and fails closed if that base cannot be resolved. Initial pushes with
+an all-zero base scan the complete tree (and all added filenames). Manual
+`workflow_dispatch` runs the existing full private-path scan; pre-existing
+historical findings are not waived or rewritten. Reproduce the incremental
+privacy lint with `python3 scripts/check-publication-hygiene.py --base-ref <commit>`;
+omit the option for the full scan. Existing path patterns and exemptions are
+unchanged; this is a private-path lint, not a credential/secret detector.
+
+The existing Zig compiler, Lean proof, JavaScript package surface, Windows
+package and upstream quirk-mining workflows are now manually dispatched; their
+commands and assertions are retained. They no longer run automatically on
+push/PR or the mining schedule. Explicitly run the relevant workflow or focused
+owner command when changing that surface. Full compiler/runtime suites,
+JavaScript package contracts/packing, Lean verified builds, Windows SDK/package
+checks, browser/platform matrices, physical GPUs and performance remain outside
+the ordinary build smoke. Existing release, signed passport and physical-runner requirements are
+not relaxed. No secret detector or security setting changes. A green smoke is not evidence
+that any of those separate checks passed.
+
 ## Strategy and comparison clarification
 
 The [acceptance hierarchy](../GOALS.md#acceptance-hierarchy), represented by

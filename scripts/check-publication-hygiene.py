@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import argparse
 import re
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -110,16 +112,63 @@ def scan_file(path: Path) -> list[Finding]:
     return findings
 
 
+def scan_added_lines(base_ref: str, files: list[Path]) -> list[Finding]:
+    """Check newly added lines against an existing commit, without historical debt."""
+
+    # Resolve first, even for an empty diff; missing/zero bases must not pass.
+    base = subprocess.check_output(
+        ["git", "rev-parse", "--verify", "--end-of-options", base_ref + "^{commit}"],
+        text=True,
+    ).strip()
+    changed = subprocess.check_output(
+        ["git", "diff", "--name-only", "--no-renames", "--diff-filter=AM",
+         "-z", base, "HEAD", "--"],
+    )
+    changed_paths = {Path(raw.decode("utf-8")) for raw in changed.split(b"\0") if raw}
+    findings: list[Finding] = []
+    for path in files:
+        if path not in changed_paths:
+            continue
+        diff = subprocess.check_output(
+            ["git", "diff", "--no-ext-diff", "--no-textconv", "--no-renames",
+             "--unified=0", base, "HEAD", "--", str(path)],
+        ).decode("utf-8", errors="ignore")
+        line_number = None
+        for line in diff.splitlines():
+            hunk = re.match(r"^@@ -[0-9]+(?:,[0-9]+)? \+([0-9]+)(?:,[0-9]+)? @@", line)
+            if hunk:
+                line_number = int(hunk.group(1))
+            elif line_number is not None and line.startswith("+"):
+                for label, pattern in PRIVATE_HOME_PATTERNS:
+                    if pattern.search(line[1:]):
+                        findings.append(Finding(path, line_number, label))
+                line_number += 1
+            elif line_number is not None and line.startswith(" "):
+                line_number += 1
+    return findings
+
+
 def main() -> int:
-    files = list_tracked_files()
-    findings = [finding for path in files for finding in scan_file(path)]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-ref", help="scan added lines from this commit to HEAD")
+    args = parser.parse_args()
+    try:
+        files = list_tracked_files()
+        findings = (
+            scan_added_lines(args.base_ref, files) if args.base_ref is not None
+            else [finding for path in files for finding in scan_file(path)]
+        )
+    except subprocess.CalledProcessError as exc:
+        print(f"publication hygiene could not inspect Git history: {exc}", file=sys.stderr)
+        return 1
     if findings:
         for finding in findings:
             print(f"{finding.path}:{finding.line}: {finding.label}")
         print(f"publication hygiene failed: {len(findings)} private path(s)")
         return 1
 
-    print(f"publication hygiene passed: {len(files)} tracked files scanned")
+    scope = "added lines" if args.base_ref is not None else f"{len(files)} tracked files"
+    print(f"publication hygiene passed: {scope} scanned")
     return 0
 
 

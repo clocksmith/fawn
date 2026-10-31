@@ -1,17 +1,7 @@
 name: WebGPU package surface
 
+# Broader qualification is explicit; see docs/process.md#continuous-integration.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/webgpu-package-surface.yml"
-      - "packages/doe-gpu/**"
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - ".github/workflows/webgpu-package-surface.yml"
-      - "packages/doe-gpu/**"
   workflow_dispatch:
 
 permissions:

@@ -1,8 +1,7 @@
 name: nightly-quirk-mining
 
+# Broader qualification is explicit; see docs/process.md#continuous-integration.
 on:
-  schedule:
-    - cron: "17 5 * * *"
   workflow_dispatch:
 
 permissions:

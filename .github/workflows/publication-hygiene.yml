@@ -1,6 +1,7 @@
 name: publication-hygiene
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -14,8 +15,20 @@ jobs:
         with:
           fetch-depth: 0
       - name: Reject newly tracked generated output
+        if: github.event_name != 'workflow_dispatch'
         env:
           BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: python3 bench/tools/check_no_new_tracked_under_gitignore.py --base-ref "$BASE_REF"
+        run: |
+          if [[ "$BASE_REF" == "0000000000000000000000000000000000000000" ]]; then
+            BASE_REF="$(git hash-object -t tree -w /dev/null)"
+          fi
+          python3 bench/tools/check_no_new_tracked_under_gitignore.py --base-ref "$BASE_REF"
       - name: Reject private workstation paths
-        run: python3 scripts/check-publication-hygiene.py
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "$BASE_REF" == "0000000000000000000000000000000000000000" ]]; then
+            python3 scripts/check-publication-hygiene.py
+          else
+            python3 scripts/check-publication-hygiene.py --base-ref "$BASE_REF"
+          fi

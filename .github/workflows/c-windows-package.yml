@@ -1,18 +1,7 @@
 name: c-windows-package
 
+# Broader qualification is explicit; see docs/process.md#continuous-integration.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/c-windows-package.yml'
-      - 'runtime/c/tools/build-native-package.py'
-      - 'runtime/c/native/tests/audit-exports.py'
-      - 'runtime/c/runtime-cli/tools/build_windows.py'
-      - 'runtime/c/runtime-cli/sources.mk'
-      - 'runtime/c/runtime-cli/src/**'
-      - 'runtime/c/runtime-cli/tests/test_windows_cli.py'
-      - 'runtime/c/modules/sources.mk'
-      - 'runtime/c/modules/src/**'
   workflow_dispatch:
     inputs:
       exact_revision:

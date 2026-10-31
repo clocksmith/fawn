@@ -1,25 +1,7 @@
 name: wgsl-compiler
 
+# Broader qualification is explicit; see docs/process.md#continuous-integration.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/wgsl-compiler.yml"
-      - "runtime/zig/**"
-      - "config/**"
-      - "pipeline/lean/Doe/**"
-      - "pipeline/lean/artifacts/proven-conditions.json"
-      - "bench/tools/bootstrap_zig.py"
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - ".github/workflows/wgsl-compiler.yml"
-      - "runtime/zig/**"
-      - "config/**"
-      - "pipeline/lean/Doe/**"
-      - "pipeline/lean/artifacts/proven-conditions.json"
-      - "bench/tools/bootstrap_zig.py"
   workflow_dispatch:
 
 permissions:

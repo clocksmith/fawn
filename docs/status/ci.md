@@ -1,11 +1,16 @@
 # CI status
 
-GitHub-hosted push and pull-request checks are smoke tests: the WGSL compiler
-tests, Lean proof typecheck and extraction, the doe-gpu package tests and packed
-contents, and publication hygiene. Config, mirror, and freshness checks are not
-CI gates; run them when a change edits what they check. Hardware-dependent AMD
-Vulkan, drop-in, macOS browser, native freshness, release, and claim-trend lanes
-remain explicit manual workflows.
+Ordinary push and pull-request CI runs one Linux C compiler shared-library
+build and native-consumer smoke, alongside the separate incremental publication
+hygiene guard. [The CI contract](../process.md#continuous-integration) owns exact
+commands, checked assertions, and exclusions. Zig, Lean, JavaScript package,
+Windows package and upstream quirk-mining checks are explicitly manual, as are
+hardware, browser and release qualification workflows.
+
+The full manual publication scan still reports pre-existing private workstation
+paths. Automatic lint rejects newly introduced paths rather than replaying that
+historical debt. Its
+[scanner](../../scripts/check-publication-hygiene.py) remains authoritative.
 
 The AMD Vulkan smoke and release, Fawn matrix, and Windows D3D12 qualification
 workflows require an exact full Git revision and an approved self-hosted runner
@@ -30,7 +35,7 @@ concurrent-process, and same-process lifecycle diagnostics for all three
 runtimes. Electron uses an explicitly installed executable, creates no
 renderer, and earns no browser evidence.
 
-The package workflow runs the doe-gpu package tests and inspects the packed
+The manual package workflow runs the doe-gpu package tests and inspects the packed
 contents. It replays no GPU work and grants no new evidence; hosted execution
 skips native checks when staged platform artifacts or physical GPUs are absent.
 The native integration suite, the tool-surface gate
