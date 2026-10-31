@@ -267,6 +267,7 @@ static void record_caps(doe_vk_context *context, const doe_vk_options *options,
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features->extension != NULL;
     context->caps.maintenance5 = features->maintenance5_enabled;
+    context->caps.external_fd = features->external_fd && context->device != NULL;
     context->caps.shader_f16 = features->shader_f16;
     context->caps.full_draw_index_uint32 = features->base.fullDrawIndexUint32 != 0;
     context->caps.image_cube_array = features->base.imageCubeArray != 0;
@@ -403,7 +404,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         .queueCount = 1,
         .pQueuePriorities = &priority
     };
-    const uint8_t *device_extensions[6];
+    const uint8_t *device_extensions[8];
     uint32_t extension_count = 0;
     void *feature_chain = timeline.timelineSemaphore ? &timeline : NULL;
     if (features.extension != NULL) {
@@ -435,6 +436,10 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         features.float16.pNext = &features.storage16;
         feature_chain = &features.float16;
     }
+    if (features.external_fd) {
+        device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_external_memory_fd";
+        device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_external_semaphore_fd";
+    }
     if (features.surface_enabled) {
         device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_swapchain";
         device_extensions[extension_count++] = (const uint8_t *)"VK_EXT_swapchain_maintenance1";
@@ -461,6 +466,10 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     }
     if (timeline.timelineSemaphore) {
         status = doe_vk_timeline_create(context, error);
+        if (status != DOE_VK_OK) goto failed;
+    }
+    if (features.external_fd) {
+        status = doe_vk_external_load_device(context, error);
         if (status != DOE_VK_OK) goto failed;
     }
     record_caps(context, options, &features);

@@ -7,7 +7,10 @@
 /* Pinned Dawn extension identities are not bit positions. Keep the mapping in
  * the feature owner: raw core values 24/25 must never alias these capabilities. */
 static const struct { uint32_t name, slot; } shared_features[] = {
-    {DOE_SHARED_FEATURE_IOSURFACE,24}, {DOE_SHARED_FEATURE_MTL_EVENT,25}
+    {DOE_SHARED_FEATURE_IOSURFACE,24}, {DOE_SHARED_FEATURE_MTL_EVENT,25},
+    {DOE_SHARED_FEATURE_OPAQUE_FD,DOE_SHARED_FEATURE_SLOT_OPAQUE_FD},
+    {DOE_SHARED_FEATURE_SYNC_FD,DOE_SHARED_FEATURE_SLOT_SYNC_FD},
+    {DOE_SHARED_FEATURE_OPAQUE_SEMAPHORE,DOE_SHARED_FEATURE_SLOT_OPAQUE_SEMAPHORE}
 };
 static uint32_t feature_bit(uint32_t name)
 {
@@ -212,6 +215,11 @@ uint32_t native_adapter_features(const native_backend *backend)
         if (formats_offer(context, bc, 14, block_volume))
             features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBCSliced3D);
     }
+    /* OPAQUE_FD image import, SYNC_FD fences and OPAQUE_FD semaphore waits are
+     * one interop selection. */
+    if (caps->external_fd_available)
+        features |= feature_bit(DOE_SHARED_FEATURE_OPAQUE_FD) | feature_bit(DOE_SHARED_FEATURE_SYNC_FD) |
+            feature_bit(DOE_SHARED_FEATURE_OPAQUE_SEMAPHORE);
     return features | native_format_adapter_features(backend);
 }
 bool native_requested_features(const native_backend *backend,

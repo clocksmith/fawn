@@ -77,6 +77,10 @@ native_result native_backend_open_luid(uint32_t low, int32_t high,
     uint32_t surface_platforms, native_backend *out);
 native_result native_backend_device(const native_backend *adapter, native_backend *out);
 native_result native_backend_device_policy(const native_backend *adapter, const DoeNativeDevicePolicy *policy, native_backend *out);
+/* As native_backend_device_policy; external_fd selects the Vulkan fd-interop
+ * extensions for a device that requested the shared OPAQUE_FD/SYNC_FD features. */
+native_result native_backend_device_select(const native_backend *adapter, const DoeNativeDevicePolicy *policy,
+    bool external_fd, native_backend *out);
 void native_backend_close(native_backend *backend);
 native_result native_backend_status(const native_backend *backend);
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out);

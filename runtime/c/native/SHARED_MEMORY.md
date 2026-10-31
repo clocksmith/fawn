@@ -1,4 +1,4 @@
-# Retained Metal shared-memory compatibility
+# Shared texture memory and fences
 
 `include/doe_native_shared_memory.h` and `SHARED_MEMORY_SYMBOLS.txt` preserve the
 25 shared fence/memory entrypoints in
@@ -108,3 +108,34 @@ the same native plane identity. This does not imply YUV or color conversion.
 Both actual IOSurface consumers pass on Apple M3. This establishes their native
 metadata, pixel and new-event path. External producer-fence waits and Fawn browser
 external-image acceptance remain separate gates; native tests do not qualify them.
+
+## Linux Vulkan OPAQUE_FD memory and SYNC_FD fences
+
+On Linux Vulkan the adapter advertises Dawn's `SharedTextureMemoryOpaqueFD`
+(`0x50020`) and `SharedFenceSyncFD` (`0x50027`) together, only when both
+`VK_KHR_external_memory_fd` and `VK_KHR_external_semaphore_fd` exist, SYNC_FD
+semaphores are importable and exportable, and an optimal BGRA8 attachment image
+is importable from OPAQUE_FD memory. A device requesting either feature selects
+the extensions (`doe_vk_options.enable_external_fd`); creation fails if they are
+not really enabled. Other devices enable nothing new.
+
+- Import reads the producer's exact `VkImageCreateInfo` (2D, one mip, layer and
+  sample, optimal, exclusive, only `VkExternalMemoryImageCreateInfo` chained) and
+  recreates the image with those flags and usage, then imports a duplicate of the
+  memory descriptor (dedicated when the producer's was). One backend image serves
+  every texture created from the memory; textures admit only the producer's
+  format, size, a subset of its usage and, for mutable images, the srgb pair.
+- Begin submits, without a CPU wait, an acquire from `VK_QUEUE_FAMILY_EXTERNAL`
+  repeating the producer's release layouts. Each fence's sync file is imported
+  into a fresh binary semaphore the submission waits for. An UNDEFINED layout or
+  `initialized=false` discards contents, which the canonical attachment owner
+  zero-initializes. An imported image is unusable outside Begin/End.
+- End submits the release back to `VK_QUEUE_FAMILY_EXTERNAL` without a layout
+  change and exports a new SYNC_FD fence signaled after all earlier queue work;
+  the end state reports that layout and whether contents are initialized. End
+  requires an output state. Destroy leaves the shared image (BUSY); the last
+  memory release frees it. Every external semaphore lives until its recording is
+  proven terminal; unknown completion keeps it.
+
+Evidence: forced-Doe Chromium canvas presentation on RADV with the exact pixel
+oracle (browser/chromium). There is no isolated two-device native test yet.

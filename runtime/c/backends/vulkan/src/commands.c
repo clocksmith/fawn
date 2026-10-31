@@ -212,7 +212,8 @@ static void complete(doe_vk_commands *commands, doe_vk_status status, const doe_
  * every written or resolved index is reset first by the recording itself. */
 static bool reusable_admissible(const doe_vk_commands *commands) {
     return commands->textures == NULL && doe_vk_queries_self_contained(commands) &&
-        commands->renders == NULL && commands->surface == NULL;
+        commands->renders == NULL && commands->surface == NULL &&
+        commands->external_wait_count == 0 && commands->external_signal == 0;
 }
 
 static doe_vk_status refuse_submit(doe_vk_commands *commands, doe_vk_status status,
@@ -224,8 +225,8 @@ static doe_vk_status refuse_submit(doe_vk_commands *commands, doe_vk_status stat
 
 static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error) {
     doe_vk_context *context = commands->context;
-    uint64_t values[2] = {0, 0};
-    VkSemaphore signals[2] = {0, 0};
+    uint64_t values[3] = {0, 0, 0};
+    VkSemaphore signals[3] = {0, 0, 0};
     uint32_t signal_count = 0;
     if (context->timeline) {
         if (context->timeline_value == UINT64_MAX)
@@ -243,11 +244,19 @@ static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error
         values[signal_count++] = next;
     }
     if (commands->surface) signals[signal_count++] = commands->surface->render_finished;
+    /* External binary semaphores: their values are ignored by the timeline info;
+     * imported producer waits gate every stage of this recording. */
+    if (commands->external_signal) signals[signal_count++] = commands->external_signal;
+    VkFlags wait_stages[8];
+    for (uint32_t i = 0; i < commands->external_wait_count; ++i) wait_stages[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     const VkTimelineSemaphoreSubmitInfo timeline = {.sType=DOE_VK_TIMELINE_SUBMIT,
         .signalSemaphoreValueCount=signal_count,.pSignalSemaphoreValues=values};
     const VkSubmitInfo submit = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = context->timeline ? &timeline : NULL,
+        .waitSemaphoreCount = commands->external_wait_count,
+        .pWaitSemaphores = commands->external_wait_count ? commands->external_waits : NULL,
+        .pWaitDstStageMask = commands->external_wait_count ? wait_stages : NULL,
         .commandBufferCount = 1,
         .pCommandBuffers = &commands->command,
         .signalSemaphoreCount = signal_count,
@@ -506,6 +515,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     doe_vk_render_release(commands);
     doe_vk_queries_release(commands);
     doe_vk_textures_release(commands);
+    doe_vk_external_commands_release(commands);
     while (commands->buffers != NULL) {
         doe_vk_buffer_use *use = commands->buffers;
         commands->buffers = use->next;

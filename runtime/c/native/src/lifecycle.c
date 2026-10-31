@@ -2,6 +2,7 @@
 #include "surface.h"
 #include "d3d12_queries.h"
 #include "adapter_request.h"
+#include "doe_native_shared_memory.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -357,7 +358,11 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
                 (const unsigned char *)descriptor->defaultQueue.label.data, queue_size) != DOE_LABEL_OK)
             goto failed_errors;
     }
-    if (native_backend_device_policy(&adapter->backend, policy, &device->backend) != NATIVE_OK) goto failed_errors;
+    const bool external_fd = (features & (NATIVE_FEATURE(DOE_SHARED_FEATURE_SLOT_OPAQUE_FD) |
+        NATIVE_FEATURE(DOE_SHARED_FEATURE_SLOT_SYNC_FD) |
+        NATIVE_FEATURE(DOE_SHARED_FEATURE_SLOT_OPAQUE_SEMAPHORE))) != 0;
+    if (native_backend_device_select(&adapter->backend, policy, external_fd, &device->backend) != NATIVE_OK)
+        goto failed_errors;
     /* The device context reopens the adapter's own hardware, so its facts match
      * the adapter's; every frontend check reads the resolved device limits. */
     device->backend.limits = limits;
