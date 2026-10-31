@@ -96,18 +96,30 @@ doe_mtl_status doe_mtl_buffer_write(doe_mtl_buffer *buffer, uint64_t offset,
     return DOE_MTL_OK;
 }
 
-doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
-    void *bytes, size_t size) {
-    doe_mtl_status status = host_access(buffer, offset, bytes, size);
+doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset,
+    size_t size, const void **out) {
+    static const unsigned char empty = 0;
+    doe_mtl_status status = out != NULL ? host_access(buffer, offset, &empty, size) :
+        DOE_MTL_INVALID_ARGUMENT;
     const unsigned char *contents;
     if (status != DOE_MTL_OK) return status;
     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
     if (!buffer->initialized) return DOE_MTL_UNINITIALIZED;
-    if (size == 0) return DOE_MTL_OK;
     contents = buffer->context->native.contents(buffer->context->native.userdata,
         buffer->native);
     if (contents == NULL) return DOE_MTL_NATIVE_FAILURE;
-    memmove(bytes, contents + (size_t)offset, size);
+    *out = contents + (size_t)offset;
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
+    void *bytes, size_t size) {
+    const void *source = NULL;
+    doe_mtl_status status;
+    if (size != 0 && bytes == NULL) return DOE_MTL_INVALID_ARGUMENT;
+    status = doe_mtl_buffer_host_range(buffer, offset, size, &source);
+    if (status != DOE_MTL_OK) return status;
+    if (size != 0) memmove(bytes, source, size);
     return DOE_MTL_OK;
 }
 

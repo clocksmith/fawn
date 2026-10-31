@@ -87,6 +87,10 @@ before reads/bindings; initialization is speculative inside a command and is
 published only on successful completion. Terminal GPU failure poisons all
 participating contents. A shared allocation recovers only with a full host write;
 a private allocation is replaced. Partial writes do not make failed output safe.
+`doe_mtl_buffer_host_range` lends a shared allocation's host range under exactly
+a read's admission (not poisoned, initialized, no recorded or pending owner); the
+native frontend lends it to read mappings and keeps it only while the mapping
+forbids GPU use. Write mappings and mapped-at-creation keep their copies.
 
 Private textures require full initialization of each selected mip/layer before
 sampling, storage use or partial updates. A 3D mip is one whole volume; array

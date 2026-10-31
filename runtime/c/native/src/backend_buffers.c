@@ -55,7 +55,10 @@ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *
 
 bool native_buffer_host_lendable(const native_buffer *buffer)
 {
-    if (buffer->device->backend.kind == WGPUBackendType_Vulkan) return true;
+    /* Every public Vulkan buffer is persistently mapped coherent host memory
+     * and every public Metal buffer is a shared allocation (native_buffer_create). */
+    if (buffer->device->backend.kind == WGPUBackendType_Vulkan ||
+        buffer->device->backend.kind == WGPUBackendType_Metal) return true;
     return buffer->device->backend.kind == WGPUBackendType_D3D12 && buffer->handle.d3d12 &&
         buffer->handle.d3d12->memory == DOE_DX_READBACK;
 }
@@ -70,8 +73,13 @@ native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, 
 {
     if (buffer->device->backend.kind == WGPUBackendType_D3D12)
         return native_d3d12_buffer_lend(buffer, offset, size, out);
-    if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
     const void *range = NULL;
+    if (buffer->device->backend.kind == WGPUBackendType_Metal) {
+        doe_mtl_status status = doe_mtl_buffer_host_range(buffer->handle.metal, offset, size, &range);
+        if (status == DOE_MTL_OK) *out = range;
+        return native_failure_metal(status, NULL);
+    }
+    if (buffer->device->backend.kind != WGPUBackendType_Vulkan) return native_failure_status(NATIVE_UNSUPPORTED);
     doe_vk_status status = doe_vk_buffer_host_range(buffer->handle.vulkan, offset, size, &range);
     if (status == DOE_VK_OK) *out = range;
     return native_failure_vulkan(status, NULL);

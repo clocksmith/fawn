@@ -99,6 +99,11 @@ doe_mtl_status doe_mtl_buffer_write(doe_mtl_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size);
 doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
     void *bytes, size_t size);
+/* The shared allocation's host range under exactly the admission of a read.
+ * The pointer stays valid until the buffer's last release; callers keep it only
+ * while their own state forbids GPU use of the buffer (for example a mapping). */
+doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset,
+    size_t size, const void **out);
 
 enum { DOE_MTL_BUFFER_SLOTS = 31 };
 /* Compiler/native validation owns shader meaning, layout, usage and robust
