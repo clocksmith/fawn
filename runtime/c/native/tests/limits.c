@@ -448,11 +448,10 @@ static void check_sparse_bindings(state *s)
     wgpuBufferRelease(a);
 }
 
-/* Limits Vulkan raises above the WebGPU default, each used above the default
- * on a device that requires the adapter limits, and refused on the default
- * device: 10 storage buffers and 8 storage textures in one stage, the adapter's
- * vertex attributes (above 16, at most 32), and 8 rgba32float targets (128 color
- * bytes per sample). */
+/* Limits an adapter may raise above the WebGPU default (Vulkan raises all four;
+ * D3D12 reports the defaults): 10 storage buffers and 8 storage textures in one
+ * stage, the adapter's vertex attributes (above 16, at most 32), and 8 rgba32float
+ * targets (128 color bytes per sample). check_raised_limits uses the raised ones. */
 static const char *const storage10 =
     "@group(0) @binding(0) var<storage, read_write> b0: array<u32>;\n"
     "@group(0) @binding(1) var<storage, read_write> b1: array<u32>;\n"
@@ -734,14 +733,20 @@ static void raised_color_bytes(state *s)
     wgpuRenderPipelineRelease(render);
 }
 
-static void check_raised_limits(state *s, const WGPULimits *adapter)
+/* WebGPU bounds these adapter limits only below, by the defaults. Each one the
+ * adapter raises executes above the default on a device requiring the adapter
+ * limits; one it reports at the default is refused on that device too. The
+ * default device refuses all four. Returns the number executed above the default. */
+static unsigned check_raised_limits(state *s, const WGPULimits *adapter)
 {
-    assert(adapter->maxStorageBuffersPerShaderStage >= 10 && adapter->maxStorageTexturesPerShaderStage >= 8);
+    const bool storage_buffers = adapter->maxStorageBuffersPerShaderStage >= 10;
+    const bool storage_textures = adapter->maxStorageTexturesPerShaderStage >= 8;
+    const bool attributes_raised = adapter->maxVertexAttributes > 16;
+    const bool color_bytes = adapter->maxColorAttachmentBytesPerSample >= 128;
     /* Raised vertex attributes use the adapter's own value: above the default 16,
-     * at most the 32 these fixtures hold. */
-    assert(adapter->maxVertexAttributes > 16 && adapter->maxColorAttachmentBytesPerSample >= 128);
-    const uint32_t attribute_count = adapter->maxVertexAttributes < 32 ? adapter->maxVertexAttributes : 32;
-    /* The default device refuses each one. */
+     * at most the 32 these fixtures hold; otherwise 17, one above the default. */
+    const uint32_t attribute_count = !attributes_raised ? 17u :
+        adapter->maxVertexAttributes < 32 ? adapter->maxVertexAttributes : 32;
     WGPUVertexAttribute attributes[32];
     WGPUVertexBufferLayout layout = attribute_layout(attributes, attribute_count);
     char attribute_code[ATTRIBUTE_SHADER_BYTES];
@@ -749,34 +754,47 @@ static void check_raised_limits(state *s, const WGPULimits *adapter)
     WGPUColorTargetState r32 = WGPU_COLOR_TARGET_STATE_INIT, wide[8];
     r32.format = WGPUTextureFormat_R32Float;
     color_targets(wide);
-    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
-    assert(!try_compute(s, storage10, NULL));
-    expect_validation(s);
-    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
-    assert(!try_compute(s, storage_textures8, NULL));
-    expect_validation(s);
-    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
-    assert(!raised_render_pipeline(s, attribute_code, &r32, 1, &layout));
-    expect_validation(s);
-    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
-    assert(!raised_render_pipeline(s, color128, wide, 8, NULL));
-    expect_validation(s);
-    /* A device requiring the adapter limits executes each with exact readback. */
     WGPUDevice defaults = s->device, maximal = open_device(s, adapter);
     WGPUQueue default_queue = s->queue;
     assert(maximal);
-    s->device = maximal;
-    s->queue = wgpuDeviceGetQueue(maximal);
-    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
-    raised_storage_buffers(s);
-    raised_storage_textures(s);
-    raised_vertex_attributes(s, attribute_count);
-    raised_color_bytes(s);
-    expect_no_error(s);
-    wgpuQueueRelease(s->queue);
+    for (int pass = 0; pass < 2; ++pass) {
+        const bool raised = pass == 1;
+        s->device = raised ? maximal : defaults;
+        s->queue = raised ? wgpuDeviceGetQueue(maximal) : default_queue;
+        if (!raised || !storage_buffers) {
+            wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            assert(!try_compute(s, storage10, NULL));
+            expect_validation(s);
+        }
+        if (!raised || !storage_textures) {
+            wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            assert(!try_compute(s, storage_textures8, NULL));
+            expect_validation(s);
+        }
+        if (!raised || !attributes_raised) {
+            wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            assert(!raised_render_pipeline(s, attribute_code, &r32, 1, &layout));
+            expect_validation(s);
+        }
+        if (!raised || !color_bytes) {
+            wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            assert(!raised_render_pipeline(s, color128, wide, 8, NULL));
+            expect_validation(s);
+        }
+        if (!raised) continue;
+        /* Each raised limit executes with exact readback. */
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        if (storage_buffers) raised_storage_buffers(s);
+        if (storage_textures) raised_storage_textures(s);
+        if (attributes_raised) raised_vertex_attributes(s, attribute_count);
+        if (color_bytes) raised_color_bytes(s);
+        expect_no_error(s);
+        wgpuQueueRelease(s->queue);
+    }
     s->device = defaults;
     s->queue = default_queue;
     wgpuDeviceRelease(maximal);
+    return (unsigned)storage_buffers + (unsigned)storage_textures + (unsigned)attributes_raised + (unsigned)color_bytes;
 }
 
 /* The CTS opens every device with all adapter features and all adapter limits. */
@@ -818,15 +836,16 @@ int main(void)
     check_default_validation(&s, &adapter);
     check_dispatch_and_binding_bounds(&s);
     check_sparse_bindings(&s);
-    check_raised_limits(&s, &adapter);
+    const unsigned raised = check_raised_limits(&s, &adapter);
     consumer_finish(&s);
     printf("PASS public limits: %zu adapter limits meet the WebGPU defaults, default device limits exact, "
         "requiredLimits refusal/default/adapter resolution, a device with every adapter feature and limit, default-limit validation of dynamic storage, "
         "workgroup size/storage, inter-stage location, buffer size, texture size, dispatch count and binding "
         "number, a sparse 0/17/31/500/999 group with binding-ordered dynamic offsets and an automatic layout, "
-        "and executions above the default of 10 storage buffers, 8 storage textures, the adapter's vertex attributes and "
-        "8 rgba32float targets (128 color bytes per sample), each refused on the default device; "
+        "and of 10 storage buffers, 8 storage textures, the adapter's vertex attributes (or 17) and "
+        "8 rgba32float targets (128 color bytes per sample), each refused on the default device, %u of the 4 "
+        "raised by this adapter and executed with exact readback, the rest refused on its adapter-limit device; "
         "exact 32 words %s\n",
-        sizeof(rows) / sizeof(rows[0]), adapter_class_scope());
+        sizeof(rows) / sizeof(rows[0]), raised, adapter_class_scope());
     return 0;
 }
