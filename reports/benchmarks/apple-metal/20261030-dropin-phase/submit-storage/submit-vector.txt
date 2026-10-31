@@ -1,0 +1,22 @@
+vector_scale_add_262k h-prof warm submit median us 9.042
+SP alloc                              n=  1022 mean_ns=    51.2 per_submit_ns=    51.2
+SP lock                               n=  1022 mean_ns=    14.1 per_submit_ns=    14.1
+SP settle                             n=  1022 mean_ns=    15.9 per_submit_ns=    15.9
+SP validate+begin                     n=  1022 mean_ns=    79.1 per_submit_ns=    79.1
+SP flush_init                         n=  1022 mean_ns=    14.7 per_submit_ns=    14.7
+SP rb.validate                        n=  1022 mean_ns=    55.8 per_submit_ns=    55.8
+SP rb.create                          n=  1022 mean_ns=   416.4 per_submit_ns=   416.4
+SP rb.record                          n=  1022 mean_ns=  6677.7 per_submit_ns=  6677.7
+SP link                               n=  1022 mean_ns=     9.6 per_submit_ns=     9.6
+SP handler                            n=  1022 mean_ns=    76.8 per_submit_ns=    76.8
+SP commit                             n=  1022 mean_ns=  1682.0 per_submit_ns=  1682.0
+SP poll                               n=  1022 mean_ns=    95.4 per_submit_ns=    95.4
+SP unlock                             n=  1022 mean_ns=    15.9 per_submit_ns=    15.9
+SP tail                               n=  1022 mean_ns=    26.8 per_submit_ns=    26.8
+SP TOTAL                              n=  1022 mean_ns=  9590.2 per_submit_ns=  9590.2
+SP native_encode(in record)           n=  3066 mean_ns=  2054.9 per_submit_ns=  6164.7
+SP use_buffer/pipeline(in record)     n=  7154 mean_ns=    17.3 per_submit_ns=   121.0
+SP objc_command(in create)            n=  1022 mean_ns=   350.4 per_submit_ns=   350.4
+SP dispatch.resolve                   n=  1022 mean_ns=    78.8 per_submit_ns=    78.8
+SP dispatch.snapshot                  n=  1022 mean_ns=    76.0 per_submit_ns=    76.0
+SP dispatch.compute_call(incl native) n=  1022 mean_ns=  2261.2 per_submit_ns=  2261.2

@@ -1,0 +1,334 @@
+diff -ru <handoff-work>/doe/runtime/c/backends/metal/src/commands.c ./backends/metal/src/commands.c
+--- <handoff-work>/doe/runtime/c/backends/metal/src/commands.c	2026-10-31 15:08:40
++++ ./backends/metal/src/commands.c	2026-10-31 15:12:58
+@@ -1,4 +1,5 @@
+ /* SPDX-License-Identifier: MIT */
++#include "../../../native/src/submit_prof.h"
+ #include "render_internal.h"
+ #include "query_internal.h"
+ 
+@@ -54,8 +55,10 @@
+     }
+     commands->context = context;
+     commands->state = DOE_MTL_RECORDING;
++    uint64_t c0 = sp_now();
+     status = context->native.command(context->native.userdata, context->queue,
+         &commands->native, error);
++    SP_ADD(SP_CREATE_OBJC, sp_now() - c0);
+     if (status != DOE_MTL_OK) {
+         (void)doe_mtl_commands_release(commands);
+         return status;
+@@ -91,9 +94,11 @@
+     doe_mtl_buffer *buffer, doe_mtl_buffer_use **out) {
+     doe_mtl_buffer_use *use;
+     doe_mtl_status status;
++    uint64_t u0 = sp_now();
+     for (use = commands->buffers; use != NULL; use = use->next) {
+         if (use->buffer == buffer) {
+             *out = use;
++            SP_ADD(SP_USE, sp_now() - u0);
+             return DOE_MTL_OK;
+         }
+     }
+@@ -110,6 +115,7 @@
+     commands->buffers = use;
+     buffer->owner = commands;
+     *out = use;
++    SP_ADD(SP_USE, sp_now() - u0);
+     return DOE_MTL_OK;
+ }
+ 
+@@ -138,9 +144,11 @@
+         status = doe_mtl_use_buffer(commands, destination, &destination_use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "copy lease", error);
+     native = &commands->context->native;
++    uint64_t n0 = sp_now();
+     status = native->copy(native->userdata, commands->native, source->native,
+         (size_t)source_offset, destination->native, (size_t)destination_offset,
+         (size_t)size, &detail);
++    SP_ADD(SP_NATIVE_ENC, sp_now() - n0);
+     if (status == DOE_MTL_OK && destination_offset == 0 && size == destination->size)
+         destination_use->initialized = true;
+     return doe_mtl_native_record_result(commands, status, &detail, error);
+@@ -164,8 +172,10 @@
+     status = doe_mtl_use_buffer(commands, destination, &use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "fill lease", error);
+     native = &commands->context->native;
++    uint64_t n0 = sp_now();
+     status = native->fill(native->userdata, commands->native, destination->native,
+         (size_t)offset, (size_t)size, value, &detail);
++    SP_ADD(SP_NATIVE_ENC, sp_now() - n0);
+     if (status == DOE_MTL_OK && offset == 0 && size == destination->size)
+         use->initialized = true;
+     return doe_mtl_native_record_result(commands, status, &detail, error);
+@@ -240,6 +250,7 @@
+     /* Registered last: a command that is never committed never runs its
+      * handler, so nothing fallible may follow a successful registration. */
+     const doe_mtl_completion_sink *sink = &commands->context->completion;
++    uint64_t h0 = sp_now();
+     if (sink->notify) {
+         doe_mtl_error detail = {0};
+         sink->acquire(sink->data);
+@@ -250,8 +261,10 @@
+             return doe_mtl_native_record_result(commands, status, &detail, error);
+         }
+     }
++    uint64_t h1 = sp_now(); SP_ADD(SP_HANDLER, h1 - h0);
+     commands->state = DOE_MTL_SUBMITTED;
+     native->commit(native->userdata, commands->native);
++    SP_ADD(SP_COMMIT, sp_now() - h1);
+     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);
+ }
+ 
+diff -ru <handoff-work>/doe/runtime/c/backends/metal/src/compute_commands.c ./backends/metal/src/compute_commands.c
+--- <handoff-work>/doe/runtime/c/backends/metal/src/compute_commands.c	2026-10-31 15:08:40
++++ ./backends/metal/src/compute_commands.c	2026-10-31 15:12:58
+@@ -1,4 +1,5 @@
+ /* SPDX-License-Identifier: MIT */
++#include "../../../native/src/submit_prof.h"
+ #include "texture_internal.h"
+ #include "query_internal.h"
+ 
+@@ -79,7 +80,9 @@
+         groups.y > SIZE_MAX / pipeline->workgroup.y ||
+         groups.z > SIZE_MAX / pipeline->workgroup.z)
+         return doe_mtl_poison(commands, DOE_MTL_RANGE, "dispatch grid", error);
++    uint64_t u0 = sp_now();
+     status = doe_mtl_use_compute_pipeline(commands, pipeline);
++    SP_ADD(SP_USE, sp_now() - u0);
+     for (i = 0; status == DOE_MTL_OK && i < count; ++i) {
+         doe_mtl_buffer_use *use;
+         status = doe_mtl_use_buffer(commands, bindings[i].buffer, &use);
+@@ -91,9 +94,11 @@
+         status = doe_mtl_use_timestamps(commands, dispatch->timestamps, &timestamp_use);
+     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "timestamp lease", error);
+     native = &commands->context->native;
++    uint64_t n0 = sp_now();
+     status = native->dispatch(native->userdata, commands->native, pipeline->native,
+         &resources, pipeline->sizes_slot, groups, pipeline->workgroup, empty ? 0 : repeat,
+         dispatch->timestamps != NULL ? &timestamp_pair : NULL, &detail);
++    SP_ADD(SP_NATIVE_ENC, sp_now() - n0);
+     if (status == DOE_MTL_OK && timestamp_use != NULL) {
+         timestamp_use->available[timestamp_pair.begin] = true;
+         timestamp_use->available[timestamp_pair.end] = true;
+diff -ru <handoff-work>/doe/runtime/c/native/src/metal_compute.c ./native/src/metal_compute.c
+--- <handoff-work>/doe/runtime/c/native/src/metal_compute.c	2026-10-31 15:08:40
++++ ./native/src/metal_compute.c	2026-10-31 15:15:00
+@@ -1,4 +1,5 @@
+ /* SPDX-License-Identifier: MIT */
++#include "submit_prof.h"
+ #include "metal_binding_internal.h"
+ #include "doe_metal_query.h"
+ #include <stdlib.h>
+@@ -27,13 +28,16 @@
+         record->value.dispatch.y > limits->maxComputeWorkgroupsPerDimension ||
+         record->value.dispatch.z > limits->maxComputeWorkgroupsPerDimension || !pipeline->metal_compute)
+         return native_failure_status(NATIVE_INVALID_ARGUMENT);
++    uint64_t d0 = sp_now();
+     doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
+     doe_resource_status status = native_resolve_resources(pipeline,
+         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
+         record->value.dispatch.dynamic_offsets, resolved);
+     if (status != DOE_RESOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
++    uint64_t d1 = sp_now(); SP_ADD(SP_D_RESOLVE, d1 - d0);
+     native_metal_snapshot snapshot = {0};
+     native_failure failure = native_metal_binding_snapshot(commands, pipeline, pipeline->metal_compute, resolved, &snapshot);
++    uint64_t d2 = sp_now(); SP_ADD(SP_D_SNAPSHOT, d2 - d1);
+     if (failure.status != NATIVE_OK) return failure;
+     doe_mtl_dimensions groups = {record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z};
+     const doe_mtl_render_bindings *bindings = &snapshot.bindings;
+@@ -45,5 +49,6 @@
+         .groups=groups,.repeat=1,.immediates={record->value.dispatch.immediates.words,
+             pipeline->metal_compute->immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT}};
+     doe_mtl_status native_status = doe_mtl_commands_compute(commands, &dispatch, &error);
++    SP_ADD(SP_D_COMPUTE, sp_now() - d2);
+     return native_failure_metal(native_status, &error);
+ }
+diff -ru <handoff-work>/doe/runtime/c/native/src/metal_progress.c ./native/src/metal_progress.c
+--- <handoff-work>/doe/runtime/c/native/src/metal_progress.c	2026-10-31 15:08:40
++++ ./native/src/metal_progress.c	2026-10-31 15:12:58
+@@ -1,4 +1,5 @@
+ /* SPDX-License-Identifier: MIT */
++#include "submit_prof.h"
+ #include "surface.h"
+ #include "../../backends/metal/src/progress.h"
+ #include <limits.h>
+@@ -162,12 +163,16 @@
+         doe_time_add(&started,UINT64_C(5000000000),&deadline).status != DOE_HOST_OK)
+         return native_failure_status(NATIVE_FAILURE);
+     for (;;) {
++        uint64_t r0 = sp_now();
+         for (size_t i = 0; i < count; ++i)
+             if (doe_resource_commands_validate_submission(resources[i]) != DOE_RESOURCE_OK)
+                 return native_failure_status(NATIVE_INVALID_ARGUMENT);
++        uint64_t r1 = sp_now(); SP_ADD(SP_RB_VALIDATE, r1 - r0);
+         native_failure failure = native_command_create(&device->backend,native);
++        uint64_t r2 = sp_now(); SP_ADD(SP_RB_CREATE, r2 - r1);
+         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+             failure = native_record_resource_commands(native,resources[i]);
++        SP_ADD(SP_RB_RECORD, sp_now() - r2);
+         if (failure.status != NATIVE_BUSY || native->kind != WGPUBackendType_Metal) return failure;
+         doe_mtl_commands *conflict = doe_mtl_commands_conflict(native->value.metal);
+         /* Roll back ALL uncommitted native work and speculative leases before
+diff -ru <handoff-work>/doe/runtime/c/native/src/queue.c ./native/src/queue.c
+--- <handoff-work>/doe/runtime/c/native/src/queue.c	2026-10-31 15:15:37
++++ ./native/src/queue.c	2026-10-31 15:12:58
+@@ -1,4 +1,5 @@
+ /* SPDX-License-Identifier: MIT */
++#include "submit_prof.h"
+ #include "surface.h"
+ #include "metal_frontend.h"
+ #include "d3d12_frontend.h"
+@@ -131,16 +132,6 @@
+     return native_failure_status(NATIVE_UNSUPPORTED);
+ }
+ 
+-/* One allocation holds the record and its submitted-command pointers, which
+- * follow the record; settle_resources frees both with the record. */
+-static native_pending *pending_with_resources(size_t count)
+-{
+-    if (count > (SIZE_MAX - sizeof(native_pending)) / sizeof(doe_resource_commands *)) return NULL;
+-    native_pending *pending = calloc(1, sizeof(native_pending) + count * sizeof(doe_resource_commands *));
+-    if (pending) pending->resources = (doe_resource_commands **)(void *)(pending + 1);
+-    return pending;
+-}
+-
+ static void settle_resources(native_pending *pending, bool success)
+ {
+     for (size_t i = 0; i < pending->count; ++i) {
+@@ -150,6 +141,7 @@
+             doe_resource_commands_settle(pending->resources[i], terminal);
+         if (status != DOE_RESOURCE_OK && status != DOE_RESOURCE_EXECUTION_FAILED) abort();
+     }
++    free(pending->resources);
+     native_device *device = pending->device;
+     free(pending);
+     /* The foreground call or progress worker still owns a device lease while
+@@ -372,8 +364,11 @@
+  * A refused submission recovers before returning, as before. */
+ static native_failure submit_pending(native_device *device, native_pending *pending, bool wait)
+ {
++    uint64_t q0 = sp_now();
+     link_pending(device, pending);
++    uint64_t q1 = sp_now(); SP_ADD(SP_LINK, q1 - q0);
+     native_failure failure = native_command_submit(&pending->native);
++    uint64_t q2 = sp_now();
+     if (failure.status == NATIVE_OK && wait) {
+         if (pending->native.kind == WGPUBackendType_D3D12 && native_command_in_flight(&pending->native)) {
+             struct timespec now, deadline;
+@@ -390,6 +385,7 @@
+         return failure;
+     }
+     native_queue_settlement settled = native_poll_pending(device);
++    SP_ADD(SP_POLL, sp_now() - q2);
+     if (wait && settled.failure.status == NATIVE_OK) {
+         /* A waited submission still linked after its fence has unknown
+          * completion: it keeps its leases and the queue reports failure. */
+@@ -405,15 +401,17 @@
+ native_failure native_submit_program(native_device *device, native_command_handle native,
+     doe_resource_commands *commands)
+ {
+-    native_pending *pending = pending_with_resources(1);
+-    if (!pending) {
++    native_pending *pending = calloc(1, sizeof(*pending));
++    doe_resource_commands **resources = pending ? calloc(1, sizeof(*resources)) : NULL;
++    if (!resources) {
++        free(pending);
+         if (native_command_release(&native) != NATIVE_OK) abort();
+         if (doe_resource_commands_settle_replay(commands, DOE_RESOURCE_EXECUTION_FAILED) !=
+                 DOE_RESOURCE_EXECUTION_FAILED) abort();
+         return native_failure_status(NATIVE_OUT_OF_MEMORY);
+     }
+-    pending->resources[0] = commands;
+-    *pending = (native_pending){.device=device,.native=native,.resources=pending->resources,.count=1,.replay=true};
++    resources[0] = commands;
++    *pending = (native_pending){.device=device,.native=native,.resources=resources,.count=1,.replay=true};
+     native_device_retain(device);
+     return submit_pending(device, pending, true);
+ }
+@@ -524,14 +522,18 @@
+     native_device *device = (native_device *)handle;
+     if (!device) return;
+     if (!count) return;
++    static unsigned submits; doe_sp_on = ++submits > 2;
++    uint64_t t0 = sp_now();
+     native_device_retain(device);
+     if (!handles || count > SIZE_MAX / sizeof(doe_resource_commands *)) {
+         native_error(device, WGPUErrorType_Validation, "invalid queue submit array");
+         native_device_release(device);
+         return;
+     }
+-    native_pending *pending = pending_with_resources(count);
+-    if (!pending) {
++    native_pending *pending = calloc(1, sizeof(*pending));
++    if (pending) pending->resources = calloc(count, sizeof(*pending->resources));
++    if (!pending || !pending->resources) {
++        free(pending);
+         native_lock(device);
+         invalidate_batch(device, count, handles);
+         native_unlock(device);
+@@ -541,9 +543,12 @@
+     }
+     pending->device = device;
+     native_device_retain(device);
++    uint64_t t1 = sp_now(); SP_ADD(SP_ALLOC, t1 - t0);
+     native_lock(device);
++    uint64_t t2 = sp_now(); SP_ADD(SP_LOCK, t2 - t1);
+     native_failure failure = native_failure_status(native_device_result(device));
+     if (failure.status == NATIVE_OK) failure = native_settle_routine(device).failure;
++    uint64_t t3 = sp_now(); SP_ADD(SP_SETTLE, t3 - t2);
+     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
+         pending->resources[i] = (doe_resource_commands *)handles[i];
+         if (doe_resource_commands_device(pending->resources[i]) != device)
+@@ -559,9 +564,11 @@
+         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
+         else ++pending->count;
+     }
++    uint64_t t4 = sp_now(); SP_ADD(SP_VALIDATE, t4 - t3);
+     /* D3D12 materializes zero fills itself and adopts, not flushes, open writes. */
+     if (failure.status == NATIVE_OK && device->backend.kind != WGPUBackendType_D3D12)
+         failure = native_flush_initialization(device);
++    uint64_t t5 = sp_now(); SP_ADD(SP_FLUSH, t5 - t4);
+     if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_Metal)
+         failure = native_metal_record_batch(device,&pending->native,pending->resources,count);
+     else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)
+@@ -571,6 +578,7 @@
+         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+             failure = native_record_resource_commands(&pending->native, pending->resources[i]);
+     }
++    uint64_t t6 = sp_now();
+     if (failure.status == NATIVE_OK) {
+         /* Recovery preserves the original submission failure; successful release
+          * is the backend's proof of terminal or never-dispatched ownership. */
+@@ -583,14 +591,16 @@
+          * on this device, so a resubmission is a validation error. */
+         invalidate_batch(device, count, handles);
+     }
++    uint64_t t7 = sp_now();
+     native_unlock(device);
++    uint64_t t8 = sp_now(); SP_ADD(SP_UNLOCK, t8 - t7);
+     if (failure.status != NATIVE_OK) {
+         char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+         native_failure_format(&failure, "queue submission failed; unresolved work stays retained", message);
+         native_error(device, resource_status != DOE_RESOURCE_OK ?
+             native_resource_error(resource_status) : native_result_error(failure.status), message);
+     }
+-    native_device_release(device);
++    native_device_release(device);    uint64_t t9 = sp_now(); SP_ADD(SP_TAIL, t9 - t8); SP_ADD(SP_TOTAL, t9 - t0); (void)t6;
+ }
+ 
+ typedef struct queue_delivery {
+Only in ./native/src: submit_prof.c
+Only in ./native/src: submit_prof.h
+diff -ru <handoff-work>/doe/runtime/c/native/src/surface.h ./native/src/surface.h
+--- <handoff-work>/doe/runtime/c/native/src/surface.h	2026-10-31 15:15:37
++++ ./native/src/surface.h	2026-10-31 12:58:30
+@@ -76,7 +76,7 @@
+     native_pending *next;
+     native_device *device;
+     native_command_handle native;
+-    doe_resource_commands **resources; /* NULL, or trailing storage of this record (pending_with_resources). */
++    doe_resource_commands **resources;
+     size_t count;
+     native_pending_kind kind;
+     bool replay; /* Command variant: settle the resource owner's open replay. */

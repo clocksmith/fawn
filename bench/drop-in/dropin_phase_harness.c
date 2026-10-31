@@ -33,7 +33,64 @@
 #include <time.h>
 #endif
 
+/* Dynamic provider loading is opt-in: neither the provider nor its linked
+ * frameworks may load before setup starts. Legacy linked builds are unchanged. */
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+#if !defined(__APPLE__) || !defined(DOE_PHASE_BACKEND_METAL)
+#error DOE_PHASE_LOAD_PROVIDER requires Apple Metal
+#endif
+#define WGPU_SKIP_DECLARATIONS
+#include <dlfcn.h>
+#include <mach-o/dyld.h>
+#endif
 #include "webgpu.h"
+
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+#define PHASE_PROCS(X) \
+    X(AdapterGetInfo) \
+    X(AdapterInfoFreeMembers) \
+    X(AdapterRelease) \
+    X(AdapterRequestDevice) \
+    X(BindGroupLayoutRelease) \
+    X(BindGroupRelease) \
+    X(BufferGetConstMappedRange) \
+    X(BufferMapAsync) \
+    X(BufferRelease) \
+    X(BufferUnmap) \
+    X(CommandBufferRelease) \
+    X(CommandEncoderBeginComputePass) \
+    X(CommandEncoderClearBuffer) \
+    X(CommandEncoderCopyBufferToBuffer) \
+    X(CommandEncoderFinish) \
+    X(CommandEncoderRelease) \
+    X(ComputePassEncoderDispatchWorkgroups) \
+    X(ComputePassEncoderEnd) \
+    X(ComputePassEncoderRelease) \
+    X(ComputePassEncoderSetBindGroup) \
+    X(ComputePassEncoderSetPipeline) \
+    X(ComputePipelineGetBindGroupLayout) \
+    X(ComputePipelineRelease) \
+    X(CreateInstance) \
+    X(DeviceCreateBindGroup) \
+    X(DeviceCreateBuffer) \
+    X(DeviceCreateCommandEncoder) \
+    X(DeviceCreateComputePipeline) \
+    X(DeviceCreateShaderModule) \
+    X(DeviceDestroy) \
+    X(DeviceGetQueue) \
+    X(DeviceRelease) \
+    X(InstanceRelease) \
+    X(InstanceRequestAdapter) \
+    X(InstanceWaitAny) \
+    X(QueueOnSubmittedWorkDone) \
+    X(QueueRelease) \
+    X(QueueSubmit) \
+    X(QueueWriteBuffer) \
+    X(ShaderModuleRelease)
+#define DECLARE_PROC(name) static WGPUProc##name wgpu##name;
+PHASE_PROCS(DECLARE_PROC)
+#undef DECLARE_PROC
+#endif
 
 #ifdef DOE_PHASE_BACKEND_METAL
 #define PHASE_BACKEND WGPUBackendType_Metal
@@ -89,6 +146,43 @@ static void die(const char *what)
     fflush(stdout);
     exit(1);
 }
+
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+/* This executable links only libSystem. Refuse accidental provider/framework
+ * preload (including DYLD_INSERT_LIBRARIES) instead of silently understating
+ * setup. Image enumeration does not load any framework. */
+static unsigned frameworks_before_setup(void)
+{
+    unsigned count = 0;
+    for (uint32_t i = 0; i < _dyld_image_count(); ++i) {
+        const char *path = _dyld_get_image_name(i);
+        if (path && (strstr(path, "/Foundation.framework/") ||
+                strstr(path, "/Metal.framework/") || strstr(path, "/IOSurface.framework/") ||
+                strstr(path, "/CoreVideo.framework/"))) ++count;
+        if (path && (strstr(path, "libwebgpu") || strstr(path, "libdoe_compiler")))
+            die("provider_loaded_before_setup");
+    }
+    return count;
+}
+
+static void load_provider(void)
+{
+    /* Retained until process exit: pending callbacks can retain provider code. */
+    void *library = dlopen(DOE_PHASE_LOAD_PROVIDER, RTLD_NOW | RTLD_LOCAL);
+    if (!library) {
+        fprintf(stderr, "provider dlopen: %s\n", dlerror());
+        die("provider_load");
+    }
+#define LOAD_PROC(name) do { \
+    void *symbol = dlsym(library, "wgpu" #name); \
+    if (!symbol) { fprintf(stderr, "missing provider symbol: wgpu%s\n", #name); die("provider_symbol"); } \
+    _Static_assert(sizeof(wgpu##name) == sizeof(symbol), "function pointer ABI"); \
+    memcpy(&wgpu##name, &symbol, sizeof(symbol)); \
+} while (0);
+    PHASE_PROCS(LOAD_PROC)
+#undef LOAD_PROC
+}
+#endif
 
 static uint8_t *read_file(const char *path, size_t *size)
 {
@@ -229,9 +323,22 @@ int main(int argc, char **argv)
     if (!host) die("oom");
     double cpu_start = cpu_ms();
 
-    /* Setup: instance, physical adapter, device, queue. */
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+    const unsigned framework_images_before = frameworks_before_setup();
+    if (framework_images_before != 0) die("framework_loaded_before_setup");
+    const uint32_t images_before = _dyld_image_count();
+#endif
+    /* Setup includes provider and framework loading in dynamic builds, followed
+     * by instance, physical adapter, device and queue on both providers. */
     struct state s = {0};
     uint64_t t0 = now_ns();
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+    load_provider();
+    const uint64_t t_provider = now_ns();
+    const uint32_t provider_images = _dyld_image_count() - images_before;
+#else
+    const uint64_t t_provider = t0;
+#endif
     WGPUInstanceFeatureName instance_features[] = {WGPUInstanceFeatureName_TimedWaitAny};
     WGPUInstanceDescriptor instance_desc = WGPU_INSTANCE_DESCRIPTOR_INIT;
     instance_desc.requiredFeatureCount = 1;
@@ -264,6 +371,9 @@ int main(int argc, char **argv)
     if (!s.done || s.status != (int)WGPURequestDeviceStatus_Success || !s.device) die("device");
     WGPUQueue queue = wgpuDeviceGetQueue(s.device);
     uint64_t t_setup = now_ns();
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+    const uint32_t setup_images = _dyld_image_count() - images_before;
+#endif
 
     /* Compile: WGSL shader module creation. */
     WGPUShaderModule module = NULL;
@@ -426,15 +536,22 @@ int main(int argc, char **argv)
     printf("\"adapterType\":%d,\"vendorID\":%u,\"deviceID\":%u,\"bytes\":%zu,\"iterations\":%ld,"
         "\"oracleChecked\":%ld,\"setupNs\":%llu,\"setupInstanceNs\":%llu,\"setupAdapterNs\":%llu,\"setupDeviceNs\":%llu,\"compileNs\":%llu,\"pipelineNs\":%llu,"
         "\"resourcesNs\":%llu,\"loopNs\":%llu,\"teardownNs\":%llu,\"teardownReleaseNs\":%llu,\"teardownDeviceNs\":%llu,\"processInMainNs\":%llu,\"cpuMs\":%.3f,"
-        "\"maxRssKiB\":%ld,\"phases\":{",
+        "\"maxRssKiB\":%ld,",
         (int)info.adapterType, info.vendorID, info.deviceID, bytes, iterations, iterations,
-        (unsigned long long)(t_setup - t0), (unsigned long long)(t_instance - t0),
+        (unsigned long long)(t_setup - t0), (unsigned long long)(t_instance - t_provider),
         (unsigned long long)(t_adapter - t_instance), (unsigned long long)(t_setup - t_adapter),
         (unsigned long long)(t_compile - t_setup),
         (unsigned long long)(t_pipeline - t_compile), (unsigned long long)(t_resources - t_pipeline),
         (unsigned long long)(t_loop - t_resources), (unsigned long long)(t_teardown - t_loop),
         (unsigned long long)(t_released - t_loop), (unsigned long long)(t_teardown - t_released),
         (unsigned long long)(t_teardown - process_start), cpu_total, rss_kib);
+#if defined(DOE_PHASE_LOAD_PROVIDER)
+    printf("\"providerLoadNs\":%llu,\"frameworkImagesBeforeSetup\":%u,"
+        "\"imagesBeforeSetup\":%u,\"providerImagesLoaded\":%u,\"setupImagesLoaded\":%u,",
+        (unsigned long long)(t_provider - t0), framework_images_before,
+        images_before, provider_images, setup_images);
+#endif
+    printf("\"phases\":{");
     for (int p = 0; p < P_COUNT; p++) {
         printf("%s\"%s\":[", p ? "," : "", PHASE_NAMES[p]);
         for (long it = 0; it < iterations; it++) printf("%s%llu", it ? "," : "", (unsigned long long)samples[p][it]);

@@ -13,7 +13,7 @@ Execute governed workloads and convert correctness, reliability, comparability, 
 
 ## Scope
 
-- Includes files beneath this directory except child-chartered components, which narrow this authority.
+- Includes this directory; child charters narrow authority.
 
 ## Contracts
 
@@ -22,9 +22,8 @@ Inputs:
 - Performance contract: [`../docs/performance-strategy.md`](../docs/performance-strategy.md).
 - Package full-buffer float32 alternatives:
   [`plans/package_readback_expectation.schema.json`](plans/package_readback_expectation.schema.json).
-  The package plan validator enforces versioned explicit finite per-value
-  alternatives and exact byte count; prospective CPU reference plans never
-  retroactively qualify retained prefix captures.
+  Validator requires versioned finite per-value alternatives and exact byte count;
+  prospective CPU plans never qualify historical prefix captures.
 
 Outputs:
 - Hash-bound run, compare, claim, replay, failure, and release-admission artifacts.
@@ -33,21 +32,25 @@ Outputs:
 
 - Correctness and structural equivalence precede performance interpretation.
 - Missing work, asymmetric timing, hidden fallback, or failed oracles cannot become wins.
+- Metal setup cohorts include provider/framework loading inside setup on both
+  providers; preloaded framework work cannot qualify that boundary.
 - Diagnostic evidence cannot be relabeled to promote a claim.
-- Optional three-provider package baselines bind actual loaded addons, enforced backend selection, physical adapter identity and per-worker completion before comparing full output-validated public API operations.
-- An explicitly selected sole-adapter experiment queries the native backend before and after measurement, requires one hardware adapter and stable native identity, and rejects ambiguous hardware rather than equating provider display names. Historical verdicts stay unchanged.
-- Output proof belongs to its actual execution. Separate preflight or replay
-  evidence cannot be assigned to timed samples or admit their comparison.
+- Three-provider package comparisons bind loaded addons, enforced backend, physical
+  adapter and per-worker completion; public operations require full output validation.
+- Explicit sole-adapter experiments query hardware before/after measurement, require
+  one adapter and stable native identity, and reject ambiguity. Display names
+  cannot substitute. Historical verdicts stand.
+- Output proof belongs to its execution; preflight/replay cannot qualify timed samples.
 
 ## Acceptance
 
-- Canonical blocking gates execute the registered correctness and evidence policy.
+- Blocking gates enforce correctness and evidence policy.
 - Evidence: [`runners/run_blocking_gates.py`](runners/run_blocking_gates.py).
 
 ## Non-goals
 
-- A benchmark leaderboard or a substitute for application adoption.
+- Leaderboards or application-adoption substitutes.
 
 ## Freedom
 
-Any mechanism is permitted if it preserves these boundaries and passes the acceptance evidence.
+Mechanisms preserve boundaries and pass acceptance.

@@ -1,0 +1,98 @@
+{
+  "consumer": "contract-setup-load and contract-submit-storage; scoped native Metal decision",
+  "sourceCommit": "125654e63",
+  "nativeBuild": "ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-{main,cand}/native CC=clang",
+  "mainRebuild": "Two clean builds byte-identical for native and compiler dylibs",
+  "toolchain": "Apple clang 17.0.0 (clang-1700.3.19.1)",
+  "harnesses": {
+    "main": {
+      "binary": "<repo>/../metal-work/bin/main",
+      "sha256": "14330f40d2925feb6d6bc07c5aebe84a09e1cd4c423c6646660426f91e58e6b9",
+      "library": "<repo>/../metal-work/build-main/native/libwebgpu_doe_c.dylib",
+      "backend": "metal",
+      "librarySha256": "0db217aaa56c7e26846a361fadcceab6b909f98f5cddd81c287e960ff1894c8c",
+      "harnessSha256": "ec37697fe33fe2c8173c4713628a5e9bd3955c2abd94be5631e633c175cf993e",
+      "argv": [
+        "gcc",
+        "-O2",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DDOE_PHASE_BACKEND_METAL",
+        "-DDOE_PHASE_UPLOAD_SPLIT",
+        "-I<repo>/runtime/zig/vendor/webgpu-headers",
+        "-DDOE_PHASE_LOAD_PROVIDER=\"<work>/build-main/native/libwebgpu_doe_c.dylib\"",
+        "<repo>/bench/drop-in/dropin_phase_harness.c",
+        "-Wl,-rpath,<work>/build-main/native",
+        "-o",
+        "<repo>/../metal-work/bin/main"
+      ],
+      "providerLoadInSetup": true
+    },
+    "cand": {
+      "binary": "<repo>/../metal-work/bin/cand",
+      "sha256": "e4cbb34cf45af273fc087a1440d7c2093e5e6ec1b35c1284aff4afc3f15c9877",
+      "library": "<repo>/../metal-work/build-cand/native/libwebgpu_doe_c.dylib",
+      "backend": "metal",
+      "librarySha256": "68209710d88ee6f9cb71f94886b247815fba111950f02ccd0a11cf4b52a69c42",
+      "harnessSha256": "ec37697fe33fe2c8173c4713628a5e9bd3955c2abd94be5631e633c175cf993e",
+      "argv": [
+        "gcc",
+        "-O2",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DDOE_PHASE_BACKEND_METAL",
+        "-DDOE_PHASE_UPLOAD_SPLIT",
+        "-I<repo>/runtime/zig/vendor/webgpu-headers",
+        "-DDOE_PHASE_LOAD_PROVIDER=\"<work>/build-cand/native/libwebgpu_doe_c.dylib\"",
+        "<repo>/bench/drop-in/dropin_phase_harness.c",
+        "-Wl,-rpath,<work>/build-cand/native",
+        "-o",
+        "<repo>/../metal-work/bin/cand"
+      ],
+      "providerLoadInSetup": true
+    },
+    "dawn": {
+      "binary": "<repo>/../metal-work/bin/dawn",
+      "sha256": "e88d7ca2075abb471bde02a9b0d776e636e775dea8d45f8074175737fc13dd59",
+      "library": "<repo>/../ss/dawn-build/src/dawn/native/libwebgpu_dawn.dylib",
+      "backend": "metal",
+      "librarySha256": "ea81f617e7989e2e35cae46a9600a7c26848ce2e5c36bde195715ce5fc8829a5",
+      "harnessSha256": "ec37697fe33fe2c8173c4713628a5e9bd3955c2abd94be5631e633c175cf993e",
+      "argv": [
+        "gcc",
+        "-O2",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-DDOE_PHASE_BACKEND_METAL",
+        "-DDOE_PHASE_UPLOAD_SPLIT",
+        "-I<repo>/runtime/zig/vendor/webgpu-headers",
+        "-DDOE_PHASE_LOAD_PROVIDER=\"<handoff-work>/dawn-build/src/dawn/native/libwebgpu_dawn.dylib\"",
+        "<repo>/bench/drop-in/dropin_phase_harness.c",
+        "-Wl,-rpath,<handoff-work>/dawn-build/src/dawn/native",
+        "-o",
+        "<repo>/../metal-work/bin/dawn"
+      ],
+      "providerLoadInSetup": true
+    }
+  },
+  "dawn-aa": "Byte-identical copy of dawn harness",
+  "checks": {
+    "physical": "81/81 status matches; 62 pass, 12 abort as main, 6 GNU-only unbuildable, 1 checker arguments",
+    "metal": "check, sdk-abi, native-check, native-graphics-check PASS for main and candidate",
+    "cCheck": "Executed, rejected labels normal archive: requires GCC x86_64-linux-gnu. Platform blocker, not PASS. 39 tool tests and style pass.",
+    "harness": "15 focused Python tests PASS; otool -L dynamic harnesses only libSystem",
+    "charters": "Affected bench charter under 250 words. Global CATSCAN blocked by 4 pre-existing oversized charters and stale index."
+  },
+  "profile": {
+    "source": "handoff instrumented a9b1bf126, submit_prof_diag_full.patch; rerun after contract freeze under global GPU lock",
+    "status": "diagnostic only, 1022 warm measured submits after first two; observer clock/accumulation perturbs timing",
+    "nativeLibrarySha256": "e4e76279b592908c786c92bf2ed5b0900e38c7a21b146825ee71db6a870b571e",
+    "unit": "mach absolute time converted by actual timebase to ns"
+  }
+}

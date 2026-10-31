@@ -1,0 +1,289 @@
+diff --git a/runtime/c/backends/metal/src/commands.c b/runtime/c/backends/metal/src/commands.c
+index 79efc7628..e84173c9d 100644
+--- a/runtime/c/backends/metal/src/commands.c
++++ b/runtime/c/backends/metal/src/commands.c
+@@ -80,10 +80,7 @@ doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
+ 
+ bool doe_mtl_buffer_initialized(const doe_mtl_commands *commands,
+     const doe_mtl_buffer *buffer) {
+-    const doe_mtl_buffer_use *use;
+-    for (use = commands->buffers; use != NULL; use = use->next) {
+-        if (use->buffer == buffer) return use->initialized;
+-    }
++    if (buffer->owner == commands) return buffer->use->initialized;
+     return buffer->initialized;
+ }
+ 
+@@ -91,24 +88,31 @@ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
+     doe_mtl_buffer *buffer, doe_mtl_buffer_use **out) {
+     doe_mtl_buffer_use *use;
+     doe_mtl_status status;
+-    for (use = commands->buffers; use != NULL; use = use->next) {
+-        if (use->buffer == buffer) {
+-            *out = use;
+-            return DOE_MTL_OK;
+-        }
++    if (buffer->owner == commands) {
++        *out = buffer->use;
++        return DOE_MTL_OK;
+     }
+-    use = calloc(1, sizeof(*use));
++    /* The exclusive recording owner makes the use directly addressable; a
++     * second recording must settle that owner before acquiring this buffer. */
++    if (buffer->owner != NULL) return DOE_MTL_BUSY;
++    bool heap = commands->inline_buffer_count ==
++        sizeof(commands->inline_buffers) / sizeof(commands->inline_buffers[0]);
++    use = heap ? calloc(1, sizeof(*use)) :
++        &commands->inline_buffers[commands->inline_buffer_count];
+     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
+     status = doe_mtl_buffer_retain(buffer);
+     if (status != DOE_MTL_OK) {
+-        free(use);
++        if (heap) free(use);
+         return status;
+     }
++    if (!heap) ++commands->inline_buffer_count;
++    use->heap = heap;
+     use->buffer = buffer;
+     use->initialized = buffer->initialized;
+     use->next = commands->buffers;
+     commands->buffers = use;
+     buffer->owner = commands;
++    buffer->use = use;
+     *out = use;
+     return DOE_MTL_OK;
+ }
+@@ -210,14 +214,15 @@ static void retire_uses(doe_mtl_commands *commands, bool completed, bool success
+             else use->buffer->poisoned = true;
+         }
+         use->buffer->owner = NULL;
++        use->buffer->use = NULL;
+         doe_mtl_buffer_release(use->buffer);
+-        free(use);
++        if (use->heap) free(use);
+     }
+     while (commands->pipelines != NULL) {
+         doe_mtl_pipeline_use *use = commands->pipelines;
+         commands->pipelines = use->next;
+         doe_mtl_pipeline_release(use->pipeline);
+-        free(use);
++        if (use->heap) free(use);
+     }
+ }
+ 
+diff --git a/runtime/c/backends/metal/src/compute_commands.c b/runtime/c/backends/metal/src/compute_commands.c
+index 2a4c88012..443fd16a8 100644
+--- a/runtime/c/backends/metal/src/compute_commands.c
++++ b/runtime/c/backends/metal/src/compute_commands.c
+@@ -8,13 +8,18 @@ doe_mtl_status doe_mtl_use_compute_pipeline(doe_mtl_commands *commands,
+     doe_mtl_status status;
+     for (use = commands->pipelines; use != NULL; use = use->next)
+         if (use->pipeline == pipeline) return DOE_MTL_OK;
+-    use = calloc(1, sizeof(*use));
++    bool heap = commands->inline_pipeline_count ==
++        sizeof(commands->inline_pipelines) / sizeof(commands->inline_pipelines[0]);
++    use = heap ? calloc(1, sizeof(*use)) :
++        &commands->inline_pipelines[commands->inline_pipeline_count];
+     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
+     status = doe_mtl_pipeline_retain(pipeline);
+     if (status != DOE_MTL_OK) {
+-        free(use);
++        if (heap) free(use);
+         return status;
+     }
++    if (!heap) ++commands->inline_pipeline_count;
++    use->heap = heap;
+     use->pipeline = pipeline;
+     use->next = commands->pipelines;
+     commands->pipelines = use;
+diff --git a/runtime/c/backends/metal/src/internal.h b/runtime/c/backends/metal/src/internal.h
+index 6010651f2..8addf4279 100644
+--- a/runtime/c/backends/metal/src/internal.h
++++ b/runtime/c/backends/metal/src/internal.h
+@@ -26,6 +26,7 @@ struct doe_mtl_buffer {
+     bool initialized;
+     bool poisoned;
+     doe_mtl_commands *owner; /* Borrowed; this command owns a buffer reference. */
++    struct doe_mtl_buffer_use *use; /* Borrowed from owner; cleared before lease release. */
+ };
+ struct doe_mtl_pipeline {
+     doe_mtl_context *context;
+@@ -37,10 +38,12 @@ struct doe_mtl_pipeline {
+ typedef struct doe_mtl_buffer_use {
+     doe_mtl_buffer *buffer;
+     bool initialized; /* Speculative until successful native completion. */
++    bool heap;
+     struct doe_mtl_buffer_use *next;
+ } doe_mtl_buffer_use;
+ typedef struct doe_mtl_pipeline_use {
+     doe_mtl_pipeline *pipeline;
++    bool heap;
+     struct doe_mtl_pipeline_use *next;
+ } doe_mtl_pipeline_use;
+ typedef enum doe_mtl_command_state {
+@@ -63,6 +66,11 @@ struct doe_mtl_commands {
+     struct doe_mtl_sampler_use *samplers;
+     struct doe_mtl_render_pipeline_use *render_pipelines;
+     struct doe_mtl_timestamp_use *timestamps;
++    /* Small recordings need no separate resource-use allocations. Larger ones
++     * retain the same list/retirement owner with heap overflow entries. */
++    size_t inline_buffer_count, inline_pipeline_count;
++    doe_mtl_buffer_use inline_buffers[8];
++    doe_mtl_pipeline_use inline_pipelines[2];
+ };
+ doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
+     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);
+diff --git a/runtime/c/backends/metal/tests/test_lifetime.c b/runtime/c/backends/metal/tests/test_lifetime.c
+index 4aac86af2..87e05293e 100644
+--- a/runtime/c/backends/metal/tests/test_lifetime.c
++++ b/runtime/c/backends/metal/tests/test_lifetime.c
+@@ -423,6 +423,59 @@ static void test_unknown_commit_and_reference_overflow(void) {
+     mock_assert_closed(&mock);
+ }
+ 
++/* Cross the small-recording storage capacity and repeat each resource use.
++ * Retirement must handle inline and overflow leases identically, including
++ * unknown completion, failed completion and an abandoned native recording. */
++static void test_many_resource_leases(void) {
++    for (unsigned outcome = 0; outcome < 3; ++outcome) {
++        mock_native mock;
++        doe_mtl_context *context = context_create(&mock);
++        doe_mtl_commands *commands = command_create(context);
++        doe_mtl_buffer *buffers[12];
++        doe_mtl_pipeline *pipelines[4];
++        for (size_t i = 0; i < 12; ++i) {
++            buffers[i] = buffer_create(context, DOE_MTL_PRIVATE);
++            for (unsigned repeat = 0; repeat < 2; ++repeat)
++                assert(doe_mtl_commands_fill(commands, buffers[i], 0, 64, 0, NULL) == DOE_MTL_OK);
++            assert(buffers[i]->references == 2 && !buffers[i]->initialized);
++            assert(doe_mtl_buffer_initialized(commands, buffers[i]));
++        }
++        for (size_t i = 0; i < 4; ++i) {
++            pipelines[i] = pipeline_create(context);
++            doe_mtl_buffer_binding binding = {0, buffers[i], 0, 64};
++            for (unsigned repeat = 0; repeat < 2; ++repeat)
++                assert(doe_mtl_commands_dispatch(commands, pipelines[i], &binding, 1,
++                    (doe_mtl_dimensions){1, 1, 1}, 1, NULL) == DOE_MTL_OK);
++            assert(pipelines[i]->references == 2);
++        }
++        if (outcome != 0) {
++            mock.unknown_commit = true;
++            assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
++            assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
++            assert(doe_mtl_commands_release(commands) == DOE_MTL_BUSY);
++            for (size_t i = 0; i < 12; ++i)
++                assert(buffers[i]->owner == commands && buffers[i]->references == 2);
++            mock_result(&mock, outcome == 1 ? 4 : 5, -8765);
++            assert(doe_mtl_commands_poll(commands, NULL) ==
++                (outcome == 1 ? DOE_MTL_OK : DOE_MTL_EXECUTION_FAILED));
++        }
++        assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
++        for (size_t i = 0; i < 12; ++i) {
++            assert(buffers[i]->owner == NULL && buffers[i]->use == NULL);
++            assert(buffers[i]->references == 1);
++            assert(buffers[i]->initialized == (outcome == 1));
++            assert(buffers[i]->poisoned == (outcome == 2));
++            doe_mtl_buffer_release(buffers[i]);
++        }
++        for (size_t i = 0; i < 4; ++i) {
++            assert(pipelines[i]->references == 1);
++            doe_mtl_pipeline_release(pipelines[i]);
++        }
++        doe_mtl_context_release(context);
++        mock_assert_closed(&mock);
++    }
++}
++
+ int main(void) {
+     test_acquisition_failures();
+     test_host_access();
+@@ -434,6 +487,7 @@ int main(void) {
+     test_recording_failures();
+     test_validation_and_empty_work();
+     test_unknown_commit_and_reference_overflow();
+-    puts("Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution");
++    test_many_resource_leases();
++    puts("Metal developer controls: 11 scenario groups passed; mocked calls, no GPU execution");
+     return 0;
+ }
+diff --git a/runtime/c/native/src/queue.c b/runtime/c/native/src/queue.c
+index 3e4e62bed..9f59631c7 100644
+--- a/runtime/c/native/src/queue.c
++++ b/runtime/c/native/src/queue.c
+@@ -131,6 +131,18 @@ native_failure native_record_resource_commands(native_command_handle *native, do
+     return native_failure_status(NATIVE_UNSUPPORTED);
+ }
+ 
++/* Record and pointers share one allocation; single-command submissions use
++ * the inline pointer. Every variant is freed once by settle_resources. */
++static native_pending *pending_with_resources(size_t count)
++{
++    size_t extra = count > 1 ? count : 0;
++    if (extra > (SIZE_MAX - sizeof(native_pending)) / sizeof(doe_resource_commands *)) return NULL;
++    native_pending *pending = calloc(1, sizeof(native_pending) + extra * sizeof(doe_resource_commands *));
++    if (pending) pending->resources = count == 1 ? &pending->single_resource :
++        (doe_resource_commands **)(void *)(pending + 1);
++    return pending;
++}
++
+ static void settle_resources(native_pending *pending, bool success)
+ {
+     for (size_t i = 0; i < pending->count; ++i) {
+@@ -140,7 +152,6 @@ static void settle_resources(native_pending *pending, bool success)
+             doe_resource_commands_settle(pending->resources[i], terminal);
+         if (status != DOE_RESOURCE_OK && status != DOE_RESOURCE_EXECUTION_FAILED) abort();
+     }
+-    free(pending->resources);
+     native_device *device = pending->device;
+     free(pending);
+     /* The foreground call or progress worker still owns a device lease while
+@@ -396,17 +407,18 @@ static native_failure submit_pending(native_device *device, native_pending *pend
+ native_failure native_submit_program(native_device *device, native_command_handle native,
+     doe_resource_commands *commands)
+ {
+-    native_pending *pending = calloc(1, sizeof(*pending));
+-    doe_resource_commands **resources = pending ? calloc(1, sizeof(*resources)) : NULL;
+-    if (!resources) {
+-        free(pending);
++    native_pending *pending = pending_with_resources(1);
++    if (!pending) {
+         if (native_command_release(&native) != NATIVE_OK) abort();
+         if (doe_resource_commands_settle_replay(commands, DOE_RESOURCE_EXECUTION_FAILED) !=
+                 DOE_RESOURCE_EXECUTION_FAILED) abort();
+         return native_failure_status(NATIVE_OUT_OF_MEMORY);
+     }
+-    resources[0] = commands;
+-    *pending = (native_pending){.device=device,.native=native,.resources=resources,.count=1,.replay=true};
++    pending->resources[0] = commands;
++    pending->device = device;
++    pending->native = native;
++    pending->count = 1;
++    pending->replay = true;
+     native_device_retain(device);
+     return submit_pending(device, pending, true);
+ }
+@@ -523,10 +535,8 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
+         native_device_release(device);
+         return;
+     }
+-    native_pending *pending = calloc(1, sizeof(*pending));
+-    if (pending) pending->resources = calloc(count, sizeof(*pending->resources));
+-    if (!pending || !pending->resources) {
+-        free(pending);
++    native_pending *pending = pending_with_resources(count);
++    if (!pending) {
+         native_lock(device);
+         invalidate_batch(device, count, handles);
+         native_unlock(device);
+diff --git a/runtime/c/native/src/surface.h b/runtime/c/native/src/surface.h
+index 6a2e2c669..c5d48eca3 100644
+--- a/runtime/c/native/src/surface.h
++++ b/runtime/c/native/src/surface.h
+@@ -77,6 +77,7 @@ struct native_pending {
+     native_device *device;
+     native_command_handle native;
+     doe_resource_commands **resources;
++    doe_resource_commands *single_resource; /* Inline common one-command submission. */
+     size_t count;
+     native_pending_kind kind;
+     bool replay; /* Command variant: settle the resource owner's open replay. */

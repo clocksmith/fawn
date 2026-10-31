@@ -69,6 +69,27 @@ class BackendBuildTest(unittest.TestCase):
         self.assertNotIn("-DDOE_PHASE_UPLOAD_SPLIT", self.build_argv("metal"))
         self.assertIn("-DDOE_PHASE_UPLOAD_SPLIT", self.build_argv("metal", True))
 
+    def test_dynamic_provider_is_loaded_instead_of_linked(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="phase provider ") as directory:
+            library = Path(directory) / "libwebgpu.dylib"
+            library.write_bytes(b"library")
+            output = Path(directory) / "harness"
+            output.write_bytes(b"binary")
+            with mock.patch.object(cohort.sys, "platform", "darwin"), \
+                    mock.patch.object(cohort.subprocess, "run") as run, \
+                    mock.patch("builtins.print"):
+                cohort.build(library, output, "cc", "metal", load_provider=True)
+            argv = run.call_args.args[0]
+            self.assertNotIn(str(library.resolve()), argv)
+            self.assertIn('-DDOE_PHASE_LOAD_PROVIDER="' + str(library.resolve()) + '"', argv)
+
+    def test_dynamic_provider_rejects_unsupported_platform_or_backend(self) -> None:
+        with mock.patch.object(cohort.subprocess, "run") as run:
+            for platform, backend in (("linux", "metal"), ("darwin", "vulkan")):
+                with mock.patch.object(cohort.sys, "platform", platform), self.assertRaises(SystemExit):
+                    cohort.build(Path("provider"), Path("harness"), "cc", backend, load_provider=True)
+            run.assert_not_called()
+
 
 class WindowsBuildTest(unittest.TestCase):
     def test_links_the_import_library_beside_the_dll(self) -> None:
@@ -99,6 +120,16 @@ class WindowsBuildTest(unittest.TestCase):
 
 
 class CompleteMetricTest(unittest.TestCase):
+    def test_provider_load_is_reported_as_nested_setup_cost(self) -> None:
+        result = {"setupNs": 9_000_000, "providerLoadNs": 3_000_000,
+                  "frameworkImagesBeforeSetup": 0, "setupImagesLoaded": 300,
+                  "maxRssKiB": 1024, "phases": {name: [1000, 1000] for name in cohort.LOOP_PHASES}}
+        metrics = cohort.process_metrics({"processWallNs": 1, "childCpuMs": 1.0, "result": result})
+        self.assertEqual(metrics["setupNs"], 9)
+        self.assertEqual(metrics["providerLoadNs"], 3)
+        self.assertEqual(metrics["frameworkImagesBeforeSetup"], 0)
+        self.assertEqual(metrics["setupImagesLoaded"], 300)
+
     def test_complete_sums_preparation_operations_and_teardown(self) -> None:
         phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}
         phases["operation"] = [3_000_000, 1_000_000]

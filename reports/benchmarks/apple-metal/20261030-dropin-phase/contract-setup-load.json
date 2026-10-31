@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "surface": "Public webgpu.h ABI, Apple Metal, dynamically loaded provider inside setupNs",
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "workloadOrigin": "unchanged amd-host C1 workloads; inputs manifest byte-identical to the amd-host and intel-host manifests (afe4e1d3...); independent CPU oracle on every iteration outside the timed interval",
+  "sampling": {
+    "pairs": 96,
+    "orders": "all 24 permutations of the 4 providers, cycled",
+    "iterationsPerProcess": 32,
+    "warmIterations": "iterations 1..31",
+    "processesPerWorkload": 384
+  },
+  "timing": "CLOCK_UPTIME_RAW (Darwin CLOCK_MONOTONIC is quantized to 1 us); host clock, not GPU timestamps",
+  "phases": "identical to amd-host contract-c1.json; complete = compile + pipeline + resources + sum of every iteration's operation + teardown",
+  "statistics": "per-pair ratio provider/control; median ratio, bootstrap 95% CI (10000 resamples, seed 20261029), provider-faster pair count",
+  "gateLimits": "Unchanged from b2/b3/m1r/m2r: idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity (tools/mac_window.py, hash below).",
+  "gpuLock": "Every timed window runs under `flock /tmp/doe-gpu-timing.lock`, the host-wide lock shared with other agents' Metal correctness and timing runs, held for that window only; scheduling (settle loop, tools/wait_quiet.sh) runs outside the lock.",
+  "host": {
+    "label": "apple-host",
+    "machine": "Apple M3 (8 CPU cores, 10 GPU cores), 24 GiB unified memory",
+    "os": "macOS 26.6.2 (25G83)",
+    "gpu": "Apple M3 integrated, Metal 4",
+    "power": "Battery at 98%, discharging, low power mode off at freeze. Each gate records power source and battery before and after; no change within a window.",
+    "sharedUse": "Live desktop and agent sessions. No host identity retained. Scheduler outside GPU lock; every GPU process under host-wide flock."
+  },
+  "rebuild": "ZERO_AR_DATE=1 make -C runtime/c/native -j8 BUILD=<work>/build-{main,cand}/native CC=clang. Main archive 125654e63; candidate checkout at same revision + patch. Main rebuilt twice byte-identically.",
+  "cohortId": "apple-metal-dropin-setup-load",
+  "frozenAtUtc": "2026-10-31T19:23:39.580883+00:00",
+  "experiment": "Symmetric provider + framework loading inside setupNs; no runtime setup change.",
+  "sourceCommit": "125654e63f2629395eaafb13da29763435ce01cf",
+  "providers": {
+    "main": "Doe C 125654e63",
+    "cand": "125654e63 plus submit-storage/candidate.patch",
+    "dawn": "Dawn d04f88359391a12375c1a3e948a0b2dcb4c97a18, rebuilt ZERO_AR_DATE=1, handoff retained build",
+    "dawn-aa": "Byte-identical dawn harness copy"
+  },
+  "harness": "build --backend metal --load-provider --upload-split. Executable links only libSystem (otool verified); exact provider dlopen, all dlsym and linked framework work occur after setup t0. Preloaded provider or Foundation/Metal/IOSurface/CoreVideo fails closed. providerLoadNs nested inside setupNs. setupInstanceNs excludes providerLoadNs so nested subphases sum to setupNs. Driver loading remains inside setup. No framework preload step.",
+  "ruleChange": "Prospective setup boundary correction explicitly requested by owner: load each provider at same point after setup timer start. Prior setup results keep their historical meaning. Upload split and bounds unchanged from m1s.",
+  "rules": {
+    "kind": "mechanism",
+    "control": "dawn",
+    "provider": "main",
+    "aaProvider": "dawn-aa",
+    "aaControl": "dawn",
+    "aaWindow": [
+      0.95,
+      1.05
+    ],
+    "workloads": [
+      "vector_scale_add_262k",
+      "image_rgba_invert_1024",
+      "buffer_upload_readback_exact_1mb"
+    ],
+    "improve": {
+      "vector_scale_add_262k": [
+        "setupNs"
+      ],
+      "image_rgba_invert_1024": [
+        "setupNs"
+      ],
+      "buffer_upload_readback_exact_1mb": [
+        "setupNs"
+      ]
+    },
+    "noRegress": [],
+    "noRegressBound": 1.05,
+    "reportedNotBounded": [
+      "warm.upload",
+      "warm.uploadSource"
+    ]
+  },
+  "acceptance": {
+    "validity": [
+      "every process status ok with all 32 iterations oracle-checked",
+      "every provider reports a Metal adapter that is not a CPU adapter",
+      "A/A: dawn-aa/dawn warm.operation median ratio within [0.95,1.05] and its CI95 contains 1, per workload",
+      "window gate (tools/mac_window.py) valid: power source and low-power mode unchanged, no thermal warning, idle GPU median <= 25% before and after, foreign CPU <= 20% of run-interval capacity"
+    ],
+    "mechanismRule": "main/dawn setupNs CI upper < 1 on all three workloads; processWall and every phase reported. This accepts measurement correction and scoped setup observation, not a runtime optimization or universal Metal support.",
+    "invalidWindows": "At most two attempts per workload. A window is invalid if environment gate fails, process/oracle/provider checks fail, or A/A warm.operation median outside [0.95,1.05] or CI excludes 1. Retain invalid attempts. Same contract for one rerun. No retry based on performance outcome.",
+    "claimBoundary": "A pass accepts the mechanism for the Metal C runtime on apple-host only; it does not by itself make a scoped win against Dawn and says nothing about Vulkan or D3D12."
+  },
+  "hashes": {
+    "bench/drop-in/dropin_phase_harness.c": "ec37697fe33fe2c8173c4713628a5e9bd3955c2abd94be5631e633c175cf993e",
+    "bench/tools/dropin_phase_cohort.py": "570ea1c03be8481ef19b73d8d8512eed6244bee0e810d64f6ebcb008edf48b6b",
+    "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage/candidate.patch": "0b2f58c803f87a3a46279e558184963c3e7c555dcc6bada05fd63e74029b3333",
+    "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "build-main/native/libwebgpu_doe_c.dylib": "0db217aaa56c7e26846a361fadcceab6b909f98f5cddd81c287e960ff1894c8c",
+    "build-main/native/libdoe_compiler.dylib": "c1c11e75e729433ecef1e1a44ebb7c4db1cf0430e1dc8b862de02a40ac127cb2",
+    "build-cand/native/libwebgpu_doe_c.dylib": "68209710d88ee6f9cb71f94886b247815fba111950f02ccd0a11cf4b52a69c42",
+    "build-cand/native/libdoe_compiler.dylib": "c1c11e75e729433ecef1e1a44ebb7c4db1cf0430e1dc8b862de02a40ac127cb2",
+    "dawn/libwebgpu_dawn.dylib": "ea81f617e7989e2e35cae46a9600a7c26848ce2e5c36bde195715ce5fc8829a5",
+    "bin/main": "14330f40d2925feb6d6bc07c5aebe84a09e1cd4c423c6646660426f91e58e6b9",
+    "bin/cand": "e4cbb34cf45af273fc087a1440d7c2093e5e6ec1b35c1284aff4afc3f15c9877",
+    "bin/dawn": "e88d7ca2075abb471bde02a9b0d776e636e775dea8d45f8074175737fc13dd59",
+    "bin/dawn-aa": "e88d7ca2075abb471bde02a9b0d776e636e775dea8d45f8074175737fc13dd59",
+    "tools/mac_window.py": "fc7022d1787375356540db245202339e6bb85838e12d1f52bd70e4e70b3955c8",
+    "tools/evaluate.py": "3202f38ead6aa3bf396da5bcdced4d1ad4f88d7505b369f1e0108ef8093a3845",
+    "tools/wait_quiet.sh": "41dbeb80bca95c2cf0beee73d9e2ba1eec26fabb42716eda8f517a6966e5c4b5"
+  },
+  "relation": "New prospective experiment; all previous verdicts remain unchanged. Same samples support separate setup boundary baseline contract."
+}

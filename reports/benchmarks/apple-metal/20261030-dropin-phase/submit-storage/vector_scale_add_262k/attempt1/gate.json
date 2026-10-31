@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 15.88609137502499,
+  "foreignCpuSeconds": 9.440000000006842,
+  "foreignCpuFraction": 0.07427881233617789,
+  "topForeignCpu": [
+    [
+      2.040000000008149,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      1.1199999999953434,
+      "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal"
+    ],
+    [
+      0.8900000000012369,
+      "claude"
+    ],
+    [
+      0.8499999999999999,
+      "/System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod"
+    ],
+    [
+      0.36000000000012733,
+      "/usr/libexec/opendirectoryd"
+    ],
+    [
+      0.31999999999993634,
+      "/usr/sbin/cfprefsd"
+    ],
+    [
+      0.31999999999970896,
+      "/sbin/launchd"
+    ],
+    [
+      0.2799999999999727,
+      "/usr/sbin/notifyd"
+    ]
+  ],
+  "idleGpuMedianBefore": 3,
+  "idleGpuMedianAfter": 5,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-10-31T19:24:15Z",
+    "monotonic": 1233039.298954,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "98%; discharging; 10:05 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      14,
+      3,
+      2,
+      4,
+      3
+    ],
+    "loadAverage": [
+      2.68017578125,
+      3.44287109375,
+      3.31640625
+    ]
+  },
+  "after": {
+    "utc": "2026-10-31T19:24:36Z",
+    "monotonic": 1233060.48184975,
+    "powerSource": "Now drawing from 'Battery Power'",
+    "battery": "98%; discharging; 10:05 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      20,
+      5,
+      3,
+      11,
+      2
+    ],
+    "loadAverage": [
+      2.615234375,
+      3.3798828125,
+      3.296875
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<handoff-work>/inputs",
+    "--provider",
+    "main=<work>/bin/main",
+    "--provider",
+    "cand=<work>/bin/cand",
+    "--provider",
+    "dawn=<work>/bin/dawn",
+    "--provider",
+    "dawn-aa=<work>/bin/dawn-aa",
+    "--workload",
+    "vector_scale_add_262k",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/submit-storage/vector_scale_add_262k/attempt1-raw.jsonl"
+  ]
+}

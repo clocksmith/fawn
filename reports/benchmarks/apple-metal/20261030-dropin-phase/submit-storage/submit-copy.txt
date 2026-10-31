@@ -1,0 +1,19 @@
+buffer_upload_readback_exact_1mb h-prof warm submit median us 4.375
+SP alloc                              n=  1022 mean_ns=    46.8 per_submit_ns=    46.8
+SP lock                               n=  1022 mean_ns=    12.8 per_submit_ns=    12.8
+SP settle                             n=  1022 mean_ns=    17.1 per_submit_ns=    17.1
+SP validate+begin                     n=  1022 mean_ns=    26.7 per_submit_ns=    26.7
+SP flush_init                         n=  1022 mean_ns=    12.4 per_submit_ns=    12.4
+SP rb.validate                        n=  1022 mean_ns=     7.7 per_submit_ns=     7.7
+SP rb.create                          n=  1022 mean_ns=   389.0 per_submit_ns=   389.0
+SP rb.record                          n=  1022 mean_ns=  2153.5 per_submit_ns=  2153.5
+SP link                               n=  1022 mean_ns=    10.6 per_submit_ns=    10.6
+SP handler                            n=  1022 mean_ns=    78.2 per_submit_ns=    78.2
+SP commit                             n=  1022 mean_ns=  1240.1 per_submit_ns=  1240.1
+SP poll                               n=  1022 mean_ns=    95.4 per_submit_ns=    95.4
+SP unlock                             n=  1022 mean_ns=    16.6 per_submit_ns=    16.6
+SP tail                               n=  1022 mean_ns=    21.2 per_submit_ns=    21.2
+SP TOTAL                              n=  1022 mean_ns=  4527.8 per_submit_ns=  4527.8
+SP native_encode(in record)           n=  1022 mean_ns=  2034.9 per_submit_ns=  2034.9
+SP use_buffer/pipeline(in record)     n=  2044 mean_ns=    20.1 per_submit_ns=    40.3
+SP objc_command(in create)            n=  1022 mean_ns=   322.9 per_submit_ns=   322.9

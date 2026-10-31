@@ -1,0 +1,65 @@
+== vector_scale_add_262k pairs=96 A/A warm.operation 1.000 [0.998,1.003]
+  setupNs            main     9.5957  dawn    12.2495  ratio 0.788 [0.783,0.795]  faster 96/96
+  compileNs          main     0.0796  dawn     0.2415  ratio 0.332 [0.328,0.335]  faster 96/96
+  pipelineNs         main     1.3235  dawn     1.4991  ratio 0.874 [0.868,0.882]  faster 92/96
+  resourcesNs        main     0.1961  dawn     0.4235  ratio 0.467 [0.455,0.476]  faster 96/96
+  teardownNs         main     0.3627  dawn     0.4377  ratio 0.872 [0.811,0.893]  faster 72/96
+  first.operation    main     2.0879  dawn     2.0873  ratio 1.004 [0.978,1.023]  faster 47/96
+  warm.upload        main     0.0245  dawn     0.0271  ratio 0.904 [0.899,0.910]  faster 91/96
+  warm.uploadSource  main     0.0088  dawn     0.0091  ratio 0.977 [0.961,0.990]  faster 64/96
+  warm.uploadDoe     main     0.0157  dawn     0.0180  ratio 0.871 [0.868,0.872]  faster 96/96
+  warm.encode        main     0.0007  dawn     0.0013  ratio 0.534 [0.531,0.552]  faster 96/96
+  warm.submit        main     0.0103  dawn     0.0087  ratio 1.165 [1.139,1.189]  faster 10/96
+  warm.completion    main     0.2865  dawn     0.3014  ratio 0.949 [0.947,0.952]  faster 95/96
+  warm.map           main     0.0169  dawn     0.0173  ratio 0.981 [0.978,0.985]  faster 84/96
+  warm.operation     main     0.3392  dawn     0.3564  ratio 0.948 [0.944,0.952]  faster 95/96
+  warmP95.operation  main     0.3679  dawn     0.3934  ratio 0.931 [0.921,0.950]  faster 77/96
+  complete           main    14.7882  dawn    16.1472  ratio 0.919 [0.905,0.928]  faster 89/96
+  processWall        main    37.6159  dawn    41.5066  ratio 0.907 [0.900,0.912]  faster 96/96
+  cpuMs              main    27.0330  dawn    29.8425  ratio 0.911 [0.904,0.919]  faster 96/96
+  maxRssMiB          main    29.6250  dawn    42.3750  ratio 0.699 [0.699,0.699]  faster 96/96
+  verdict {'improve': {'setupNs': True}, 'noRegress': {}, 'pass': True}
+== image_rgba_invert_1024 pairs=96 A/A warm.operation 1.001 [0.997,1.005]
+  setupNs            main    10.1343  dawn    12.9157  ratio 0.787 [0.781,0.797]  faster 96/96
+  compileNs          main     0.0683  dawn     0.2497  ratio 0.269 [0.266,0.275]  faster 96/96
+  pipelineNs         main     1.4051  dawn     1.6067  ratio 0.877 [0.862,0.884]  faster 95/96
+  resourcesNs        main     0.7351  dawn     0.4574  ratio 1.615 [1.599,1.637]  faster 0/96
+  teardownNs         main     0.5817  dawn     0.6614  ratio 0.882 [0.851,0.902]  faster 89/96
+  first.operation    main     2.7911  dawn     3.3041  ratio 0.846 [0.831,0.854]  faster 94/96
+  warm.upload        main     0.1232  dawn     0.3799  ratio 0.333 [0.327,0.337]  faster 96/96
+  warm.uploadSource  main     0.0609  dawn     0.0609  ratio 0.996 [0.984,1.007]  faster 51/96
+  warm.uploadDoe     main     0.0619  dawn     0.3164  ratio 0.199 [0.197,0.203]  faster 96/96
+  warm.encode        main     0.0009  dawn     0.0021  ratio 0.413 [0.392,0.433]  faster 96/96
+  warm.submit        main     0.0119  dawn     0.0142  ratio 0.825 [0.801,0.845]  faster 92/96
+  warm.completion    main     0.4650  dawn     0.7385  ratio 0.630 [0.627,0.633]  faster 96/96
+  warm.map           main     0.0811  dawn     0.0845  ratio 0.962 [0.944,0.976]  faster 75/96
+  warm.operation     main     0.6850  dawn     1.2234  ratio 0.558 [0.556,0.563]  faster 96/96
+  warmP95.operation  main     0.7610  dawn     1.3228  ratio 0.571 [0.561,0.580]  faster 96/96
+  complete           main    27.4105  dawn    44.7077  ratio 0.615 [0.610,0.622]  faster 96/96
+  processWall        main    53.7219  dawn    73.7923  ratio 0.733 [0.726,0.739]  faster 96/96
+  cpuMs              main    37.3575  dawn    50.2640  ratio 0.741 [0.736,0.744]  faster 96/96
+  maxRssMiB          main    59.4531  dawn    74.2969  ratio 0.800 [0.800,0.800]  faster 96/96
+  verdict {'improve': {'setupNs': True}, 'noRegress': {}, 'pass': True}
+== buffer_upload_readback_exact_1mb pairs=96 A/A warm.operation 1.002 [0.998,1.004]
+  setupNs            main     9.2406  dawn    11.8235  ratio 0.779 [0.775,0.785]  faster 96/96
+  compileNs          main     0.0001  dawn     0.0001  ratio 1.000 [0.988,1.012]  faster 39/93
+  pipelineNs         main     0.0000  dawn     0.0000  ratio 0.000 [0.000,0.976]  faster 36/47
+  resourcesNs        main     0.1364  dawn     0.0144  ratio 9.568 [9.315,9.835]  faster 0/96
+  teardownNs         main     0.3147  dawn     0.3698  ratio 0.858 [0.844,0.867]  faster 82/96
+  first.operation    main     2.6450  dawn     2.9752  ratio 0.891 [0.882,0.900]  faster 94/96
+  warm.upload        main     0.0241  dawn     0.0263  ratio 0.917 [0.916,0.919]  faster 87/96
+  warm.uploadSource  main     0.0084  dawn     0.0085  ratio 0.990 [0.990,1.000]  faster 58/96
+  warm.uploadDoe     main     0.0157  dawn     0.0178  ratio 0.881 [0.879,0.881]  faster 96/96
+  warm.encode        main     0.0003  dawn     0.0005  ratio 0.500 [0.500,0.545]  faster 96/96
+  warm.submit        main     0.0047  dawn     0.0031  ratio 1.532 [1.500,1.554]  faster 0/96
+  warm.completion    main     0.2430  dawn     0.2657  ratio 0.912 [0.907,0.915]  faster 88/96
+  warm.map           main     0.0167  dawn     0.0170  ratio 0.982 [0.980,0.983]  faster 93/96
+  warm.operation     main     0.2891  dawn     0.3135  ratio 0.921 [0.918,0.924]  faster 88/96
+  warmP95.operation  main     0.3137  dawn     0.3401  ratio 0.907 [0.890,0.929]  faster 70/96
+  complete           main    12.1950  dawn    13.2497  ratio 0.915 [0.910,0.926]  faster 89/96
+  processWall        main    27.8274  dawn    31.3912  ratio 0.886 [0.882,0.893]  faster 96/96
+  cpuMs              main    18.5345  dawn    20.7105  ratio 0.893 [0.890,0.901]  faster 96/96
+  maxRssMiB          main    26.8750  dawn    38.2500  ratio 0.703 [0.703,0.703]  faster 96/96
+  verdict {'improve': {'setupNs': True}, 'noRegress': {}, 'pass': True}
+VALIDITY {'noFailedProcesses': True, 'gate:reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage/vector_scale_add_262k/attempt1/gate.json': True, 'gate:reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage/image_rgba_invert_1024/attempt1/gate.json': True, 'gate:reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage/buffer_upload_readback_exact_1mb/attempt1/gate.json': True, 'aa.vector_scale_add_262k': True, 'aa.image_rgba_invert_1024': True, 'aa.buffer_upload_readback_exact_1mb': True} VALID
+MECHANISM PASS

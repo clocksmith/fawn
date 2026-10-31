@@ -529,3 +529,92 @@ substituted. B3, M1R and M2R have used their attempts and have verdicts. A
 changed M1, any pipeline or submit candidate, or a baseline that includes M2
 needs a new prospective contract. B1, B2, M1 and M2 keep the status recorded
 above.
+
+## Setup boundary correction and storage trial (2026-10-31)
+
+Consumer: the owner's Metal phase-gap investigation, scoped to this Apple M3 and
+these unchanged drop-in workloads. No application, backend-support or cross-device
+claim follows. Baseline is `125654e63`; Dawn is the handoff rebuild of `d04f88359`
+with SHA-256 `ea81f617…`. Earlier contracts and verdicts remain unchanged.
+
+The prospective [setup](contract-setup-load.json) and
+[storage](contract-submit-storage.json) contracts were frozen at 19:23:39Z.
+Both use 96 balanced pairs of 32 iterations, 10,000 bootstrap resamples and Dawn
+A/A. All three windows were valid on attempt 1, with low power off and battery at
+98%. Vector ran on battery; image and copy/readback ran with AC attached.
+Foreign CPU was 6.5–7.4%; idle GPU and thermal/power checks passed.
+Actual observations are in each [window gate](submit-storage/).
+The libraries were built with `ZERO_AR_DATE=1`; two clean main builds matched
+byte-for-byte. [Build and check receipt](builds/setup-submit-storage.json).
+
+### Setup: corrected boundary, pass
+
+`build --backend metal --load-provider` removes the link-time provider dependency.
+The executable links only libSystem. After the setup timer starts, it dlopens the
+exact provider and resolves its WebGPU procedures; Dawn's linked frameworks and
+Doe's later framework loads therefore fall inside `setupNs`. Preloaded provider,
+Foundation, Metal, IOSurface or CoreVideo images reject. `providerLoadNs` is a
+nested component, and the instance/adapter/device subphases plus provider load
+sum to setup. There is no framework-preload step outside the timer. Every timed
+process reported zero framework images before setup and passed its full oracle.
+Implementation: `bench/drop-in/dropin_phase_harness.c:150,326,336` and
+`bench/tools/dropin_phase_cohort.py:154,173`.
+
+| Main / Dawn [95% CI] | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| setup | 0.788 [0.783,0.795] | 0.787 [0.781,0.797] | 0.779 [0.775,0.785] |
+| pipeline | 0.874 [0.868,0.882] | 0.877 [0.862,0.884] | absent |
+| resources | 0.467 [0.455,0.476] | **1.615 [1.599,1.637]** | **9.568 [9.315,9.835]** |
+| first operation | 1.004 [0.978,1.023] | 0.846 [0.831,0.854] | 0.891 [0.882,0.900] |
+| warm submit | **1.165 [1.139,1.189]** | 0.825 [0.801,0.845] | **1.532 [1.500,1.554]** |
+| warm map | 0.981 [0.978,0.985] | 0.962 [0.944,0.976] | 0.982 [0.980,0.983] |
+| warm operation | 0.948 [0.944,0.952] | 0.558 [0.556,0.563] | 0.921 [0.918,0.924] |
+| complete (setup excluded) | 0.919 [0.905,0.928] | 0.615 [0.610,0.622] | 0.915 [0.910,0.926] |
+| process wall | 0.907 [0.900,0.912] | 0.733 [0.726,0.739] | 0.886 [0.882,0.893] |
+
+**Setup rule: PASS** ([evaluator](submit-storage/setup-eval.txt)). This corrects
+the comparison boundary; it is not a runtime setup optimization. Full phases and
+raw-file hashes are in [the Dawn summary](submit-storage/summary-vs-dawn.json).
+Retained raw/gate paths are sanitized before summarization; summary hashes bind
+those retained bytes.
+
+### Combined pending and inline resource storage: fail, excluded
+
+[Patch](submit-storage/candidate.patch): one native pending/resource allocation,
+a single-command pointer inline, eight inline buffer-use entries and two inline
+compute-pipeline entries with heap overflow. The existing exclusive buffer owner
+points directly to its use instead of searching the list. Retirement, unknown
+completion, validation and error transport retain their owners.
+
+| Candidate / main [95% CI] | vector | image | upload/readback |
+| --- | --- | --- | --- |
+| warm submit | 0.965 [0.951,0.992] | 0.974 [0.947,1.008] | 0.996 [0.983,1.009] |
+| warm operation | 0.998 [0.995,1.001] | 1.001 [0.997,1.009] | 1.000 [0.997,1.003] |
+
+**Storage rule: FAIL** ([evaluator](submit-storage/eval.txt)). Vector improves,
+but the required copy/readback improvement is unproven. All no-regression bounds
+pass. The runtime patch is excluded; its failure is retained, with no retry based
+on its performance result. [Main summary](submit-storage/summary-vs-main.json).
+All 81 physical-client statuses matched main (62 pass, 12 same aborts, six
+GNU-only unbuildable, one requires checker arguments). Metal `check`, `sdk-abi`,
+`native-check`, and `native-graphics-check` passed. The added lifetime case crossed
+inline capacity under abandonment, unknown completion, success and terminal
+failure; those test changes remain in the rejected patch.
+
+The [diagnostic vector](submit-storage/submit-vector.txt) and
+[copy](submit-storage/submit-copy.txt) reruns of the handoff instrumentation
+(1,022 warm submits, [patch](submit-storage/profile.patch)) put allocation at
+51/47 ns, lock+settle at 30/30 ns, validation at 135/34 ns, resource-use tracking
+at 121/40 ns, native encoding at 6,165/2,035 ns, and commit at 1,682/1,240 ns.
+These instrumented means are diagnostic and not acceptance timings.
+
+Component: benchmark/evidence owner; intent changed only for the explicitly
+authorized prospective setup boundary. Runtime intent is preserved. No public
+ABI or production-provider selection changed. Fifteen harness tests pass.
+`make -C runtime/c check` ran: 39 tooling tests and style passed, but the build
+stopped at the labels owner's required GCC/Linux archive on this Mac. Global
+CATSCAN remains blocked by four pre-existing oversized charters and a stale
+component index; the changed benchmark charter meets its 250-word limit.
+No unmeasured build-time or maintenance improvement is claimed. The storage
+trial reduced one allocation per public submit and up to ten resource-node
+allocations by construction, but that did not establish its required latency win.

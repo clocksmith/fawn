@@ -10,6 +10,8 @@ Timing is a host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on
 Apple; QueryPerformanceCounter on Windows), not GPU timestamps. ``build --backend`` fixes the adapter backend the
 harness requests and asserts (Vulkan by default, or Metal). The oracle check
 runs after each iteration's host-operation interval closes and is mandatory.
+Apple Metal builds may opt into ``--load-provider``: dlopen and symbol resolution
+then happen inside setupNs, including frameworks linked by the provider.
 """
 
 from __future__ import annotations
@@ -59,7 +61,8 @@ WORKLOADS = {
     },
 }
 SECOND_SET_SEED_OFFSET = 1000
-ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "teardownReleaseNs", "teardownDeviceNs", "processInMainNs")
+ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "teardownReleaseNs", "teardownDeviceNs", "processInMainNs", "providerLoadNs")
+IMAGE_COUNTS = ("frameworkImagesBeforeSetup", "imagesBeforeSetup", "providerImagesLoaded", "setupImagesLoaded")
 LOOP_PHASES = ("upload", "encode", "submit", "completion", "map", "operation")
 # Present only in harnesses built with --upload-split.
 SPLIT_PHASES = ("uploadSource", "uploadDoe")
@@ -148,7 +151,10 @@ def prepare(out: Path, oracle_plans: Path | None) -> None:
 BACKEND_DEFINES = {"vulkan": [], "metal": ["-DDOE_PHASE_BACKEND_METAL"]}
 
 
-def build(library: Path, output: Path, compiler: str, backend: str, upload_split: bool = False) -> None:
+def build(library: Path, output: Path, compiler: str, backend: str,
+          upload_split: bool = False, load_provider: bool = False) -> None:
+    if load_provider and (sys.platform != "darwin" or backend != "metal"):
+        raise SystemExit("--load-provider requires Apple Metal")
     if os.name == "nt":
         # clang-cl links the provider's import library. The DLL must sit beside the
         # harness: Windows resolves it from the executable directory first, so no
@@ -164,10 +170,13 @@ def build(library: Path, output: Path, compiler: str, backend: str, upload_split
     else:
         argv = [compiler, "-O2", "-std=c11", "-Wall", "-Wextra", "-Werror", *BACKEND_DEFINES[backend],
                 *(["-DDOE_PHASE_UPLOAD_SPLIT"] if upload_split else []), f"-I{HEADERS}",
-                str(HARNESS), str(library.resolve()), f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
+                *([f"-DDOE_PHASE_LOAD_PROVIDER={json.dumps(str(library.resolve()))}"] if load_provider else []),
+                str(HARNESS), *([] if load_provider else [str(library.resolve())]),
+                f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
     subprocess.run(argv, check=True)
     print(json.dumps({"binary": str(output), "sha256": sha256(output), "library": str(library), "backend": backend,
-                      "librarySha256": sha256(library), "harnessSha256": sha256(HARNESS), "argv": argv}))
+                      "librarySha256": sha256(library), "harnessSha256": sha256(HARNESS), "argv": argv,
+                      "providerLoadInSetup": load_provider}))
 
 
 def run_process(argv: list[str], timeout: float) -> tuple[int, str, str, int, float]:
@@ -252,6 +261,7 @@ def bootstrap_median_ci(values: list[float]) -> tuple[float, float]:
 def process_metrics(row: dict) -> dict[str, float]:
     result = row["result"]
     metrics = {key: result[key] / 1e6 for key in ONE_TIME if key in result}
+    metrics.update({key: float(result[key]) for key in IMAGE_COUNTS if key in result})
     # Complete operation after device acquisition: one-time preparation, every
     # iteration's host-operation interval (CPU oracle excluded) and teardown.
     if all(key in result for key in ("compileNs", "pipelineNs", "resourcesNs", "teardownNs")):
@@ -331,6 +341,8 @@ def main() -> None:
     b.add_argument("--backend", choices=sorted(BACKEND_DEFINES), default="vulkan")
     b.add_argument("--upload-split", action="store_true",
                    help="time the harness's own source read apart from the provider's queue write")
+    b.add_argument("--load-provider", action="store_true",
+                   help="Apple Metal only: time dlopen and provider framework loading inside setup")
     r = sub.add_parser("run")
     r.add_argument("--inputs", required=True)
     r.add_argument("--provider", action="append", required=True, help="name=harness-binary")
@@ -347,7 +359,7 @@ def main() -> None:
     if args.command == "prepare":
         prepare(Path(args.out), Path(args.oracle_plans) if args.oracle_plans else None)
     elif args.command == "build":
-        build(Path(args.library), Path(args.output), args.cc, args.backend, args.upload_split)
+        build(Path(args.library), Path(args.output), args.cc, args.backend, args.upload_split, args.load_provider)
     elif args.command == "run":
         run(args)
     else:
