@@ -432,10 +432,7 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
             while (failure.status == NATIVE_OK && !doe_mtl_texture_release_scheduled(payload->metal)) {
                 if (doe_monotonic_now(&now).status != DOE_HOST_OK) failure = native_failure_status(NATIVE_FAILURE);
                 else if (doe_time_reached(&now, &deadline)) failure = native_failure_status(NATIVE_TIMEOUT);
-                else {
-                    const struct timespec pause = {0, 20000};
-                    (void)nanosleep(&pause, NULL);
-                }
+                else (void)doe_sleep_for(UINT64_C(20000));
             }
             doe_mtl_error detail = {0};
             if (failure.status == NATIVE_OK)
