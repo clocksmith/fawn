@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Adapter info strings: vendor from the PCI/Khronos vendor ID (lowercase, empty
- * when unknown), no architecture family, and the driver's device name as both
+ * when unknown), Metal's highest supported family as the architecture (Vulkan and
+ * D3D12 report none), and the driver's device name as both
  * device and description; adapter and device report the same. Without the
  * "subgroups" feature the subgroup sizes are the spec defaults 4 and 128. The
  * doeNativeAdapterGetPciIdentity extension reports the same vendor and device
@@ -15,11 +16,32 @@ static bool same(WGPUStringView a, WGPUStringView b)
     return a.length == b.length && (!a.length || !memcmp(a.data, b.data, a.length));
 }
 
+static bool contains(WGPUStringView text, const char *mark)
+{
+    const size_t size = strlen(mark);
+    for (size_t i = 0; i + size <= text.length; ++i)
+        if (!memcmp(text.data + i, mark, size)) return true;
+    return false;
+}
+
 static void check(const WGPUAdapterInfo *info)
 {
     assert(info->device.length && info->device.data);
     assert(same(info->description, info->device));
-    assert(info->architecture.length == 0 && info->architecture.data);
+    assert(info->architecture.data);
+    if (info->backendType == WGPUBackendType_Metal) {
+        static const char *families[] = {"metal-3", "common-3", "common-2", "common-1"};
+        bool known = false;
+        for (size_t i = 0; i < sizeof(families) / sizeof(families[0]); ++i)
+            known |= same(info->architecture, (WGPUStringView){families[i], strlen(families[i])});
+        assert(known);
+        assert(info->adapterType == WGPUAdapterType_IntegratedGPU ||
+            info->adapterType == WGPUAdapterType_DiscreteGPU);
+        if (contains(info->device, "Apple"))
+            assert(info->vendorID == 0x106B && same(info->vendor, (WGPUStringView){"apple", 5}));
+    } else {
+        assert(info->architecture.length == 0);
+    }
     for (size_t i = 0; i < info->vendor.length; ++i)
         assert(islower((unsigned char)info->vendor.data[i]));
     if (info->vendorID == 0x10005) assert(same(info->vendor, (WGPUStringView){"mesa", 4}));

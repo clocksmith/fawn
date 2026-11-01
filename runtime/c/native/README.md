@@ -1345,8 +1345,10 @@ unknown does not publish a public texture and cannot drop its private allocation
 `DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical` selects Metal explicitly.
 It checks ordinary WGSL vertex_index rendering into RGBA8, asymmetric triangle
 pixels, public early releases, discard followed by zero readback and packed upload
-roundtrip. The Metal adapter prints its actual name and truthful unclassified
-subtype. These focused developer results do not qualify Metal graphics, broader
+roundtrip. The Metal adapter prints its actual name and its unified-memory
+subtype. Metal reports no PCI vendor ID, so adapter info takes the vendor from the
+device-name trademark and names the highest supported Metal3/Common family as the
+architecture; Vulkan and D3D12 report their PCI vendor and no architecture. These focused developer results do not qualify Metal graphics, broader
 platforms, performance or a production provider switch. The host-only
 `metal-bridge` control separately checks native initialization failure detail,
 unknown-work private lifetime and direct-render call identity without GPU emulation.

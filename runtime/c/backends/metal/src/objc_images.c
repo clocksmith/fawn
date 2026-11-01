@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
 
+#include <stdio.h>
+#include <string.h>
+
 bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
     r->texture_class = r->get_class("MTLTextureDescriptor");
     r->sampler_class = r->get_class("MTLSamplerDescriptor");
@@ -50,6 +53,36 @@ bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
         r->read_image != NULL && r->copy_image != NULL && r->set_texture != NULL &&
         r->set_sampler != NULL && r->supports_family != NULL && r->supports_bc != NULL &&
         r->supports_samples != NULL && r->supports_depth24 != NULL && r->supports_float_filter != NULL;
+}
+
+/* Metal exposes no PCI vendor ID; its device names carry the vendor trademark. */
+static uint32_t vendor_from_name(const char *name) {
+    static const struct { const char *mark; uint32_t vendor; } marks[] = {
+        {"Apple", 0x106B}, {"AMD", 0x1002}, {"Radeon", 0x1002}, {"Intel", 0x8086},
+        {"NVIDIA", 0x10DE}, {"GeForce", 0x10DE}, {"Quadro", 0x10DE},
+    };
+    for (size_t index = 0; index < sizeof(marks) / sizeof(marks[0]); ++index)
+        if (strstr(name, marks[index].mark) != NULL) return marks[index].vendor;
+    return 0;
+}
+
+void doe_mtl_objc_identity_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) {
+    /* MTLGPUFamilyMetal3 and MTLGPUFamilyCommon3..1, newest first. */
+    static const struct { intptr_t family; const char *name; } families[] = {
+        {5001, "metal-3"}, {3003, "common-3"}, {3002, "common-2"}, {3001, "common-1"},
+    };
+    void *unified = r->selector("hasUnifiedMemory");
+    caps->vendor_id = vendor_from_name(caps->device_name);
+    if (unified != NULL && r->responds_call(device, r->responds, unified))
+        caps->unified_memory = r->bool_call(device, unified) != 0;
+    caps->architecture[0] = '\0';
+    if (!r->responds_call(device, r->responds, r->supports_family)) return;
+    for (size_t index = 0; index < sizeof(families) / sizeof(families[0]); ++index) {
+        if (r->family_call(device, r->supports_family, families[index].family)) {
+            snprintf(caps->architecture, sizeof(caps->architecture), "%s", families[index].name);
+            return;
+        }
+    }
 }
 
 void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) {

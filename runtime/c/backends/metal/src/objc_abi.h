@@ -234,6 +234,7 @@ doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeli
     const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error);
 bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *runtime);
 void doe_mtl_objc_image_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
+void doe_mtl_objc_identity_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
 doe_mtl_status doe_mtl_objc_texture(void *userdata, void *device,
     const doe_mtl_texture_desc *desc, void **out, doe_mtl_error *error);
 doe_mtl_status doe_mtl_objc_view(void *userdata, void *texture,

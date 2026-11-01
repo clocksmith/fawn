@@ -232,6 +232,8 @@ void doeNativeAdapterGetPciIdentity(WGPUAdapter adapter, uint32_t *vendor_id, ui
     } else if (backend && backend->kind == WGPUBackendType_D3D12) {
         vendor = backend->value.d3d12.caps.vendor_id;
         device = backend->value.d3d12.caps.device_id;
+    } else if (backend && backend->kind == WGPUBackendType_Metal) {
+        vendor = backend->value.metal.caps.vendor_id; /* Metal exposes no device ID. */
     }
     if (vendor_id) *vendor_id = vendor;
     if (device_id) *device_id = device;
@@ -241,7 +243,7 @@ void doeNativeAdapterGetPciIdentity(WGPUAdapter adapter, uint32_t *vendor_id, ui
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out)
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;
-    const char *name;
+    const char *name, *architecture = "";
     /* Without the requested feature, retain WebGPU default range. */
     WGPUAdapterInfo result = {.backendType=backend->kind,.adapterType=WGPUAdapterType_Unknown,
         .subgroupMinSize=4,.subgroupMaxSize=128};
@@ -260,6 +262,10 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
     } else if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         name = caps->device_name;
+        architecture = caps->architecture;
+        result.vendorID = caps->vendor_id;
+        result.adapterType = caps->unified_memory ? WGPUAdapterType_IntegratedGPU :
+            WGPUAdapterType_DiscreteGPU;
         if (caps->subgroups) {
             result.subgroupMinSize = caps->subgroup_min_size;
             result.subgroupMaxSize = caps->subgroup_max_size;
@@ -279,18 +285,20 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
     }
     else return WGPUStatus_Error;
     /* One owned block: vendor, architecture, device, description (the driver's
-     * device name). No architecture family is known, so it stays empty. */
+     * device name). Metal names its highest supported family; Vulkan and D3D12
+     * expose no architecture family, so theirs stays empty. */
     const char *vendor = vendor_name(result.vendorID);
-    const size_t vendor_size = strlen(vendor), size = strlen(name);
-    char *owned = malloc(vendor_size + 1 + 1 + 2 * (size + 1));
+    const size_t vendor_size = strlen(vendor), architecture_size = strlen(architecture);
+    const size_t size = strlen(name);
+    char *owned = malloc(vendor_size + 1 + architecture_size + 1 + 2 * (size + 1));
     if (!owned) return WGPUStatus_Error;
     char *at = owned;
     memcpy(at, vendor, vendor_size + 1);
     result.vendor = (WGPUStringView){at,vendor_size};
     at += vendor_size + 1;
-    *at = '\0';
-    result.architecture = (WGPUStringView){at,0};
-    at += 1;
+    memcpy(at, architecture, architecture_size + 1);
+    result.architecture = (WGPUStringView){at,architecture_size};
+    at += architecture_size + 1;
     memcpy(at, name, size + 1);
     result.device = (WGPUStringView){at,size};
     at += size + 1;

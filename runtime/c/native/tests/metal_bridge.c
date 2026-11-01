@@ -882,7 +882,8 @@ int main(int argc, char **argv)
     assert(wgpuInstanceRequestAdapter(s.instance,&options,adapter).id && s.adapter);
     WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
     assert(wgpuAdapterGetInfo(s.adapter,&info) == WGPUStatus_Success && info.backendType == WGPUBackendType_Metal);
-    assert(info.adapterType == WGPUAdapterType_Unknown);
+    assert(info.adapterType == WGPUAdapterType_IntegratedGPU && info.vendorID == 0);
+    assert(info.vendor.length == 0 && info.architecture.length == 0);
     wgpuAdapterInfoFreeMembers(info);
     WGPULimits limits = WGPU_LIMITS_INIT;
     assert(wgpuAdapterGetLimits(s.adapter,&limits) == WGPUStatus_Success && limits.maxBufferSize == 4096);

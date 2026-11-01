@@ -140,6 +140,7 @@ static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *ca
     doe_mtl_objc_text(runtime, doe_mtl_objc_object(runtime, device, runtime->name),
         result.device_name, sizeof(result.device_name));
     doe_mtl_objc_image_caps(runtime, device, &result);
+    doe_mtl_objc_identity_caps(runtime, device, &result);
     doe_mtl_objc_query_caps(runtime, device, &result);
     result.shared_surface_import = runtime->external.texture_call && runtime->external.new_texture &&
         runtime->external.surface_format && runtime->external.cf_retain && runtime->external.cf_release &&

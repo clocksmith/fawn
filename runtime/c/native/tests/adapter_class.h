@@ -60,13 +60,14 @@ static inline void adapter_class_require(WGPUAdapter adapter)
     assert(wgpuAdapterGetInfo(adapter, &info) == WGPUStatus_Success);
     assert(info.backendType == adapter_class_backend());
     if (info.backendType == WGPUBackendType_Metal) {
-        /* Metal has no CPU fallback; subtype is not queried by this provider. */
+        /* Metal has no CPU fallback; unified memory classifies the subtype. */
         assert(adapter_class_physical() && info.device.length && info.device.data);
-        assert(info.adapterType == WGPUAdapterType_Unknown || info.adapterType == WGPUAdapterType_IntegratedGPU ||
+        assert(info.adapterType == WGPUAdapterType_IntegratedGPU ||
             info.adapterType == WGPUAdapterType_DiscreteGPU);
         snprintf(adapter_class_label, sizeof(adapter_class_label),
-            "(native Metal device: %.*s; subtype unclassified; developer run, not qualification)",
-            (int)info.device.length, info.device.data);
+            "(native Metal device: %.*s; %s; developer run, not qualification)",
+            (int)info.device.length, info.device.data,
+            info.adapterType == WGPUAdapterType_IntegratedGPU ? "integrated" : "discrete");
         printf("Selected adapter backend Metal, type %u: %.*s\n", (unsigned)info.adapterType,
             (int)info.device.length, info.device.data);
         wgpuAdapterInfoFreeMembers(info);

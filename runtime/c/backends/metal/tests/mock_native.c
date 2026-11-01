@@ -120,6 +120,7 @@ static doe_mtl_status device_create(void *userdata, void **out,
     result.timestamp_period_ns = 1.0f;
     result.timestamp_blit = true;
     strcpy(result.device_name, "test call ledger, not a GPU");
+    result.unified_memory = true; /* No trademark or family: vendor and architecture stay empty. */
     *out = object_create(mock, MOCK_KIND_DEVICE);
     *caps = result;
     return doe_mtl_fail(DOE_MTL_OK, "mock device", error);

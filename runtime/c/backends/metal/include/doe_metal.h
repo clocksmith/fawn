@@ -49,6 +49,12 @@ typedef struct doe_mtl_caps {
     uint64_t max_threads_per_dimension[3];
     uint32_t max_threads_per_workgroup; /* Queried family envelope; PSO total checked separately. */
     char device_name[256];
+    /* Adapter identity: PCI vendor from the device-name trademark (Metal reports
+     * no vendor ID), unified memory as reported, and the highest supported
+     * Metal3/Common family name; empty when no family is admitted. */
+    uint32_t vendor_id;
+    bool unified_memory;
+    char architecture[16];
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;
     bool bc_texture_compression;
     bool texture_swizzle;
