@@ -707,6 +707,13 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             self.assertNotIn("--use-webgpu-runtime=doe", dawn)
             self.assertFalse(any(value.startswith("--doe-webgpu-library-path=") for value in dawn))
             self.assertIn(f"--user-data-dir={env['HOME']}/Library/Application Support/Fawn/dawn", dawn)
+            named = subprocess.run([launcher, "--use-webgpu-runtime=doe", f"--doe-webgpu-library-path={bundled}"],
+                                   env=env, check=True, capture_output=True, text=True).stdout.splitlines()
+            named_paths = [value for value in named if value.startswith("--doe-webgpu-library-path=")]
+            self.assertEqual(len(named_paths), 1)
+            self.assertEqual(Path(named_paths[0].split("=", 1)[1]).resolve(), bundled.resolve())
+            foreign = root / "libwebgpu_doe_full.dylib"
+            foreign.write_bytes(b"selected runtime")
             explicit = subprocess.run([launcher, f"--user-data-dir={root}/explicit profile"],
                                       env=env, check=True, capture_output=True, text=True).stdout.splitlines()
             self.assertEqual(sum(value.startswith("--user-data-dir=") for value in explicit), 1)
@@ -714,6 +721,9 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
                 ["--use-webgpu-runtime=auto"],
                 ["--use-webgpu-runtime=dawn", " -use-webgpu-runtime=doe "],
                 [" -doe-webgpu-library-path=/foreign "],
+                [f"--doe-webgpu-library-path={foreign}"],
+                [f"--doe-webgpu-library-path={bundled}", f" -doe-webgpu-library-path={bundled} "],
+                ["--use-webgpu-runtime=dawn", f"--doe-webgpu-library-path={bundled}"],
                 ["--user-data-dir"], ["--user-data-dir=relative"],
                 ["--user-data-dir=/one", " -user-data-dir=/two "],
             ]:

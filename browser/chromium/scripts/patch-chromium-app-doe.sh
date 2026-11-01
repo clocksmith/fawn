@@ -257,6 +257,7 @@ fi
 RUNTIME=doe
 MODE_SEEN=0
 PROFILE_SEEN=0
+LIBRARY_SEEN=0
 POSITIONAL=0
 FORWARDED=(--no-first-run)
 for ARGUMENT in "$@"; do
@@ -281,8 +282,14 @@ for ARGUMENT in "$@"; do
         continue
         ;;
       doe-webgpu-library-path)
-        echo "Fawn: the product launcher selects its bundled runtime; use the raw image for diagnostics" >&2
-        exit 1
+        # A verifier may name the runtime it selects; admit only the bundled file
+        # itself, once. Foreign libraries stay with the raw image for diagnostics.
+        if [[ "${LIBRARY_SEEN}" -ne 0 || -z "${VALUE}" || ! "${VALUE}" -ef "${DOE_LIB}" ]]; then
+          echo "Fawn: only the bundled Doe runtime may be named; use the raw image for diagnostics" >&2
+          exit 1
+        fi
+        LIBRARY_SEEN=1
+        continue
         ;;
       user-data-dir)
         if [[ "${PROFILE_SEEN}" -ne 0 || "${VALUE}" != /* ]]; then
@@ -297,6 +304,10 @@ for ARGUMENT in "$@"; do
 done
 
 SELECTED=(--use-webgpu-runtime=doe)
+if [[ "${RUNTIME}" == dawn && "${LIBRARY_SEEN}" -ne 0 ]]; then
+  echo "Fawn: a Doe runtime path requires --use-webgpu-runtime=doe" >&2
+  exit 1
+fi
 if [[ "${RUNTIME}" == dawn ]]; then
   SELECTED=(--use-webgpu-runtime=dawn)
 else
