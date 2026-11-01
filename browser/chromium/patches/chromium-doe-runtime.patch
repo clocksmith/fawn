@@ -1015,8 +1015,30 @@ index 55c0b1bd55..04102ed18c 100644
  }  // namespace gpu
  
  #endif  // GPU_COMMAND_BUFFER_SERVICE_SHARED_IMAGE_EXTERNAL_VK_IMAGE_DAWN_REPRESENTATION_H_
+diff --git a/gpu/command_buffer/service/shared_image/iosurface_image_backing.mm b/gpu/command_buffer/service/shared_image/iosurface_image_backing.mm
+index ad8f919806..0dd5d8329c 100644
+--- a/gpu/command_buffer/service/shared_image/iosurface_image_backing.mm
++++ b/gpu/command_buffer/service/shared_image/iosurface_image_backing.mm
+@@ -1323,7 +1323,16 @@
+     return nullptr;
+   }
+ 
+-  if (backend_type == wgpu::BackendType::Metal) {
++  // The WebGPU backend over an external runtime (forced Doe) imports the same
++  // IOSurface through SharedTextureMemory and MTLSharedEvent fences. It admits
++  // only packed 8-bit RGBA/BGRA surfaces, so others decline before any import.
++  const bool external_runtime = backend_type == wgpu::BackendType::WebGPU;
++  if (external_runtime && io_surface_format_ != 'BGRA' &&
++      io_surface_format_ != 'RGBA') {
++    return nullptr;
++  }
++
++  if (backend_type == wgpu::BackendType::Metal || external_runtime) {
+     wgpu::SharedTextureMemory shared_texture_memory;
+     {
+       AutoLock auto_lock(this);
 diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
-index 6030a9f57c..972a18e389 100644
+index 6030a9f57c..f04c8db797 100644
 --- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
 +++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
 @@ -13,6 +13,7 @@
@@ -1052,7 +1074,7 @@ index 6030a9f57c..972a18e389 100644
      has_polling_work_ =
          dawn::native::InstanceProcessEvents(dawn_instance_->Get());
  
-@@ -399,6 +408,24 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -399,6 +408,25 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        wgpu::TextureUsage internal_usage,
        std::vector<wgpu::TextureFormat> view_formats);
  
@@ -1063,8 +1085,9 @@ index 6030a9f57c..972a18e389 100644
 +      wgpu::TextureUsage usage,
 +      wgpu::TextureUsage internal_usage);
 +
-+  // Forced Doe: zero-copy when the device enabled Doe's Vulkan OPAQUE_FD and
-+  // SYNC_FD interop and the backing exports its memory, else Skia staging.
++  // Forced Doe: zero-copy when the device enabled Doe's interop (Linux: Vulkan
++  // OPAQUE_FD and SYNC_FD; macOS: IOSurface and MTLSharedEvent) and the backing
++  // exports its memory, else Skia staging.
 +  std::unique_ptr<SharedImageRepresentationAndAccess> AssociateMailboxForDoe(
 +      const Mailbox& mailbox,
 +      MailboxFlags flags,
@@ -1077,7 +1100,7 @@ index 6030a9f57c..972a18e389 100644
    std::unique_ptr<SharedImageRepresentationAndAccess>
    AssociateMailboxUsingSkiaFallback(
        const Mailbox& mailbox,
-@@ -435,6 +462,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -435,6 +463,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
    std::unique_ptr<DawnServiceMemoryTransferService> memory_transfer_service_;
  
    webgpu::SafetyLevel safety_level_ = webgpu::SafetyLevel::kSafe;
@@ -1087,7 +1110,7 @@ index 6030a9f57c..972a18e389 100644
    WebGPUAdapterName use_webgpu_adapter_ = WebGPUAdapterName::kDefault;
    WebGPUPowerPreference use_webgpu_power_preference_ =
        WebGPUPowerPreference::kNone;
-@@ -514,10 +544,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -514,10 +545,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        // Include list of formats this is tested to work with.
        // See gpu/command_buffer/tests/webgpu_mailbox_unittest.cc
        if (format != viz::SinglePlaneFormat::kBGRA_8888 &&
@@ -1098,7 +1121,7 @@ index 6030a9f57c..972a18e389 100644
            format != viz::SinglePlaneFormat::kRGBA_F16) {
          return nullptr;
        }
-@@ -687,12 +714,18 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -687,12 +715,18 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
          success = false;
        }
  
@@ -1118,7 +1141,7 @@ index 6030a9f57c..972a18e389 100644
                                    bytes_per_row, 0, 0)) {
            DLOG(ERROR) << "Failed to read from SkImage";
            success = false;
-@@ -703,7 +736,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -703,7 +737,7 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
          if (success && !GraphiteReadPixelsSync(
                             shared_context_state_->graphite_shared_context(),
                             shared_context_state_->gpu_main_graphite_recorder(),
@@ -1127,7 +1150,7 @@ index 6030a9f57c..972a18e389 100644
                             bytes_per_row, 0, 0)) {
            DLOG(ERROR) << "Failed to read from SkImage";
            success = false;
-@@ -867,7 +900,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
+@@ -867,7 +901,9 @@ class WebGPUDecoderImpl final : public WebGPUDecoder {
        }
  
        WaitForSemaphores(std::move(begin_semaphores));
@@ -1138,7 +1161,7 @@ index 6030a9f57c..972a18e389 100644
                             /*x*/ 0, /*y*/ 0);
  
        // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
-@@ -1545,6 +1580,23 @@ WGPUFuture WebGPUDecoderImpl::RequestDeviceImpl(
+@@ -1545,6 +1581,23 @@ WGPUFuture WebGPUDecoderImpl::RequestDeviceImpl(
      }
    }
  
@@ -1162,7 +1185,7 @@ index 6030a9f57c..972a18e389 100644
    // Require platform-specific SharedBufferMemory feature to support
    // importing transfer buffer into Dawn as shared buffer memory in dawn
    // wire.
-@@ -1666,10 +1718,15 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1666,10 +1719,15 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      bool force_fallback,
      wgpu::FeatureLevel feature_level,
      bool webgpu_on_vk_gl_interop) const {
@@ -1179,7 +1202,7 @@ index 6030a9f57c..972a18e389 100644
    if (force_fallback && !allow_fallback_adapter) {
      return nullptr;
    }
-@@ -1732,6 +1789,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1732,6 +1790,10 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
    dawn_adapter_toggles.disabledToggleCount =
        require_adapter_disabled_toggles.size();
    ChainStruct(adapter_options, &dawn_adapter_toggles);
@@ -1190,7 +1213,7 @@ index 6030a9f57c..972a18e389 100644
  
  #if BUILDFLAG(IS_WIN)
    // On Windows, query the LUID of ANGLE's adapter.
-@@ -1772,7 +1833,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1772,7 +1834,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      adapter_options_get_gl_proc.display = EGL_NO_DISPLAY;
    }
  
@@ -1198,7 +1221,7 @@ index 6030a9f57c..972a18e389 100644
  #endif
  
    // Build a list of backend types we will search for, in order of preference.
-@@ -1793,9 +1853,13 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1793,9 +1854,13 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
  #elif BUILDFLAG(IS_APPLE)
        backend_types = {wgpu::BackendType::Metal};
  #elif BUILDFLAG(IS_LINUX)
@@ -1215,7 +1238,7 @@ index 6030a9f57c..972a18e389 100644
          backend_types = {wgpu::BackendType::Vulkan};
        } else {
          // Deliberately disable compat on linux.
-@@ -1808,6 +1872,16 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1808,6 +1873,16 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      }
    }
  
@@ -1232,7 +1255,7 @@ index 6030a9f57c..972a18e389 100644
    // `CanUseAdapter` is a helper to determine if an adapter is not blocklisted,
    // supports all required features, and matches the requested adapter options
    // (some of which may be set by command-line flags).
-@@ -1817,7 +1891,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1817,7 +1892,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      wgpu::AdapterInfo adapter_info = {};
      adapter.GetInfo(&adapter_info);
  
@@ -1251,7 +1274,7 @@ index 6030a9f57c..972a18e389 100644
        return false;
      }
  
-@@ -1859,7 +1943,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1859,7 +1944,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      // SharedTextureMemory.
      supports_external_textures = native_adapter.SupportsExternalImages();
  #endif
@@ -1260,7 +1283,7 @@ index 6030a9f57c..972a18e389 100644
        return false;
      }
  
-@@ -1881,6 +1965,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1881,6 +1966,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
    // Enumerate adapters in order of the preferred backend type.
    for (wgpu::BackendType backend_type : backend_types) {
      adapter_options.backendType = backend_type;
@@ -1278,7 +1301,7 @@ index 6030a9f57c..972a18e389 100644
      for (dawn::native::Adapter& native_adapter :
           dawn_instance_->EnumerateAdapters(&adapter_options)) {
        native_adapter.SetUseTieredLimits(tiered_adapter_limits_);
-@@ -2114,11 +2209,51 @@ WebGPUDecoderImpl::AssociateMailboxDawn(
+@@ -2114,11 +2210,70 @@ WebGPUDecoderImpl::AssociateMailboxDawn(
      wgpu::TextureUsage usage,
      wgpu::TextureUsage internal_usage,
      std::vector<wgpu::TextureFormat> view_formats) {
@@ -1304,9 +1327,28 @@ index 6030a9f57c..972a18e389 100644
 +  // exports its memory never falls back after a failed import or access; that
 +  // failure yields the error texture like any Dawn representation.
 +  const char* reason = "interop_not_enabled";
-+  if (device.HasFeature(wgpu::FeatureName::SharedTextureMemoryOpaqueFD) &&
++#if BUILDFLAG(IS_APPLE)
++  // macOS: Doe imports the canvas IOSurface directly and exchanges
++  // MTLSharedEvent fences with the backing. The backing admits only the packed
++  // 8-bit surfaces Doe imports and otherwise declines before any import.
++  const bool interop =
++      device.HasFeature(wgpu::FeatureName::SharedTextureMemoryIOSurface) &&
++      device.HasFeature(wgpu::FeatureName::SharedFenceMTLSharedEvent);
++  if (interop && ((usage | internal_usage) &
++                  wgpu::TextureUsage::StorageBinding)) {
++    // Doe's IOSurface textures admit copy, sampling and attachment usage only.
++    VLOG(1) << "runtime_canvas_route: skia_staging reason=storage_usage";
++    return AssociateMailboxUsingSkiaFallback(mailbox, flags, device, usage,
++                                             internal_usage,
++                                             std::move(view_formats));
++  }
++#else
++  const bool interop =
++      device.HasFeature(wgpu::FeatureName::SharedTextureMemoryOpaqueFD) &&
 +      device.HasFeature(wgpu::FeatureName::SharedFenceSyncFD) &&
-+      device.HasFeature(wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD)) {
++      device.HasFeature(wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD);
++#endif
++  if (interop) {
 +    std::unique_ptr<DawnImageRepresentation> shared_image =
 +        shared_image_representation_factory_->ProduceDawn(
 +            mailbox, device, backendType, view_formats, shared_context_state_);
@@ -1332,7 +1374,7 @@ index 6030a9f57c..972a18e389 100644
    if (!ValidateAssociateMailboxAndSetSharedImageClearState(
            shared_image.get(), flags, usage, internal_usage)) {
      return nullptr;
-@@ -2164,6 +2299,14 @@ WebGPUDecoderImpl::AssociateMailboxUsingSkiaFallback(
+@@ -2164,6 +2319,14 @@ WebGPUDecoderImpl::AssociateMailboxUsingSkiaFallback(
        shared_image_representation_factory_->ProduceSkia(
            mailbox, shared_context_state_.get());
  
@@ -1347,7 +1389,7 @@ index 6030a9f57c..972a18e389 100644
    if (!ValidateAssociateMailboxAndSetSharedImageClearState(
            shared_image.get(), flags, usage, internal_usage)) {
      return nullptr;
-@@ -2249,6 +2392,10 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
+@@ -2249,6 +2412,10 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
    if (it->second.adapterType == wgpu::AdapterType::CPU) {
      representation_and_access = AssociateMailboxUsingSkiaFallback(
          mailbox, flags, device, usage, internal_usage, std::move(view_formats));
@@ -1358,7 +1400,7 @@ index 6030a9f57c..972a18e389 100644
    } else {
      representation_and_access =
          AssociateMailboxDawn(mailbox, flags, device, it->second.backendType,
-@@ -2348,6 +2495,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
+@@ -2348,6 +2515,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
                                                const wgpu::Device& device,
                                                wgpu::BackendType backendType,
                                                wgpu::BufferUsage usage) {
