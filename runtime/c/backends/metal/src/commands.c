@@ -68,6 +68,7 @@ doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable) {
     if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
+    if (buffer->evict_requested) return DOE_MTL_INVALID_STATE;
     if (buffer->owner != NULL && buffer->owner != commands) {
         commands->conflict = buffer->owner;
         return DOE_MTL_BUSY;
@@ -209,7 +210,7 @@ static void retire_uses(doe_mtl_commands *commands, bool completed, bool success
             if (success) use->buffer->initialized = use->initialized;
             else use->buffer->poisoned = true;
         }
-        use->buffer->owner = NULL;
+        doe_mtl_buffer_owner_retired(use->buffer);
         doe_mtl_buffer_release(use->buffer);
         free(use);
     }

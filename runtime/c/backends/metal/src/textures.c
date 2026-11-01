@@ -154,6 +154,35 @@ void *doe_mtl_texture_native(const doe_mtl_texture *texture) {
     return texture != NULL ? texture->native : NULL;
 }
 
+/* A Metal view keeps its parent's storage alive, so freeing the allocation
+ * releases every native view too. The view objects stay valid without one. */
+void doe_mtl_texture_evict_now(doe_mtl_texture *texture) {
+    doe_mtl_context *context = texture->context;
+    if (texture->evicted) return;
+    for (doe_mtl_texture_view *view = texture->views; view != NULL; view = view->next) {
+        if (view->native != NULL) context->native.release(context->native.userdata, view->native);
+        view->native = NULL;
+    }
+    if (texture->native != NULL) context->native.release(context->native.userdata, texture->native);
+    texture->native = NULL;
+    texture->evicted = true;
+}
+
+doe_mtl_status doe_mtl_texture_evict(doe_mtl_texture *texture) {
+    if (texture == NULL) return DOE_MTL_INVALID_ARGUMENT;
+    if (texture->surface != NULL || texture->drawable != NULL) return DOE_MTL_BUSY;
+    texture->evict_requested = true;
+    if (texture->owner == NULL) doe_mtl_texture_evict_now(texture);
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_texture_discard(doe_mtl_texture *texture) {
+    if (texture == NULL) return DOE_MTL_INVALID_ARGUMENT;
+    if (texture->owner != NULL) return DOE_MTL_BUSY;
+    memset(texture->initialized, 0, texture->subresource_count * sizeof(uint8_t));
+    return DOE_MTL_OK;
+}
+
 const doe_mtl_texture_desc *doe_mtl_texture_description(const doe_mtl_texture *texture) {
     return texture != NULL ? &texture->desc : NULL;
 }
@@ -218,6 +247,15 @@ doe_mtl_status doe_mtl_texture_view_create(doe_mtl_texture *texture,
     view->texture = texture;
     view->references = 1;
     view->desc = *desc;
+    view->next = texture->views;
+    if (texture->views != NULL) texture->views->prev = view;
+    texture->views = view;
+    /* WebGPU admits views of a destroyed texture; every use of one is rejected
+     * (preflight), so a view of an evicted allocation has no native view. */
+    if (texture->evicted) {
+        *out = view;
+        return doe_mtl_fail(DOE_MTL_OK, "texture view without native storage", error);
+    }
     status = context->native.view(context->native.userdata, texture->native, desc, &view->native, error);
     if (status != DOE_MTL_OK) {
         doe_mtl_texture_view_release(view);
@@ -238,6 +276,9 @@ void doe_mtl_texture_view_release(doe_mtl_texture_view *view) {
     doe_mtl_texture *texture;
     if (view == NULL || --view->references != 0) return;
     texture = view->texture;
+    if (view->prev != NULL) view->prev->next = view->next;
+    else texture->views = view->next;
+    if (view->next != NULL) view->next->prev = view->prev;
     if (view->native != NULL)
         texture->context->native.release(texture->context->native.userdata, view->native);
     free(view);

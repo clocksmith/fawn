@@ -255,6 +255,13 @@ void wgpuTextureDestroy(WGPUTexture handle)
         native_progress_pending(device);
         doe_vk_status evicted = doe_vk_texture_evict(payload->texture);
         if (evicted != DOE_VK_OK && evicted != DOE_VK_BUSY) abort();
+    } else if (device->backend.kind == WGPUBackendType_Metal && payload && payload->metal) {
+        /* Metal views share their parent's storage: the backend releases the
+         * texture and its native views together, now or when the recording
+         * that owns the texture retires. Polling first retires finished work. */
+        native_progress_pending(device);
+        doe_mtl_status evicted = doe_mtl_texture_evict(payload->metal);
+        if (evicted != DOE_MTL_OK && evicted != DOE_MTL_BUSY) abort();
     }
     native_unlock(device);
 }

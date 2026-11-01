@@ -42,11 +42,21 @@ do not expand the shared-image policy described below.
 - Begin snapshots and retains all input fences, reserves the access state, then
   waits for native producer values **without a device mutex held**. Concurrent
   Begin/End cannot observe an access as active before those waits succeed.
-- End with an output state creates a fresh real shared event and records its
-  signal after preceding queue work. No pre-access queue timeline value can be
-  reused. The existing pending-command owner retains the signal event and device
-  through unknown completion. Failed End leaves both access and caller output
-  unchanged; the original native operation/code/detail survives rollback.
+- End with an output state exports, without waiting for completion or new GPU
+  work, the device queue's real timeline event and the value its queue signals
+  after the committed command buffer that owns the texture (0 when no recording
+  owns it: its uses have retired). End returns once that command buffer is
+  scheduled (bounded at five seconds), which other queues and the window server
+  rely on, as with Dawn's commands-scheduled future. The single recording owner is the texture's only
+  unretired GPU use, so that value follows all of the access's work (owner
+  authorized 2026-10-31). A device without a real timeline keeps the waited
+  fresh-event signal recorded after preceding queue work; the pending-command
+  owner retains that event and device through unknown completion. Failed End
+  leaves both access and caller output unchanged; the original native
+  operation/code/detail survives rollback.
+- Begin with `initialized=false` discards the texture's contents (settling an
+  earlier still-running use first), so its first recorded use clears them.
+  Shared textures carry a private attachment usage for that clear only.
 - Fence export returns the original borrowed native event identity. Output-state
   free-members releases each fence and both owned arrays. Imported memory and
   fences retain their device independently of public device/queue references.
@@ -54,8 +64,8 @@ do not expand the shared-image policy described below.
 ## Deliberately retained limits
 
 This is **not** all Dawn shared-image policy. Like the retained implementation,
-Begin ignores `initialized`, `concurrentRead` and its extension chain: there is one
-exclusive access state, not concurrent readers or undefined-content tracking.
+Begin ignores `concurrentRead` and its extension chain: there is one exclusive
+access state, not concurrent readers.
 Producer synchronization comes from the supplied fence/value pairs. End with a
 null state only closes access; it does not submit a completion signal. Successful
 End with a state reports `initialized=true`, as retained. These fields do not

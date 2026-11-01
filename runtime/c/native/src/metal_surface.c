@@ -134,7 +134,7 @@ static native_failure publish(native_surface *surface, doe_mtl_texture *metal)
     if (!payload) { doe_mtl_texture_release(metal); return native_failure_status(NATIVE_OUT_OF_MEMORY); }
     payload->device = device;
     payload->metal = metal;
-    native_failure failure = native_metal_initialize_texture(device, payload, doe_mtl_texture_description(metal));
+    native_failure failure = native_metal_initialize_texture(device, payload, doe_mtl_texture_description(metal), true);
     if (failure.status != NATIVE_OK) { native_texture_release(NULL, payload); return failure; }
     payload->surface = surface;
     native_retain_count(&surface->leases);

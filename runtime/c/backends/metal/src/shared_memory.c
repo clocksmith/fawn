@@ -65,6 +65,28 @@ doe_mtl_status doe_mtl_shared_texture_import(doe_mtl_context *context, void *sur
     return status;
 }
 
+doe_mtl_status doe_mtl_texture_release_point(const doe_mtl_texture *texture,
+    void **event, uint64_t *value)
+{
+    if (!texture || !event || !value) return DOE_MTL_INVALID_ARGUMENT;
+    if (!texture->context->timeline) return DOE_MTL_UNSUPPORTED;
+    if (texture->owner && (texture->owner->state != DOE_MTL_SUBMITTED || !texture->owner->timeline_value))
+        return DOE_MTL_INVALID_STATE;
+    *event = texture->context->timeline;
+    *value = texture->owner ? texture->owner->timeline_value : 0;
+    return DOE_MTL_OK;
+}
+
+bool doe_mtl_texture_release_scheduled(const doe_mtl_texture *texture)
+{
+    const doe_mtl_commands *owner = texture ? texture->owner : NULL;
+    if (!owner || owner->state != DOE_MTL_SUBMITTED) return true;
+    const doe_mtl_native *native = &owner->context->native;
+    doe_mtl_error detail = {0};
+    size_t status = native->observe(native->userdata, owner->native, false, &detail);
+    return status != SIZE_MAX && status >= 3; /* MTLCommandBufferStatusScheduled or later. */
+}
+
 doe_mtl_status doe_mtl_shared_event_import(doe_mtl_context *context, void *event,
     void **out, doe_mtl_error *error)
 {

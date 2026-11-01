@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 native_failure native_metal_initialize_texture(native_device *device, native_texture *texture,
-    const doe_mtl_texture_desc *desc)
+    const doe_mtl_texture_desc *desc, bool wait)
 {
     native_command_handle commands = {0};
     native_failure failure = native_command_create(&device->backend, &commands);
@@ -54,7 +54,9 @@ native_failure native_metal_initialize_texture(native_device *device, native_tex
             failure = native_failure_metal(status, &detail);
         }
     }
-    if (failure.status == NATIVE_OK) failure = native_submit_backend_commands(device, commands);
+    if (failure.status == NATIVE_OK)
+        failure = wait ? native_submit_backend_commands(device, commands) :
+            native_submit_backend_commands_async(device, commands);
     else if (native_command_release(&commands) != NATIVE_OK) abort();
     doe_mtl_texture_view_release(view);
     doe_mtl_buffer_release(zero);
@@ -122,13 +124,23 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
     doe_resource_texture *texture = NULL;
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
-    if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
+    /* Routine settlement polls: creation never waits for unrelated queue work. */
+    if (failure.status == NATIVE_OK) failure = native_settle_routine(device).failure;
     if (failure.status == NATIVE_OK) {
         doe_mtl_error detail = {0};
         doe_mtl_status status = doe_mtl_texture_create(device->backend.value.metal.context, &native, &payload->metal, &detail);
         failure = native_failure_metal(status, &detail);
     }
-    if (failure.status == NATIVE_OK) failure = native_metal_initialize_texture(device, payload, &native);
+    /* Zero initialization stays a real GPU clear before any access, but nothing
+     * waits for it. An attachment-capable texture starts with every subresource
+     * uninitialized; every recording path (render attachments, bindings,
+     * transfers, copies) first clears its missing aspects in the same command
+     * buffer (doe_mtl_commands_initialize_attachment). Other formats queue their
+     * staged zero upload without waiting: that command owns the texture, so the
+     * first use settles exactly that owner before recording (BUSY conflict), and
+     * a failed upload poisons the texture. */
+    if (failure.status == NATIVE_OK && !(native.usage & DOE_MTL_TEXTURE_RENDER_TARGET))
+        failure = native_metal_initialize_texture(device, payload, &native, false);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (failure.status == NATIVE_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,

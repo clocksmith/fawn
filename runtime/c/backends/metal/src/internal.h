@@ -25,6 +25,7 @@ struct doe_mtl_buffer {
     doe_mtl_memory memory;
     bool initialized;
     bool poisoned;
+    bool evict_requested; /* Public destroy(): free native storage once unused. */
     doe_mtl_commands *owner; /* Borrowed; this command owns a buffer reference. */
 };
 struct doe_mtl_pipeline {
@@ -68,6 +69,8 @@ doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);
 doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable);
+/* Clears the retired owner and completes a deferred destroy() eviction. */
+void doe_mtl_buffer_owner_retired(doe_mtl_buffer *buffer);
 doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer_binding *bindings, size_t count, uint32_t sizes_slot,
     doe_mtl_native_binding *flat);

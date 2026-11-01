@@ -154,6 +154,12 @@ void wgpuBufferDestroy(WGPUBuffer handle)
     native_buffer_host_return(payload);
     free(payload->mapping);
     payload->mapping = NULL;
+    /* Metal frees the allocation now, or when the recording that owns it
+     * retires; later recording and host access are rejected. */
+    if (device->backend.kind == WGPUBackendType_Metal && payload->handle.metal) {
+        native_progress_pending(device);
+        if (doe_mtl_buffer_evict(payload->handle.metal) != DOE_MTL_OK) abort();
+    }
     native_unlock(device);
 }
 

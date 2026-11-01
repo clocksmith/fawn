@@ -230,7 +230,14 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   texture's last command use retires, while views keep only their own native
   views. A failed batch recording poisons every texture
   it held, and final release discards a batch that was never submitted. Borrowed
-  surface frames keep their own waited initialization before publication. The
+  surface frames keep their own waited initialization before publication. On
+  Metal, creation neither settles pending work nor waits: attachment-capable
+  textures start uninitialized and every recording path (attachments, bindings,
+  transfers, copies) records the missing clear in that command first, while
+  other formats submit a staged zero upload that owns the texture until it
+  retires. Metal destroy() releases a texture with its native views, or a
+  buffer's allocation, at once or when the recording that owns it retires
+  (`tests/destroy_memory.c`, `tests/lazy_texture_init.c`). The
   batch and other private initialization use the same pending-submission owner
   and an explicit submission device lease. Packed queue writes and 256-byte-aligned public command
   copies retain their distinct canonical validation. Native views/samplers remain

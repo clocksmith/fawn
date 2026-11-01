@@ -12,16 +12,20 @@ struct doe_mtl_texture {
     size_t subresource_count;
     uint8_t *initialized;
     bool poisoned;
+    bool evict_requested; /* Public destroy(): free native storage once unused. */
+    bool evicted;         /* Native texture and every native view released. */
     doe_mtl_commands *owner;
     doe_mtl_surface *surface;
     void *drawable;
     bool presentation_registered;
+    struct doe_mtl_texture_view *views; /* Live views; Metal views share storage. */
 };
 struct doe_mtl_texture_view {
     doe_mtl_texture *texture;
     uint32_t references;
     void *native;
     doe_mtl_texture_view_desc desc;
+    struct doe_mtl_texture_view *prev, *next; /* Parent's live-view list. */
 };
 struct doe_mtl_sampler {
     doe_mtl_context *context;
@@ -47,6 +51,8 @@ enum { DOE_MTL_ASPECT_COLOR = 1, DOE_MTL_ASPECT_DEPTH = 2, DOE_MTL_ASPECT_STENCI
 doe_mtl_status doe_mtl_texture_adopt_external(doe_mtl_context *context,
     const doe_mtl_texture_desc *desc, void *native, doe_mtl_texture **out, doe_mtl_error *error);
 uint8_t doe_mtl_format_aspects(doe_mtl_format format);
+/* Releases the native texture and every native view once no recording owns it. */
+void doe_mtl_texture_evict_now(doe_mtl_texture *texture);
 bool doe_mtl_samples_supported(const doe_mtl_caps *caps, uint32_t samples);
 bool doe_mtl_texture_aspect_initialized(const doe_mtl_commands *commands,
     const doe_mtl_texture_view *view, uint8_t aspects);

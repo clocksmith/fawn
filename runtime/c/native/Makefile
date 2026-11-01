@@ -734,6 +734,21 @@ check-iosurface-shared: $(BUILD)/iosurface-shared
 PHYSICAL_CLIENTS += iosurface-shared
 endif
 
+ifeq ($(SHARED_PLATFORM),Darwin)
+# Native memory after destroy() with live handles (process phys_footprint), and
+# zero initialization when Metal texture creation does not wait.
+$(BUILD)/destroy-memory: tests/destroy_memory.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/lazy-texture-init: tests/lazy_texture_init.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-destroy-memory check-lazy-texture-init
+check-destroy-memory: $(BUILD)/destroy-memory
+	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/destroy-memory
+check-lazy-texture-init: $(BUILD)/lazy-texture-init
+	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/lazy-texture-init
+PHYSICAL_CLIENTS += destroy-memory lazy-texture-init
+endif
+
 # CPU call-ledger boundary; no hardware adapter or Metal GPU execution.
 $(BUILD)/metal-async-submit: tests/metal_async_submit.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_async_submit.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=native_record_resource_commands -o $@

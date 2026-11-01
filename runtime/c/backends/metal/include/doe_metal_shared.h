@@ -40,6 +40,18 @@ doe_mtl_status doe_mtl_shared_event_wait(doe_mtl_context *context, void *event,
  * unknown/pending commands cannot release that obligation. */
 doe_mtl_status doe_mtl_commands_signal_shared_event(doe_mtl_commands *commands,
     void *event, uint64_t value, doe_mtl_error *error);
+/* Release point for a shared texture access without new GPU work: the context
+ * timeline event (borrowed) and the value the queue signals at the end of the
+ * committed command buffer that currently owns the texture, after all of its
+ * work. With no owner every recorded use has retired, so the value is 0 (already
+ * reached). UNSUPPORTED without a real timeline; INVALID_STATE while the owner
+ * is still recording. Outputs stay untouched on failure. */
+doe_mtl_status doe_mtl_texture_release_point(const doe_mtl_texture *texture,
+    void **event, uint64_t *value);
+/* Read-only: true once the command buffer that owns the texture is scheduled
+ * or terminal, or when no recording owns it. Another device or the window
+ * server may then rely on the IOSurface write order, as Metal consumers do. */
+bool doe_mtl_texture_release_scheduled(const doe_mtl_texture *texture);
 #ifdef __cplusplus
 }
 #endif

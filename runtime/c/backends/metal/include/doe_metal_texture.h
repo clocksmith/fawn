@@ -109,6 +109,15 @@ doe_mtl_status doe_mtl_texture_create(doe_mtl_context *context,
 doe_mtl_status doe_mtl_texture_retain(doe_mtl_texture *texture);
 void doe_mtl_texture_release(doe_mtl_texture *texture);
 void *doe_mtl_texture_native(const doe_mtl_texture *texture);
+/* WebGPU destroy(): releases the native texture and all of its native views at
+ * once, or when the recording that still owns it retires (unknown completion
+ * keeps that owner, and so the storage). Later recording uses fail; views of an
+ * evicted texture have no native view. Borrowed presentation drawables are
+ * BUSY and keep their storage until release. The object itself stays valid. */
+doe_mtl_status doe_mtl_texture_evict(doe_mtl_texture *texture);
+/* Marks every subresource uninitialized, so the next recorded use clears it
+ * first. BUSY while a recording still owns the texture (it would publish). */
+doe_mtl_status doe_mtl_texture_discard(doe_mtl_texture *texture);
 const doe_mtl_texture_desc *doe_mtl_texture_description(const doe_mtl_texture *texture);
 
 typedef enum doe_mtl_swizzle {

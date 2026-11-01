@@ -216,8 +216,15 @@ namespaces can differ even for the same public binding. The native buffer-size
 table uses the compiler's actual buffer slot; never invent another size index. Allocate vertex-fetch slots around the selected vertex resource/size
 slots, preserving canonical empty vertex slots. Whole passes lower once through
 the existing backend attachment owner, including empty clear/load and discard.
-Never publish a public texture until its real initialization completes; unknown
-initialization retains the private allocation on the existing pending owner.
+Never publish a public texture until its real initialization is ordered before
+every access; unknown initialization retains the private allocation on the
+existing pending owner. On Metal (owner authorized 2026-10-31) creation never
+waits: an attachment-capable texture starts uninitialized and each recording
+path clears its missing aspects in the same command first; other formats submit
+their staged zero upload asynchronously, and that command stays the texture's
+recording owner until it retires. Metal destroy() frees the texture with all of
+its native views (shared storage), and a buffer's allocation, at once or when
+its recording owner retires.
 On Vulkan, texture zero initialization is queue-ordered before any access
 instead: it records into one device batch that the next submission flushes
 first (as do the 64th texture it holds and any texture destroy(), so retention

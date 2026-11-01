@@ -6,6 +6,7 @@
 #include "doe_metal_shared.h"
 #include <stddef.h>
 #include <stdlib.h>
+#include <time.h>
 #include "doe_vk_external.h"
 
 typedef struct shared_wait {
@@ -252,9 +253,12 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
     doe_mtl_texture_desc native = {.type=DOE_MTL_TEXTURE_2D,.width=desc.width,.height=desc.height,
         .depth_or_layers=1,.mip_levels=1,.sample_count=1,.allow_format_views=desc.view_format_count != 0};
     if (desc.usage & WGPUTextureUsage_TextureBinding) native.usage |= DOE_MTL_TEXTURE_SAMPLED;
-    if (desc.usage & WGPUTextureUsage_RenderAttachment) native.usage |= DOE_MTL_TEXTURE_RENDER_TARGET;
     if (desc.usage & WGPUTextureUsage_CopySrc) native.usage |= DOE_MTL_TEXTURE_COPY_SRC;
     if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_MTL_TEXTURE_COPY_DST;
+    /* Every admitted shared format is color-renderable. The private attachment
+     * usage lets an access that begins uninitialized clear on first use; it
+     * adds no public usage, which the resource owner validates. */
+    native.usage |= DOE_MTL_TEXTURE_RENDER_TARGET;
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
     bool shape = !descriptor->nextInChain && shared_format(desc.format, &native.format) &&
@@ -341,6 +345,19 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     native_lock(device);
     bool success = admitted && failure.status == NATIVE_OK && native_shared_matches_texture(memory, texture) &&
         native_device_result(device) == NATIVE_OK;
+    if (success && descriptor && !descriptor->initialized) {
+        /* Uninitialized producer contents are undefined: the next recorded use
+         * clears them (the texture is attachment-capable for that private clear).
+         * A still-running earlier use would publish its bits, so settle first. */
+        native_texture *payload = doe_resource_texture_native(texture);
+        doe_mtl_status discarded = doe_mtl_texture_discard(payload->metal);
+        if (discarded == DOE_MTL_BUSY) {
+            failure = native_settle_pending(device).failure;
+            discarded = failure.status == NATIVE_OK ? doe_mtl_texture_discard(payload->metal) : DOE_MTL_OK;
+        }
+        if (failure.status == NATIVE_OK) failure = native_failure_metal(discarded, NULL);
+        success = failure.status == NATIVE_OK;
+    }
     if (admitted) {
         memory->access = success ? SHARED_ACTIVE : SHARED_IDLE;
         memory->active_texture = success ? texture : NULL;
@@ -389,16 +406,48 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
     bool admitted = memory->access == SHARED_ACTIVE && memory->active_texture == texture &&
         native_shared_matches_texture(memory, texture) && (!state || fence);
     native_failure failure = native_failure_status(NATIVE_OK);
+    uint64_t release_value = 1;
     if (admitted && state) {
         failure = native_failure_status(native_device_result(device));
-        if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
-        if (failure.status == NATIVE_OK) failure = completion_fence(device, fence);
+        /* Every committed command buffer signals the queue timeline after its
+         * work, and the single recording owner is the texture's only unretired
+         * GPU use. Export that point without waiting or new GPU work. A device
+         * without a real timeline keeps the waited fresh-event signal. */
+        void *timeline = NULL;
+        native_texture *payload = doe_resource_texture_native(texture);
+        doe_mtl_status point = failure.status == NATIVE_OK ?
+            doe_mtl_texture_release_point(payload->metal, &timeline, &release_value) : DOE_MTL_UNSUPPORTED;
+        if (point == DOE_MTL_OK) {
+            /* Like Dawn's commands-scheduled future, consumers on another queue
+             * or the window server rely on the owning commands being scheduled:
+             * they were committed at submit, so this rarely spins. */
+            struct timespec now, deadline;
+            if (doe_monotonic_now(&now).status != DOE_HOST_OK ||
+                doe_time_add(&now, UINT64_C(5000000000), &deadline).status != DOE_HOST_OK)
+                failure = native_failure_status(NATIVE_FAILURE);
+            while (failure.status == NATIVE_OK && !doe_mtl_texture_release_scheduled(payload->metal)) {
+                if (doe_monotonic_now(&now).status != DOE_HOST_OK) failure = native_failure_status(NATIVE_FAILURE);
+                else if (doe_time_reached(&now, &deadline)) failure = native_failure_status(NATIVE_TIMEOUT);
+                else {
+                    const struct timespec pause = {0, 20000};
+                    (void)nanosleep(&pause, NULL);
+                }
+            }
+            doe_mtl_error detail = {0};
+            if (failure.status == NATIVE_OK)
+                failure = native_failure_metal(doe_mtl_shared_event_import(metal_context(device), timeline,
+                    &fence->event, &detail), &detail);
+        } else {
+            release_value = 1;
+            if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
+            if (failure.status == NATIVE_OK) failure = completion_fence(device, fence);
+        }
     }
     bool success = admitted && failure.status == NATIVE_OK;
     if (success) {
         if (state) {
             fences[0] = fence;
-            values[0] = 1;
+            values[0] = release_value;
             state->initialized = WGPU_TRUE;
             state->fenceCount = 1;
             state->fences = fences;

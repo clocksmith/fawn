@@ -97,6 +97,10 @@ doe_mtl_status doe_mtl_buffer_create(doe_mtl_context *context, uint64_t size,
 doe_mtl_status doe_mtl_buffer_retain(doe_mtl_buffer *buffer);
 void doe_mtl_buffer_release(doe_mtl_buffer *buffer);
 uint64_t doe_mtl_buffer_size(const doe_mtl_buffer *buffer);
+/* WebGPU destroy(): releases the native allocation at once, or when the
+ * recording that still owns the buffer retires (unknown completion keeps it).
+ * Later recording and host access fail; the object itself stays valid. */
+doe_mtl_status doe_mtl_buffer_evict(doe_mtl_buffer *buffer);
 void *doe_mtl_buffer_native(const doe_mtl_buffer *buffer);
 /* Host accesses reject every recorded or unresolved GPU use. Failed GPU work
  * poisons contents; only a full host rewrite (shared) or replacement (private)

@@ -571,6 +571,71 @@ static void compatible_copies(void)
     mock_assert_closed(&mock);
 }
 
+/* destroy(): the native texture and every native view (views share Metal
+ * storage) drop at once without a recording owner, else when that owner retires;
+ * unknown completion keeps them. Later recording rejects; views stay valid. */
+static void destroy_eviction(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_open(&mock);
+    doe_mtl_texture *texture = image_new(context, image_desc());
+    doe_mtl_texture_view_desc vd = view_desc();
+    doe_mtl_texture_view *view = NULL, *late = NULL;
+    doe_mtl_buffer *buffer = buffer_new(context, 1024, DOE_MTL_SHARED);
+    doe_mtl_buffer *staging = buffer_new(context, 1024, DOE_MTL_SHARED);
+    doe_mtl_commands *commands = commands_new(context);
+    doe_mtl_texture_region region = {0, 0, 0, 0, 4, 2, 2};
+    assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_upload_texture(commands, staging,
+        (doe_mtl_texture_buffer_layout){0}, texture, region, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_copy(commands, staging, 0, buffer, 0, 16, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+    unsigned textures = mock.releases_by_kind[MOCK_KIND_TEXTURE];
+    unsigned views = mock.releases_by_kind[MOCK_KIND_VIEW];
+    unsigned buffers = mock.releases_by_kind[MOCK_KIND_BUFFER];
+    assert(doe_mtl_texture_evict(texture) == DOE_MTL_OK && !texture->evicted && texture->native);
+    assert(doe_mtl_buffer_evict(buffer) == DOE_MTL_OK && buffer->native);
+    mock_result(&mock, 0, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
+    assert(texture->native && view->native && buffer->native &&
+        mock.releases_by_kind[MOCK_KIND_TEXTURE] == textures && mock.releases_by_kind[MOCK_KIND_VIEW] == views);
+    mock_result(&mock, 4, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_OK);
+    assert(texture->evicted && !texture->native && !view->native && !buffer->native);
+    assert(mock.releases_by_kind[MOCK_KIND_TEXTURE] == textures + 1 &&
+        mock.releases_by_kind[MOCK_KIND_VIEW] == views + 1 && mock.releases_by_kind[MOCK_KIND_BUFFER] == buffers + 1);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    /* Objects outlive their storage; every later use is rejected before native calls. */
+    assert(doe_mtl_texture_view_create(texture, &vd, &late, NULL) == DOE_MTL_OK && late && !late->native);
+    commands = commands_new(context);
+    assert(doe_mtl_commands_upload_texture(commands, staging,
+        (doe_mtl_texture_buffer_layout){0}, texture, region, NULL) == DOE_MTL_INVALID_STATE);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    commands = commands_new(context);
+    assert(doe_mtl_commands_copy(commands, staging, 0, buffer, 0, 16, NULL) == DOE_MTL_INVALID_STATE);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    unsigned char bytes[4] = {0};
+    assert(doe_mtl_buffer_write(buffer, 0, bytes, 4) == DOE_MTL_INVALID_STATE);
+    assert(doe_mtl_texture_evict(texture) == DOE_MTL_OK && doe_mtl_buffer_evict(buffer) == DOE_MTL_OK);
+    doe_mtl_texture_view_release(late); doe_mtl_texture_view_release(view);
+    doe_mtl_texture_release(texture); doe_mtl_buffer_release(buffer);
+    /* Without an owner, eviction is immediate. */
+    texture = image_new(context, image_desc());
+    assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_OK);
+    textures = mock.releases_by_kind[MOCK_KIND_TEXTURE]; views = mock.releases_by_kind[MOCK_KIND_VIEW];
+    assert(doe_mtl_texture_evict(texture) == DOE_MTL_OK && texture->evicted && !view->native);
+    assert(mock.releases_by_kind[MOCK_KIND_TEXTURE] == textures + 1 && mock.releases_by_kind[MOCK_KIND_VIEW] == views + 1);
+    doe_mtl_texture_release(texture); doe_mtl_texture_view_release(view);
+    /* A discarded access clears published contents only without an owner. */
+    texture = image_new(context, image_desc());
+    commands = commands_new(context);
+    assert(doe_mtl_commands_upload_texture(commands, staging,
+        (doe_mtl_texture_buffer_layout){0}, texture, region, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_texture_discard(texture) == DOE_MTL_BUSY);
+    complete(&mock, commands);
+    assert(texture->initialized[0] && doe_mtl_texture_discard(texture) == DOE_MTL_OK && !texture->initialized[0]);
+    doe_mtl_texture_release(texture); doe_mtl_buffer_release(staging); doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
 int main(void) {
     compatible_copies();
     extended_compressed_formats();
@@ -578,7 +643,7 @@ int main(void) {
     selected_aspect_transfer();
     factory_rollback(); descriptor_validation(); mixed_dispatch_lifetime();
     mip_layer_initialization(); copies_and_padding(); compressed_and_volume(); failures_and_busy();
-    image_binding_validation(); transfer_record_faults();
-    puts("Metal image ownership controls: 13 groups passed; mocked native calls, no pixel/GPU execution");
+    image_binding_validation(); transfer_record_faults(); destroy_eviction();
+    puts("Metal image ownership controls: 14 groups passed; mocked native calls, no pixel/GPU execution");
     return 0;
 }

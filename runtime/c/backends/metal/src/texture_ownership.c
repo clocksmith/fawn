@@ -5,7 +5,7 @@ doe_mtl_status doe_mtl_texture_preflight(doe_mtl_commands *commands,
     const doe_mtl_texture *texture, uint32_t usage) {
     if (texture == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (texture->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
-    if (texture->presentation_registered) return DOE_MTL_INVALID_STATE;
+    if (texture->presentation_registered || texture->evict_requested) return DOE_MTL_INVALID_STATE;
     if (texture->poisoned) return DOE_MTL_EXECUTION_FAILED;
     if (texture->owner != NULL && texture->owner != commands) {
         commands->conflict = texture->owner;
@@ -146,6 +146,7 @@ void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool succ
             else use->texture->poisoned = true;
         }
         use->texture->owner = NULL;
+        if (use->texture->evict_requested) doe_mtl_texture_evict_now(use->texture);
         doe_mtl_texture_release(use->texture);
         free(use->initialized);
         free(use);

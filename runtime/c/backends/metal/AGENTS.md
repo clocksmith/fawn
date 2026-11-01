@@ -5,7 +5,11 @@ WebGPU validation/reference ownership in the shared resource/native owners.
 Never call a borrowed native handle outside the command lifetime protocol.
 The actual Metal command buffers have unretained references: recording leases
 must exist before native encoding and survive pending/unknown completion.
-Textures, parent-backed views and samplers participate in that same owner. Array
+Textures, parent-backed views and samplers participate in that same owner.
+WebGPU destroy() evicts: a Metal view shares its parent's storage, so the
+texture's native object and every native view are released together, at once or
+when the recording owner retires (unknown completion keeps them); buffers alike.
+Evicted objects stay valid and reject later recording/host use. Array
 slices and 3D origins are distinct native coordinates, not interchangeable depth.
 
 The compiler supplies validated MSL, resolved workgroup size, flattened slots and

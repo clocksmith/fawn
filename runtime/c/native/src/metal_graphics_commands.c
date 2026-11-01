@@ -174,7 +174,9 @@ native_failure native_metal_render(doe_mtl_commands *commands,
             .resolve_view=resolve ? resolve->metal : NULL};
         if (source->load == WGPULoadOp_Clear && !clear_color(source, &target->clear_color))
             failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
-        if (failure.status == NATIVE_OK) failure = native_failure_metal(
+        /* A Clear load overwrites the whole single-subresource attachment, so
+         * only a Load needs the attachment's missing contents zeroed first. */
+        if (failure.status == NATIVE_OK && source->load != WGPULoadOp_Clear) failure = native_failure_metal(
             doe_mtl_commands_initialize_attachment(commands, view->metal, &detail), &detail);
     }
     native_view *depth = doe_resource_view_native(begin->targets.depth_stencil);
@@ -192,7 +194,8 @@ native_failure native_metal_render(doe_mtl_commands *commands,
                 .load=source->stencil_load == WGPULoadOp_Clear ? DOE_MTL_CLEAR : DOE_MTL_LOAD,
                 .store=source->stencil_read_only || source->stencil_store == WGPUStoreOp_Store ? DOE_MTL_STORE : DOE_MTL_STORE_DISCARD,
                 .clear_stencil=source->clear_stencil};
-        failure = native_failure_metal(doe_mtl_commands_initialize_attachment(commands, depth->metal, &detail), &detail);
+        if (!(!pass.depth.view || pass.depth.load == DOE_MTL_CLEAR) || !(!pass.stencil.view || pass.stencil.load == DOE_MTL_CLEAR))
+            failure = native_failure_metal(doe_mtl_commands_initialize_attachment(commands, depth->metal, &detail), &detail);
     }
     if (failure.status == NATIVE_OK) {
         doe_mtl_status status = doe_mtl_commands_render(commands, &pass, draws, draws_count, &detail);

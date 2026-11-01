@@ -59,6 +59,24 @@ void doe_mtl_buffer_release(doe_mtl_buffer *buffer) {
     doe_mtl_context_release(context);
 }
 
+static void buffer_evict_now(doe_mtl_buffer *buffer) {
+    doe_mtl_context *context = buffer->context;
+    if (buffer->native != NULL) context->native.release(context->native.userdata, buffer->native);
+    buffer->native = NULL;
+}
+
+doe_mtl_status doe_mtl_buffer_evict(doe_mtl_buffer *buffer) {
+    if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
+    buffer->evict_requested = true;
+    if (buffer->owner == NULL) buffer_evict_now(buffer);
+    return DOE_MTL_OK;
+}
+
+void doe_mtl_buffer_owner_retired(doe_mtl_buffer *buffer) {
+    buffer->owner = NULL;
+    if (buffer->evict_requested) buffer_evict_now(buffer);
+}
+
 uint64_t doe_mtl_buffer_size(const doe_mtl_buffer *buffer) {
     return buffer != NULL ? buffer->size : 0;
 }
@@ -72,6 +90,7 @@ static doe_mtl_status host_access(doe_mtl_buffer *buffer, uint64_t offset,
     if (buffer == NULL || (size != 0 && bytes == NULL)) return DOE_MTL_INVALID_ARGUMENT;
     if (!doe_mtl_range(buffer->size, offset, size)) return DOE_MTL_RANGE;
     if (buffer->memory != DOE_MTL_SHARED) return DOE_MTL_UNSUPPORTED;
+    if (buffer->evict_requested) return DOE_MTL_INVALID_STATE;
     if (buffer->owner != NULL) return DOE_MTL_BUSY;
     return DOE_MTL_OK;
 }
