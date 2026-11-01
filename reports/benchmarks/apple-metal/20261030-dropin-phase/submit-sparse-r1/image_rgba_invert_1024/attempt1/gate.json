@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 24.630245957989246,
+  "foreignCpuSeconds": 21.180000000009976,
+  "foreignCpuFraction": 0.10748979139375929,
+  "topForeignCpu": [
+    [
+      7.94999999999709,
+      "/Library/SystemExtensions/897A5AC9-E16B-48A7-948B-8AAE699639DE/io.tailscale.ipn.macsys.network-extension.systemextension/Contents/MacOS/io.tailscale.ipn.macsys.network-extension"
+    ],
+    [
+      2.0100000000093132,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      1.3799999999973807,
+      "/System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/MacOS/WallpaperAerialsExtension"
+    ],
+    [
+      1.1999999999989086,
+      "claude"
+    ],
+    [
+      1.0299999999988358,
+      "/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN"
+    ],
+    [
+      0.7100000000064028,
+      "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal"
+    ],
+    [
+      0.5399999999999636,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      0.4199999999999875,
+      "ssh"
+    ]
+  ],
+  "idleGpuMedianBefore": 2,
+  "idleGpuMedianAfter": 11,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-11-01T01:36:11Z",
+    "monotonic": 1255355.594686375,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      60,
+      2,
+      2,
+      2,
+      2
+    ],
+    "loadAverage": [
+      3.32275390625,
+      4.03857421875,
+      5.0341796875
+    ]
+  },
+  "after": {
+    "utc": "2026-11-01T01:36:41Z",
+    "monotonic": 1255385.616224875,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      28,
+      11,
+      11,
+      12,
+      10
+    ],
+    "loadAverage": [
+      2.5888671875,
+      3.7939453125,
+      4.91015625
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<handoff-work>/inputs",
+    "--provider",
+    "main=<work>/bin-submit-sparse-r1/main",
+    "--provider",
+    "cand=<work>/bin-submit-sparse-r1/cand",
+    "--provider",
+    "dawn=<work>/bin-submit-sparse-r1/dawn",
+    "--provider",
+    "dawn-aa=<work>/bin-submit-sparse-r1/dawn-aa",
+    "--workload",
+    "image_rgba_invert_1024",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/submit-sparse-r1/image_rgba_invert_1024/attempt1-raw.jsonl"
+  ]
+}

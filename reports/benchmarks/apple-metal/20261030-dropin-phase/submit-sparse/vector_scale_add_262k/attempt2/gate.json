@@ -1,0 +1,117 @@
+{
+  "valid": false,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": false
+  },
+  "windowWallSeconds": 17.109663917217404,
+  "foreignCpuSeconds": 43.26000000000279,
+  "foreignCpuFraction": 0.31604945755590197,
+  "topForeignCpu": [
+    [
+      12.719999999999999,
+      "/Library/Apple/System/Library/CoreServices/XProtect.app/Contents/MacOS/XProtectRemediatorAdload"
+    ],
+    [
+      12.290000000000873,
+      "/Library/SystemExtensions/897A5AC9-E16B-48A7-948B-8AAE699639DE/io.tailscale.ipn.macsys.network-extension.systemextension/Contents/MacOS/io.tailscale.ipn.macsys.network-extension"
+    ],
+    [
+      3.220000000001164,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      2.839999999999918,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+    ],
+    [
+      2.360000000000582,
+      "/Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.80/Helpers/Google Chrome Helper (Aperitif).app/Contents/MacOS/Google Chrome Helper (Aperitif)"
+    ],
+    [
+      1.6499999999978172,
+      "/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN"
+    ],
+    [
+      0.8799999999991996,
+      "claude"
+    ],
+    [
+      0.8600000000000136,
+      "ssh"
+    ]
+  ],
+  "idleGpuMedianBefore": 13,
+  "idleGpuMedianAfter": 13,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-11-01T01:23:43Z",
+    "monotonic": 1254607.045253291,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      14,
+      13,
+      13,
+      14,
+      13
+    ],
+    "loadAverage": [
+      5.92041015625,
+      5.85009765625,
+      6.220703125
+    ]
+  },
+  "after": {
+    "utc": "2026-11-01T01:24:05Z",
+    "monotonic": 1254629.544019375,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      24,
+      13,
+      11,
+      13,
+      13
+    ],
+    "loadAverage": [
+      5.9619140625,
+      5.85986328125,
+      6.21484375
+    ]
+  },
+  "command": [
+    "--inputs",
+    "/private/tmp/claude-501/-Users-xyz-deco/f7c6ca03-f1d7-40a6-9dbd-091c2291175b/scratchpad/ss/inputs",
+    "--provider",
+    "main=<work>/bin-submit-sparse/main",
+    "--provider",
+    "cand=<work>/bin-submit-sparse/cand",
+    "--provider",
+    "dawn=<work>/bin-submit-sparse/dawn",
+    "--provider",
+    "dawn-aa=<work>/bin-submit-sparse/dawn-aa",
+    "--workload",
+    "vector_scale_add_262k",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/submit-sparse/vector_scale_add_262k/attempt2-raw.jsonl"
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "valid": true,
+  "checks": {
+    "runExitedZero": true,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "noThermalWarning": true,
+    "idleGpuBefore": true,
+    "idleGpuAfter": true,
+    "foreignCpu": true
+  },
+  "windowWallSeconds": 16.543712541926652,
+  "foreignCpuSeconds": 19.890000000004793,
+  "foreignCpuFraction": 0.15028367989952118,
+  "topForeignCpu": [
+    [
+      10.239999999997963,
+      "/Library/SystemExtensions/897A5AC9-E16B-48A7-948B-8AAE699639DE/io.tailscale.ipn.macsys.network-extension.systemextension/Contents/MacOS/io.tailscale.ipn.macsys.network-extension"
+    ],
+    [
+      1.540000000008149,
+      "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer"
+    ],
+    [
+      1.0999999999985448,
+      "/System/Library/ExtensionKit/Extensions/WallpaperAerialsExtension.appex/Contents/MacOS/WallpaperAerialsExtension"
+    ],
+    [
+      1.0499999999992724,
+      "/System/Library/DriverExtensions/com.apple.DriverKit-AppleBCMWLAN.dext/com.apple.DriverKit-AppleBCMWLAN"
+    ],
+    [
+      0.7300000000000182,
+      "ssh"
+    ],
+    [
+      0.6000000000058208,
+      "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal"
+    ],
+    [
+      0.5,
+      "claude"
+    ],
+    [
+      0.46000000000000796,
+      "rsync"
+    ]
+  ],
+  "idleGpuMedianBefore": 12,
+  "idleGpuMedianAfter": 12,
+  "limits": {
+    "idleGpuPercent": 25.0,
+    "foreignCpuFraction": 0.2
+  },
+  "before": {
+    "utc": "2026-11-01T01:42:59Z",
+    "monotonic": 1255763.876378041,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      18,
+      12,
+      13,
+      12,
+      12
+    ],
+    "loadAverage": [
+      3.51904296875,
+      3.78271484375,
+      4.53125
+    ]
+  },
+  "after": {
+    "utc": "2026-11-01T01:43:21Z",
+    "monotonic": 1255785.7690215,
+    "powerSource": "Now drawing from 'AC Power'",
+    "battery": "100%; charged; 0:00 remaining present: true",
+    "lowPowerMode": "0",
+    "thermalWarning": false,
+    "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "idleGpuUtilization": [
+      24,
+      11,
+      11,
+      12,
+      13
+    ],
+    "loadAverage": [
+      4.24365234375,
+      3.9130859375,
+      4.55859375
+    ]
+  },
+  "command": [
+    "--inputs",
+    "<handoff-work>/inputs",
+    "--provider",
+    "main=<work>/bin-submit-pools/main",
+    "--provider",
+    "cand=<work>/bin-submit-pools/cand",
+    "--provider",
+    "dawn=<work>/bin-submit-pools/dawn",
+    "--provider",
+    "dawn-aa=<work>/bin-submit-pools/dawn-aa",
+    "--workload",
+    "vector_scale_add_262k",
+    "--pairs",
+    "96",
+    "--iterations",
+    "32",
+    "--out",
+    "<work>/submit-pools/vector_scale_add_262k/attempt1-raw.jsonl"
+  ]
+}

@@ -1,0 +1,65 @@
+== vector_scale_add_262k pairs=96 A/A warm.operation 0.998 [0.995,1.001]
+  setupNs            cand     9.5461  main     9.5584  ratio 0.994 [0.988,1.003]  faster 50/96
+  compileNs          cand     0.0843  main     0.0842  ratio 1.001 [0.991,1.007]  faster 47/96
+  pipelineNs         cand     1.3842  main     1.3921  ratio 0.996 [0.984,1.006]  faster 51/96
+  resourcesNs        cand     0.1900  main     0.1867  ratio 1.015 [0.992,1.026]  faster 42/96
+  teardownNs         cand     0.3441  main     0.3481  ratio 0.987 [0.959,1.019]  faster 53/96
+  first.operation    cand     1.9726  main     1.9736  ratio 1.005 [0.994,1.016]  faster 44/96
+  warm.upload        cand     0.0246  main     0.0247  ratio 0.998 [0.992,1.003]  faster 49/96
+  warm.uploadSource  cand     0.0089  main     0.0089  ratio 0.995 [0.986,1.010]  faster 51/96
+  warm.uploadDoe     cand     0.0157  main     0.0158  ratio 1.000 [0.997,1.000]  faster 47/96
+  warm.encode        cand     0.0007  main     0.0007  ratio 0.999 [0.999,1.000]  faster 49/96
+  warm.submit        cand     0.0103  main     0.0107  ratio 0.974 [0.951,0.990]  faster 59/96
+  warm.completion    cand     0.2743  main     0.2739  ratio 1.004 [0.999,1.007]  faster 41/96
+  warm.map           cand     0.0167  main     0.0166  ratio 1.000 [0.997,1.005]  faster 43/96
+  warm.operation     cand     0.3276  main     0.3275  ratio 1.000 [0.996,1.005]  faster 48/96
+  warmP95.operation  cand     0.3620  main     0.3588  ratio 1.006 [0.995,1.013]  faster 42/96
+  complete           cand    14.2555  main    14.2613  ratio 0.998 [0.991,1.005]  faster 51/96
+  processWall        cand    37.5289  main    37.6187  ratio 0.998 [0.993,1.004]  faster 53/96
+  cpuMs              cand    27.5525  main    27.5160  ratio 0.999 [0.993,1.008]  faster 49/96
+  maxRssMiB          cand    29.5156  main    29.5000  ratio 1.001 [1.000,1.001]  faster 18/96
+  verdict {'improve': {'warm.submit': True}, 'noRegress': {'setupNs': True, 'compileNs': True, 'pipelineNs': True, 'resourcesNs': True, 'teardownNs': True, 'first.operation': True, 'warm.uploadDoe': True, 'warm.encode': True, 'warm.submit': True, 'warm.completion': True, 'warm.map': True, 'warm.operation': True, 'warmP95.operation': True, 'complete': True, 'processWall': True, 'cpuMs': True, 'maxRssMiB': True}, 'pass': True}
+== image_rgba_invert_1024 pairs=96 A/A warm.operation 0.997 [0.988,1.011]
+  setupNs            cand     9.8965  main     9.9335  ratio 0.992 [0.985,1.002]  faster 54/96
+  compileNs          cand     0.0669  main     0.0671  ratio 0.999 [0.985,1.009]  faster 49/96
+  pipelineNs         cand     1.4134  main     1.4213  ratio 0.994 [0.986,1.001]  faster 55/96
+  resourcesNs        cand     0.6454  main     0.6408  ratio 0.996 [0.987,1.006]  faster 52/96
+  teardownNs         cand     0.4571  main     0.4531  ratio 1.004 [0.987,1.042]  faster 46/96
+  first.operation    cand     2.4200  main     2.3882  ratio 1.031 [0.998,1.043]  faster 40/96
+  warm.upload        cand     0.1227  main     0.1226  ratio 1.001 [0.995,1.006]  faster 47/96
+  warm.uploadSource  cand     0.0606  main     0.0605  ratio 1.001 [0.987,1.012]  faster 46/96
+  warm.uploadDoe     cand     0.0619  main     0.0619  ratio 1.000 [1.000,1.000]  faster 33/96
+  warm.encode        cand     0.0008  main     0.0008  ratio 0.999 [0.951,1.025]  faster 48/96
+  warm.submit        cand     0.0113  main     0.0115  ratio 0.991 [0.959,1.015]  faster 51/96
+  warm.completion    cand     0.4668  main     0.4665  ratio 0.998 [0.992,1.007]  faster 50/96
+  warm.map           cand     0.0824  main     0.0824  ratio 1.003 [0.994,1.012]  faster 45/96
+  warm.operation     cand     0.6883  main     0.6862  ratio 1.003 [0.994,1.007]  faster 46/96
+  warmP95.operation  cand     0.7832  main     0.7770  ratio 1.003 [0.993,1.017]  faster 45/96
+  complete           cand    27.9538  main    27.5185  ratio 1.008 [0.990,1.014]  faster 43/96
+  processWall        cand    53.5112  main    53.5229  ratio 0.998 [0.991,1.010]  faster 49/96
+  cpuMs              cand    36.3565  main    36.4605  ratio 0.999 [0.993,1.004]  faster 50/96
+  maxRssMiB          cand    59.5938  main    59.5781  ratio 1.000 [1.000,1.001]  faster 26/96
+  verdict {'improve': {}, 'noRegress': {'setupNs': True, 'compileNs': True, 'pipelineNs': True, 'resourcesNs': True, 'teardownNs': True, 'first.operation': True, 'warm.uploadDoe': True, 'warm.encode': True, 'warm.submit': True, 'warm.completion': True, 'warm.map': True, 'warm.operation': True, 'warmP95.operation': True, 'complete': True, 'processWall': True, 'cpuMs': True, 'maxRssMiB': True}, 'pass': True}
+== buffer_upload_readback_exact_1mb pairs=96 A/A warm.operation 1.005 [0.987,1.019]
+  setupNs            cand     9.6579  main     9.6235  ratio 1.002 [0.988,1.012]  faster 47/96
+  compileNs          cand     0.0001  main     0.0001  ratio 1.000 [1.000,1.000]  faster 37/96
+  pipelineNs         cand     0.0000  main     0.0000  ratio 0.000 [0.000,1.000]  faster 24/37
+  resourcesNs        cand     0.1288  main     0.1296  ratio 1.006 [0.991,1.033]  faster 44/96
+  teardownNs         cand     0.3064  main     0.3044  ratio 1.002 [0.992,1.026]  faster 46/96
+  first.operation    cand     2.4625  main     2.4815  ratio 1.006 [0.990,1.022]  faster 44/96
+  warm.upload        cand     0.0248  main     0.0248  ratio 0.998 [0.997,1.002]  faster 49/96
+  warm.uploadSource  cand     0.0090  main     0.0090  ratio 0.998 [0.991,1.005]  faster 50/96
+  warm.uploadDoe     cand     0.0158  main     0.0158  ratio 1.000 [0.997,1.000]  faster 41/96
+  warm.encode        cand     0.0003  main     0.0003  ratio 1.000 [1.000,1.000]  faster 37/96
+  warm.submit        cand     0.0053  main     0.0053  ratio 0.992 [0.970,1.016]  faster 51/96
+  warm.completion    cand     0.2261  main     0.2252  ratio 1.000 [0.991,1.016]  faster 48/96
+  warm.map           cand     0.0163  main     0.0163  ratio 1.002 [0.998,1.005]  faster 41/96
+  warm.operation     cand     0.2736  main     0.2728  ratio 1.005 [0.990,1.017]  faster 45/96
+  warmP95.operation  cand     0.3168  main     0.3271  ratio 0.987 [0.933,1.059]  faster 50/96
+  complete           cand    13.9141  main    13.8796  ratio 0.998 [0.986,1.016]  faster 49/96
+  processWall        cand    29.7754  main    29.8735  ratio 0.998 [0.990,1.018]  faster 49/96
+  cpuMs              cand    18.8420  main    18.8480  ratio 1.004 [0.998,1.008]  faster 42/96
+  maxRssMiB          cand    26.8906  main    26.8594  ratio 1.001 [1.001,1.001]  faster 9/96
+  verdict {'improve': {}, 'noRegress': {'setupNs': True, 'compileNs': True, 'pipelineNs': True, 'resourcesNs': True, 'teardownNs': True, 'first.operation': True, 'warm.uploadDoe': True, 'warm.encode': True, 'warm.submit': True, 'warm.completion': True, 'warm.map': True, 'warm.operation': True, 'warmP95.operation': True, 'complete': True, 'processWall': True, 'cpuMs': True, 'maxRssMiB': True}, 'pass': True}
+VALIDITY {'noFailedProcesses': True, 'gate:<repo>/reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1/vector_scale_add_262k/attempt1/gate.json': True, 'gate:<repo>/reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1/image_rgba_invert_1024/attempt1/gate.json': True, 'gate:<repo>/reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1/buffer_upload_readback_exact_1mb/attempt1/gate.json': True, 'aa.vector_scale_add_262k': True, 'aa.image_rgba_invert_1024': True, 'aa.buffer_upload_readback_exact_1mb': True} VALID
+MECHANISM PASS

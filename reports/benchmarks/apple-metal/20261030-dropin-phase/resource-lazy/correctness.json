@@ -64,6 +64,6 @@
     "perClientStatusMatch": true,
     "counts": "62 pass,12 same aborts,6 GNU-only unbuildable,1 checker arguments",
     "backend": "host check, arm64/x86_64 sdk-abi, native compute and graphics PASS",
-    "timingVerdict": "pending; frozen CPU gate blocks windows"
+    "timingVerdict": "FAIL; patch excluded"
   }
 }

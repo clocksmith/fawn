@@ -6,6 +6,8 @@ diagnostic on apple-host**. It is not an application win and does not qualify
 Metal support. RADV and ANV evidence does not transfer here, and none of this
 transfers back.
 
+**Latest (2026-11-01): sparse binding passes; lazy zeroing and pools fail** ([decisions](#pending-trial-decisions-2026-11-01)).
+
 **Status (2026-10-31, evening): M1 under the revised upload rule and the
 adapter-owned identity worker both passed and landed**
 ([section](#owner-decisions-of-2026-10-31-evening-m1-revised-rule-adapter-identity)).
@@ -649,3 +651,27 @@ older probe's accounting: Dawn's upload opens a blit encoder before submit and
 reuses it; Doe's CPU upload needs no blit, so submit opens one. The old probe also
 used `@autoreleasepool` in its Doe variant rather than the actual Foundation pool
 adapter. Those probe results cannot attribute the whole submit gap to bookkeeping.
+
+## Pending-trial decisions (2026-11-01)
+
+All nine selected windows passed gates and Dawn A/A on attempt 1, with 96 pairs of 32 full-oracle iterations each. Power stayed AC/100%, low power off. Original sparse vector attempts 1/2 (foreign CPU 21.2%/31.6%) and image attempts 1/2 (32.2%/22.2%) remain invalid; copy was not run under that exhausted contract. The same-binary [follow-up](contract-submit-sparse-r1.json) was frozen before three fresh windows, with identical rules and hashes. [Shared-lock coordination](shared-window-retries.json) changed scheduling, not acceptance thresholds.
+
+| Trial / workload | candidate/main [CI95] | candidate/Dawn [CI95] |
+| --- | --- | --- |
+| Sparse submit, vector | 0.974 [0.951,0.990] | 1.147 [1.106,1.178] |
+| Sparse submit, image | 0.991 [0.959,1.015] | 0.910 [0.880,0.939] |
+| Sparse submit, copy | 0.992 [0.970,1.016] | 1.480 [1.456,1.523] |
+| Lazy resources, vector | 0.137 [0.136,0.141] | 0.062 [0.061,0.065] |
+| Lazy resources, image | 0.041 [0.040,0.042] | 0.064 [0.062,0.066] |
+| Lazy resources, copy | 0.138 [0.135,0.142] | 1.248 [1.189,1.273] |
+| Pool submit, vector | 0.978 [0.966,0.996] | 1.161 [1.143,1.191] |
+| Pool submit, image | 0.996 [0.955,1.026] | 0.859 [0.837,0.885] |
+| Pool submit, copy | 1.000 [0.963,1.033] | 1.479 [1.446,1.506] |
+
+**Sparse: PASS** ([evaluation](submit-sparse-r1/eval.txt)). Vector submit improves and every no-regression bound passes. Fresh encoders bind 3 occupied buffer slots instead of 31; sparse indices, the full size table and immediate bytes are preserved (`runtime/c/backends/metal/src/objc_commands.c:63`). Direct and indirect compute share this helper. Main is `125654e63`.
+
+**Lazy zeroing: FAIL** ([evaluation](resource-lazy/eval.txt)). Image first operation is 1.115 [1.096,1.142], exceeding 1.05. First provider upload adds 168 us and first map adds 102 us; submit is 8 us lower. Resource savings cannot hide that first-use regression. Patch excluded.
+
+**Pools: FAIL** ([evaluation](submit-pools/eval.txt)). Copy-submit improvement is unproven; every no-regression bound passes. Vector-only improvement does not satisfy the frozen copy rule. Patch excluded. Lazy/pool main is `7aba775e1`.
+
+Component: C Metal backend. Intent preserved; no public ABI, validation, lifetime, error or provider-default change. Sparse production code adds 3 net lines, tests 9, with no new globals. All 81 per-client statuses matched main before freeze; host, both SDK ABI targets and real compute/graphics checks pass again on integrated sparse source. No build/iteration speedup is claimed. Remaining phase losses include vector/copy submit and image/copy resource creation. Complete-operation wins do not erase them.

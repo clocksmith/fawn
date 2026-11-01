@@ -1,0 +1,11 @@
+{
+  "recordedAtUtc": "2026-11-01T01:20:06.988403+00:00",
+  "authorization": "User: other Fawn-vs-Chrome browser benchmarks share the GPU lock; if their activity invalidates a gate, wait and rerun the window.",
+  "scope": "Fresh retries for environment-gate failures attributable to shared browser runs only. Retain every attempt and attribution. No retry based on performance; all frozen sampling, oracle, bootstrap, A/A and gate limits remain unchanged.",
+  "contracts": {
+    "contract-submit-sparse.json": "031572653102c454b085305784ab3d63e18cbce4c329d59c56bb8faff4d4535f",
+    "contract-resource-lazy.json": "5eaae9ae4a1b4b140097ec50b277443756f9b6d20e14cd6debd6dd774878f33b",
+    "contract-submit-pools.json": "76b9273886cd47cf9e1ac94f6c52ba85e9838b0fb91259a5cd2cc8e54abc8d4c"
+  },
+  "scheduling": "Quiet admission now holds the shared flock for at most 60 seconds, then either starts the unchanged gated window or releases it without sampling and waits five seconds. This coordinates with the concurrent browser campaign; gate/sampling/acceptance criteria unchanged."
+}

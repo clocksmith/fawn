@@ -59,8 +59,11 @@ static void bind_compute(doe_mtl_objc *runtime, void *encoder, void *pipeline,
     uint32_t i;
     runtime->set_object_call(encoder, runtime->set_pipeline, pipeline);
     for (i = 0; i < DOE_MTL_BUFFER_SLOTS; ++i) {
-        runtime->bind_buffer_call(encoder, runtime->set_buffer,
-            resources->buffers[i].buffer, resources->buffers[i].offset, i);
+        /* Every dispatch opens a fresh encoder, whose bindings start empty.
+         * Sparse MSL slots retain their identities; no prior binding survives. */
+        if (resources->buffers[i].buffer != NULL)
+            runtime->bind_buffer_call(encoder, runtime->set_buffer,
+                resources->buffers[i].buffer, resources->buffers[i].offset, i);
         sizes[i] = resources->buffers[i].size;
     }
     if (sizes_slot != UINT32_MAX) {
