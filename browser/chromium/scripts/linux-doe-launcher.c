@@ -51,6 +51,18 @@ static int package_path(char *out, size_t size, const char *root, const char *su
     return length >= 0 && (size_t)length < size;
 }
 
+/* A named path admits only the same file (device and inode) as the bundled
+ * one, like test -ef; a byte-identical copy elsewhere is foreign. */
+static int same_file(ArgumentView value, const char *bundled) {
+    char path[PATH_MAX];
+    struct stat named, own;
+    if (!value.length || value.length >= sizeof(path)) return 0;
+    memcpy(path, value.data, value.length);
+    path[value.length] = '\0';
+    return stat(path, &named) == 0 && stat(bundled, &own) == 0 && S_ISREG(named.st_mode) &&
+           named.st_dev == own.st_dev && named.st_ino == own.st_ino;
+}
+
 static int readable_file(const char *path) {
     struct stat metadata;
     return stat(path, &metadata) == 0 && S_ISREG(metadata.st_mode) && access(path, R_OK) == 0;
@@ -95,6 +107,7 @@ int main(int argc, char **argv) {
     int explicit_mode = 0;
     int positional = 0;
     int has_profile = 0;
+    int library_seen = 0;
     size_t count = 0;
     ssize_t length = readlink("/proc/self/exe", image, sizeof(image) - 1);
     if (length <= 0 || (size_t)length >= sizeof(image) - 1) {
@@ -127,8 +140,12 @@ int main(int argc, char **argv) {
             explicit_mode = 1;
             dawn = view_equal(value, "dawn");
         } else if (protected_switch(view, "doe-webgpu-library-path", &value)) {
-            fputs("Fawn: the product launcher uses its bundled C library; use the raw image for diagnostics\n", stderr);
-            goto cleanup;
+            /* A verifier may name the runtime it selects; admit only the bundled
+             * file itself, once. Foreign libraries stay with the raw image. */
+            if (library_seen++ || !same_file(value, library)) {
+                fputs("Fawn: only the bundled Doe C library may be named; use the raw image for diagnostics\n", stderr);
+                goto cleanup;
+            }
         }
         if (protected_switch(view, "user-data-dir", &value)) {
             if (has_profile++ || !value.length || value.data[0] != '/') {
@@ -136,6 +153,10 @@ int main(int argc, char **argv) {
                 goto cleanup;
             }
         }
+    }
+    if (dawn && library_seen) {
+        fputs("Fawn: a Doe library path requires --use-webgpu-runtime=doe\n", stderr);
+        goto cleanup;
     }
     if (!readable_file(browser) || access(browser, X_OK) != 0) {
         fprintf(stderr, "Fawn: bundled Chromium image is unavailable: %s\n", browser);
@@ -192,6 +213,7 @@ int main(int argc, char **argv) {
         ArgumentView view = argument_view(argv[index]);
         ArgumentView value = {NULL, 0};
         if (!positional && protected_switch(view, "use-webgpu-runtime", &value)) continue;
+        if (!positional && protected_switch(view, "doe-webgpu-library-path", &value)) continue;
         if (!dawn && !positional && protected_switch(view, "gpu-sandbox-start-early", &value)) continue;
         if (view_equal(view, "--")) positional = 1;
         forwarded[count++] = argv[index];

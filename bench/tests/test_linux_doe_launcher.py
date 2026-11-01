@@ -129,6 +129,27 @@ class LinuxLauncherTests(unittest.TestCase):
             self.assertEqual(failed.returncode, 1)
             self.assertEqual(failed.stdout, "")
 
+    def test_only_the_bundled_library_may_be_named_once_with_doe(self) -> None:
+        self.install()
+        bundled = self.package / "lib/doe/libwebgpu_doe_c.so"
+        linked = self.root / "linked.so"
+        linked.symlink_to(bundled)
+        for named in (bundled, linked):
+            process = subprocess.run([str(self.package / "chrome-wrapper"), "--use-webgpu-runtime=doe",
+                                      f"--doe-webgpu-library-path={named}"], capture_output=True, text=True)
+            self.assertEqual(process.returncode, 7, process.stderr)
+            paths = [line for line in process.stdout.splitlines() if "doe-webgpu-library-path" in line]
+            self.assertEqual(paths, ["--doe-webgpu-library-path=" + str(bundled)])
+        copy = self.root / "copy.so"
+        shutil.copyfile(bundled, copy)
+        for arguments in ([f"--doe-webgpu-library-path={copy}"],
+                          [f"--doe-webgpu-library-path={bundled}", f" -doe-webgpu-library-path={bundled} "],
+                          ["--use-webgpu-runtime=dawn", f"--doe-webgpu-library-path={bundled}"],
+                          ["--doe-webgpu-library-path="], ["--doe-webgpu-library-path"]):
+            failed = subprocess.run([str(self.package / "chrome-wrapper"), *arguments], capture_output=True, text=True)
+            self.assertEqual(failed.returncode, 1, arguments)
+            self.assertEqual(failed.stdout, "")
+
     def test_pinned_chromium_switch_forms_preserve_forced_selection(self) -> None:
         self.install()
         for spelling in ["-use-webgpu-runtime=dawn", " \t--use-webgpu-runtime=dawn\r\n"]:
