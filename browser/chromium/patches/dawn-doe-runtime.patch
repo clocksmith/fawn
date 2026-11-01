@@ -182,8 +182,32 @@ index 7d5e1972c..50fe30140 100644
  
      bool mBeginCaptureOnStartup = false;
      BackendValidationLevel mBackendValidationLevel = BackendValidationLevel::Disabled;
+diff --git a/src/dawn/native/metal/MetalBackend.mm b/src/dawn/native/metal/MetalBackend.mm
+index 567994b94..720bf1d08 100644
+--- a/src/dawn/native/metal/MetalBackend.mm
++++ b/src/dawn/native/metal/MetalBackend.mm
+@@ -30,6 +30,7 @@
+ 
+ #include "dawn/native/MetalBackend.h"
+ 
++#include "src/dawn/native/PhysicalDevice.h"
+ #include "src/dawn/native/metal/DeviceMTL.h"
+ #include "src/dawn/native/metal/QueueMTL.h"
+ #include "src/dawn/native/metal/TextureMTL.h"
+@@ -43,6 +44,11 @@
+ }
+ 
+ id<MTLDevice> GetMTLDevice(WGPUDevice device) {
++    // A device of another backend (for example the WebGPU backend over an
++    // external runtime) has no Dawn-owned MTLDevice to report.
++    if (FromAPI(device)->GetPhysicalDevice()->GetBackendType() != wgpu::BackendType::Metal) {
++        return nil;
++    }
+     Device* backendDevice = ToBackend(FromAPI(device));
+     return backendDevice->GetMTLDevice();
+ }
 diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
-index 665dea721..ba0867903 100644
+index 665dea721..01e2f9701 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.cpp
 +++ b/src/dawn/native/webgpu/BackendWGPU.cpp
 @@ -27,21 +27,34 @@
@@ -223,7 +247,7 @@ index 665dea721..ba0867903 100644
  
      auto toggles = instance->GetTogglesState();
      auto enabledTogglesName = toggles.GetEnabledToggleNames();
-@@ -61,10 +74,509 @@
+@@ -61,10 +74,515 @@
      instanceDesc.requiredLimits = &limits;
  
      mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
@@ -386,6 +410,9 @@ index 665dea721..ba0867903 100644
 +        return false;
 +    }
 +    if (!load(&mDawnProcs.computePassEncoderEnd, "wgpuComputePassEncoderEnd")) {
++        return false;
++    }
++    if (!load(&mDawnProcs.computePassEncoderRelease, "wgpuComputePassEncoderRelease")) {
 +        return false;
 +    }
 +    if (!load(&mDawnProcs.computePassEncoderInsertDebugMarker,
@@ -598,6 +625,9 @@ index 665dea721..ba0867903 100644
 +    if (!load(&mDawnProcs.renderPassEncoderEnd, "wgpuRenderPassEncoderEnd")) {
 +        return false;
 +    }
++    if (!load(&mDawnProcs.renderPassEncoderRelease, "wgpuRenderPassEncoderRelease")) {
++        return false;
++    }
 +    if (!load(&mDawnProcs.renderPassEncoderEndOcclusionQuery,
 +              "wgpuRenderPassEncoderEndOcclusionQuery")) {
 +        return false;
@@ -733,7 +763,7 @@ index 665dea721..ba0867903 100644
  Backend::~Backend() {
      if (mInnerInstance) {
          mDawnProcs.instanceRelease(mInnerInstance);
-@@ -74,42 +586,94 @@
+@@ -74,42 +592,94 @@
  
  std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
      const UnpackedPtr<RequestAdapterOptions>& options) {
@@ -831,7 +861,7 @@ index 665dea721..ba0867903 100644
  
      if (innerAdapter == nullptr) {
          return {};
-@@ -126,6 +690,18 @@
+@@ -126,6 +696,18 @@
      return mInnerInstance;
  }
  
@@ -931,6 +961,30 @@ index cc71a5ffe..e5213da6b 100644
  }
  
  MaybeError BindGroup::InitializeImpl() {
+diff --git a/src/dawn/native/webgpu/CommandBufferWGPU.cpp b/src/dawn/native/webgpu/CommandBufferWGPU.cpp
+index 5ea1b23d8..d340b7936 100644
+--- a/src/dawn/native/webgpu/CommandBufferWGPU.cpp
++++ b/src/dawn/native/webgpu/CommandBufferWGPU.cpp
+@@ -116,6 +116,9 @@
+             case Command::EndComputePass: {
+                 commands.NextCommand<EndComputePassCmd>();
+                 wgpu.computePassEncoderEnd(passEncoder);
++                // The pass encoder is a separate inner reference that retains its
++                // command encoder and every resource it recorded.
++                wgpu.computePassEncoderRelease(passEncoder);
+                 return;
+             }
+ 
+@@ -261,6 +264,9 @@
+             case Command::EndRenderPass: {
+                 commands.NextCommand<EndRenderPassCmd>();
+                 wgpu.renderPassEncoderEnd(passEncoder);
++                // The pass encoder is a separate inner reference that retains its
++                // command encoder and every attachment view it recorded.
++                wgpu.renderPassEncoderRelease(passEncoder);
+                 return;
+             }
+ 
 diff --git a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp b/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
 index 03842c139..4dcba683d 100644
 --- a/src/dawn/native/webgpu/ComputePipelineWGPU.cpp
@@ -1981,7 +2035,7 @@ index 7b2817703..2615ab14c 100644
      return {};
  }
 diff --git a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
-index 56c645a39..a94b46bce 100644
+index 56c645a39..45c40003e 100644
 --- a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
 +++ b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
 @@ -30,6 +30,7 @@
@@ -2037,20 +2091,98 @@ index 56c645a39..a94b46bce 100644
  
      stm->Initialize();
      return stm;
-@@ -107,6 +122,9 @@
+@@ -107,71 +122,137 @@
      TextureBase* texture,
      ExecutionSerial lastUsageSerial,
      UnpackedPtr<EndAccessState>& state) {
 +    if (mOpaqueFD) {
 +        return EndAccessOpaqueFD(texture, state);
 +    }
++    DAWN_TRY(state.ValidateSubset<SharedTextureMemoryMetalEndAccessState>());
++
++    // The inner runtime's release point covers only work it has received.
++    DAWN_TRY(ToBackend(GetDevice()->GetQueue())->SubmitPendingCommands());
++
      WGPUSharedTextureMemoryEndAccessState innerState =
          WGPU_SHARED_TEXTURE_MEMORY_END_ACCESS_STATE_INIT;
+-
+-    // TODO(crbug.com/483147423): Handle all possible chained structures in EndAccessState.
+-    // For now we only handle Metal.
+-    DAWN_TRY(state.ValidateSubset<SharedTextureMemoryMetalEndAccessState>());
+-    WGPUSharedTextureMemoryMetalEndAccessState mtlEndState =
++    WGPUSharedTextureMemoryMetalEndAccessState innerMtlEndState =
+         WGPU_SHARED_TEXTURE_MEMORY_METAL_END_ACCESS_STATE_INIT;
+     if (state.Get<SharedTextureMemoryMetalEndAccessState>()) {
+-        innerState.nextInChain = &mtlEndState.chain;
++        innerState.nextInChain = &innerMtlEndState.chain;
+     }
+-
+     const DawnProcTable& wgpu = ToBackend(GetDevice())->wgpu.get();
+     DAWN_TRY(CheckWGPUSuccess(wgpu.sharedTextureMemoryEndAccess(
+                                   mInnerHandle, ToBackend(texture)->GetInnerHandle(), &innerState),
+                               "sharedTextureMemoryEndAccess"));
  
-@@ -168,10 +186,85 @@
-     return FenceAndSignalValue{std::move(fence), static_cast<uint64_t>(lastUsageSerial)};
- }
+-    // We must manually sync the initialized state from the inner handle to the outer texture
+-    // frontend so that the correct state is returned to the user in EndAccess.
++    // Sync the inner initialized state to the outer texture frontend so that the correct state is
++    // returned to the user in EndAccess.
+     if (innerState.initialized) {
+         texture->SetIsSubresourceContentInitialized(true, texture->GetAllSubresources());
+     }
+-    DAWN_ASSERT(texture->IsResourceInitialized() == static_cast<bool>(innerState.initialized));
+-
+-    if (auto* mtlEndStateChain = state.Get<SharedTextureMemoryMetalEndAccessState>()) {
+-        DAWN_TRY(ToBackend(GetDevice()->GetQueue())->SubmitPendingCommands());
  
+-        WGPUQueueWorkDoneCallbackInfo callbackInfo = {};
+-        callbackInfo.mode = WGPUCallbackMode_WaitAnyOnly;
+-        // We need a callback even if it does nothing because queueOnSubmittedWorkDone
+-        // requires one.
+-        callbackInfo.callback = [](WGPUQueueWorkDoneStatus, WGPUStringView, void*, void*) {};
+-
+-        WGPUFuture innerFuture = wgpu.queueOnSubmittedWorkDone(
+-            ToBackend(GetDevice()->GetQueue())->GetInnerHandle(), callbackInfo);
++    // The inner runtime releases the access with its own fence and value, signaled after all of
++    // the access's inner work; neither is the outer queue's. Wrap a new reference before the inner
++    // state frees its own.
++    if (innerState.fenceCount != 1 || innerState.signaledValueCount != 1) {
++        wgpu.sharedTextureMemoryEndAccessStateFreeMembers(innerState);
++        return DAWN_UNRECOVERABLE_ERROR("The inner runtime did not export one release fence.");
++    }
++    WGPUSharedFence innerFence = innerState.fences[0];
++    uint64_t signaledValue = innerState.signaledValues[0];
++    wgpu.sharedFenceAddRef(innerFence);
++    wgpu.sharedTextureMemoryEndAccessStateFreeMembers(innerState);
++    Ref<SharedFence> fence =
++        SharedFence::CreateFromHandle(ToBackend(GetDevice()), "WebGPU release", innerFence);
+ 
+-        // Since there is no public API to get a scheduled future from a WGPUQueue, we wait on
+-        // the inner future for the end of the access.
+-        WGPUFutureWaitInfo waitInfo = {innerFuture, false};
++    // Consumers on another queue or the window server need the inner commands to be scheduled. An
++    // inner runtime either returns its own commands-scheduled future, waited here, or (like Doe)
++    // returns only after they are scheduled. Either way no outer future is reported, so no consumer
++    // retains this device to wait on one.
++    if (innerMtlEndState.commandsScheduledFuture.id != 0) {
++        WGPUFutureWaitInfo waitInfo = {innerMtlEndState.commandsScheduledFuture, false};
+         wgpu.instanceWaitAny(ToBackend(GetDevice())->GetInnerInstance(), 1, &waitInfo, UINT64_MAX);
+-
+-        // Return a outer future to wait on.
+-        // Since we already instanceWaitAny above, we only need an already completed future to avoid
+-        // an unnecessary GPU bubble.
+-        mtlEndStateChain->commandsScheduledFuture = {
+-            EventManager::TrackedEvent::CreateAlreadyCompletedEvent(
+-                GetDevice()->GetInstance()->GetEventManager(), wgpu::CallbackMode::AllowSpontaneous)
+-                ->GetFuture()
+-                .id};
+     }
+ 
+-    // Only that Texture is used by gpu will enter EndAccess.
+-    // The fence could only be from the inner queue.
+-    DAWN_ASSERT(innerState.fenceCount == 1);
++    return FenceAndSignalValue{std::move(fence), signaledValue};
++}
++
 +ResultOrUnknownError<FenceAndSignalValue> SharedTextureMemory::EndAccessOpaqueFD(
 +    TextureBase* texture,
 +    UnpackedPtr<EndAccessState>& state) {
@@ -2060,7 +2192,11 @@ index 56c645a39..a94b46bce 100644
 +    WGPUSharedTextureMemoryVkImageLayoutEndState innerLayout =
 +        WGPU_SHARED_TEXTURE_MEMORY_VK_IMAGE_LAYOUT_END_STATE_INIT;
 +    innerState.nextInChain = &innerLayout.chain;
-+
+ 
+-    Ref<SharedFence> fence;
+-    DAWN_TRY_ASSIGN(
+-        fence, ToBackend(GetDevice()->GetQueue())->GetOrCreateSharedFence(innerState.fences[0]));
+-    return FenceAndSignalValue{std::move(fence), static_cast<uint64_t>(lastUsageSerial)};
 +    const DawnProcTable& wgpu = ToBackend(GetDevice())->wgpu.get();
 +    DAWN_TRY(CheckWGPUSuccess(wgpu.sharedTextureMemoryEndAccess(
 +                                  mInnerHandle, ToBackend(texture)->GetInnerHandle(), &innerState),
@@ -2086,8 +2222,8 @@ index 56c645a39..a94b46bce 100644
 +    Ref<SharedFence> fence = SharedFence::CreateFromHandle(ToBackend(GetDevice()),
 +                                                           "WebGPU SyncFD release", innerFence);
 +    return FenceAndSignalValue{std::move(fence), signaledValue};
-+}
-+
+ }
+ 
  MaybeValError SharedTextureMemory::BeginAccessImpl(
      TextureBase* textureBase,
      const UnpackedPtr<BeginAccessDescriptor>& descriptor) {

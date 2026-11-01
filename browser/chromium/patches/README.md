@@ -20,7 +20,13 @@ providers, the disable switch, and fallback adapters. Shared-buffer mailbox
 imports remain explicitly unsupported.
 
 `dawn-doe-runtime.patch` loads the selected provider's required native functions
-into the existing WebGPU-on-WebGPU backend and pumps its instance callbacks.
+into the existing WebGPU-on-WebGPU backend and pumps its instance callbacks. The
+backend releases each inner render and compute pass encoder after ending it (a
+pass retains its encoder and recorded attachments). An IOSurface access ends with
+the provider's own release fence and value, waits on a provider
+commands-scheduled future when one is returned, and reports no outer future, so
+no shared image retains the device. `GetMTLDevice` reports nil for a device of
+another backend.
 Dawn's wire and validation wrappers remain in this recovered integration. This
 is a buildable diagnostic route, not acceptance of the contract's direct Doe wire
 ownership or a browser performance claim. The current build and execution state
