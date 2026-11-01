@@ -421,7 +421,8 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
             /* Like Dawn's commands-scheduled future, consumers on another queue
              * or the window server rely on the owning commands being scheduled:
              * they were committed at submit, so this rarely spins. */
-            struct timespec now, deadline;
+            /* Zeroed: GCC cannot see that a failed doe_time_add skips the loop. */
+            struct timespec now = {0}, deadline = {0};
             if (doe_monotonic_now(&now).status != DOE_HOST_OK ||
                 doe_time_add(&now, UINT64_C(5000000000), &deadline).status != DOE_HOST_OK)
                 failure = native_failure_status(NATIVE_FAILURE);
