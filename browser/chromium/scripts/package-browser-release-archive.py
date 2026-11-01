@@ -20,8 +20,6 @@ DEFAULT_MACOS_BROWSER_EXECUTABLE_PACKAGE_PATH = "Contents/MacOS/Chromium"
 DEFAULT_MACOS_APP_METADATA_PACKAGE_PATH = "Contents/Info.plist"
 DEFAULT_LINUX_BROWSER_EXECUTABLE_PACKAGE_PATH = "chrome-wrapper"
 DEFAULT_LINUX_APP_METADATA_PACKAGE_PATH = "browser-product.json"
-DEFAULT_DOE_RUNTIME_NAME = "libwebgpu_doe.so"
-DEFAULT_DAWN_RUNTIME_NAME = "libdawn_native.so"
 PRODUCT_DISPLAY_NAMES = {
     "doe-browser": "Doe Browser",
     "fawn-doe": "Fawn Doe",
@@ -282,6 +280,20 @@ def default_runtime_member_path(
     return package_member_path(package_root_name, runtime_name)
 
 
+def default_runtime_member(
+    package_dir: Path,
+    package_root_name: str,
+    runtime: Path,
+    platform_os: str,
+) -> str:
+    """Name a runtime by where it already lives in the package, else by its own file name."""
+    try:
+        relative = runtime.resolve().relative_to(package_dir.resolve())
+    except ValueError:
+        return default_runtime_member_path(package_root_name, runtime.name, platform_os)
+    return package_member_path(package_root_name, relative.as_posix())
+
+
 def package_relative_member_path(package_root_name: str, archive_path: str) -> str:
     normalized_root = normalize_member_path(package_root_name)
     normalized_archive_path = normalize_member_path(archive_path)
@@ -448,23 +460,27 @@ def resolved_package_config(args: argparse.Namespace) -> dict[str, Any]:
         args.browser_app_metadata_package_path
         or default_app_metadata_package_path(args.platform_os)
     )
+    doe_runtime = Path(required_arg(args.doe_runtime, "--doe-runtime"))
+    dawn_fallback_runtime = Path(required_arg(args.dawn_fallback_runtime, "--dawn-fallback-runtime"))
     return {
         "package_dir": package_dir,
         "package_root_name": package_root_name,
         "browser_executable_package_path": browser_executable_package_path,
         "app_metadata_package_path": app_metadata_package_path,
-        "doe_member": args.doe_runtime_archive_path or default_runtime_member_path(
+        "doe_member": args.doe_runtime_archive_path or default_runtime_member(
+            package_dir,
             package_root_name,
-            DEFAULT_DOE_RUNTIME_NAME,
+            doe_runtime,
             args.platform_os,
         ),
-        "dawn_member": args.dawn_fallback_runtime_archive_path or default_runtime_member_path(
+        "dawn_member": args.dawn_fallback_runtime_archive_path or default_runtime_member(
+            package_dir,
             package_root_name,
-            DEFAULT_DAWN_RUNTIME_NAME,
+            dawn_fallback_runtime,
             args.platform_os,
         ),
-        "doe_runtime": Path(required_arg(args.doe_runtime, "--doe-runtime")),
-        "dawn_fallback_runtime": Path(required_arg(args.dawn_fallback_runtime, "--dawn-fallback-runtime")),
+        "doe_runtime": doe_runtime,
+        "dawn_fallback_runtime": dawn_fallback_runtime,
         "product": {
             "productId": args.product_id,
             "displayName": args.product_name,

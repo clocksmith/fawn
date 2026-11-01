@@ -126,6 +126,11 @@ def _write_executable(path: Path, payload: bytes) -> Path:
     return path
 
 
+def package_bytes(archive: Path, member: str) -> bytes:
+    with zipfile.ZipFile(archive) as package:
+        return package.read(member)
+
+
 class PackageBrowserReleaseArchiveTests(unittest.TestCase):
     def test_linux_release_candidate_requires_complete_eligible_preflight(self) -> None:
         import tempfile
@@ -298,6 +303,63 @@ class PackageBrowserReleaseArchiveTests(unittest.TestCase):
                     self.assertTrue(mode & stat.S_IXUSR)
                     for info in package.infolist():
                         self.assertEqual(info.date_time, (1980, 1, 1, 0, 0, 0))
+
+    def test_packer_names_bundled_runtimes_by_their_package_paths(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            app_dir, _, _ = _write_app_fixture(root)
+            frameworks_dir = app_dir / "Contents" / "Frameworks"
+            doe_runtime = _write_executable(frameworks_dir / "libwebgpu_doe_c.dylib", b"bundled doe runtime\n")
+            dawn_dir = frameworks_dir / "Chromium Framework.framework" / "Versions" / "1.0"
+            dawn_dir.mkdir(parents=True)
+            dawn_runtime = _write_executable(dawn_dir / "Chromium Framework", b"bundled dawn runtime\n")
+            archive = root / "Fawn-Doe-macos-arm64.zip"
+            manifest = root / "Fawn-Doe-macos-arm64.manifest.json"
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(PACKER),
+                    "--app-dir",
+                    str(app_dir),
+                    "--out",
+                    str(archive),
+                    "--manifest-out",
+                    str(manifest),
+                    "--doe-runtime",
+                    str(doe_runtime),
+                    "--dawn-fallback-runtime",
+                    str(dawn_runtime),
+                    "--product-version",
+                    "0.0.0-test",
+                    "--product-channel",
+                    "diagnostic",
+                    "--platform-arch",
+                    "arm64",
+                ],
+                cwd=REPO_ROOT,
+                check=True,
+            )
+
+            members = json.loads(manifest.read_text(encoding="utf-8"))["members"]
+            self.assertEqual(
+                members["doeRuntime"]["archivePath"],
+                "Fawn.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+            )
+            self.assertEqual(
+                members["dawnFallbackRuntime"]["archivePath"],
+                "Fawn.app/Contents/Frameworks/Chromium Framework.framework/Versions/1.0/Chromium Framework",
+            )
+            with zipfile.ZipFile(archive) as package:
+                names = set(package.namelist())
+            self.assertIn("Fawn.app/Contents/Frameworks/libwebgpu_doe_c.dylib", names)
+            # Only the fixture's stale files carry the old Linux spellings; no runtime copy is added.
+            self.assertEqual(
+                package_bytes(archive, "Fawn.app/Contents/Frameworks/libwebgpu_doe.so"),
+                b"stale doe runtime\n",
+            )
 
     def test_packer_derives_release_archive_from_package_inputs(self) -> None:
         import tempfile

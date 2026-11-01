@@ -494,14 +494,25 @@ def runtime_member_path(
     *,
     explicit_path: str,
     package_root_name: str,
-    runtime_name: str,
+    package_dir: Path | None,
+    runtime_path: Path | None,
+    runtime_text: str,
     platform_os: str,
     field: str,
     failures: list[dict[str, str]],
 ) -> str:
     if explicit_path:
         return normalize_member_path(explicit_path, field=field, failures=failures)
+    # Mirror the packer's default: an in-package runtime keeps its own path.
+    runtime_name = PurePosixPath(runtime_text.replace("\\", "/")).name
     try:
+        if package_dir is not None and runtime_path is not None:
+            return PACKER.default_runtime_member(
+                package_dir,
+                package_root_name,
+                runtime_path,
+                platform_os,
+            )
         return PACKER.default_runtime_member_path(
             package_root_name,
             runtime_name,
@@ -1069,7 +1080,9 @@ def build_report(
     doe_member = runtime_member_path(
         explicit_path=doe_runtime_archive_path,
         package_root_name=package_root_name,
-        runtime_name=PACKER.DEFAULT_DOE_RUNTIME_NAME,
+        package_dir=package_dir_path,
+        runtime_path=resolve_input_path(root, doe_runtime),
+        runtime_text=doe_runtime,
         platform_os=platform_os,
         field="inputs.doeRuntime.archivePath",
         failures=failures,
@@ -1077,7 +1090,9 @@ def build_report(
     dawn_member = runtime_member_path(
         explicit_path=dawn_fallback_runtime_archive_path,
         package_root_name=package_root_name,
-        runtime_name=PACKER.DEFAULT_DAWN_RUNTIME_NAME,
+        package_dir=package_dir_path,
+        runtime_path=resolve_input_path(root, dawn_fallback_runtime),
+        runtime_text=dawn_fallback_runtime,
         platform_os=platform_os,
         field="inputs.dawnFallbackRuntime.archivePath",
         failures=failures,
