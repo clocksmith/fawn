@@ -1761,12 +1761,18 @@ build IDs, the exact SPIR-V and the adapter/driver identity, then seeds a
 temporary driver cache with the returned envelope. The envelope's device,
 driver, version and digest checks and the driver's own validation make a wrong
 or corrupt value a miss; when nothing compatible was loaded the new envelope is
-handed back to `store`. Both callbacks run on the creating thread with no Doe
-lock held. The store is set once per device and excludes the directory cache.
+handed back to `store`. `load` runs on the creating thread. A miss keeps its
+populated driver cache instead of serializing it during creation: one worker
+thread per device serializes, digests and hands each envelope to `store` in
+creation order, so `store` must be thread-safe. Flush waits for that work, and
+device destruction stores what remains before it returns. Neither callback runs
+with a Doe lock held. The store is set once per device and excludes the
+directory cache.
 Render pipelines use the same store with a key over both stages; their
 fixed-function state is validated by the driver cache. `check-pipeline-blob` exercises miss/store,
 in-device reuse, a driver-accepted load on a fresh device, a corrupt value,
-unlocked callbacks and exact dispatch output; it does not qualify a browser.
+deferred stores completed by flush and by destruction, unlocked callbacks and
+exact dispatch output; it does not qualify a browser.
 
 Pinned bind-group layout entries accept `bindingArraySize` zero (default) or one
 (normalized scalar). Both produce one canonical resource entry, so explicit

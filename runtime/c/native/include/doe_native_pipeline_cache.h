@@ -32,15 +32,21 @@ typedef struct DoeNativePipelineCacheInfo {
 DOE_NATIVE_EXTENSION uint32_t doeNativeDeviceConfigurePipelineCache(void *device,
     uint32_t abi_version, const char *directory, size_t length,
     DoeNativePipelineCacheInfo *out, size_t out_size);
+/* Flush also waits until every deferred embedder blob (below) has been stored. */
 DOE_NATIVE_EXTENSION uint32_t doeNativeDeviceFlushPipelineCache(void *device,
     uint32_t abi_version, DoeNativePipelineCacheInfo *out, size_t out_size);
+/* Info also reads the final counters of a destroyed (not yet released) device. */
 DOE_NATIVE_EXTENSION uint32_t doeNativeDevicePipelineCacheInfo(void *device,
     uint32_t abi_version, DoeNativePipelineCacheInfo *out, size_t out_size);
 /* Embedder-owned pipeline blob store, for example a browser that persists bytes
  * behind its GPU sandbox. Doe performs no file access for it and holds no Doe
- * lock while calling it. Callbacks run synchronously on the thread creating a
- * compute or render pipeline of this device and never after that call returns; the
- * embedder keeps userdata valid until the device is released. A lookup may
+ * lock while calling it. load runs synchronously on the thread creating a
+ * compute or render pipeline of this device. A miss does not serialize during
+ * creation: one Doe worker thread per device serializes the driver cache and
+ * calls store later, possibly concurrently with this device's other calls, so
+ * store must be thread-safe. Every store returns before wgpuDeviceDestroy (or
+ * the last external wgpuDeviceRelease) returns and none starts afterwards; the
+ * embedder keeps userdata valid until then. A lookup may
  * precede reuse of an identical pipeline already held in device memory; then
  * nothing is loaded into the driver or stored. load either calls
  * receive once with the stored bytes (copied before receive returns) or not at
@@ -52,7 +58,8 @@ DOE_NATIVE_EXTENSION uint32_t doeNativeDevicePipelineCacheInfo(void *device,
  * Configure once per Vulkan device; it is exclusive with the directory cache
  * and independent of doeNativeDeviceDisablePersistentCache, which governs only
  * Doe-owned files. Info counters: load_attempts = lookups, load_successes =
- * driver-accepted loads, serializations = values handed to store. Other
+ * driver-accepted loads, serializations = values handed to store (counted
+ * when the worker finishes, so they may trail creation). Other
  * backends, or a runtime without ELF build IDs, return UNSUPPORTED. */
 typedef void (*DoeNativePipelineBlobReceive)(void *receiver, const void *value, size_t size);
 typedef struct DoeNativePipelineBlobStore {

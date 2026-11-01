@@ -186,6 +186,8 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
         blobs.load(blobs.userdata, blob_key, sizeof(blob_key), native_receive_blob, &loaded);
         blob.loaded = loaded.bytes;
         blob.loaded_size = loaded.size;
+        /* A miss hands its driver cache to the publisher (pipeline_blob_publisher.h). */
+        blob.defer = true;
     }
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) {
@@ -237,6 +239,8 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     free(loaded.bytes);
     if (blob.produced) blobs.store(blobs.userdata, blob_key, sizeof(blob_key), blob.produced, blob.produced_size);
     free(blob.produced);
+    if (blob.deferred && !native_blob_publisher_defer(device, blob.deferred, blob_key))
+        native_blob_publish_now(device, blob.deferred, blob_key);
     native_d3d12_compiler_release(compiled);
     if (pipeline && resource_status != DOE_RESOURCE_OK) {
         /* Its release, outside the device lock, also releases the payload. */

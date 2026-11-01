@@ -37,7 +37,20 @@ bool doe_vk_render_pipeline_blob_key(const doe_vk_context *, const uint8_t verte
 typedef struct doe_vk_pipeline_blob {
     const uint8_t *loaded; size_t loaded_size; /* Borrowed for the call; NULL on a miss. */
     uint8_t *produced; size_t produced_size;   /* Envelope to persist; the caller frees it. */
+    /* Set by the caller: on a miss, keep the populated driver cache in
+     * `deferred` instead of serializing it during creation. The caller then
+     * owns it and passes it once to doe_vk_pipeline_blob_serialize or _discard. */
+    bool defer;
+    uint64_t deferred;
 } doe_vk_pipeline_blob;
+/* Envelope (same bytes as `produced`) of a deferred driver cache, which is
+ * destroyed either way. Callable from any thread: it uses only that cache,
+ * which nothing else references, and read-only context state; it updates no
+ * context counters (record the outcome with _counted under the caller's lock).
+ * The device must outlive the call. */
+doe_vk_status doe_vk_pipeline_blob_serialize(doe_vk_context *, uint64_t deferred, uint8_t **out, size_t *out_size);
+void doe_vk_pipeline_blob_discard(doe_vk_context *, uint64_t deferred);
+void doe_vk_pipeline_blob_counted(doe_vk_context *, bool serialized);
 #ifdef __cplusplus
 }
 #endif

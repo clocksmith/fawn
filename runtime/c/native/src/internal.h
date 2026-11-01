@@ -17,6 +17,7 @@
 #include "shader_cache.h"
 #include "persistent_cache.h"
 #include "shader_identity_worker.h"
+#include "pipeline_blob_publisher.h"
 #include "doe_native_pipeline_cache.h"
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
@@ -56,6 +57,7 @@ typedef struct native_device {
     native_persistent_cache_policy persistent_cache;
     /* Embedder blob store, set once under the mutex; snapshot before calling it. */
     DoeNativePipelineBlobStore pipeline_blobs;
+    native_blob_publisher blob_publisher; /* See pipeline_blob_publisher.h. */
     uint8_t build_identity[32];
     doe_label_store *labels;
     unsigned char queue_label_key;

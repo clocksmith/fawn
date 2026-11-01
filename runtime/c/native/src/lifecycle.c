@@ -302,6 +302,8 @@ void native_device_release(void *identity)
      * race or discard an unresolved backend obligation. */
     if (device->pending) abort();
     native_identity_worker_finish(&device->identity_worker);
+    native_blob_publisher_finish(device);
+    native_blob_publisher_destroy(device);
     native_release_initialization(device);
     native_release_access_batch(device);
     native_metal_completion_detach(device);
@@ -537,6 +539,8 @@ void wgpuDeviceDestroy(WGPUDevice handle)
     }
     native_unlock(device);
     if (first) native_loss_complete(device->loss, WGPUDeviceLostReason_Destroyed, "device destroyed");
+    /* Every deferred pipeline blob is stored before destruction returns. */
+    if (first) native_blob_publisher_finish(device);
     native_device_release(device);
 }
 

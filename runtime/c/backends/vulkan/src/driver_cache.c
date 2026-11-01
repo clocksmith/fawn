@@ -57,11 +57,13 @@ static doe_vk_status open_cache(doe_vk_context *context, const uint8_t *bytes, s
     return status;
 }
 /* Envelope: magic, device/driver UUIDs, driver version, payload size and digest. */
-static doe_vk_status serialize(doe_vk_context *context, VkPipelineCache cache,
+/* `record` receives a device-loss observation; serialization off the creating
+ * thread passes NULL, leaving loss to the next ordinary call. */
+static doe_vk_status serialize_with(doe_vk_context *context, doe_vk_context *record, VkPipelineCache cache,
     uint8_t **out, size_t *out_size, doe_vk_error *error) {
     size_t size=0;
     VkResult result=context->vk.vkGetPipelineCacheData(context->device,cache,&size,NULL);
-    doe_vk_status status=doe_vk_result(context,result,"vkGetPipelineCacheData(size)",error);
+    doe_vk_status status=doe_vk_result(record,result,"vkGetPipelineCacheData(size)",error);
     uint8_t *bytes=NULL;
     if (status == DOE_VK_OK && (size<CACHE_HEADER_SIZE || size>DOE_VK_CACHE_MAX_BYTES-CACHE_ENVELOPE_SIZE))
         status=doe_vk_fail(DOE_VK_UNSUPPORTED,"pipeline cache blob size",error);
@@ -72,7 +74,7 @@ static doe_vk_status serialize(doe_vk_context *context, VkPipelineCache cache,
     }
     if (status == DOE_VK_OK) {
         result=context->vk.vkGetPipelineCacheData(context->device,cache,&size,bytes+CACHE_ENVELOPE_SIZE);
-        status=doe_vk_result(context,result,"vkGetPipelineCacheData(bytes)",error);
+        status=doe_vk_result(record,result,"vkGetPipelineCacheData(bytes)",error);
         if (status == DOE_VK_OK && size>capacity) status=doe_vk_fail(DOE_VK_NATIVE_FAILURE,"pipeline cache size changed",error);
     }
     if (status == DOE_VK_OK) {
@@ -85,6 +87,10 @@ static doe_vk_status serialize(doe_vk_context *context, VkPipelineCache cache,
     if (status != DOE_VK_OK) { free(bytes); return status; }
     *out=bytes; *out_size=size+CACHE_ENVELOPE_SIZE;
     return DOE_VK_OK;
+}
+static doe_vk_status serialize(doe_vk_context *context, VkPipelineCache cache,
+    uint8_t **out, size_t *out_size, doe_vk_error *error) {
+    return serialize_with(context,context,cache,out,out_size,error);
 }
 void doe_vk_driver_cache_clear(doe_vk_context *context) {
     if (context->driver_cache) context->vk.vkDestroyPipelineCache(context->device,context->driver_cache,NULL);
@@ -195,10 +201,30 @@ doe_vk_status doe_vk_pipeline_blob_open(doe_vk_context *context, const doe_vk_pi
 void doe_vk_pipeline_blob_close(doe_vk_context *context, VkPipelineCache cache, bool loaded, bool created,
     doe_vk_pipeline_blob *blob) {
     if (created) ++context->driver_cache_stats.additions; else ++context->driver_cache_stats.addition_failures;
+    if (created && !loaded && blob->defer) {
+        blob->deferred=(uint64_t)cache; /* Serialized and destroyed by its new owner. */
+        return;
+    }
     if (created && !loaded) {
         if (serialize(context,cache,&blob->produced,&blob->produced_size,NULL) == DOE_VK_OK)
             ++context->driver_cache_stats.serializations;
         else ++context->driver_cache_stats.serialization_failures;
     }
     context->vk.vkDestroyPipelineCache(context->device,cache,NULL);
+}
+
+doe_vk_status doe_vk_pipeline_blob_serialize(doe_vk_context *context, uint64_t deferred, uint8_t **out,
+    size_t *out_size) {
+    if (!context || !deferred || !out || !out_size) return DOE_VK_INVALID_ARGUMENT;
+    doe_vk_status status=serialize_with(context,NULL,(VkPipelineCache)deferred,out,out_size,NULL);
+    context->vk.vkDestroyPipelineCache(context->device,(VkPipelineCache)deferred,NULL);
+    return status;
+}
+void doe_vk_pipeline_blob_discard(doe_vk_context *context, uint64_t deferred) {
+    if (context && deferred) context->vk.vkDestroyPipelineCache(context->device,(VkPipelineCache)deferred,NULL);
+}
+void doe_vk_pipeline_blob_counted(doe_vk_context *context, bool serialized) {
+    if (!context) return;
+    if (serialized) ++context->driver_cache_stats.serializations;
+    else ++context->driver_cache_stats.serialization_failures;
 }

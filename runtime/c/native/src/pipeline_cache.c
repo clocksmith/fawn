@@ -36,7 +36,8 @@ static uint32_t cache_operation(void *handle, uint32_t version, unsigned operati
     native_device_retain(device);
     native_lock(device);
     native_failure failure = native_failure_status(NATIVE_OK);
-    if (!native_device_alive(device)) failure = native_failure_status(NATIVE_INVALID_STATE);
+    /* Counters stay readable after destruction, which stores every deferred blob. */
+    if (operation != 2 && !native_device_alive(device)) failure = native_failure_status(NATIVE_INVALID_STATE);
     else if (operation == 0 &&
         !native_persistent_cache_reserve(&device->persistent_cache))
         failure = native_failure_status(NATIVE_INVALID_STATE);
@@ -94,6 +95,9 @@ uint32_t doeNativeDeviceConfigurePipelineCache(void *device, uint32_t version,
 uint32_t doeNativeDeviceFlushPipelineCache(void *device, uint32_t version,
     DoeNativePipelineCacheInfo *out, size_t out_size)
 {
+    /* Deferred embedder blobs are part of what a flush makes durable. */
+    if (device && version == DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION && out && out_size == sizeof(*out))
+        native_blob_publisher_drain(device);
     return cache_operation(device, version, 1, NULL, 0, out, out_size);
 }
 uint32_t doeNativeDevicePipelineCacheInfo(void *device, uint32_t version,

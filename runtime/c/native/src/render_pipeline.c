@@ -104,6 +104,8 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
         blobs.load(blobs.userdata, blob_key, sizeof(blob_key), native_receive_blob, &loaded);
         blob.loaded = loaded.bytes;
         blob.loaded_size = loaded.size;
+        /* A miss hands its driver cache to the publisher (pipeline_blob_publisher.h). */
+        blob.defer = true;
     }
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { free(loaded.bytes); *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
@@ -142,6 +144,8 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
     free(loaded.bytes);
     if (blob.produced) blobs.store(blobs.userdata, blob_key, sizeof(blob_key), blob.produced, blob.produced_size);
     free(blob.produced);
+    if (blob.deferred && !native_blob_publisher_defer(device, blob.deferred, blob_key))
+        native_blob_publish_now(device, blob.deferred, blob_key);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
         error->type = backend != DOE_VK_OK ? native_result_error(failure.status) : native_resource_error(status);

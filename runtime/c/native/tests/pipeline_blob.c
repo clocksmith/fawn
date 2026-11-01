@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Embedder pipeline blob store on a real Vulkan device: miss then store, memory
  * reuse without a driver load or store, a driver-accepted hit on a fresh device, a corrupt value
- * treated as a miss, unlocked callbacks and identical dispatch output. */
+ * treated as a miss, unlocked callbacks and identical dispatch output. A miss
+ * stores from Doe's worker after creation returns: flush waits for it, and
+ * destruction stores whatever remains before it returns. */
 #include "consumer.h"
 #include "doe_native_pipeline_cache.h"
+#include <stdatomic.h>
 #include <stdlib.h>
 
 static const char *const kernel =
@@ -16,6 +19,7 @@ typedef struct store {
     uint8_t *value;
     size_t size;
     unsigned loads, hits, stores;
+    _Atomic unsigned in_store;
 } store;
 static void blob_load(void *userdata, const void *key, size_t key_size,
     DoeNativePipelineBlobReceive receive, void *receiver)
@@ -34,6 +38,7 @@ static void blob_load(void *userdata, const void *key, size_t key_size,
 static void blob_store(void *userdata, const void *key, size_t key_size, const void *value, size_t size)
 {
     store *s = userdata;
+    atomic_fetch_add(&s->in_store, 1u);
     DoeNativePipelineCacheInfo info;
     assert(doeNativeDevicePipelineCacheInfo(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
         &info, sizeof(info)) == DOE_NATIVE_PIPELINE_CACHE_OK);
@@ -45,6 +50,14 @@ static void blob_store(void *userdata, const void *key, size_t key_size, const v
     memcpy(s->value, value, size);
     s->size = size;
     ++s->stores;
+    atomic_fetch_sub(&s->in_store, 1u);
+}
+/* Waits for the worker's stores: the store above is unsynchronized test state. */
+static void settle(state *device)
+{
+    DoeNativePipelineCacheInfo info;
+    assert(doeNativeDeviceFlushPipelineCache(device->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
+        &info, sizeof(info)) == DOE_NATIVE_PIPELINE_CACHE_OK);
 }
 static void configure(state *device, store *blobs)
 {
@@ -126,8 +139,10 @@ int main(void)
     assert(doeNativeDeviceConfigurePipelineCache(first.device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
         "unused", 6, &info, sizeof(info)) != DOE_NATIVE_PIPELINE_CACHE_OK);
     run(&first);
+    settle(&first);
     assert(blobs.loads == 1 && blobs.hits == 0 && blobs.stores == 1);
     run(&first); /* Identical native pipeline reuse: a lookup may precede it, but no driver load or store. */
+    settle(&first);
     assert(blobs.loads == 2 && blobs.hits == 1 && blobs.stores == 1);
     info = info_of(&first);
     assert(info.load_attempts == 1 && info.load_successes == 0 && info.serializations == 1);
@@ -135,6 +150,7 @@ int main(void)
     consumer_init(&second);
     configure(&second, &blobs);
     run(&second);
+    settle(&second);
     info = info_of(&second);
     assert(blobs.loads == 3 && blobs.hits == 2 && blobs.stores == 1);
     assert(info.load_attempts == 1 && info.load_successes == 1 && info.serializations == 0);
@@ -143,6 +159,7 @@ int main(void)
     consumer_init(&third);
     configure(&third, &blobs);
     run(&third);
+    settle(&third);
     info = info_of(&third);
     assert(blobs.loads == 4 && blobs.hits == 3 && blobs.stores == 2);
     assert(info.load_attempts == 1 && info.load_successes == 0 && info.serializations == 1);
@@ -150,6 +167,7 @@ int main(void)
     /* Render pipelines share the store: a miss stores, a fresh device loads. */
     const unsigned stores = blobs.stores;
     render(&third);
+    settle(&third);
     assert(blobs.stores == stores + 1u);
     info = info_of(&third);
     assert(info.load_attempts == 2 && info.load_successes == 0 && info.serializations == 2);
@@ -157,14 +175,27 @@ int main(void)
     consumer_init(&fourth);
     configure(&fourth, &blobs);
     render(&fourth);
+    settle(&fourth);
     info = info_of(&fourth);
     assert(blobs.stores == stores + 1u && info.load_attempts == 1 && info.load_successes == 1 && info.serializations == 0);
     consumer_finish(&fourth);
     consumer_finish(&third);
     consumer_finish(&second);
     consumer_finish(&first);
+
+    /* Destruction stores a miss nobody flushed before the device is released. */
+    free(blobs.value);
+    blobs.value = NULL;
+    const unsigned before = blobs.stores;
+    state fifth = {0};
+    consumer_init(&fifth);
+    configure(&fifth, &blobs);
+    run(&fifth);
+    consumer_finish(&fifth);
+    assert(blobs.stores == before + 1u && atomic_load(&blobs.in_store) == 0u);
     free(blobs.value);
     printf("PASS embedder pipeline blobs: miss/store, memory reuse, driver-accepted hit, corrupt miss, "
-        "render miss/load, unlocked callbacks and exact output; %s\n", adapter_class_scope());
+        "render miss/load, deferred store before flush and destruction, unlocked callbacks and exact output; %s\n",
+        adapter_class_scope());
     return 0;
 }
