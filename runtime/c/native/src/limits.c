@@ -262,13 +262,33 @@ bool native_limits_support_core(const WGPULimits *limits)
     return true;
 }
 
+/* Browsers chain WGPUCompatibilityModeLimits on every required-limits request.
+ * A core device has no separate compatibility budget: each vertex/fragment
+ * storage limit is the adapter's per-stage storage limit, so a request above it
+ * refuses and any other value is already satisfied. Other chains refuse. */
+static bool compatibility_limits_supported(const WGPULimits *supported, const WGPUChainedStruct *chain)
+{
+    if (!chain) return true;
+    if (chain->next || chain->sType != WGPUSType_CompatibilityModeLimits) return false;
+    const WGPUCompatibilityModeLimits *compatibility = (const WGPUCompatibilityModeLimits *)chain;
+    const uint32_t requested[] = {compatibility->maxStorageBuffersInVertexStage,
+        compatibility->maxStorageTexturesInVertexStage, compatibility->maxStorageBuffersInFragmentStage,
+        compatibility->maxStorageTexturesInFragmentStage};
+    const uint32_t available[] = {supported->maxStorageBuffersPerShaderStage,
+        supported->maxStorageTexturesPerShaderStage, supported->maxStorageBuffersPerShaderStage,
+        supported->maxStorageTexturesPerShaderStage};
+    for (size_t i = 0; i < sizeof(requested) / sizeof(requested[0]); ++i)
+        if (requested[i] != WGPU_LIMIT_U32_UNDEFINED && requested[i] > available[i]) return false;
+    return true;
+}
+
 /* https://gpuweb.github.io/gpuweb/#dom-gpuadapter-requestdevice: a required
  * value better than the adapter's rejects; each device limit is the better of
  * the required value and the default. An adapter below a default keeps its own
  * value: a device limit never exceeds what the adapter enforces. */
 bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out)
 {
-    if (required && required->nextInChain) return false;
+    if (required && !compatibility_limits_supported(supported, required->nextInChain)) return false;
     WGPULimits result = {0};
     for (size_t i = 0; i < sizeof(fields) / sizeof(fields[0]); ++i) {
         const limit_field *field = &fields[i];

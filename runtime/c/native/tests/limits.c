@@ -218,6 +218,33 @@ static WGPURenderPipeline try_render(state *s, const char *code)
 /* Each check runs on the default device (expect a validation error) and on a
  * device requesting every adapter limit (expect success where the adapter
  * exceeds the default). */
+/* Browsers chain WGPUCompatibilityModeLimits onto requiredLimits. Values within
+ * the adapter's per-stage storage limits open a core device; a value above them,
+ * a second link or another chain type refuses. */
+static void check_compatibility_chain(state *s, const WGPULimits *adapter)
+{
+    WGPUCompatibilityModeLimits compatibility = WGPU_COMPATIBILITY_MODE_LIMITS_INIT;
+    WGPULimits required = WGPU_LIMITS_INIT;
+    required.nextInChain = &compatibility.chain;
+    WGPUDevice device = open_device(s, &required);
+    assert(device);
+    wgpuDeviceRelease(device);
+    compatibility.maxStorageBuffersInFragmentStage = adapter->maxStorageBuffersPerShaderStage;
+    compatibility.maxStorageTexturesInVertexStage = adapter->maxStorageTexturesPerShaderStage;
+    device = open_device(s, &required);
+    assert(device);
+    wgpuDeviceRelease(device);
+    compatibility.maxStorageBuffersInVertexStage = adapter->maxStorageBuffersPerShaderStage + 1;
+    assert(!open_device(s, &required));
+    compatibility.maxStorageBuffersInVertexStage = WGPU_LIMIT_U32_UNDEFINED;
+    WGPUCompatibilityModeLimits second = WGPU_COMPATIBILITY_MODE_LIMITS_INIT;
+    compatibility.chain.next = &second.chain;
+    assert(!open_device(s, &required));
+    WGPUChainedStruct other = {.sType = WGPUSType_ShaderSourceWGSL};
+    required.nextInChain = &other;
+    assert(!open_device(s, &required));
+}
+
 static void check_default_validation(state *s, const WGPULimits *adapter)
 {
     WGPUDevice defaults = s->device, maximal = open_device(s, adapter);
@@ -832,6 +859,7 @@ int main(void)
     WGPULimits adapter;
     check_adapter_and_defaults(&s, &adapter);
     check_required(&s, &adapter);
+    check_compatibility_chain(&s, &adapter);
     check_every_feature_and_limit(&s, &adapter);
     check_default_validation(&s, &adapter);
     check_dispatch_and_binding_bounds(&s);
@@ -839,7 +867,7 @@ int main(void)
     const unsigned raised = check_raised_limits(&s, &adapter);
     consumer_finish(&s);
     printf("PASS public limits: %zu adapter limits meet the WebGPU defaults, default device limits exact, "
-        "requiredLimits refusal/default/adapter resolution, a device with every adapter feature and limit, default-limit validation of dynamic storage, "
+        "requiredLimits refusal/default/adapter resolution, the compatibility-limits chain, a device with every adapter feature and limit, default-limit validation of dynamic storage, "
         "workgroup size/storage, inter-stage location, buffer size, texture size, dispatch count and binding "
         "number, a sparse 0/17/31/500/999 group with binding-ordered dynamic offsets and an automatic layout, "
         "and of 10 storage buffers, 8 storage textures, the adapter's vertex attributes (or 17) and "
