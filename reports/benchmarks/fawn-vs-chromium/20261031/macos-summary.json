@@ -1,0 +1,4755 @@
+{
+ "arms": {
+  "chrome": {
+   "args": [],
+   "browserPath": "Google Chrome for Testing",
+   "browserVersion": "158.0.8108.0"
+  },
+  "fawn_dawn": {
+   "args": [
+    "--use-webgpu-runtime=dawn"
+   ],
+   "browserPath": "Chromium",
+   "browserVersion": "158.0.8108.0"
+  },
+  "fawn_doe": {
+   "args": [
+    "--use-webgpu-runtime=doe",
+    "--doe-webgpu-library-path=<bundled>"
+   ],
+   "browserPath": "Chromium",
+   "browserVersion": "158.0.8108.0"
+  }
+ },
+ "baseline": "chrome",
+ "bootstrap": {
+  "ci": "percentile 95%",
+  "resamples": 10000,
+  "seed": 20261031,
+  "unit": "launch"
+ },
+ "candidate": "fawn_doe",
+ "control": "fawn_dawn",
+ "pages": {
+  "compute_atomic_canvas": {
+   "arms": {
+    "chrome": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "exactOracleMatched": "12/12",
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        97.79999995231628,
+        120.70000004768372
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 103.40000009536743
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        120.70000004768372,
+        137.5
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 137.5
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        33.799999952316284,
+        35.10000014305115
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 34.799999952316284
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        35.90000009536743,
+        37.10000014305115
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 36.10000014305115
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.114366666666667,
+        4.143133333333334
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.4202333333333326
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        162.93888,
+        168.329216
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 164.069376
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        194.069584,
+        199.279624
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 194.790408
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        49.39999985694885,
+        49.799999952316284
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 49.59999990463257
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        51.299999952316284,
+        51.90000009536743
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 51.59999990463257
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        579.199951171875,
+        713.9000487327576
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 623.7999024391174
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        5.1047666666666665,
+        6.7148
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.598099999999999
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        357.654448,
+        363.552808
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 360.84952
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 1,
+      "hashes": [
+       "4390d2f4db489e83ba00161e468ef83276225bb7de48138277d6b2858a650586"
+      ],
+      "meanLuma": 98.29210293427212,
+      "minNonModalFraction": 0.9988262910798122
+     }
+    },
+    "fawn_dawn": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "exactOracleMatched": "12/12",
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        96,
+        102.40000009536743
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 100
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        102.40000009536743,
+        111.70000004768372
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 111.70000004768372
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        34.30000019073486,
+        35.299999952316284
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 35.09999990463257
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        35.89999985694885,
+        37
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 36.5
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.2816666666666667,
+        5.313199999999999
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.739033333333333
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        162.93888,
+        168.3456
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 164.069376
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        192.988336,
+        197.969096
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 193.643696
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        49.5,
+        49.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 49.5
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        51.5,
+        52.200000047683716
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 52.09999990463257
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        585.2000977993011,
+        656.2000977993011
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 647.89990234375
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        5.631666666666665,
+        9.084033333333334
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 8.276366666666666
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        359.309592,
+        365.66668
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 360.456472
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 1,
+      "hashes": [
+       "4390d2f4db489e83ba00161e468ef83276225bb7de48138277d6b2858a650586"
+      ],
+      "meanLuma": 98.29210293427212,
+      "minNonModalFraction": 0.9988262910798122
+     }
+    },
+    "fawn_doe": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "True": 12
+     },
+     "exactOracleMatched": "12/12",
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        104.60000014305115,
+        115
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 112
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        115,
+        136.29999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 136.29999995231628
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        36.40000009536743,
+        37.5
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 36.5
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        38.299999952316284,
+        39.19999980926514
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 38.60000014305115
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        7.048533333333333,
+        8.772666666666664
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 7.6904
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        691.306496,
+        696.64768
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 692.420608
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        722.404552,
+        727.434512
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 723.731632
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        49.700000047683716,
+        49.90000009536743
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 49.799999952316284
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        52.09999990463257,
+        53.200000047683716
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 52.5
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        593.5000975131989,
+        708.10009765625
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 602.5000977516174
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        10.022766666666666,
+        12.769333333333334
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 11.278333333333332
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        888.152608,
+        891.6916
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 889.758072
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 1,
+      "hashes": [
+       "4390d2f4db489e83ba00161e468ef83276225bb7de48138277d6b2858a650586"
+      ],
+      "meanLuma": 98.29210293427212,
+      "minNonModalFraction": 0.9988262910798122
+     }
+    }
+   },
+   "comparisons": {
+    "fawn_dawn/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 103.40000009536743,
+      "candidate": 100,
+      "ci95": [
+       0.7978458982126928,
+       1.0293819665042188
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9671179875025961,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 137.5,
+      "candidate": 111.70000004768372,
+      "ci95": [
+       0.768000001040372,
+       0.8914664445909207
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.812363636710427,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 34.799999952316284,
+      "candidate": 35.09999990463257,
+      "ci95": [
+       0.9828571455819266,
+       1.0384615371050376
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.008620688296763,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 36.10000014305115,
+      "candidate": 36.5,
+      "ci95": [
+       0.9730458157799797,
+       1.0249307506300558
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0110803284034293,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 3.4202333333333326,
+      "candidate": 4.739033333333333,
+      "ci95": [
+       0.9591545968082592,
+       1.5864876432005253
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 1.3855877279327924,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 164.069376,
+      "candidate": 164.069376,
+      "ci95": [
+       0.9746177969423756,
+       1.026143790849673
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 1.0,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 194.790408,
+      "candidate": 193.643696,
+      "ci95": [
+       0.9713895084426695,
+       1.0170024558997939
+      ],
+      "label": "GPU-process memory",
+      "ratio": 0.9941130982178548,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 49.59999990463257,
+      "candidate": 49.5,
+      "ci95": [
+       0.9939759045661941,
+       1.0040485839729325
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 0.997983872886596,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 51.59999990463257,
+      "candidate": 52.09999990463257,
+      "ci95": [
+       0.9961464345411135,
+       1.0175438615244443
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0096899224985292,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 623.7999024391174,
+      "candidate": 647.89990234375,
+      "ci95": [
+       0.8773614016754919,
+       1.1194753166343894
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 1.0386341835104482,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 5.598099999999999,
+      "candidate": 8.276366666666666,
+      "ci95": [
+       0.9877554572124713,
+       1.6938553527920048
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.4784242272675852,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 360.84952,
+      "candidate": 360.456472,
+      "ci95": [
+       0.9894550670063866,
+       1.0174222697677249
+      ],
+      "label": "total browser memory",
+      "ratio": 0.9989107703399468,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     }
+    },
+    "fawn_doe/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 103.40000009536743,
+      "candidate": 112,
+      "ci95": [
+       0.9032815214691102,
+       1.1584867076437344
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.0831721460029078,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 137.5,
+      "candidate": 136.29999995231628,
+      "ci95": [
+       0.8487272730740634,
+       1.0656763084494565
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9912727269259366,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 34.799999952316284,
+      "candidate": 36.5,
+      "ci95": [
+       1.0398860356479518,
+       1.0857988195106105
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.0488505761498015,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 36.10000014305115,
+      "candidate": 38.60000014305115,
+      "ci95": [
+       1.0379403821353617,
+       1.0858725737623827
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0692520772879062,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 3.4202333333333326,
+      "candidate": 7.6904,
+      "ci95": [
+       1.756754147424654,
+       2.6593157546154496
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 2.2485015642207653,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 164.069376,
+      "candidate": 692.420608,
+      "ci95": [
+       4.113295697878139,
+       4.249673202614379
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 4.22029159177152,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 194.790408,
+      "candidate": 723.731632,
+      "ci95": [
+       3.6269659431106516,
+       3.736960465840932
+      ],
+      "label": "GPU-process memory",
+      "ratio": 3.7154377334637543,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 49.59999990463257,
+      "candidate": 49.799999952316284,
+      "ci95": [
+       1.0,
+       1.0080971679458652
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0040322590336344,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 51.59999990463257,
+      "candidate": 52.5,
+      "ci95": [
+       1.0076775404193967,
+       1.0370370342829418
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0174418623455586,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 623.7999024391174,
+      "candidate": 602.5000977516174,
+      "ci95": [
+       0.8366718825194085,
+       1.1529695319622961
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.9658547482867251,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 5.598099999999999,
+      "candidate": 11.278333333333332,
+      "ci95": [
+       1.5173348424376,
+       2.381035254338422
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 2.0146716445460666,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 360.84952,
+      "candidate": 889.758072,
+      "ci95": [
+       2.44408392695655,
+       2.489133421877644
+      ],
+      "label": "total browser memory",
+      "ratio": 2.465731621314059,
+      "unit": "MB",
+      "verdict": "loss"
+     }
+    }
+   },
+   "crossArmPixelHashesEqual": true
+  },
+  "cycle": {
+   "arms": {
+    "chrome": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        171.79999995231628,
+        208.29999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 183
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        208.29999995231628,
+        218.5
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 218.5
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        12.399999856948853,
+        14
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 12.700000047683716
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        16.100000143051147,
+        21.200000047683716
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 20
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.7963293051359517,
+        3.7124384615384622
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.230348754448398
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        343.212032,
+        343.359488
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 343.2448
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        429.2128,
+        430.507184
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 429.78624
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.800000190734863,
+        19.09999990463257
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 17.600000143051147
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        23.09999990463257,
+        35.60000014305115
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 34.59999990463257
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        611.4000976085663,
+        965.2999999523163
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 756.199951171875
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        4.304510574018127,
+        5.700215384615385
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.935152091254753
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        629.317648,
+        632.660008
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 630.694096
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "10afcf30b44841bfeb8b483347eeb4ec923d0e30175ac1ebeb939a547b626d98",
+       "1d5a8dbfa7faf0a32c3b5a2cce8b19474af0607b97d83d881f7399fe0c779d26",
+       "3f5afe086e0aa2f511ffc586b653f68e633c86229f7662b67bdab3dbe8126cce"
+      ],
+      "meanLuma": 29.545108899353195,
+      "minNonModalFraction": 0.8773588798415493
+     }
+    },
+    "fawn_dawn": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        184.70000004768372,
+        190.40000009536743
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 189.20000004768372
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        190.40000009536743,
+        197.79999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 197.79999995231628
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        12.299999952316284,
+        13.200000047683716
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 12.900000095367432
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        20.399999856948853,
+        21.40000009536743
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 21.199999809265137
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.886055194805195,
+        3.6191428571428577
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.509065693430657
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        343.2448,
+        343.343104
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 343.32672
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        429.507856,
+        430.343392
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 429.63888
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        17.5,
+        19.09999990463257
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.600000143051147
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        34.60000014305115,
+        35.59999990463257
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 35.299999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        660.89990234375,
+        740.7999022006989
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 680.5000977516174
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        4.780058441558443,
+        6.279640926640928
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.9593175182481755
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        630.36668,
+        632.676728
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 631.710072
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "0d9c9bc5cea09810367b82d3679ead3a2744aa789648b4f0278a196a85adf66b",
+       "307e62a5b685195d24a08cbaee707dfe86af0c1fe1720acea77fb8c19276d1c2",
+       "3e09bf1b20cd8613e55e26e4f693c981eb23926a71b067956b5ba8d481eafada"
+      ],
+      "meanLuma": 29.503467801891837,
+      "minNonModalFraction": 0.8780855707159625
+     }
+    },
+    "fawn_doe": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "True": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        228.20000004768372,
+        235.79999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 232.70000004768372
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        235.79999995231628,
+        260.7000000476837
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 260.7000000476837
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        15,
+        18
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 17.5
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        21.799999952316284,
+        22.299999952316284
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 21.90000009536743
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        6.151762096774195,
+        6.7148230088495575
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 6.500682926829268
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        5574.656,
+        5820.055552
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 5609.242624
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        5666.71904,
+        5915.788752
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 5700.895992
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        19.800000190734863,
+        29.899999856948853
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 25.700000047683716
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        35.299999952316284,
+        36
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 35.59999990463257
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        699.7000000476837,
+        776.4999022483826
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 717.1000487804413
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        8.315975806451613,
+        9.206317796610167
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 8.937381974248929
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        5847.589384,
+        6121.710616
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 5901.197784
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "0ede26e63f06397f0ee1182e2406e48b59c63222eeb48c66d2fd8364b35c17f9",
+       "361928094b434f183f7b3b6910a2265060ccd194749c4d10d49dc8555957f574",
+       "4a6c6e1d503a8597c0a40531ea75c34d049111394ba6ff4081898eebbeb034c4"
+      ],
+      "meanLuma": 29.54708929084606,
+      "minNonModalFraction": 0.8790529636150235
+     }
+    }
+   },
+   "comparisons": {
+    "fawn_dawn/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 183,
+      "candidate": 189.20000004768372,
+      "ci95": [
+       0.8991838693960283,
+       1.102489868590913
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.0338797816813319,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 218.5,
+      "candidate": 197.79999995231628,
+      "ci95": [
+       0.8755148750148048,
+       0.9387755097653155
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9052631576765048,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 12.700000047683716,
+      "candidate": 12.900000095367432,
+      "ci95": [
+       0.9057971045791139,
+       1.0560000038146973
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.0157480351915584,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 20,
+      "candidate": 21.199999809265137,
+      "ci95": [
+       0.971428564616612,
+       1.3167701627887984
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0599999904632569,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 3.230348754448398,
+      "candidate": 3.509065693430657,
+      "ci95": [
+       0.8527251429788204,
+       1.2797999972215601
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 1.0862807579517375,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 343.2448,
+      "candidate": 343.32672,
+      "ci95": [
+       0.9997136858179042,
+       1.000381898033225
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 1.0002386634844869,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 429.78624,
+      "candidate": 429.63888,
+      "ci95": [
+       0.9977547227179373,
+       1.0022132263305763
+      ],
+      "label": "GPU-process memory",
+      "ratio": 0.9996571318802574,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 17.600000143051147,
+      "candidate": 18.600000143051147,
+      "ci95": [
+       0.947643991278823,
+       1.1130952141047068
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.056818181356369,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 34.59999990463257,
+      "candidate": 35.299999952316284,
+      "ci95": [
+       0.9831460634651636,
+       1.5367965431411403
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0202312153067374,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 756.199951171875,
+      "candidate": 680.5000977516174,
+      "ci95": [
+       0.6941630637537185,
+       1.1455666334933603
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.8998943952549239,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 4.935152091254753,
+      "candidate": 5.9593175182481755,
+      "ci95": [
+       0.926805105196095,
+       1.4296115875827347
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.2075245925669194,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 630.694096,
+      "candidate": 631.710072,
+      "ci95": [
+       0.9967634432805811,
+       1.0051547413128081
+      ],
+      "label": "total browser memory",
+      "ratio": 1.0016108855409358,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     }
+    },
+    "fawn_doe/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 183,
+      "candidate": 232.70000004768372,
+      "ci95": [
+       1.1046567448742521,
+       1.3603026781871246
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.2715846997141187,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 218.5,
+      "candidate": 260.7000000476837,
+      "ci95": [
+       1.086041189713118,
+       1.2373042239614829
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.1931350116598798,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 12.700000047683716,
+      "candidate": 17.5,
+      "ci95": [
+       1.18110235777013,
+       1.44
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.3779527507318183,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 20,
+      "candidate": 21.90000009536743,
+      "ci95": [
+       1.0330188588533338,
+       1.3664596151879742
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0950000047683717,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 3.230348754448398,
+      "candidate": 6.500682926829268,
+      "ci95": [
+       1.6598993694968032,
+       2.3809860928081856
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 2.01237804985527,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 343.2448,
+      "candidate": 5609.242624,
+      "ci95": [
+       16.23640007635045,
+       16.95760931831201
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 16.3418138424821,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 429.78624,
+      "candidate": 5700.895992,
+      "ci95": [
+       13.182959894549702,
+       13.77709485413001
+      ],
+      "label": "GPU-process memory",
+      "ratio": 13.264491650547024,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 17.600000143051147,
+      "candidate": 25.700000047683716,
+      "ci95": [
+       1.1250000016933137,
+       1.738372079887024
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.4602272635679847,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 34.59999990463257,
+      "candidate": 35.59999990463257,
+      "ci95": [
+       0.9915730417218719,
+       1.5411255433595563
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0289017341837077,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 756.199951171875,
+      "candidate": 717.1000487804413,
+      "ci95": [
+       0.7306045363664487,
+       1.214621749462323
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.9482942278284453,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 4.935152091254753,
+      "candidate": 8.937381974248929,
+      "ci95": [
+       1.5118889805925668,
+       2.1185434502055953
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.8109638383964408,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 630.694096,
+      "candidate": 5901.197784,
+      "ci95": [
+       9.271432795961745,
+       9.725767012276373
+      ],
+      "label": "total browser memory",
+      "ratio": 9.356671992692952,
+      "unit": "MB",
+      "verdict": "loss"
+     }
+    }
+   },
+   "crossArmPixelHashesEqual": false
+  },
+  "heavy_particles": {
+   "arms": {
+    "chrome": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        60.299999952316284,
+        102.5
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 80.70000004768372
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        102.5,
+        114.60000014305115
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 114.60000014305115
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        3.8999998569488525,
+        4.099999904632568
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        5,
+        5.200000047683716
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.1000001430511475
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.0737867036011077,
+        2.549168975069252
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.277634349030471
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        225.509376,
+        225.640448
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 225.60768
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        275.498088,
+        276.51392
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 275.743872
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.699999809265137,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.59999990463257,
+        18.799999952316284
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.700000047683716
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        573.9000000953674,
+        923.4000976085663
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 604.0000488758087
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.0333573407202215,
+        3.703260387811634
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.335387811634349
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        454.926304,
+        456.876192
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 455.499984
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "1214016b404e13714ab6c5b3551eeef5f0e97e112747bf7c95e6d6d467871325",
+       "2efb6c8d2a997d818004f8daba041a284850ffa1125555ef0c3469fcb5a2ab2d",
+       "2f8a3b541475f19174eaee5db484de1e8ad15838faafa8b4548dad5cac61c552"
+      ],
+      "meanLuma": 15.364843092077502,
+      "minNonModalFraction": 0.46003887910798125
+     }
+    },
+    "fawn_dawn": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        66.19999980926514,
+        71.39999985694885
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 68.70000004768372
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        71.39999985694885,
+        75.70000004768372
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 75.70000004768372
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        3.8000001907348633,
+        4
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.9000000953674316
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        5.099999904632568,
+        5.200000047683716
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.199999809265137
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.2118138888888885,
+        2.6826454293628808
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.4819861111111114
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        223.232,
+        225.558528
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 225.492992
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        273.40108,
+        275.87504
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 275.547408
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.700000047683716,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.700000047683716
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.600000143051147,
+        18.799999952316284
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.700000047683716
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        592.2000486850739,
+        633.5999510288239
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 619.6000487804413
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.5126638888888886,
+        4.2213601108033245
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.8587388888888894
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        452.99352,
+        455.483912
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 454.943384
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "20ce1eaad93f96349f9dccac8a01e418c77a7b4289a342a546ccf175869cf38c",
+       "2c9030c651692ccb6a562ddb924c6487d9ffd334711acbd4d2a76d9fccd501b9",
+       "30076990c10257f487c4a1ccb0c30610f7f3c95fde07e21e1568ff8ee84ccd40"
+      ],
+      "meanLuma": 15.36250385925193,
+      "minNonModalFraction": 0.4599265514964789
+     }
+    },
+    "fawn_doe": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "True": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        77.40000009536743,
+        79.60000014305115
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 79
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        79.60000014305115,
+        84.79999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 84.79999995231628
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        5.3999998569488525,
+        5.700000047683716
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.5
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        6.3999998569488525,
+        7.1000001430511475
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 6.5
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        5.1722777777777775,
+        5.957332409972299
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.524074999999999
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        7728.16896,
+        7743.504384
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7728.922624
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        7786.349816,
+        7801.980176
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7787.578688
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.5,
+        18.700000047683716
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.600000143051147
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        555.2999999523163,
+        621.39990234375
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 592.39990234375
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        6.218659279778394,
+        7.101091412742383
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 6.631338888888888
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        7966.892648,
+        7982.047848
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7968.154096
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "259bd3bf776a15335a3778c23a84981672ac6330108fd8f3ca11c25f66096cd4",
+       "4a393de7a248e3a054e456564bc31e7bd19d42ea1733e681c9c46584a06f54bd",
+       "570c3496a5e17196e47cfe8436b5fb6d8ec73645f81bd015ee733dd75578c78d"
+      ],
+      "meanLuma": 15.359091216664709,
+      "minNonModalFraction": 0.4601695459213615
+     }
+    }
+   },
+   "comparisons": {
+    "fawn_dawn/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 80.70000004768372,
+      "candidate": 68.70000004768372,
+      "ci95": [
+       0.6653306602071573,
+       1.1393034842787717
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.8513011153294984,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 114.60000014305115,
+      "candidate": 75.70000004768372,
+      "ci95": [
+       0.6230366484848714,
+       0.7385365858310606
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.6605584638149221,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 4,
+      "candidate": 3.9000000953674316,
+      "ci95": [
+       0.9500000476837158,
+       1.0000000611329714
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 0.9750000238418579,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 5.1000001430511475,
+      "candidate": 5.199999809265137,
+      "ci95": [
+       0.98076920343574,
+       1.0399999618530273
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0196077771390342,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.277634349030471,
+      "candidate": 2.4819861111111114,
+      "ci95": [
+       0.9246760723233421,
+       1.2715183253523832
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 1.0897210573627094,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 225.60768,
+      "candidate": 225.492992,
+      "ci95": [
+       0.9893980103115242,
+       1.0000726480203415
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 0.9994916485112564,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 275.743872,
+      "candidate": 275.547408,
+      "ci95": [
+       0.989275737004488,
+       1.0010695211673128
+      ],
+      "label": "GPU-process memory",
+      "ratio": 0.9992875127248522,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.699999809265137,
+      "candidate": 16.700000047683716,
+      "ci95": [
+       1.0,
+       1.0000000142765617
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0000000142765617,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.700000047683716,
+      "candidate": 18.700000047683716,
+      "ci95": [
+       0.9946524115306109,
+       1.0107526907908158
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 604.0000488758087,
+      "candidate": 619.6000487804413,
+      "ci95": [
+       0.6609269389648964,
+       1.0817463302806598
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 1.0258278123216513,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 3.335387811634349,
+      "candidate": 3.8587388888888894,
+      "ci95": [
+       1.0076406098358754,
+       1.3551220587378792
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.1569086135738131,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 455.499984,
+      "candidate": 454.943384,
+      "ci95": [
+       0.9935094888901543,
+       1.000973344465041
+      ],
+      "label": "total browser memory",
+      "ratio": 0.9987780460602607,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     }
+    },
+    "fawn_doe/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 80.70000004768372,
+      "candidate": 79,
+      "ci95": [
+       0.7699805075383145,
+       1.31674958407523
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9789343240808026,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 114.60000014305115,
+      "candidate": 84.79999995231628,
+      "ci95": [
+       0.6945898796622374,
+       0.8265107215510574
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.7399650946462777,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 4,
+      "candidate": 5.5,
+      "ci95": [
+       1.3414634458370545,
+       1.425000011920929
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.375,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 5.1000001430511475,
+      "candidate": 6.5,
+      "ci95": [
+       1.2307692378230348,
+       1.4
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.2745097681725324,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.277634349030471,
+      "candidate": 5.524074999999999,
+      "ci95": [
+       2.0762657056328413,
+       2.698111341381675
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 2.425356380119334,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 225.60768,
+      "candidate": 7728.922624,
+      "ci95": [
+       34.25036305547488,
+       34.335343261896114
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 34.25824255628177,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 275.743872,
+      "candidate": 7787.578688,
+      "ci95": [
+       28.161231116321378,
+       28.314489727613484
+      ],
+      "label": "GPU-process memory",
+      "ratio": 28.242073455761147,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.699999809265137,
+      "candidate": 16.699999809265137,
+      "ci95": [
+       0.9940119817756266,
+       1.0000000142765617
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.700000047683716,
+      "candidate": 18.600000143051147,
+      "ci95": [
+       0.9840425556873833,
+       1.0053763389173913
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 0.9946524115306109,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 604.0000488758087,
+      "candidate": 592.39990234375,
+      "ci95": [
+       0.629208671109841,
+       1.0628687827930605
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.9807944609381251,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 3.335387811634349,
+      "candidate": 6.631338888888888,
+      "ci95": [
+       1.731330232075701,
+       2.2772717167281926
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.98817626716682,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 455.499984,
+      "candidate": 7968.154096,
+      "ci95": [
+       17.439937146035398,
+       17.536333492153886
+      ],
+      "label": "total browser memory",
+      "ratio": 17.493203898773356,
+      "unit": "MB",
+      "verdict": "loss"
+     }
+    }
+   },
+   "crossArmPixelHashesEqual": false
+  },
+  "image_lab": {
+   "arms": {
+    "chrome": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        53.5,
+        85
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 56.5
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        85,
+        110.90000009536743
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 110.90000009536743
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        16.5,
+        16.59999990463257
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.59999990463257
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        18.40000009536743,
+        19
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.5
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.2973,
+        3.1272499999999996
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.6262333333333325
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        224.4608,
+        228.032512
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 225.869824
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        257.590376,
+        260.998248
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 258.83556
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.59999990463257,
+        16.699999809265137
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.600000143051147
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.600000143051147,
+        19.200000047683716
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.799999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        559.300048828125,
+        871.7000489234924
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 581.800048828125
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.602416666666667,
+        4.921483333333334
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.202383333333334
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        428.842832,
+        431.841296
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 431.15312
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 1,
+      "hashes": [
+       "e43314de9ad4e0add1dafead8e78e80b0350803598c8fda814f85cfc0a1de559"
+      ],
+      "meanLuma": 159.66909212780982,
+      "minNonModalFraction": 0.8486488593016432
+     }
+    },
+    "fawn_dawn": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        53.80000019073486,
+        62.5
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 56.700000047683716
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        62.5,
+        74.29999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 74.29999995231628
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        16.5,
+        16.59999990463257
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.59999990463257
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        18.299999952316284,
+        18.700000047683716
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.59999990463257
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.6509833333333335,
+        3.0891
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.753316666666667
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        225.492992,
+        227.672064
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 225.673216
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        258.458848,
+        260.277448
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 259.425528
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.600000143051147
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.59999990463257,
+        18.800000190734863
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.799999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        533.0999023914337,
+        608.0999023914337
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 568.9000976085663
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        4.660450000000001,
+        5.378349999999999
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.798033333333334
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        431.743328,
+        435.560776
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 434.151848
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 1,
+      "hashes": [
+       "e43314de9ad4e0add1dafead8e78e80b0350803598c8fda814f85cfc0a1de559"
+      ],
+      "meanLuma": 159.66909212780982,
+      "minNonModalFraction": 0.8486488593016432
+     }
+    },
+    "fawn_doe": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "True": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        69.5,
+        77
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 71.59999990463257
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        77,
+        87.20000004768372
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 87.20000004768372
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        16.59999990463257,
+        16.600000143051147
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.59999990463257
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        17.59999990463257,
+        18.200000047683716
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        4.483666666666666,
+        5.6082
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.365566666666666
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        1182.810112,
+        1188.315136
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 1185.988608
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        1216.59512,
+        1223.181584
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 1220.019448
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.699999809265137,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.100000143051147,
+        18.40000009536743
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.299999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        545.9999511241913,
+        632.300048828125
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 561.4000000953674
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        6.39165,
+        7.653966666666667
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 7.363466666666667
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        1382.85108,
+        1399.497632
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 1395.15544
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 1,
+      "hashes": [
+       "e43314de9ad4e0add1dafead8e78e80b0350803598c8fda814f85cfc0a1de559"
+      ],
+      "meanLuma": 159.66909212780982,
+      "minNonModalFraction": 0.8486488593016432
+     }
+    }
+   },
+   "comparisons": {
+    "fawn_dawn/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 56.5,
+      "candidate": 56.700000047683716,
+      "ci95": [
+       0.6411764705882353,
+       1.1561338257838045
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.003539823852809,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 110.90000009536743,
+      "candidate": 74.29999995231628,
+      "ci95": [
+       0.5644724964003631,
+       0.8649592534322158
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.669972947596237,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 16.59999990463257,
+      "candidate": 16.59999990463257,
+      "ci95": [
+       0.9939759093248752,
+       1.0060606002807617
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 18.5,
+      "candidate": 18.59999990463257,
+      "ci95": [
+       0.9736842105263158,
+       1.016304345150075
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0054054002504091,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.6262333333333325,
+      "candidate": 2.753316666666667,
+      "ci95": [
+       0.8536893436725559,
+       1.2796979062377574
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 1.0483899628111242,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 225.869824,
+      "candidate": 225.673216,
+      "ci95": [
+       0.9896536858744073,
+       1.0142335766423356
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 0.9991295517191353,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 258.83556,
+      "candidate": 259.425528,
+      "ci95": [
+       0.992153387941516,
+       1.0102391779842148
+      ],
+      "label": "GPU-process memory",
+      "ratio": 1.0022793158714358,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.600000143051147,
+      "candidate": 16.600000143051147,
+      "ci95": [
+       0.9940119959667,
+       1.0060240905886033
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.799999952316284,
+      "candidate": 18.799999952316284,
+      "ci95": [
+       0.9740932765379923,
+       1.0107526778347824
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 581.800048828125,
+      "candidate": 568.9000976085663,
+      "ci95": [
+       0.6190203824384662,
+       1.0726759695624384
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.9778275178121039,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 4.202383333333334,
+      "candidate": 4.798033333333334,
+      "ci95": [
+       0.9553522142714425,
+       1.4364431284554346
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.1417409961807388,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 431.15312,
+      "candidate": 434.151848,
+      "ci95": [
+       1.0002282988319395,
+       1.0139083495279222
+      ],
+      "label": "total browser memory",
+      "ratio": 1.00695513463987,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     }
+    },
+    "fawn_doe/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 56.5,
+      "candidate": 71.59999990463257,
+      "ci95": [
+       0.8246445477012836,
+       1.3828996251226815
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.2672566354802224,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 110.90000009536743,
+      "candidate": 87.20000004768372,
+      "ci95": [
+       0.6943192058952621,
+       1.0151338760287894
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.7862939582749944,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 16.59999990463257,
+      "candidate": 16.59999990463257,
+      "ci95": [
+       1.0,
+       1.0060606147303726
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 18.5,
+      "candidate": 18,
+      "ci95": [
+       0.9365079343053629,
+       0.9891304322474395
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 0.972972972972973,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.6262333333333325,
+      "candidate": 5.365566666666666,
+      "ci95": [
+       1.5128583998804639,
+       2.3698544668378823
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 2.0430654803457426,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 225.869824,
+      "candidate": 1185.988608,
+      "ci95": [
+       5.19923839632131,
+       5.293701189694183
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 5.250761642245757,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 258.83556,
+      "candidate": 1220.019448,
+      "ci95": [
+       4.674246978086995,
+       4.747648970131249
+      ],
+      "label": "GPU-process memory",
+      "ratio": 4.713492411939071,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.600000143051147,
+      "candidate": 16.699999809265137,
+      "ci95": [
+       1.0,
+       1.0060240906751248
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0060240762260384,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.799999952316284,
+      "candidate": 18.299999952316284,
+      "ci95": [
+       0.947916666796017,
+       0.9839572218421762
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 0.9734042552516924,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 581.800048828125,
+      "candidate": 561.4000000953674,
+      "ci95": [
+       0.6343924185060111,
+       1.111834188705651
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.9649363234433413,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 4.202383333333334,
+      "candidate": 7.363466666666667,
+      "ci95": [
+       1.3168920855454407,
+       2.0489023572139073
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.752212038406777,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 431.15312,
+      "candidate": 1395.15544,
+      "ci95": [
+       3.207331724747811,
+       3.25876562628427
+      ],
+      "label": "total browser memory",
+      "ratio": 3.2358699851226866,
+      "unit": "MB",
+      "verdict": "loss"
+     }
+    }
+   },
+   "crossArmPixelHashesEqual": true
+  },
+  "magnetic_fluids": {
+   "arms": {
+    "chrome": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        76.79999995231628,
+        118.10000014305115
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 87.5
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        118.10000014305115,
+        127.20000004768372
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 127.20000004768372
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        2.5999999046325684,
+        3.200000047683716
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.9000000953674316
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        4.299999952316284,
+        4.5
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.5
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.0260805555555557,
+        2.5561218836565094
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.1224016620498616
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        206.913536,
+        207.077376
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 206.995456
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        244.204648,
+        244.794496
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 244.384896
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.699999809265137
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.700000047683716,
+        19
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.799999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        517.4000976085663,
+        894.3999512195587
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 583.5000977516174
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.0277091412742387,
+        3.7853656509695286
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.1590554016620493
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        423.17416,
+        425.713728
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 424.599472
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "36c0c343b7b900a0b3e2c7523c4a621a38cff43dc0a7ef80dac9b0aaede66d84",
+       "5894ecf72de3311ae8416650974aebc445e0e58e012c2fa461d72f1060711d7f",
+       "62c20e1a5b5505c793ab48d991f5217f788f30fa399ea1f73d1f78b65abc8064"
+      ],
+      "meanLuma": 4.721945885624756,
+      "minNonModalFraction": 0.5035463431631455
+     }
+    },
+    "fawn_dawn": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        76.79999995231628,
+        89.59999990463257
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 85.5
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        89.59999990463257,
+        98.79999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 98.79999995231628
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        2.700000047683716,
+        2.799999952316284
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.700000047683716
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        4.200000047683716,
+        4.400000095367432
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.299999952316284
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.318063711911357,
+        2.597551246537396
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.5061500000000003
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        194.64192,
+        209.22368
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 207.126528
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        232.260856,
+        246.842592
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 245.433592
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.899999856948853,
+        19
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.90000009536743
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        555.9000489711761,
+        626.2000489234924
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 612.5999023914337
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.7814653739612187,
+        4.151703601108034
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.045047222222222
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        411.29624,
+        426.795408
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 413.672088
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "056d1c5b40e1456445b7dc87e2a4b60ef15434ce3473225207fbc71f4dae4878",
+       "23fd463297a1808c38932e994b0d7afa1d6efb0904c73dd1f14a52fb2a6e9348",
+       "2b6eb17b04305710fab2679c726b546e4cfb682e51c9fa3593c947addfdcd95c"
+      ],
+      "meanLuma": 4.724573132864777,
+      "minNonModalFraction": 0.503764121185446
+     }
+    },
+    "fawn_doe": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "True": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        90.79999995231628,
+        95.79999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 93.79999995231628
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        95.79999995231628,
+        125.79999995231628
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 125.79999995231628
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        3.8000001907348633,
+        3.9000000953674316
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.8999998569488525
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        5.400000095367432,
+        5.700000047683716
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.5
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        5.416838888888889,
+        5.679677777777778
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.574163888888888
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        7697.104896,
+        7712.44032
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7711.670272
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        7742.014784,
+        7756.186896
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7755.482384
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.399999856948853,
+        18.700000047683716
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.59999990463257
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        564.7999999523163,
+        642.9000976085663
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 630.2999999523163
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        6.536397222222222,
+        6.858088888888888
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 6.79951388888889
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        7921.508728,
+        7937.221248
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7936.172672
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "0cc58198eaf1df8464c7d55976e72bbbedc3fdc326786a3f658e3243cac6a33e",
+       "346f1fdf92171fbaac030e9110f32a2b0a67628c7c6f487780a4652f00de9bd8",
+       "455a475e477bc2f24f001ae40159d69a57571b9e14b81ab6540f1bc489e1eeb7"
+      ],
+      "meanLuma": 4.726472351385558,
+      "minNonModalFraction": 0.5038397703931925
+     }
+    }
+   },
+   "comparisons": {
+    "fawn_dawn/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 87.5,
+      "candidate": 85.5,
+      "ci95": [
+       0.6621507193307561,
+       1.143410851304339
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9771428571428571,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 127.20000004768372,
+      "candidate": 98.79999995231628,
+      "ci95": [
+       0.7169811321815676,
+       0.8295549944051007
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.7767295590823815,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 2.9000000953674316,
+      "candidate": 2.700000047683716,
+      "ci95": [
+       0.8437500023283064,
+       1.07692309808449
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 0.9310344685839137,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 4.5,
+      "candidate": 4.299999952316284,
+      "ci95": [
+       0.9333333439297147,
+       1.0000000541860425
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 0.9555555449591743,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.1224016620498616,
+      "candidate": 2.5061500000000003,
+      "ci95": [
+       0.9676709003424511,
+       1.2585678756631378
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 1.180808536297275,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 206.995456,
+      "candidate": 207.126528,
+      "ci95": [
+       0.9403197720436917,
+       1.0110847189231986
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 1.0006332119677064,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 244.384896,
+      "candidate": 245.433592,
+      "ci95": [
+       0.9491804156056095,
+       1.010056759978171
+      ],
+      "label": "GPU-process memory",
+      "ratio": 1.00429116535909,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.699999809265137,
+      "candidate": 16.699999809265137,
+      "ci95": [
+       0.9940119959667,
+       1.0060240762260384
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.799999952316284,
+      "candidate": 18.90000009536743,
+      "ci95": [
+       0.9947368345762554,
+       1.0160427781578238
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0053191565587651,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 583.5000977516174,
+      "candidate": 612.5999023914337,
+      "ci95": [
+       0.6312352905287741,
+       1.1839964955996005
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 1.0498711221333907,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 3.1590554016620493,
+      "candidate": 4.045047222222222,
+      "ci95": [
+       1.0630589057191875,
+       1.3679644149353478
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.2804609947942138,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 424.599472,
+      "candidate": 413.672088,
+      "ci95": [
+       0.9677882033250802,
+       1.0065440668683552
+      ],
+      "label": "total browser memory",
+      "ratio": 0.9742642543841882,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     }
+    },
+    "fawn_doe/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 87.5,
+      "candidate": 93.79999995231628,
+      "ci95": [
+       0.791701946543151,
+       1.2377260960500973
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 1.0719999994550433,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 127.20000004768372,
+      "candidate": 125.79999995231628,
+      "ci95": [
+       0.7547169808491532,
+       1.0562552460219794
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9889937099462058,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 2.9000000953674316,
+      "candidate": 3.8999998569488525,
+      "ci95": [
+       1.218749937135727,
+       1.5
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.3448274926538306,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 4.5,
+      "candidate": 5.5,
+      "ci95": [
+       1.1874999720603225,
+       1.295454598409087
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.2222222222222223,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.1224016620498616,
+      "candidate": 5.574163888888888,
+      "ci95": [
+       2.1699039174746297,
+       2.789022284794061
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 2.6263473067134897,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 206.995456,
+      "candidate": 7711.670272,
+      "ci95": [
+       37.17901234567901,
+       37.270783847980994
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 37.25526357448156,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 244.384896,
+      "candidate": 7755.482384,
+      "ci95": [
+       31.635054652946216,
+       31.758530099721938
+      ],
+      "label": "GPU-process memory",
+      "ratio": 31.734704193830375,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.699999809265137,
+      "candidate": 16.699999809265137,
+      "ci95": [
+       0.9940119959667,
+       1.0060240762260384
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.799999952316284,
+      "candidate": 18.59999990463257,
+      "ci95": [
+       0.9735449859594794,
+       0.9999999872503434
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 0.9893616995643091,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 583.5000977516174,
+      "candidate": 630.2999999523163,
+      "ci95": [
+       0.6556007706117755,
+       1.2182061867896345
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 1.0802054744824061,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 3.1590554016620493,
+      "candidate": 6.79951388888889,
+      "ci95": [
+       1.7563971802440483,
+       2.2597040771310524
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 2.1523883010445193,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 424.599472,
+      "candidate": 7936.172672,
+      "ci95": [
+       18.616100949415472,
+       18.75414801319627
+      ],
+      "label": "total browser memory",
+      "ratio": 18.690962178115946,
+      "unit": "MB",
+      "verdict": "loss"
+     }
+    }
+   },
+   "crossArmPixelHashesEqual": false
+  },
+  "prismatic_fluids": {
+   "arms": {
+    "chrome": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        97.5,
+        132.09999990463257
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 126.10000014305115
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        132.09999990463257,
+        139.19999980926514
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 139.19999980926514
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        3.200000047683716,
+        3.3999998569488525
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.299999952316284
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        4.799999952316284,
+        5.1000001430511475
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.086188888888889,
+        2.751587257617729
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.572147222222222
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        195.05152,
+        197.328896
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 197.312512
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        235.30816,
+        237.438056
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 236.962944
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.700000047683716,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.700000047683716
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.600000143051147,
+        18.799999952316284
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.799999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        557.300048828125,
+        871.2000489234924
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 833.5999510288239
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.059841666666667,
+        4.087767313019391
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.7735416666666666
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        416.2764,
+        419.192872
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 416.554928
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "0c678866f17aee0f647ffaaca33cca0b20920d7db9ac923830826cfc7afc6e9f",
+       "2107cf68001288feed4c7845310a642e00876669113f7917d021a3cf1e1e026a",
+       "2134eedd16d593f344d4f6deaca4755983af3919e12e4831c8c56c1160fa82ee"
+      ],
+      "meanLuma": 24.18166035600065,
+      "minNonModalFraction": 0.6241151335093897
+     }
+    },
+    "fawn_dawn": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "False": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        91.79999995231628,
+        99
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 94.09999990463257
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        99,
+        112.20000004768372
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 112.20000004768372
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        3.299999952316284,
+        3.5
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 3.5
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        5,
+        5.1000001430511475
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.099999904632568
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        2.4880305555555555,
+        3.1877174515235454
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 2.5433130193905815
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        194.9696,
+        197.361664
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 195.002368
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        235.12796,
+        237.71668
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 235.816184
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.700000047683716
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.700000047683716
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.600000143051147,
+        18.90000009536743
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.799999952316284
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        582.1999022960663,
+        671.2000000476837
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 597.5
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        3.9229944444444445,
+        5.054537396121884
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.045240997229917
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        419.242504,
+        421.782288
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 419.684992
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "0dd4836898192204b638273477f15abcafa3609861553ce4e250a5ac50924026",
+       "177124c594dc23979e4a10e60113391d368cb9d211953d66c10522a5905e3253",
+       "3869acb75ce4f8235604659e9f02f47255fa17505075f8cc367191c751138b4b"
+      ],
+      "meanLuma": 24.163601745744877,
+      "minNonModalFraction": 0.6240967943075117
+     }
+    },
+    "fawn_doe": {
+     "adapters": [
+      "apple / metal-3 /  / "
+     ],
+     "browserVersions": [
+      "158.0.8108.0"
+     ],
+     "doeRuntimeMappedCounts": {
+      "True": 12
+     },
+     "failures": [],
+     "launches": 12,
+     "metrics": {
+      "cold_first_job_ms:p50": {
+       "ci95": [
+        107.39999985694885,
+        118
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 112.89999985694885
+      },
+      "cold_first_job_ms:p95": {
+       "ci95": [
+        118,
+        127.10000014305115
+       ],
+       "label": "cold first job (nav -> first completed job)",
+       "n": 12,
+       "stat": "p95",
+       "unit": "ms",
+       "value": 127.10000014305115
+      },
+      "completion_p50_ms:p50": {
+       "ci95": [
+        4.3999998569488525,
+        4.799999952316284
+       ],
+       "label": "frame/op completion p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 4.699999809265137
+      },
+      "completion_p95_ms:p50": {
+       "ci95": [
+        6.5,
+        6.799999952316284
+       ],
+       "label": "frame/op completion p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 6.799999952316284
+      },
+      "gpu_cpu_ms_per_frame:p50": {
+       "ci95": [
+        5.353138888888889,
+        5.7167839335180055
+       ],
+       "label": "GPU-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 5.633459833795014
+      },
+      "gpu_gfx_mem_mb:p50": {
+       "ci95": [
+        7684.734976,
+        7715.340288
+       ],
+       "label": "GPU-process graphics memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7700.004864
+      },
+      "gpu_mem_mb:p50": {
+       "ci95": [
+        7731.954984,
+        7761.90496
+       ],
+       "label": "GPU-process memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7746.569464
+      },
+      "interval_p50_ms:p50": {
+       "ci95": [
+        16.600000143051147,
+        16.699999809265137
+       ],
+       "label": "completed-frame interval p50",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 16.699999809265137
+      },
+      "interval_p95_ms:p50": {
+       "ci95": [
+        18.5,
+        18.59999990463257
+       ],
+       "label": "completed-frame interval p95",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 18.5
+      },
+      "launch_to_first_job_ms:p50": {
+       "ci95": [
+        581.699951171875,
+        668.2999022006989
+       ],
+       "label": "launch -> first completed job",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 648.5000488758087
+      },
+      "total_cpu_ms_per_frame:p50": {
+       "ci95": [
+        6.345416666666666,
+        6.91195567867036
+       ],
+       "label": "all-process CPU per frame/op",
+       "n": 12,
+       "stat": "p50",
+       "unit": "ms",
+       "value": 6.756565096952908
+      },
+      "total_mem_mb:p50": {
+       "ci95": [
+        7913.25124,
+        7942.693312
+       ],
+       "label": "total browser memory",
+       "n": 12,
+       "stat": "p50",
+       "unit": "MB",
+       "value": 7929.504264
+      }
+     },
+     "ok": 12,
+     "positionCounts": {
+      "0": 4,
+      "1": 4,
+      "2": 4
+     },
+     "visual": {
+      "distinctHashes": 12,
+      "hashes": [
+       "2e47ba19125efca132dab9a807be0afafc9369c2525f860384edc1ae057b826a",
+       "3108c08c9b19084882523108d050f71126aeb7c29667e9fcd1dde72484f5fae9",
+       "310b82d59282a2fa0a5f8cf33705473f38598f5f2c312b018776f60cbf2f7843"
+      ],
+      "meanLuma": 24.1608831126575,
+      "minNonModalFraction": 0.6241197183098591
+     }
+    }
+   },
+   "comparisons": {
+    "fawn_dawn/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 126.10000014305115,
+      "candidate": 94.09999990463257,
+      "ci95": [
+       0.7093111288064262,
+       0.9969788500487551
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.7462331466921733,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 139.19999980926514,
+      "candidate": 112.20000004768372,
+      "ci95": [
+       0.7158351412446398,
+       0.8177842566230956
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.8060344842056221,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 3.299999952316284,
+      "candidate": 3.5,
+      "ci95": [
+       0.9722222479773164,
+       1.0937499837018552
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.0606060759314058,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 5,
+      "candidate": 5.099999904632568,
+      "ci95": [
+       0.9803921293634864,
+       1.062500040357312
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.0199999809265137,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.572147222222222,
+      "candidate": 2.5433130193905815,
+      "ci95": [
+       0.9123956015426111,
+       1.403659028365404
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 0.9887898318640062,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 197.312512,
+      "candidate": 195.002368,
+      "ci95": [
+       0.9880438392560612,
+       1.0004982561036373
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 0.9882919538321016,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 236.962944,
+      "candidate": 235.816184,
+      "ci95": [
+       0.9919135291277579,
+       1.0048486696720227
+      ],
+      "label": "GPU-process memory",
+      "ratio": 0.9951605935483313,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.700000047683716,
+      "candidate": 16.700000047683716,
+      "ci95": [
+       0.9940119817756266,
+       1.0
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.799999952316284,
+      "candidate": 18.799999952316284,
+      "ci95": [
+       0.9893617122461484,
+       1.0161290167521737
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 1.0,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 833.5999510288239,
+      "candidate": 597.5,
+      "ci95": [
+       0.6811745668229617,
+       1.1541357364826526
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.7167706755051619,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 3.7735416666666666,
+      "candidate": 4.045240997229917,
+      "ci95": [
+       0.982046291753519,
+       1.5154700366229514
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.0720011476124112,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 416.554928,
+      "candidate": 419.684992,
+      "ci95": [
+       1.0009389472633972,
+       1.012748313840111
+      ],
+      "label": "total browser memory",
+      "ratio": 1.0075141686956588,
+      "unit": "MB",
+      "verdict": "no clear difference"
+     }
+    },
+    "fawn_doe/chrome": {
+     "cold_first_job_ms:p50": {
+      "baseline": 126.10000014305115,
+      "candidate": 112.89999985694885,
+      "ci95": [
+       0.8266464808971905,
+       1.1856410246628981
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.8953211715215871,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "cold_first_job_ms:p95": {
+      "baseline": 139.19999980926514,
+      "candidate": 127.10000014305115,
+      "ci95": [
+       0.8484195424200742,
+       0.9263848403708286
+      ],
+      "label": "cold first job (nav -> first completed job)",
+      "ratio": 0.9130747149224593,
+      "unit": "ms",
+      "verdict": "win"
+     },
+     "completion_p50_ms:p50": {
+      "baseline": 3.299999952316284,
+      "candidate": 4.699999809265137,
+      "ci95": [
+       1.3235294674507085,
+       1.4848485352031902
+      ],
+      "label": "frame/op completion p50",
+      "ratio": 1.424242387023729,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "completion_p95_ms:p50": {
+      "baseline": 5,
+      "candidate": 6.799999952316284,
+      "ci95": [
+       1.3,
+       1.4166666708058782
+      ],
+      "label": "frame/op completion p95",
+      "ratio": 1.359999990463257,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_cpu_ms_per_frame:p50": {
+      "baseline": 2.572147222222222,
+      "candidate": 5.633459833795014,
+      "ci95": [
+       1.9733700921049846,
+       2.7045208151037796
+      ],
+      "label": "GPU-process CPU per frame/op",
+      "ratio": 2.190177834738383,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "gpu_gfx_mem_mb:p50": {
+      "baseline": 197.312512,
+      "candidate": 7700.004864,
+      "ci95": [
+       38.94702316698497,
+       39.47677446451071
+      ],
+      "label": "GPU-process graphics memory",
+      "ratio": 39.0244125217969,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "gpu_mem_mb:p50": {
+      "baseline": 236.962944,
+      "candidate": 7746.569464,
+      "ci95": [
+       32.61811464377268,
+       32.92325342223576
+      ],
+      "label": "GPU-process memory",
+      "ratio": 32.69105849731509,
+      "unit": "MB",
+      "verdict": "loss"
+     },
+     "interval_p50_ms:p50": {
+      "baseline": 16.700000047683716,
+      "candidate": 16.699999809265137,
+      "ci95": [
+       0.9940119817756266,
+       0.9999999857234384
+      ],
+      "label": "completed-frame interval p50",
+      "ratio": 0.9999999857234384,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "interval_p95_ms:p50": {
+      "baseline": 18.799999952316284,
+      "candidate": 18.5,
+      "ci95": [
+       0.9840425556873833,
+       0.999999987181797
+      ],
+      "label": "completed-frame interval p95",
+      "ratio": 0.9840425556873833,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "launch_to_first_job_ms:p50": {
+      "baseline": 833.5999510288239,
+      "candidate": 648.5000488758087,
+      "ci95": [
+       0.6814666718303543,
+       1.180872046221231
+      ],
+      "label": "launch -> first completed job",
+      "ratio": 0.7779511599963915,
+      "unit": "ms",
+      "verdict": "no clear difference"
+     },
+     "total_cpu_ms_per_frame:p50": {
+      "baseline": 3.7735416666666666,
+      "candidate": 6.756565096952908,
+      "ci95": [
+       1.6003307603957,
+       2.2081420651786146
+      ],
+      "label": "all-process CPU per frame/op",
+      "ratio": 1.7905102669559962,
+      "unit": "ms",
+      "verdict": "loss"
+     },
+     "total_mem_mb:p50": {
+      "baseline": 416.554928,
+      "candidate": 7929.504264,
+      "ci95": [
+       18.91287994992434,
+       19.071330133893927
+      ],
+      "label": "total browser memory",
+      "ratio": 19.03591514826587,
+      "unit": "MB",
+      "verdict": "loss"
+     }
+    }
+   },
+   "crossArmPixelHashesEqual": false
+  }
+ },
+ "practicalThreshold": 0.03
+}
