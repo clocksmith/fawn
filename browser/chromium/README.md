@@ -206,6 +206,22 @@ comparison. The route also allows `fcntl(F_DUPFD_QUERY)`, which Mesa's loader
 uses to compare a DRI3 descriptor with an already open device; it compares two
 caller-owned descriptors and opens or grants nothing.
 
+Fawn gives Mesa a shader cache of its own. The browser names
+`<user-data-dir>/FawnMesaShaderCache` (beside Chromium's `ShaderCache`) with
+`--fawn-mesa-shader-cache-dir`; before either sandbox start the GPU process
+creates it owner-only, refuses an existing directory it does not own or that
+others can access, and sets `MESA_SHADER_CACHE_DIR` to it with
+`MESA_DISK_CACHE_DATABASE_NUM_PARTS=1`, so Mesa never uses the user's shared
+cache. Mesa opens every database part whenever a driver creates its cache, and
+each sandboxed open is a broker round trip: with Mesa's default 50 parts a fresh
+profile's first heavy-particles job took about 1 s longer than with one part.
+On the early external X11 GLX route the broker admits reads, writes, creation
+and directory creation only below that directory, and the GPU policy allows
+`flock`, an advisory lock on a descriptor the process already holds, which
+Mesa's database takes. The broker never admits a directory through a
+temporary-only permission such as `/dev/shm`. Other routes keep their policies;
+there the variable only moves an unsandboxed driver's cache out of the user's.
+
 Since Linux 6.8 a DRM file records the process that uses it; the first ioctl
 from another process transfers it and waits for an RCU grace period. A brokered
 open makes the broker that recorded process, so compositor Vulkan and the

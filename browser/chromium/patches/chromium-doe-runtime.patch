@@ -1,5 +1,5 @@
 diff --git a/content/browser/gpu/gpu_process_host.cc b/content/browser/gpu/gpu_process_host.cc
-index 1b29f20028..431f92682f 100644
+index 1b29f20028..d5f556ace7 100644
 --- a/content/browser/gpu/gpu_process_host.cc
 +++ b/content/browser/gpu/gpu_process_host.cc
 @@ -329,6 +329,9 @@ static const char* const kSwitchNames[] = {
@@ -12,6 +12,26 @@ index 1b29f20028..431f92682f 100644
      switches::kForceVideoOverlays,
      switches::kSkiaGraphiteDawnBackend,
  #if BUILDFLAG(IS_ANDROID)
+@@ -1342,6 +1345,19 @@ bool GpuProcessHost::LaunchGpuProcess() {
+ 
+   cmd_line->AppendSwitchASCII(switches::kProcessType, switches::kGpuProcess);
+ 
++#if BUILDFLAG(IS_LINUX)
++  // Fawn: Mesa's shader cache lives beside the browser's own GPU caches in
++  // this user-data directory, never in the user's shared cache. The GPU
++  // process creates it before its sandbox starts.
++  if (const base::FilePath shader_cache =
++          GetContentClient()->browser()->GetShaderDiskCacheDirectory();
++      !shader_cache.empty() && shader_cache.IsAbsolute()) {
++    cmd_line->AppendSwitchPath(
++        switches::kFawnMesaShaderCacheDir,
++        shader_cache.DirName().Append(FILE_PATH_LITERAL("FawnMesaShaderCache")));
++  }
++#endif
++
+ #if BUILDFLAG(IS_WIN)
+   if (kind_ == GPU_PROCESS_KIND_INFO_COLLECTION) {
+     cmd_line->AppendArgNative(app_launch_prefetch::GetPrefetchSwitch(
 diff --git a/content/common/BUILD.gn b/content/common/BUILD.gn
 index e41489d4c9..ebce50ab41 100644
 --- a/content/common/BUILD.gn
@@ -36,10 +56,10 @@ index e41489d4c9..ebce50ab41 100644
      if (use_v4l2_codec) {
        deps += [ "//media/gpu/v4l2" ]
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
-index 2e53794fa3..49c904e82a 100644
+index 2e53794fa3..a3b67a2f64 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
-@@ -6,8 +6,10 @@
+@@ -6,8 +6,11 @@
  
  #include <dlfcn.h>
  #include <errno.h>
@@ -47,10 +67,11 @@ index 2e53794fa3..49c904e82a 100644
  #include <stdlib.h>
  #include <sys/stat.h>
 +#include <sys/sysmacros.h>
++#include <unistd.h>
  
  #include <array>
  #include <memory>
-@@ -16,18 +18,25 @@
+@@ -16,18 +19,25 @@
  #include <vector>
  
  #include "base/base_paths.h"
@@ -76,7 +97,7 @@ index 2e53794fa3..49c904e82a 100644
  #include "sandbox/linux/syscall_broker/broker_command.h"
  #include "sandbox/linux/syscall_broker/broker_file_permission.h"
  #include "sandbox/linux/syscall_broker/broker_process.h"
-@@ -36,6 +45,11 @@
+@@ -36,6 +46,11 @@
  #include "sandbox/policy/linux/bpf_cros_arm_gpu_policy_linux.h"
  #include "sandbox/policy/linux/bpf_gpu_policy_linux.h"
  #include "sandbox/policy/linux/sandbox_linux.h"
@@ -88,7 +109,7 @@ index 2e53794fa3..49c904e82a 100644
  
  #if BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
-@@ -46,6 +60,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
+@@ -46,6 +61,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
  using sandbox::syscall_broker::BrokerProcess;
  
  namespace content {
@@ -124,7 +145,7 @@ index 2e53794fa3..49c904e82a 100644
  namespace {
  
  inline bool IsChromeOS() {
-@@ -224,11 +267,174 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+@@ -224,11 +268,192 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
    permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
  }
  
@@ -245,6 +266,24 @@ index 2e53794fa3..49c904e82a 100644
 +  }
 +}
 +
++// Fawn's Mesa shader cache: gpu_main.cc created the owner-only directory and
++// pointed MESA_SHADER_CACHE_DIR at it. Empty unless both still hold.
++base::FilePath FawnMesaShaderCacheDirectory() {
++  const base::FilePath directory =
++      base::CommandLine::ForCurrentProcess()->GetSwitchValuePath(
++          switches::kFawnMesaShaderCacheDir);
++  const char* selected = getenv("MESA_SHADER_CACHE_DIR");
++  struct stat info;
++  if (directory.empty() || !directory.IsAbsolute() ||
++      directory.ReferencesParent() || !selected ||
++      directory.value() != selected ||
++      lstat(directory.value().c_str(), &info) != 0 || !S_ISDIR(info.st_mode) ||
++      info.st_uid != geteuid() || (info.st_mode & 0077)) {
++    return base::FilePath();
++  }
++  return directory;
++}
++
 +void AddSystemDrircPermissions(std::vector<BrokerFilePermission>* permissions) {
 +  const base::FilePath directory("/usr/share/drirc.d");
 +  struct stat info;
@@ -302,7 +341,7 @@ index 2e53794fa3..49c904e82a 100644
      permissions->push_back(BrokerFilePermission::ReadWrite(path));
  
      uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
-@@ -240,13 +446,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+@@ -240,13 +465,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
    }
  }
  
@@ -323,7 +362,7 @@ index 2e53794fa3..49c904e82a 100644
    }
  }
  
-@@ -592,6 +801,37 @@ void LoadVulkanLibraries() {
+@@ -592,6 +820,37 @@ void LoadVulkanLibraries() {
    dlopen("libvulkan_freedreno.so", dlopen_flag);
  }
  
@@ -361,9 +400,15 @@ index 2e53794fa3..49c904e82a 100644
  void LoadChromecastV4L2Libraries() {
    for (const char* path : kAllowedChromecastPaths) {
      const std::string library_path(std::string(path) +
-@@ -604,23 +844,26 @@ void LoadChromecastV4L2Libraries() {
+@@ -603,24 +862,38 @@ void LoadChromecastV4L2Libraries() {
+ 
  }  // namespace
  
++bool UsesFawnMesaShaderCache(bool early_sandbox) {
++  return UsesEarlyExternalGlxResources(early_sandbox) &&
++         !FawnMesaShaderCacheDirectory().empty();
++}
++
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
 -    const sandbox::policy::SandboxLinux::Options& options) {
 +    const sandbox::policy::SandboxLinux::Options& options,
@@ -385,6 +430,12 @@ index 2e53794fa3..49c904e82a 100644
 +        options.use_virtio_specific_policies || IsArchitectureArm()))) {
      command_set.set(sandbox::syscall_broker::COMMAND_READLINK);
    }
++  // Mesa creates its cache database directories; the broker admits a mkdir
++  // only below a non-temporary create permission, which on this route is
++  // Fawn's cache directory alone.
++  if (UsesFawnMesaShaderCache(early_sandbox)) {
++    command_set.set(sandbox::syscall_broker::COMMAND_MKDIR);
++  }
    return command_set;
  }
  
@@ -395,7 +446,7 @@ index 2e53794fa3..49c904e82a 100644
    // All GPU process policies need this file brokered out.
    static const char kDriRcPath[] = "/etc/drirc";
    std::vector<BrokerFilePermission> permissions = {
-@@ -669,12 +912,37 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+@@ -669,12 +942,42 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
    }
  
    AddStandardGpuPermissions(&permissions);
@@ -403,6 +454,11 @@ index 2e53794fa3..49c904e82a 100644
 +    AddDrmGpuPermissions(&permissions, &options);
 +    AddSystemDrircPermissions(&permissions);
 +    AddSystemVulkanIcdManifestPermissions(&permissions);
++    if (const base::FilePath cache = FawnMesaShaderCacheDirectory();
++        UsesFawnMesaShaderCache(early_sandbox)) {
++      permissions.push_back(BrokerFilePermission::ReadWriteCreateRecursive(
++          cache.value() + "/"));
++    }
 +  }
    return permissions;
  }
@@ -434,7 +490,7 @@ index 2e53794fa3..49c904e82a 100644
    if (IsArchitectureArm()) {
      LoadArmGpuLibraries();
    }
-@@ -696,11 +964,39 @@ bool LoadLibrariesForGpu(
+@@ -696,11 +999,39 @@ bool LoadLibrariesForGpu(
  }
  
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
@@ -477,15 +533,18 @@ index 2e53794fa3..49c904e82a 100644
    // TODO(tsepez): enable namspace sandbox here once crashes are understood.
  
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.h b/content/common/gpu_pre_sandbox_hook_linux.h
-index 764a5502ba..5088f458a3 100644
+index 764a5502ba..8deb921c1e 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.h
 +++ b/content/common/gpu_pre_sandbox_hook_linux.h
-@@ -19,23 +19,34 @@ namespace content {
+@@ -19,23 +19,37 @@ namespace content {
  // require general GPU usage.
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options);
  
 +// One owner for the actual early external-runtime X11 GLX route.
 +bool UsesEarlyExternalGlxResources(bool early_sandbox);
++
++// That route with Fawn's Mesa shader cache directory prepared by gpu_main.cc.
++bool UsesFawnMesaShaderCache(bool early_sandbox);
 +
 +// Binds the actual GPU preference; other hook users retain the legacy policy.
 +bool GpuPreSandboxHookWithEarlyGlxResources(
@@ -519,10 +578,23 @@ index 764a5502ba..5088f458a3 100644
  }  // namespace content
  
 diff --git a/content/gpu/gpu_main.cc b/content/gpu/gpu_main.cc
-index 543e347e14..863b1aac9f 100644
+index 543e347e14..926af872e8 100644
 --- a/content/gpu/gpu_main.cc
 +++ b/content/gpu/gpu_main.cc
-@@ -85,6 +85,10 @@
+@@ -2,9 +2,12 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#include <errno.h>
+ #include <fcntl.h>
+ #include <stddef.h>
+ #include <stdlib.h>
++#include <sys/stat.h>
++#include <unistd.h>
+ 
+ #include <memory>
+ #include <tuple>
+@@ -85,6 +88,10 @@
  #include "ui/gl/gl_switches.h"
  #include "ui/gl/init/gl_factory.h"
  
@@ -533,7 +605,42 @@ index 543e347e14..863b1aac9f 100644
  #if BUILDFLAG(IS_WIN)
  #include <windows.h>
  
-@@ -197,6 +201,17 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
+@@ -136,6 +143,34 @@ namespace content {
+ 
+ namespace {
+ 
++#if BUILDFLAG(IS_LINUX)
++// Fawn: this process's Mesa disk cache, in the owner-only directory the
++// browser names. It is created here, before either sandbox start; Mesa reads
++// the variable when a driver later creates its cache. The user's shared Mesa
++// cache is never used; an unusable directory leaves Mesa without a disk cache
++// path inside the sandbox, as before.
++void UseFawnMesaShaderCache(const base::CommandLine& command_line) {
++  const base::FilePath directory =
++      command_line.GetSwitchValuePath(switches::kFawnMesaShaderCacheDir);
++  if (directory.empty() || !directory.IsAbsolute() ||
++      directory.ReferencesParent()) {
++    return;
++  }
++  if (mkdir(directory.value().c_str(), 0700) != 0 && errno != EEXIST) {
++    return;
++  }
++  struct stat info;
++  if (lstat(directory.value().c_str(), &info) != 0 || !S_ISDIR(info.st_mode) ||
++      info.st_uid != geteuid() || (info.st_mode & 0077)) {
++    return;
++  }
++  setenv("MESA_SHADER_CACHE_DIR", directory.value().c_str(), 1);
++  // One database part: Mesa opens every part each time a driver creates its
++  // cache, and in the sandbox each open is a broker round trip.
++  setenv("MESA_DISK_CACHE_DATABASE_NUM_PARTS", "1", 1);
++}
++#endif
++
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
+                        const gpu::GPUInfo*,
+@@ -197,6 +232,17 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
      webnn::PreSandboxWebNNInitialization(/*is_gpu_process=*/true);
  #endif
  
@@ -551,7 +658,17 @@ index 543e347e14..863b1aac9f 100644
      // On Linux, reading system memory doesn't work through the GPU sandbox.
      // This value is cached, so access it here to populate the cache.
      base::SysInfo::AmountOfTotalPhysicalMemory();
-@@ -565,10 +580,23 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
+@@ -238,6 +284,9 @@ int GpuMain(MainFunctionParams parameters) {
+       base::CurrentProcessType::PROCESS_GPU);
+ 
+   const base::CommandLine& command_line = *parameters.command_line;
++#if BUILDFLAG(IS_LINUX)
++  UseFawnMesaShaderCache(command_line);
++#endif
+ 
+   gpu::GpuPreferences gpu_preferences;
+   if (command_line.HasSwitch(switches::kGpuPreferences)) {
+@@ -565,10 +614,26 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
    base::IncreaseFdLimitTo(new_max_fds);
  #endif
  
@@ -565,6 +682,9 @@ index 543e347e14..863b1aac9f 100644
 +  // GLX route seals; that comparison opens and grants nothing.
 +  sandbox_options.gpu_allow_file_description_query =
 +      UsesEarlyExternalGlxResources(gpu_prefs.gpu_sandbox_start_early);
++  // Mesa locks its shader cache database files in Fawn's cache directory.
++  sandbox_options.gpu_allow_file_lock =
++      UsesFawnMesaShaderCache(gpu_prefs.gpu_sandbox_start_early);
 +
    bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
        sandbox::policy::SandboxTypeFromCommandLine(
@@ -1478,31 +1598,34 @@ index 0000000000..bf6c4ad494
 +
 +#endif  // GPU_COMMAND_BUFFER_SERVICE_WEBGPU_SKIA_FALLBACK_H_
 diff --git a/gpu/config/gpu_switches.cc b/gpu/config/gpu_switches.cc
-index 018cc8be85..e263a3b6df 100644
+index 018cc8be85..92ff0288f2 100644
 --- a/gpu/config/gpu_switches.cc
 +++ b/gpu/config/gpu_switches.cc
-@@ -6,6 +6,10 @@
+@@ -6,6 +6,11 @@
  
  namespace switches {
  
 +const char kUseWebGPURuntime[] = "use-webgpu-runtime";
 +const char kDisableWebGPUDoe[] = "disable-webgpu-doe";
 +const char kDoeWebGPULibraryPath[] = "doe-webgpu-library-path";
++const char kFawnMesaShaderCacheDir[] = "fawn-mesa-shader-cache-dir";
 +
  // Passes the number of recent GPU crashes to the GPU process.
  const char kGpuRecentCrashCount[] = "gpu-recent-crash-count";
  
 diff --git a/gpu/config/gpu_switches.h b/gpu/config/gpu_switches.h
-index c4aa207273..bf1bb60efb 100644
+index c4aa207273..de14552fd6 100644
 --- a/gpu/config/gpu_switches.h
 +++ b/gpu/config/gpu_switches.h
-@@ -9,6 +9,10 @@
+@@ -9,6 +9,12 @@
  
  namespace switches {
  
 +GPU_CONFIG_EXPORT extern const char kUseWebGPURuntime[];
 +GPU_CONFIG_EXPORT extern const char kDisableWebGPUDoe[];
 +GPU_CONFIG_EXPORT extern const char kDoeWebGPULibraryPath[];
++// Fawn: the GPU process's private Mesa shader cache directory (absolute).
++GPU_CONFIG_EXPORT extern const char kFawnMesaShaderCacheDir[];
 +
  GPU_CONFIG_EXPORT extern const char kGpuRecentCrashCount[];
  GPU_CONFIG_EXPORT extern const char kDisableGpuRasterization[];
@@ -1734,10 +1857,10 @@ index 3d530c7800..66e0de8e26 100644
                                       // know will be denied to the broker. (Used
                                       // for tests).
 diff --git a/sandbox/policy/linux/bpf_gpu_policy_linux.cc b/sandbox/policy/linux/bpf_gpu_policy_linux.cc
-index 74333b96d1..4f533d8b5a 100644
+index 74333b96d1..d840701c61 100644
 --- a/sandbox/policy/linux/bpf_gpu_policy_linux.cc
 +++ b/sandbox/policy/linux/bpf_gpu_policy_linux.cc
-@@ -35,7 +35,15 @@ namespace sandbox {
+@@ -35,7 +35,17 @@ namespace sandbox {
  namespace policy {
  
  GpuProcessPolicy::GpuProcessPolicy(MremapPolicy mremap_policy)
@@ -1747,14 +1870,16 @@ index 74333b96d1..4f533d8b5a 100644
 +GpuProcessPolicy::GpuProcessPolicy(
 +    MremapPolicy mremap_policy,
 +    SchedTargetFailurePolicy sched_target_failure,
-+    bool allow_file_description_query)
++    bool allow_file_description_query,
++    bool allow_file_lock)
 +    : mremap_policy_(mremap_policy),
 +      sched_target_failure_(sched_target_failure),
-+      allow_file_description_query_(allow_file_description_query) {}
++      allow_file_description_query_(allow_file_description_query),
++      allow_file_lock_(allow_file_lock) {}
  
  GpuProcessPolicy::~GpuProcessPolicy() {}
  
-@@ -65,6 +73,12 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
+@@ -65,6 +75,12 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
            F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW;
        BoolExpr add_seals =
            AllOf(cmd == F_ADD_SEALS, (arg & ~kAllowedMask) == 0);
@@ -1767,10 +1892,16 @@ index 74333b96d1..4f533d8b5a 100644
  
        return If(add_seals, Allow()).Else(BPFBasePolicy::EvaluateSyscall(sysno));
      }
-@@ -104,8 +118,15 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
+@@ -104,8 +120,21 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
      case __NR_sysinfo:
      case __NR_uname:  // https://crbug.com/1075934
        return Allow();
++    case __NR_flock:
++      // An advisory lock on a descriptor this process already holds.
++      if (allow_file_lock_) {
++        return Allow();
++      }
++      return BPFBasePolicy::EvaluateSyscall(sysno);
 +    case __NR_sched_setscheduler:
 +      if (sched_target_failure_ == SchedTargetFailurePolicy::kReturnEPERM) {
 +        return RestrictSchedTarget(GetPolicyPid(), sysno,
@@ -1785,7 +1916,7 @@ index 74333b96d1..4f533d8b5a 100644
        return RestrictPrlimit64(GetPolicyPid());
      case __NR_memfd_create:
 diff --git a/sandbox/policy/linux/bpf_gpu_policy_linux.h b/sandbox/policy/linux/bpf_gpu_policy_linux.h
-index cf02752619..0e46396dcc 100644
+index cf02752619..d297aba4b2 100644
 --- a/sandbox/policy/linux/bpf_gpu_policy_linux.h
 +++ b/sandbox/policy/linux/bpf_gpu_policy_linux.h
 @@ -6,6 +6,7 @@
@@ -1796,22 +1927,24 @@ index cf02752619..0e46396dcc 100644
  #include "sandbox/policy/export.h"
  #include "sandbox/policy/linux/bpf_base_policy_linux.h"
  
-@@ -20,6 +21,9 @@ enum class MremapPolicy {
+@@ -20,6 +21,10 @@ enum class MremapPolicy {
  class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
   public:
    explicit GpuProcessPolicy(MremapPolicy mremap_policy);
 +  GpuProcessPolicy(MremapPolicy mremap_policy,
 +                   SchedTargetFailurePolicy sched_target_failure,
-+                   bool allow_file_description_query = false);
++                   bool allow_file_description_query = false,
++                   bool allow_file_lock = false);
  
    GpuProcessPolicy(const GpuProcessPolicy&) = delete;
    GpuProcessPolicy& operator=(const GpuProcessPolicy&) = delete;
-@@ -30,6 +34,8 @@ class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
+@@ -30,6 +35,9 @@ class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
  
   private:
    MremapPolicy mremap_policy_;
 +  const SchedTargetFailurePolicy sched_target_failure_;
 +  const bool allow_file_description_query_;
++  const bool allow_file_lock_;
  };
  
  }  // namespace policy
@@ -1832,7 +1965,7 @@ index 76e20d21b7..1dac050715 100644
    friend struct base::DefaultSingletonTraits<SandboxLinux>;
  
 diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
-index 50b2478e6c..9c883ba66b 100644
+index 50b2478e6c..5837f23326 100644
 --- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
 +++ b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
 @@ -143,7 +143,9 @@ std::unique_ptr<BPFBasePolicy> GetGpuProcessSandbox(
@@ -1842,12 +1975,12 @@ index 50b2478e6c..9c883ba66b 100644
 -  return std::make_unique<GpuProcessPolicy>(mremap_policy);
 +  return std::make_unique<GpuProcessPolicy>(
 +      mremap_policy, options.gpu_sched_target_failure,
-+      options.gpu_allow_file_description_query);
++      options.gpu_allow_file_description_query, options.gpu_allow_file_lock);
  }
  #endif  // !defined(IN_NACL_HELPER)
  
 diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
-index 7fe9953416..f347840547 100644
+index 7fe9953416..3a46336b76 100644
 --- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
 +++ b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
 @@ -10,6 +10,7 @@
@@ -1858,7 +1991,7 @@ index 7fe9953416..f347840547 100644
  #include "sandbox/linux/seccomp-bpf/sandbox_bpf.h"
  #include "sandbox/policy/export.h"
  #include "sandbox/policy/linux/bpf_base_policy_linux.h"
-@@ -32,6 +33,16 @@ class SANDBOX_POLICY_EXPORT SandboxSeccompBPF {
+@@ -32,6 +33,20 @@ class SANDBOX_POLICY_EXPORT SandboxSeccompBPF {
      // Options for GPU's PreSandboxHook.
      bool accelerated_video_decode_enabled = false;
      bool accelerated_video_encode_enabled = false;
@@ -1872,6 +2005,10 @@ index 7fe9953416..f347840547 100644
 +    // Only affects fcntl(F_DUPFD_QUERY) in the generic GPU policy. The command
 +    // compares two of the caller's own descriptors and opens nothing.
 +    bool gpu_allow_file_description_query = false;
++
++    // Only affects flock in the generic GPU policy: an advisory lock on one of
++    // the caller's own descriptors (Mesa's shader cache database).
++    bool gpu_allow_file_lock = false;
    };
  
    SandboxSeccompBPF() = delete;
@@ -1977,3 +2114,22 @@ index 4537244c51..9655cc8696 100644
    // Some tests may skip based on the platform name.
    static std::string GetPlatformNameForTest();
    static bool RunningOnWaylandForTest();
+diff --git a/sandbox/linux/syscall_broker/broker_command.cc b/sandbox/linux/syscall_broker/broker_command.cc
+index 4d169b2f2b..a0b2ed5872 100644
+--- a/sandbox/linux/syscall_broker/broker_command.cc
++++ b/sandbox/linux/syscall_broker/broker_command.cc
+@@ -29,9 +29,11 @@ const char* CommandMkdirIsSafe(const BrokerCommandSet& command_set,
+     return nullptr;
+   }
+ 
+-  return policy
+-      .GetFileNameIfAllowedToOpen(requested_filename, O_RDWR | O_CREAT | O_EXCL)
+-      .first;
++  // A temporary-only permission admits a file unlinked once opened, never a
++  // directory that would persist.
++  const auto [filename, unlink_after_open] = policy.GetFileNameIfAllowedToOpen(
++      requested_filename, O_RDWR | O_CREAT | O_EXCL);
++  return unlink_after_open ? nullptr : filename;
+ }
+ 
+ std::pair<const char*, bool> CommandOpenIsSafe(
