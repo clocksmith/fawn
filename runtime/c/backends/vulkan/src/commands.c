@@ -279,6 +279,7 @@ static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error
     doe_vk_textures_complete(commands, status);
     doe_vk_queries_complete(commands, status);
     commands->committed = true;
+    if (status == DOE_VK_OK) doe_vk_external_publish(commands);
     return status;
 }
 

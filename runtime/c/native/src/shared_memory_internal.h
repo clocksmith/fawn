@@ -29,6 +29,10 @@ struct native_shared_fence {
     void *event;  /* Metal shared event. */
     int sync_fd;  /* Vulkan: owned sync file (-1: already signaled) or opaque semaphore fd. */
     bool opaque;  /* Vulkan: sync_fd is an OPAQUE_FD binary semaphore. */
+    /* Vulkan EndAccess state storage: one fence (this one) and its value, freed
+     * with the fence by FreeMembers instead of separate arrays. */
+    WGPUSharedFence end_fence;
+    uint64_t end_value;
 };
 typedef struct shared_texture_payload {
     native_texture texture; /* Canonical payload prefix, never another resource. */

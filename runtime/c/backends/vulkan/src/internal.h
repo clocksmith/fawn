@@ -25,6 +25,9 @@ doe_vk_status doe_vk_load_symbol(void *library, const char *name,
 doe_vk_status doe_vk_external_probe(doe_vk_context *context, bool *available, doe_vk_error *error);
 doe_vk_status doe_vk_external_load_device(doe_vk_context *context, doe_vk_error *error);
 void doe_vk_external_commands_release(doe_vk_commands *commands);
+/* After vkQueueSubmit accepted a recording that released images: one sync file
+ * exported for the recording, a duplicate published to each released image. */
+void doe_vk_external_publish(doe_vk_commands *commands);
 
 enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
 enum { DOE_VK_COMMAND_SPARES = 8 };
@@ -185,6 +188,8 @@ struct doe_vk_commands {
     VkSemaphore external_waits[8];
     uint32_t external_wait_count;
     VkSemaphore external_signal;
+    int external_fd; /* The signal's exported sync file once published; 0 or -1: none. */
+    bool external_published;
 };
 doe_vk_status doe_vk_result(doe_vk_context *context, VkResult result,
     const char *operation, doe_vk_error *error);

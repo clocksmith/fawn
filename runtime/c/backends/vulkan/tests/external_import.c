@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
     check(doe_vk_texture_evict(texture) == DOE_VK_BUSY, "imported destroy is BUSY");
 
     /* Unacquired use fails closed. */
-    doe_vk_buffer *readback = NULL, *upload = NULL;
+    doe_vk_buffer *readback = NULL, *upload = NULL, *host_upload = NULL;
     require(doe_vk_buffer_create(context, BYTES, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &readback, &error), "readback");
     require(doe_vk_buffer_create(context, BYTES, DOE_VK_BUFFER_COPY_SRC, DOE_VK_MEMORY_HOST, &upload, &error), "upload");
     const doe_vk_texture_region region = {.extent = {SIZE, SIZE, 1}};
@@ -279,9 +279,79 @@ int main(int argc, char **argv) {
     check(memcmp(mapped, pixels, BYTES) == 0, "Doe pixels in producer");
     context->vk.vkUnmapMemory(p.device, host_memory);
 
-    /* Doe retires its release before tearing down; the producer frees its image. */
     require(doe_vk_commands_wait(commands, UINT64_C(5000000000), &error), "wait release");
     require(doe_vk_commands_release(commands), "release release");
+
+    /* Folded access: the producer hands the image back; Doe acquires, writes and
+     * releases in one submission, writes again in a second (reacquired from its
+     * own release with no producer wait), and the access ends with the second
+     * submission's release, without another submission. */
+    command = begin(&p);
+    barrier(&p, command, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        context->caps.queue_family, VK_QUEUE_FAMILY_EXTERNAL);
+    produced = submit(&p, command, -1, true, false);
+    const doe_vk_external_wait handback = {produced, false};
+    doe_vk_commands *rolled = NULL;
+    require(doe_vk_commands_create(context, &rolled, &error), "rolled-back commands");
+    require(doe_vk_commands_external_acquire(rolled, texture, &handback, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, true), "acquire never submitted");
+    require(doe_vk_commands_release(rolled), "release unsubmitted acquire");
+    check(!doe_vk_texture_external_acquired(texture), "unsubmitted acquire rolled back");
+    doe_vk_commands *first = NULL, *second = NULL;
+    require(doe_vk_commands_create(context, &first, &error), "first folded commands");
+    require(doe_vk_commands_external_acquire(first, texture, &handback, 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, true), "folded acquire");
+    (void)close(produced);
+    unsigned char first_pixels[BYTES], second_pixels[BYTES];
+    for (size_t i = 0; i < BYTES; ++i) {
+        first_pixels[i] = (unsigned char)(i * 5 + 1);
+        second_pixels[i] = (unsigned char)(i * 11 + 9);
+    }
+    require(doe_vk_buffer_write(upload, 0, first_pixels, sizeof(first_pixels)), "first upload bytes");
+    require(doe_vk_commands_upload_texture(first, upload, (doe_vk_texture_buffer_layout){0}, texture, region),
+        "first folded write");
+    uint32_t released_count = 0;
+    require(doe_vk_commands_external_release_acquired(first, &released_count), "first folded release");
+    check(released_count == 1, "first submission releases the image");
+    check(doe_vk_texture_external_take_release(texture, &released, &layout, &initialized) == DOE_VK_INVALID_STATE,
+        "no release before acceptance");
+    require(doe_vk_commands_submit(first, &error), "submit first folded");
+    require(doe_vk_commands_wait(first, UINT64_C(5000000000), &error), "wait first folded");
+    require(doe_vk_commands_create(context, &second, &error), "second folded commands");
+    require(doe_vk_commands_read_texture(second, texture, region, readback, (doe_vk_texture_buffer_layout){0}),
+        "reacquired read");
+    check(doe_vk_texture_external_acquired(texture), "first use reacquires");
+    require(doe_vk_buffer_create(context, BYTES, DOE_VK_BUFFER_COPY_SRC, DOE_VK_MEMORY_HOST, &host_upload, &error),
+        "second upload");
+    require(doe_vk_buffer_write(host_upload, 0, second_pixels, sizeof(second_pixels)), "second upload bytes");
+    require(doe_vk_commands_upload_texture(second, host_upload, (doe_vk_texture_buffer_layout){0}, texture, region),
+        "second folded write");
+    require(doe_vk_commands_external_release_acquired(second, &released_count), "second folded release");
+    check(released_count == 1, "second submission releases the image");
+    require(doe_vk_commands_submit(second, &error), "submit second folded");
+    require(doe_vk_texture_external_take_release(texture, &released, &layout, &initialized), "take release");
+    check(initialized && layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "folded layout (last write) and contents");
+    int again = -1;
+    uint32_t again_layout = 0;
+    bool again_initialized = false;
+    check(doe_vk_texture_external_take_release(texture, &again, &again_layout, &again_initialized) ==
+        DOE_VK_INVALID_STATE, "one take per access");
+    command = begin(&p);
+    barrier(&p, command, image, layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_QUEUE_FAMILY_EXTERNAL,
+        context->caps.queue_family);
+    context->vk.vkCmdCopyImageToBuffer(command, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, host, 1, &copy);
+    (void)submit(&p, command, released, false, false);
+    check(context->vk.vkMapMemory(p.device, host_memory, 0, BYTES, 0, &mapped) == 0, "producer map folded");
+    check(memcmp(mapped, second_pixels, BYTES) == 0, "second folded pixels in producer");
+    context->vk.vkUnmapMemory(p.device, host_memory);
+    require(doe_vk_commands_wait(second, UINT64_C(5000000000), &error), "wait second folded");
+    require(doe_vk_buffer_read(readback, 0, seen, sizeof(seen)), "reacquired read bytes");
+    check(memcmp(seen, first_pixels, BYTES) == 0, "reacquire keeps first submission contents");
+    require(doe_vk_commands_release(first), "release first folded");
+    require(doe_vk_commands_release(second), "release second folded");
+    doe_vk_buffer_release(host_upload);
+
+    /* Doe retires its releases before tearing down; the producer frees its image. */
     doe_vk_buffer_release(readback);
     doe_vk_buffer_release(upload);
     doe_vk_texture_release(texture);
@@ -292,7 +362,7 @@ int main(int argc, char **argv) {
     context->vk.vkDestroyCommandPool(p.device, p.pool, NULL);
     context->vk.vkDestroyDevice(p.device, NULL);
     doe_vk_context_release(context);
-    printf("PASS external import (%s producer semaphore): producer clear read by Doe, Doe upload read by producer after its sync file\n",
+    printf("PASS external import (%s producer semaphore): producer clear read by Doe, Doe upload read by producer after its sync file; folded two-submission access ends with its last release\n",
         opaque_handoff ? "OPAQUE_FD" : "SYNC_FD");
     return 0;
 }

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
+#include "../include/doe_vk_external.h"
 #include <math.h>
 
 uint32_t doe_vk_format_aspects(doe_vk_texture_format format) {
@@ -404,6 +405,10 @@ void doe_vk_texture_release(doe_vk_texture *texture) {
     doe_vk_context *context = texture->context;
     if (texture->image != 0 && !texture->borrowed_image) context->vk.vkDestroyImage(context->device, texture->image, NULL);
     if (texture->memory != 0) context->vk.vkFreeMemory(context->device, texture->memory, NULL);
+    if (texture->imported) {
+        texture->external_acquired = false;
+        doe_vk_texture_external_reset(texture);
+    }
     free(texture->initialized);
     free(texture);
     doe_vk_context_release(context);

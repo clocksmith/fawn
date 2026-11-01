@@ -118,6 +118,8 @@ void doe_vk_external_commands_release(doe_vk_commands *commands) {
     commands->external_wait_count = 0;
     if (commands->external_signal) context->vk.vkDestroySemaphore(context->device, commands->external_signal, NULL);
     commands->external_signal = 0;
+    if (commands->external_published) (void)close(commands->external_fd);
+    commands->external_published = false;
 }
 
 static bool admitted_format(doe_vk_texture_format format) {
@@ -196,6 +198,7 @@ doe_vk_status doe_vk_texture_import_opaque_fd(doe_vk_context *context,
     texture->context = context;
     texture->references = 1;
     texture->imported = true;
+    texture->external_release_fd = -1;
     /* Owner-level usage is the WebGPU-visible subset; the native image keeps
      * the producer's exact flags below. */
     texture->desc = (doe_vk_texture_desc){.dimension = DOE_VK_TEXTURE_2D, .format = desc->format,
@@ -319,6 +322,9 @@ doe_vk_status doe_vk_commands_external_acquire(doe_vk_commands *commands, doe_vk
         status = import_wait(commands, waits[i]);
         if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     }
+    /* A producer acquire starts a new access: no earlier release of this
+     * queue may be reacquired or handed out within it. */
+    doe_vk_texture_external_reset(texture);
     texture->external_acquired = true;
     doe_vk_texture_use *use = NULL;
     status = doe_vk_use_texture(commands, texture, &use);
@@ -326,6 +332,7 @@ doe_vk_status doe_vk_commands_external_acquire(doe_vk_commands *commands, doe_vk
         texture->external_acquired = false;
         return doe_vk_poison(commands, status);
     }
+    use->external_changes |= DOE_VK_EXTERNAL_ACQUIRED;
     /* The acquire repeats the producer's release layouts. A transition to
      * UNDEFINED is invalid, so that pair discards into GENERAL instead. */
     const uint32_t target = new_layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_IMAGE_LAYOUT_GENERAL : new_layout;
@@ -336,47 +343,160 @@ doe_vk_status doe_vk_commands_external_acquire(doe_vk_commands *commands, doe_vk
     return kept ? DOE_VK_OK : doe_vk_commands_initialize_texture(commands, texture);
 }
 
-doe_vk_status doe_vk_commands_external_release(doe_vk_commands *commands, doe_vk_texture *texture,
-    uint32_t *layout, bool *initialized) {
-    doe_vk_status status = doe_vk_recording(commands);
-    if (status != DOE_VK_OK) return status;
-    if (texture == NULL || layout == NULL || initialized == NULL || texture->context != commands->context ||
-        !texture->imported || !texture->external_acquired || commands->external_signal != 0)
-        return doe_vk_poison(commands, DOE_VK_INVALID_STATE);
-    doe_vk_texture_use *use = NULL;
-    status = doe_vk_use_texture(commands, texture, &use);
-    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+static doe_vk_status arm_signal(doe_vk_commands *commands) {
+    if (commands->external_signal != 0) return DOE_VK_OK; /* One signal covers every release. */
     doe_vk_context *context = commands->context;
     const VkExportSemaphoreCreateInfo exportable = {.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
         .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT};
     const VkSemaphoreCreateInfo create = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = &exportable};
     VkSemaphore semaphore = 0;
-    status = doe_vk_result(context, context->vk.vkCreateSemaphore(context->device, &create, NULL, &semaphore),
-        "vkCreateSemaphore(export sync fd)", NULL);
+    doe_vk_status status = doe_vk_result(context, context->vk.vkCreateSemaphore(context->device, &create, NULL,
+        &semaphore), "vkCreateSemaphore(export sync fd)", NULL);
+    if (status == DOE_VK_OK) commands->external_signal = semaphore;
+    return status;
+}
+
+static doe_vk_status release_use(doe_vk_commands *commands, doe_vk_texture_use *use) {
+    doe_vk_texture *texture = use->texture;
+    doe_vk_status status = arm_signal(commands);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     const uint32_t old_layout = use->layout;
     const uint32_t released = old_layout == VK_IMAGE_LAYOUT_UNDEFINED ? VK_IMAGE_LAYOUT_GENERAL : old_layout;
     if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) use->initialized[0] = 0;
     ownership_barrier(commands, texture, false, old_layout, released);
     use->layout = released;
-    commands->external_signal = semaphore;
+    use->external_changes |= DOE_VK_EXTERNAL_RELEASED;
     texture->external_acquired = false;
-    *layout = released;
+    /* Reacquirable once the accepted submission publishes its sync file. */
+    texture->external_reacquire = true;
+    texture->external_release_owner = NULL;
+    return DOE_VK_OK;
+}
+
+doe_vk_status doe_vk_commands_external_release(doe_vk_commands *commands, doe_vk_texture *texture,
+    uint32_t *layout, bool *initialized) {
+    doe_vk_status status = doe_vk_recording(commands);
+    if (status != DOE_VK_OK) return status;
+    if (texture == NULL || layout == NULL || initialized == NULL || texture->context != commands->context ||
+        !texture->imported || !texture->external_acquired)
+        return doe_vk_poison(commands, DOE_VK_INVALID_STATE);
+    doe_vk_texture_use *use = NULL;
+    status = doe_vk_use_texture(commands, texture, &use);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    status = release_use(commands, use);
+    if (status != DOE_VK_OK) return status;
+    *layout = use->layout;
     *initialized = (use->initialized[0] & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
     return DOE_VK_OK;
+}
+
+doe_vk_status doe_vk_commands_external_release_acquired(doe_vk_commands *commands, uint32_t *count) {
+    doe_vk_status status = doe_vk_recording(commands);
+    if (status != DOE_VK_OK) return status;
+    uint32_t released = 0;
+    for (doe_vk_texture_use *use = commands->textures; use != NULL; use = use->next) {
+        if (!use->texture->imported || !use->texture->external_acquired) continue;
+        status = release_use(commands, use);
+        if (status != DOE_VK_OK) return status;
+        ++released;
+    }
+    if (count != NULL) *count = released;
+    return DOE_VK_OK;
+}
+
+/* Accepted work only, before any later recording: export the one signal once,
+ * then give each image this recording released its own duplicate. An image
+ * whose duplicate fails keeps no release, so its access end reports failure. */
+void doe_vk_external_publish(doe_vk_commands *commands) {
+    if (commands->external_signal == 0 || commands->external_published) return;
+    bool released = false;
+    for (doe_vk_texture_use *use = commands->textures; use != NULL; use = use->next)
+        released = released || (use->external_changes & DOE_VK_EXTERNAL_RELEASED);
+    if (!released) return;
+    doe_vk_context *context = commands->context;
+    const VkSemaphoreGetFdInfoKHR info = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
+        .semaphore = commands->external_signal, .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT};
+    int exported = -1;
+    if (context->external.vkGetSemaphoreFdKHR(context->device, &info, &exported) != 0) return;
+    commands->external_fd = exported;
+    commands->external_published = true;
+    for (doe_vk_texture_use *use = commands->textures; use != NULL; use = use->next) {
+        doe_vk_texture *texture = use->texture;
+        if (!(use->external_changes & DOE_VK_EXTERNAL_RELEASED) || texture->external_acquired) continue;
+        if (texture->external_release_fd >= 0) (void)close(texture->external_release_fd);
+        /* -1 is an already signaled sync file, which stays a valid release. */
+        texture->external_release_fd = exported >= 0 ? dup(exported) : -1;
+        if (exported >= 0 && texture->external_release_fd < 0) {
+            texture->external_reacquire = false;
+            texture->external_release_owner = NULL;
+            continue;
+        }
+        texture->external_release_layout = use->layout;
+        texture->external_release_initialized = (use->initialized[0] & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
+        texture->external_release_owner = commands;
+    }
+}
+
+doe_vk_status doe_vk_external_reacquire(doe_vk_commands *commands, doe_vk_texture_use *use) {
+    doe_vk_texture *texture = use->texture;
+    if (texture->external_release_owner == NULL) return DOE_VK_INVALID_STATE;
+    /* Same queue, later in submission order than the release: the transfer
+     * back from EXTERNAL keeps the published layout and contents. */
+    ownership_barrier(commands, texture, true, use->layout, use->layout);
+    use->external_changes |= DOE_VK_EXTERNAL_REACQUIRED;
+    texture->external_acquired = true;
+    texture->external_reacquire = false;
+    return DOE_VK_OK;
+}
+
+void doe_vk_external_undo(doe_vk_texture_use *use) {
+    doe_vk_texture *texture = use->texture;
+    if (use->external_changes & DOE_VK_EXTERNAL_RELEASED) {
+        texture->external_acquired = true;
+        texture->external_reacquire = false;
+    }
+    if (use->external_changes & DOE_VK_EXTERNAL_REACQUIRED) {
+        texture->external_acquired = false;
+        texture->external_reacquire = true;
+    } else if (use->external_changes & DOE_VK_EXTERNAL_ACQUIRED) texture->external_acquired = false;
+    use->external_changes = 0;
+}
+
+doe_vk_status doe_vk_texture_external_take_release(doe_vk_texture *texture, int *fd, uint32_t *layout,
+    bool *initialized) {
+    if (texture == NULL || fd == NULL || layout == NULL || initialized == NULL || !texture->imported ||
+        texture->external_acquired || !texture->external_reacquire || texture->external_release_owner == NULL)
+        return DOE_VK_INVALID_STATE;
+    *fd = texture->external_release_fd;
+    *layout = texture->external_release_layout;
+    *initialized = texture->external_release_initialized;
+    texture->external_release_fd = -1;
+    texture->external_reacquire = false;
+    texture->external_release_owner = NULL;
+    return DOE_VK_OK;
+}
+
+void doe_vk_texture_external_reset(doe_vk_texture *texture) {
+    if (texture == NULL || !texture->imported || texture->external_acquired) return;
+    if (texture->external_release_fd >= 0) (void)close(texture->external_release_fd);
+    texture->external_release_fd = -1;
+    texture->external_reacquire = false;
+    texture->external_release_owner = NULL;
+}
+
+bool doe_vk_texture_external_acquired(const doe_vk_texture *texture) {
+    return texture != NULL && texture->imported && texture->external_acquired;
 }
 
 doe_vk_status doe_vk_commands_export_sync_fd(doe_vk_commands *commands, int *fd, doe_vk_error *error) {
     if (commands == NULL || fd == NULL || commands->external_signal == 0 || !commands->committed ||
         (commands->state != DOE_VK_SUBMITTED && commands->state != DOE_VK_COMPLETE))
         return doe_vk_fail(DOE_VK_INVALID_STATE, "export sync fd before accepted release", error);
-    doe_vk_context *context = commands->context;
-    const VkSemaphoreGetFdInfoKHR info = {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
-        .semaphore = commands->external_signal, .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT};
-    int exported = -1;
-    doe_vk_status status = doe_vk_result(context, context->external.vkGetSemaphoreFdKHR(context->device, &info, &exported),
-        "vkGetSemaphoreFdKHR(sync fd)", error);
-    if (status != DOE_VK_OK) return status;
+    /* Acceptance exported the signal once (doe_vk_external_publish). */
+    if (!commands->external_published) return doe_vk_fail(DOE_VK_NATIVE_FAILURE, "vkGetSemaphoreFdKHR(sync fd)", error);
+    int exported = commands->external_fd >= 0 ? dup(commands->external_fd) : -1;
+    if (commands->external_fd >= 0 && exported < 0)
+        return doe_vk_fail(DOE_VK_NATIVE_FAILURE, "sync fd duplicate", error);
     *fd = exported;
     return DOE_VK_OK;
 }

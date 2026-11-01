@@ -3,6 +3,7 @@
 #include "metal_frontend.h"
 #include "d3d12_frontend.h"
 #include "doe_native_queue.h"
+#include "doe_vk_external.h"
 #include "../../backends/metal/src/progress.h"
 #include <stdlib.h>
 
@@ -454,6 +455,29 @@ native_failure native_flush_initialization(native_device *device)
     return submit_pending(device, pending, false);
 }
 
+doe_vk_commands *native_take_access_batch(native_device *device)
+{
+    doe_vk_commands *batch = device->access_batch;
+    device->access_batch = NULL;
+    device->access_batch_memory = NULL;
+    return batch;
+}
+
+native_failure native_flush_access_batch(native_device *device)
+{
+    doe_vk_commands *batch = native_take_access_batch(device);
+    if (!batch) return native_failure_status(NATIVE_OK);
+    return native_submit_backend_commands_async(device,
+        (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=batch});
+}
+
+void native_release_access_batch(native_device *device)
+{
+    doe_vk_commands *batch = native_take_access_batch(device);
+    /* Never submitted: the release undoes its acquire. */
+    if (batch && doe_vk_commands_release(batch) != DOE_VK_OK) abort();
+}
+
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
 {
     native_command_handle native = {.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
@@ -562,9 +586,18 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     else if (failure.status == NATIVE_OK && device->backend.kind == WGPUBackendType_D3D12)
         failure = native_d3d12_record_batch(device,&pending->native,pending->resources,count);
     else {
-        if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
+        /* A pending shared-memory acquire becomes the head of this recording, so
+         * acquire and work share one submission. */
+        doe_vk_commands *batch = failure.status == NATIVE_OK ? native_take_access_batch(device) : NULL;
+        if (batch) pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=batch};
+        else if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
             failure = native_record_resource_commands(&pending->native, pending->resources[i]);
+        /* Each imported image this work uses is released at its end. An access
+         * that ends next then needs no submission; more work reacquires it. */
+        if (failure.status == NATIVE_OK)
+            failure = native_failure_status(native_from_vulkan(
+                doe_vk_commands_external_release_acquired(pending->native.value.vulkan, NULL)));
     }
     if (failure.status == NATIVE_OK) {
         /* Recovery preserves the original submission failure; successful release

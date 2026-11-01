@@ -135,17 +135,36 @@ not really enabled. Other devices enable nothing new.
   memory descriptor (dedicated when the producer's was). One backend image serves
   every texture created from the memory; textures admit only the producer's
   format, size, a subset of its usage and, for mutable images, the srgb pair.
-- Begin submits, without a CPU wait, an acquire from `VK_QUEUE_FAMILY_EXTERNAL`
-  repeating the producer's release layouts. Each fence's sync file is imported
-  into a fresh binary semaphore the submission waits for. An UNDEFINED layout or
-  `initialized=false` discards contents, which the canonical attachment owner
-  zero-initializes. An imported image is unusable outside Begin/End.
-- End submits the release back to `VK_QUEUE_FAMILY_EXTERNAL` without a layout
-  change and exports a new SYNC_FD fence signaled after all earlier queue work;
-  the end state reports that layout and whether contents are initialized. End
-  requires an output state. Destroy leaves the shared image (BUSY); the last
-  memory release frees it. Every external semaphore lives until its recording is
-  proven terminal; unknown completion keeps it.
+- Begin records, without submitting, an acquire from `VK_QUEUE_FAMILY_EXTERNAL`
+  repeating the producer's release layouts into the device's access batch. Each
+  fence's sync file is imported into a fresh binary semaphore that submission
+  waits for. An UNDEFINED layout or `initialized=false` discards contents, which
+  the canonical attachment owner zero-initializes. An imported image is unusable
+  outside Begin/End. One acquire occupies the batch: a later Begin first submits
+  an earlier one, so a rejected acquire never discards another access's.
+- The next queue submission records its work after that acquire, so acquire and
+  work share one `vkQueueSubmit`. Every submission releases, at its end, each
+  imported image it used, back to `VK_QUEUE_FAMILY_EXTERNAL` without a layout
+  change, all sharing one exportable SYNC_FD signal exported once on acceptance.
+  Within the same access, the next recording that uses the image transfers it
+  back from `VK_QUEUE_FAMILY_EXTERNAL` before any command touches it (same queue,
+  later in submission order: no producer wait, same layout and contents).
+- End takes the last accepted release of the access as its fence, without a
+  submission, when the last submission that used the image released it. An
+  access no submission used adds its release to the batch, so acquire and release
+  share one submission; an image acquired by a submission that did not use it is
+  released by a new one. The end state reports the released layout and whether
+  contents are initialized; its one fence and value live inside that fence, which
+  FreeMembers recognizes and releases. End requires an output state. Destroy
+  leaves the shared image (BUSY); the last memory release frees it. Every
+  external semaphore lives until its recording is proven terminal; unknown
+  completion keeps it. A recording that never reached the queue undoes the
+  acquire, reacquire and release it recorded, so failure leaves the image's
+  ownership as it was; an access ending through texture destruction forgets any
+  queue release.
 
-Evidence: forced-Doe Chromium canvas presentation on RADV with the exact pixel
-oracle (browser/chromium). There is no isolated two-device native test yet.
+Evidence: forced-Doe Chromium canvas presentation on RADV and ANV with the exact
+pixel oracle (browser/chromium). The backend's two-device test
+(`backends/vulkan` `external-import`) covers acquire, release, a folded
+two-submission access with reacquire, and undo of an unsubmitted acquire; there
+is no native-level two-device test.

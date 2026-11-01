@@ -16,6 +16,15 @@ struct doe_vk_texture {
     bool borrowed_image, external_alive;
     /* OPAQUE_FD import (external.c): usable only between acquire and release. */
     bool imported, external_acquired;
+    /* A release recorded by this queue during one access (external.c). Until
+     * the access ends, the next recording that uses the image acquires it back
+     * from EXTERNAL with the same layout and contents and no producer wait.
+     * The release's published sync file, layout and contents state wait here
+     * for the access end; external_release_owner is weak, compared only. */
+    bool external_reacquire, external_release_initialized;
+    uint32_t external_release_layout;
+    int external_release_fd;
+    const doe_vk_commands *external_release_owner;
     bool evicted; /* destroy() freed image and memory (doe_vk_texture_evict). */
     bool evict_requested; /* destroy() while command uses remained: evict at the last. */
     uint32_t command_uses; /* Commands holding a use (recording, queued or running). */
@@ -44,6 +53,9 @@ typedef struct doe_vk_texture_use {
     doe_vk_texture *texture;
     uint32_t layout;
     uint8_t *initialized;
+    /* External ownership changes recorded here (DOE_VK_EXTERNAL_* bits); a
+     * recording that never reached the queue undoes them on release. */
+    uint8_t external_changes;
     struct doe_vk_texture_use *next;
 } doe_vk_texture_use;
 static inline uint32_t doe_vk_samples(uint32_t requested) {
@@ -72,6 +84,11 @@ doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_textu
 /* A command use ended (doe_vk_textures_release): the last one completes a
  * requested eviction. Before the texture reference it held is dropped. */
 void doe_vk_texture_use_released(doe_vk_texture *texture);
+/* external.c: ownership changes a use records, the first-use reacquire within
+ * one access, and the undo for a recording that never reached the queue. */
+enum { DOE_VK_EXTERNAL_ACQUIRED = 1, DOE_VK_EXTERNAL_REACQUIRED = 2, DOE_VK_EXTERNAL_RELEASED = 4 };
+doe_vk_status doe_vk_external_reacquire(doe_vk_commands *commands, doe_vk_texture_use *use);
+void doe_vk_external_undo(doe_vk_texture_use *use);
 doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *texture,
     doe_vk_texture_use **out);
 void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *use,

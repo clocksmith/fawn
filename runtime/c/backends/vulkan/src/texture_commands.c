@@ -138,7 +138,7 @@ doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *text
     if (texture == NULL || texture->context != commands->context) return DOE_VK_INVALID_ARGUMENT;
     if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
     if (texture->evicted) return DOE_VK_INVALID_STATE;
-    if (texture->imported && !texture->external_acquired) return DOE_VK_INVALID_STATE;
+    if (texture->imported && !texture->external_acquired && !texture->external_reacquire) return DOE_VK_INVALID_STATE;
     if (texture->external_owner != NULL && texture->external_owner != commands) return DOE_VK_BUSY;
     if (texture->content_status != DOE_VK_OK) return texture->content_status;
     if (texture->recording_owner != NULL && texture->recording_owner != commands) return DOE_VK_BUSY;
@@ -174,6 +174,12 @@ doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *text
     use->next = commands->textures;
     commands->textures = use;
     texture->recording_owner = commands;
+    /* First use within an access after this queue's own release: transfer it
+     * back before any command touches the image (uses precede render passes). */
+    if (texture->imported && !texture->external_acquired) {
+        status = doe_vk_external_reacquire(commands, use);
+        if (status != DOE_VK_OK) return status;
+    }
     *out = use;
     return DOE_VK_OK;
 }
@@ -404,6 +410,7 @@ void doe_vk_textures_release(doe_vk_commands *commands) {
     while (commands->textures != NULL) {
         doe_vk_texture_use *use = commands->textures;
         commands->textures = use->next;
+        if (!commands->committed) doe_vk_external_undo(use);
         if (use->texture->recording_owner == commands) use->texture->recording_owner = NULL;
         doe_vk_texture_use_released(use->texture);
         doe_vk_texture_release(use->texture);

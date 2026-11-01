@@ -152,6 +152,7 @@ void wgpuSharedTextureMemoryRelease(WGPUSharedTextureMemory memory)
     native_device *device = memory->device;
     native_lock(device);
     if (doe_label_store_remove(device->labels, memory) != DOE_LABEL_OK) abort();
+    if (device->access_batch_memory == memory) device->access_batch_memory = NULL;
     if (device->backend.kind == WGPUBackendType_Metal) doe_mtl_shared_surface_release(metal_context(device), memory->surface);
     else doe_vk_texture_release(memory->vulkan);
     native_unlock(device);
@@ -216,6 +217,8 @@ void native_shared_texture_finalize(void *userdata, void *handle)
     if (payload->identity && memory->active_texture == payload->identity) {
         memory->active_texture = NULL;
         memory->access = SHARED_IDLE;
+        /* The access ended without End: no queue release of it is handed out. */
+        if (memory->device->backend.kind == WGPUBackendType_Vulkan) doe_vk_texture_external_reset(memory->vulkan);
     }
     native_unlock(memory->device);
     native_texture_release(NULL, &payload->texture);
@@ -492,6 +495,12 @@ WGPUBool wgpuSharedTextureMemoryIsDeviceLost(WGPUSharedTextureMemory memory)
 }
 void wgpuSharedTextureMemoryEndAccessStateFreeMembers(WGPUSharedTextureMemoryEndAccessState state)
 {
+    /* Vulkan End stores its one fence and value inside that fence. */
+    WGPUSharedFence own = state.fences && state.fenceCount == 1 ? state.fences[0] : NULL;
+    if (valid_fence(own) && state.fences == &own->end_fence && state.signaledValues == &own->end_value) {
+        wgpuSharedFenceRelease(own);
+        return;
+    }
     if (state.fences) {
         for (size_t i = 0; i < state.fenceCount; ++i) wgpuSharedFenceRelease(state.fences[i]);
         free((void *)state.fences);

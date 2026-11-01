@@ -303,6 +303,7 @@ void native_device_release(void *identity)
     if (device->pending) abort();
     native_identity_worker_finish(&device->identity_worker);
     native_release_initialization(device);
+    native_release_access_batch(device);
     native_metal_completion_detach(device);
     native_pending_progress_destroy(device);
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();

@@ -61,14 +61,32 @@ doe_vk_status doe_vk_commands_external_acquire(doe_vk_commands *commands, doe_vk
     bool initialized);
 /* Records the transfer back to VK_QUEUE_FAMILY_EXTERNAL without a layout change
  * (an UNDEFINED image is released as GENERAL with undefined contents) and arms
- * an exportable SYNC_FD semaphore signaled by this recording's submission.
- * Outputs the released layout and whether the image holds initialized contents. */
+ * an exportable SYNC_FD semaphore signaled by this recording's submission; every
+ * release in one recording shares that signal. Outputs the released layout and
+ * whether the image holds initialized contents. */
 doe_vk_status doe_vk_commands_external_release(doe_vk_commands *commands, doe_vk_texture *texture,
     uint32_t *layout, bool *initialized);
+/* Releases, at the end of this recording, every imported image the recording
+ * uses and owns. Within the same access, the next recording that uses such an
+ * image acquires it back first (same queue, so no producer wait, same layout
+ * and contents); when the access instead ends, its release is this one, and
+ * the end needs no further submission. Reports how many images it released. */
+doe_vk_status doe_vk_commands_external_release_acquired(doe_vk_commands *commands, uint32_t *count);
 /* After the queue accepted a release recording: a new owned sync file that
- * signals when that submission completes. The semaphore stays owned by the
- * recording until its completion is proven. */
+ * signals when that submission completes. Acceptance exports the semaphore once;
+ * this returns a duplicate. The semaphore stays owned by the recording until
+ * its completion is proven. */
 doe_vk_status doe_vk_commands_export_sync_fd(doe_vk_commands *commands, int *fd, doe_vk_error *error);
+/* Ends an access whose last release (either kind above) the queue accepted and
+ * no recording has reacquired: transfers that release's own sync file (-1 is
+ * already signaled), its layout and contents state. INVALID_STATE otherwise,
+ * including while the image is still acquired. */
+doe_vk_status doe_vk_texture_external_take_release(doe_vk_texture *texture, int *fd, uint32_t *layout,
+    bool *initialized);
+/* Forgets an unreleased-to-the-caller release of an unacquired image (its
+ * access ended without one), closing its sync file. */
+void doe_vk_texture_external_reset(doe_vk_texture *texture);
+bool doe_vk_texture_external_acquired(const doe_vk_texture *texture);
 /* The one POSIX descriptor owner for callers holding sync files: a duplicate
  * (-1 stays -1 or reports failure) and an idempotent close of a valid descriptor. */
 int doe_vk_external_duplicate_fd(int fd);

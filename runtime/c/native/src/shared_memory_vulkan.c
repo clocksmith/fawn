@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: MIT
  * Linux Vulkan shared images: an OPAQUE_FD import (one backend image shared by
- * every texture created from the memory) and SYNC_FD fences. Begin and End
- * submit backend ownership transfers through the existing pending owner without
- * a CPU wait; producer fences become queue waits and End exports a sync file
- * signaled after all earlier queue work. No CPU copy or substitute path. */
+ * every texture created from the memory) and SYNC_FD fences. Begin records the
+ * acquire (producer fences become queue waits) into the device's access batch,
+ * which the next queue submission records its work into. Each submission
+ * releases the imported images it used at its end; an access that ends after
+ * one takes that release's sync file without submitting, an access that ends
+ * first adds its release to the batch, and later work reacquires from the
+ * queue's own release. Submissions go through the existing pending owner
+ * without a CPU wait. No CPU copy or substitute path. */
 #include "shared_memory_internal.h"
 #include "doe_vk_external.h"
 #include <stdlib.h>
@@ -240,15 +244,20 @@ WGPUStatus native_vulkan_shared_begin(WGPUSharedTextureMemory memory, doe_resour
         native_shared_matches_texture(memory, texture);
     if (failure.status == NATIVE_OK && !admitted) failure = native_failure_status(NATIVE_INVALID_STATE);
     native_command_handle command = {0};
-    if (admitted) failure = native_command_create(&device->backend, &command);
+    /* One acquire per batch: an earlier access's unsubmitted acquire goes first,
+     * so a rejected acquire here cannot discard it. */
+    if (admitted) failure = native_flush_access_batch(device);
+    if (admitted && failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &command);
     if (admitted && failure.status == NATIVE_OK) {
         for (size_t i = 0; i < count; ++i)
             waits[i] = (doe_vk_external_wait){descriptor->fences[i]->sync_fd, descriptor->fences[i]->opaque};
         doe_vk_status status = doe_vk_commands_external_acquire(command.value.vulkan, memory->vulkan, waits,
             (uint32_t)count, old_layout, new_layout, descriptor && descriptor->initialized);
         failure = native_failure_status(native_from_vulkan(status));
-        if (failure.status == NATIVE_OK) failure = native_submit_backend_commands_async(device, command);
-        else if (native_command_release(&command) != NATIVE_OK) abort();
+        if (failure.status == NATIVE_OK) {
+            device->access_batch = command.value.vulkan;
+            device->access_batch_memory = memory;
+        } else if (native_command_release(&command) != NATIVE_OK) abort();
     }
     bool success = admitted && failure.status == NATIVE_OK;
     if (success) {
@@ -281,9 +290,7 @@ WGPUStatus native_vulkan_shared_end(WGPUSharedTextureMemory memory, doe_resource
         native_error(device, WGPUErrorType_Validation, "shared OPAQUE_FD end requires an output state");
         return WGPUStatus_Error;
     }
-    WGPUSharedFence *fences = calloc(1, sizeof(*fences));
-    uint64_t *values = calloc(1, sizeof(*values));
-    WGPUSharedFence fence = fences && values ? native_shared_allocate_fence(device) : NULL;
+    WGPUSharedFence fence = native_shared_allocate_fence(device);
     wgpuSharedTextureMemoryAddRef(memory);
     doe_resource_texture_retain(texture);
     native_lock(device);
@@ -294,21 +301,27 @@ WGPUStatus native_vulkan_shared_end(WGPUSharedTextureMemory memory, doe_resource
     uint32_t layout = 0;
     bool initialized = false;
     native_command_handle command = {0};
-    if (admitted) failure = native_command_create(&device->backend, &command);
-    if (admitted && failure.status == NATIVE_OK) {
-        doe_vk_commands *recording = command.value.vulkan;
-        doe_vk_status status = doe_vk_commands_external_release(recording, memory->vulkan, &layout, &initialized);
+    if (admitted && device->access_batch && device->access_batch_memory == memory) {
+        /* No work used this access: its acquire and release share one submission. */
+        command = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=native_take_access_batch(device)};
+    } else if (admitted && doe_vk_texture_external_acquired(memory->vulkan)) {
+        /* Acquired by an earlier submission that did not use it. */
+        failure = native_command_create(&device->backend, &command);
+    }
+    if (command.value.vulkan && failure.status == NATIVE_OK) {
+        doe_vk_status status = doe_vk_commands_external_release(command.value.vulkan, memory->vulkan, &layout,
+            &initialized);
         failure = native_failure_status(native_from_vulkan(status));
-        if (failure.status == NATIVE_OK) {
-            /* The pending owner adopts the recording; the device lock keeps it
-             * linked (and its semaphore alive) for the export below. */
-            failure = native_submit_backend_commands_async(device, command);
-            if (failure.status == NATIVE_OK) {
-                doe_vk_error detail = {0};
-                failure = native_failure_vulkan(doe_vk_commands_export_sync_fd(recording, &fence->sync_fd, &detail),
-                    &detail);
-            }
-        } else if (native_command_release(&command) != NATIVE_OK) abort();
+        /* The pending owner adopts the recording; acceptance publishes its sync file. */
+        if (failure.status == NATIVE_OK) failure = native_submit_backend_commands_async(device, command);
+        else if (native_command_release(&command) != NATIVE_OK) abort();
+    }
+    if (admitted && failure.status == NATIVE_OK) {
+        /* The last accepted release of this access, from the submission above
+         * or the last one that used the image. */
+        doe_vk_status status = doe_vk_texture_external_take_release(memory->vulkan, &fence->sync_fd, &layout,
+            &initialized);
+        failure = native_failure_status(native_from_vulkan(status));
     }
     bool success = admitted && failure.status == NATIVE_OK;
     if (success) {
@@ -317,21 +330,20 @@ WGPUStatus native_vulkan_shared_end(WGPUSharedTextureMemory memory, doe_resource
     }
     native_unlock(device);
     if (success) {
-        fences[0] = fence;
-        values[0] = 1;
+        /* The one fence and value live in the fence; FreeMembers recognizes them. */
+        fence->end_fence = fence;
+        fence->end_value = 1;
         state->initialized = initialized ? WGPU_TRUE : WGPU_FALSE;
         state->fenceCount = 1;
-        state->fences = fences;
+        state->fences = &fence->end_fence;
         state->signaledValueCount = 1;
-        state->signaledValues = values;
+        state->signaledValues = &fence->end_value;
         if (layout_out) {
             layout_out->oldLayout = (int32_t)layout;
             layout_out->newLayout = (int32_t)layout;
         }
     } else {
         wgpuSharedFenceRelease(fence);
-        free(values);
-        free(fences);
         native_shared_error(device, failure, "shared OPAQUE_FD release failed");
     }
     doe_resource_texture_release(texture);
