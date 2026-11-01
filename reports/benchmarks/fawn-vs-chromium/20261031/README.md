@@ -246,6 +246,137 @@ magnetic_fluids, 1.28x [1.06, 1.37] for `fawn_dawn`.
    dispatch batch and the staging texture's synchronous clear serialize on one
    queue. **Hypothesis**; no per-phase trace was taken.
 
+## After the fixes (Doe 038fceebd)
+
+The three owners above were fixed, Fawn was rebuilt incrementally from the same
+Chromium 158 tree and repackaged (`fawn-doe-158.0.8108.0-macos-arm64.zip`,
+sha256 `c87529233545ccaa3012f903acd3364c9249a399a9618e9a7b1017ac5a537128`;
+Doe runtime sha256 `d1e165381a48a2077634cc53c101e7e07a27fe856e6cb1f66b064a3c4e20dfc5`,
+compiler unchanged). Its clean-install verifier passed forced-Dawn and forced-Doe
+smoke (`activeRuntimeProof.matched` on both). Then the same driver, harness,
+pages, arms, balanced order and n (12 x 6 pages x 3 arms) ran again.
+
+- **Memory** (`74545d796`, `8e076fa8e`): the leaked reference was Dawn's
+  WebGPU backend never releasing inner render and compute pass encoders. A Doe
+  pass retains its encoder and attachment views, so every destroyed canvas
+  texture stayed alive (counted in the GPU process: per frame two encoders,
+  three render passes and two compute passes; every destroyed canvas texture
+  held by its handle and one view whose references included those passes).
+  Doe's Metal `destroy()` now also frees the texture, its native views and buffer
+  allocations once no recording owns them.
+- **Presentation** (`038fceebd`, `8e076fa8e`): forced Doe on macOS imports the
+  canvas IOSurface zero-copy with MTLSharedEvent fences; the Skia staging copy
+  and readback are gone for packed 8-bit canvases.
+- **Texture creation** (`74545d796`): no settle of pending work and no waited
+  clear; zero initialization is a clear recorded in the first using command.
+
+Totals: 216 of 216 launches completed with no failures, no device loss and no
+uncaptured errors; every launch drained. `libwebgpu_doe_c.dylib` was mapped in
+all 72 `fawn_doe` launches and in none of the 144 others. The compute oracle
+matched in 36 of 36 launches, and `compute_atomic_canvas` and `image_lab`
+screenshot hashes were identical across all launches and arms.
+
+Fawn+Doe before and after, each against Chrome 158 in its own run (the
+"Chrome 158" column is the after run). Verdicts use the same rule as above.
+
+#### compute_atomic_canvas
+
+| Metric | Chrome 158 (after run) | Fawn+Doe before | before / Chrome [95% CI] | Fawn+Doe after | after / Chrome [95% CI] | after verdict | Fawn+Dawn after / Chrome [95% CI] |
+|---|---|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 94.3 [87.2, 96.9] | 112 | 1.08 [0.903, 1.16] | 102 [97.3, 107] | 1.09 [1.02, 1.21] | loss | 1.03 [0.989, 1.19] |
+| Frame/op completion p50 (ms) | 35.2 [34.9, 35.5] | 36.5 | 1.05 [1.04, 1.09] | 36.1 [36, 37] | 1.03 [1.02, 1.05] | no clear difference | 1.00 [0.989, 1.02] |
+| Frame/op completion p95 (ms) | 36.1 [35.6, 36.3] | 38.6 | 1.07 [1.04, 1.09] | 37.4 [37, 38] | 1.04 [1.02, 1.06] | loss | 1.01 [0.994, 1.02] |
+| Completed-frame interval p50 (ms) | 49.8 [49.7, 49.9] | 49.8 | 1.00 [1, 1.01] | 49.8 [49.6, 49.9] | 1.00 [0.996, 1] | no clear difference | 1.00 [0.996, 1] |
+| GPU-process CPU per frame/op (ms) | 5.48 [5.12, 5.61] | 7.69 | 2.25 [1.76, 2.66] | 5.1 [4.71, 5.26] | 0.93 [0.846, 1.02] | no clear difference | 1.15 [0.994, 1.24] |
+| All-process CPU per frame/op (ms) | 8.6 [8.11, 8.71] | 11.3 | 2.01 [1.52, 2.38] | 9.76 [8.65, 10.4] | 1.13 [0.999, 1.25] | no clear difference | 1.22 [1.1, 1.32] |
+| GPU-process memory (MB) | 197 [193, 198] | 724 | 3.72 [3.63, 3.74] | 192 [190, 195] | 0.97 [0.96, 0.994] | no clear difference | 1.00 [0.99, 1.02] |
+| Total browser memory (MB) | 361 [348, 365] | 890 | 2.47 [2.44, 2.49] | 360 [356, 364] | 1.00 [0.979, 1.04] | no clear difference | 1.01 [0.997, 1.06] |
+
+#### cycle
+
+| Metric | Chrome 158 (after run) | Fawn+Doe before | before / Chrome [95% CI] | Fawn+Doe after | after / Chrome [95% CI] | after verdict | Fawn+Dawn after / Chrome [95% CI] |
+|---|---|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 173 [169, 196] | 233 | 1.27 [1.1, 1.36] | 229 [225, 294] | 1.32 [1.16, 1.71] | loss | 1.13 [0.971, 1.3] |
+| Frame/op completion p50 (ms) | 12.5 [11.8, 13.4] | 17.5 | 1.38 [1.18, 1.44] | 14.7 [13.9, 14.9] | 1.18 [1.06, 1.26] | loss | 1.05 [0.836, 1.13] |
+| Frame/op completion p95 (ms) | 21.3 [20.6, 21.6] | 21.9 | 1.10 [1.03, 1.37] | 22.1 [21.8, 22.6] | 1.04 [1.01, 1.08] | loss | 0.99 [0.925, 1.02] |
+| Completed-frame interval p50 (ms) | 18.5 [17.9, 19.4] | 25.7 | 1.46 [1.13, 1.74] | 20.1 [18.7, 21] | 1.09 [1, 1.15] | no clear difference | 1.01 [0.928, 1.07] |
+| GPU-process CPU per frame/op (ms) | 5.56 [4.74, 5.77] | 6.5 | 2.01 [1.66, 2.38] | 5.95 [5.44, 6.21] | 1.07 [0.96, 1.29] | no clear difference | 1.11 [0.889, 1.38] |
+| All-process CPU per frame/op (ms) | 8.23 [7.01, 8.8] | 8.94 | 1.81 [1.51, 2.12] | 10.3 [9.46, 10.9] | 1.25 [1.11, 1.47] | loss | 1.22 [0.956, 1.48] |
+| GPU-process memory (MB) | 432 [432, 433] | 5701 | 13.26 [13.2, 13.8] | 441 [434, 441] | 1.02 [1, 1.02] | no clear difference | 1.00 [0.998, 1] |
+| Total browser memory (MB) | 637 [635, 638] | 5901 | 9.36 [9.27, 9.73] | 644 [617, 645] | 1.01 [0.969, 1.02] | no clear difference | 1.00 [0.996, 1] |
+
+#### heavy_particles
+
+| Metric | Chrome 158 (after run) | Fawn+Doe before | before / Chrome [95% CI] | Fawn+Doe after | after / Chrome [95% CI] | after verdict | Fawn+Dawn after / Chrome [95% CI] |
+|---|---|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 63.9 [59.1, 70.5] | 79 | 0.98 [0.77, 1.32] | 83 [80.4, 90.6] | 1.30 [1.17, 1.46] | loss | 1.18 [0.99, 1.29] |
+| Frame/op completion p50 (ms) | 4 [3.8, 4.1] | 5.5 | 1.38 [1.34, 1.43] | 4.9 [4.4, 5.1] | 1.23 [1.1, 1.31] | loss | 1.03 [0.976, 1.08] |
+| Frame/op completion p95 (ms) | 5.3 [4.6, 5.4] | 6.5 | 1.27 [1.23, 1.4] | 5.7 [4.9, 6] | 1.08 [0.925, 1.26] | no clear difference | 0.98 [0.852, 1.15] |
+| Completed-frame interval p50 (ms) | 16.7 [16.7, 16.7] | 16.7 | 1.00 [0.994, 1] | 16.7 [16.7, 16.7] | 1.00 [1, 1] | no clear difference | 1.00 [1, 1] |
+| GPU-process CPU per frame/op (ms) | 3.87 [2.96, 3.92] | 5.52 | 2.43 [2.08, 2.7] | 4.1 [3.47, 4.28] | 1.06 [0.892, 1.39] | no clear difference | 1.06 [0.832, 1.39] |
+| All-process CPU per frame/op (ms) | 5.6 [4.2, 5.73] | 6.63 | 1.99 [1.73, 2.28] | 6.58 [5.33, 6.65] | 1.18 [0.952, 1.57] | no clear difference | 1.16 [0.88, 1.54] |
+| GPU-process memory (MB) | 276 [276, 278] | 7788 | 28.24 [28.2, 28.3] | 269 [269, 270] | 0.98 [0.969, 0.977] | no clear difference | 1.00 [0.995, 1] |
+| Total browser memory (MB) | 458 [458, 459] | 7968 | 17.49 [17.4, 17.5] | 454 [451, 455] | 0.99 [0.984, 0.993] | no clear difference | 1.00 [0.965, 1.01] |
+
+#### image_lab
+
+| Metric | Chrome 158 (after run) | Fawn+Doe before | before / Chrome [95% CI] | Fawn+Doe after | after / Chrome [95% CI] | after verdict | Fawn+Dawn after / Chrome [95% CI] |
+|---|---|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 56.5 [45.5, 63] | 71.6 | 1.27 [0.825, 1.38] | 76.6 [68.7, 80.4] | 1.36 [1.15, 1.68] | loss | 1.26 [1, 1.57] |
+| Frame/op completion p50 (ms) | 16.5 [16.4, 16.6] | 16.6 | 1.00 [1, 1.01] | 16.5 [16.4, 16.5] | 1.00 [0.994, 1.01] | no clear difference | 1.00 [0.988, 1.01] |
+| Frame/op completion p95 (ms) | 18.5 [18.3, 18.6] | 18 | 0.97 [0.937, 0.989] | 18.5 [18.5, 18.7] | 1.00 [0.995, 1.01] | no clear difference | 1.02 [1, 1.03] |
+| Completed-frame interval p50 (ms) | 16.6 [16.6, 16.7] | 16.7 | 1.01 [1, 1.01] | 16.6 [16.6, 16.7] | 1.00 [0.994, 1.01] | no clear difference | 1.01 [0.994, 1.01] |
+| GPU-process CPU per frame/op (ms) | 4.42 [3.37, 5.03] | 5.37 | 2.04 [1.51, 2.37] | 4.56 [4, 5.06] | 1.03 [0.834, 1.46] | no clear difference | 1.17 [0.952, 1.57] |
+| All-process CPU per frame/op (ms) | 6.82 [5.24, 7.67] | 7.36 | 1.75 [1.32, 2.05] | 8.42 [6.87, 9.15] | 1.24 [0.913, 1.72] | no clear difference | 1.28 [1.05, 1.7] |
+| GPU-process memory (MB) | 261 [260, 261] | 1220 | 4.71 [4.67, 4.75] | 252 [251, 254] | 0.97 [0.962, 0.974] | win | 1.01 [0.999, 1.02] |
+| Total browser memory (MB) | 435 [434, 437] | 1395 | 3.24 [3.21, 3.26] | 429 [426, 431] | 0.99 [0.977, 0.993] | no clear difference | 1.01 [0.983, 1.02] |
+
+#### magnetic_fluids
+
+| Metric | Chrome 158 (after run) | Fawn+Doe before | before / Chrome [95% CI] | Fawn+Doe after | after / Chrome [95% CI] | after verdict | Fawn+Dawn after / Chrome [95% CI] |
+|---|---|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 80.2 [77.4, 87.5] | 93.8 | 1.07 [0.792, 1.24] | 108 [89.6, 120] | 1.35 [1.08, 1.51] | loss | 1.13 [0.977, 1.29] |
+| Frame/op completion p50 (ms) | 3.7 [3, 3.8] | 3.9 | 1.34 [1.22, 1.5] | 3.9 [3.1, 4.1] | 1.05 [0.838, 1.37] | no clear difference | 1.03 [0.946, 1.3] |
+| Frame/op completion p95 (ms) | 4.8 [4.4, 5.1] | 5.5 | 1.22 [1.19, 1.3] | 5.4 [4.7, 5.6] | 1.12 [0.94, 1.25] | no clear difference | 1.06 [0.902, 1.18] |
+| Completed-frame interval p50 (ms) | 16.7 [16.6, 16.7] | 16.7 | 1.00 [0.994, 1.01] | 16.7 [16.6, 16.7] | 1.00 [0.994, 1.01] | no clear difference | 1.00 [0.994, 1.01] |
+| GPU-process CPU per frame/op (ms) | 3.33 [2.73, 3.83] | 5.57 | 2.63 [2.17, 2.79] | 3.88 [3.1, 4.09] | 1.16 [0.835, 1.44] | no clear difference | 1.25 [0.978, 1.53] |
+| All-process CPU per frame/op (ms) | 5.01 [3.93, 5.67] | 6.8 | 2.15 [1.76, 2.26] | 6.31 [4.92, 6.6] | 1.26 [0.923, 1.61] | no clear difference | 1.31 [1.06, 1.67] |
+| GPU-process memory (MB) | 247 [235, 247] | 7755 | 31.73 [31.6, 31.8] | 183 [183, 186] | 0.74 [0.741, 0.787] | win | 0.99 [0.944, 1.04] |
+| Total browser memory (MB) | 427 [417, 430] | 7936 | 18.69 [18.6, 18.8] | 367 [366, 372] | 0.86 [0.852, 0.883] | win | 1.00 [0.971, 1.03] |
+
+#### prismatic_fluids
+
+| Metric | Chrome 158 (after run) | Fawn+Doe before | before / Chrome [95% CI] | Fawn+Doe after | after / Chrome [95% CI] | after verdict | Fawn+Dawn after / Chrome [95% CI] |
+|---|---|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 89.5 [84.1, 94] | 113 | 0.90 [0.827, 1.19] | 122 [115, 128] | 1.36 [1.23, 1.51] | loss | 1.20 [1.11, 1.35] |
+| Frame/op completion p50 (ms) | 3.6 [3.4, 3.7] | 4.7 | 1.42 [1.32, 1.48] | 4.2 [3.8, 4.4] | 1.17 [1.05, 1.26] | loss | 1.06 [0.914, 1.12] |
+| Frame/op completion p95 (ms) | 5.3 [5.2, 5.4] | 6.8 | 1.36 [1.3, 1.42] | 6.5 [5.4, 6.6] | 1.23 [1.02, 1.25] | loss | 0.98 [0.963, 1.06] |
+| Completed-frame interval p50 (ms) | 16.7 [16.7, 16.7] | 16.7 | 1.00 [0.994, 1] | 16.7 [16.6, 16.7] | 1.00 [0.994, 1] | no clear difference | 1.00 [0.994, 1] |
+| GPU-process CPU per frame/op (ms) | 3.91 [2.93, 3.94] | 5.63 | 2.19 [1.97, 2.7] | 4.2 [3.35, 4.27] | 1.07 [0.854, 1.45] | no clear difference | 1.11 [0.813, 1.51] |
+| All-process CPU per frame/op (ms) | 5.62 [4.22, 5.76] | 6.76 | 1.79 [1.6, 2.21] | 6.62 [5.22, 6.84] | 1.18 [0.929, 1.58] | no clear difference | 1.22 [0.87, 1.62] |
+| GPU-process memory (MB) | 238 [237, 240] | 7747 | 32.69 [32.6, 32.9] | 190 [190, 190] | 0.80 [0.79, 0.8] | win | 1.00 [0.989, 1] |
+| Total browser memory (MB) | 422 [403, 424] | 7930 | 19.04 [18.9, 19.1] | 377 [375, 377] | 0.89 [0.887, 0.934] | win | 1.00 [0.997, 1.05] |
+
+Reading the table:
+
+- GPU-process and total memory now match Chrome or are lower on every page
+  (was 3.7-33x and 2.5-19x).
+- GPU-process CPU per frame/op is no longer a loss on any page (was 2.0-2.6x;
+  now 0.93-1.16x, every CI including 1.0). All-process CPU remains a loss on
+  `cycle` (1.25x); `fawn_dawn` shows a similar 1.22x [0.96, 1.48] there.
+- `cycle` completed-frame interval is no longer a loss (1.46x to 1.09x).
+  Submit-to-completion p50 losses shrank (1.05-1.42x to 1.03-1.23x) but remain
+  on `cycle`, `heavy_particles` and `prismatic_fluids`; p95 losses remain on
+  `compute_atomic_canvas` (1.04x), `cycle` (1.04x) and `prismatic_fluids` (1.23x).
+- Cold first job is not improved. Its ratios look worse partly because Chrome's
+  cold start was faster and less bimodal in this run, and because the first
+  launch (r00) of the freshly extracted Fawn app was slow in both Fawn arms
+  (`fawn_doe` 293-4434 ms, `fawn_dawn` 281-519 ms on the first three pages),
+  which dominates the p95 rows in `macos-after-summary.md`.
+- Absolute CPU values differ between the two runs for every arm, Chrome
+  included (host load from the shared timing job differed), so only the
+  within-run ratios are comparable.
+
 ## Limits
 
 - One Mac and one display. Frames are vsync-capped at 60 Hz, so cadence differs
@@ -266,6 +397,9 @@ magnetic_fluids, 1.28x [1.06, 1.37] for `fawn_dawn`.
 - `raw-evidence-macos.tar.gz`: per-launch specs and receipts, the schedule,
   the orchestration log, rep-0 screenshots and the harness source. Paths and
   user names are replaced with placeholders.
+- `macos-after-summary.json` / `macos-after-summary.md` and
+  `raw-evidence-macos-after.tar.gz`: the same for the run after the fixes; the
+  harness copy includes `config.macos.after.json`.
 - `SHA256SUMS`.
 
 Reproduce, from a directory holding the harness:
