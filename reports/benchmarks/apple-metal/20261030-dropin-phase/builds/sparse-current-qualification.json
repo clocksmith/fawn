@@ -1,0 +1,27 @@
+{
+  "recordedAtUtc": "2026-11-01T02:29:22.753450+00:00",
+  "baselineCommit": "fa20a959bdf99647bf5c0eade74d9e4c34fcd03e",
+  "candidateCommit": "cf8828bab6fc71db3c36d77296e33ac71b08d844",
+  "physicalClients": 81,
+  "perClientStatusMatch": true,
+  "statuses": {
+    "0": 62,
+    "134": 12,
+    "unbuildable": 6,
+    "2": 1
+  },
+  "gates": {
+    "Metal check": "pass",
+    "sdk-abi arm64+x86_64": "pass",
+    "native-check": "pass",
+    "native-graphics-check": "pass"
+  },
+  "commands": "ZERO_AR_DATE=1 make -C runtime/c/backends/metal -j4 check sdk-abi native-check native-graphics-check; physical.sh <source> <native-build> <out>, all under flock /tmp/doe-gpu-timing.lock",
+  "fullCCheck": "Executed; blocked by Linux-only labels owner toolchain on macOS. Style and 39 tool tests pass; no full-suite pass claimed.",
+  "libraries": {
+    "base/libwebgpu_doe_c.dylib": "23f463c4f14be48bf6c03c6ebce1d88c91f8e97d5e70fad590361b483a33aac9",
+    "base/libdoe_compiler.dylib": "c1c11e75e729433ecef1e1a44ebb7c4db1cf0430e1dc8b862de02a40ac127cb2",
+    "sparse/libwebgpu_doe_c.dylib": "07f54845c85b45e596b95cd1df3ca6340aeb8fefa91a2c7f239676ea061e1179",
+    "sparse/libdoe_compiler.dylib": "c1c11e75e729433ecef1e1a44ebb7c4db1cf0430e1dc8b862de02a40ac127cb2"
+  }
+}
