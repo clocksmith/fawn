@@ -1001,7 +1001,7 @@ index 03842c139..4dcba683d 100644
      // Shader reflection after the application of overrides is required by the frontend for the
      // workgroup size.
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
-index 8af48f595..38b415a1a 100644
+index 8af48f595..a2dc1dcd8 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.cpp
 +++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
 @@ -33,6 +33,8 @@
@@ -1063,7 +1063,7 @@ index 8af48f595..38b415a1a 100644
      std::string label = "Inner Device on " + adapter->GetPhysicalDevice()->GetName();
      apiDesc.label = ToOutputStringView(label);
  
-@@ -162,43 +184,159 @@ Device::Device(AdapterBase* adapter,
+@@ -162,43 +184,163 @@ Device::Device(AdapterBase* adapter,
      apiToggleDescriptor.disabledToggleCount = disabledTogglesName.size();
      apiToggleDescriptor.disabledToggles = disabledTogglesName.data();
  
@@ -1223,8 +1223,12 @@ index 8af48f595..38b415a1a 100644
 +    return cacheKey;
 +}
 +
-+// Both run synchronously inside the provider's pipeline creation for this device,
-+// which outer pipeline initialization keeps alive; no provider lock is held.
++// Load runs synchronously inside the provider's pipeline creation for this device,
++// which outer pipeline initialization keeps alive. Store may run later on the
++// provider's blob worker thread, concurrently with this device's other calls,
++// until the inner deviceDestroy in DestroyImpl returns; the blob cache and the
++// embedder's caching interface are thread-safe (Dawn's own asynchronous pipeline
++// creation stores from worker threads). No provider lock is held for either.
 +void Device::LoadExternalPipelineBlob(void* userdata,
 +                                      const void* key,
 +                                      size_t keySize,
@@ -1255,7 +1259,7 @@ index 8af48f595..38b415a1a 100644
  }
  
  Device::~Device() {
-@@ -209,10 +347,98 @@ WGPUInstance Device::GetInnerInstance() const {
+@@ -209,10 +351,98 @@ WGPUInstance Device::GetInnerInstance() const {
      return ToBackend(GetPhysicalDevice())->GetBackend()->GetInnerInstance();
  }
  
@@ -1355,7 +1359,7 @@ index 8af48f595..38b415a1a 100644
  }
  
  ResultOrError<Ref<BindGroupBase>> Device::CreateBindGroupImpl(
-@@ -309,8 +535,9 @@ ResultOrUnknownError<Ref<SharedTextureMemoryBase>> Device::ImportSharedTextureMe
+@@ -309,8 +539,9 @@ ResultOrUnknownError<Ref<SharedTextureMemoryBase>> Device::ImportSharedTextureMe
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
      } else if (unpacked.Get<SharedTextureMemoryOpaqueFDDescriptor>()) {
@@ -1367,7 +1371,7 @@ index 8af48f595..38b415a1a 100644
      } else if (unpacked.Get<SharedTextureMemoryVkDedicatedAllocationDescriptor>()) {
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
-@@ -348,11 +575,11 @@ ResultOrUnknownError<Ref<SharedFenceBase>> Device::ImportSharedFenceImpl(
+@@ -348,11 +579,11 @@ ResultOrUnknownError<Ref<SharedFenceBase>> Device::ImportSharedFenceImpl(
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedFence in WebGPU backend has not been implemented for all platforms.");
      } else if (unpacked.Get<SharedFenceSyncFDDescriptor>()) {
@@ -1383,7 +1387,7 @@ index 8af48f595..38b415a1a 100644
      } else if (unpacked.Get<SharedFenceVkSemaphoreZirconHandleDescriptor>()) {
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedFence in WebGPU backend has not been implemented for all platforms.");
-@@ -364,7 +591,7 @@ ResultOrUnknownError<Ref<SharedFenceBase>> Device::ImportSharedFenceImpl(
+@@ -364,7 +595,7 @@ ResultOrUnknownError<Ref<SharedFenceBase>> Device::ImportSharedFenceImpl(
      DAWN_TRY((
          unpacked.ValidateSubset<SharedFenceMTLSharedEventDescriptor,
                                  SharedFenceDXGISharedHandleDescriptor, SharedFenceEGLSyncDescriptor,
@@ -1392,7 +1396,7 @@ index 8af48f595..38b415a1a 100644
                                  SharedFenceVkSemaphoreZirconHandleDescriptor>()));
  
      return SharedFence::Create(this, unpacked);
-@@ -380,10 +607,29 @@ void Device::DestroyImpl(DestroyReason reason) {
+@@ -380,13 +611,33 @@ void Device::DestroyImpl(DestroyReason reason) {
      //   is implicitly destroyed. This case is thread-safe because there are no
      //   other threads using the device since there are no other live refs.
  
@@ -1409,6 +1413,10 @@ index 8af48f595..38b415a1a 100644
 +        retired = ExternalCallbacks().Remove(mExternalCallbackToken);
 +        mExternalCallbackToken = 0;
 +    }
+     if (mInnerHandle) {
++        // The provider stores every deferred pipeline blob before this returns.
+         wgpu->deviceDestroy(mInnerHandle);
+     }
 +    if (mInnerHandle && mExternalPipelineBlobs) {
 +        ExternalPipelineCacheInfo info = {};
 +        auto* backend = ToBackend(GetPhysicalDevice())->GetBackend();
@@ -1420,10 +1428,10 @@ index 8af48f595..38b415a1a 100644
 +                            << " store_failures=" << info.serializationFailures;
 +        }
 +    }
-     if (mInnerHandle) {
-         wgpu->deviceDestroy(mInnerHandle);
-     }
-@@ -433,6 +679,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
+ }
+ 
+ void Device::SetLabelImpl() {
+@@ -433,6 +684,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
  }
  
  MaybeError Device::TickImpl() {
@@ -2035,14 +2043,14 @@ index 7b2817703..2615ab14c 100644
      return {};
  }
 diff --git a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
-index 56c645a39..45c40003e 100644
+index 56c645a39..23a751482 100644
 --- a/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
 +++ b/src/dawn/native/webgpu/SharedTextureMemoryWGPU.cpp
 @@ -30,6 +30,7 @@
  #include <utility>
  #include <vector>
  
-+#include "src/dawn/common/Enumerator.h"
++#include "absl/container/inlined_vector.h"
  #include "src/dawn/common/StringViewUtils.h"
  #include "src/dawn/native/ChainUtils.h"
  #include "src/dawn/native/Instance.h"
@@ -2091,7 +2099,7 @@ index 56c645a39..45c40003e 100644
  
      stm->Initialize();
      return stm;
-@@ -107,71 +122,137 @@
+@@ -107,71 +122,138 @@
      TextureBase* texture,
      ExecutionSerial lastUsageSerial,
      UnpackedPtr<EndAccessState>& state) {
@@ -2247,16 +2255,17 @@ index 56c645a39..45c40003e 100644
 +        innerDesc.nextInChain = &innerLayout.chain;
 +        innerDesc.concurrentRead = descriptor->concurrentRead;
 +        innerDesc.initialized = descriptor->initialized;
-+        std::vector<WGPUSharedFence> innerFences;
-+        std::vector<uint64_t> signaledValues;
-+        for (auto [i, fence] : Enumerate(descriptor->fences)) {
++        // Inner handles in inline storage (an access carries a few fences);
++        // the signaled values are already one borrowed contiguous array.
++        absl::InlinedVector<WGPUSharedFence, 4> innerFences;
++        innerFences.reserve(descriptor->fences.size());
++        for (auto fence : descriptor->fences) {
 +            innerFences.push_back(ToBackend(fence)->GetInnerHandle());
-+            signaledValues.push_back(descriptor->signaledValues[i]);
 +        }
 +        innerDesc.fenceCount = innerFences.size();
 +        innerDesc.fences = innerFences.data();
-+        innerDesc.signaledValueCount = signaledValues.size();
-+        innerDesc.signaledValues = signaledValues.data();
++        innerDesc.signaledValueCount = descriptor->signaledValues.size();
++        innerDesc.signaledValues = descriptor->signaledValues.data();
 +        const DawnProcTable& wgpu = ToBackend(GetDevice())->wgpu.get();
 +        // BeginAccess reports validation only; the inner device records its own
 +        // native failure detail before rejecting.

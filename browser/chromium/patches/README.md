@@ -63,7 +63,11 @@ store enveloped Vulkan driver caches through Chromium's WebGPU blob cache, which
 the browser process persists; the sandboxed provider opens no cache file. A
 provider without the symbol, or a refused store, logs
 `runtime_pipeline_blob_cache_unavailable` and creates pipelines uncached. Each
-configured device logs `runtime_pipeline_blob_cache` counters when destroyed. This neither advertises a WebGPU feature nor accepts Dawn-private chains
+configured device logs `runtime_pipeline_blob_cache` counters after the inner
+device is destroyed. Lookups run synchronously during pipeline creation; a miss's
+store may arrive later from the provider's blob worker thread, until the inner
+destruction returns, and Dawn's blob cache and Chromium's caching interface
+accept stores from any thread. This neither advertises a WebGPU feature nor accepts Dawn-private chains
 in the C constructors. An older runtime without the operation rejects at load.
 
 The focused CPU boundary control uses the actual generated header and provider:
@@ -92,6 +96,10 @@ references outside that mutex. The existing recursive device mutex is present
 before provider construction and keeps its identity through initialization.
 A loss before publication rejects creation without touching an uninitialized
 queue. Failed creation and normal destruction retire their callback entries.
+
+An OPAQUE_FD access passes the provider its inner fence handles from inline
+storage and the frontend's contiguous signaled values directly; the provider owns
+how acquire and release reach its queue.
 
 The separate Linux CPU controls use the native Chromium compiler flags, actual
 Dawn error scopes and reference counts, and Chromium's pointer-safety libraries:
