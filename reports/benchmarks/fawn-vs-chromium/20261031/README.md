@@ -1,11 +1,16 @@
 # Fawn 158 vs stock Chromium 158 on WebGPU pages
 
-Disposition: **diagnostic comparison**. On macOS, Fawn with forced Doe produced
-correct output on every page and launch. It loses on GPU-process CPU, memory and
-frame completion latency on every page. Most of the memory loss is a
-presentation-path leak of about one canvas-sized allocation per frame. Windows
-(D3D12) results will be added in this directory when that build exists; this
-commit contains macOS only.
+Disposition: **diagnostic comparison**. On macOS (Metal) and Windows (D3D12),
+Fawn with forced Doe produced correct output on every page and launch (216 of
+216 launches per run). On macOS before the presentation and lifetime fixes,
+forced Doe lost on GPU-process CPU, memory and frame completion latency on every
+page because of a presentation-path leak of about one canvas-sized allocation per
+frame, Skia staging presentation, and synchronous waits in texture creation; the
+follow-up macOS run (`038fceebd` / `8bb0fb77a`) eliminated the memory and
+GPU-process CPU losses. On Windows (D3D12), forced Doe currently exhibits the
+same unaddressed presentation-path memory growth (2.7-31x GPU-process memory),
+GPU-process CPU overhead (2.0-3.0x), and frame completion latency losses
+(1.05-3.91x p50 on the five canvas-heavy pages).
 
 ## What was compared
 
@@ -377,13 +382,288 @@ Reading the table:
   included (host load from the shared timing job differed), so only the
   within-run ratios are comparable.
 
+## Windows (D3D12) results (Fawn+Doe vs Chrome 158)
+
+### What was compared on Windows
+
+| Arm | Browser | Runtime selection |
+|---|---|---|
+| `chrome` | Chrome for Testing 158.0.8108.0 (`chrome-win64/chrome.exe`, official PGO build) | stock Dawn |
+| `fawn_doe` | Fawn 158.0.8108.0 diagnostic package (`chrome.exe`) | `--use-webgpu-runtime=doe` plus `--doe-webgpu-library-path=.../lib/doe/webgpu_doe_c.dll` |
+| `fawn_dawn` | same Fawn binary | `--use-webgpu-runtime=dawn` (same-binary control) |
+
+- Host: win-host, AMD Ryzen 7 6800H with Radeon Graphics (8 cores / 16 logical
+  processors, 30 GiB visible RAM), integrated AMD Radeon Graphics (`amd / rdna-2`,
+  driver `32.0.21030.2001`), Windows 11 Pro 10.0.26300 (Build 26300), 2560x1440
+  120 Hz display, device pixel ratio 1.2 (1268x708 viewport, 1521x849 canvas).
+- Fawn diagnostic archive `Fawn-Doe-windows-x64-158.0.8108.0-doe.8b5637d28.zip`,
+  sha256 `16bb33813370b297fc38364a733ff5019274b5b0b3daf505d290485061cc96c6`.
+  Built from Doe `6258de498` (pre-rewrite stamp `8b5637d28`), Chromium
+  `4a6fb38567da` (`158.0.8108.0`), Dawn `758e5e6a974e`. Sandboxed forced-Dawn
+  smoke (`a286d14f…`), forced-Doe smoke (`8f56b9c1…`), provider identity probe
+  (`426e7147…`), start-page forced-Doe smoke (`8920218a…`) and launcher controls
+  (`cd56add8…`) passed before the benchmark run.
+- Doe runtime `lib/doe/webgpu_doe_c.dll` sha256
+  `09c4dbf9cb5ebad5a27d612faa7dae16eb8d0e072d5fcf334ea595a1badb5a09`, compiler
+  `lib/doe/doe_compiler.dll` sha256
+  `288daf201a6a1cd20f21991b0d9f18b286160a8b0203f73080805e89d07ea45d`. Fawn
+  `Fawn.exe` sha256 `66aaab0325d8…`, `chrome.exe` sha256 `38503e854bce…`,
+  `158.0.8108.0/chrome.dll` sha256 `cfa797987e9e…`. Chrome for Testing
+  `chrome.exe` sha256 `da235cbc50f6…`.
+- Pages: `browser/chromium/resources/` served unchanged from Doe `6258de498`.
+  Per-request sha256 values are recorded in each launch receipt.
+
+### Windows method notes
+
+- Same design as macOS: 12 repetitions x 6 pages x 3 arms = 216 fresh headed
+  launches with fresh profiles, sandbox enabled, and balanced 6-permutation arm
+  orderings, serialized under a host GPU lock file with no compiler or parallel
+  GPU job active.
+- **Memory** on Windows is sampled at the end of the measured window via
+  `Get-Process` and Windows `\GPU Process Memory(pid_*)\*` performance counters:
+  - GPU-process memory = GPU process `PrivateMemorySize64`;
+  - GPU-process graphics memory = `Dedicated Usage + Shared Usage` from
+    `\GPU Process Memory(pid_<gpu>)\*`;
+  - Total browser memory = sum of `PrivateMemorySize64` across the browser's
+    process tree.
+- **Provider**: `Get-Process -Module` on the GPU process confirmed that
+  `webgpu_doe_c.dll` and `doe_compiler.dll` (along with `d3d12.dll`,
+  `D3D12Core.dll`, `dxcompiler.dll` and `dxil.dll`) were mapped in all 72
+  `fawn_doe` launches and in 0 of the 144 `chrome` and `fawn_dawn` launches.
+  The adapter was `amd / rdna-2` in all 216 launches.
+- **Correctness**: 216 of 216 launches succeeded with no fallback, no device
+  loss and no uncaptured errors; every launch drained (`gpuCompletion`
+  completed). `compute_atomic_canvas` matched the exact `sha256_exact_v1` oracle
+  in 36 of 36 launches (`12/12` per arm), and both deterministic pages
+  (`compute_atomic_canvas` and `image_lab`) produced 1 distinct screenshot RGBA
+  hash identical across all launches and all three arms.
+
+#### compute_atomic_canvas (Windows D3D12)
+
+| Metric | Chrome 158 | Fawn+Doe | Fawn+Doe / Chrome [95% CI] | Verdict | Fawn+Dawn / Chrome [95% CI] |
+|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 928 [902, 947] | 1011 [1002, 1032] | 1.09 [1.06, 1.12] | loss | 0.99 [0.96, 1.01] |
+| Cold first job p95 (ms) | 967 [947, 967] | 1082 [1032, 1082] | 1.12 [1.07, 1.13] | loss | 1.03 [0.96, 1.04] |
+| Frame/op completion p50 (ms) | 517 [517, 518] | 508 [508, 508] | 0.98 [0.98, 0.98] | no clear difference | 1.00 [1.00, 1.00] |
+| Frame/op completion p95 (ms) | 520 [520, 520] | 510 [509, 511] | 0.98 [0.98, 0.98] | no clear difference | 1.00 [1.00, 1.00] |
+| Completed-frame interval p50 (ms) | 520 [520, 521] | 515 [515, 515] | 0.99 [0.99, 0.99] | no clear difference | 1.00 [1.00, 1.00] |
+| GPU-process CPU per frame/op (ms) | 10.1 [9.88, 10.5] | 20.5 [20.0, 20.8] | 2.02 [1.91, 2.09] | loss | 1.53 [1.44, 1.62] |
+| All-process CPU per frame/op (ms) | 21.7 [21.1, 22.2] | 30.7 [30.0, 33.3] | 1.42 [1.36, 1.55] | loss | 1.69 [1.64, 1.78] |
+| GPU-process memory (MB) | 152 [151, 152] | 409 [409, 410] | 2.70 [2.69, 2.71] | loss | 1.01 [1.00, 1.01] |
+| GPU-process graphics memory (MB) | 85.8 [85.8, 86.1] | 274 [274, 274] | 3.19 [3.18, 3.20] | loss | 1.00 [1.00, 1.00] |
+| Total browser memory (MB) | 315 [313, 317] | 572 [570, 574] | 1.81 [1.80, 1.83] | loss | 1.00 [1.00, 1.02] |
+
+#### cycle (Windows D3D12)
+
+| Metric | Chrome 158 | Fawn+Doe | Fawn+Doe / Chrome [95% CI] | Verdict | Fawn+Dawn / Chrome [95% CI] |
+|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 1079 [1018, 1148] | 1564 [1552, 1596] | 1.45 [1.35, 1.54] | loss | 0.99 [0.92, 1.05] |
+| Cold first job p95 (ms) | 1513 [1148, 1513] | 1658 [1596, 1658] | 1.10 [1.09, 1.44] | loss | 0.73 [0.72, 0.97] |
+| Frame/op completion p50 (ms) | 14.0 [13.0, 14.7] | 17.0 [16.9, 17.1] | 1.21 [1.15, 1.31] | loss | 1.07 [1.02, 1.15] |
+| Frame/op completion p95 (ms) | 18.0 [17.9, 18.1] | 19.3 [19.2, 19.5] | 1.07 [1.06, 1.08] | loss | 1.01 [1.00, 1.02] |
+| Completed-frame interval p50 (ms) | 19.1 [19.1, 19.2] | 23.3 [23.2, 23.4] | 1.22 [1.21, 1.23] | loss | 1.01 [1.00, 1.02] |
+| GPU-process CPU per frame/op (ms) | 2.81 [2.78, 2.93] | 6.55 [6.47, 7.01] | 2.33 [2.23, 2.50] | loss | 1.29 [1.24, 1.31] |
+| All-process CPU per frame/op (ms) | 5.43 [5.13, 5.95] | 12.3 [12.1, 13.0] | 2.26 [2.05, 2.50] | loss | 1.35 [1.22, 1.46] |
+| GPU-process memory (MB) | 289 [284, 290] | 3073 [3047, 3080] | 10.63 [10.52, 10.80] | loss | 1.00 [1.00, 1.02] |
+| GPU-process graphics memory (MB) | 191 [188, 191] | 3151 [3125, 3170] | 16.51 [16.38, 16.72] | loss | 1.00 [1.00, 1.01] |
+| Total browser memory (MB) | 487 [483, 490] | 3268 [3246, 3277] | 6.70 [6.64, 6.76] | loss | 1.00 [0.99, 1.01] |
+
+#### heavy_particles (Windows D3D12)
+
+| Metric | Chrome 158 | Fawn+Doe | Fawn+Doe / Chrome [95% CI] | Verdict | Fawn+Dawn / Chrome [95% CI] |
+|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 582 [485, 608] | 669 [654, 728] | 1.15 [1.08, 1.41] | loss | 0.89 [0.85, 1.08] |
+| Cold first job p95 (ms) | 960 [608, 960] | 761 [728, 761] | 0.79 [0.78, 1.24] | no clear difference | 0.68 [0.58, 1.02] |
+| Frame/op completion p50 (ms) | 3.50 [3.40, 3.70] | 13.7 [13.0, 14.3] | 3.91 [3.59, 4.09] | loss | 1.09 [1.03, 1.12] |
+| Frame/op completion p95 (ms) | 4.10 [4.10, 4.10] | 16.1 [16.0, 16.9] | 3.93 [3.90, 4.12] | loss | 1.00 [0.98, 1.00] |
+| Completed-frame interval p50 (ms) | 9.60 [9.50, 9.70] | 10.7 [10.4, 10.9] | 1.11 [1.08, 1.14] | loss | 0.98 [0.96, 0.99] |
+| GPU-process CPU per frame/op (ms) | 1.73 [1.72, 1.75] | 4.90 [4.83, 5.05] | 2.84 [2.79, 2.93] | loss | 1.26 [1.25, 1.32] |
+| All-process CPU per frame/op (ms) | 2.55 [2.52, 3.17] | 6.57 [6.47, 7.37] | 2.57 [2.06, 2.90] | loss | 1.43 [1.14, 1.67] |
+| GPU-process memory (MB) | 206 [205, 213] | 5581 [5377, 5629] | 27.07 [25.49, 27.39] | loss | 1.04 [1.00, 1.05] |
+| GPU-process graphics memory (MB) | 121 [121, 121] | 5999 [5815, 6070] | 49.65 [48.12, 50.23] | loss | 1.00 [1.00, 1.00] |
+| Total browser memory (MB) | 380 [377, 385] | 5753 [5545, 5800] | 15.12 [14.52, 15.34] | loss | 1.01 [1.00, 1.03] |
+
+#### image_lab (Windows D3D12)
+
+| Metric | Chrome 158 | Fawn+Doe | Fawn+Doe / Chrome [95% CI] | Verdict | Fawn+Dawn / Chrome [95% CI] |
+|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 576 [567, 595] | 709 [699, 712] | 1.23 [1.18, 1.25] | loss | 0.99 [0.96, 1.02] |
+| Cold first job p95 (ms) | 957 [595, 957] | 747 [712, 747] | 0.78 [0.75, 1.24] | no clear difference | 0.62 [0.61, 1.00] |
+| Frame/op completion p50 (ms) | 9.10 [9.10, 9.20] | 9.60 [9.50, 9.60] | 1.05 [1.04, 1.05] | loss | 1.00 [0.99, 1.00] |
+| Frame/op completion p95 (ms) | 10.9 [10.9, 11.1] | 11.1 [10.9, 11.1] | 1.02 [0.99, 1.02] | no clear difference | 0.97 [0.91, 1.01] |
+| Completed-frame interval p50 (ms) | 9.20 [9.20, 9.20] | 9.80 [9.70, 9.80] | 1.07 [1.05, 1.07] | loss | 1.00 [1.00, 1.00] |
+| GPU-process CPU per frame/op (ms) | 2.36 [2.18, 2.43] | 4.76 [4.72, 4.76] | 2.02 [1.95, 2.18] | loss | 1.13 [1.09, 1.24] |
+| All-process CPU per frame/op (ms) | 3.89 [3.68, 4.16] | 7.45 [7.40, 7.47] | 1.92 [1.79, 2.03] | loss | 1.39 [1.29, 1.48] |
+| GPU-process memory (MB) | 224 [222, 226] | 856 [803, 859] | 3.82 [3.58, 3.87] | loss | 1.00 [0.99, 1.01] |
+| GPU-process graphics memory (MB) | 121 [119, 121] | 496 [494, 496] | 4.10 [4.08, 4.16] | loss | 1.00 [0.99, 1.02] |
+| Total browser memory (MB) | 386 [385, 390] | 1020 [967, 1024] | 2.64 [2.48, 2.66] | loss | 1.00 [0.99, 1.01] |
+
+#### magnetic_fluids (Windows D3D12)
+
+| Metric | Chrome 158 | Fawn+Doe | Fawn+Doe / Chrome [95% CI] | Verdict | Fawn+Dawn / Chrome [95% CI] |
+|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 606 [578, 961] | 716 [709, 740] | 1.18 [0.74, 1.25] | no clear difference | 0.93 [0.58, 0.98] |
+| Cold first job p95 (ms) | 1005 [961, 1005] | 786 [740, 786] | 0.78 [0.74, 0.82] | win | 0.62 [0.57, 0.65] |
+| Frame/op completion p50 (ms) | 3.70 [3.60, 3.80] | 6.80 [5.20, 9.70] | 1.84 [1.41, 2.69] | loss | 1.00 [0.97, 1.06] |
+| Frame/op completion p95 (ms) | 4.00 [4.00, 4.00] | 14.6 [14.3, 14.6] | 3.65 [3.57, 3.65] | loss | 1.00 [1.00, 1.00] |
+| Completed-frame interval p50 (ms) | 9.60 [9.60, 10.0] | 10.3 [10.1, 10.4] | 1.07 [1.03, 1.08] | loss | 0.98 [0.94, 1.02] |
+| GPU-process CPU per frame/op (ms) | 1.57 [1.56, 1.63] | 4.76 [4.67, 4.81] | 3.02 [2.90, 3.08] | loss | 1.36 [1.30, 1.37] |
+| All-process CPU per frame/op (ms) | 2.37 [2.34, 2.45] | 6.42 [6.34, 6.46] | 2.71 [2.60, 2.75] | loss | 1.49 [1.44, 1.53] |
+| GPU-process memory (MB) | 185 [183, 187] | 5749 [5577, 5851] | 31.04 [29.94, 31.79] | loss | 1.02 [1.01, 1.04] |
+| GPU-process graphics memory (MB) | 100 [99.9, 101] | 6184 [6108, 6243] | 61.63 [60.73, 62.44] | loss | 1.01 [0.99, 1.02] |
+| Total browser memory (MB) | 357 [349, 361] | 5919 [5749, 6020] | 16.60 [16.00, 17.08] | loss | 1.02 [1.00, 1.05] |
+
+#### prismatic_fluids (Windows D3D12)
+
+| Metric | Chrome 158 | Fawn+Doe | Fawn+Doe / Chrome [95% CI] | Verdict | Fawn+Dawn / Chrome [95% CI] |
+|---|---|---|---|---|---|
+| Cold first job p50 (ms) | 646 [627, 1046] | 820 [812, 824] | 1.27 [0.78, 1.31] | no clear difference | 1.00 [0.61, 1.04] |
+| Cold first job p95 (ms) | 1396 [1046, 1396] | 843 [824, 843] | 0.60 [0.59, 0.80] | win | 0.48 [0.47, 0.63] |
+| Frame/op completion p50 (ms) | 3.90 [3.90, 3.90] | 6.40 [5.90, 6.70] | 1.64 [1.51, 1.72] | loss | 1.00 [1.00, 1.00] |
+| Frame/op completion p95 (ms) | 5.90 [5.00, 5.90] | 10.3 [9.90, 10.4] | 1.75 [1.68, 2.06] | loss | 0.85 [0.83, 1.00] |
+| Completed-frame interval p50 (ms) | 9.40 [9.30, 9.50] | 10.3 [10.2, 10.3] | 1.10 [1.08, 1.11] | loss | 0.98 [0.97, 0.99] |
+| GPU-process CPU per frame/op (ms) | 1.70 [1.67, 1.71] | 5.06 [5.03, 5.08] | 2.97 [2.94, 3.04] | loss | 1.35 [1.33, 1.39] |
+| All-process CPU per frame/op (ms) | 2.50 [2.45, 2.52] | 6.82 [6.79, 6.98] | 2.73 [2.70, 2.84] | loss | 1.48 [1.47, 1.52] |
+| GPU-process memory (MB) | 194 [192, 197] | 5472 [5425, 5571] | 28.15 [27.67, 28.88] | loss | 1.02 [1.01, 1.04] |
+| GPU-process graphics memory (MB) | 106 [106, 108] | 6012 [5967, 6069] | 56.68 [55.31, 57.21] | loss | 1.02 [1.00, 1.02] |
+| Total browser memory (MB) | 370 [368, 374] | 5647 [5600, 5753] | 15.25 [15.08, 15.58] | loss | 1.01 [0.99, 1.02] |
+
+The full Windows table, including `fawn_dawn` arm values, `launch -> first
+completed job`, p99 completion latencies, and completed-frame interval p95/p99,
+is in [windows-summary.md](windows-summary.md) and
+[windows-summary.json](windows-summary.json).
+
+### Windows wins
+
+- `image_lab`: frame/op completion p99 p50 0.90x [0.88, 0.97] (11.3 ms vs
+  Chrome 12.5 ms; `fawn_dawn` is 1.01x [0.95, 1.13]).
+- `magnetic_fluids`: cold first job p95 0.78x [0.74, 0.82].
+- `prismatic_fluids`: cold first job p95 0.60x [0.59, 0.80].
+
+As on macOS, both cold-first-job p95 wins come from Chrome's bimodal cold-start
+tail across 12 launches, and the same-binary `fawn_dawn` control is lower still
+(0.62x [0.57, 0.65] and 0.48x [0.47, 0.63]). Neither cold-start win is
+attributable to Doe.
+
+### Windows losses
+
+| Page | Loss (Fawn+Doe / Chrome) |
+|---|---|
+| all six | GPU-process memory 2.70x (`compute_atomic_canvas`), 3.82x (`image_lab`), 10.63x (`cycle`), 27.07-31.04x (`heavy_particles`, `prismatic_fluids`, `magnetic_fluids`); GPU-process graphics memory 3.19-61.63x; total browser memory 1.81-16.60x |
+| all six | GPU-process CPU per frame/op 2.02-3.02x; all-process CPU per frame/op 1.42-2.73x |
+| `heavy_particles`, `magnetic_fluids`, `prismatic_fluids` | frame/op completion p50 1.64-3.91x, p95 1.75-3.93x, p99 3.33-7.72x; completed-frame interval p50 1.07-1.11x, p99 2.31-2.57x |
+| `cycle` | frame/op completion p50 1.21x, p95 1.07x, p99 1.06x; completed-frame interval p50 1.22x, p95 1.18x, p99 1.11x; cold first job p50 1.45x, p95 1.10x |
+| `image_lab` | cold first job p50 1.23x; frame/op completion p50 1.05x; completed-frame interval p50 1.07x |
+| `compute_atomic_canvas`, `heavy_particles` | cold first job p50 1.09x (`compute_atomic_canvas`, p95 1.12x) and 1.15x (`heavy_particles`) |
+
+In the memory and frame/op completion losses, `fawn_dawn` is within noise of
+Chrome (1.00-1.04x GPU-process memory and 0.85-1.09x frame completion p50/p95),
+so those losses are Doe-specific. On CPU per frame/op, `fawn_dawn` is 1.13-1.53x
+on GPU-process CPU and 1.35-1.69x on all-process CPU (reflecting Fawn's
+`is_official_build=false`, `chrome_pgo_phase=0` build against official PGO
+Chrome), while `fawn_doe` adds another 1.6-2.2x of GPU-process CPU on top of
+`fawn_dawn` on the five canvas-heavy pages.
+
+### Likely owners of the Windows (D3D12) losses (code reading)
+
+1. **GPU memory growth of about one canvas per presented frame.** Over the 2 s
+   warm-up + 6 s measured window at ~90-100 fps on the 1521x849 canvas,
+   `fawn_doe` accumulates ~5.5-6.0 GB of GPU-process memory on
+   `heavy_particles`, `magnetic_fluids` and `prismatic_fluids`, ~3.1 GB on
+   `cycle`, ~856 MB on `image_lab` (60 operations) and ~409 MB on
+   `compute_atomic_canvas` (30 operations). Two code-confirmed mechanisms keep
+   per-frame allocations alive:
+   - In the incremental Windows Chromium checkout that produced
+     `158.0.8108.0/chrome.dll`, Dawn's WebGPU backend (`third_party/dawn/src/dawn/native/webgpu/CommandBufferWGPU.cpp:116-120, 261-265`)
+     was compiled before `528ad37fd` added `wgpu.computePassEncoderRelease` and
+     `wgpu.renderPassEncoderRelease` (`browser/chromium/patches/dawn-doe-runtime.patch:971-985`).
+     Every inner render and compute pass encoder therefore stays alive, and each
+     Doe render pass retains its command encoder and every attachment view
+     (`runtime/c/resources/src/passes.c:69-83, 189`), which in turn retains the
+     per-frame staging canvas texture.
+   - Even when `texture_.Destroy()` is called at the end of each frame's Skia
+     fallback access (`gpu/command_buffer/service/webgpu_decoder_impl.cc:613`),
+     Doe's `wgpuTextureDestroy` (`runtime/c/native/src/textures.c:230-267`) and
+     `wgpuBufferDestroy` (`runtime/c/native/src/buffers.c:146-164`) only evict
+     backing memory on Vulkan (`textures.c:245-258`) and Metal
+     (`textures.c:258-265`, `buffers.c:159-162`). Neither function has a
+     `WGPUBackendType_D3D12` branch, so D3D12 `destroy()` only sets the frontend
+     `destroyed` flag (`textures.c:236`) and keeps the `ID3D12Resource`
+     (`runtime/c/backends/d3d12/src/windows_textures.c:17-22`,
+     `runtime/c/native/src/d3d12_buffers.c:158-171`) until the last handle and
+     view reference drops.
+2. **Skia staging fallback on every presented canvas frame (no D3D12 DXGI
+   shared-handle interop).** `WebGPUDecoderImpl::RequestDeviceImpl`
+   (`browser/chromium/patches/chromium-doe-runtime.patch:1353-1368`) and
+   `WebGPUDecoderImpl::AssociateMailboxForDoe`
+   (`browser/chromium/patches/chromium-doe-runtime.patch:1503-1551`) only enable
+   zero-copy shared-texture import under `IS_APPLE` (`lines 1515-1530`) and
+   `IS_LINUX` (`lines 1353-1368, 1531-1535`). On `IS_WIN`, `AssociateMailboxForDoe`
+   falls through to `AssociateMailboxUsingSkiaFallback` (`lines 1547-1550`), and
+   Doe's C runtime (`runtime/c/native/src/shared_memory.c:99-105, 170-176`)
+   accepts only Vulkan and Metal in `wgpuDeviceImportSharedFence` and
+   `wgpuDeviceImportSharedTextureMemory` (no `SharedTextureMemoryDXGISharedHandle`
+   or `SharedFenceDXGISharedHandle`). Every presented canvas frame therefore
+   executes `UploadContentsToSkia` (`gpu/command_buffer/service/webgpu_decoder_impl.cc:789-907`),
+   which allocates a fresh canvas-sized `CopyDst | MapRead` buffer (`line 806`,
+   zeroed synchronously on the CPU via `ID3D12Resource_Map` + `memset` in
+   `runtime/c/native/src/d3d12_buffers.c:126-128` →
+   `runtime/c/backends/d3d12/src/windows_resources.c:203-221`), submits
+   `CopyTextureToBuffer` (`lines 830-836`), blocks synchronously on
+   `buffer.MapAsync` + `instance_.WaitAny` (`lines 840-851`), and copies the
+   mapped pixels into Skia (`surface->writePixels`, `line 880`).
+3. **Per-frame synchronous GPU waits inside D3D12 texture creation.** Under the
+   Skia fallback above, `AssociateMailboxUsingSkiaFallback` creates a fresh
+   canvas `WGPUTexture` on every frame. `native_d3d12_create_texture`
+   (`runtime/c/native/src/d3d12_textures.c:24-84`) first calls
+   `native_settle_pending(device)` (`line 55`), waiting synchronously for all
+   in-flight GPU work to finish before calling `CreateCommittedResource`, and
+   then calls `initialize(device, payload->d3d12)` (`line 65`, defined at
+   `d3d12_textures.c:8-20`), which records `doe_dx_commands_initialize_texture`
+   (`runtime/c/backends/d3d12/src/windows_texture_initialize.c:32-101`) and
+   submits it via `native_submit_backend_commands` (`d3d12_textures.c:17` →
+   `runtime/c/native/src/queue.c:423-427`), waiting synchronously on the fence.
+   This is the exact D3D12 counterpart to the Metal texture-creation stall that
+   was removed for macOS in `c1231428e`.
+4. **Per-dispatch and per-draw D3D12 descriptor rebuilds, heap allocations, and
+   resource barriers.** On `compute_atomic_canvas`, each operation submits 100
+   compute dispatches before presenting once, and `fawn_doe` still uses 2.02x
+   GPU-process CPU (20.5 ms vs Chrome 10.1 ms and `fawn_dawn` 15.5 ms). In the
+   D3D12 backend:
+   - `write_set` and `doe_dx_prepare_sets` (`runtime/c/backends/d3d12/src/windows_bindings.c:5-66, 338-347`)
+     rebuild CBV/SRV/UAV/Sampler descriptors on the CPU for every draw or
+     dispatch and call `ID3D12Device_CreateDescriptorHeap` whenever a sampler is
+     bound (`line 343`); `doe_dx_prepare_color_view` and
+     `doe_dx_prepare_depth_view` (`runtime/c/backends/d3d12/src/windows_graphics.c:45-117`)
+     allocate fresh RTV/DSV `ID3D12DescriptorHeap`s for every render-pass
+     attachment.
+   - `record_dispatch` (`runtime/c/backends/d3d12/src/windows_commands.c:176, 187`)
+     and `draw_packet` (`runtime/c/backends/d3d12/src/windows_render_commands.c:112, 153`)
+     call `transition_sets` (`runtime/c/backends/d3d12/src/windows_transitions.c:65-107`)
+     before and after every dispatch or draw, emitting D3D12 resource barriers
+     from `D3D12_RESOURCE_STATE_COPY_DEST` to the shader state and immediately
+     back to `COPY_DEST`.
+5. **Cold first-job latency (no persistent pipeline blob store on D3D12 and
+   per-stage compiler DLL load/unload).** Forced Doe loses on cold first-job p50
+   on four of six pages (1.09-1.45x):
+   - `doeNativeDeviceConfigurePipelineBlobStore` (`runtime/c/native/src/pipeline_cache.c:116-161`)
+     requires ELF build IDs (`lines 125-126`) and `WGPUBackendType_Vulkan`
+     (`line 133`), rejecting D3D12 so compiled pipelines are not cached through
+     the browser's blob store.
+   - Every shader stage compilation (`compile_stage` in
+     `runtime/c/native/src/d3d12_shader.c:73-148` → `compile_shader` /
+     `compile_fxc` in `runtime/c/backends/d3d12/src/windows_shader.cpp:47-55, 138-255`)
+     calls `GetModuleFileNameW`, `LoadLibraryExW`, `DxcCreateInstance` (or
+     `D3DCompile`), and `FreeLibrary` instead of keeping `dxcompiler.dll` /
+     `d3dcompiler_47.dll` and the DXC compiler/utils instances resident on the
+     device or context.
+
 ## Limits
 
-- One Mac and one display. Frames are vsync-capped at 60 Hz, so cadence differs
-  only where a page misses frames (cycle).
-- Memory is a single sample at the end of the window. Because Doe's growth is
-  linear, its value depends on the window length (2 s warm-up plus 6 s
-  measured).
+- One Mac (60 Hz display) and one Windows host (120 Hz display).
+- Memory is a single sample at the end of the window. Where Doe's growth is
+  linear (macOS before the fixes, and Windows D3D12), its value depends on the
+  window length (2 s warm-up plus 6 s measured).
 - An init-script observer and an extra rAF loop ran in every arm.
 - Same-milestone baseline, but a different build configuration (official PGO vs
   Fawn's non-official build); the `fawn_dawn` control covers this.
@@ -393,15 +673,19 @@ Reading the table:
 ## Files
 
 - `macos-summary.json` / `macos-summary.md`: all metrics, CIs, verdicts,
-  failure, provider and position counts.
+  failure, provider and position counts for the initial macOS run.
 - `raw-evidence-macos.tar.gz`: per-launch specs and receipts, the schedule,
   the orchestration log, rep-0 screenshots and the harness source. Paths and
   user names are replaced with placeholders.
 - `macos-after-summary.json` / `macos-after-summary.md` and
-  `raw-evidence-macos-after.tar.gz`: the same for the run after the fixes; the
-  harness copy includes `config.macos.after.json`.
+  `raw-evidence-macos-after.tar.gz`: the same for the macOS run after the fixes;
+  the harness copy includes `config.macos.after.json`.
+- `windows-summary.json` / `windows-summary.md` and
+  `raw-evidence-windows.tar.gz`: the same for the Windows (D3D12) run; the
+  harness copy includes `config.windows.json`.
 - `SHA256SUMS`.
 
 Reproduce, from a directory holding the harness:
-`node orchestrate.mjs --config config.macos.json --out RUN`, then
+`node orchestrate.mjs --config config.macos.json --out RUN` (or
+`--config config.windows.json` on Windows), then
 `python3 -I analyze.py RUN`.
