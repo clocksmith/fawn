@@ -195,6 +195,10 @@ static void block_walk(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_
         }
         hlsl_indent(e);
         switch (ir->opcode) {
+            case IR_DISCARD:
+                /* Fragment-only (sema): the lane stops writing, as Metal's discard_fragment. */
+                hlsl_text(e, "discard;\n");
+                break;
             case IR_WORKGROUP_BARRIER:
                 switch ((BarrierMemory)ir->operands.scalar.literal) {
                     case BARRIER_WORKGROUP: hlsl_text(e, "GroupMemoryBarrierWithGroupSync();\n"); break;
@@ -259,7 +263,6 @@ static void block_walk(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_
                 hlsl_expression(e, ir);
                 hlsl_text(e, ";\n");
                 break;
-            case IR_DISCARD:
             case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_ROBUST_STORE: case IR_MAX:
             case IR_SWITCH_BEGIN: case IR_SWITCH_CASE: case IR_END_CASE: case IR_END_SWITCH:
             case IR_IF: case IR_ELSE: case IR_END_IF: case IR_SHORT_BEGIN: case IR_SHORT_END:

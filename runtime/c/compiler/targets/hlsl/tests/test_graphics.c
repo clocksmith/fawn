@@ -47,6 +47,14 @@ static void test_fragment_builtins(void) {
     free(text);
     release(f);
 }
+static void test_fragment_discard(void) {
+    Fixture *f = prepare_graphics(target_discard_fragment);
+    char *text = emit(f, 0u);
+    has(text, "discard;");
+    has(text, "SV_Target0");
+    free(text);
+    release(f);
+}
 static void test_invariant_rejection(void) {
     Fixture *f = prepare_graphics(target_invariant_vertex);
     DoeHlslResult result;
@@ -75,6 +83,7 @@ static void test_graphics_host_fixture(const char *output_path) {
 void test_graphics(const char *output_path) {
     test_stage_mapping();
     test_fragment_builtins();
+    test_fragment_discard();
     test_invariant_rejection();
     test_graphics_host_fixture(output_path);
 }

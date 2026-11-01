@@ -20,6 +20,10 @@ static const char target_fragment_builtins[] =
         "if(input.face){return Output(input.p.z,input.mask,input.color);}"
         "return Output(0.5,input.index,vec4f(0.0));}";
 static const char target_empty_fragment[] ="@fragment fn empty(){}";
+/* Dawn's CopyTextureForBrowser blit: discard inside a helper called from the fragment. */
+static const char target_discard_fragment[] =
+        "fn outside(t:vec2f){if(any(t<vec2f(0.0))||any(t>vec2f(1.0))){discard;}}"
+        "@fragment fn copy(@location(0) t:vec2f)->@location(0) vec4f{outside(t);return vec4f(t,0.0,1.0);}";
 static const char target_invariant_vertex[] =
         "@vertex fn vertex()->@builtin(position) @invariant vec4f{return vec4f(0.0);}";
 static const char target_graphics_control[] =
