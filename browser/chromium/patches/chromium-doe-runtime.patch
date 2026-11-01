@@ -578,10 +578,10 @@ index 764a5502ba..8deb921c1e 100644
  }  // namespace content
  
 diff --git a/content/gpu/gpu_main.cc b/content/gpu/gpu_main.cc
-index 543e347e14..926af872e8 100644
+index 543e347e14..a71f5bac2a 100644
 --- a/content/gpu/gpu_main.cc
 +++ b/content/gpu/gpu_main.cc
-@@ -2,9 +2,12 @@
+@@ -2,6 +2,7 @@
  // Use of this source code is governed by a BSD-style license that can be
  // found in the LICENSE file.
  
@@ -589,11 +589,17 @@ index 543e347e14..926af872e8 100644
  #include <fcntl.h>
  #include <stddef.h>
  #include <stdlib.h>
-+#include <sys/stat.h>
-+#include <unistd.h>
- 
- #include <memory>
- #include <tuple>
+@@ -15,8 +16,10 @@
+ #include "base/check.h"
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
++#include "base/files/file_path.h"
+ #include "base/files/scoped_file.h"
+ #include "base/functional/bind.h"
++#include "base/logging.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/message_loop/message_pump_type.h"
+ #include "base/message_loop/message_pump_wakeup_counter.h"
 @@ -85,6 +88,10 @@
  #include "ui/gl/gl_switches.h"
  #include "ui/gl/init/gl_factory.h"
@@ -605,7 +611,20 @@ index 543e347e14..926af872e8 100644
  #if BUILDFLAG(IS_WIN)
  #include <windows.h>
  
-@@ -136,6 +143,34 @@ namespace content {
+@@ -122,6 +129,12 @@
+ #include "sandbox/policy/sandbox_type.h"
+ #endif
+ 
++#if BUILDFLAG(IS_LINUX)
++// POSIX-only headers for the Fawn Mesa shader cache directory below.
++#include <sys/stat.h>
++#include <unistd.h>
++#endif
++
+ #if BUILDFLAG(IS_MAC)
+ #include "base/message_loop/message_pump_apple.h"
+ #include "components/metal_util/device_removal.h"
+@@ -136,6 +149,34 @@ namespace content {
  
  namespace {
  
@@ -640,7 +659,53 @@ index 543e347e14..926af872e8 100644
  #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
  bool StartSandboxLinux(gpu::GpuWatchdogThread*,
                         const gpu::GPUInfo*,
-@@ -197,6 +232,17 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
+@@ -144,6 +185,39 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
+ bool StartSandboxAndroid(gpu::GpuWatchdogThread*);
+ #elif BUILDFLAG(IS_WIN)
+ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
++
++// The lowered GPU token cannot map new images. Map the forced Doe provider and
++// the shader compilers it loads beside itself before LowerToken(), as Linux
++// maps the provider before its sandbox; the provider's later full-path loads
++// reuse these modules. A failure is logged and the adapter request fails closed.
++void PreloadDoeWebGPURuntime() {
++  const auto* command_line = base::CommandLine::ForCurrentProcess();
++  if (command_line->GetSwitchValueASCII(switches::kUseWebGPURuntime) != "doe" ||
++      command_line->HasSwitch(switches::kDisableWebGPUDoe)) {
++    return;
++  }
++  const base::FilePath library =
++      command_line->GetSwitchValuePath(switches::kDoeWebGPULibraryPath);
++  if (library.empty() || !library.IsAbsolute()) {
++    LOG(ERROR) << "runtime_artifact_load_failed: " << library;
++    return;
++  }
++  // The C compiler library is a load-time import of the provider; DXC, its
++  // signer and FXC are loaded on demand by full path from this directory.
++  const base::FilePath images[] = {
++      library, library.DirName().Append(FILE_PATH_LITERAL("dxcompiler.dll")),
++      library.DirName().Append(FILE_PATH_LITERAL("dxil.dll")),
++      library.DirName().Append(FILE_PATH_LITERAL("d3dcompiler_47.dll"))};
++  for (const base::FilePath& image : images) {
++    if (!::LoadLibraryExW(image.value().c_str(), nullptr,
++                          LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
++                              LOAD_LIBRARY_SEARCH_SYSTEM32)) {
++      LOG(ERROR) << "runtime_artifact_load_failed: " << image
++                 << " error=" << ::GetLastError();
++      return;
++    }
++  }
++}
+ #endif
+ 
+ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
+@@ -192,11 +266,23 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
+ #endif  // BUILDFLAG(USE_VAAPI)
+ #if BUILDFLAG(IS_WIN)
+     media::PreSandboxMediaFoundationInitialization();
++    PreloadDoeWebGPURuntime();
+ #endif
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
      webnn::PreSandboxWebNNInitialization(/*is_gpu_process=*/true);
  #endif
  
@@ -658,7 +723,7 @@ index 543e347e14..926af872e8 100644
      // On Linux, reading system memory doesn't work through the GPU sandbox.
      // This value is cached, so access it here to populate the cache.
      base::SysInfo::AmountOfTotalPhysicalMemory();
-@@ -238,6 +284,9 @@ int GpuMain(MainFunctionParams parameters) {
+@@ -238,6 +324,9 @@ int GpuMain(MainFunctionParams parameters) {
        base::CurrentProcessType::PROCESS_GPU);
  
    const base::CommandLine& command_line = *parameters.command_line;
@@ -668,7 +733,7 @@ index 543e347e14..926af872e8 100644
  
    gpu::GpuPreferences gpu_preferences;
    if (command_line.HasSwitch(switches::kGpuPreferences)) {
-@@ -565,10 +614,26 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
+@@ -565,10 +654,26 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
    base::IncreaseFdLimitTo(new_max_fds);
  #endif
  

@@ -94,6 +94,29 @@ class WindowsBuilderTests(unittest.TestCase):
         self.assertEqual(browser_dxc.read_bytes(), b"canonical browser compiler")
         self.assertTrue(all(Path(row["path"]).parent == out / "lib/doe" for row in records))
 
+    def test_fawn_icon_replaces_unbranded_main_icon_in_tracked_source(self) -> None:
+        target = self.src / build.CHROMIUM_ICON
+        target.parent.mkdir(parents=True)
+        target.write_bytes(b'\0\0\1\0chromium')
+        self.git(self.src, 'add', str(build.CHROMIUM_ICON))
+        self.git(self.src, 'commit', '-qm', 'Unbranded icon')
+        record = build.install_fawn_icon(self.src)
+        self.assertEqual(target.read_bytes(), build.FAWN_ICON.read_bytes())
+        self.assertEqual(record['sha256'], build.digest(build.FAWN_ICON))
+        evidence = self.root / 'evidence'
+        evidence.mkdir()
+        build.source_diffs(self.src, evidence, 'patched')
+        self.assertIn(b'chromium.ico', (evidence / 'patched-chromium.diff').read_bytes())
+        self.assertEqual(build.install_fawn_icon(self.src), record)
+
+    def test_fawn_icon_requires_icon_bytes_and_upstream_target(self) -> None:
+        with self.assertRaisesRegex(ValueError, 'unbranded main icon'):
+            build.install_fawn_icon(self.src)
+        fake = self.root / 'fake.ico'
+        fake.write_bytes(b'PNG')
+        with self.assertRaisesRegex(ValueError, 'not a Windows icon'):
+            build.install_fawn_icon(self.src, fake)
+
     def test_cmd_metacharacters_rejected(self) -> None:
         for bad in ('a&b', '%PATH%', '!bad!', 'a|b', 'a^b', 'a\nb', 'a"b'):
             with self.assertRaises(ValueError):

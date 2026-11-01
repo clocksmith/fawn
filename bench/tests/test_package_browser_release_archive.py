@@ -895,6 +895,82 @@ class PackageBrowserReleaseArchiveTests(unittest.TestCase):
             self.assertIn("embedded Dawn fallback must be the packaged Linux browser", result.stderr)
             self.assertFalse(manifest.exists())
 
+    def _run_windows(self, root: Path, channel: str) -> tuple[subprocess.CompletedProcess, Path, Path]:
+        package_dir = root / "Fawn-Doe-windows-x64"
+        version = package_dir / "158.0.8108.0"
+        private = package_dir / "lib" / "doe"
+        branding = package_dir / "fawn"
+        for directory in (version, private, branding):
+            directory.mkdir(parents=True)
+        (package_dir / "Fawn.exe").write_bytes(b"windows fawn launcher\n")
+        (package_dir / "Fawn.exe").chmod(0o755)
+        (package_dir / "chrome.exe").write_bytes(b"windows chrome\n")
+        (version / "chrome.dll").write_bytes(b"windows chrome.dll with built-in dawn\n")
+        (private / "webgpu_doe_c.dll").write_bytes(b"windows doe c runtime\n")
+        (branding / "fawn-start.html").write_bytes(b"<!doctype html>\n")
+        archive = root / "Fawn-Doe-windows-x64.zip"
+        manifest = root / "Fawn-Doe-windows-x64.manifest.json"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(PACKER),
+                "--package-dir",
+                str(package_dir),
+                "--out",
+                str(archive),
+                "--manifest-out",
+                str(manifest),
+                "--doe-runtime",
+                str(private / "webgpu_doe_c.dll"),
+                "--dawn-fallback-runtime",
+                str(version / "chrome.dll"),
+                "--product-version",
+                "158.0.8108.0",
+                "--product-channel",
+                channel,
+                "--platform-os",
+                "windows",
+                "--platform-arch",
+                "x64",
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return result, archive, manifest
+
+    def test_packer_emits_windows_diagnostic_archive(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result, archive, manifest = self._run_windows(Path(temp_dir), "diagnostic")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            jsonschema.validate(payload, json.loads(SCHEMA.read_text(encoding="utf-8")))
+            members = payload["members"]
+            self.assertEqual(payload["platform"], {"os": "windows", "arch": "x64", "packageFormat": "zip"})
+            self.assertEqual(members["browserExecutable"]["archivePath"], "Fawn-Doe-windows-x64/Fawn.exe")
+            self.assertEqual(members["doeRuntime"]["archivePath"], "Fawn-Doe-windows-x64/lib/doe/webgpu_doe_c.dll")
+            self.assertEqual(
+                members["dawnFallbackRuntime"]["archivePath"],
+                "Fawn-Doe-windows-x64/158.0.8108.0/chrome.dll",
+            )
+            with zipfile.ZipFile(archive) as package:
+                self.assertEqual(package.read("Fawn-Doe-windows-x64/fawn/fawn-start.html"), b"<!doctype html>\n")
+                metadata = json.loads(package.read("Fawn-Doe-windows-x64/browser-product.json"))
+                self.assertEqual(metadata["platform"], payload["platform"])
+
+    def test_packer_rejects_windows_release_candidate(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result, archive, manifest = self._run_windows(Path(temp_dir), "release_candidate")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("declares no Windows release platform", result.stderr)
+            self.assertFalse(archive.exists())
+            self.assertFalse(manifest.exists())
+
     def test_packer_rejects_product_identity_mismatch(self) -> None:
         import tempfile
 

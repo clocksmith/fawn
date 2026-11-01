@@ -46,7 +46,8 @@ function cStageFiles(libraryPath, workspaceRoot) {
   const windows = extension === '.dll';
   const runtimeDirectory = windows ? 'bin' : 'lib';
   const runtimePaths = [libraryPath, compiler,
-    ...(windows ? ['dxcompiler.dll', 'dxil.dll'].map((name) => resolve(directory, name)) : [])];
+    // The D3D12 backend loads DXC and FXC (d3dcompiler_47.dll) beside the provider only.
+    ...(windows ? ['dxcompiler.dll', 'dxil.dll', 'd3dcompiler_47.dll'].map((name) => resolve(directory, name)) : [])];
   const files = runtimePaths.map((path) => ({ source: path, target: basename(path), key: `${runtimeDirectory}/${basename(path)}` }));
   for (const key of Object.keys(manifest.artifacts)) {
     if (key.startsWith('licenses/') || key === 'NATIVE_BUILD.json') files.push({ source: resolve(stage, key), target: key, key });

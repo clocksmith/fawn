@@ -20,6 +20,7 @@ DEFAULT_MACOS_BROWSER_EXECUTABLE_PACKAGE_PATH = "Contents/MacOS/Chromium"
 DEFAULT_MACOS_APP_METADATA_PACKAGE_PATH = "Contents/Info.plist"
 DEFAULT_LINUX_BROWSER_EXECUTABLE_PACKAGE_PATH = "chrome-wrapper"
 DEFAULT_LINUX_APP_METADATA_PACKAGE_PATH = "browser-product.json"
+DEFAULT_WINDOWS_BROWSER_EXECUTABLE_PACKAGE_PATH = "Fawn.exe"
 PRODUCT_DISPLAY_NAMES = {
     "doe-browser": "Doe Browser",
     "fawn-doe": "Fawn Doe",
@@ -86,7 +87,7 @@ def parse_args() -> argparse.Namespace:
         choices=("diagnostic", "release_candidate", "release"),
         default="release_candidate",
     )
-    parser.add_argument("--platform-os", choices=("macos", "linux"), default="macos")
+    parser.add_argument("--platform-os", choices=("macos", "linux", "windows"), default="macos")
     parser.add_argument("--platform-arch", choices=("arm64", "x64"), default="")
     return parser.parse_args()
 
@@ -261,6 +262,8 @@ def package_member_path(package_root_name: str, package_relative_path: str) -> s
 def default_browser_executable_package_path(platform_os: str) -> str:
     if platform_os == "macos":
         return DEFAULT_MACOS_BROWSER_EXECUTABLE_PACKAGE_PATH
+    if platform_os == "windows":
+        return DEFAULT_WINDOWS_BROWSER_EXECUTABLE_PACKAGE_PATH
     return DEFAULT_LINUX_BROWSER_EXECUTABLE_PACKAGE_PATH
 
 
@@ -448,6 +451,11 @@ def resolved_package_config(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError(
             "Linux release-candidate packaging requires --package-inputs from "
             "the browser release package preflight"
+        )
+    if args.platform_os == "windows" and args.product_channel != "diagnostic":
+        raise ValueError(
+            "config/browser-release-platform-policy.json declares no Windows release "
+            "platform; Windows archives are diagnostic"
         )
     package_dir = Path(required_arg(args.package_dir, "--package-dir"))
     package_root_name = args.package_root_name or package_dir.name

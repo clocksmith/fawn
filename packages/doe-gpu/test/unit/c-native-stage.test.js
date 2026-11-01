@@ -32,7 +32,7 @@ try {
   const windowsLibrary = write('windows/bin/webgpu_doe_c.dll', 'windows-native');
   const windowsFiles = {
     'bin/webgpu_doe_c.dll': 'windows-native', 'bin/doe_compiler.dll': 'windows-compiler',
-    'bin/dxcompiler.dll': 'dxc', 'bin/dxil.dll': 'dxil',
+    'bin/dxcompiler.dll': 'dxc', 'bin/dxil.dll': 'dxil', 'bin/d3dcompiler_47.dll': 'fxc',
     'licenses/DXC/LICENSE.txt': 'license', 'NATIVE_BUILD.json': '{}',
   };
   const windowsManifest = { ...manifest, artifacts: {} };
@@ -40,7 +40,10 @@ try {
     write(`windows/${name}`, bytes); windowsManifest.artifacts[name] = hash(bytes);
   }
   write('windows/MANIFEST.json', JSON.stringify(windowsManifest));
-  assert.equal(cStageFiles(windowsLibrary, root).files.length, 6);
+  assert.equal(cStageFiles(windowsLibrary, root).files.length, 7);
+  write('windows/bin/d3dcompiler_47.dll', 'wrong');
+  assert.throws(() => cStageFiles(windowsLibrary, root), /artifact digest mismatch/);
+  write('windows/bin/d3dcompiler_47.dll', 'fxc');
   write('windows/bin/dxil.dll', 'wrong');
   assert.throws(() => cStageFiles(windowsLibrary, root), /artifact digest mismatch/);
   write('windows/bin/dxil.dll', 'dxil');

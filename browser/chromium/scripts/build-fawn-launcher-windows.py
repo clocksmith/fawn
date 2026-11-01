@@ -9,11 +9,14 @@ import json
 import os
 from pathlib import Path
 import runpy
+import shutil
 import subprocess
 
 LANE = Path(__file__).resolve().parents[1]
 SOURCE = LANE / 'launcher/fawn_windows.c'
 MANIFEST = LANE / 'launcher/fawn_windows.manifest'
+RESOURCE = LANE / 'launcher/fawn_windows.rc'
+ICON = LANE / 'assets/logo/compiled/windows/fawn-icon-main.ico'
 
 
 def digest(file: Path) -> str:
@@ -31,7 +34,12 @@ def build(clang: Path, vs: Path, output: Path) -> dict:
     sdk = Path(env['WindowsSdkDir'])
     version = env['WindowsSDKVersion'].rstrip('\\/')
     vc = Path(env['VCToolsInstallDir'])
-    inputs = [SOURCE, MANIFEST, Path(__file__), helper, clang,
+    path_key = next(key for key in env if key.casefold() == 'path')
+    rc = shutil.which('rc.exe', path=env[path_key])
+    if rc is None:
+        raise ValueError('the selected Windows SDK developer environment has no rc.exe')
+    rc = Path(rc)
+    inputs = [SOURCE, MANIFEST, RESOURCE, ICON, Path(__file__), helper, clang, rc,
               sdk / f'Include/{version}/um/Windows.h',
               sdk / f'Lib/{version}/um/x64/kernel32.lib',
               sdk / f'Lib/{version}/um/x64/shell32.lib',
@@ -39,7 +47,7 @@ def build(clang: Path, vs: Path, output: Path) -> dict:
               vc / 'include/vcruntime.h', vc / 'lib/x64/libcmt.lib']
     snapshots = output / 'source-inputs'
     snapshots.mkdir()
-    for file in (SOURCE, MANIFEST, Path(__file__), helper):
+    for file in (SOURCE, MANIFEST, RESOURCE, ICON, Path(__file__), helper):
         (snapshots / file.name).write_bytes(file.read_bytes())
     receipt = {'kind': 'windows-fawn-launcher-build', 'schemaVersion': 1,
                'scope': 'launcher binary only; no Chromium/provider/browser qualification',
@@ -49,15 +57,22 @@ def build(clang: Path, vs: Path, output: Path) -> dict:
                'compilerVersion': subprocess.check_output([str(clang), '--version'], text=True),
                'windowsSdkVersion': version, 'vcToolsVersion': env['VCToolsVersion'],
                'completed': False}
+    resource_command = [str(rc), '/nologo', '/i', str(ICON.parent),
+                        '/fo', str(output / 'fawn_windows.res'), str(RESOURCE)]
+    receipt['resourceCommand'] = resource_command
     command = [str(clang), '--target=x86_64-pc-windows-msvc', '/std:c11', '/W4', '/WX',
                '/O2', '/MT', str(SOURCE), '/Fe:' + str(output / 'Fawn.exe'),
-               '/Fo:' + str(output / 'fawn_windows.obj'), '/link', '/SUBSYSTEM:WINDOWS',
+               '/Fo:' + str(output / 'fawn_windows.obj'), '/link', str(output / 'fawn_windows.res'),
+               '/SUBSYSTEM:WINDOWS',
                'shell32.lib', 'user32.lib', '/MANIFEST:EMBED', '/MANIFESTINPUT:' + str(MANIFEST)]
     receipt['command'] = command
     record = output / 'launcher-build.json'
     record.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
     with (output / 'compile.stdout').open('wb') as stdout, (output / 'compile.stderr').open('wb') as stderr:
-        result = subprocess.run(command, cwd=output, env=env, stdout=stdout, stderr=stderr)
+        result = subprocess.run(resource_command, cwd=output, env=env, stdout=stdout, stderr=stderr)
+        receipt['resourceExitCode'] = result.returncode
+        if result.returncode == 0:
+            result = subprocess.run(command, cwd=output, env=env, stdout=stdout, stderr=stderr)
     receipt['exitCode'] = result.returncode
     drift = [str(file) for file in inputs if digest(file) != receipt['inputs'][str(file)]]
     receipt['inputDrift'] = drift

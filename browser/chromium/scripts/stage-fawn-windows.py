@@ -55,6 +55,15 @@ def upstream_action_arguments(command: list[str], src: Path, env: dict[str, str]
     return arguments
 
 
+def start_page_resources(lane: Path = LANE) -> list[Path]:
+    """The start-page resource set the macOS bundle and Linux installer carry."""
+    resources = sorted(path for suffix in ('html', 'svg', 'js')
+                       for path in (lane / 'resources').glob(f'fawn-*.{suffix}'))
+    if lane / 'resources/fawn-start.html' not in resources:
+        raise ValueError('Fawn start page is missing from browser resources')
+    return resources
+
+
 def validate_producers(browser: Path, native: Path, launcher: Path) -> tuple[dict, dict, dict]:
     browser_record = json.loads((browser / 'fawn-windows-browser-build.json').read_text())
     if not browser_record.get('completed'):
@@ -152,7 +161,10 @@ def stage(src: Path, browser: Path, native: Path, launcher: Path, output: Path) 
                 raise ValueError('this diagnostic lane requires its canonical noncomponent browser build')
             version = upstream.BuildVersion()
             config = upstream.Readconfig(options.input_file, version)
-            upstream.CopyAllFilesToStagingDir(config, options.distribution, str(output), str(browser),
+            # Upstream case-insensitively globs '<build_dir>/<name>'; an absolute
+            # build_dir turns the drive 'C:' into '[cC]:', which never matches on
+            # Windows. Pass the relative directory, as GN's own action does.
+            upstream.CopyAllFilesToStagingDir(config, options.distribution, str(output), os.curdir,
                 options.enable_hidpi, options.include_snapshotblob, options.include_dxc,
                 options.component_build, options.component_ffmpeg_build, options.verbose)
         package = output / upstream.CHROME_DIR
@@ -177,6 +189,13 @@ def stage(src: Path, browser: Path, native: Path, launcher: Path, output: Path) 
         shutil.copytree(native / 'licenses', closure / 'licenses')
         shutil.copy2(launcher, package / 'Fawn.exe')
         checked_file(package / 'Fawn.exe', launcher_record['launcherSha256'])
+        # Fawn.exe opens fawn/fawn-start.html as homepage and new window.
+        branding = package / 'fawn'
+        branding.mkdir()
+        record['branding'] = {}
+        for path in start_page_resources():
+            shutil.copy2(path, branding / path.name)
+            record['branding']['fawn/' + path.name] = digest(branding / path.name)
         licenses = package / 'licenses'
         licenses.mkdir(exist_ok=True)
         shutil.copy2(src / 'LICENSE', licenses / 'Chromium.txt')

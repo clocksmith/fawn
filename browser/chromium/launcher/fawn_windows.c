@@ -216,6 +216,38 @@ static int switch_value(LauncherSwitch option, const wchar_t *value)
            wmemcmp(option.value, value, option.value_length) == 0;
 }
 
+/* Append an absolute Windows path as a file URL: drive paths as file:///C:/...,
+ * UNC paths as file://server/..., with any \\?\ prefix removed, UTF-8, '\' as '/',
+ * and every byte except RFC 3986 unreserved characters, '/' and ':' encoded. */
+static int file_url(Command *command, const wchar_t *prefix, const wchar_t *path)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    const wchar_t *scheme = L"file:///";
+    if (!wcsncmp(path, L"\\\\?\\UNC\\", 8)) { path += 8; scheme = L"file://"; }
+    else if (!wcsncmp(path, L"\\\\?\\", 4)) path += 4;
+    else if (!wcsncmp(path, L"\\\\", 2)) { path += 2; scheme = L"file://"; }
+    if (command->used && !append(command, L' ')) return 0;
+    if (!append(command, L'"')) return 0;
+    for (const wchar_t *text = prefix; *text; ++text) if (!append(command, *text)) return 0;
+    for (const wchar_t *text = scheme; *text; ++text) if (!append(command, *text)) return 0;
+    int bytes = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path, -1, NULL, 0, NULL, NULL);
+    if (bytes <= 1) return 0;
+    char *utf8 = HeapAlloc(GetProcessHeap(), 0, (size_t)bytes);
+    if (!utf8) return 0;
+    int ok = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path, -1, utf8, bytes, NULL, NULL) == bytes;
+    for (const unsigned char *byte = (const unsigned char *)utf8; ok && *byte; ++byte) {
+        unsigned char value = *byte == '\\' ? '/' : *byte;
+        if ((value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z') ||
+            (value >= '0' && value <= '9') || strchr("-._~/:", value))
+            ok = append(command, (wchar_t)value);
+        else
+            ok = append(command, L'%') && append(command, (wchar_t)hex[value >> 4]) &&
+                 append(command, (wchar_t)hex[value & 15]);
+    }
+    HeapFree(GetProcessHeap(), 0, utf8);
+    return ok && append(command, L'"');
+}
+
 static int launch(int count, wchar_t **args)
 {
     int status = 1;
@@ -267,8 +299,9 @@ static int launch(int count, wchar_t **args)
     failure = L"Command line exceeds the Windows limit";
     error = ERROR_BUFFER_OVERFLOW;
     if (!dawn) {
-        const wchar_t *files[] = {L"lib\\doe\\webgpu_doe_c.dll", L"lib\\doe\\doe_compiler.dll", L"lib\\doe\\dxcompiler.dll", L"lib\\doe\\dxil.dll"};
-        for (size_t index = 0; index < 4; ++index) {
+        const wchar_t *files[] = {L"lib\\doe\\webgpu_doe_c.dll", L"lib\\doe\\doe_compiler.dll", L"lib\\doe\\dxcompiler.dll",
+                                  L"lib\\doe\\dxil.dll", L"lib\\doe\\d3dcompiler_47.dll"};
+        for (size_t index = 0; index < sizeof(files) / sizeof(*files); ++index) {
             if (!sibling(path, root, files[index]) || !file_exists(path, &error)) {
                 failure = L"Required private C runtime dependency missing or invalid";
                 failure_path = path;
@@ -297,6 +330,16 @@ static int launch(int count, wchar_t **args)
         HeapFree(GetProcessHeap(), 0, profile);
         if (!added) goto cleanup;
     }
+    /* Match the macOS and Linux product launchers: the bundled start page is the
+     * homepage and opens in a new window. */
+    failure = L"Bundled Fawn start page missing, or its path exceeds the command limit";
+    failure_path = path;
+    if (!sibling(path, root, L"fawn\\fawn-start.html") || !file_exists(path, &error)) goto cleanup;
+    error = ERROR_BUFFER_OVERFLOW;
+    if (!file_url(command, L"--homepage=", path) || !argument(command, L"--new-window") ||
+        !file_url(command, L"", path)) goto cleanup;
+    failure_path = NULL;
+    failure = L"Command line exceeds the Windows limit";
     int literal_arguments = 0;
     for (int index = 1; index < count; ++index) {
         LauncherSwitch option = parse_switch(args[index]);

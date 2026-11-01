@@ -407,8 +407,8 @@ retains its own gates.
 
 The provider loader rejects embedded NULs and truncated path copies. On Windows
 it converts UTF-8 strictly, resolves a relative path once, and uses explicit
-DLL-directory plus System32 dependency search. Keep the C compiler and DXC runtime
-DLLs beside the selected provider; no PATH or working-directory change is needed.
+DLL-directory plus System32 dependency search. Keep the C compiler, DXC runtime
+and FXC (`d3dcompiler_47.dll`) DLLs beside the selected provider; no PATH or working-directory change is needed.
 `scripts/check-provider-loader.js` runs the separate CPU-only loader controls:
 Windows builds a real sibling-import fixture with Unicode/relative paths and an
 ambient-directory rejection case; POSIX checks explicitly supplied C and retained

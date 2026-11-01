@@ -151,6 +151,17 @@ link `chrome-wrapper` as `fawn` on `PATH` and copy `fawn/fawn.desktop` and
 directories. Chromium links Dawn into `chrome`, so a Linux release package
 declares `chrome` as both its browser executable and its Dawn fallback runtime.
 
+On Windows, `scripts/build-windows.py` installs the compiled
+`assets/logo/compiled/windows/fawn-icon-main.ico` as Chromium's unbranded
+`chrome/app/theme/chromium/win/chromium.ico` before building, so `chrome.exe`
+carries the Fawn icon and the tracked source diff binds it. `Fawn.exe` embeds the
+same icon through `launcher/fawn_windows.rc`. `scripts/stage-fawn-windows.py`
+stages the start-page set under `fawn/`, and `Fawn.exe` opens
+`fawn/fawn-start.html` as the homepage and a new window, failing if it is missing.
+The platform policy declares no Windows release platform, so
+`scripts/package-browser-release-archive.py --platform-os windows` packs only a
+diagnostic zip, with Dawn's fallback member being the versioned `chrome.dll`.
+
 
 The Linux C frontdoor requests early GPU sandbox startup. On X11 with ANGLE's
 GLX backend, the managed pre-sandbox hook maps the fixed GLVND/Mesa library

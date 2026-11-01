@@ -25,7 +25,7 @@ class ProducerAdmission(unittest.TestCase):
         self.browser, self.native, self.launcher = root / 'browser', root / 'native', root / 'launcher'
         for path in (self.browser, self.native / 'bin', self.launcher):
             path.mkdir(parents=True)
-        self.library_names = ('webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll')
+        self.library_names = ('webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll', 'd3dcompiler_47.dll')
         self.browser_record = {'completed': True, 'browserArtifacts': [],
                                'selectedToolAndSdkInputs': [], 'selectedToolAndSdkInputsAfter': []}
         for name in ('chrome.exe', 'chrome.dll'):
@@ -84,6 +84,22 @@ class ProducerAdmission(unittest.TestCase):
         self.launcher_record['inputs'] = {'fawn_windows.c': hashlib.sha256(b'old source fixture').hexdigest()}
         with self.assertRaisesRegex(ValueError, 'source differs'):
             self.admit()
+
+
+class StartPageResources(unittest.TestCase):
+    def test_start_page_set_matches_other_platforms(self) -> None:
+        names = [path.name for path in stage.start_page_resources()]
+        self.assertIn('fawn-start.html', names)
+        self.assertIn('fawn-icon.svg', names)
+        self.assertIn('fawn-formation.js', names)
+
+    def test_missing_start_page_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            lane = Path(temporary)
+            (lane / 'resources').mkdir()
+            (lane / 'resources/fawn-icon.svg').write_text('<svg/>')
+            with self.assertRaisesRegex(ValueError, 'start page is missing'):
+                stage.start_page_resources(lane)
 
 
 class ActionArgumentDiagnostics(unittest.TestCase):

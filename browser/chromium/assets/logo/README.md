@@ -15,6 +15,8 @@ the literal paths consumed by the lane scripts.
 - macOS compiled: `assets/logo/compiled/macos/fawn-icon-main.icns`
 - Linux compiled preview PNGs: `assets/logo/compiled/linux/fawn-icon-main-<size>.png`
   - Generated sizes: 16, 32, 64, 128, 256, 512
+- Windows compiled icon: `assets/logo/compiled/windows/fawn-icon-main.ico`
+  - PNG-compressed 32-bit images at 16, 20, 24, 32, 40, 48, 64, 96, 128 and 256
 
 Use the lane script to rebuild from source:
 

@@ -20,7 +20,11 @@ import sys
 
 LANE = Path(__file__).resolve().parents[1]
 REPO = LANE.parents[1]
-RUNTIME_FILES = ('webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll')
+# The provider loads DXC and FXC only from its own directory (runtime/c/native/src/d3d12_shader.c).
+RUNTIME_FILES = ('webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll', 'd3dcompiler_47.dll')
+FAWN_ICON = LANE / 'assets/logo/compiled/windows/fawn-icon-main.ico'
+# chrome/app/chrome_exe.rc selects this IDR_MAINFRAME icon for unbranded builds.
+CHROMIUM_ICON = Path('chrome/app/theme/chromium/win/chromium.ico')
 RELEASE_ARGS = '''is_debug = false
 is_official_build = false
 dcheck_always_on = false
@@ -61,6 +65,19 @@ def patch_plan(src: Path, lane: Path = LANE, pins: tuple[str, str] | None = None
         subprocess.run(command + ['--check', str(patch)], check=True)
         pending.append((root, patch))
     return pending
+
+
+def install_fawn_icon(src: Path, icon: Path = FAWN_ICON) -> dict[str, str]:
+    """Make the compiled Fawn logo chrome.exe's main icon; the tracked diff binds it."""
+    data = icon.read_bytes()
+    if data[:4] != b'\0\0\1\0':
+        raise ValueError(f'Fawn icon is not a Windows icon resource: {icon}')
+    target = src / CHROMIUM_ICON
+    if not target.is_file():
+        raise ValueError(f'pinned Chromium no longer carries its unbranded main icon: {target}')
+    if target.read_bytes() != data:
+        target.write_bytes(data)
+    return {'source': str(icon), 'target': CHROMIUM_ICON.as_posix(), 'sha256': hashlib.sha256(data).hexdigest()}
 
 
 def source_diffs(src: Path, output: Path, phase: str) -> list[dict[str, str]]:
@@ -213,6 +230,7 @@ def main() -> int:
     try:
         for root, patch in pending:
             run(['git', '-c', 'core.autocrlf=false', '-C', str(root), 'apply', str(patch)])
+        receipt['fawnIcon'] = install_fawn_icon(src)
         receipt['sourcePatched'] = source_diffs(src, out, 'patched')
         if not (args.depot_tools / 'python3_bin_reldir.txt').is_file():
             run(batch_command(args.depot_tools.absolute() / 'bootstrap/win_tools.bat', []))

@@ -14,7 +14,10 @@ browser/chromium/scripts/build-release-external.sh --release-profile local
 
 `chromium-doe-runtime.patch` carries explicit provider switches to the GPU
 process, selects the external WebGPU backend for page requests, and preloads the
-selected library before Linux's existing GPU sandbox starts. Canvas textures are
+selected library before Linux's existing GPU sandbox starts. On Windows the GPU
+process maps the provider and the DXC, DXIL and FXC libraries beside it before
+`LowerToken()`, since the lowered token cannot map new images; the provider's
+later full-path loads reuse them. Canvas textures are
 imported zero-copy when the device enabled Doe's interop (Linux: Vulkan OPAQUE_FD
 memory with SYNC_FD and OPAQUE_FD semaphores; macOS: IOSurface with
 MTLSharedEvent fences, packed 8-bit surfaces without storage usage) and the

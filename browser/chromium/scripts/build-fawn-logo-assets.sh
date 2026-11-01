@@ -7,11 +7,12 @@ SOURCE="${LANE_DIR}/assets/logo/source/fawn-icon-main.svg"
 CANONICAL_SOURCE="${SOURCE}"
 LINUX_OUT="${LANE_DIR}/assets/logo/compiled/linux"
 MACOS_OUT="${LANE_DIR}/assets/logo/compiled/macos"
+WINDOWS_OUT="${LANE_DIR}/assets/logo/compiled/windows"
 
 usage() {
   cat <<'USAGE'
 Usage:
-  ./scripts/build-fawn-logo-assets.sh [--source PATH] [--linux-out PATH] [--macos-out PATH]
+  ./scripts/build-fawn-logo-assets.sh [--source PATH] [--linux-out PATH] [--macos-out PATH] [--windows-out PATH]
 
 Build compiled logo assets for the Chromium lane.
 
@@ -19,6 +20,7 @@ Defaults:
   --source    ${LANE_DIR}/assets/logo/source/fawn-icon-main.svg
   --linux-out ${LANE_DIR}/assets/logo/compiled/linux
   --macos-out ${LANE_DIR}/assets/logo/compiled/macos
+  --windows-out ${LANE_DIR}/assets/logo/compiled/windows
 USAGE
 }
 
@@ -48,6 +50,14 @@ while [[ $# -gt 0 ]]; do
       MACOS_OUT="$2"
       shift 2
       ;;
+    --windows-out)
+      if [[ $# -lt 2 ]]; then
+        echo "missing value for --windows-out" >&2
+        exit 2
+      fi
+      WINDOWS_OUT="$2"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -65,7 +75,7 @@ if [[ ! -f "${SOURCE}" ]]; then
   exit 1
 fi
 
-mkdir -p "${LINUX_OUT}" "${MACOS_OUT}"
+mkdir -p "${LINUX_OUT}" "${MACOS_OUT}" "${WINDOWS_OUT}"
 
 # The start-page icon and native app icon share the owner's selected artwork.
 # A custom --source build must not replace the canonical browser resource.
@@ -143,5 +153,47 @@ if command -v sips >/dev/null 2>&1 && command -v iconutil >/dev/null 2>&1; then
 else
   echo "skipping macOS icns render; install sips/iconutil (macOS) or build manually"
 fi
+
+# Windows: one .ico holding PNG-compressed 32-bit images (Vista and later), used
+# by the Fawn.exe launcher resource and the Windows chrome.exe main icon.
+ICO_SIZES=(16 20 24 32 40 48 64 96 128 256)
+ico_dir="$(mktemp -d)"
+ico_inputs=()
+for size in "${ICO_SIZES[@]}"; do
+  if ! render_png_linux "${SOURCE}" "${ico_dir}/${size}.png" "${size}"; then
+    ico_inputs=()
+    break
+  fi
+  ico_inputs+=("${ico_dir}/${size}.png")
+done
+if [[ "${#ico_inputs[@]}" -gt 0 ]]; then
+  python3 - "${WINDOWS_OUT}/fawn-icon-main.ico" "${ico_inputs[@]}" <<'PY'
+import struct
+import sys
+
+images = []
+for name in sys.argv[2:]:
+    data = open(name, "rb").read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+        raise SystemExit(f"not a PNG image: {name}")
+    width, height = struct.unpack(">II", data[16:24])
+    if width != height or not 0 < width <= 256:
+        raise SystemExit(f"icon image must be square and at most 256 pixels: {name}")
+    images.append((width, data))
+header = struct.pack("<HHH", 0, 1, len(images))
+offset = len(header) + 16 * len(images)
+entries = b""
+for width, data in images:
+    side = width % 256
+    entries += struct.pack("<BBBBHHII", side, side, 0, 0, 1, 32, len(data), offset)
+    offset += len(data)
+with open(sys.argv[1], "wb") as icon:
+    icon.write(header + entries + b"".join(data for _, data in images))
+PY
+  echo "wrote ${WINDOWS_OUT}/fawn-icon-main.ico"
+else
+  echo "skipping Windows ico render for ${WINDOWS_OUT}/fawn-icon-main.ico; no supported renderer found" >&2
+fi
+rm -rf "${ico_dir}"
 
 echo "logo asset build complete"
