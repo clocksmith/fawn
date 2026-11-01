@@ -1445,6 +1445,23 @@ index ac3c2414e..0c7201268 100644
      Device(AdapterBase* adapter,
             WGPUAdapter innerAdapter,
             const UnpackedPtr<DeviceDescriptor>& descriptor,
+diff --git a/src/dawn/native/webgpu/ExternalTextureWGPU.cpp b/src/dawn/native/webgpu/ExternalTextureWGPU.cpp
+index 5f3767a88..d30117bb7 100644
+--- a/src/dawn/native/webgpu/ExternalTextureWGPU.cpp
++++ b/src/dawn/native/webgpu/ExternalTextureWGPU.cpp
+@@ -46,7 +46,11 @@ ExternalTexture::CreationParams::CreationParams(const ExternalTextureDescriptor*
+ 
+     hasPlane1 = descriptor->plane1 != nullptr;
+ 
+-    Span<float>(yuvToRgbConversionMatrix).CopyFrom(descriptor->yuvToRgbConversionMatrix);
++    // The frontend admits an empty YUV-to-RGB matrix for single-plane sources and uses
++    // the identity; keep the zero-initialized record instead of copying a size mismatch.
++    if (!descriptor->yuvToRgbConversionMatrix.empty()) {
++        Span<float>(yuvToRgbConversionMatrix).CopyFrom(descriptor->yuvToRgbConversionMatrix);
++    }
+     Span<float>(srcTransferFunctionParameters).CopyFrom(descriptor->srcTransferFunctionParameters);
+     Span<float>(dstTransferFunctionParameters).CopyFrom(descriptor->dstTransferFunctionParameters);
+     Span<float>(gamutConversionMatrix).CopyFrom(descriptor->gamutConversionMatrix);
 diff --git a/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h b/src/dawn/native/webgpu/InnerRuntimeCallbackRegistry.h
 new file mode 100644
 index 000000000..6221d5ad1
