@@ -184,7 +184,7 @@ class BrowserReleaseCleanInstallTests(unittest.TestCase):
                                 "hiddenFallbackAllowed": False,
                                 "artifactIdentity": identity,
                             },
-                            "activeRuntimeProof": {"matchesRequestedMode": True},
+                            "activeRuntimeProof": {"matched": True},
                         }
                     )
                 smoke_out.write_text(

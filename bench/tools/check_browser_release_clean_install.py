@@ -373,7 +373,7 @@ def validate_smoke_report(
             if not isinstance(identity, dict) or Path(str(identity.get("doeLibPath", ""))).resolve() != doe_runtime_path.resolve():
                 failures.append(failure("smoke_doe_path_mismatch", path, "runtime selection did not use extracted Doe runtime"))
         proof = row.get("activeRuntimeProof")
-        if not isinstance(proof, dict) or proof.get("matchesRequestedMode") is not True:
+        if not isinstance(proof, dict) or proof.get("matched") is not True:
             failures.append(failure("active_runtime_proof_failed", path, f"active runtime proof failed for {mode}"))
     return failures
 
