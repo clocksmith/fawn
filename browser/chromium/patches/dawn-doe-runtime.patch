@@ -947,7 +947,7 @@ index 03842c139..4dcba683d 100644
      // Shader reflection after the application of overrides is required by the frontend for the
      // workgroup size.
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
-index 8af48f595..ec84694b5 100644
+index 8af48f595..38b415a1a 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.cpp
 +++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
 @@ -33,6 +33,8 @@
@@ -985,7 +985,7 @@ index 8af48f595..ec84694b5 100644
  
  namespace {
  
-@@ -130,7 +144,14 @@
+@@ -130,7 +144,14 @@ ResultOrError<Ref<Device>> Device::Create(AdapterBase* adapter,
      Ref<Device> device =
          AcquireRef(new Device(adapter, innerAdapter, descriptor, outerDeviceToggles, deviceToggles,
                                std::move(lostEvent)));
@@ -1001,7 +1001,7 @@ index 8af48f595..ec84694b5 100644
      return device;
  }
  
-@@ -146,6 +167,7 @@
+@@ -146,6 +167,7 @@ Device::Device(AdapterBase* adapter,
      DAWN_ASSERT(adapter->GetPhysicalDevice()->GetBackendType() == wgpu::BackendType::WebGPU);
  
      WGPUDeviceDescriptor apiDesc = *(ToAPI(*descriptor));
@@ -1009,7 +1009,7 @@ index 8af48f595..ec84694b5 100644
      std::string label = "Inner Device on " + adapter->GetPhysicalDevice()->GetName();
      apiDesc.label = ToOutputStringView(label);
  
-@@ -162,43 +184,159 @@
+@@ -162,43 +184,159 @@ Device::Device(AdapterBase* adapter,
      apiToggleDescriptor.disabledToggleCount = disabledTogglesName.size();
      apiToggleDescriptor.disabledToggles = disabledTogglesName.data();
  
@@ -1201,7 +1201,7 @@ index 8af48f595..ec84694b5 100644
  }
  
  Device::~Device() {
-@@ -209,10 +347,95 @@
+@@ -209,10 +347,98 @@ WGPUInstance Device::GetInnerInstance() const {
      return ToBackend(GetPhysicalDevice())->GetBackend()->GetInnerInstance();
  }
  
@@ -1282,6 +1282,9 @@ index 8af48f595..ec84694b5 100644
      Ref<Queue> queue;
      DAWN_TRY_ASSIGN(queue, Queue::Create(this, &descriptor->defaultQueue));
 -    return DeviceBase::Initialize(descriptor, std::move(queue));
++    // DeviceBase::Initialize installs the queue first; DestroyImpl may run after a
++    // failed initialization that never reached it.
++    mHasQueue = true;
 +    DAWN_TRY(DeviceBase::Initialize(descriptor, std::move(queue)));
 +    if (IsExternalRuntime()) {
 +        MaybeError lateError = mExternalInitializationError.Check(true, "device initialization");
@@ -1298,7 +1301,7 @@ index 8af48f595..ec84694b5 100644
  }
  
  ResultOrError<Ref<BindGroupBase>> Device::CreateBindGroupImpl(
-@@ -309,8 +532,9 @@
+@@ -309,8 +535,9 @@ ResultOrUnknownError<Ref<SharedTextureMemoryBase>> Device::ImportSharedTextureMe
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
      } else if (unpacked.Get<SharedTextureMemoryOpaqueFDDescriptor>()) {
@@ -1310,7 +1313,7 @@ index 8af48f595..ec84694b5 100644
      } else if (unpacked.Get<SharedTextureMemoryVkDedicatedAllocationDescriptor>()) {
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedTextureMemory in WebGPU backend has not been implemented for all platforms.");
-@@ -348,11 +572,11 @@
+@@ -348,11 +575,11 @@ ResultOrUnknownError<Ref<SharedFenceBase>> Device::ImportSharedFenceImpl(
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedFence in WebGPU backend has not been implemented for all platforms.");
      } else if (unpacked.Get<SharedFenceSyncFDDescriptor>()) {
@@ -1326,7 +1329,7 @@ index 8af48f595..ec84694b5 100644
      } else if (unpacked.Get<SharedFenceVkSemaphoreZirconHandleDescriptor>()) {
          return DAWN_UNIMPLEMENTED_ERROR(
              "SharedFence in WebGPU backend has not been implemented for all platforms.");
-@@ -364,7 +588,7 @@
+@@ -364,7 +591,7 @@ ResultOrUnknownError<Ref<SharedFenceBase>> Device::ImportSharedFenceImpl(
      DAWN_TRY((
          unpacked.ValidateSubset<SharedFenceMTLSharedEventDescriptor,
                                  SharedFenceDXGISharedHandleDescriptor, SharedFenceEGLSyncDescriptor,
@@ -1335,12 +1338,12 @@ index 8af48f595..ec84694b5 100644
                                  SharedFenceVkSemaphoreZirconHandleDescriptor>()));
  
      return SharedFence::Create(this, unpacked);
-@@ -380,10 +604,29 @@
+@@ -380,10 +607,29 @@ void Device::DestroyImpl(DestroyReason reason) {
      //   is implicitly destroyed. This case is thread-safe because there are no
      //   other threads using the device since there are no other live refs.
  
 -    if (ToBackend(GetQueue())->IsCapturing()) {
-+    if (GetQueue() && ToBackend(GetQueue())->IsCapturing()) {
++    if (mHasQueue && ToBackend(GetQueue())->IsCapturing()) {
          EndCapture();
      }
  
@@ -1366,7 +1369,7 @@ index 8af48f595..ec84694b5 100644
      if (mInnerHandle) {
          wgpu->deviceDestroy(mInnerHandle);
      }
-@@ -433,6 +676,7 @@
+@@ -433,6 +679,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
  }
  
  MaybeError Device::TickImpl() {
@@ -1375,7 +1378,7 @@ index 8af48f595..ec84694b5 100644
      return {};
  }
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.h b/src/dawn/native/webgpu/DeviceWGPU.h
-index ac3c2414e..0c7201268 100644
+index ac3c2414e..d07089b26 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.h
 +++ b/src/dawn/native/webgpu/DeviceWGPU.h
 @@ -29,15 +29,19 @@
@@ -1398,7 +1401,7 @@ index ac3c2414e..0c7201268 100644
  #include "src/dawn/native/webgpu/ObjectWGPU.h"
  #include "src/dawn/native/webgpu/QueueWGPU.h"
  
-@@ -54,6 +58,19 @@
+@@ -54,6 +58,19 @@ class Device final : public DeviceBase, public ObjectWGPU<WGPUDevice> {
  
      MaybeError Initialize(const UnpackedPtr<DeviceDescriptor>& descriptor);
  
@@ -1418,7 +1421,7 @@ index ac3c2414e..0c7201268 100644
      uint32_t GetOptimalBytesPerRowAlignment() const override;
      uint64_t GetOptimalBufferToTextureCopyOffsetAlignment() const override;
  
-@@ -80,6 +97,26 @@
+@@ -80,6 +97,27 @@ class Device final : public DeviceBase, public ObjectWGPU<WGPUDevice> {
      const raw_ref<const DawnProcTable> wgpu;
  
    private:
@@ -1441,6 +1444,7 @@ index ac3c2414e..0c7201268 100644
 +    CacheKey ExternalPipelineBlobKey(const void* key, size_t keySize) const;
 +    bool mExternalPipelineBlobs = false;
 +    uintptr_t mExternalCallbackToken = 0;
++    bool mHasQueue = false;
 +
      Device(AdapterBase* adapter,
             WGPUAdapter innerAdapter,
@@ -1824,6 +1828,48 @@ index 000000000..f6cce21ec
 +
 +}  // namespace dawn::native::webgpu
 +#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEERROR_H_
+diff --git a/src/dawn/native/webgpu/PhysicalDeviceWGPU.cpp b/src/dawn/native/webgpu/PhysicalDeviceWGPU.cpp
+index 2d92d908d..14ef11625 100644
+--- a/src/dawn/native/webgpu/PhysicalDeviceWGPU.cpp
++++ b/src/dawn/native/webgpu/PhysicalDeviceWGPU.cpp
+@@ -31,6 +31,7 @@
+ #include <utility>
+ 
+ #include "dawn/native/Features_autogen.h"
++#include "src/dawn/common/GPUInfo.h"
+ #include "src/dawn/common/StringViewUtils.h"
+ #include "src/dawn/native/ChainUtils.h"
+ #include "src/dawn/native/Instance.h"
+@@ -149,6 +150,17 @@ ResultOrError<PhysicalDeviceSurfaceCapabilities> PhysicalDevice::GetSurfaceCapab
+     return capabilities;
+ }
+ 
++// Keep the inner adapter's own vendor and architecture names; derive them from the
++// PCI IDs only where the inner adapter reported none (an Apple GPU has no device ID).
++void PhysicalDevice::InitializeVendorArchitectureImpl() {
++    if (mVendorName.empty()) {
++        mVendorName = gpu_info::GetVendorName(mVendorId);
++    }
++    if (mArchitectureName.empty()) {
++        mArchitectureName = gpu_info::GetArchitectureName(mVendorId, mDeviceId);
++    }
++}
++
+ MaybeError PhysicalDevice::InitializeImpl() {
+     return {};
+ }
+diff --git a/src/dawn/native/webgpu/PhysicalDeviceWGPU.h b/src/dawn/native/webgpu/PhysicalDeviceWGPU.h
+index d974f5a15..0ff19afd9 100644
+--- a/src/dawn/native/webgpu/PhysicalDeviceWGPU.h
++++ b/src/dawn/native/webgpu/PhysicalDeviceWGPU.h
+@@ -56,6 +56,7 @@ class PhysicalDevice : public PhysicalDeviceBase {
+     explicit PhysicalDevice(Backend* backend, WGPUAdapter innerAdapter);
+ 
+     MaybeError InitializeImpl() override;
++    void InitializeVendorArchitectureImpl() override;
+     void InitializeSupportedFeaturesImpl() override;
+     MaybeError InitializeSupportedLimitsImpl(CombinedLimits* limits) override;
+ 
 diff --git a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp b/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
 index 965a7bc4c..8925e30d3 100644
 --- a/src/dawn/native/webgpu/PipelineLayoutWGPU.cpp
