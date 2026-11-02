@@ -31,6 +31,12 @@ $(BUILD)/test_library_cache: tests/test_library_cache.c $(BUILD)/libdoe_metal.a
 check-library-cache: $(BUILD)/test_library_cache
 	$(BUILD)/test_library_cache
 check: check-library-cache
+$(BUILD)/test_buffer_reuse: tests/test_buffer_reuse.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_buffer_reuse.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+.PHONY: check-buffer-reuse
+check-buffer-reuse: $(BUILD)/test_buffer_reuse
+	$(BUILD)/test_buffer_reuse
+check: check-buffer-reuse
 $(BUILD)/test_surface: tests/test_surface.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_surface.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD):

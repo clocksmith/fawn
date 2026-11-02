@@ -5,6 +5,8 @@
 doe_mtl_status doe_mtl_recording(doe_mtl_commands *commands, doe_mtl_error *error) {
     if (commands == NULL)
         return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "command recording", error);
+    if (commands->state == DOE_MTL_RECORDING && commands->failure.status != DOE_MTL_OK)
+        commands->state = DOE_MTL_POISONED;
     if (commands->state == DOE_MTL_POISONED) {
         if (error != NULL) *error = commands->failure;
         return commands->failure.status;
@@ -18,7 +20,8 @@ doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,
     const char *operation, doe_mtl_error *error) {
     if (commands != NULL && commands->state == DOE_MTL_RECORDING) {
         commands->state = DOE_MTL_POISONED;
-        doe_mtl_fail(status, operation, &commands->failure);
+        if (commands->failure.status == DOE_MTL_OK)
+            doe_mtl_fail(status, operation, &commands->failure);
     }
     if (commands != NULL && commands->state == DOE_MTL_POISONED) {
         if (error != NULL) *error = commands->failure;
@@ -64,15 +67,42 @@ doe_mtl_status doe_mtl_commands_create(doe_mtl_context *context,
     return doe_mtl_fail(DOE_MTL_OK, "command create", error);
 }
 
+static void confirm_submission(doe_mtl_commands *commands) {
+    if (commands->submission_known || commands->completion_unknown) return;
+    const doe_mtl_native *native = &commands->context->native;
+    doe_mtl_error error = {0};
+    /* commit is a void native boundary. A nonwaiting status observation proves
+     * accepted queue order, never resource retirement or successful output. */
+    size_t status = native->observe(native->userdata, commands->native, false, &error);
+    commands->submission_known = status >= 2 && status <= 5;
+    commands->completion_unknown = !commands->submission_known;
+    if (status == 4 && commands->timeline_value &&
+        native->timeline_value(native->userdata, commands->context->timeline) < commands->timeline_value)
+        commands->completion_unknown = true;
+    if (status == 5 && commands->failure.status == DOE_MTL_OK) {
+        commands->failure = error;
+        commands->failure.status = DOE_MTL_EXECUTION_FAILED;
+        if (!commands->failure.operation) commands->failure.operation = "command completion";
+    }
+}
+
 doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable) {
     if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
     if (buffer->evict_requested) return DOE_MTL_INVALID_STATE;
-    if (buffer->owner != NULL && buffer->owner != commands) {
-        commands->conflict = buffer->owner;
-        return DOE_MTL_BUSY;
-    }
+    if (buffer->owner && buffer->owner != commands && buffer->owner->state == DOE_MTL_SUBMITTED)
+        confirm_submission(buffer->owner); /* Usually proved by routine frontend polling. */
+    for (const doe_mtl_buffer_use *use = buffer->uses; use; use = use->older)
+        if (use->commands != commands && (use->commands->state != DOE_MTL_SUBMITTED ||
+                !use->commands->submission_known || use->commands->completion_unknown)) {
+            commands->conflict = use->commands;
+            return DOE_MTL_BUSY;
+        }
+        else if (use->commands->failure.status != DOE_MTL_OK) {
+            if (commands->failure.status == DOE_MTL_OK) commands->failure = use->commands->failure;
+            return DOE_MTL_EXECUTION_FAILED;
+        }
     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
     if (readable && !doe_mtl_buffer_initialized(commands, buffer))
         return DOE_MTL_UNINITIALIZED;
@@ -85,6 +115,11 @@ bool doe_mtl_buffer_initialized(const doe_mtl_commands *commands,
     for (use = commands->buffers; use != NULL; use = use->next) {
         if (use->buffer == buffer) return use->initialized;
     }
+    /* A committed command precedes this recording on the context's one queue.
+     * Its speculative initialization is usable by GPU work, never host access.
+     * Completion below observes earlier uses before publishing later output. */
+    if (buffer->uses && buffer->owner->state == DOE_MTL_SUBMITTED && buffer->owner->submission_known &&
+        !buffer->owner->completion_unknown) return buffer->uses->initialized;
     return buffer->initialized;
 }
 
@@ -106,9 +141,13 @@ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
         return status;
     }
     use->buffer = buffer;
-    use->initialized = buffer->initialized;
+    use->commands = commands;
+    use->initialized = doe_mtl_buffer_initialized(commands, buffer);
     use->next = commands->buffers;
     commands->buffers = use;
+    use->older = buffer->uses;
+    if (use->older) use->older->newer = use;
+    buffer->uses = use;
     buffer->owner = commands;
     *out = use;
     return DOE_MTL_OK;
@@ -208,9 +247,17 @@ static void retire_uses(doe_mtl_commands *commands, bool completed, bool success
         commands->buffers = use->next;
         if (completed) {
             if (success) use->buffer->initialized = use->initialized;
-            else use->buffer->poisoned = true;
+            else {
+                use->buffer->poisoned = true;
+                /* These records already retain every dependent resource. A
+                 * failed predecessor forbids their success, but cannot retire
+                 * work whose own native completion is still unknown. */
+                for (doe_mtl_buffer_use *later = use->newer; later; later = later->newer)
+                    if (later->commands->failure.status == DOE_MTL_OK)
+                        later->commands->failure = commands->failure;
+            }
         }
-        doe_mtl_buffer_owner_retired(use->buffer);
+        doe_mtl_buffer_use_retired(use);
         doe_mtl_buffer_release(use->buffer);
         free(use);
     }
@@ -226,6 +273,10 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
     doe_mtl_status status = doe_mtl_recording(commands, error);
     doe_mtl_native *native;
     if (status != DOE_MTL_OK) return status;
+    for (doe_mtl_buffer_use *use = commands->buffers; use; use = use->next)
+        for (doe_mtl_buffer_use *earlier = use->older; earlier; earlier = earlier->older)
+            if (earlier->commands->completion_unknown)
+                return doe_mtl_poison(commands, DOE_MTL_BUSY, "unknown buffer predecessor", error);
     native = &commands->context->native;
     if (commands->context->timeline) {
         if (commands->context->timeline_next == UINT64_MAX)
@@ -257,7 +308,7 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);
 }
 
-static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
+static doe_mtl_status observe_terminal(doe_mtl_commands *commands, bool wait,
     doe_mtl_error *error) {
     doe_mtl_native *native;
     size_t status;
@@ -276,34 +327,69 @@ static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
     status = commands->present_texture ? native->surface_observe(native->userdata, commands->native,
         commands->present_texture->drawable, wait, &native_error) :
         native->observe(native->userdata, commands->native, wait, &native_error);
+    commands->submission_known = status >= 2 && status <= 5;
     if (status == 4 && commands->timeline_value &&
-        native->timeline_value(native->userdata, commands->context->timeline) < commands->timeline_value)
+        native->timeline_value(native->userdata, commands->context->timeline) < commands->timeline_value) {
+        commands->completion_unknown = true;
         return doe_mtl_fail(DOE_MTL_COMPLETION_UNKNOWN, "timeline completion proof", error);
+    }
     /* A signaled event alone cannot discard a command's terminal NSError or
      * presentation lease: ordinary terminal observation remains authoritative. */
-    if (status == 4) {
-        if (commands->present_texture) {
-            native->release(native->userdata, commands->present_texture->drawable);
-            commands->present_texture->drawable = NULL;
-            commands->present_texture = NULL;
-        }
+    if (status == 4 && commands->present_texture) {
+        native->release(native->userdata, commands->present_texture->drawable);
+        commands->present_texture->drawable = NULL;
+        commands->present_texture = NULL;
+    }
+    if (status == 4 && commands->failure.status == DOE_MTL_OK) {
+        commands->completion_unknown = false;
         commands->state = DOE_MTL_COMPLETE;
         retire_uses(commands, true, true);
         return doe_mtl_fail(DOE_MTL_OK, "command completion", error);
     }
-    if (status == 5) {
+    if (status == 4 || status == 5) {
+        commands->completion_unknown = false;
         commands->present_texture = NULL;
         commands->state = DOE_MTL_FAILED;
-        commands->failure = native_error;
+        if (commands->failure.status == DOE_MTL_OK) commands->failure = native_error;
         commands->failure.status = DOE_MTL_EXECUTION_FAILED;
         if (commands->failure.operation == NULL) commands->failure.operation = "command completion";
         retire_uses(commands, true, false);
         if (error != NULL) *error = commands->failure;
         return DOE_MTL_EXECUTION_FAILED;
     }
-    if (!wait && (status == 2 || status == 3))
+    if (!wait && (status == 2 || status == 3)) {
+        commands->completion_unknown = false;
         return doe_mtl_fail(DOE_MTL_PENDING, "command completion", error);
+    }
+    commands->completion_unknown = true;
     return doe_mtl_fail(DOE_MTL_COMPLETION_UNKNOWN, "command completion", error);
+}
+
+static doe_mtl_commands *earlier_buffer_use(const doe_mtl_commands *commands) {
+    for (const doe_mtl_buffer_use *use = commands->buffers; use; use = use->next)
+        if (use->older) return use->older->commands;
+    return NULL;
+}
+
+static doe_mtl_status observe(doe_mtl_commands *commands, bool wait, doe_mtl_error *error) {
+    if (commands && commands->state == DOE_MTL_SUBMITTED) {
+        for (;;) {
+            doe_mtl_commands *earlier = earlier_buffer_use(commands);
+            if (!earlier) break;
+            /* Every edge was admitted only from an already committed command
+             * to a new recording. Walk backwards to its first outstanding use,
+             * then retire through the ordinary observer. No recursion/queue or
+             * extra resource ownership: traversal is bounded by live leases. */
+            doe_mtl_commands *next;
+            while ((next = earlier_buffer_use(earlier)) != NULL) earlier = next;
+            doe_mtl_status status = observe_terminal(earlier, wait, error);
+            if (status != DOE_MTL_OK && status != DOE_MTL_EXECUTION_FAILED) {
+                if (status == DOE_MTL_COMPLETION_UNKNOWN) commands->completion_unknown = true;
+                return status;
+            }
+        }
+    }
+    return observe_terminal(commands, wait, error);
 }
 
 doe_mtl_status doe_mtl_commands_poll(doe_mtl_commands *commands, doe_mtl_error *error) {

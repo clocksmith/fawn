@@ -28,7 +28,11 @@ Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the GPU normalizer/
 Native samples precede timestamp resolves.
 Producer dependencies retain GPU waits; exports reference committed queue timeline values.
 Pending/unknown work retains resources; failure forbids successful readback. No interpreter, backend substitution, Zig delegation,
-production-selection change. Host/SDK/physical evidence stays distinct. Serialized single-resource owners survive asynchronous acceptance; unlocked waits require native leases.
+production-selection change. Host/SDK/physical evidence stays distinct. Command-owned buffer leases admit queue-ordered reuse after known submission;
+unsubmitted/unknown owners exclude reuse. The ordinary queue synchronizes directly bound
+[tracked resources](https://developer.apple.com/documentation/metal/resource-synchronization).
+Earlier failure/completion precedes dependent publication,
+host access and eviction require all uses retired; unlocked waits require native leases.
 Stencil initialization uses parent-format attachments/speculative aspect ownership,
 preserving companions. Aspect transfers use those bits/native component-copy options,
 published after completion. Per-draw native encoder state controls depth clip/clamp/bias.

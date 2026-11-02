@@ -20,6 +20,8 @@ static void rollback_groups(void)
     assert(doe_mtl_commands_create(context,&first,NULL) == DOE_MTL_OK);
     assert(doe_mtl_commands_fill(first,held,0,64,1,NULL) == DOE_MTL_OK);
     assert(doe_mtl_commands_submit(first,NULL) == DOE_MTL_OK);
+    mock_command_result(first->native, 0, 0);
+    assert(doe_mtl_commands_poll(first,NULL) == DOE_MTL_COMPLETION_UNKNOWN);
     doe_mtl_texture *texture = NULL;
     doe_mtl_texture_desc td = {DOE_MTL_TEXTURE_2D,DOE_MTL_RGBA8_UNORM,4,4,1,1,
         DOE_MTL_TEXTURE_RENDER_TARGET,false,1};
@@ -152,6 +154,8 @@ int main(void)
 
     assert(doe_mtl_commands_create(context,&provisional,NULL) == DOE_MTL_OK);
     assert(doe_mtl_commands_fill(provisional,scratch,0,64,3,NULL) == DOE_MTL_OK);
+    mock_command_result(first->native,0,0);
+    assert(doe_mtl_commands_poll(first,NULL) == DOE_MTL_COMPLETION_UNKNOWN);
     assert(doe_mtl_commands_copy(provisional,a,0,scratch,0,64,NULL) == DOE_MTL_BUSY);
     assert(doe_mtl_commands_conflict(provisional) == first);
     assert(doe_mtl_commands_release(provisional) == DOE_MTL_OK);
@@ -159,6 +163,7 @@ int main(void)
     assert(mock.commits == 2); /* No partial recording dispatched. */
 
     doe_mtl_wait_lease lease = {0};
+    mock_command_result(first->native,2,0);
     assert(doe_mtl_commands_hold(first,&lease) == DOE_MTL_OK);
     assert(doe_mtl_commands_block(&lease,0) == DOE_MTL_PENDING);
     assert(!a->initialized && a->owner == first && mock.waits == 0);

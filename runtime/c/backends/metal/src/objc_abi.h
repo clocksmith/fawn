@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum { DOE_MTL_RESOURCE_HAZARD_TRACKED = 2u << 8 };
+
 /* Narrow 64-bit macOS C ABI. MTLSize and NSRange use NSUInteger fields.
  * objc_msgSend is always cast to the exact selected method signature.
  * x86_64 uses objc_msgSend_stret for a returned three-word MTLSize; arm64

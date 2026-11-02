@@ -18,6 +18,7 @@ struct doe_mtl_context {
     doe_mtl_completion_sink completion; /* notify == NULL: none configured. */
     doe_mtl_caps caps;
 };
+typedef struct doe_mtl_buffer_use doe_mtl_buffer_use;
 struct doe_mtl_buffer {
     doe_mtl_context *context;
     uint32_t references;
@@ -27,7 +28,8 @@ struct doe_mtl_buffer {
     bool initialized;
     bool poisoned;
     bool evict_requested; /* Public destroy(): free native storage once unused. */
-    doe_mtl_commands *owner; /* Borrowed; this command owns a buffer reference. */
+    doe_mtl_commands *owner; /* Newest use; every use owns its existing reference. */
+    doe_mtl_buffer_use *uses;
 };
 struct doe_mtl_pipeline {
     doe_mtl_context *context;
@@ -36,11 +38,13 @@ struct doe_mtl_pipeline {
     doe_mtl_dimensions workgroup;
     uint32_t sizes_slot;
 };
-typedef struct doe_mtl_buffer_use {
+struct doe_mtl_buffer_use {
     doe_mtl_buffer *buffer;
+    doe_mtl_commands *commands;
     bool initialized; /* Speculative until successful native completion. */
     struct doe_mtl_buffer_use *next;
-} doe_mtl_buffer_use;
+    struct doe_mtl_buffer_use *older, *newer; /* Same-buffer queue/recording order. */
+};
 typedef struct doe_mtl_pipeline_use {
     doe_mtl_pipeline *pipeline;
     struct doe_mtl_pipeline_use *next;
@@ -54,11 +58,13 @@ struct doe_mtl_commands {
     void *native;
     doe_mtl_command_state state;
     doe_mtl_commands *conflict; /* Borrowed under caller serialization; never retained. */
+    bool submission_known; /* Native status confirmed commit, not just a void commit call. */
+    bool completion_unknown;
     uint64_t timeline_value;
     void *shared_signal_event; /* +1 until this recording is discarded or terminal. */
     void **shared_wait_events;
     size_t shared_wait_count;
-    doe_mtl_error failure;
+    doe_mtl_error failure; /* First own/predecessor error; only state proves terminality. */
     doe_mtl_texture *present_texture; /* Borrowed through the ordinary texture use. */
     doe_mtl_buffer_use *buffers;
     doe_mtl_pipeline_use *pipelines;
@@ -72,8 +78,8 @@ doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);
 doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable);
-/* Clears the retired owner and completes a deferred destroy() eviction. */
-void doe_mtl_buffer_owner_retired(doe_mtl_buffer *buffer);
+/* Unlinks only this existing lease; eviction requires the last use to retire. */
+void doe_mtl_buffer_use_retired(doe_mtl_buffer_use *use);
 doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer_binding *bindings, size_t count, uint32_t sizes_slot,
     doe_mtl_native_binding *flat);

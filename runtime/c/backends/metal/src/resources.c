@@ -72,9 +72,13 @@ doe_mtl_status doe_mtl_buffer_evict(doe_mtl_buffer *buffer) {
     return DOE_MTL_OK;
 }
 
-void doe_mtl_buffer_owner_retired(doe_mtl_buffer *buffer) {
-    buffer->owner = NULL;
-    if (buffer->evict_requested) buffer_evict_now(buffer);
+void doe_mtl_buffer_use_retired(doe_mtl_buffer_use *use) {
+    doe_mtl_buffer *buffer = use->buffer;
+    if (use->older) use->older->newer = use->newer;
+    if (use->newer) use->newer->older = use->older;
+    else buffer->uses = use->older;
+    buffer->owner = buffer->uses ? buffer->uses->commands : NULL;
+    if (!buffer->uses && buffer->evict_requested) buffer_evict_now(buffer);
 }
 
 uint64_t doe_mtl_buffer_size(const doe_mtl_buffer *buffer) {

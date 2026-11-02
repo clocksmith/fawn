@@ -169,7 +169,10 @@ static doe_mtl_status create_buffer(void *userdata, void *device, size_t length,
     doe_mtl_objc *runtime = userdata;
     void *pool = doe_mtl_objc_pool(runtime);
     void *buffer;
-    const size_t options = memory == DOE_MTL_PRIVATE ? (size_t)2 << 4 : 0;
+    /* One ordered queue and tracked buffer hazards admit GPU reuse without
+     * converting resource dependencies into frontend CPU completion waits. */
+    const size_t options = (memory == DOE_MTL_PRIVATE ? (size_t)2 << 4 : 0) |
+        DOE_MTL_RESOURCE_HAZARD_TRACKED;
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
     buffer = runtime->buffer_call(device, runtime->new_buffer,
         length, options);
