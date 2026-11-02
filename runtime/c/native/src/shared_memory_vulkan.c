@@ -150,7 +150,8 @@ static bool view_format_admitted(WGPUSharedTextureMemory memory, WGPUTextureForm
 WGPUTexture native_vulkan_shared_create_texture(WGPUSharedTextureMemory memory, const WGPUTextureDescriptor *descriptor)
 {
     native_device *device = memory->device;
-    bool shape = !descriptor->nextInChain && descriptor->dimension == WGPUTextureDimension_2D &&
+    bool shape = !descriptor->nextInChain &&
+        native_shared_texture_dimension(descriptor->dimension) == WGPUTextureDimension_2D &&
         descriptor->format == memory->format && descriptor->size.width == memory->width &&
         descriptor->size.height == memory->height && descriptor->size.depthOrArrayLayers == 1 &&
         descriptor->mipLevelCount == 1 && descriptor->sampleCount == 1 &&

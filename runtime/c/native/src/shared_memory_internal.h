@@ -43,6 +43,14 @@ typedef struct shared_texture_payload {
     doe_resource_texture *identity;
 } shared_texture_payload;
 
+/* The pinned public descriptor defaults Undefined to 2D for every import route.
+ * Preserve explicit dimensions so each shared-image admission still rejects
+ * unsupported 1D/3D shapes without changing the caller's descriptor. */
+static inline WGPUTextureDimension native_shared_texture_dimension(WGPUTextureDimension dimension)
+{
+    return dimension == WGPUTextureDimension_Undefined ? WGPUTextureDimension_2D : dimension;
+}
+
 const WGPUChainedStruct *native_shared_find_chain(const WGPUChainedStruct *chain, uint32_t type);
 void native_shared_error(native_device *device, native_failure failure, const char *operation);
 WGPUSharedFence native_shared_allocate_fence(native_device *device);

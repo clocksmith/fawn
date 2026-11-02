@@ -108,7 +108,8 @@ WGPUTexture native_d3d12_shared_create_texture(WGPUSharedTextureMemory memory,co
 {
 #if defined(_WIN32)
     native_device *device=memory->device;
-    bool shape=!descriptor->nextInChain && descriptor->dimension==WGPUTextureDimension_2D &&
+    bool shape=!descriptor->nextInChain &&
+        native_shared_texture_dimension(descriptor->dimension)==WGPUTextureDimension_2D &&
         descriptor->format==memory->format && descriptor->size.width==memory->width &&
         descriptor->size.height==memory->height && descriptor->size.depthOrArrayLayers==1 &&
         descriptor->mipLevelCount==1 && descriptor->sampleCount==1 && !(descriptor->usage & ~memory->usage) &&

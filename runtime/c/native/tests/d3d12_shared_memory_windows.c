@@ -64,9 +64,17 @@ static WGPUTexture shared_texture(WGPUSharedTextureMemory memory)
     assert(wgpuSharedTextureMemoryGetProperties(memory,&properties)==WGPUStatus_Success);
     assert(properties.size.width==2 && properties.size.height==2 && properties.format==WGPUTextureFormat_RGBA8Unorm);
     WGPUTextureDescriptor desc=WGPU_TEXTURE_DESCRIPTOR_INIT;
-    desc.dimension=WGPUTextureDimension_2D; desc.size=properties.size; desc.format=properties.format;
+    desc.size=properties.size; desc.format=properties.format;
     desc.usage=WGPUTextureUsage_CopySrc|WGPUTextureUsage_CopyDst|WGPUTextureUsage_RenderAttachment;
-    WGPUTexture image=wgpuSharedTextureMemoryCreateTexture(memory,&desc); assert(image); return image;
+    assert(desc.dimension==WGPUTextureDimension_Undefined);
+    WGPUTexture image=wgpuSharedTextureMemoryCreateTexture(memory,&desc); assert(image);
+    assert(desc.dimension==WGPUTextureDimension_Undefined && wgpuTextureGetDimension(image)==WGPUTextureDimension_2D);
+    desc.dimension=WGPUTextureDimension_1D; assert(!wgpuSharedTextureMemoryCreateTexture(memory,&desc));
+    desc.dimension=WGPUTextureDimension_3D; assert(!wgpuSharedTextureMemoryCreateTexture(memory,&desc));
+    desc.dimension=WGPUTextureDimension_2D;
+    WGPUTexture explicit_2d=wgpuSharedTextureMemoryCreateTexture(memory,&desc); assert(explicit_2d);
+    wgpuTextureRelease(explicit_2d);
+    return image;
 }
 static void wait_external(ID3D12Device *device,HANDLE handle,uint64_t value)
 {

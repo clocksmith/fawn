@@ -187,11 +187,39 @@ static WGPUSharedTextureMemory import_memory(state *s, fixture *f)
 static WGPUTexture make_texture(WGPUSharedTextureMemory memory, WGPUTextureFormat format)
 {
     WGPUTextureFormat srgb_view = WGPUTextureFormat_BGRA8UnormSrgb;
-    WGPUTextureDescriptor desc = {.dimension=WGPUTextureDimension_2D,.format=format,
-        .size={4,2,1},.mipLevelCount=1,.sampleCount=1,.usage=WGPUTextureUsage_CopySrc |
-        WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_RenderAttachment,
-        .viewFormatCount=1,.viewFormats=&srgb_view};
+    WGPUTextureDescriptor desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    desc.format = format;
+    desc.size = (WGPUExtent3D){4,2,1};
+    desc.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
+        WGPUTextureUsage_TextureBinding | WGPUTextureUsage_RenderAttachment;
+    desc.viewFormatCount = 1;
+    desc.viewFormats = &srgb_view;
     return wgpuSharedTextureMemoryCreateTexture(memory,&desc);
+}
+static void texture_dimension_contract(state *s, WGPUSharedTextureMemory memory)
+{
+    WGPUTextureDescriptor desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    desc.format = WGPUTextureFormat_BGRA8Unorm;
+    desc.size = (WGPUExtent3D){4,2,1};
+    desc.usage = WGPUTextureUsage_CopySrc;
+    assert(desc.dimension == WGPUTextureDimension_Undefined);
+    const WGPUTextureDimension dimensions[] = {WGPUTextureDimension_Undefined,
+        WGPUTextureDimension_2D, WGPUTextureDimension_1D, WGPUTextureDimension_3D,
+        (WGPUTextureDimension)UINT32_MAX};
+    for (size_t i = 0; i < sizeof(dimensions) / sizeof(dimensions[0]); ++i) {
+        desc.dimension = dimensions[i];
+        unsigned errors = s->errors;
+        WGPUTexture texture = wgpuSharedTextureMemoryCreateTexture(memory,&desc);
+        assert(desc.dimension == dimensions[i]);
+        assert(desc.format == WGPUTextureFormat_BGRA8Unorm && desc.size.height == 2);
+        if (i < 2) {
+            assert(texture && s->errors == errors);
+            assert(wgpuTextureGetDimension(texture) == WGPUTextureDimension_2D);
+            wgpuTextureRelease(texture);
+        } else {
+            assert(!texture && s->errors == errors + 1 && s->last_error == WGPUErrorType_Validation);
+        }
+    }
 }
 static WGPUSharedFence import_fence(state *s, fixture *f)
 {
@@ -370,6 +398,7 @@ int main(void)
     WGPUSharedTextureMemory memory = import_memory(&s,f);
     WGPUSharedTextureMemory other = import_memory(&s,f);
     assert(memory && other && f->surface_references == 2);
+    texture_dimension_contract(&s,memory);
     WGPUSharedTextureMemoryProperties properties = {0};
     assert(wgpuSharedTextureMemoryGetProperties(memory,&properties) == WGPUStatus_Success);
     assert(properties.format == WGPUTextureFormat_BGRA8Unorm && properties.size.width == 4 && properties.size.height == 2);

@@ -275,7 +275,7 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
     wgpuSharedTextureMemoryAddRef(memory);
     native_device *device = memory->device;
     doe_resource_texture *texture = NULL;
-    doe_resource_texture_desc desc = {.dimension=descriptor->dimension,.format=descriptor->format,
+    doe_resource_texture_desc desc = {.dimension=native_shared_texture_dimension(descriptor->dimension),.format=descriptor->format,
         .width=descriptor->size.width,.height=descriptor->size.height,
         .depth_or_layers=descriptor->size.depthOrArrayLayers,.mip_levels=descriptor->mipLevelCount,
         .samples=descriptor->sampleCount,.usage=descriptor->usage,
