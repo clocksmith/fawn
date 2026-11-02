@@ -2,7 +2,7 @@
 
 Generated from [sources.json](sources.json) by `python3 bench/cli.py inventory`.
 
-Current product-source frontier: `8c4bc670ec5452f126adf99c4a5b315e0a99e922`.
+Current product-source frontier: `7c6ad42c2c97fa57d7d42e45f43efc06eaf66e9c`.
 
 Each family links to its complete aggregate history. Builds and dates below summarize recorded evidence; they do not bind different machines or executions together.
 
@@ -25,7 +25,7 @@ W/L/I counts refer to aggregate metric outcomes, not workload or campaign wins. 
 
 | Family | Recorded machine / OS | Recorded builds: source/binary | Last execution / contract freeze | Metrics W/L/I; failed observations | Qualification | Current source / measurement gaps |
 | --- | --- | --- | --- | --- | --- | --- |
-| [macOS Fawn/Chrome fresh-launch and retained browser diagnostics](families/browser-macos.md) (531 observations) | mars; 456 unbound observations / darwin | chrome unknown/2acf677e0b33 vs unknown unknown/unknown; chrome unknown/unknown vs unknown unknown/unknown; +7 pairs | 2026-11-02T17:54:09.850000Z / unknown | 26/119/311; 0 failed | 0 fully qualified observations | current source unmeasured; machine provenance missing |
+| [macOS Fawn/Chrome fresh-launch and retained browser diagnostics](families/browser-macos.md) (552 observations) | mars; 456 unbound observations / darwin | chrome unknown/2acf677e0b33 vs unknown unknown/unknown; chrome unknown/unknown vs unknown unknown/unknown; +7 pairs | 2026-11-02T19:19:52.272000Z / unknown | 28/127/343; 0 failed | 0 fully qualified observations | current source unmeasured; machine provenance missing |
 | [Windows Fawn/Chrome fresh-launch diagnostics](families/browser-windows.md) (228 observations) | unbound; 228 unbound observations / win32 | chrome unknown/unknown vs unknown unknown/unknown; fawn_dawn unknown/unknown vs chrome unknown/unknown; +3 pairs | 2026-11-01T17:31:17.257000Z / unknown | 8/80/80; 0 failed | 0 fully qualified observations | current source unmeasured; machine provenance missing |
 | [Linux Fawn/Chromium integrated comparison gaps](families/browser-linux.md) (1 observations) | unbound; 1 unbound observations / linux | unknown unknown/unknown vs unknown unknown/unknown | unknown / unknown | 0/0/0; 0 failed | 0 fully qualified observations | current source unmeasured; 1 undated; machine provenance missing; required evidence unavailable |
 

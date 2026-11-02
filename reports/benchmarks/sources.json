@@ -3397,6 +3397,41 @@
       "section": "browser-integration",
       "sha256": "fbb40650ad3421a3ce4bcdf18546bbfea1ccb10688dc1517145c19e436ac3e1e",
       "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "fawn-macos-20261102/headless-alpha-candidate",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-20261102-headless-alpha-candidate",
+      "limitations": [
+        "Complete six-repetition headless particle comparison with queue-ordered tracked texture uses and default shared-texture dimensions; diagnostic, no universal win qualification.",
+        "Diagnostic on an active desktop; no isolated-host or release qualification.",
+        "Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.",
+        "Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.",
+        "GPU driver identity is not retained.",
+        "Headless evidence cannot qualify visible presentation or headed performance.",
+        "No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output."
+      ],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-alpha-candidate-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-alpha-candidate-receipts.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "d6b64784df5961131827dfee248d3791a8d35acd46984649d8585b777899a9b4"
+        },
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/alpha-candidate-runtime-build.json.gz",
+          "required": true,
+          "role": "runtime-build",
+          "sha256": "bc88422af9ead0465180a962d37ea02c744360f08481e09252c55a2afd34296d"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "6a07b0390e087ef387be11d2a7d1e6151fd8d0ce45cbbd636eb0e357df5ef87f",
+      "supersedes": []
     }
   ]
 }

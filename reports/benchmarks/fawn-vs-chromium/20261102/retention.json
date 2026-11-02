@@ -4,6 +4,11 @@
     "sha256": "9214f78d7c7557ddf229063e2c97329afdd4f90d76a7024d94e808ce4743a1d6"
   },
   "builds": {
+    "alpha-candidate": {
+      "originalManifestSha256": "bf73e80dec9a26e79c8124aeb6dd3363269941e0dde03e18136de152358f5afc",
+      "retainedPath": "alpha-candidate-runtime-build.json.gz",
+      "sourceCommit": "7c6ad42c2c97fa57d7d42e45f43efc06eaf66e9c"
+    },
     "baseline": {
       "originalManifestSha256": "11999c83fc5a7d410abf29703c916e3dc967ad13b5f7e19aa753c23e9ae0b603",
       "retainedPath": "baseline-runtime-build.json.gz",
@@ -94,6 +99,54 @@
       "presentationMode": "headed",
       "runtimeBuild": "baseline",
       "scope": "Interrupted at user request after 9 of 18 planned launches; incomplete counterbalance; never resumed as headless."
+    },
+    "headless-alpha-candidate": {
+      "originalFileSha256": {
+        "launches/heavy_particles.chrome.r00.json": "8f61547beea9d2e0d39142ce2968f7dfdf1e67066f3c1bd316a21a2108be3860",
+        "launches/heavy_particles.chrome.r00.png": "460850be63e770f97f8f3e6e31a82c8a5d9f09735a44b6fa295796be8bdac663",
+        "launches/heavy_particles.chrome.r00.spec.json": "a89356c8a2dd9cee3862a60ef12e531a3bbe471c82e3b81a20111731b28b0b37",
+        "launches/heavy_particles.chrome.r01.json": "412eca8fca940e2f34b7daf227ab1fd34b531de3e7c6addedfefd40a14c829ca",
+        "launches/heavy_particles.chrome.r01.spec.json": "dfa67b6be701a0c5ab859724677ff72a754f4083bcc0e5d3887c237241fa4448",
+        "launches/heavy_particles.chrome.r02.json": "224896ccec995a12ab711a697bfc1fbd8e3b9664d25d43a09dfa0703894f2e7b",
+        "launches/heavy_particles.chrome.r02.spec.json": "33f28c0cd53949c286ed08e57364d3f3fdea3f2838691b2b97a2ccb1a507548e",
+        "launches/heavy_particles.chrome.r03.json": "e87bb6743d99cfc15ffb7dc1309d8fc35da102dfeb4f527ee935f8f6ad32eea9",
+        "launches/heavy_particles.chrome.r03.spec.json": "95f98bc889e4acf1e124a2db51eb582ec8eb97d5f6ef120f7eccab3609320519",
+        "launches/heavy_particles.chrome.r04.json": "ea732dedd0996fc28c1fd3821ea28b4bb517383b41664aae081e8a62d36109f8",
+        "launches/heavy_particles.chrome.r04.spec.json": "72b3589ab661a49948511a6cff6b3c32cfa4c50623ae99f9dab3242c4987b6e6",
+        "launches/heavy_particles.chrome.r05.json": "e3e4fab0d8b090b0779149b30cb1b9f10de79f490d4b84f9d87b3e47f5a7e899",
+        "launches/heavy_particles.chrome.r05.spec.json": "4a6e0510748f417888ef76a65060be7101f0c18a60674f1429f03d418443fb34",
+        "launches/heavy_particles.fawn_dawn.r00.json": "d949b4413fef4b5e82c0553c7b85128c27d5997207b07c32eb8cf06a409bb885",
+        "launches/heavy_particles.fawn_dawn.r00.png": "366ff734020feaae21a96885cde9e3a1af9e93e5b8afcd07a5983b7975f1e125",
+        "launches/heavy_particles.fawn_dawn.r00.spec.json": "76638ddb7742c358e28b2f35fb733dc6701c40c2faacab123a73c40b65e8799d",
+        "launches/heavy_particles.fawn_dawn.r01.json": "2d0b3020e551f2c256d2a1ceae8740a8db4ab6adcdd1411046a287dcbcd8ec4c",
+        "launches/heavy_particles.fawn_dawn.r01.spec.json": "6a7aec7d12cac609dcb6ffa8055780492a3e63781657385b6b9c0da91c045830",
+        "launches/heavy_particles.fawn_dawn.r02.json": "da88795cc6294dd06e16851e268806e158be7239257f80c77d362200a77363a3",
+        "launches/heavy_particles.fawn_dawn.r02.spec.json": "373a06b83508e5de81e6566f6ecb2e9f216c4894887a02caf2b13ac2865e4490",
+        "launches/heavy_particles.fawn_dawn.r03.json": "587e9905f60268f1c7688691d65412537bd0303286210c950d4ca614f52fb70e",
+        "launches/heavy_particles.fawn_dawn.r03.spec.json": "4ed6457232ba212787ad9339f4028066d16e0c21da87a03d6a8db74a670a6a8d",
+        "launches/heavy_particles.fawn_dawn.r04.json": "bf26207a5eab773035399add0700d5f37ecbd7eb54549888d616f5f8b1783add",
+        "launches/heavy_particles.fawn_dawn.r04.spec.json": "8b7b94f22a99be61f8abe805747f86ff79bf79aca1a8011f9dafdc2d646cc9ca",
+        "launches/heavy_particles.fawn_dawn.r05.json": "dbba0ea9718eb3cbc9f30f6a0fdbce09990986fad601b708f37c036366449141",
+        "launches/heavy_particles.fawn_dawn.r05.spec.json": "a4c93f3bc138a59efc63aee30b9e29375e11802bd10f551d1d48043815b7e53e",
+        "launches/heavy_particles.fawn_doe.r00.json": "26e8be7907b475914c794b478b8038a136b1735bf243f188e8655f1efdf5d145",
+        "launches/heavy_particles.fawn_doe.r00.png": "241259b1df192d6070209a9ba4a408e7e9a254efee744dd6c28ae9cc87a69adb",
+        "launches/heavy_particles.fawn_doe.r00.spec.json": "06b6b0ba816abf726f2c87c84689cc3313e0d8c46a55903643832ceb9b97564b",
+        "launches/heavy_particles.fawn_doe.r01.json": "cfc49d45bd3f90ce89cc686947aa701385ab4fd4c859ea70223cdd7e5c481332",
+        "launches/heavy_particles.fawn_doe.r01.spec.json": "a6a446962468d35044d3343738b99e8c1cba1d6c9a6eae03ed9fe24abc436a0a",
+        "launches/heavy_particles.fawn_doe.r02.json": "a45fa1da0ba48ae40bb1e2a543a53b8d22c2a7704b66bc60ec9155d4578c1803",
+        "launches/heavy_particles.fawn_doe.r02.spec.json": "ddfc13411bf0f7dfe053cadae9c537c7602acccf6b407760d1fd42279736c5bd",
+        "launches/heavy_particles.fawn_doe.r03.json": "c7a86005c144eb79a85d484f4875be0c136822470393b177b7ce7812c3e22eba",
+        "launches/heavy_particles.fawn_doe.r03.spec.json": "d1bf611a7653ae6134697f1d7a74c911e1ac4152141630d83df4d073fe32fd6a",
+        "launches/heavy_particles.fawn_doe.r04.json": "d818fa582236736b8541700fc7925c29837295e1f16660ee0eaeab02ae7b3cdd",
+        "launches/heavy_particles.fawn_doe.r04.spec.json": "07b26fb57311799425711fbc451b03085c8528d10bbe31a651fbc3b8a6603a16",
+        "launches/heavy_particles.fawn_doe.r05.json": "4c57f80854b503b8e245f8431c24b092a25d15d757ff141321dfc33dc2430360",
+        "launches/heavy_particles.fawn_doe.r05.spec.json": "4899a7ed7910a23883723038ba9c20c19704c5241962e90b2d260888935ceaa3",
+        "orchestrate.log": "1ac7d4018fb40f1a15f743231e9b110b10d0bacb99da880d8d2c800f3470b626",
+        "schedule.json": "6dcc5d65c11c4bdfbf3f5cad9ea44e2e6780b442d00070fab7fbfb5d7672f476"
+      },
+      "presentationMode": "headless",
+      "runtimeBuild": "alpha-candidate",
+      "scope": "Complete six-repetition headless particle comparison with queue-ordered tracked texture uses and default shared-texture dimensions; diagnostic, no universal win qualification."
     },
     "headless-buffer-baseline": {
       "originalFileSha256": {
@@ -193,7 +246,15 @@
     }
   },
   "consumer": "reports/benchmarks/sources.json: browser-macos source-bound diagnostic comparisons and rejected all-tests win target",
+  "diagnosis": {
+    "originalFileSha256": {
+      "alpha-clear-diagnostic-build.json.gz": "9a7712af65a2386260134b3646bf7b1d12301eaacaceb741f6b8a080f6c0b5b7",
+      "alpha-clear-diagnostic-receipt.json.gz": "95a4615b993d65e314116db8da4b5eeba7b6b007aa66d213196bde44465ae4a9",
+      "alpha-clear-diagnostic.log.gz": "6fbb2de3a18809b85acb1f9793b94c9cc09a38c0427deda1e3187e3241026276"
+    },
+    "scope": "One instrumented headless launch identifies resource conflicts; timings are not comparison evidence."
+  },
   "qualification": "diagnostic",
   "redaction": "Only private filesystem prefixes and JSON formatting change. Numeric samples, execution clocks, hashes, flags, errors and limitations are preserved. Original byte hashes are recorded below; unredacted originals remain local.",
-  "reportedAt": "2026-11-02T18:15:56.320380+00:00"
+  "reportedAt": "2026-11-02T19:20:32.868874+00:00"
 }
