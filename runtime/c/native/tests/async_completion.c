@@ -2,7 +2,6 @@
  * Real public future admission, deferred read access and stale map generations.
  * Exact byte readback and generation checks do not assume that real GPU work
  * is still pending when callback registration begins. */
-#include "../src/internal.h"
 #include "consumer.h"
 
 typedef struct map_expectation {
@@ -15,16 +14,11 @@ static void map_reply(WGPUMapAsyncStatus status, WGPUStringView message, void *u
     (void)message;
     (void)unused;
     map_expectation *expected = userdata;
+    if (status != expected->expected)
+        fprintf(stderr,"map callback mismatch: actual=%u expected=%u priorCalls=%u\n",
+            (unsigned)status,(unsigned)expected->expected,expected->called);
     assert(status == expected->expected);
     expected->called++;
-}
-
-static void not_ready(state *s, WGPUFuture future)
-{
-    assert(future.id);
-    WGPUFutureWaitInfo wait = {.future=future};
-    assert(wgpuInstanceWaitAny(s->instance, 1, &wait, 0) == WGPUWaitStatus_TimedOut);
-    assert(!wait.completed);
 }
 
 static void read_and_queue_obligations(state *s)
@@ -36,14 +30,12 @@ static void read_and_queue_obligations(state *s)
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
     wgpuCommandEncoderCopyBufferToBuffer(encoder, source, 0, result, 0, sizeof(expected));
     submit(s, encoder);
-    native_device *device = (native_device *)s->device;
     map_expectation observed = {.expected=WGPUMapAsyncStatus_Success};
     WGPUBufferMapCallbackInfo map_info = {.mode=WGPUCallbackMode_WaitAnyOnly,
         .callback=map_reply,.userdata1=&observed};
     unsigned done = 0;
     WGPUQueueWorkDoneCallbackInfo done_info = {.mode=WGPUCallbackMode_WaitAnyOnly,
         .callback=work_done_reply,.userdata1=&done};
-    native_lock(device);
     WGPUFuture map_future = wgpuBufferMapAsync(result, WGPUMapMode_Read, 0, sizeof(expected), map_info);
     WGPUFuture done_future = wgpuQueueOnSubmittedWorkDone(s->queue, done_info);
     /* These real submissions may already be terminal. Readiness may publish
@@ -51,7 +43,6 @@ static void read_and_queue_obligations(state *s)
      * controlled Metal ledger separately proves actual pending/unknown work. */
     assert(map_future.id && done_future.id);
     assert(!observed.called && !done && wgpuBufferGetMapState(result) == WGPUBufferMapState_Pending);
-    native_unlock(device);
     wait_future(s, map_future);
     wait_future(s, done_future);
     assert(observed.called == 1 && done == 1);
@@ -64,19 +55,20 @@ static void read_and_queue_obligations(state *s)
 static void cancelled_generation_does_not_replace_new_mapping(state *s)
 {
     WGPUBuffer writable = buffer(s, 16, WGPUBufferUsage_MapWrite | WGPUBufferUsage_CopySrc);
-    native_device *device = (native_device *)s->device;
     map_expectation cancelled = {.expected=WGPUMapAsyncStatus_Aborted};
     map_expectation current = {.expected=WGPUMapAsyncStatus_Success};
     WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,
         .callback=map_reply,.userdata1=&cancelled};
-    native_lock(device);
     WGPUFuture old = wgpuBufferMapAsync(writable, WGPUMapMode_Write, 0, 16, callback);
-    not_ready(s, old);
+    /* WaitAnyOnly defers delivery even if a direct UPLOAD lend is already
+     * ready. Do not deliver the old generation before canceling it. */
+    assert(old.id && !cancelled.called && wgpuBufferGetMapState(writable) == WGPUBufferMapState_Pending);
     wgpuBufferUnmap(writable);
+    assert(!cancelled.called && wgpuBufferGetMapState(writable) == WGPUBufferMapState_Unmapped);
     callback.userdata1 = &current;
     WGPUFuture fresh = wgpuBufferMapAsync(writable, WGPUMapMode_Write, 0, 16, callback);
-    not_ready(s, fresh);
-    native_unlock(device);
+    assert(fresh.id && !current.called && !cancelled.called &&
+        wgpuBufferGetMapState(writable) == WGPUBufferMapState_Pending);
     wait_future(s, fresh);
     assert(current.called == 1);
     uint32_t *bytes = wgpuBufferGetMappedRange(writable, 0, 16);
@@ -93,6 +85,7 @@ static void cancelled_generation_does_not_replace_new_mapping(state *s)
 
 int main(void)
 {
+    consumer_line_output();
     state s = {0};
     consumer_init(&s);
     read_and_queue_obligations(&s);

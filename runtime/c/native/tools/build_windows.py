@@ -243,6 +243,10 @@ def main() -> int:
     invoke(consumer_flags + [str(upload_source), '/Fo' + str(out / 'upload_mapping_windows.obj'),
             '/Fe' + str(upload_fixture), '/link', str(imports),
             'kernel32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'], out)
+    # Public-ABI future/cancellation consumer; execution remains explicit.
+    async_source = ROOT / 'tests/async_completion.c'
+    invoke(consumer_flags + [str(async_source), '/Fo' + str(out / 'async_completion.obj'),
+            '/Fe' + str(out / 'async_completion.exe'), '/link', str(imports), 'kernel32.lib'], out)
     # Build only. Run d3d12_async_signal.exe --signal-fault --warp explicitly.
     signal_fixture = build_signal_control(compiler, strict, sources, objects, out, compiler_imports)
     headers = sorted(set(ROOT.joinpath('src').glob('*.h')) |
@@ -255,7 +259,7 @@ def main() -> int:
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
               ROOT / 'EXTENSION_SYMBOLS.txt', ROOT / 'LEGACY_SYMBOLS.txt', ROOT / 'SHARED_MEMORY_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
-              shader_adapter, fxc_source, window_source, window_host, shared_source, upload_source, ROOT / 'tests/d3d12_async.c', ROOT / 'tests/surface_consumer.h',
+              shader_adapter, fxc_source, window_source, window_host, shared_source, upload_source, async_source, ROOT / 'tests/d3d12_async.c', ROOT / 'tests/surface_consumer.h',
               ROOT / 'tests/consumer.h', ROOT / 'tests/adapter_class.h',
               C_ROOT / 'runtime-cli/src/surface_platform.h', fxc_helper,
               REPO / 'runtime/vendor/webgpu-headers/webgpu.h']

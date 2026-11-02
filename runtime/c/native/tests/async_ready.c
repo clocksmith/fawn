@@ -264,6 +264,8 @@ static void own_record_only(state *s)
     native_lock(device); /* Excludes worker, not proof that GPU work is pending. */
     WGPUFuture map=map_ready(s,shadow,WGPUMapMode_Write,WGPUCallbackMode_WaitAnyOnly,&map_result);
     assert(map.id && wakes==1 && !lends && count(device,NATIVE_PENDING_ASYNC)==1);
+    not_ready(s,map); /* This nonlendable mock buffer still requires the excluded worker's CPU copy. */
+    assert(!map_result.calls && wgpuBufferGetMapState(shadow)==WGPUBufferMapState_Pending);
     later_queue=s->queue;
     later_command=command; /* Accepted after the queue callback's captured serial. */
     WGPUFuture queue=queue_ready(s,WGPUCallbackMode_WaitAnyOnly,&queue_result);

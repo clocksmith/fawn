@@ -825,8 +825,8 @@ $(BUILD)/d3d12-buffer-placement.exe: tests/d3d12_buffer_placement.c src/d3d12_bu
 $(BUILD)/d3d12-write-batch.exe: tests/d3d12_write_batch.c src/d3d12_buffers.c src/d3d12_writes.c src/backend_status.c src/backend_failure.c $(HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_write_batch.c src/d3d12_buffers.c src/d3d12_writes.c src/backend_status.c src/backend_failure.c -o $@
 
-$(BUILD)/async-completion: tests/async_completion.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+$(BUILD)/async-completion: tests/async_completion.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 .PHONY: check-async-completion
 check-async-completion: $(BUILD)/async-completion
 	$(BUILD)/async-completion
