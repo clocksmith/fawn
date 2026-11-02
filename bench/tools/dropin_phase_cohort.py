@@ -39,7 +39,7 @@ else:
 
 REPO = Path(__file__).resolve().parents[2]
 HARNESS = REPO / "bench/drop-in/dropin_phase_harness.c"
-HEADERS = REPO / "runtime/zig/vendor/webgpu-headers"
+HEADERS = REPO / "runtime/vendor/webgpu-headers"
 # Node5 package workloads with frozen generator inputs. Set 0 is the frozen
 # Node5 asset; set 1 uses the same generator with a distinct seed so stale
 # output from the previous iteration cannot satisfy the oracle.

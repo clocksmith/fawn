@@ -130,8 +130,9 @@ static void test_depth_only_draw_bundles(void)
             size_t count;
             const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
             assert(count == 3);
-            const doe_resource_render_packet *draw = doe_resource_render_record_borrow(records[1].value.render);
-            assert(!draw->targets.color && draw->pipeline == pipeline && draw->count == 3);
+            doe_resource_render_packet draw;
+            assert(doe_resource_render_record_draw(records[1].value.render, 0, &draw));
+            assert(!draw.targets.color && draw.pipeline == pipeline && draw.count == 3);
             assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
             doe_resource_commands_release(commands);
             assert(doe_resource_commands_settle(commands, DOE_RESOURCE_EXECUTION_FAILED) == DOE_RESOURCE_EXECUTION_FAILED);

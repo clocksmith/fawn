@@ -372,6 +372,9 @@ bool doe_runtime_close(doe_runtime *runtime)
     if (!runtime_retire_readback(runtime)) return false;
     for (size_t i = 0; i < runtime->pipeline_count; i++) {
         pipeline_entry *entry = &runtime->pipelines[i];
+        for (uint32_t g = 0; g < entry->group_count; g++)
+            if (entry->bound_groups[g]) wgpuBindGroupRelease(entry->bound_groups[g]);
+        free(entry->bound_resources);
         if (entry->pipeline) wgpuComputePipelineRelease(entry->pipeline);
         for (uint32_t g = 0; g < entry->group_count; g++) if (entry->groups[g]) wgpuBindGroupLayoutRelease(entry->groups[g]);
         free(entry->source_path);

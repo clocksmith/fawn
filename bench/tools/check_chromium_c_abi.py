@@ -206,7 +206,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--header', type=Path, required=True, help='Actual pinned generated Dawn webgpu.h from the selected Chromium build.')
     parser.add_argument('--c-include', type=Path, default=ROOT / 'runtime/c/native/include')
-    parser.add_argument('--base-header', type=Path, default=ROOT / 'runtime/zig/vendor/webgpu-headers/webgpu.h')
+    parser.add_argument('--base-header', type=Path, default=ROOT / 'runtime/vendor/webgpu-headers/webgpu.h')
     parser.add_argument('--selector', type=Path, default=ROOT / 'browser/chromium/patches/dawn-doe-runtime.patch')
     parser.add_argument('--compiler', default='clang', help='Host Clang executable; exact binary/version retained.')
     parser.add_argument('--compiler-arg', action='append', default=[], help='Explicit additional compiler argument, repeated.')

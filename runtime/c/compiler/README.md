@@ -465,6 +465,24 @@ historical evidence and the full compiler migration gates.
 The final full-feature50% source-reduction goal includes the complete delivery
 burden. No such reduction or complete compiler migration is claimed by M13.
 
+## Prepared compilation
+
+[`doe_compiler_prepared.h`](include/doe_compiler_prepared.h) adds ABI20 for callers
+that need exact allocation without repeating source analysis. Query the complete
+caller-owned workspace, prepare validation or target compilation once, then publish
+its retained result. Keep workspace and borrowed source/selection/value spans alive
+and stable until publication returns. No allocation, callback or process-global cache
+is introduced, and ABI1-19 layouts, queries and synchronous behavior are unchanged.
+
+Publication checks all output descriptors and capacities before writing. MSL/HLSL
+serialization uses a separate caller scratch span of the reported exact size and
+restores floating-point state before copying output. Rejected publication preserves
+bulk outputs and can retry with corrected extents without another analysis. The
+shader owner supplies immutable input snapshots and releases temporary storage before
+publishing its owned handle. `make test-prepared` checks legacy output parity across
+all three targets; `make test-prepared-analysis` additionally counts the real analysis
+calls through the Linux linker wrapper. Neither is SDK or physical-GPU qualification.
+
 ## Shared pointer semantics
 
 The current shared grammar and typed pipeline admit Function, Private, Workgroup,

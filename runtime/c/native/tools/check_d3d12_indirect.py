@@ -54,7 +54,7 @@ def main() -> None:
                 'labels', 'error-scopes', 'shader', 'backends/vulkan', 'backends/metal', 'platform']
     commands += [
         [args.cc,*flags,'-ffunction-sections','-fdata-sections',
-         '-I'+str(ROOT/'runtime/zig/vendor/webgpu-headers'),
+         '-I'+str(ROOT/'runtime/vendor/webgpu-headers'),
          *['-I'+str(ROOT/'runtime/c'/owner/'include') for owner in includes],
          *[str(ROOT/name) for name in draw_sources],str(library),
          '-Wl,--gc-sections','-Wl,-rpath,'+str(library.parent),'-o',str(output/'draw-layout-control')],

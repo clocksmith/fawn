@@ -66,7 +66,7 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
         for (size_t i = 0; i < 4; i++) clear.float32[i] = (float)color->clear[i];
         clear_pointer = &clear;
     } else if (color->view && color->load != WGPULoadOp_Load) return DOE_VK_UNSUPPORTED;
-    enum { MAX_CONSUMER_DRAWS = 3, MAX_CONSUMER_OPS = 9 };
+    enum { MAX_CONSUMER_DRAWS = 6, MAX_CONSUMER_OPS = 12 };
     doe_vk_render_pass_op ops[MAX_CONSUMER_OPS];
     doe_vk_binding_resource bindings[MAX_CONSUMER_DRAWS];
     doe_vk_buffer_binding vertices[MAX_CONSUMER_DRAWS];
@@ -112,14 +112,19 @@ static doe_vk_status render_pass(doe_vk_commands *commands,
             if (status == DOE_VK_OK) *consumed = i + 1;
             return status;
         }
-        if (packet->last_in_pass || draw_count == MAX_CONSUMER_DRAWS || op_count == MAX_CONSUMER_OPS)
-            return DOE_VK_UNSUPPORTED;
-        ops[op_count].kind = DOE_VK_RENDER_DRAW;
-        doe_vk_status status = prepare_draw(packet, &ops[op_count].value.draw,
-            &bindings[draw_count], &vertices[draw_count]);
-        if (status != DOE_VK_OK) return status;
-        draw_count++;
-        op_count++;
+        if (packet->last_in_pass) return DOE_VK_UNSUPPORTED;
+        for (size_t j = 0; j < doe_resource_render_record_draw_count(record->value.render); ++j) {
+            doe_resource_render_packet draw;
+            if (draw_count == MAX_CONSUMER_DRAWS || op_count == MAX_CONSUMER_OPS ||
+                !doe_resource_render_record_draw(record->value.render, j, &draw) ||
+                validate_render_packet(&draw) != DOE_VK_OK) return DOE_VK_UNSUPPORTED;
+            ops[op_count].kind = DOE_VK_RENDER_DRAW;
+            doe_vk_status status = prepare_draw(&draw, &ops[op_count].value.draw,
+                &bindings[draw_count], &vertices[draw_count]);
+            if (status != DOE_VK_OK) return status;
+            draw_count++;
+            op_count++;
+        }
     }
     return DOE_VK_UNSUPPORTED; /* Missing end must not emit a partial pass. */
 }
@@ -277,6 +282,7 @@ int main(int argc, char **argv)
     assert(doe_resource_bundle_encoder_set_group(bundle_encoder, 0, &dispatch_group) == DOE_RESOURCE_OK);
     assert(doe_resource_bundle_encoder_set_vertex(bundle_encoder, 0, vertices, 0, 108) == DOE_RESOURCE_OK);
     assert(doe_resource_bundle_encoder_draw(bundle_encoder, false, 3, 1, 0, 0, 0) == DOE_RESOURCE_OK);
+    assert(doe_resource_bundle_encoder_draw(bundle_encoder, false, 3, 1, 0, 0, 0) == DOE_RESOURCE_OK); /* Two draws per retained invocation. */
     doe_resource_render_bundle *bundle;
     assert(doe_resource_bundle_encoder_finish(bundle_encoder, &bundle) == DOE_RESOURCE_OK);
     doe_resource_bundle_encoder_release(bundle_encoder);

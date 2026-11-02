@@ -88,6 +88,7 @@ typedef struct doe_dx_caps {
     char name[256]; /* UTF-8, NUL terminated. */
     doe_dx_adapter_selection adapter_selection;
     bool unified_memory; /* Actual node0 ARCHITECTURE.UMA query. */
+    bool shared_texture_import, shared_fence_import; /* SDK import path and shareable queue fence. */
     uint32_t feature_level; /* Highest queried profile among FL11_0..FL12_1. */
     uint32_t resource_binding_tier, resource_heap_tier;
     uint32_t gpu_va_bits_per_resource, gpu_va_bits_per_process;
@@ -152,15 +153,18 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
 doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error);
 /* Serialized caller-data staging, at least size bytes; contents unspecified on
- * reuse. Write and copy only caller-provided bytes. One page up to one MiB uses
- * the existing cache lease; reuse requires no other caller/recording/pending use.
- * Busy/oversized requests remain uncached. A larger speculative page's OOM may
+ * reuse. Write and copy only caller-provided bytes. Up to eight one-MiB pages
+ * keep ordinary cache leases; reuse requires no caller/recording/pending use.
+ * Pool overflow/oversized requests stay uncached. A speculative page's OOM may
  * retry the exact size; all other errors propagate. Release the caller lease. */
 doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error);
 
 doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer);
 void doe_dx_buffer_release(doe_dx_buffer *buffer);
+/* Reject new use immediately; retain the native allocation while recorded or
+ * pending work owns it. The wrapper and its immutable description survive. */
+doe_dx_status doe_dx_buffer_evict(doe_dx_buffer *buffer);
 uint64_t doe_dx_buffer_size(const doe_dx_buffer *buffer);
 /* Host accesses reject recorded or unresolved GPU use. Reads require completed
  * initialization. Outputs are unchanged on failure. No persistent map escapes. */

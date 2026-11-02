@@ -2,7 +2,7 @@ CC = gcc
 AR = ar
 include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
 BUILD ?= $(DOE_C_TMP)/resources
-CPPFLAGS += -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../zig/vendor/webgpu-headers
+CPPFLAGS += -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
 SOURCES = src/objects.c src/formats.c src/textures.c src/texture_copy.c src/bindings.c src/usage_scope.c src/commands.c src/queries.c src/external_textures.c src/render.c src/render_targets.c src/render_state.c src/render_usage.c src/bundles.c src/compute_pass.c src/accessors.c src/lost.c

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const BUN_FFI = new URL('../../src/vendor/webgpu/bun-ffi.js', import.meta.url);
-const HEADER = new URL('../../../../runtime/zig/vendor/webgpu-headers/webgpu.h', import.meta.url);
+const HEADER = new URL('../../../../runtime/vendor/webgpu-headers/webgpu.h', import.meta.url);
 
 const zigTextureFormat = (value) => {
   if (value < 0x24 || value > 0x2B) return value;

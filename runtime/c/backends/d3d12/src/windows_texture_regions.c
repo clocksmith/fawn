@@ -15,16 +15,18 @@ void doe_dx_native_texture_region_transfer(doe_dx_native_commands *commands,
     image.pResource = texture->resource;
     image.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     if (upload) {
+        if (texture->shared) doe_dx_transition(commands->list,texture->resource,doe_dx_texture_rest(texture),D3D12_RESOURCE_STATE_COPY_DEST);
         if (buffer->memory == DOE_DX_DEFAULT)
             doe_dx_transition(commands->list,buffer->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_COPY_SOURCE);
         ID3D12GraphicsCommandList_CopyTextureRegion(commands->list,&image,region.x,region.y,0,&linear,NULL);
         if (buffer->memory == DOE_DX_DEFAULT)
             doe_dx_transition(commands->list,buffer->resource,D3D12_RESOURCE_STATE_COPY_SOURCE,D3D12_RESOURCE_STATE_COPY_DEST);
+        if (texture->shared) doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,doe_dx_texture_rest(texture));
     } else {
         D3D12_BOX box = {region.x,region.y,0,region.x + region.width,region.y + region.height,1};
-        doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_COPY_SOURCE);
+        doe_dx_transition(commands->list,texture->resource,doe_dx_texture_rest(texture),D3D12_RESOURCE_STATE_COPY_SOURCE);
         ID3D12GraphicsCommandList_CopyTextureRegion(commands->list,&linear,0,0,0,&image,&box);
-        doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_SOURCE,D3D12_RESOURCE_STATE_COPY_DEST);
+        doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_SOURCE,doe_dx_texture_rest(texture));
     }
 }
 
@@ -38,8 +40,10 @@ void doe_dx_native_texture_blit(doe_dx_native_commands *commands,
     dst.pResource = destination->resource;
     dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     D3D12_BOX box = {from.x,from.y,0,from.x + from.width,from.y + from.height,1};
-    doe_dx_transition(commands->list,source->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_COPY_SOURCE);
+    doe_dx_transition(commands->list,source->resource,doe_dx_texture_rest(source),D3D12_RESOURCE_STATE_COPY_SOURCE);
+    if (destination->shared) doe_dx_transition(commands->list,destination->resource,doe_dx_texture_rest(destination),D3D12_RESOURCE_STATE_COPY_DEST);
     ID3D12GraphicsCommandList_CopyTextureRegion(commands->list,&dst,destination_x,destination_y,0,&src,&box);
-    doe_dx_transition(commands->list,source->resource,D3D12_RESOURCE_STATE_COPY_SOURCE,D3D12_RESOURCE_STATE_COPY_DEST);
+    if (destination->shared) doe_dx_transition(commands->list,destination->resource,D3D12_RESOURCE_STATE_COPY_DEST,doe_dx_texture_rest(destination));
+    doe_dx_transition(commands->list,source->resource,D3D12_RESOURCE_STATE_COPY_SOURCE,doe_dx_texture_rest(source));
 }
 #endif

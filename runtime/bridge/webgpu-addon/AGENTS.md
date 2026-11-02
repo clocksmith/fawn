@@ -43,7 +43,7 @@ apply to this C code; this file adds the addon's own invariants.
 ## Values and layouts
 
 - Every name-to-value table uses the pinned
-  [webgpu.h](../../zig/vendor/webgpu-headers/webgpu.h) value. Prefer the
+  [webgpu.h](../../vendor/webgpu-headers/webgpu.h) value. Prefer the
   header's enumerator name to a literal. The Zig runtime numbers the RGBA16 and
   RGBA32 texture formats differently and starts stencil operations at zero;
   `g_zig_enum_order` translates those at the provider boundary only.

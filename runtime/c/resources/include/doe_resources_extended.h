@@ -220,11 +220,17 @@ doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_p
 doe_resource_status doe_resource_render_pass_debug(doe_resource_render_pass *pass,
     doe_resource_debug_operation operation);
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass);
+/* Borrowed invocation envelope. Bundle records carry targets/dynamic/query
+ * state only here; consume their immutable draws with the bounded accessor.
+ * Both record and materialized resource pointers live until commands retire. */
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record);
+size_t doe_resource_render_record_draw_count(const doe_resource_render_record *record);
+/* Copies one draw without allocation or retention. False leaves out untouched. */
+bool doe_resource_render_record_draw(const doe_resource_render_record *record, size_t index,
+    doe_resource_render_packet *out);
 
 /* Bundles contain self-contained draw snapshots, not synthetic attachments.
- * At most 4096 successful setter/draw operations, matching retained command budget.
- * Finish moves storage. Replay expands through the same pass recording owner;
+ * Finish moves storage. Replay retains one invocation through the same pass owner;
  * caller pipeline/group/vertex/index bindings are cleared even for zero bundles;
  * viewport/scissor/blend/stencil and attachment/query state remain unchanged. */
 typedef struct doe_resource_bundle_encoder doe_resource_bundle_encoder;

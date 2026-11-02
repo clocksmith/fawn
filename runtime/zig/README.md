@@ -192,7 +192,7 @@ submissions remain rejected. Pure render submission is a separate path.
 `tests/d3d12_compute_readback.c` dynamically loads the DLL and checks a CPU
 numerical oracle, early caller release, repeated dispatch ordering, and rejection
 without modifying a prefilled readback buffer. Build it with the pinned Zig C
-compiler and `-I vendor/webgpu-headers`, then pass the DLL path and optionally
+compiler and `-I ../vendor/webgpu-headers`, then pass the DLL path and optionally
 `float`, `int`, `repeat`, `reject`, or `unsupported`. The last mode checks pipeline
 rejection for an aggregate array. `tests/d3d12_buffer_readback.c` retains copy
 coverage; `write` writes through the queue into a readback buffer, and
@@ -276,7 +276,7 @@ Vulkan device on Linux; NULL or another backend reports 0.
 
 `tests/d3d12_command_consumption.c` checks duplicate and repeated submission on
 physical D3D12 with exact unchanged readback and fresh-command recovery. Build it
-with the pinned Zig C compiler and `-I vendor/webgpu-headers`, then pass the full
+with the pinned Zig C compiler and `-I ../vendor/webgpu-headers`, then pass the full
 DLL path and `duplicate` or `reuse`. Shared admission unit tests additionally
 check failed batches, foreign-device buffers and mapped retained resources.
 These tests do not establish physical Vulkan/Metal lifecycle or concurrency
@@ -293,7 +293,7 @@ still undergo range and resource admission. Invalid ranges reject the entire
 submission before execution; they do not silently truncate or partially clear.
 
 Build `tests/d3d12_clear_readback.c` with the pinned Zig C compiler and
-`-I vendor/webgpu-headers`; run the executable with the DLL path and one of
+`-I ../vendor/webgpu-headers`; run the executable with the DLL path and one of
 `full`, `partial`, `whole`, `zero`, `large`, `readback`, `recover`, `range`,
 `size`, `zero-range`, or `destroyed`. The fixture independently checks all words,
 including unchanged regions, early caller release, validation rejection followed

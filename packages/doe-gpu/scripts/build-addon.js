@@ -130,7 +130,7 @@ function main() {
   const checkedLayouts = checkNativeAbiLayouts({
     compiler, prefixArgs, includeDir,
     bridgeHeader: resolve(BRIDGE_ROOT, 'doe_napi_internal.h'),
-    upstreamHeader: resolve(WORKSPACE_ROOT, 'runtime/zig/vendor/webgpu-headers/webgpu.h'),
+    upstreamHeader: resolve(WORKSPACE_ROOT, 'runtime/vendor/webgpu-headers/webgpu.h'),
   });
   mkdirSync(OUTPUT_DIR, { recursive: true });
   execFileSync(compiler, args, {

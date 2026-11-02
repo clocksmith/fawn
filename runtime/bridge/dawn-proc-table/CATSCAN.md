@@ -21,7 +21,7 @@ WebGPU entrypoints for external consumer integration.
 ## Contracts
 
 - Inputs: generated headers from the consumer's pinned Dawn revision and Doe's
-  [pinned WebGPU header](../../zig/vendor/webgpu-headers/webgpu.h).
+  [pinned WebGPU header](../../vendor/webgpu-headers/webgpu.h).
 - Outputs: an explicitly initialized, process-owned table and call observations.
 - Additive error query: nullable, consumed thread-local diagnostics. Failed
   initialization releases partial state and permits retry.

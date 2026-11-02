@@ -59,12 +59,12 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   allocator/list order; failures
   propagate without a fresh-create retry. Pending/lost/discarded recordings never
   supply a pair, and context teardown releases its idle native objects.
-- Caller-data writes may reuse one ordinary UPLOAD page up to one MiB on the
-  context. No other caller, recorded or pending command may still hold it. Busy
-  and larger writes allocate independent storage; immutable zero data stays
+- Caller-data writes may reuse eight ordinary UPLOAD pages up to one MiB each
+  on the context. Reuse requires only the cache lease and no recorded/pending
+  use; requests while every page is busy and larger writes allocate independently; immutable zero data stays
   separate. A speculative larger page's OOM alone permits an exact-size retry.
   Initial allocation zeros its full width; reuse copies only caller bytes and
-  makes no zero-content promise. Teardown drops only the cache's ordinary lease.
+  makes no zero-content promise. Teardown drops only each cache's ordinary lease.
 - Compute and graphics resource descriptors borrow contiguous ranges of a
   context-owned 4096-entry shader-visible heap instead of creating a heap per
   descriptor use. The first heap is created with the device (device-opening owner,
@@ -200,7 +200,7 @@ keeps index start and instance start distinct. D32 extent must match color. Dept
 transfers copy the entire subresource with zero coordinates and no source box,
 following [CopyTextureRegion depth rules](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion).
 Graphics resources use both pixel and non-pixel shader read states and return to
-COPY_DEST after each draw. RTV, DSV and shader heaps remain owned by the command until
+COPY_DEST after each draw (COMMON for imported simultaneous-access DXGI textures). RTV, DSV and shader heaps remain owned by the command until
 completion or terminal loss. All fallible descriptor preparation precedes command
 mutation. Timestamp resolves reject unwritten slots and partial destinations with
 uninitialized bytes, following the native
@@ -896,3 +896,28 @@ reports their actual full range. It also records `CREATERESOURCE_STATE_IGNORED`
 for DEFAULT buffers. These documented advisories are counted explicitly; errors,
 corruption and all other warnings fail the control. A pass does not mean the
 SDK emitted no warnings.
+
+## Shared DXGI imports and destruction
+
+[`doe_d3d12_shared.h`](include/doe_d3d12_shared.h) imports borrowed NT handles
+through official SDK interfaces. Imports own their native leases and admit the
+pinned Dawn 758e5e6a single-mip, single-sample simultaneous-access 2D color subset.
+Producer fences are retained across bounded waits outside frontend device locking;
+EndAccess exports the existing known queue timeline. Unknown recording/signal state
+rejects export. Keyed imports use D3D11On12 wrapping and key-zero acquisition;
+release waits for that texture's own commands. Imported textures return to COMMON.
+Native canonical access checks reject inactive or different shared texture aliases.
+
+Destroy evicts ordinary native allocations immediately when idle, otherwise after
+existing command retirement; wrappers and descriptors survive and reject later use.
+Borrowed surface/shared-memory storage remains with its owning object. Texture
+construction submits its real zero initialization asynchronously, without a
+device-wide drain; a first use may still wait for that texture's exclusive owner.
+
+[`test_eviction.c`](tests/test_eviction.c) checks lifetime through the host seam.
+[`test_upload_staging.c`](tests/test_upload_staging.c) checks eight queued pages
+reused after retirement with zero new allocations or waits. The Windows SDK region
+control checks COMMON transitions; [`native_shared.c`](tests/native_shared.c), run
+explicitly with `--warp`, separately exercises shared import, zero/readback, fence
+retention and keyed acquire/retire/release/reacquire on CPU software. These checks
+do not qualify browser presentation, physical hardware or performance.

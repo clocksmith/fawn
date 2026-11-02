@@ -10,7 +10,9 @@ static const struct { uint32_t name, slot; } shared_features[] = {
     {DOE_SHARED_FEATURE_IOSURFACE,24}, {DOE_SHARED_FEATURE_MTL_EVENT,25},
     {DOE_SHARED_FEATURE_OPAQUE_FD,DOE_SHARED_FEATURE_SLOT_OPAQUE_FD},
     {DOE_SHARED_FEATURE_SYNC_FD,DOE_SHARED_FEATURE_SLOT_SYNC_FD},
-    {DOE_SHARED_FEATURE_OPAQUE_SEMAPHORE,DOE_SHARED_FEATURE_SLOT_OPAQUE_SEMAPHORE}
+    {DOE_SHARED_FEATURE_OPAQUE_SEMAPHORE,DOE_SHARED_FEATURE_SLOT_OPAQUE_SEMAPHORE},
+    {DOE_SHARED_FEATURE_DXGI_MEMORY,DOE_SHARED_FEATURE_SLOT_DXGI_MEMORY},
+    {DOE_SHARED_FEATURE_DXGI_FENCE,DOE_SHARED_FEATURE_SLOT_DXGI_FENCE}
 };
 static uint32_t feature_bit(uint32_t name)
 {
@@ -37,12 +39,12 @@ bool native_timestamp_supported(const doe_vk_caps *caps)
 {
     return native_timestamp_workgroup(caps) != 0;
 }
-static bool formats_offer(doe_vk_context *context, const doe_vk_texture_format *formats, size_t count,
+static bool formats_offer(native_format_queries *queries, const doe_vk_texture_format *formats, size_t count,
     bool (*offered)(const doe_vk_format_caps *))
 {
     for (size_t i = 0; i < count; ++i) {
         doe_vk_format_caps caps;
-        if (doe_vk_texture_format_caps(context, formats[i], &caps) != DOE_VK_OK || !offered(&caps)) return false;
+        if (!native_query_format(queries, formats[i], &caps) || !offered(&caps)) return false;
     }
     return true;
 }
@@ -79,6 +81,7 @@ bool native_vulkan_subgroups_supported(const doe_vk_caps *caps)
 }
 uint32_t native_adapter_features(const native_backend *backend)
 {
+    native_format_queries queries = {0};
     if (backend->kind == WGPUBackendType_D3D12) {
         const doe_dx_caps *caps = &backend->value.d3d12.caps;
         uint32_t features = caps->timestamp_frequency && caps->shader_model >= 0x60 ?
@@ -103,12 +106,14 @@ uint32_t native_adapter_features(const native_backend *backend)
         if (caps->float32_blendable) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
         if (caps->rg11b10ufloat_renderable) features |= NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable);
         if (caps->feature_level >= 0xb000) features |= NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle);
+        if (caps->shared_texture_import) features |= feature_bit(DOE_SHARED_FEATURE_DXGI_MEMORY);
+        if (caps->shared_fence_import) features |= feature_bit(DOE_SHARED_FEATURE_DXGI_FENCE);
         if (native_d3d12_core_supported(backend)) features |= NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
-        return features | native_format_adapter_features(backend);
+        return features | native_format_adapter_features(backend, &queries);
     }
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
-        return native_format_adapter_features(backend) | NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
+        return native_format_adapter_features(backend, &queries) | NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
             (caps->shared_surface_import ? feature_bit(DOE_SHARED_FEATURE_IOSURFACE) : 0) |
             (caps->timeline_enabled ? feature_bit(DOE_SHARED_FEATURE_MTL_EVENT) : 0) |
             NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
@@ -134,7 +139,7 @@ uint32_t native_adapter_features(const native_backend *backend)
     /* No compatibility mode: every adapter that can create a device is core. */
     if (backend->kind != WGPUBackendType_Vulkan) return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     const doe_vk_caps *caps = &backend->value.vulkan.caps;
-    doe_vk_context *context = backend->value.vulkan.context;
+    queries.context = backend->value.vulkan.context;
     static const doe_vk_texture_format float32[] = {DOE_VK_FORMAT_R32_FLOAT, DOE_VK_FORMAT_RG32_FLOAT,
         DOE_VK_FORMAT_RGBA32_FLOAT};
     static const doe_vk_texture_format depth32_stencil8[] = {DOE_VK_FORMAT_D32_FLOAT_S8_UINT};
@@ -190,19 +195,19 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (caps->geometry_shader) features |= NATIVE_FEATURE(WGPUFeatureName_PrimitiveIndex);
     if (caps->dual_source_blend) features |= NATIVE_FEATURE(WGPUFeatureName_DualSourceBlending);
     if (caps->shader_f16) features |= NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
-    if (caps->texture_compression_etc2 && formats_offer(context, etc2, sizeof(etc2) / sizeof(etc2[0]), block_sampled))
+    if (caps->texture_compression_etc2 && formats_offer(&queries, etc2, sizeof(etc2) / sizeof(etc2[0]), block_sampled))
         features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionETC2);
-    if (caps->texture_compression_astc && formats_offer(context, astc, sizeof(astc) / sizeof(astc[0]), block_sampled)) {
+    if (caps->texture_compression_astc && formats_offer(&queries, astc, sizeof(astc) / sizeof(astc[0]), block_sampled)) {
         features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTC);
-        if (formats_offer(context, astc, sizeof(astc) / sizeof(astc[0]), block_volume))
+        if (formats_offer(&queries, astc, sizeof(astc) / sizeof(astc[0]), block_volume))
             features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTCSliced3D);
     }
     if (native_timestamp_supported(caps)) features |= NATIVE_FEATURE(WGPUFeatureName_TimestampQuery);
-    if (formats_offer(context, float32, 3, filterable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Filterable);
-    if (formats_offer(context, float32, 3, blendable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
-    if (formats_offer(context, depth32_stencil8, 1, depth_stencil))
+    if (formats_offer(&queries, float32, 3, filterable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Filterable);
+    if (formats_offer(&queries, float32, 3, blendable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
+    if (formats_offer(&queries, depth32_stencil8, 1, depth_stencil))
         features |= NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8);
-    if (formats_offer(context, rg11b10, 1, renderable_4x))
+    if (formats_offer(&queries, rg11b10, 1, renderable_4x))
         features |= NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable);
     if (caps->draw_indirect_first_instance) features |= NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance);
     if (caps->depth_clamp) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl);
@@ -210,9 +215,9 @@ uint32_t native_adapter_features(const native_backend *backend)
     features |= NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle);
     /* Enabled textureCompressionBC plus sampled, filterable, copyable formats;
      * sliced 3D additionally needs 3D images of every BC format. */
-    if (caps->texture_compression_bc && formats_offer(context, bc, 14, block_sampled)) {
+    if (caps->texture_compression_bc && formats_offer(&queries, bc, 14, block_sampled)) {
         features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC);
-        if (formats_offer(context, bc, 14, block_volume))
+        if (formats_offer(&queries, bc, 14, block_volume))
             features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBCSliced3D);
     }
     /* OPAQUE_FD image import, SYNC_FD fences and OPAQUE_FD semaphore waits are
@@ -220,14 +225,13 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (caps->external_fd_available)
         features |= feature_bit(DOE_SHARED_FEATURE_OPAQUE_FD) | feature_bit(DOE_SHARED_FEATURE_SYNC_FD) |
             feature_bit(DOE_SHARED_FEATURE_OPAQUE_SEMAPHORE);
-    return features | native_format_adapter_features(backend);
+    return features | native_format_adapter_features(backend, &queries);
 }
-bool native_requested_features(const native_backend *backend,
+bool native_requested_features(uint32_t offered,
     const WGPUDeviceDescriptor *descriptor, uint32_t *enabled)
 {
     /* Core is implicit only on an adapter that actually offers the complete
      * core envelope. Compatibility adapters must not gain it on default creation. */
-    const uint32_t offered = native_adapter_features(backend);
     uint32_t requested = offered & NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     if (descriptor && descriptor->requiredFeatureCount) {
         if (!descriptor->requiredFeatures) return false;
@@ -270,7 +274,7 @@ void wgpuAdapterGetFeatures(WGPUAdapter handle, WGPUSupportedFeatures *features)
     native_adapter *adapter = (native_adapter *)handle;
     /* This void adapter API has no error channel; allocation failure leaves an
      * empty owned output, never an invalid pointer or invented capability. */
-    (void)feature_list(adapter ? native_adapter_features(&adapter->backend) : 0, features);
+    (void)feature_list(adapter ? adapter->features : 0, features);
 }
 void wgpuDeviceGetFeatures(WGPUDevice handle, WGPUSupportedFeatures *features)
 {
@@ -281,7 +285,7 @@ void wgpuDeviceGetFeatures(WGPUDevice handle, WGPUSupportedFeatures *features)
 WGPUBool wgpuAdapterHasFeature(WGPUAdapter handle, WGPUFeatureName feature)
 {
     native_adapter *adapter = (native_adapter *)handle;
-    return adapter && (native_adapter_features(&adapter->backend) & feature_bit((uint32_t)feature));
+    return adapter && (adapter->features & feature_bit((uint32_t)feature));
 }
 WGPUBool wgpuDeviceHasFeature(WGPUDevice handle, WGPUFeatureName feature)
 {

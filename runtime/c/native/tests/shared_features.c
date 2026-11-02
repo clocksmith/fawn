@@ -24,10 +24,11 @@ int main(void)
     for(unsigned surface=0;surface<2;++surface)for(unsigned event=0;event<2;++event){
         adapter.backend.value.metal.caps.shared_surface_import=surface!=0;
         adapter.backend.value.metal.caps.timeline_enabled=event!=0;
+        adapter.features=native_adapter_features(&adapter.backend);
         enumeration(&adapter,names[0],surface!=0);enumeration(&adapter,names[1],event!=0);
         WGPUDeviceDescriptor descriptor={.requiredFeatureCount=3,.requiredFeatures=names};
         uint32_t enabled=UINT32_MAX;
-        bool accepted=native_requested_features(&adapter.backend,&descriptor,&enabled);
+        bool accepted=native_requested_features(adapter.features,&descriptor,&enabled);
         assert(accepted==(surface&&event));
         if(!accepted){assert(enabled==UINT32_MAX);continue;}
         native_device device={.features=enabled};
@@ -36,18 +37,47 @@ int main(void)
         assert(list.featureCount==3); /* Core plus exactly two distinct extensions. */
         for(size_t i=0;i<list.featureCount;++i)assert(wgpuDeviceHasFeature((WGPUDevice)&device,list.features[i]));
         wgpuSupportedFeaturesFreeMembers(list);
-        assert(native_requested_features(&adapter.backend,NULL,&enabled));device.features=enabled;
+        assert(native_requested_features(adapter.features,NULL,&enabled));device.features=enabled;
         assert(!wgpuDeviceHasFeature((WGPUDevice)&device,names[0]) && !wgpuDeviceHasFeature((WGPUDevice)&device,names[1]));
     }
-    const uint32_t unknown[]={0,24,25,31,32,0x50025,0x50029,0x5002B,UINT32_MAX};
+    adapter.backend=(native_backend){.kind=WGPUBackendType_D3D12};
+    WGPUFeatureName dxgi[]={(WGPUFeatureName)DOE_SHARED_FEATURE_DXGI_MEMORY,
+        (WGPUFeatureName)DOE_SHARED_FEATURE_DXGI_FENCE};
+    for(unsigned memory=0;memory<2;++memory)for(unsigned fence=0;fence<2;++fence){
+        adapter.backend.value.d3d12.caps.shared_texture_import=memory!=0;
+        adapter.backend.value.d3d12.caps.shared_fence_import=fence!=0;
+        adapter.features=native_adapter_features(&adapter.backend);
+        enumeration(&adapter,dxgi[0],memory!=0);enumeration(&adapter,dxgi[1],fence!=0);
+        WGPUDeviceDescriptor descriptor={.requiredFeatureCount=2,.requiredFeatures=dxgi};
+        uint32_t enabled=UINT32_MAX;
+        assert(native_requested_features(adapter.features,&descriptor,&enabled)==(memory&&fence));
+        if(memory&&fence){
+            native_device device={.features=enabled};
+            assert(wgpuDeviceHasFeature((WGPUDevice)&device,dxgi[0]) && wgpuDeviceHasFeature((WGPUDevice)&device,dxgi[1]));
+        }
+        adapter.backend.value.d3d12.caps.shared_texture_import=false;
+        adapter.backend.value.d3d12.caps.shared_fence_import=false;
+        enumeration(&adapter,dxgi[0],memory!=0);enumeration(&adapter,dxgi[1],fence!=0);
+    }
+    adapter.backend=(native_backend){.kind=WGPUBackendType_Undefined};
+    adapter.features=native_adapter_features(&adapter.backend);
+    const uint32_t unknown[]={0,24,25,31,32,0x50025,0x5002B,UINT32_MAX};
     for(size_t i=0;i<sizeof(unknown)/sizeof(unknown[0]);++i){
         WGPUFeatureName name=(WGPUFeatureName)unknown[i];
         assert(!wgpuAdapterHasFeature((WGPUAdapter)&adapter,name));
         WGPUDeviceDescriptor descriptor={.requiredFeatureCount=1,.requiredFeatures=&name};
-        uint32_t enabled=UINT32_MAX;assert(!native_requested_features(&adapter.backend,&descriptor,&enabled));assert(enabled==UINT32_MAX);
+        uint32_t enabled=UINT32_MAX;assert(!native_requested_features(adapter.features,&descriptor,&enabled));assert(enabled==UINT32_MAX);
         native_device device={.features=UINT32_MAX};assert(!wgpuDeviceHasFeature((WGPUDevice)&device,name));
     }
     adapter.backend.kind=WGPUBackendType_Undefined;
+    adapter.features=native_adapter_features(&adapter.backend);
     enumeration(&adapter,names[0],false);enumeration(&adapter,names[1],false);
+    /* Raw fixture capabilities can change; published support is an immutable
+     * snapshot until the fixture explicitly constructs another adapter. */
+    adapter.backend.kind=WGPUBackendType_Metal;
+    adapter.backend.value.metal.caps.shared_surface_import=true;
+    enumeration(&adapter,names[0],false);
+    adapter.features=native_adapter_features(&adapter.backend);
+    enumeration(&adapter,names[0],true);
     puts("PASS pinned shared feature names: queried Metal capabilities, independent admission, exact enumeration, duplicate requests, disabled devices and unknown/slot-alias rejection; host only");
 }

@@ -26,6 +26,7 @@ doe_dx_status doe_dx_texture_view_validate(const doe_dx_texture *texture,
     const doe_dx_texture_view_desc *input,doe_dx_texture_view_desc *out)
 {
     if (!texture || !out) return DOE_DX_INVALID_ARGUMENT;
+    if (texture->evict_requested) return DOE_DX_INVALID_STATE;
     const doe_dx_texture_shape *shape=&texture->shape;
     doe_dx_texture_view_desc view=input ? *input : (doe_dx_texture_view_desc){.format=texture->desc.format,
         .dimension=shape->dimension==1 ? 1u : shape->dimension==3 ? 6u : shape->depth_or_layers>1 ? 3u : 2u,

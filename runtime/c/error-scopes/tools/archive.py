@@ -25,7 +25,7 @@ SOURCES = {"error_scopes.o": OWNER / "src/error_scopes.c",
 INPUTS = [*SOURCES.values(), OWNER / "src/internal.h", OWNER / "include/doe_error_scopes.h",
           OWNER / "integration/doe_error_scopes_zig_bridge.h", OWNER / "CONTRACT.md",
           OWNER / "CONTRACT.sha256", OWNER / "Makefile", OWNER / "tools/archive.py",
-          Path("runtime/zig/vendor/webgpu-headers/webgpu.h"),
+          Path("runtime/vendor/webgpu-headers/webgpu.h"),
           Path("runtime/c/platform/include/doe_platform.h"),
           Path("runtime/c/platform/include/doe_platform_posix.h"),
           Path("runtime/c/platform/include/doe_platform_win32.h")]
@@ -77,7 +77,7 @@ def build(root: Path, directory: Path) -> Path:
     archiver = before["archiver"]
     assert isinstance(compiler, dict) and isinstance(archiver, dict)
     includes = ["-I" + str(root / path) for path in
-                (OWNER / "include", OWNER / "integration", Path("runtime/zig/vendor/webgpu-headers"))]
+                (OWNER / "include", OWNER / "integration", Path("runtime/vendor/webgpu-headers"))]
     objects: dict[str, str] = {}
     commands = []
     start = time.monotonic()

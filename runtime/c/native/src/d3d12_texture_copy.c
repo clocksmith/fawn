@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_texture.h"
 #include "d3d12_texture_desc.h"
+#include "shared_memory_internal.h"
 
 #if defined(_WIN32)
 static bool region_span(const doe_resource_texture_desc *texture,uint32_t mip,const uint32_t origin[3],
@@ -24,6 +25,7 @@ static native_failure buffer_texture(native_command_handle *commands,const doe_r
 {
     const doe_resource_texture_copy *copy = &record->value.texture.copy;
     if (!copy->width || !copy->height || !copy->depth_or_layers) return native_failure_status(NATIVE_OK);
+    if (!native_shared_texture_accessible(record->value.texture.texture)) return native_failure_status(NATIVE_INVALID_STATE);
     native_texture *texture = doe_resource_texture_native(record->value.texture.texture);
     native_buffer *buffer = doe_resource_buffer_native(record->value.texture.buffer);
     const doe_resource_copy_region *public = &record->value.texture.region;
@@ -82,6 +84,8 @@ native_failure native_d3d12_texture_copy(native_command_handle *commands,const d
     if (record->kind != DOE_COMMAND_COPY_TEXTURE) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     const doe_resource_texture_blit *copy = &record->value.blit;
     if (!copy->width || !copy->height || !copy->depth_or_layers) return native_failure_status(NATIVE_OK);
+    if (!native_shared_texture_accessible(copy->source.texture) || !native_shared_texture_accessible(copy->destination.texture))
+        return native_failure_status(NATIVE_INVALID_STATE);
     native_texture *source=doe_resource_texture_native(copy->source.texture);
     native_texture *destination=doe_resource_texture_native(copy->destination.texture);
     const doe_resource_texture_desc *source_desc=doe_resource_texture_description(copy->source.texture);

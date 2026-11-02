@@ -4,8 +4,7 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
 
-Execute admitted D3D12 compute, offscreen graphics, transfers and timestamps with
-explicit resource/completion obligations.
+Admitted D3D12 compute, offscreen graphics, transfers/timestamps preserve resource/completion obligations.
 
 ## Authority
 
@@ -19,25 +18,26 @@ Private Windows ABI/fixtures; [guide](README.md).
 
 ## Contracts
 
-- Inputs: [resources/bytecode](include/doe_d3d12.h), [dynamic stages](include/doe_d3d12_render.h), [HLSL/entry/stage/module](include/doe_d3d12_shader.h).
+- Inputs: [resources/bytecode](include/doe_d3d12.h), [stages](include/doe_d3d12_render.h), [HLSL/entry/stage/module](include/doe_d3d12_shader.h).
 - Outputs: identity/caps/statuses, completion-backed readback.
 
 ## Invariants
 
 - Unknown completion retains dependencies/events; release/timeout cannot settle; unresolved destruction rejects.
-- Pending ordered buffers exclude CPU access; fence observers run unlocked; context-owned events/serialized retirement.
-- Retained Zig remains intact; no hidden delegation/default change.
-- Portable controls prove ownership; SDK controls composition, never driver execution.
-- Compilers preserve diagnostics/blob/module lifetime; no CLI, filesystem includes, profile fallback or source interpretation.
-- LUID discovery queries software identity; construction verifies it without retries.
-- WARP requires explicit selection/software identity. CPU evidence never qualifies hardware/public integration.
-- HWND presentation shares context/texture/command ownership. Exact DXGI backbuffer identity and PRESENT/COPY_DEST transitions persist.
+- Pending ordered buffers forbid CPU access; unlocked observers, context events, serialized retirement.
+- DXGI imports retain texture/command leases; COMMON states and producer/release fences preserve ownership.
+- Retain Zig intact; no hidden delegation/default change.
+- Portable controls: ownership; SDK: composition, never execution.
+- Compilers retain diagnostics/blobs/modules; no CLI, filesystem includes, profile fallback or source interpretation.
+- Discover LUID/software identity; construction verifies without retries.
+- WARP requires explicit selection/software identity; CPU evidence never qualifies hardware/public integration.
+- HWND uses context/texture/command owners; exact DXGI backbuffer identity and PRESENT/COPY_DEST transitions persist.
 - Execute precedes Present/signal; only completion/terminal loss retires leases; retained frames block resize.
 
 ## Acceptance
 
 - [Owner controls](Makefile) cover rollback/ranges/order/lifetime.
-- [SDK](tests/test_windows_caps.c), [DXC](tests/native_shader.c) and [driver](tests/native_mesh.c) controls retain separate scopes.
+- [SDK](tests/test_windows_caps.c), [DXC](tests/native_shader.c) and [driver](tests/native_mesh.c) retain separate scopes.
 - Evidence: [host receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json), [SDK/driver scope](README.md).
 
 ## Non-goals

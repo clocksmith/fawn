@@ -262,6 +262,12 @@ void wgpuTextureDestroy(WGPUTexture handle)
         native_progress_pending(device);
         doe_mtl_status evicted = doe_mtl_texture_evict(payload->metal);
         if (evicted != DOE_MTL_OK && evicted != DOE_MTL_BUSY) abort();
+#if defined(_WIN32)
+    } else if (device->backend.kind == WGPUBackendType_D3D12 && payload && payload->d3d12 && !payload->shared_memory) {
+        native_progress_pending(device);
+        doe_dx_status evicted = doe_dx_texture_evict(payload->d3d12);
+        if (evicted != DOE_DX_OK && evicted != DOE_DX_BUSY) abort();
+#endif
     }
     native_unlock(device);
 }

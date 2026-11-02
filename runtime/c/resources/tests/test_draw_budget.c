@@ -124,11 +124,16 @@ static void test_all_draws_share_budget(void)
     assert(draw(&b, 0) == DOE_RESOURCE_RANGE);
     assert(b.f.allocations == allocations && b.encoder->count == records && b.pass->draw_count == 4);
     finish(&b, DOE_RESOURCE_RANGE);
-    begin(&b, true, 1);
-    b.f.fail_at = b.f.allocations;
-    assert(draw(&b, 0) == DOE_RESOURCE_OUT_OF_MEMORY);
-    assert(!b.pass->draw_count && b.encoder->count == 1);
-    finish(&b, DOE_RESOURCE_OUT_OF_MEMORY);
+    for (unsigned failure = 0; failure < 2; ++failure) {
+        begin(&b, true, 8);
+        for (size_t i = 0; i < 7; ++i) assert(draw(&b, 0) == DOE_RESOURCE_OK);
+        /* Command-array growth succeeds in the second case, then allocating
+         * the next stable record chunk fails. Neither publishes another draw. */
+        b.f.fail_at = b.f.allocations + failure;
+        assert(draw(&b, 0) == DOE_RESOURCE_OUT_OF_MEMORY);
+        assert(b.pass->draw_count == 7 && b.encoder->count == 8);
+        finish(&b, DOE_RESOURCE_OUT_OF_MEMORY);
+    }
 }
 
 static void test_bundle_preflight(void)
@@ -167,12 +172,33 @@ static void test_final_counter_without_wrap(void)
     finish(&b, DOE_RESOURCE_RANGE);
 }
 
+static void test_stable_record_storage(void)
+{
+    budget_fixture b;
+    begin(&b, true, 40);
+    const doe_resource_render_record *begin_record = b.encoder->commands[0].value.render;
+    unsigned leases = b.f.device_references;
+    size_t allocations = b.f.allocations;
+    b.f.fail_at = allocations;
+    for (size_t i = 0; i < 7; ++i) assert(draw(&b, 0) == DOE_RESOURCE_OK);
+    assert(b.f.allocations == allocations && b.f.device_references == leases);
+    b.f.fail_at = SIZE_MAX;
+    const doe_resource_render_record *first = b.encoder->commands[1].value.render;
+    for (size_t i = 7; i < 40; ++i) assert(draw(&b, 0) == DOE_RESOURCE_OK);
+    assert(b.encoder->commands[0].value.render == begin_record && b.encoder->commands[1].value.render == first);
+    assert(b.f.device_references == leases);
+    assert(doe_resource_render_record_borrow(begin_record)->first_in_pass);
+    assert(doe_resource_render_record_borrow(first)->pipeline == b.pipeline);
+    finish(&b, DOE_RESOURCE_OK); /* Encoder release precedes pending retirement. */
+}
+
 int main(void)
 {
+    test_stable_record_storage();
     test_presence_and_zero();
     test_all_draws_share_budget();
     test_bundle_preflight();
     test_final_counter_without_wrap();
-    puts("render draw budget: 4 host suites passed; no native draw execution claimed");
+    puts("render draw budget/storage: 5 host suites passed; no native draw execution claimed");
     return 0;
 }

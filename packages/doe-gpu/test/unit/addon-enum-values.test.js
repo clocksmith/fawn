@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 
 const ADDON = new URL('../../../../runtime/bridge/webgpu-addon/', import.meta.url);
-const HEADER = new URL('../../../../runtime/zig/vendor/webgpu-headers/webgpu.h', import.meta.url);
+const HEADER = new URL('../../../../runtime/vendor/webgpu-headers/webgpu.h', import.meta.url);
 
 // Converter-name fragment -> webgpu.h enum. A new numeric table must be listed.
 const FAMILIES = [

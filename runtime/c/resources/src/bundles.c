@@ -276,20 +276,14 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
         if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
         if (bundle->count > remaining) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
         remaining -= bundle->count;
-        for (size_t j = 0; j < bundle->count; j++) {
-            status = resource_render_draw_validate(&bundle->draws[j], pass->base.config.device.identity, &signature);
-            if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
-        }
     }
     for (size_t i = 0; i < count; i++) {
         status = resource_scope_add(&pass->base.config, &pass->scope, bundles[i]->scope.uses, bundles[i]->scope.count);
         if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     }
     for (size_t i = 0; i < count; i++) {
-        for (size_t j = 0; j < bundles[i]->count; j++) {
-            status = resource_render_replay_packet(pass, &bundles[i]->draws[j]);
-            if (status != DOE_RESOURCE_OK) return status;
-        }
+        status = resource_render_replay_bundle(pass, bundles[i]);
+        if (status != DOE_RESOURCE_OK) return status;
     }
     /* Logical WebGPU state clears even for an empty list. Backend physical
      * state restoration does not preserve these public binding obligations. */
@@ -329,4 +323,14 @@ doe_resource_status doe_resource_bundle_encoder_debug(doe_resource_bundle_encode
     doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     return fail(encoder, resource_debug_apply(&encoder->debug_depth, operation));
+}
+
+size_t resource_bundle_draw_count(const doe_resource_render_bundle *bundle)
+{
+    return bundle->count;
+}
+
+const doe_resource_render_packet *resource_bundle_draw(const doe_resource_render_bundle *bundle, size_t index)
+{
+    return index < bundle->count ? &bundle->draws[index] : NULL;
 }

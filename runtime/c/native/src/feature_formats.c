@@ -6,7 +6,17 @@
 /* One canonical resource predicate determines which optional formats add a
  * requirement. No independently maintained feature-format inventory can drift
  * from texture/layout/render admission. The pinned ABI's format range is finite. */
-static bool vulkan_tier(doe_vk_context *context,uint32_t features)
+bool native_query_format(native_format_queries *queries, doe_vk_texture_format format, doe_vk_format_caps *out)
+{
+    uint32_t index = (uint32_t)format;
+    if (index >= NATIVE_FORMAT_QUERY_COUNT) return false;
+    if (!queries->state[index])
+        queries->state[index] = doe_vk_texture_format_caps(queries->context, format, &queries->formats[index]) == DOE_VK_OK ? 1 : 2;
+    if (queries->state[index] != 1) return false;
+    *out = queries->formats[index];
+    return true;
+}
+static bool vulkan_tier(native_format_queries *queries,uint32_t features)
 {
     for (uint32_t name=WGPUTextureFormat_R8Unorm;name<=WGPUTextureFormat_ASTC12x12UnormSrgb;++name) {
         WGPUTextureFormat format=(WGPUTextureFormat)name;
@@ -20,7 +30,7 @@ static bool vulkan_tier(doe_vk_context *context,uint32_t features)
         doe_vk_texture_format native;
         doe_vk_format_caps caps;
         if (!native_texture_format(UINT32_MAX,format,&native) ||
-            doe_vk_texture_format_caps(context,native,&caps)!=DOE_VK_OK) return false;
+            !native_query_format(queries,native,&caps)) return false;
         if (storage && (!caps.storage || !caps.sampled || !caps.copy_src || !caps.copy_dst)) return false;
         if (render && (!caps.color_attachment || !caps.blendable || !caps.filterable ||
             !(caps.attachment_sample_counts & 4u))) return false;
@@ -28,7 +38,7 @@ static bool vulkan_tier(doe_vk_context *context,uint32_t features)
     return true;
 }
 
-uint32_t native_format_adapter_features(const native_backend *backend)
+uint32_t native_format_adapter_features(const native_backend *backend, native_format_queries *queries)
 {
     bool bgra=false,tier1=false,tier2=false;
     if (backend->kind==WGPUBackendType_Metal) {
@@ -42,15 +52,14 @@ uint32_t native_format_adapter_features(const native_backend *backend)
         tier1=caps->texture_formats_tier1 && caps->rg11b10ufloat_renderable;
         tier2=tier1 && caps->texture_formats_tier2;
     } else if (backend->kind==WGPUBackendType_Vulkan) {
-        doe_vk_context *context=backend->value.vulkan.context;
         doe_vk_format_caps caps;
-        bgra=doe_vk_texture_format_caps(context,DOE_VK_FORMAT_BGRA8_UNORM,&caps)==DOE_VK_OK &&
+        bgra=native_query_format(queries,DOE_VK_FORMAT_BGRA8_UNORM,&caps) &&
             caps.storage && caps.sampled && caps.copy_src && caps.copy_dst;
-        const bool rg11=doe_vk_texture_format_caps(context,DOE_VK_FORMAT_RG11B10_UFLOAT,&caps)==DOE_VK_OK &&
+        const bool rg11=native_query_format(queries,DOE_VK_FORMAT_RG11B10_UFLOAT,&caps) &&
             caps.color_attachment && caps.blendable && (caps.attachment_sample_counts & 4u);
         tier1=rg11 && backend->value.vulkan.caps.storage_image_extended_formats &&
-            vulkan_tier(context,DOE_RESOURCE_FORMAT_TIER1);
-        tier2=tier1 && vulkan_tier(context,DOE_RESOURCE_FORMAT_TIER1|DOE_RESOURCE_FORMAT_TIER2);
+            vulkan_tier(queries,DOE_RESOURCE_FORMAT_TIER1);
+        tier2=tier1 && vulkan_tier(queries,DOE_RESOURCE_FORMAT_TIER1|DOE_RESOURCE_FORMAT_TIER2);
     }
     return (bgra ? NATIVE_FEATURE(WGPUFeatureName_BGRA8UnormStorage) : 0) |
         (tier1 ? NATIVE_FEATURE(WGPUFeatureName_TextureFormatsTier1) : 0) |

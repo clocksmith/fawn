@@ -1,4 +1,4 @@
-// Compare bridge layouts with the same pinned C header used by the Zig runtime.
+// Compare bridge layouts with the shared pinned C header used by the C and Zig runtimes.
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

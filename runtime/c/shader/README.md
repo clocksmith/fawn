@@ -44,7 +44,13 @@ specialization, including override/sampling/translation pools.
 Additional
 interface-attribute and stage-interface capacities are explicit options; zero
 retains compute-only admission rather than inventing hidden capacity. Graphics
-entries retain actual stage and zero compute metadata. Successful measure then publish calls use the same effective capacities; no source re-parser or alternate semantic engine.
+entries retain actual stage and zero compute metadata. Compiler ABI20 prepares one
+analysis in caller-owned temporary workspace, then publishes retained metadata and
+code into exact owned spans. Text serialization uses separately queried exact
+scratch storage, which is released with the analysis workspace before the shader
+handle is published. No second parse/validation, hidden compiler cache or output-size
+heuristic is involved; existing ABI1-19 semantics remain intact. Only actual pool
+exhaustion can retry preparation under the opted-in growth policy.
 The temporary workspace is released before publication. One owned allocation
 contains the retained result. Identity matching compares exact source, explicit
 compiler identity and entry selection, not hashes alone. It is not a cache.

@@ -83,7 +83,7 @@ native_result native_backend_device_select(const native_backend *adapter, const 
     bool external_fd, native_backend *out);
 void native_backend_close(native_backend *backend);
 native_result native_backend_status(const native_backend *backend);
-WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out);
+WGPUStatus native_backend_info(const native_backend *backend, uint32_t offered_features, WGPUAdapterInfo *out);
 WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out);
 WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out);
 native_failure native_failure_status(native_result status);

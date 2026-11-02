@@ -919,6 +919,18 @@ typed-loader host control. Its [recorded SDK/public-consumer checkpoint](DEVELOP
 is source-bound; later changes need their own workflow result and executed scope.
 Linux and Darwin builds keep their existing owner set.
 
+The Windows builder also links `d3d12_shared_memory_windows.exe` against the actual
+native DLL, without running it. Explicit `d3d12_shared_memory_windows.exe --warp`
+selects and verifies CPU WARP, then exercises public DXGI import, texture creation,
+Begin/queue-copy/End, zero readback and independent exported-fence lifetime. Its
+keyed concurrency controls park the real SDK queue with a test-owned fence:
+while one End waits outside device locking, a second End and Begin reject without
+changing output canaries. A destroy-during-wait control verifies rejection and
+subsequent keyed reacquisition through canonical finalization. This white-box queue
+coordination forces the race interval; it does not simulate GPU completion/data.
+This dedicated software control does not establish Chromium presentation or
+physical GPU evidence.
+
 The Makefile invokes the compiler owner's canonical `shared` target for
 `libdoe_compiler.so`, without parsing or duplicating its target source lists, then links `libwebgpu_doe_c.so` from C owners only. It writes
 all outputs to /tmp by default. Existing GCC/G++ and Vulkan loader/ICD are needed;

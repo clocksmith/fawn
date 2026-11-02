@@ -147,6 +147,7 @@ WGPUQueue wgpuDeviceGetQueue(WGPUDevice device) { assert(device == DEVICE); retu
 void wgpuQueueRelease(WGPUQueue queue) { assert(!queue); }
 void wgpuBufferRelease(WGPUBuffer buffer) { assert(!buffer); }
 void wgpuComputePipelineRelease(WGPUComputePipeline pipeline) { assert(!pipeline); }
+void wgpuBindGroupRelease(WGPUBindGroup group) { assert(!group); }
 void wgpuBindGroupLayoutRelease(WGPUBindGroupLayout layout) { assert(!layout); }
 void runtime_release_render(doe_runtime *runtime) { (void)runtime; }
 void runtime_release_surfaces(doe_runtime *runtime) { (void)runtime; }

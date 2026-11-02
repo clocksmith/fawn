@@ -10,58 +10,87 @@
 #include "host_io.h"
 #include <string.h>
 
-static char *read_source(const char *path, size_t *size)
+static bool reserve_bytes(char **bytes, size_t *capacity, size_t required)
 {
-    if (!doe_host_regular_file(path)) return NULL;
+    if (required <= *capacity) return true;
+    char *grown = realloc(*bytes, required);
+    if (!grown) return false;
+    *bytes = grown;
+    *capacity = required;
+    return true;
+}
+
+static bool read_source(const char *path, kernel_source_workspace *workspace, size_t *size)
+{
+    if (!doe_host_regular_file(path)) return false;
     FILE *file = doe_host_fopen(path, "rb");
-    if (!file) return NULL;
+    if (!file) return false;
     long length = fseek(file, 0, SEEK_END) == 0 ? ftell(file) : -1;
-    if (length <= 0 || (unsigned long)length > MAX_KERNEL_SOURCE_BYTES || fseek(file, 0, SEEK_SET)) {
+    if (length <= 0 || (unsigned long)length > MAX_KERNEL_SOURCE_BYTES || fseek(file, 0, SEEK_SET) ||
+        !reserve_bytes(&workspace->bytes, &workspace->byte_capacity, (size_t)length + 1)) {
         fclose(file);
-        return NULL;
+        return false;
     }
-    char *text = malloc((size_t)length + 1);
-    size_t read = text ? fread(text, 1, (size_t)length, file) : 0;
+    size_t read = fread(workspace->bytes, 1, (size_t)length, file);
     bool ok = !ferror(file);
     if (fclose(file)) ok = false;
-    if (!text || !ok || read != (size_t)length) {
-        free(text);
-        return NULL;
-    }
-    text[read] = '\0';
+    if (!ok || read != (size_t)length) return false;
+    workspace->bytes[read] = '\0';
     *size = read;
-    return text;
+    return true;
 }
 
-static char *join(const char *root, const char *name, const char *suffix)
+static bool source_path(kernel_source_workspace *workspace, unsigned index,
+    const char *root, const char *name, const char *suffix)
 {
-    size_t length = strlen(root) + 1 + strlen(name) + strlen(suffix) + 1;
-    char *path = malloc(length);
-    if (path) snprintf(path, length, "%s/%s%s", root, name, suffix);
-    return path;
+    size_t a = root ? strlen(root) : 0, b = strlen(name), c = strlen(suffix);
+    if (a > SIZE_MAX - b || a + b > SIZE_MAX - c - 2) return false;
+    size_t length = a + b + c + (root ? 2 : 1);
+    if (!reserve_bytes(&workspace->paths[index], &workspace->path_capacity[index], length)) return false;
+    if (root) snprintf(workspace->paths[index], length, "%s/%s%s", root, name, suffix);
+    else memcpy(workspace->paths[index], name, b + 1);
+    return true;
 }
 
-/* The doe-zig-runtime order (wgpu_commands_compute.zig resolveKernelSource):
- * the name as a path, the name under the kernel root, then name.wgsl there. */
+/* The doe-zig-runtime precedence: as given, under root, then root/name.wgsl.
+ * No stat/path identity cache: bytes and precedence are observed on each call. */
+static const char *resolve_source(const doe_runtime *runtime, const char *kernel,
+    kernel_source_workspace *workspace, size_t *size)
+{
+    const char *root = runtime->options.kernel_root;
+    size_t length = strlen(kernel);
+    bool suffix = length < 5 || strcmp(kernel + length - 5, ".wgsl") != 0;
+    for (unsigned i = 0; i < 3; ++i) {
+        if (i && (!root || (i == 2 && !suffix))) continue;
+        if (source_path(workspace, i, i ? root : NULL, kernel, i == 2 ? ".wgsl" : "") &&
+            read_source(workspace->paths[i], workspace, size)) return workspace->paths[i];
+    }
+    return NULL;
+}
+
+static void source_workspace_clear(kernel_source_workspace *workspace)
+{
+    for (unsigned i = 0; i < 3; ++i) free(workspace->paths[i]);
+    free(workspace->bytes);
+    *workspace = (kernel_source_workspace){0};
+}
+
+/* The render source consumer retains the existing owned-return contract. */
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size)
 {
-    char *candidates[3] = {0};
-    candidates[0] = doe_host_strdup(kernel);
-    const char *root = runtime->options.kernel_root;
-    if (root) {
-        candidates[1] = join(root, kernel, "");
-        size_t length = strlen(kernel);
-        if (length < 5 || strcmp(kernel + length - 5, ".wgsl") != 0) candidates[2] = join(root, kernel, ".wgsl");
-    }
-    char *chosen = NULL;
-    for (int i = 0; i < 3; i++) {
-        if (!chosen && candidates[i] && (*source = read_source(candidates[i], size))) {
-            chosen = candidates[i];
-            continue;
+    kernel_source_workspace workspace = {0};
+    const char *chosen = resolve_source(runtime, kernel, &workspace, size);
+    char *path = NULL;
+    if (chosen) {
+        for (unsigned i = 0; i < 3; ++i) if (workspace.paths[i] == chosen) {
+            path = workspace.paths[i];
+            workspace.paths[i] = NULL;
         }
-        free(candidates[i]);
+        *source = workspace.bytes;
+        workspace.bytes = NULL;
     }
-    return chosen;
+    source_workspace_clear(&workspace);
+    return path;
 }
 
 static void source_record_clear(kernel_source_record *record)
@@ -78,6 +107,10 @@ void runtime_kernel_sources_clear(doe_runtime *runtime)
     free(runtime->kernel_sources);
     runtime->kernel_sources = NULL;
     runtime->kernel_source_count = runtime->kernel_source_capacity = 0;
+    source_workspace_clear(&runtime->kernel_workspace);
+    free(runtime->binding_workspace);
+    runtime->binding_workspace = NULL;
+    runtime->binding_workspace_capacity = 0;
 }
 size_t doe_runtime_source_receipt_count(const doe_runtime *runtime)
 {
@@ -163,6 +196,9 @@ static pipeline_entry *find_pipeline(doe_runtime *runtime, const char *path, con
 
 static void release_pipeline(pipeline_entry *entry)
 {
+    for (uint32_t g = 0; g < entry->group_count; ++g)
+        if (entry->bound_groups[g]) wgpuBindGroupRelease(entry->bound_groups[g]);
+    free(entry->bound_resources);
     if (entry->pipeline) wgpuComputePipelineRelease(entry->pipeline);
     for (uint32_t g = 0; g < entry->group_count; g++) if (entry->groups[g]) wgpuBindGroupLayoutRelease(entry->groups[g]);
     free(entry->source_path);
@@ -233,9 +269,9 @@ static bool build_pipeline(doe_runtime *runtime, pipeline_entry *entry, const ch
 
 static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
-    char *source = NULL;
     size_t source_size = 0;
-    char *path = runtime_resolve_kernel(runtime, command->as.dispatch.kernel, &source, &source_size);
+    const char *path = resolve_source(runtime, command->as.dispatch.kernel, &runtime->kernel_workspace, &source_size);
+    const char *source = runtime->kernel_workspace.bytes;
     if (!path) {
         runtime_fail(execution, "kernel_source_missing", "kernel \"%s\" has no readable WGSL source%s",
             command->as.dispatch.kernel, runtime->options.kernel_root ? " under the kernel root" : " (no --kernel-root)");
@@ -248,32 +284,29 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
         size_t identity;
         bool recorded = runtime_record_kernel_source(runtime, command->as.dispatch.kernel, path,
             command->as.dispatch.entry_point, source, source_size, &identity);
-        free(path);
-        free(source);
         if (!recorded) { runtime_fail(execution, "out_of_memory", "source receipt allocation failed"); return NULL; }
         return cached;
     }
     if (runtime->pipeline_count == runtime->pipeline_capacity) {
         if (runtime->pipeline_capacity > SIZE_MAX / 2 / sizeof(pipeline_entry)) {
-            free(path); free(source);
             runtime_fail(execution, "out_of_memory", "pipeline cache capacity overflow");
             return NULL;
         }
         size_t capacity = runtime->pipeline_capacity ? runtime->pipeline_capacity * 2 : 8;
         pipeline_entry *grown = realloc(runtime->pipelines, capacity * sizeof(*grown));
         if (!grown) {
-            free(path);
-            free(source);
             runtime_fail(execution, "out_of_memory", "out of memory");
             return NULL;
         }
         runtime->pipelines = grown;
         runtime->pipeline_capacity = capacity;
     }
-    pipeline_entry entry = {.source_path = path, .entry_point = doe_host_strdup(command->as.dispatch.entry_point)};
-    if (count) entry.signature = malloc(count * sizeof(*bindings));
-    if (!entry.entry_point || (count && !entry.signature)) {
-        free(source);
+    pipeline_entry entry = {.source_path = doe_host_strdup(path), .entry_point = doe_host_strdup(command->as.dispatch.entry_point)};
+    if (count && count <= SIZE_MAX / sizeof(*bindings) && count <= SIZE_MAX / sizeof(*entry.bound_resources)) {
+        entry.signature = malloc(count * sizeof(*bindings));
+        entry.bound_resources = calloc(count, sizeof(*entry.bound_resources));
+    }
+    if (!entry.source_path || !entry.entry_point || (count && (!entry.signature || !entry.bound_resources))) {
         release_pipeline(&entry);
         runtime_fail(execution, "out_of_memory", "out of memory");
         return NULL;
@@ -284,7 +317,6 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
     if (built && !runtime_record_kernel_source(runtime, command->as.dispatch.kernel, path,
         command->as.dispatch.entry_point, source, source_size, &entry.source_index))
         built = runtime_fail(execution, "out_of_memory", "source receipt allocation failed");
-    free(source);
     if (!built) {
         release_pipeline(&entry);
         return NULL;
@@ -326,26 +358,65 @@ static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipe
     return encode_dispatches(runtime, pipeline, groups, command, count, NULL, NULL);
 }
 
-/* A 2D view of the binding's texture (created or replaced as Zig's
- * getOrCreateTextureFromBinding does), in the binding's or the texture's format. */
-static WGPUTextureView binding_view(doe_runtime *runtime, const doe_kernel_binding *binding, doe_trace_execution *execution)
+static void release_resolved(kernel_bound_resource *resources, size_t count)
 {
-    WGPUTextureUsage usage = binding->resource == DOE_RESOURCE_TEXTURE ? WGPUTextureUsage_TextureBinding :
-        WGPUTextureUsage_StorageBinding;
-    doe_texture_format view_format;
-    WGPUTexture texture = runtime_binding_texture(runtime, binding->handle, usage, binding->has_format, binding->format,
-        &view_format, execution);
-    if (!texture) return NULL;
-    WGPUTextureViewDescriptor descriptor = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
-    descriptor.format = runtime_webgpu_format(view_format);
-    descriptor.dimension = WGPUTextureViewDimension_2D;
-    WGPUTextureView view = wgpuTextureCreateView(texture, &descriptor);
-    if (!view) runtime_fail(execution, "kernel_texture_view_failed", "texture %llu view was not created", (unsigned long long)binding->handle);
-    return view;
+    for (size_t i = 0; i < count; ++i) {
+        if (resources[i].buffer) wgpuBufferRelease(resources[i].buffer);
+        if (resources[i].texture) wgpuTextureRelease(resources[i].texture);
+    }
 }
 
-static bool create_groups(doe_runtime *runtime, runtime_buffer_table *buffers, const pipeline_entry *pipeline,
-    const doe_command *command, WGPUBindGroup *groups, doe_trace_execution *execution)
+/* Temporary leases also protect an earlier binding if resolving a later
+ * binding replaces that stream handle's native object. Groups own the final
+ * leases; the cache key never depends on stream handles or raw pointer reuse. */
+static bool resolve_bindings(doe_runtime *runtime, runtime_buffer_table *buffers,
+    const pipeline_entry *pipeline, const doe_command *command, kernel_bound_resource *resources,
+    doe_trace_execution *execution)
+{
+    const doe_kernel_binding *bindings = command->as.dispatch.bindings;
+    size_t count = command->as.dispatch.binding_count;
+    if (count) memset(resources, 0, count * sizeof(*resources));
+    for (uint32_t g = 0; g < pipeline->group_count; ++g) {
+        size_t used = 0;
+        for (size_t i = 0; i < count && used < MAX_GROUP_BINDINGS; ++i) {
+            const doe_kernel_binding *binding = &bindings[i];
+            if (binding->group != g) continue;
+            ++used;
+            kernel_bound_resource *resolved = &resources[i];
+            if (binding->resource != DOE_RESOURCE_BUFFER) {
+                WGPUTextureUsage usage = binding->resource == DOE_RESOURCE_TEXTURE ? WGPUTextureUsage_TextureBinding :
+                    WGPUTextureUsage_StorageBinding;
+                doe_texture_format format;
+                resolved->texture = runtime_binding_texture(runtime, binding->handle, usage,
+                    binding->has_format, binding->format, &format, execution);
+                if (!resolved->texture) return false;
+                wgpuTextureAddRef(resolved->texture);
+                resolved->format = runtime_webgpu_format(format);
+                continue;
+            }
+            buffer_entry *buffer = runtime_buffer_table_find(buffers, binding->handle);
+            if (!buffer) {
+                if (binding->buffer_size == UINT64_MAX)
+                    return runtime_fail(execution, "kernel_binding_size", "binding %u.%u names new buffer %llu without buffer_size",
+                        g, binding->binding, (unsigned long long)binding->handle);
+                if (binding->buffer_offset > UINT64_MAX - binding->buffer_size)
+                    return runtime_fail(execution, "kernel_binding_size", "binding %u.%u range overflows", g, binding->binding);
+                buffer = runtime_buffer_table_create(runtime, buffers, binding->handle,
+                    binding->buffer_offset + binding->buffer_size, execution);
+                if (!buffer) return false;
+            }
+            resolved->buffer = buffer->buffer;
+            wgpuBufferAddRef(resolved->buffer);
+            resolved->offset = binding->buffer_offset;
+            resolved->size = binding->buffer_size == UINT64_MAX ? WGPU_WHOLE_SIZE : binding->buffer_size;
+        }
+    }
+    return true;
+}
+
+static bool create_resolved_groups(doe_runtime *runtime, const pipeline_entry *pipeline,
+    const doe_command *command, const kernel_bound_resource *resources, WGPUBindGroup *groups,
+    doe_trace_execution *execution)
 {
     const doe_kernel_binding *bindings = command->as.dispatch.bindings;
     size_t count = command->as.dispatch.binding_count;
@@ -353,51 +424,113 @@ static bool create_groups(doe_runtime *runtime, runtime_buffer_table *buffers, c
     WGPUTextureView views[MAX_GROUP_BINDINGS];
     for (uint32_t g = 0; g < pipeline->group_count; g++) {
         size_t used = 0, view_count = 0;
-        bool entries_ok = true;
+        bool ok = true;
         for (size_t i = 0; i < count && used < MAX_GROUP_BINDINGS; i++) {
-            const doe_kernel_binding *binding = &bindings[i];
-            if (binding->group != g) continue;
-            if (binding->resource != DOE_RESOURCE_BUFFER) {
-                WGPUTextureView view = binding_view(runtime, binding, execution);
-                if (!view) { entries_ok = false; break; }
-                views[view_count++] = view;
-                WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
-                entry.binding = binding->binding;
-                entry.textureView = view;
-                entries[used++] = entry;
-                continue;
-            }
-            buffer_entry *buffer = runtime_buffer_table_find(buffers, binding->handle);
-            if (!buffer) {
-                if (binding->buffer_size == UINT64_MAX) {
-                    entries_ok = runtime_fail(execution, "kernel_binding_size", "binding %u.%u names new buffer %llu without buffer_size",
-                        g, binding->binding, (unsigned long long)binding->handle);
-                    break;
-                }
-                if (binding->buffer_offset > UINT64_MAX - binding->buffer_size) {
-                    entries_ok = runtime_fail(execution, "kernel_binding_size", "binding %u.%u range overflows", g, binding->binding);
-                    break;
-                }
-                buffer = runtime_buffer_table_create(runtime, buffers, binding->handle, binding->buffer_offset + binding->buffer_size, execution);
-                if (!buffer) { entries_ok = false; break; }
-            }
+            if (bindings[i].group != g) continue;
+            const kernel_bound_resource *resource = &resources[i];
             WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
-            entry.binding = binding->binding;
-            entry.buffer = buffer->buffer;
-            entry.offset = binding->buffer_offset;
-            entry.size = binding->buffer_size == UINT64_MAX ? WGPU_WHOLE_SIZE : binding->buffer_size;
+            entry.binding = bindings[i].binding;
+            entry.buffer = resource->buffer;
+            entry.offset = resource->offset;
+            entry.size = resource->size;
+            if (resource->texture) {
+                WGPUTextureViewDescriptor descriptor = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+                descriptor.format = resource->format;
+                descriptor.dimension = WGPUTextureViewDimension_2D;
+                entry.textureView = wgpuTextureCreateView(resource->texture, &descriptor);
+                if (!entry.textureView) {
+                    ok = runtime_fail(execution, "kernel_texture_view_failed", "texture %llu view was not created",
+                        (unsigned long long)bindings[i].handle);
+                    break;
+                }
+                views[view_count++] = entry.textureView;
+            }
             entries[used++] = entry;
         }
         WGPUBindGroupDescriptor descriptor = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
         descriptor.layout = pipeline->groups[g];
         descriptor.entryCount = used;
         descriptor.entries = entries;
-        groups[g] = entries_ok ? wgpuDeviceCreateBindGroup(runtime->device, &descriptor) : NULL;
+        groups[g] = ok ? wgpuDeviceCreateBindGroup(runtime->device, &descriptor) : NULL;
         for (size_t v = 0; v < view_count; v++) wgpuTextureViewRelease(views[v]);
-        if (!entries_ok) return false;
+        if (!ok) return false;
         if (!groups[g]) return runtime_fail(execution, "kernel_bind_group_failed", "bind group %u was not created", g);
     }
     return true;
+}
+
+static bool same_resources(const kernel_bound_resource *a, const kernel_bound_resource *b, size_t count)
+{
+    for (size_t i = 0; i < count; ++i)
+        if (a[i].buffer != b[i].buffer || a[i].texture != b[i].texture || a[i].format != b[i].format ||
+            a[i].offset != b[i].offset || a[i].size != b[i].size) return false;
+    return true;
+}
+
+typedef struct prepared_groups {
+    WGPUBindGroup groups[MAX_GROUPS];
+    kernel_bound_resource *resources;
+    bool replace;
+} prepared_groups;
+
+static bool cached_groups(doe_runtime *runtime, pipeline_entry *pipeline,
+    const doe_command *command, prepared_groups *prepared, doe_trace_execution *execution)
+{
+    size_t count = command->as.dispatch.binding_count;
+    if (count > runtime->binding_workspace_capacity) {
+        if (count > SIZE_MAX / sizeof(kernel_bound_resource))
+            return runtime_fail(execution, "out_of_memory", "binding cache capacity overflow");
+        kernel_bound_resource *grown = realloc(runtime->binding_workspace, count * sizeof(*grown));
+        if (!grown) return runtime_fail(execution, "out_of_memory", "binding cache allocation failed");
+        runtime->binding_workspace = grown;
+        runtime->binding_workspace_capacity = count;
+    }
+    prepared->resources = runtime->binding_workspace;
+    if (!resolve_bindings(runtime, &runtime->buffers, pipeline, command, prepared->resources, execution)) return false;
+    prepared->replace = !pipeline->bindings_cached ||
+        !same_resources(pipeline->bound_resources, prepared->resources, count);
+    if (!prepared->replace) {
+        memcpy(prepared->groups, pipeline->bound_groups, sizeof(prepared->groups));
+        return true;
+    }
+    return create_resolved_groups(runtime, pipeline, command, prepared->resources, prepared->groups, execution);
+}
+
+static void finish_groups(pipeline_entry *pipeline, prepared_groups *prepared, bool publish)
+{
+    if (prepared->replace) {
+        if (publish) {
+            /* Publish only a complete, admitted replacement. The old groups
+             * protect their exact native objects until this transaction succeeds. */
+            for (uint32_t g = 0; g < pipeline->group_count; ++g) {
+                if (pipeline->bound_groups[g]) wgpuBindGroupRelease(pipeline->bound_groups[g]);
+                pipeline->bound_groups[g] = prepared->groups[g];
+                prepared->groups[g] = NULL;
+            }
+            if (pipeline->signature_count) memcpy(pipeline->bound_resources, prepared->resources,
+                pipeline->signature_count * sizeof(*prepared->resources));
+            pipeline->bindings_cached = true;
+        }
+        for (uint32_t g = 0; g < MAX_GROUPS; ++g)
+            if (prepared->groups[g]) wgpuBindGroupRelease(prepared->groups[g]);
+    }
+    if (prepared->resources) release_resolved(prepared->resources, pipeline->signature_count);
+}
+
+/* Oracle groups always use a fresh isolated resource table and never read or
+ * populate the measured invocation cache. */
+static bool create_groups(doe_runtime *runtime, runtime_buffer_table *buffers, const pipeline_entry *pipeline,
+    const doe_command *command, WGPUBindGroup *groups, doe_trace_execution *execution)
+{
+    size_t count = command->as.dispatch.binding_count;
+    if (count > SIZE_MAX / sizeof(kernel_bound_resource)) return false;
+    kernel_bound_resource *resources = count ? calloc(count, sizeof(*resources)) : NULL;
+    if (count && !resources) return runtime_fail(execution, "out_of_memory", "oracle binding allocation failed");
+    bool ok = resolve_bindings(runtime, buffers, pipeline, command, resources, execution) &&
+        create_resolved_groups(runtime, pipeline, command, resources, groups, execution);
+    release_resolved(resources, count);
+    free(resources);
+    return ok;
 }
 
 static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, WGPUBuffer indirect,
@@ -451,9 +584,10 @@ static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, W
         execution->setup_ns = doe_runtime_monotonic_ns() - start;
         return false;
     }
-    WGPUBindGroup groups[MAX_GROUPS] = {0};
     runtime_push_scopes(runtime);
-    bool ok = create_groups(runtime, &runtime->buffers, pipeline, command, groups, execution);
+    prepared_groups prepared = {0};
+    bool ok = cached_groups(runtime, pipeline, command, &prepared, execution);
+    WGPUBindGroup *groups = prepared.groups;
     if (ok && command->as.dispatch.warmup) {
         ok = runtime_submit(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
         if (ok && runtime->options.defer_queue_sync) ok = runtime_wait_queue(runtime, execution);
@@ -471,8 +605,8 @@ static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, W
     }
     ok = runtime_timestamp_finish(runtime, &timestamp, ok, execution);
     uint64_t end = doe_runtime_monotonic_ns();
-    for (uint32_t g = 0; g < MAX_GROUPS; g++) if (groups[g]) wgpuBindGroupRelease(groups[g]);
     bool scopes_ok = runtime_pop_scopes(runtime, execution);
+    finish_groups(pipeline, &prepared, ok && scopes_ok);
     execution->setup_ns = setup_end - start;
     execution->encode_ns = encode_end - setup_end;
     execution->submit_wait_ns = end - encode_end;

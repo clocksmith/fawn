@@ -78,10 +78,10 @@ $(BUILD)/test_cpp: $(OWNER)/tests/test_cpp.cpp $(ARCHIVE) $(HEADERS) $(SETTINGS)
 	"$(CXX)" $(CXXFLAGS) -I "$(OWNER)/include" "$<" "$(ARCHIVE)" -o "$@"
 
 $(BUILD)/abi_probe: $(OWNER)/integration/abi_probe.c $(ARCHIVE) $(HEADERS) $(SETTINGS)
-	"$(CC)" $(CFLAGS) -I "$(OWNER)/include" -I "$(ROOT)/runtime/zig/vendor/webgpu-headers" "$<" "$(ARCHIVE)" -o "$@"
+	"$(CC)" $(CFLAGS) -I "$(OWNER)/include" -I "$(ROOT)/runtime/vendor/webgpu-headers" "$<" "$(ARCHIVE)" -o "$@"
 
 $(BUILD)/native_consumer: $(OWNER)/integration/native_consumer.c $(SETTINGS)
-	"$(CC)" $(CFLAGS) -I "$(ROOT)/runtime/zig/vendor/webgpu-headers" "$<" -ldl -o "$@"
+	"$(CC)" $(CFLAGS) -I "$(ROOT)/runtime/vendor/webgpu-headers" "$<" -ldl -o "$@"
 
 check-generation:
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) "$(OWNER)/tests/test_generation.py"

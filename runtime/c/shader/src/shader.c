@@ -3,81 +3,6 @@
  * using the new compiler's actual typed metadata, not the retained Zig layout. */
 #include "internal.h"
 
-static DoeCompilerStatus text_requirements(doe_shader_target target,
-    const DoeCompilerTextCapacities *capacities, DoeCompilerWorkspaceRequirements *requirements)
-{
-    if (target == DOE_SHADER_HLSL)
-        return doe_compiler_hlsl_requirements(DOE_COMPILER_HLSL_ABI_VERSION,
-            capacities, sizeof(*capacities), requirements, sizeof(*requirements));
-    return doe_compiler_metal_requirements(DOE_COMPILER_METAL_ABI_VERSION,
-        capacities, sizeof(*capacities), requirements, sizeof(*requirements));
-}
-
-static DoeCompilerStatus compile_text(doe_shader_target target,
-    const DoeCompilerTextCapacities *capacities, void *workspace, size_t workspace_size,
-    const char *source, size_t source_size, const DoeCompilerEntrySelectionV5 *selection,
-    uint32_t flags, const DoeCompilerMetalOutputs *metal, const DoeCompilerHlslOutputs *hlsl,
-    DoeCompilerTextResult *result)
-{
-    if (target == DOE_SHADER_HLSL)
-        return doe_compiler_compile_hlsl(DOE_COMPILER_HLSL_ABI_VERSION,
-            capacities, sizeof(*capacities), workspace, workspace_size, source, source_size,
-            selection, sizeof(*selection), flags, hlsl, hlsl ? sizeof(*hlsl) : 0,
-            result, sizeof(*result));
-    return doe_compiler_compile_metal(DOE_COMPILER_METAL_ABI_VERSION,
-        capacities, sizeof(*capacities), workspace, workspace_size, source, source_size,
-        selection, sizeof(*selection), flags, metal, metal ? sizeof(*metal) : 0,
-        result, sizeof(*result));
-}
-
-static DoeCompilerStatus specialization_requirements(const doe_shader_options *options, size_t overrides,
-    const DoeCompilerTextCapacities *target, DoeCompilerWorkspaceRequirements *requirements)
-{
-    const DoeCompilerTranslationCapacitiesV17 capacities = {
-        {{*target,overrides},options->sampling_pairs},
-        target->stages.module.entries};
-    return doe_compiler_translation_requirements(DOE_COMPILER_TRANSLATION_ABI_VERSION,
-        (uint32_t)options->target,&capacities,sizeof(capacities),requirements,sizeof(*requirements));
-}
-static DoeCompilerStatus specialize(const doe_shader *module, const doe_shader_options *options, size_t overrides,
-    const DoeCompilerTextCapacities *target,
-    void *workspace, size_t workspace_size, const DoeCompilerEntrySelectionV5 *selection,
-    const DoeCompilerOverrideValueV13 *values, size_t count, uint32_t flags,
-    const DoeCompilerMetalPipelineOptionsV15 *pipeline,
-    const DoeCompilerSpecializationOutputs *outputs, DoeCompilerTextResult *result,
-    DoeCompilerSamplingPairV16 *pairs, size_t pair_count, DoeCompilerTranslationResultV17 *translation,
-    DoeCompilerTranslationEntryV17 *entries, size_t entry_count, DoeCompilerHlslProfileV19 *profile)
-{
-    const DoeCompilerTranslationCapacitiesV17 capacities = {
-        {{*target,overrides},options->sampling_pairs},
-        target->stages.module.entries};
-    const DoeCompilerSamplingOptionsV16 sampling_options = {pipeline ? pipeline->sample_mask : UINT32_MAX,
-        pipeline ? DOE_COMPILER_SAMPLING_METAL_PIPELINE : 0};
-    DoeCompilerTranslationOutputsV17 combined = {
-        .sampling={.pairs=pairs,.pair_capacity=pair_count,
-            .pair_record_size=sizeof(DoeCompilerSamplingPairV16)},
-        .entries=entries,.entry_capacity=entry_count,
-        .entry_record_size=sizeof(DoeCompilerTranslationEntryV17)};
-    if (outputs) combined.sampling.target = *outputs;
-    DoeCompilerStatus status;
-    if (module->options.target == DOE_SHADER_HLSL) {
-        DoeCompilerHlslProfileResultV19 result19 = {0};
-        status = doe_compiler_specialize_hlsl_profile(DOE_COMPILER_HLSL_PROFILE_ABI_VERSION,
-            &sampling_options,sizeof(sampling_options),&capacities,sizeof(capacities),
-            workspace,workspace_size,module->source,module->source_size,selection,sizeof(*selection),
-            values,count,sizeof(*values),flags,outputs ? &combined : NULL,outputs ? sizeof(combined) : 0,
-            &result19,sizeof(result19));
-        *translation = result19.translation;
-        *profile = result19.profile;
-    } else status = doe_compiler_specialize_translation(DOE_COMPILER_TRANSLATION_ABI_VERSION,
-            (uint32_t)module->options.target,&sampling_options,sizeof(sampling_options),&capacities,sizeof(capacities),
-            workspace,workspace_size,module->source,module->source_size,selection,sizeof(*selection),
-            values,count,sizeof(*values),flags,outputs ? &combined : NULL,outputs ? sizeof(combined) : 0,
-            translation,sizeof(*translation));
-    *result = translation->sampling.target;
-    return status;
-}
-
 doe_shader_status doe_shader_create(const doe_shader_options *options,
     const char *source, size_t source_size, doe_shader **out, doe_shader_error *error)
 {
@@ -100,18 +25,19 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         (!saved.selection.name && saved.selection.name_length))
         return shader_fail(error, DOE_SHADER_INVALID_ARGUMENT, DOE_COMPILER_INPUT_ERROR, NULL);
     const bool textual = saved.target == DOE_SHADER_METAL || saved.target == DOE_SHADER_HLSL;
-    DoeCompilerStageCapacities capacities = {.module = saved.capacities,
-        .interface_attributes = saved.interface_attributes, .stage_interfaces = saved.stage_interfaces};
-    DoeCompilerTextCapacities text_capacities = {.stages = capacities};
+    DoeCompilerTextCapacities text_capacities = {.stages={.module=saved.capacities,
+        .interface_attributes=saved.interface_attributes,.stage_interfaces=saved.stage_interfaces}};
     DoeCompilerTextResult text_result = {0};
     DoeCompilerTranslationResultV17 translation = {0};
     DoeCompilerHlslProfileV19 profile = {0};
     size_t override_capacity = module ? module->override_capacity : 0;
+    DoeCompilerPrepareOptionsV20 request = shader_prepare_options(&saved, override_capacity,
+        module ? DOE_COMPILER_PREPARE_SPECIALIZED : DOE_COMPILER_PREPARE_LEGACY,
+        values, value_count, saved_pipeline);
+    DoeCompilerPreparedResultV20 prepared = {0};
     DoeCompilerWorkspaceRequirements requirements;
-    DoeCompilerStatus status = module ? specialization_requirements(&saved,override_capacity,&text_capacities,&requirements) :
-        textual ? text_requirements(saved.target, &text_capacities, &requirements) :
-        doe_compiler_stage_requirements(DOE_COMPILER_ATOMIC_ABI_VERSION,
-        &capacities, sizeof(capacities), &requirements, sizeof(requirements));
+    DoeCompilerStatus status = doe_compiler_prepare_requirements(DOE_COMPILER_PREPARED_ABI_VERSION,
+        &request, sizeof(request), &requirements, sizeof(requirements));
     if (status != DOE_COMPILER_OK)
         return shader_fail(error, DOE_SHADER_COMPILE_FAILED, status, NULL);
     /* Oversized source goes directly to the compiler's canonical capacity
@@ -127,36 +53,30 @@ doe_shader_status shader_compile(const doe_shader_options *options,
     source = input.source;
     saved.compiler_identity = input.identity;
     saved.selection.name = input.selection;
+    request.selection.name = input.selection;
     DoeCompilerStageResult result = {0};
     doe_shader *shader = NULL;
+    void *publication = NULL;
+    size_t publication_bytes = 0u;
     doe_shader_status outcome = DOE_SHADER_COMPILE_FAILED;
     for (;;) {
-        if (module) {
-            status = specialize(module,&saved,override_capacity,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
-                values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION |
-                DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,saved_pipeline,NULL,&text_result,NULL,0,&translation,NULL,0,&profile);
-            result = text_result.stages;
-        } else if (textual) {
-            status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
-                source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
-                DOE_COMPILER_TEXT_REFLECTION | DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags, NULL, NULL, &text_result);
-            result = text_result.stages;
-        } else {
-            status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
-                &capacities, sizeof(capacities), workspace, requirements.size_bytes,
-                source, source_size, &saved.selection, sizeof(saved.selection),
-                DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION | DOE_COMPILER_MODULE_MEASURE | saved.semantic_flags,
-                NULL, 0, &result, sizeof(result));
-        }
+        status = doe_compiler_prepare(DOE_COMPILER_PREPARED_ABI_VERSION,
+            &request, sizeof(request), workspace, requirements.size_bytes,
+            source, source_size, &prepared, sizeof(prepared));
+        translation = prepared.compiled.translation;
+        text_result = translation.sampling.target;
+        profile = prepared.compiled.profile;
+        result = text_result.stages;
         if (status == DOE_COMPILER_OK) break;
         if (!shader_grow_pools(&saved,&text_capacities.stages,&override_capacity,status,
                 result.resources.module.exhausted_pool,result.resources.module.minimum_pool_capacity)) goto finished;
-        capacities = text_capacities.stages;
         DoeCompilerWorkspaceRequirements next;
-        status = module ? specialization_requirements(&saved,override_capacity,&text_capacities,&next) :
-            textual ? text_requirements(saved.target,&text_capacities,&next) :
-            doe_compiler_stage_requirements(DOE_COMPILER_ATOMIC_ABI_VERSION,
-                &capacities,sizeof(capacities),&next,sizeof(next));
+        request.capacities.sampling.specialization.target = text_capacities;
+        request.capacities.sampling.specialization.overrides = override_capacity;
+        request.capacities.sampling.sampling_pairs = saved.sampling_pairs;
+        request.capacities.translation_entries = text_capacities.stages.module.entries;
+        status = doe_compiler_prepare_requirements(DOE_COMPILER_PREPARED_ABI_VERSION,
+            &request, sizeof(request), &next, sizeof(next));
         if (status != DOE_COMPILER_OK) goto finished;
         outcome = shader_input_resize(&saved.allocator,&requirements,&next,source_size,
             saved.compiler_identity_size,module == NULL && source_size <= saved.capacities.typed.source_bytes,&input);
@@ -167,6 +87,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         source = input.source;
         saved.compiler_identity = input.identity;
         saved.selection.name = input.selection;
+        request.selection.name = input.selection;
         outcome = DOE_SHADER_COMPILE_FAILED;
     }
     if (status != DOE_COMPILER_OK) goto finished;
@@ -236,18 +157,10 @@ doe_shader_status shader_compile(const doe_shader_options *options,
     }
     outcome = DOE_SHADER_COMPILE_FAILED;
     saved.compiler_identity = shader->identity;
-    if (textual) {
-        saved.allocator.deallocate(saved.allocator.userdata, workspace,
-            workspace_bytes, requirements.alignment_bytes);
-        workspace = NULL;
-        text_capacities.text_bytes = text_result.required_text_bytes;
-        status = module ? specialization_requirements(&saved,override_capacity,&text_capacities,&requirements) :
-            text_requirements(saved.target, &text_capacities, &requirements);
-        if (status != DOE_COMPILER_OK) goto finished;
-        workspace_bytes = requirements.size_bytes;
-        workspace = saved.allocator.allocate(saved.allocator.userdata,
-            workspace_bytes, requirements.alignment_bytes);
-        if (!workspace) {
+    publication_bytes = prepared.publication_bytes;
+    if (publication_bytes) {
+        publication = saved.allocator.allocate(saved.allocator.userdata, publication_bytes, 1u);
+        if (!publication) {
             outcome = DOE_SHADER_OUT_OF_MEMORY;
             goto finished;
         }
@@ -284,30 +197,23 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             .entry_capacity = text_result.required_entries,
             .entry_record_size = sizeof(DoeCompilerMetalEntryV12)
         };
-        if (module) {
-            DoeCompilerSpecializationOutputs outputs = {0};
-            if (saved.target == DOE_SHADER_METAL) outputs.metal = text_outputs;
-            else outputs.hlsl = hlsl_outputs;
-            status = specialize(module,&saved,override_capacity,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
-                shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-                saved_pipeline,&outputs,&text_result,pairs,pair_count,&translation,translation_entries,translation_count,&profile);
-        } else status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
-            shader->source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
-            DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags, &text_outputs, &hlsl_outputs, &text_result);
-        result = text_result.stages;
-    } else if (module) {
-        const DoeCompilerSpecializationOutputs outputs = {.spirv=shader->outputs};
-        status = specialize(module,&saved,override_capacity,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
-            shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-            saved_pipeline,&outputs,&text_result,pairs,pair_count,&translation,translation_entries,translation_count,&profile);
-        result = text_result.stages;
-    } else {
-        status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
-            &capacities, sizeof(capacities), workspace, requirements.size_bytes,
-            shader->source, source_size, &saved.selection, sizeof(saved.selection),
-            DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION | saved.semantic_flags,
-            &shader->outputs, sizeof(shader->outputs), &result, sizeof(result));
     }
+    DoeCompilerSpecializationOutputs target_outputs = {0};
+    if (saved.target == DOE_SHADER_METAL) target_outputs.metal = text_outputs;
+    else if (saved.target == DOE_SHADER_HLSL) target_outputs.hlsl = hlsl_outputs;
+    else target_outputs.spirv = shader->outputs;
+    const DoeCompilerTranslationOutputsV17 outputs = {
+        .sampling={.target=target_outputs,.pairs=pairs,.pair_capacity=pair_count,
+            .pair_record_size=sizeof(DoeCompilerSamplingPairV16)},
+        .entries=translation_entries,.entry_capacity=translation_count,
+        .entry_record_size=sizeof(DoeCompilerTranslationEntryV17)};
+    status = doe_compiler_publish(DOE_COMPILER_PREPARED_ABI_VERSION,
+        workspace, requirements.size_bytes, publication, publication_bytes,
+        &outputs, sizeof(outputs), &prepared, sizeof(prepared));
+    translation = prepared.compiled.translation;
+    text_result = translation.sampling.target;
+    profile = prepared.compiled.profile;
+    result = text_result.stages;
     if (status == DOE_COMPILER_OK && module && saved.target == DOE_SHADER_HLSL &&
         memcmp(&profile,&measured_profile,sizeof(profile))) {
         status = DOE_COMPILER_INPUT_ERROR;
@@ -346,6 +252,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         outcome = DOE_SHADER_OK;
     }
 finished:
+    if (publication) saved.allocator.deallocate(saved.allocator.userdata, publication, publication_bytes, 1u);
     if (workspace) saved.allocator.deallocate(saved.allocator.userdata, workspace,
         workspace_bytes, requirements.alignment_bytes);
     if (outcome != DOE_SHADER_OK && shader) doe_shader_release(shader);

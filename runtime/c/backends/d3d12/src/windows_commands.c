@@ -85,6 +85,7 @@ fail:
 
 void doe_dx_transition(ID3D12GraphicsCommandList *list, ID3D12Resource *resource,
     D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
+    if (before==after) return;
     D3D12_RESOURCE_BARRIER barrier = {0};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Transition.pResource = resource;

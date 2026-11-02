@@ -1,5 +1,5 @@
 // Windows public ABI scalar-storage oracle: bounded views and dispatch.
-// zig cc -I vendor/webgpu-headers tests/d3d12_auto_layout_readback.c -o compute.exe
+// zig cc -I ../vendor/webgpu-headers tests/d3d12_auto_layout_readback.c -o compute.exe
 // With DXC on process PATH: compute.exe <DLL>
 // Modes are documented in README.md, including dense multi-buffer views and rejection/recovery.
 #include <windows.h>

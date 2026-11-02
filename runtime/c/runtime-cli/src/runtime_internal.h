@@ -50,6 +50,18 @@ typedef struct kernel_source_record {
     char sha256[65];
 } kernel_source_record;
 
+/* Scratch is runtime-owned; every resolution still rereads the selected file. */
+typedef struct kernel_source_workspace {
+    char *paths[3], *bytes;
+    size_t path_capacity[3], byte_capacity;
+} kernel_source_workspace;
+typedef struct kernel_bound_resource {
+    WGPUBuffer buffer;
+    WGPUTexture texture;
+    WGPUTextureFormat format;
+    uint64_t offset, size;
+} kernel_bound_resource;
+
 typedef struct pipeline_entry {
     size_t source_index;
     char *source_path;
@@ -60,6 +72,9 @@ typedef struct pipeline_entry {
     WGPUComputePipeline pipeline;
     WGPUBindGroupLayout groups[MAX_GROUPS];
     uint32_t group_count;
+    WGPUBindGroup bound_groups[MAX_GROUPS];
+    kernel_bound_resource *bound_resources;
+    bool bindings_cached;
 } pipeline_entry;
 
 typedef struct surface_entry {
@@ -104,6 +119,9 @@ struct doe_runtime {
     size_t pipeline_count, pipeline_capacity;
     kernel_source_record *kernel_sources;
     size_t kernel_source_count, kernel_source_capacity;
+    kernel_source_workspace kernel_workspace;
+    kernel_bound_resource *binding_workspace;
+    size_t binding_workspace_capacity;
     texture_entry *textures;
     size_t texture_count, texture_capacity;
     sampler_entry *samplers;

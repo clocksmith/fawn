@@ -2,11 +2,11 @@
   "schemaVersion": 2,
   "source": {
     "kind": "vendored-pinned-header",
-    "path": "runtime/zig/vendor/webgpu-headers/webgpu.h",
+    "path": "runtime/vendor/webgpu-headers/webgpu.h",
     "sha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
     "repository": "https://chromium.googlesource.com/external/github.com/webgpu-native/webgpu-headers",
     "commit": "01addc4ba8a2915a061b7095a6768b512071ab96",
-    "licensePath": "runtime/zig/vendor/webgpu-headers/LICENSE"
+    "licensePath": "runtime/vendor/webgpu-headers/LICENSE"
   },
   "ownership": {
     "upstreamDefinitions": "vendored-pinned-header",

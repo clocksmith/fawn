@@ -170,6 +170,24 @@ void native_d3d12_buffer_close(native_buffer *buffer)
     buffer->handle.d3d12 = NULL;
 }
 
+native_failure native_d3d12_buffer_evict(native_buffer *buffer)
+{
+#if defined(_WIN32)
+    native_d3d12_buffer *payload = buffer->handle.d3d12;
+    if (!payload) return native_failure_status(NATIVE_OK);
+    if (payload->zero_deferred) unlink_deferred(buffer->device, payload);
+    /* Publish open copies to their existing pending owner before rejecting new
+     * recordings. Even a failed signal keeps the command's allocation leases. */
+    native_failure failure = native_d3d12_flush_writes(buffer->device);
+    native_progress_pending(buffer->device);
+    doe_dx_status evicted = doe_dx_buffer_evict(payload->allocation);
+    return failure.status != NATIVE_OK ? failure : native_failure_d3d12(evicted, NULL);
+#else
+    (void)buffer;
+    return native_failure_status(NATIVE_UNAVAILABLE);
+#endif
+}
+
 native_failure native_d3d12_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size)
 {
 #if defined(_WIN32)

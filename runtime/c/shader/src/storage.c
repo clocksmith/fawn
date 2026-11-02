@@ -92,6 +92,21 @@ bool shader_options_valid(const doe_shader_options *options)
         (options->target == DOE_SHADER_SPIRV || options->target == DOE_SHADER_METAL || options->target == DOE_SHADER_HLSL);
 }
 
+DoeCompilerPrepareOptionsV20 shader_prepare_options(const doe_shader_options *options, size_t overrides,
+    uint32_t kind, const DoeCompilerOverrideValueV13 *values, size_t count,
+    const DoeCompilerMetalPipelineOptionsV15 *pipeline)
+{
+    const DoeCompilerTextCapacities target = {.stages={.module=options->capacities,
+        .interface_attributes=options->interface_attributes,.stage_interfaces=options->stage_interfaces}};
+    return (DoeCompilerPrepareOptionsV20){.kind=kind,.target=(uint32_t)options->target,
+        .semantic_flags=options->semantic_flags,
+        .capacities={.sampling={.specialization={.target=target,.overrides=overrides},
+            .sampling_pairs=options->sampling_pairs},.translation_entries=options->capacities.entries},
+        .sampling={pipeline ? pipeline->sample_mask : UINT32_MAX,
+            pipeline ? DOE_COMPILER_SAMPLING_METAL_PIPELINE : 0u},
+        .selection=options->selection,.values=values,.value_count=count,.value_record_size=sizeof(*values)};
+}
+
 /* Fixed input extents are captured by value before allocator reentry. Copy all
  * externally owned bytes before measuring; later compiler passes use this arena
  * or the privately prepared artifact, never the caller's mutable storage. */

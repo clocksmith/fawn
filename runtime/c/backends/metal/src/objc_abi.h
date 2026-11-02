@@ -254,8 +254,9 @@ doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
 doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
     const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
     size_t draw_count, doe_mtl_error *error);
-void doe_mtl_objc_render_encode_draw(doe_mtl_objc *runtime, void *encoder,
-    const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draw);
+bool doe_mtl_objc_render_encode_draw(doe_mtl_objc *runtime, void *encoder,
+    const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draw,
+    const doe_mtl_native_render_draw *previous);
 void *doe_mtl_objc_depth_state(doe_mtl_objc *runtime, void *device,
     const doe_mtl_depth_stencil *desc);
 void doe_mtl_objc_load_queries(doe_mtl_objc *runtime, doe_objc_message message);

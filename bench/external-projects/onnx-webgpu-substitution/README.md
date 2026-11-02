@@ -28,7 +28,7 @@ python3 -m venv /tmp/onnx-webgpu-consumer
 /tmp/onnx-webgpu-consumer/bin/pip install --require-hashes \
   -r reports/benchmarks/amd-vulkan/20261005-onnx-webgpu-substitution/requirements.lock
 cc -std=c11 -shared -fPIC -O2 -Wall -Wextra -Werror \
-  -I runtime/zig/vendor/webgpu-headers \
+  -I runtime/vendor/webgpu-headers \
   bench/external-projects/onnx-webgpu-substitution/preload-probe.c \
   -ldl -o /tmp/onnx-webgpu-probe.so
 /tmp/onnx-webgpu-consumer/bin/python \

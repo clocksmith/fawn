@@ -10,7 +10,7 @@ Own ABI conversion/adapter/device leases; exclude resource semantics, callbacks,
 compilation, execution, production selection.
 
 ## Scope
-WebGPU/presentation, queried IOSurface/Vulkan-fd imports; others reject.
+WebGPU/presentation, queried IOSurface/Vulkan-fd/DXGI imports; others reject.
 
 ## Contracts
 Pinned ABI, inventoried legacy/browser signatures, [owner contracts](AGENTS.md),

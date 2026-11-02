@@ -21,7 +21,7 @@ run gcc-version gcc --version
 run zig-version "$zig" version
 run archive sh "$here/build_archive.sh" "$out/archive"
 run native-compile gcc -std=c11 -O2 -g -Wall -Wextra -Wpedantic -Werror \
-    -Iruntime/zig/vendor/webgpu-headers "$here/native_consumer.c" -ldl -o "$out/native_consumer"
+    -Iruntime/vendor/webgpu-headers "$here/native_consumer.c" -ldl -o "$out/native_consumer"
 run cpp-compile g++ -std=c++17 -O2 -g -Wall -Wextra -Wpedantic -Werror \
     -fno-exceptions -fno-rtti -pthread -Iruntime/c/futures/include \
     -Iruntime/c/futures/integration "$here/test_bridge.cpp" \

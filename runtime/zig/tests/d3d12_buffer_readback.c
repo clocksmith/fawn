@@ -1,5 +1,5 @@
 // Windows-only bounded public ABI check. One 32-byte copy, no shader or DXC.
-// zig cc -I vendor/webgpu-headers tests/d3d12_buffer_readback.c -o readback.exe
+// zig cc -I ../vendor/webgpu-headers tests/d3d12_buffer_readback.c -o readback.exe
 // readback.exe <absolute path to webgpu_doe_full.dll> [default|write|write-default]
 // write: queue write straight into a mappable readback buffer.
 // write-default: queue write into a default-heap buffer, copy it out, then

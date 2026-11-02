@@ -27,13 +27,13 @@ static void d3d_features(void)
     native_backend backend = {.kind=WGPUBackendType_D3D12};
     doe_dx_caps *caps = &backend.value.d3d12.caps;
     uint32_t enabled = UINT32_MAX;
-    assert(native_requested_features(&backend, NULL, &enabled) && !enabled);
+    assert(native_requested_features(native_adapter_features(&backend), NULL, &enabled) && !enabled);
     WGPUFeatureName request = WGPUFeatureName_CoreFeaturesAndLimits;
     WGPUDeviceDescriptor descriptor = {.requiredFeatureCount=1,.requiredFeatures=&request};
     enabled = 0xa5a5a5a5;
-    assert(!native_requested_features(&backend, &descriptor, &enabled) && enabled == 0xa5a5a5a5);
+    assert(!native_requested_features(native_adapter_features(&backend), &descriptor, &enabled) && enabled == 0xa5a5a5a5);
     request = (WGPUFeatureName)-1;
-    assert(!native_requested_features(&backend, &descriptor, &enabled) && enabled == 0xa5a5a5a5);
+    assert(!native_requested_features(native_adapter_features(&backend), &descriptor, &enabled) && enabled == 0xa5a5a5a5);
     native_device unconfigured = {.features=UINT32_MAX};
     assert(!native_feature_enabled(&unconfigured, (WGPUFeatureName)-1));
     const uint32_t half = NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
@@ -61,13 +61,14 @@ static void d3d_features(void)
     assert(!(native_adapter_features(&backend) & NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance)));
     caps->shader_model = 0x61;
     request = WGPUFeatureName_PrimitiveIndex;
-    assert(native_requested_features(&backend, &descriptor, &enabled));
+    assert(native_requested_features(native_adapter_features(&backend), &descriptor, &enabled));
     assert(enabled == NATIVE_FEATURE(request));
     WGPUFeatureName duplicate[2] = {request,request};
     descriptor.requiredFeatures = duplicate;
     descriptor.requiredFeatureCount = 2;
     enabled = 0xa5a5a5a5;
-    assert(!native_requested_features(&backend,&descriptor,&enabled) && enabled == 0xa5a5a5a5);
+    assert(native_requested_features(native_adapter_features(&backend),&descriptor,&enabled));
+    assert(enabled == NATIVE_FEATURE(request));
 }
 
 static void metal_graphics_features(void)
@@ -98,16 +99,16 @@ static void optional_format_features(void)
     WGPUFeatureName request=WGPUFeatureName_TextureFormatsTier2;
     WGPUDeviceDescriptor descriptor={.requiredFeatureCount=1,.requiredFeatures=&request};
     uint32_t enabled=0;
-    assert(native_requested_features(&backend,&descriptor,&enabled));
+    assert(native_requested_features(native_adapter_features(&backend),&descriptor,&enabled));
     assert(enabled==(tier1|tier2|rg11));
-    assert(native_requested_features(&backend,NULL,&enabled) && !enabled);
+    assert(native_requested_features(native_adapter_features(&backend),NULL,&enabled) && !enabled);
     caps->texture_formats_tier1=false;
     enabled=0xa5a5a5a5;
-    assert(!native_requested_features(&backend,&descriptor,&enabled) && enabled==0xa5a5a5a5);
+    assert(!native_requested_features(native_adapter_features(&backend),&descriptor,&enabled) && enabled==0xa5a5a5a5);
     caps->bgra8unorm_storage=true;
     assert(native_adapter_features(&backend) & NATIVE_FEATURE(WGPUFeatureName_BGRA8UnormStorage));
     request=WGPUFeatureName_BGRA8UnormStorage;
-    assert(native_requested_features(&backend,&descriptor,&enabled));
+    assert(native_requested_features(native_adapter_features(&backend),&descriptor,&enabled));
     assert(enabled==NATIVE_FEATURE(request));
     assert(!native_d3d12_core_supported(&backend));
     assert(!native_limits_support_core(NULL));

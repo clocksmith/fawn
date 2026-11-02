@@ -147,6 +147,15 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   Sizes must be nonzero multiples of four. The native Zig Vulkan lane reports
   mapping unsupported; C executes it through the selected WebGPU provider.
 - Kernels resolve as given, then under `--kernel-root`, then with `.wgsl`.
+  Each CLI execution rereads the selected file and compares its exact bytes with
+  retained pipeline source; same-path edits take effect and receipts name those
+  bytes. Source/path read buffers reuse allocation. The existing pipeline cache
+  also owns one compatible bind-group set, keyed by native buffer/texture identity,
+  buffer offsets/sizes, effective view format and pipeline layout signature. Cache
+  hits reuse groups/views; a complete admitted replacement precedes release of the
+  prior set. Isolated output oracles always create fresh buffers/groups. This
+  reduces CLI setup work; filesystem reads, uploads and browser workloads retain
+  their existing execution boundaries.
 - Semantic identity on `kernel_dispatch` (`src/operators.c`), as
   doe-zig-runtime's `contracts/semantic.zig` reads it: `semanticOpId`,
   `semanticStage`, `semanticPhase`, `semanticTokenIndex`, `semanticLayerIndex`

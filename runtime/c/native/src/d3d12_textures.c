@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #if defined(_WIN32)
-static native_failure initialize(native_device *device,doe_dx_texture *texture)
+native_failure native_d3d12_initialize_texture(native_device *device,doe_dx_texture *texture)
 {
     native_command_handle commands={0};
     native_failure failure=native_d3d12_prepare_recording(device);
@@ -14,7 +14,9 @@ static native_failure initialize(native_device *device,doe_dx_texture *texture)
     doe_dx_error detail={0};
     doe_dx_status status=doe_dx_commands_initialize_texture(commands.value.d3d12.commands,texture,&detail);
     failure=native_failure_d3d12(status,&detail);
-    if (failure.status==NATIVE_OK) failure=native_submit_backend_commands(device,commands);
+    /* The pending owner adopts the initialization command and its texture lease.
+     * Later work is ordered on this queue; creation never drains unrelated work. */
+    if (failure.status==NATIVE_OK) failure=native_submit_backend_commands_async(device,commands);
     else if (native_command_release(&commands)!=NATIVE_OK) abort();
     return failure;
 }
@@ -52,7 +54,6 @@ WGPUTexture native_d3d12_create_texture(native_device *device,const WGPUTextureD
     doe_resource_texture *texture = NULL;
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
-    if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
 #if defined(_WIN32)
     if (failure.status == NATIVE_OK) {
         doe_dx_error detail = {0};
@@ -62,7 +63,7 @@ WGPUTexture native_d3d12_create_texture(native_device *device,const WGPUTextureD
         doe_dx_status created = doe_dx_texture_create_shape(device->backend.value.d3d12.context,&shape,&payload->d3d12,&detail);
         failure = native_failure_d3d12(created,&detail);
     }
-    if (failure.status == NATIVE_OK) failure = initialize(device,payload->d3d12);
+    if (failure.status == NATIVE_OK) failure = native_d3d12_initialize_texture(device,payload->d3d12);
 #else
     failure = native_failure_status(NATIVE_UNAVAILABLE);
 #endif

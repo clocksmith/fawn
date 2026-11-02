@@ -131,10 +131,11 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
     if (!begin || !begin->boundary_only || !begin->first_in_pass || begin->last_in_pass)
         return DOE_VK_INVALID_ARGUMENT;
-    size_t end = 0, binding_count = 0, vertex_count = 0, indirect_count = 0, indexed_count = 0;
+    size_t end = 0, op_count = 0, immediate_count = 0, binding_count = 0, vertex_count = 0, indirect_count = 0, indexed_count = 0;
     for (size_t i = 1; i < count; ++i) {
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind == DOE_COMMAND_END_OCCLUSION) {
             if (records[i].value.timestamp.set != begin->targets.occlusion_queries) return DOE_VK_INVALID_ARGUMENT;
+            if (!add_size(&op_count, 1)) return DOE_VK_OUT_OF_MEMORY;
             continue;
         }
         if (records[i].kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
@@ -147,40 +148,57 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
             break;
         }
         if (packet->last_in_pass) return DOE_VK_UNSUPPORTED;
-        if (packet->indirect && !add_size(&indirect_count,1)) return DOE_VK_OUT_OF_MEMORY;
-        if (packet->indexed && !add_size(&indexed_count,1)) return DOE_VK_OUT_OF_MEMORY;
-        native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
-        if (!pipeline || !add_size(&binding_count, pipeline->binding_count) ||
-            !add_size(&vertex_count, pipeline->vertex_count)) return DOE_VK_OUT_OF_MEMORY;
+        size_t draws = doe_resource_render_record_draw_count(records[i].value.render);
+        if (!add_size(&op_count, draws)) return DOE_VK_OUT_OF_MEMORY;
+        for (size_t j = 0; j < draws; ++j) {
+            doe_resource_render_packet draw;
+            if (!doe_resource_render_record_draw(records[i].value.render, j, &draw)) return DOE_VK_INVALID_ARGUMENT;
+            if (draw.indirect && !add_size(&indirect_count, 1)) return DOE_VK_OUT_OF_MEMORY;
+            if (draw.indexed && !add_size(&indexed_count, 1)) return DOE_VK_OUT_OF_MEMORY;
+            native_pipeline *pipeline = doe_resource_render_pipeline_native(draw.pipeline);
+            if (!pipeline || !add_size(&binding_count, pipeline->binding_count) ||
+                !add_size(&vertex_count, pipeline->vertex_count)) return DOE_VK_OUT_OF_MEMORY;
+            if (pipeline->immediate_bytes && !add_size(&immediate_count, 1)) return DOE_VK_OUT_OF_MEMORY;
+        }
     }
     if (!end) return DOE_VK_INVALID_ARGUMENT;
-    size_t op_count = end - 1;
     if (op_count > SIZE_MAX / sizeof(doe_vk_render_pass_op) ||
+        immediate_count > SIZE_MAX / sizeof(doe_resource_immediate_state) ||
         indirect_count > SIZE_MAX / sizeof(doe_vk_render_indirect) ||
         indexed_count > SIZE_MAX / sizeof(doe_vk_render_indices) || binding_count > SIZE_MAX / sizeof(doe_vk_binding_resource) ||
         vertex_count > SIZE_MAX / sizeof(doe_vk_buffer_binding)) return DOE_VK_OUT_OF_MEMORY;
     doe_vk_render_pass_op *ops = op_count ? calloc(op_count, sizeof(*ops)) : NULL;
+    doe_resource_immediate_state *immediates = immediate_count ? calloc(immediate_count, sizeof(*immediates)) : NULL;
     doe_vk_render_indirect *indirect = indirect_count ? calloc(indirect_count,sizeof(*indirect)) : NULL;
     doe_vk_render_indices *indices = indexed_count ? calloc(indexed_count,sizeof(*indices)) : NULL;
     doe_vk_binding_resource *bindings = binding_count ? calloc(binding_count, sizeof(*bindings)) : NULL;
     doe_vk_buffer_binding *vertices = vertex_count ? calloc(vertex_count, sizeof(*vertices)) : NULL;
-    doe_vk_status status = (op_count && !ops) || (indirect_count && !indirect) || (indexed_count && !indices) ||
+    doe_vk_status status = (op_count && !ops) || (immediate_count && !immediates) || (indirect_count && !indirect) || (indexed_count && !indices) ||
         (binding_count && !bindings) || (vertex_count && !vertices) ?
         DOE_VK_OUT_OF_MEMORY : DOE_VK_OK;
-    size_t binding_at = 0, vertex_at = 0, indirect_at = 0, indexed_at = 0;
+    size_t binding_at = 0, vertex_at = 0, indirect_at = 0, indexed_at = 0, op_at = 0, immediate_at = 0;
     for (size_t i = 1; status == DOE_VK_OK && i < end; ++i) {
-        doe_vk_render_pass_op *op = &ops[i - 1];
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION) {
-            op->kind = DOE_VK_RENDER_BEGIN_OCCLUSION;
-            op->value.query_index = records[i].value.timestamp.index;
-        } else if (records[i].kind == DOE_COMMAND_END_OCCLUSION) op->kind = DOE_VK_RENDER_END_OCCLUSION;
-        else {
+            ops[op_at].kind = DOE_VK_RENDER_BEGIN_OCCLUSION;
+            ops[op_at++].value.query_index = records[i].value.timestamp.index;
+        } else if (records[i].kind == DOE_COMMAND_END_OCCLUSION) ops[op_at++].kind = DOE_VK_RENDER_END_OCCLUSION;
+        else for (size_t j = 0; status == DOE_VK_OK &&
+                j < doe_resource_render_record_draw_count(records[i].value.render); ++j) {
+            doe_resource_render_packet packet;
+            if (!doe_resource_render_record_draw(records[i].value.render, j, &packet)) {
+                status = DOE_VK_INVALID_ARGUMENT;
+                break;
+            }
+            doe_vk_render_pass_op *op = &ops[op_at++];
             op->kind = DOE_VK_RENDER_DRAW;
-            const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-            status = prepare_draw(commands, packet, &op->value.draw, bindings ? bindings + binding_at : NULL,
-                vertices ? vertices + vertex_at : NULL, packet->indirect ? &indirect[indirect_at++] : NULL,
-                packet->indexed ? &indices[indexed_at++] : NULL);
+            status = prepare_draw(commands, &packet, &op->value.draw, bindings ? bindings + binding_at : NULL,
+                vertices ? vertices + vertex_at : NULL, packet.indirect ? &indirect[indirect_at++] : NULL,
+                packet.indexed ? &indices[indexed_at++] : NULL);
             if (status == DOE_VK_OK) {
+                if (op->value.draw.immediate_bytes) {
+                    immediates[immediate_at] = packet.immediates;
+                    op->value.draw.immediates = immediates[immediate_at++].words;
+                }
                 binding_at += op->value.draw.binding_count;
                 vertex_at += op->value.draw.vertex_buffer_count;
             }
@@ -213,6 +231,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
             query ? query->pool : NULL, ops, op_count);
     }
     for (uint32_t i = 0; i < DOE_RESOURCE_MAX_COLOR_ATTACHMENTS; ++i) doe_vk_texture_view_release(slices[i]);
+    free(immediates);
     free(indirect);
     free(indices);
     free(vertices);

@@ -31,6 +31,7 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
         }
         /* Initialization is monotonic; retirement may visit newer fences first. */
         if (publish && use->initialized) use->buffer->initialized = true;
+        doe_dx_buffer_try_evict(use->buffer);
         doe_dx_buffer_release(use->buffer);
     }
     commands->buffer_count = 0;
@@ -41,6 +42,7 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
             use->texture->initialized = use->initialized;
             if (use->surface_acquire) doe_dx_surface_acquisition_complete(use->texture);
         }
+        doe_dx_texture_try_evict(use->texture);
         doe_dx_texture_release(use->texture);
     }
     commands->texture_count = 0;
@@ -126,6 +128,7 @@ doe_dx_buffer_use *doe_dx_find_buffer(doe_dx_commands *commands, doe_dx_buffer *
 doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
     doe_dx_buffer *buffer, bool readable) {
     if (!buffer) return DOE_DX_INVALID_ARGUMENT;
+    if (buffer->evict_requested) return DOE_DX_INVALID_STATE;
     if (buffer->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
     if (buffer->lent) return DOE_DX_INVALID_STATE; /* Host-lent bytes exclude GPU use. */
     if (buffer->owner && buffer->owner != commands) {

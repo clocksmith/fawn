@@ -68,7 +68,7 @@ static doe_dx_status initialize_attachments(doe_dx_native_commands *commands,doe
     /* All fallible descriptor preparation is complete before recording/publishing. */
     use->next=commands->descriptors; commands->descriptors=use;
     D3D12_RESOURCE_STATES state=depth ? D3D12_RESOURCE_STATE_DEPTH_WRITE : D3D12_RESOURCE_STATE_RENDER_TARGET;
-    doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,state);
+    doe_dx_transition(commands->list,texture->resource,doe_dx_texture_rest(texture),state);
     for (uint32_t i=0;i<count;++i) {
         D3D12_CPU_DESCRIPTOR_HANDLE handle={start.ptr+(SIZE_T)i*stride};
         if (depth) {
@@ -80,7 +80,7 @@ static doe_dx_status initialize_attachments(doe_dx_native_commands *commands,doe
             ID3D12GraphicsCommandList_ClearRenderTargetView(commands->list,handle,zero,0,NULL);
         }
     }
-    doe_dx_transition(commands->list,texture->resource,state,D3D12_RESOURCE_STATE_COPY_DEST);
+    doe_dx_transition(commands->list,texture->resource,state,doe_dx_texture_rest(texture));
     return DOE_DX_OK;
 }
 
@@ -90,6 +90,7 @@ doe_dx_status doe_dx_native_texture_initialize(doe_dx_native_commands *commands,
     if (!texture->upload_bytes) return initialize_attachments(commands,texture,error);
     if (!zero || zero->memory!=DOE_DX_UPLOAD || zero->size<texture->upload_bytes)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"texture.initialize_upload",error);
+    if (texture->shared) doe_dx_transition(commands->list,texture->resource,doe_dx_texture_rest(texture),D3D12_RESOURCE_STATE_COPY_DEST);
     for (uint32_t i=0;i<texture->footprint_count;++i) {
         D3D12_TEXTURE_COPY_LOCATION source={0},target={0};
         source.pResource=zero->resource; source.Type=D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -97,6 +98,7 @@ doe_dx_status doe_dx_native_texture_initialize(doe_dx_native_commands *commands,
         target.pResource=texture->resource; target.Type=D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX; target.SubresourceIndex=i;
         ID3D12GraphicsCommandList_CopyTextureRegion(commands->list,&target,0,0,0,&source,NULL);
     }
+    if (texture->shared) doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,doe_dx_texture_rest(texture));
     return DOE_DX_OK;
 }
 #endif

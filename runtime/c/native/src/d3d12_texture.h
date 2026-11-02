@@ -3,8 +3,9 @@
 #define DOE_NATIVE_D3D12_TEXTURE_H
 #include "d3d12_frontend.h"
 #include "../../backends/d3d12/include/doe_d3d12_texture_regions.h"
+native_failure native_d3d12_initialize_texture(native_device *,doe_dx_texture *);
 /* Canonical resource owners retain descriptors/view parents/sampler lifetime.
- * Constructors publish only after real GPU zero initialization is terminal;
+ * Constructors publish after queue-ordered GPU zero initialization is accepted;
  * unknown work remains private on the existing native pending owner. */
 WGPUTexture native_d3d12_create_texture(native_device *device,const WGPUTextureDescriptor *descriptor);
 WGPUTextureView native_d3d12_create_view(doe_resource_texture *texture,const WGPUTextureViewDescriptor *descriptor);

@@ -180,7 +180,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         # The compute-program schema supplies the native program contract version;
         # the Lean inputs supply the manifest's lean_proof record.
         subprocess.run(["git", "archive", "--format=tar", commit, "runtime/c",
-                        "runtime/zig/vendor/webgpu-headers", "runtime/zig/vendor/spirv-headers/LICENSE", "LICENSE",
+                        "runtime/vendor/webgpu-headers", "runtime/vendor/spirv-headers/LICENSE", "LICENSE",
                         # The Windows compiler builder executes its ordinary
                         # native consumer against this retained shader fixture.
                         "bench/inference-pipeline/kernels/residual.wgsl",
@@ -229,11 +229,11 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         shutil.copy2(header, candidate / "include" / header.name)
     for header in sorted((owner / "include").glob("*.h")):  # Doe extension ABI headers.
         shutil.copy2(header, candidate / "include" / header.name)
-    vendor = source / "runtime/zig/vendor/webgpu-headers"
+    vendor = source / "runtime/vendor/webgpu-headers"
     shutil.copy2(vendor / "webgpu.h", candidate / "include/webgpu.h")
     shutil.copy2(vendor / "LICENSE", candidate / "licenses/WebGPU-Headers.txt")
     shutil.copy2(source / "LICENSE", candidate / "licenses/Doe.txt")
-    shutil.copy2(source / "runtime/zig/vendor/spirv-headers/LICENSE",
+    shutil.copy2(source / "runtime/vendor/spirv-headers/LICENSE",
                  candidate / "licenses/Khronos-SPIRV-Headers.txt")
     copy_symbol_inventories(owner, candidate)
     shutil.copy2(owner / "tests/procedures.cpp", candidate / "procedures.cpp")

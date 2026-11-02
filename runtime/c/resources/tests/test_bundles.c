@@ -69,7 +69,12 @@ static void test_bundle_replay_lifetimes(void)
     state.blend[0] = 0.25;
     assert(doe_resource_render_pass_set_state(pass, &state) == DOE_RESOURCE_OK);
     doe_resource_render_bundle *replays[] = {bundle, bundle};
+    size_t allocations = f.allocations;
+    unsigned device_leases = f.device_references;
+    f.fail_at = allocations; /* Existing storage fits both invocations. */
     assert(doe_resource_render_pass_execute_bundles(pass, replays, 2) == DOE_RESOURCE_OK);
+    assert(f.allocations == allocations && f.device_references == device_leases);
+    f.fail_at = SIZE_MAX;
     doe_resource_render_bundle_release(bundle);
     assert(!pipeline_token.releases && !vertex_token.releases);
     /* Dynamic state survives; pipeline bindings must be established again. */
@@ -83,14 +88,21 @@ static void test_bundle_replay_lifetimes(void)
     doe_resource_encoder_release(encoder);
     size_t count;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
-    assert(count == 7);
-    for (size_t i = 1; i < 5; i++) {
-        const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-        assert(packet->pipeline == pipeline && packet->state.blend[0] == 0.25);
-        assert(packet->vertices[0].offset == (i % 2 ? 0 : 16));
-        assert(!packet->boundary_only && !packet->first_in_pass && !packet->last_in_pass);
+    assert(count == 5); /* Two retained invocations, not four copied draws. */
+    for (size_t i = 1; i < 3; i++) {
+        assert(doe_resource_render_record_draw_count(records[i].value.render) == 2);
+        for (size_t j = 0; j < 2; j++) {
+            doe_resource_render_packet packet;
+            assert(doe_resource_render_record_draw(records[i].value.render, j, &packet));
+            assert(packet.pipeline == pipeline && packet.state.blend[0] == 0.25);
+            assert(packet.vertices[0].offset == (j ? 16 : 0));
+            assert(!packet.boundary_only && !packet.first_in_pass && !packet.last_in_pass);
+        }
+        doe_resource_render_packet untouched = {.count = 17};
+        assert(!doe_resource_render_record_draw(records[i].value.render, 2, &untouched) && untouched.count == 17);
     }
-    assert(doe_resource_render_record_borrow(records[5].value.render)->pipeline == caller_pipeline);
+    assert(doe_resource_render_record_draw_count(records[0].value.render) == 0);
+    assert(doe_resource_render_record_borrow(records[3].value.render)->pipeline == caller_pipeline);
     doe_resource_render_pipeline_release(caller_pipeline);
     doe_resource_view_release(view);
     doe_resource_texture_release(texture);
@@ -212,7 +224,13 @@ static void test_bundle_replay_rejection(void)
         assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
         assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
         if (scenario == 1) doe_resource_buffer_destroy(vertices);
-        if (scenario == 2) f.fail_at = f.allocations;
+        if (scenario == 2) {
+            /* Fill the first command/record block; reject the next growth
+             * transaction without leaking its bundle lease or resources. */
+            for (size_t i = 0; i < 7; ++i)
+                assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+            f.fail_at = f.allocations;
+        }
         doe_resource_status expected = scenario == 0 ? DOE_RESOURCE_LAYOUT :
             scenario == 1 ? DOE_RESOURCE_UNAVAILABLE : DOE_RESOURCE_OUT_OF_MEMORY;
         assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == expected);

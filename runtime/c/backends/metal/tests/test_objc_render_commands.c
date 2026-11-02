@@ -29,6 +29,7 @@ typedef struct fixture {
     void *vertex_samplers[DOE_MTL_SAMPLER_SLOTS], *fragment_samplers[DOE_MTL_SAMPLER_SLOTS];
     doe_mtl_native_binding buffers[2][DOE_MTL_BUFFER_SLOTS];
     uint32_t sizes[2][DOE_MTL_BUFFER_SLOTS];
+    bool bytes_bound[2][DOE_MTL_BUFFER_SLOTS];
 } fixture;
 static fixture *active;
 static bool named(void *sel, const char *name) { return strcmp(sel, name) == 0; }
@@ -112,6 +113,12 @@ static void *named_call(void *object, void *sel, void *descriptor) {
     assert(object == &active->command && named(sel, "renderCommandEncoderWithDescriptor:") && descriptor == &active->descriptor);
     assert(active->releases == 0 && active->drains == 0);
     active->begins++;
+    memset(active->buffers, 0, sizeof(active->buffers));
+    memset(active->vertex_textures, 0, sizeof(active->vertex_textures));
+    memset(active->fragment_textures, 0, sizeof(active->fragment_textures));
+    memset(active->vertex_samplers, 0, sizeof(active->vertex_samplers));
+    memset(active->fragment_samplers, 0, sizeof(active->fragment_samplers));
+    memset(active->bytes_bound, 0, sizeof(active->bytes_bound));
     return active->no_encoder ? NULL : &active->encoder;
 }
 static void viewport(void *object, void *sel, doe_mtl_viewport value) {
@@ -133,12 +140,15 @@ static void bind_buffer(void *object, void *sel, void *buffer, size_t offset, si
     assert(object == &active->encoder && slot < DOE_MTL_BUFFER_SLOTS);
     if (stage == 1) assert(named(sel, "setFragmentBuffer:offset:atIndex:"));
     active->buffers[stage][slot] = (doe_mtl_native_binding){buffer, offset, 0}; active->buffer_sets[stage]++;
+    active->bytes_bound[stage][slot] = false;
 }
 static void bind_bytes(void *object, void *sel, const void *bytes, size_t length, size_t slot) {
     unsigned stage = named(sel, "setVertexBytes:length:atIndex:") ? 0u : 1u;
-    assert(object == &active->encoder && slot < DOE_MTL_BUFFER_SLOTS && length == (slot + 1) * 4);
+    assert(object == &active->encoder && slot < DOE_MTL_BUFFER_SLOTS && length && length <= sizeof(active->sizes[stage]));
     if (stage == 1) assert(named(sel, "setFragmentBytes:length:atIndex:"));
     memcpy(active->sizes[stage], bytes, length); active->bytes_sets[stage]++;
+    active->buffers[stage][slot] = (doe_mtl_native_binding){0};
+    active->bytes_bound[stage][slot] = true;
 }
 static void bind_image(void *object, void *sel, void *image, size_t slot) {
     assert(object == &active->encoder);
@@ -219,6 +229,7 @@ static void encoding(void) {
     draws[0].vertex_sizes_slot = 30; draws[0].fragment_sizes_slot = UINT32_MAX;
     draws[0].vertex.buffers[4] = (doe_mtl_native_binding){&f.buffer, 12, 20};
     draws[0].vertex.textures[127] = &f.texture; draws[0].fragment.samplers[15] = &f.sampler;
+    draws[0].vertex.texture_count = 128; draws[0].fragment.sampler_count = 16;
     draws[0].values = (doe_mtl_render_draw){.topology = 4, .count = 5, .instance_count = 3, .first_vertex = 7, .first_instance = 2,
         .unclipped_depth = true, .viewport_enabled = true, .viewport = {1, 2, 10, 11, 0.1, 0.9}, .scissor_enabled = true, .scissor = {3, 4, 8, 9}};
     draws[1].pipeline = &f.pipeline; draws[1].vertex_sizes_slot = UINT32_MAX; draws[1].fragment_sizes_slot = UINT32_MAX;
@@ -230,7 +241,7 @@ static void encoding(void) {
     assert(f.draws == 1 && f.indexed_draws == 1 && f.index_offset == 24 && f.base_vertex == -11 && f.first_instance == 8);
     assert(f.clear.red == 1 && f.clear.blue == 0.25 && f.clear_depth == 0.75 && f.clear_stencil == 254);
     assert(f.store[8] == 0 && f.load[0] == 2 && f.attachment_texture[1] == NULL && f.level[0] == 0 && f.slice[0] == 0);
-    assert(f.buffer_sets[0] == 62 && f.texture_sets[0] == 256 && f.sampler_sets[1] == 32);
+    assert(f.buffer_sets[0] == 3 && f.texture_sets[0] == 2 && f.sampler_sets[1] == 2);
     assert(f.bytes_sets[0] == 1 && f.sizes[0][4] == 20 && f.sizes[0][3] == 0);
     assert(f.viewport.width == 64 && f.viewport.min_depth == 0 && f.scissor.width == 64 && f.scissor.height == 32);
     assert(f.depth_clip_count == 2 && f.depth_clip_values[0] == 1 && f.depth_clip_values[1] == 0 && f.depth_clip == 0);
@@ -274,6 +285,7 @@ static void resolves_and_visibility(void) {
         draws[i].fragment_sizes_slot = UINT32_MAX;
         draws[i].vertex.textures[127] = &f.texture;
         draws[i].fragment.samplers[15] = &f.sampler;
+        draws[i].vertex.texture_count = 128; draws[i].fragment.sampler_count = 16;
         draws[i].values.count = 3;
         draws[i].values.instance_count = 1;
     }
@@ -302,6 +314,7 @@ static void empty_raster_state(void) {
         draw.vertex_sizes_slot = draw.fragment_sizes_slot = UINT32_MAX;
         draw.vertex.textures[127] = &f.texture;
         draw.fragment.samplers[15] = &f.sampler;
+        draw.vertex.texture_count = 128; draw.fragment.sampler_count = 16;
         draw.values = (doe_mtl_render_draw){.count = 3, .instance_count = 1,
             .viewport_enabled = mode != 2, .viewport = {0, 0, mode == 0 ? 0 : 8, 0, 0, 1},
             .scissor_enabled = true, .scissor = {3, 4, mode == 2 ? 0u : 8u, 9}};
@@ -311,7 +324,61 @@ static void empty_raster_state(void) {
         assert(f.ends == 1 && f.pools == f.drains);
     }
 }
+static void changed_bindings(void) {
+    fixture f;
+    initialize(&f);
+    doe_mtl_native_render_pass pass = pass_new(&f);
+    doe_mtl_native_render_draw draws[10] = {0};
+    draws[0].pipeline = &f.pipeline;
+    draws[0].vertex_sizes_slot = 30;
+    draws[0].fragment_sizes_slot = UINT32_MAX;
+    draws[0].vertex.buffers[4] = (doe_mtl_native_binding){&f.buffer, 12, 20};
+    draws[0].vertex.textures[127] = &f.texture;
+    draws[0].vertex.texture_count = 128;
+    draws[0].fragment.samplers[15] = &f.sampler;
+    draws[0].fragment.sampler_count = 16;
+    draws[0].values.count = draws[0].values.instance_count = 1;
+    draws[1] = draws[0];
+    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
+    assert(f.buffer_sets[0] == 1 && f.bytes_sets[0] == 1);
+    assert(f.texture_sets[0] == 1 && f.sampler_sets[1] == 1 && f.draws == 2);
+    /* A new native encoder starts unbound, even with the same draw snapshots. */
+    f.releases = f.drains = 0;
+    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
+    assert(f.buffer_sets[0] == 2 && f.bytes_sets[0] == 2);
+    assert(f.texture_sets[0] == 2 && f.sampler_sets[1] == 2);
+
+    draws[2] = draws[0];
+    draws[2].vertex.buffers[4].offset = 16;
+    draws[2].vertex.buffers[4].size = 24;
+    /* An empty direct draw must not become the cached native state. */
+    draws[3].vertex_sizes_slot = draws[3].fragment_sizes_slot = UINT32_MAX;
+    draws[4] = draws[2];
+    draws[5] = draws[2];
+    draws[5].vertex_sizes_slot = UINT32_MAX;
+    draws[5].vertex.buffers[30] = (doe_mtl_native_binding){&f.index_buffer, 8, 12};
+    draws[5].vertex.immediate_size = 4;
+    draws[5].vertex.immediate_slot = 6;
+    draws[5].vertex.immediate_words[0] = 7;
+    draws[6] = draws[5];
+    draws[6].vertex.immediate_words[0] = 8;
+    draws[7] = draws[6];
+    draws[7].vertex.immediate_size = 0;
+    draws[7].vertex.buffers[6] = (doe_mtl_native_binding){&f.buffer, 0, 4};
+    draws[8] = draws[7];
+    draws[8].vertex_sizes_slot = 6;
+    draws[8].vertex.buffers[6] = (doe_mtl_native_binding){0};
+    draws[9] = draws[7];
+    initialize(&f); pass = pass_new(&f);
+    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 10, NULL) == DOE_MTL_OK);
+    assert(f.draws == 9 && f.buffer_sets[0] == 5 && f.bytes_sets[0] == 5);
+    assert(f.texture_sets[0] == 1 && f.sampler_sets[1] == 1);
+    assert(f.buffers[0][4].buffer == &f.buffer && f.buffers[0][4].offset == 16);
+    assert(f.buffers[0][6].buffer == &f.buffer && !f.bytes_bound[0][6]);
+    assert(f.buffers[0][30].buffer == &f.index_buffer && !f.bytes_bound[0][30]);
+}
 int main(void) {
+    changed_bindings();
     empty_raster_state();
     resolves_and_visibility();
     encoding(); clear_and_failure();

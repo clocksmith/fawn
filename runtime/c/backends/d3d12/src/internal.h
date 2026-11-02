@@ -7,6 +7,7 @@
 #include <string.h>
 #include <limits.h>
 
+enum { DOE_DX_UPLOAD_PAGES = 8 };
 struct doe_dx_context {
     doe_dx_native_context *native;
     doe_dx_caps caps;
@@ -16,6 +17,7 @@ struct doe_dx_context {
     doe_dx_commands *pending;
     doe_dx_buffer *zero_upload; /* One context-owned immutable staging lease. */
     doe_dx_buffer *upload_staging; /* One ordinary reusable caller-data staging lease. */
+    doe_dx_buffer *upload_pages[DOE_DX_UPLOAD_PAGES - 1]; /* Same ordinary cache leases. */
 };
 struct doe_dx_buffer {
     doe_dx_context *context;
@@ -30,6 +32,7 @@ struct doe_dx_buffer {
     bool initialized; /* Completed full initialization. */
     bool accepted_initialized; /* Future GPU use, guarded by pending identity. */
     bool lent; /* Mapped READBACK bytes lent to a read mapping. */
+    bool evict_requested; /* Native allocation retires after its last GPU use. */
 };
 struct doe_dx_texture {
     doe_dx_surface *surface;
@@ -44,6 +47,8 @@ struct doe_dx_texture {
     uint32_t references;
     size_t owner_index;
     bool initialized;
+    bool shared, shared_active, shared_read_only;
+    bool evict_requested;
 };
 struct doe_dx_timestamps {
     doe_dx_context *context;
@@ -176,6 +181,8 @@ doe_dx_status doe_dx_texture_preflight(doe_dx_commands *commands,
 doe_dx_texture_use *doe_dx_find_texture(doe_dx_commands *commands, doe_dx_texture *texture);
 void doe_dx_use_texture(doe_dx_commands *commands, doe_dx_texture *texture);
 void doe_dx_use_buffer(doe_dx_commands *commands, doe_dx_buffer *buffer);
+void doe_dx_buffer_try_evict(doe_dx_buffer *buffer);
+void doe_dx_texture_try_evict(doe_dx_texture *texture);
 doe_dx_status doe_dx_context_result(doe_dx_context *context, doe_dx_status status,
     const doe_dx_error *error);
 void doe_dx_context_lose(doe_dx_context *context, const doe_dx_error *error);

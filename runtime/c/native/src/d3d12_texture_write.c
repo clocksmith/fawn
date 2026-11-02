@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_texture.h"
 #include "d3d12_texture_desc.h"
+#include "shared_memory_internal.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,6 +17,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
     doe_resource_copy_region admitted = {0};
     native_lock(device);
     doe_resource_status status = doe_resource_texture_write_validate(device,texture,data_size,&copy,&admitted);
+    if (status==DOE_RESOURCE_OK && !native_shared_texture_accessible(texture)) status=DOE_RESOURCE_STATE;
     if (status == DOE_RESOURCE_OK) doe_resource_texture_retain(texture);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {

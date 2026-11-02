@@ -1,5 +1,5 @@
 // Windows D3D12 clearBuffer parity: ordered zeroing, exact ranges and recovery.
-// zig cc -I vendor/webgpu-headers tests/d3d12_clear_readback.c -o clear.exe
+// zig cc -I ../vendor/webgpu-headers tests/d3d12_clear_readback.c -o clear.exe
 // clear.exe <absolute path to webgpu_doe_full.dll> <mode>
 #include <windows.h>
 #include <stdint.h>

@@ -439,7 +439,9 @@ static void test_nullable_vertex_and_accessors(void)
             size_t count;
             const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
             assert(count == 3);
-            assert(!doe_resource_render_record_borrow(records[1].value.render)->vertices[7].buffer);
+            doe_resource_render_packet replay;
+            assert(doe_resource_render_record_draw(records[1].value.render, 0, &replay));
+            assert(!replay.vertices[7].buffer);
             assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
             doe_resource_commands_release(commands);
             assert(!vertex_token.releases);

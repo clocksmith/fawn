@@ -1,5 +1,5 @@
 // Windows public ABI compute oracle: runtime arrayLength over a 32-byte allocation, bounded dispatch.
-// zig cc -I vendor/webgpu-headers tests/d3d12_runtime_array_readback.c -o compute.exe
+// zig cc -I ../vendor/webgpu-headers tests/d3d12_runtime_array_readback.c -o compute.exe
 // With DXC on process PATH: compute.exe <DLL>
 // Optional mode: short|rebind|fixture|float|int|repeat|overdispatch|reject|unsupported|recover
 #include <windows.h>

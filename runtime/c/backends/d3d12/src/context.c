@@ -115,6 +115,11 @@ doe_dx_status doe_dx_context_destroy(doe_dx_context *context) {
      * destruction, including a constructor waiting outside its device mutex. */
     doe_dx_buffer_release(zero);
     doe_dx_buffer_release(staging);
+    for (size_t i = 0; i < DOE_DX_UPLOAD_PAGES - 1; ++i) {
+        doe_dx_buffer *page = context->upload_pages[i];
+        context->upload_pages[i] = NULL;
+        doe_dx_buffer_release(page);
+    }
     if (context->objects || context->pending) return DOE_DX_BUSY;
     doe_dx_status status = doe_dx_native_close(context->native);
     if (status != DOE_DX_OK) return status;

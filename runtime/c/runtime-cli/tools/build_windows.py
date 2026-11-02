@@ -114,7 +114,7 @@ def main() -> int:
              '/D_CRT_SECURE_NO_WARNINGS', '/D_WIN32_WINNT=0x0A00', '/DWGPU_SHARED_LIBRARY',
              '/clang:-std=c11', '/clang:-Wall', '/clang:-Wextra', '/clang:-Wpedantic',
              '/I' + str(ROOT / 'src'), '/I' + str(MODULES / 'src'), '/I' + str(C_ROOT / 'native/include'),
-             '/I' + str(REPO / 'runtime/zig/vendor/webgpu-headers')]
+             '/I' + str(REPO / 'runtime/vendor/webgpu-headers')]
     provider_header = None
     if args.provider == 'dawn':
         provider_header = out / 'provider_identity.h'
@@ -161,7 +161,7 @@ def main() -> int:
               ROOT / 'tests/test_windows_cli.py', ROOT / 'tests/normalized_retained.json',
               MODULES / 'tests/test_modules.py', MODULES / 'tests/cases.py', MODULES / 'tests/retained.json',
               ROOT / 'tools/gen_toggle_registry.py', REPO / 'config/quirk-toggle-registry.json',
-              REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']
+              REPO / 'runtime/vendor/webgpu-headers/webgpu.h']
     for owner in [ROOT / 'src', MODULES / 'src', C_ROOT / 'platform/include', C_ROOT / 'native/include']:
         inputs.extend(sorted(owner.glob('*.h')))
     out.joinpath('cli-scope.json').write_text(json.dumps({

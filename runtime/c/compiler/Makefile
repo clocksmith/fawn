@@ -36,6 +36,15 @@ CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wra
 # `all` still builds every artifact; host/TSIR keep their own behavioral gates.
 .PHONY: compiler-core
 all: compiler-core
+build/test_prepared: tests/test_prepared.c tests/hlsl_fixture.h tests/metal12_fixture.h build/libdoe_compiler_core.a $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_prepared.c build/libdoe_compiler_core.a -lm -o $@
+build/test_prepared_analysis: tests/test_prepared.c tests/hlsl_fixture.h tests/metal12_fixture.h build/libdoe_compiler_core.a $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -DDOE_PREPARED_COUNT_ANALYSES tests/test_prepared.c build/libdoe_compiler_core.a -Wl,--wrap=compiler_analyze,--wrap=fesetenv -lm -o $@
+.PHONY: test-prepared test-prepared-analysis
+test-prepared: build/test_prepared
+	build/test_prepared
+test-prepared-analysis: build/test_prepared_analysis
+	build/test_prepared_analysis
 compiler-core: build/doe-compiler-c build/libdoe_compiler.so build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c
 build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c: build/doe-compiler-c
 	ln -sf doe-compiler-c $@

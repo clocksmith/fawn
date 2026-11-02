@@ -150,7 +150,7 @@ def main() -> int:
     contract = json.loads(schema.read_text(encoding="utf-8"))['$defs']['nativeContractVersion']['const']
     if not isinstance(contract, int) or isinstance(contract, bool) or not 0 < contract <= 0xffffffff:
         raise ValueError('native program contract must be a positive uint32')
-    includes = [ROOT / 'include', REPO / 'runtime/zig/vendor/webgpu-headers', C_ROOT / 'compiler/include']
+    includes = [ROOT / 'include', REPO / 'runtime/vendor/webgpu-headers', C_ROOT / 'compiler/include']
     includes.extend(owner / 'include' for owner in owners)
     strict = [compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/MD', '/O2', '/WX',
               '/D_CRT_SECURE_NO_WARNINGS', '/DWGPU_SHARED_LIBRARY', '/DWGPU_IMPLEMENTATION',
@@ -211,6 +211,13 @@ def main() -> int:
     fxc_fixture = out / 'shader_fxc.exe'
     invoke(consumer_flags + [str(fxc_source), '/Fo' + str(out / 'shader_fxc.obj'),
             '/Fe' + str(fxc_fixture), '/link', str(shader_object), 'kernel32.lib', 'dxguid.lib'], out)
+    # Build only: the explicit --warp fixture separately exercises public DXGI
+    # access and the real queue's unlocked completion interval on CPU software.
+    shared_source = ROOT / 'tests/d3d12_shared_memory_windows.c'
+    shared_fixture = out / 'd3d12_shared_memory_windows.exe'
+    invoke(consumer_flags + [str(shared_source), '/Fo' + str(out / 'shared_memory_windows.obj'),
+            '/Fe' + str(shared_fixture), '/link', str(imports),
+            'kernel32.lib', 'd3d11.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'], out)
     headers = sorted(set(ROOT.joinpath('src').glob('*.h')) |
                      set(ROOT.joinpath('include').glob('*.h')) |
                      set(C_ROOT.joinpath('compiler/include').glob('*.h')) |
@@ -221,10 +228,10 @@ def main() -> int:
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
               ROOT / 'EXTENSION_SYMBOLS.txt', ROOT / 'LEGACY_SYMBOLS.txt', ROOT / 'SHARED_MEMORY_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
-              shader_adapter, fxc_source, window_source, window_host, ROOT / 'tests/surface_consumer.h',
+              shader_adapter, fxc_source, window_source, window_host, shared_source, ROOT / 'tests/surface_consumer.h',
               ROOT / 'tests/consumer.h', ROOT / 'tests/adapter_class.h',
               C_ROOT / 'runtime-cli/src/surface_platform.h', fxc_helper,
-              REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']
+              REPO / 'runtime/vendor/webgpu-headers/webgpu.h']
     out.joinpath('native-scope.json').write_text(json.dumps({
         'compiler': compiler, 'windows_sdk_version': os.environ.get('WindowsSDKVersion'),
         'vc_tools_version': os.environ.get('VCToolsVersion'),

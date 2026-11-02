@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_binding_internal.h"
 #include "d3d12_texture_desc.h"
+#include "shared_memory_internal.h"
 #include <string.h>
 
 native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
@@ -44,7 +45,7 @@ native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
         if (!view_payload) return native_failure_status(NATIVE_INVALID_STATE);
         for (uint32_t channel=0;channel<4;++channel) out->texture_views[i].swizzle[channel]=view_payload->d3d12_swizzle[channel];
         native_texture *native = doe_resource_texture_native(texture);
-        if (!native || !native->d3d12) return native_failure_status(NATIVE_INVALID_STATE);
+        if (!native || !native->d3d12 || !native_shared_texture_accessible(texture)) return native_failure_status(NATIVE_INVALID_STATE);
         out->textures[i] = native->d3d12;
     }
     for (size_t i = 0; i < map->sampler_count; ++i) {

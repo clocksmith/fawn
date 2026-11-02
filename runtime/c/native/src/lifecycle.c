@@ -192,6 +192,7 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
                 adapter->instance = instance;
                 doe_instance_retain(instance);
                 adapter->backend = backend;
+                adapter->features = native_adapter_features(&adapter->backend);
                 adapter->identity = identity;
                 identity = NULL;
                 delivery.adapter = adapter;
@@ -331,7 +332,7 @@ void native_device_release(void *identity)
 static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss, const DoeNativeDevicePolicy *policy)
 {
     uint32_t features = 0;
-    if (!native_requested_features(&adapter->backend, descriptor, &features)) return NULL;
+    if (!native_requested_features(adapter->features, descriptor, &features)) return NULL;
     if (descriptor && (descriptor->nextInChain || descriptor->defaultQueue.nextInChain ||
         descriptor->deviceLostCallbackInfo.nextInChain ||
         descriptor->uncapturedErrorCallbackInfo.nextInChain)) return NULL;
@@ -553,11 +554,13 @@ void wgpuQueueAddRef(WGPUQueue queue) { native_device_retain((native_device *)qu
 void wgpuQueueRelease(WGPUQueue queue) { native_device_release((native_device *)queue); }
 WGPUStatus wgpuAdapterGetInfo(WGPUAdapter adapter, WGPUAdapterInfo *out)
 {
-    return adapter ? native_backend_info(&((native_adapter *)adapter)->backend, out) : WGPUStatus_Error;
+    native_adapter *value = (native_adapter *)adapter;
+    return value ? native_backend_info(&value->backend, value->features, out) : WGPUStatus_Error;
 }
 WGPUStatus wgpuDeviceGetAdapterInfo(WGPUDevice device, WGPUAdapterInfo *out)
 {
-    return device ? native_backend_info(&((native_device *)device)->backend, out) : WGPUStatus_Error;
+    native_device *value = (native_device *)device;
+    return value ? native_backend_info(&value->backend, value->adapter->features, out) : WGPUStatus_Error;
 }
 WGPUStatus wgpuAdapterGetLimits(WGPUAdapter adapter, WGPULimits *out)
 {

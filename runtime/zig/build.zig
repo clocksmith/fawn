@@ -88,7 +88,7 @@ fn addBackendBridgeIncludePaths(artifact: *std.Build.Step.Compile, b: *std.Build
 fn addSourceModuleIncludePaths(module: *std.Build.Module, b: *std.Build) void {
     module.addIncludePath(b.path("src/backend/d3d12"));
     module.addIncludePath(b.path("src/backend/metal"));
-    module.addIncludePath(b.path("vendor/webgpu-headers"));
+    module.addIncludePath(b.path("../vendor/webgpu-headers"));
     const candidates = [_][]const u8{
         "../../bench/vendor/dawn/out/Release/gen/include",
         "../../bench/vendor/dawn/out/Release/gen/include/dawn",
@@ -546,7 +546,7 @@ fn configureCLabelsArtifact(artifact: *std.Build.Step.Compile, b: *std.Build, ar
 fn configureCErrorScopesModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
     module.addIncludePath(b.path("../c/error-scopes/include"));
     module.addIncludePath(b.path("../c/error-scopes/integration"));
-    module.addIncludePath(b.path("vendor/webgpu-headers"));
+    module.addIncludePath(b.path("../vendor/webgpu-headers"));
     module.addObjectFile(.{ .cwd_relative = archive });
     module.linkSystemLibrary("pthread", .{});
     module.link_libc = true;
@@ -1311,7 +1311,7 @@ pub fn build(b: *std.Build) void {
     });
     webgpu_plan_executor.linkLibC();
     const dawn_shared_include_candidates = [_][]const u8{
-        "vendor/webgpu-headers",
+        "../vendor/webgpu-headers",
         "../../bench/vendor/dawn/out/Release/gen/include",
         "../../bench/vendor/dawn/out/Release/gen/include/dawn",
         "../../bench/vendor/node-webgpu-package/out/cmake-release/gen/include/dawn",

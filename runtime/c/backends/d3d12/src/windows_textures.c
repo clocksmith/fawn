@@ -16,6 +16,7 @@ DXGI_FORMAT doe_dx_texture_format(doe_dx_format format) {
 
 void doe_dx_native_texture_destroy(doe_dx_native_texture *texture) {
     if (!texture) return;
+    doe_dx_shared_texture_native_close(texture);
     if (texture->resource) ID3D12Resource_Release(texture->resource);
     free(texture->footprints);
     free(texture);
@@ -172,22 +173,26 @@ void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
     image.pResource = texture->resource;
     image.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     if (upload) {
+        if (texture->shared) doe_dx_transition(commands->list,texture->resource,doe_dx_texture_rest(texture),D3D12_RESOURCE_STATE_COPY_DEST);
         ID3D12GraphicsCommandList_CopyTextureRegion(commands->list, &image, 0, 0, 0, &linear, NULL);
+        if (texture->shared) doe_dx_transition(commands->list,texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,doe_dx_texture_rest(texture));
     } else {
         doe_dx_transition(commands->list, texture->resource,
-            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE);
+            doe_dx_texture_rest(texture), D3D12_RESOURCE_STATE_COPY_SOURCE);
         ID3D12GraphicsCommandList_CopyTextureRegion(commands->list, &linear, 0, 0, 0, &image, NULL);
         doe_dx_transition(commands->list, texture->resource,
-            D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+            D3D12_RESOURCE_STATE_COPY_SOURCE, doe_dx_texture_rest(texture));
     }
 }
 
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination) {
     doe_dx_transition(commands->list, source->resource,
-        D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        doe_dx_texture_rest(source), D3D12_RESOURCE_STATE_COPY_SOURCE);
+    if (destination->shared) doe_dx_transition(commands->list,destination->resource,doe_dx_texture_rest(destination),D3D12_RESOURCE_STATE_COPY_DEST);
     ID3D12GraphicsCommandList_CopyResource(commands->list, destination->resource, source->resource);
+    if (destination->shared) doe_dx_transition(commands->list,destination->resource,D3D12_RESOURCE_STATE_COPY_DEST,doe_dx_texture_rest(destination));
     doe_dx_transition(commands->list, source->resource,
-        D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+        D3D12_RESOURCE_STATE_COPY_SOURCE, doe_dx_texture_rest(source));
 }
 #endif

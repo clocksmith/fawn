@@ -1,38 +1,40 @@
-# CATSCAN: Experimental C compiler
+# CATSCAN: C compiler
 
-Parent: [Experimental C migration](../CATSCAN.md)
+Parent: [C runtime](../CATSCAN.md)
 
 ## Target
 Translate admitted WGSL into source-linked artifacts.
 
 ## Authority
-Own parsing, validation, typed IR, robustness (buffer clamps), emission, reflection and diagnostics;
+Own parsing, validation, typed IR, buffer robustness, emission, reflection and diagnostics;
 exclude execution and application acceptance.
 
 ## Scope
-Compiler; [historical coverage](MILESTONE_1.md).
+Compiler and [historical coverage](MILESTONE_1.md).
 
 ## Contracts
 Versioned caller-owned spans produce SPIR-V, MSL or HLSL through shared semantics.
-Reflection carries entry/binding metadata, spaces and native requirements;
-diagnostics retain source locations. [Specialization](SPECIALIZATION.md) separates
+Reflection carries bindings/native requirements; diagnostics retain locations.
+[Specialization](SPECIALIZATION.md) separates
 symbolic modules from selected/whole-module artifacts.
-[ABI19](include/doe_compiler_hlsl_profile.h) certifies conservative selected HLSL
-profiles in the same transaction; existing APIs/records/workspaces remain unchanged.
-Browser/offline edits preserve validated WGSL; bounded Wasm imports no host functions.
-The allocating [host companion](host/README.md) owns TSIR/explicit DXC orchestration.
+[ABI19](include/doe_compiler_hlsl_profile.h) certifies selected HLSL profiles transactionally.
+Browser/offline preserves validated WGSL; Wasm imports no host functions.
+[Prepared transactions](include/doe_compiler_prepared.h) retain one analysis through
+exact-size publication in caller-owned workspace; ABI1-19 layouts/semantics remain unchanged.
+[Host companion](host/README.md) owns allocation and TSIR/DXC orchestration.
 
 ## Invariants
-Unsupported syntax/types/targets reject without fallback. Failure publishes nothing
-and retains no pointers. Reflection/profiles derive from validated IR and complete
-emission, never source matching. Unknown profile features retain the baseline.
-Limits reject, never truncate; check arithmetic before narrowing/access.
-Const/override/runtime stages stay distinct. Deferred facts are not executable
-values/layouts; replaced or unrequired initializers are not evaluated.
+Unsupported syntax/types/targets reject without fallback. Failure publishes nothing.
+Synchronous calls retain no pointers; prepared transactions borrow stable spans
+within their explicit lifetime. Reflection/profiles derive from validated IR and
+complete emission; unknown profile features retain baseline.
+Limits reject without truncation; check arithmetic before narrowing/access.
+Const/override/runtime stages stay distinct; deferred facts are not executable.
+Replaced/unrequired initializers are not evaluated.
 
 ## Acceptance
 Frozen tests, independent execution, target validation, sanitizers and GCC
-consumption pass. Migration additionally requires retained support-matrix,
+consumption pass. Migration requires support-matrix,
 target-interface and real-adopter gates. [MSL](targets/metal/README.md) and
 [HLSL](targets/hlsl/README.md) controls never establish independent semantics,
 SDK/device qualification or adoption.
@@ -43,4 +45,4 @@ SDK/device qualification or adoption.
 Second interpreters, simulated qualification or universal frameworks.
 
 ## Freedom
-Algorithms vary within these boundaries.
+Algorithms vary within boundaries.

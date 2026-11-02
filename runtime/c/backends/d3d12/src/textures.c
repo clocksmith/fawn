@@ -123,10 +123,24 @@ void doe_dx_texture_release(doe_dx_texture *texture) {
     if (!texture) return;
     texture->references--;
     if (texture->references) return;
-    doe_dx_native_texture_destroy(texture->native);
+    if (texture->native) doe_dx_native_texture_destroy(texture->native);
     texture->context->objects--;
     if (texture->surface) doe_dx_surface_texture_release(texture->surface,texture);
     free(texture);
+}
+
+void doe_dx_texture_try_evict(doe_dx_texture *texture) {
+    if (!texture->evict_requested || texture->owner || !texture->native) return;
+    doe_dx_native_texture_destroy(texture->native);
+    texture->native = NULL;
+}
+
+doe_dx_status doe_dx_texture_evict(doe_dx_texture *texture) {
+    if (!texture) return DOE_DX_INVALID_ARGUMENT;
+    if (texture->surface) return DOE_DX_BUSY;
+    texture->evict_requested = true;
+    doe_dx_texture_try_evict(texture);
+    return DOE_DX_OK;
 }
 
 doe_dx_status doe_dx_texture_description(const doe_dx_texture *texture, doe_dx_texture_desc *out) {
@@ -159,6 +173,7 @@ doe_dx_status doe_dx_texture_layout_2d(const doe_dx_texture_desc *desc,
 doe_dx_status doe_dx_texture_copy_footprint(const doe_dx_texture *texture,
     doe_dx_texture_layout layout, doe_dx_texture_footprint *out) {
     if (!texture) return DOE_DX_INVALID_ARGUMENT;
+    if (texture->evict_requested) return DOE_DX_INVALID_STATE;
     if (texture->samples!=1 || texture->shape.mip_levels!=1 || texture->shape.depth_or_layers!=1) return DOE_DX_UNSUPPORTED;
     return doe_dx_texture_layout_2d(&texture->desc, layout, out);
 }
@@ -173,6 +188,9 @@ doe_dx_texture_use *doe_dx_find_texture(doe_dx_commands *commands, doe_dx_textur
 doe_dx_status doe_dx_texture_preflight(doe_dx_commands *commands,
     doe_dx_texture *texture, uint32_t usage, bool readable) {
     if (!texture) return DOE_DX_INVALID_ARGUMENT;
+    if (texture->evict_requested || (texture->shared && !texture->shared_active)) return DOE_DX_INVALID_STATE;
+    if (texture->shared_read_only && (usage & (DOE_DX_TEXTURE_COPY_DST|DOE_DX_TEXTURE_STORAGE|
+        DOE_DX_TEXTURE_RENDER_ATTACHMENT|DOE_DX_TEXTURE_DEPTH_ATTACHMENT))) return DOE_DX_INVALID_STATE;
     if (!doe_dx_surface_texture_recordable(texture)) return DOE_DX_INVALID_STATE;
     if (texture->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
     if (texture->owner && texture->owner != commands) {

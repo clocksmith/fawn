@@ -10,8 +10,8 @@ typedef struct observed {
     bool has_box;
     UINT x, y, z;
     size_t copies, transitions;
-    ID3D12Resource *resource[2];
-    D3D12_RESOURCE_STATES before[2], after[2];
+    ID3D12Resource *resource[4];
+    D3D12_RESOURCE_STATES before[4], after[4];
 } observed;
 static observed seen;
 static void STDMETHODCALLTYPE copy_region(ID3D12GraphicsCommandList *self,
@@ -30,7 +30,7 @@ void doe_dx_transition(ID3D12GraphicsCommandList *list,ID3D12Resource *resource,
     D3D12_RESOURCE_STATES before,D3D12_RESOURCE_STATES after)
 {
     (void)list;
-    assert(seen.transitions < 2);
+    assert(seen.transitions < 4);
     size_t i = seen.transitions++;
     seen.resource[i] = resource;
     seen.before[i] = before;
@@ -82,5 +82,20 @@ int main(void)
     assert(seen.source.pResource == &texture_resource && seen.destination.pResource == &destination_resource);
     assert(seen.box.left == 3 && seen.box.top == 4 && seen.box.right == 5 && seen.box.bottom == 6);
     restored(&texture_resource);
+    memset(&seen,0,sizeof(seen));
+    texture.shared=true; buffer.memory=DOE_DX_UPLOAD;
+    doe_dx_native_texture_region_transfer(&commands,&buffer,&texture,&footprint,region,true);
+    assert(seen.transitions==2 && seen.resource[0]==&texture_resource && seen.resource[1]==&texture_resource);
+    assert(seen.before[0]==D3D12_RESOURCE_STATE_COMMON && seen.after[0]==D3D12_RESOURCE_STATE_COPY_DEST);
+    assert(seen.before[1]==D3D12_RESOURCE_STATE_COPY_DEST && seen.after[1]==D3D12_RESOURCE_STATE_COMMON);
+    memset(&seen,0,sizeof(seen));
+    destination.shared=true;
+    doe_dx_native_texture_blit(&commands,&texture,region,&destination,7,8);
+    assert(seen.transitions==4 && seen.resource[0]==&texture_resource && seen.resource[3]==&texture_resource);
+    assert(seen.before[0]==D3D12_RESOURCE_STATE_COMMON && seen.after[0]==D3D12_RESOURCE_STATE_COPY_SOURCE);
+    assert(seen.before[3]==D3D12_RESOURCE_STATE_COPY_SOURCE && seen.after[3]==D3D12_RESOURCE_STATE_COMMON);
+    assert(seen.resource[1]==&destination_resource && seen.resource[2]==&destination_resource);
+    assert(seen.before[1]==D3D12_RESOURCE_STATE_COMMON && seen.after[1]==D3D12_RESOURCE_STATE_COPY_DEST);
+    assert(seen.before[2]==D3D12_RESOURCE_STATE_COPY_DEST && seen.after[2]==D3D12_RESOURCE_STATE_COMMON);
     puts("PASS actual Windows SDK texture-region call composition; CPU-only, no device/GPU");
 }

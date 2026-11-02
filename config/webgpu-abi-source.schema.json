@@ -13,11 +13,11 @@
       "required": ["kind", "path", "sha256", "repository", "commit", "licensePath"],
       "properties": {
         "kind": { "const": "vendored-pinned-header" },
-        "path": { "const": "runtime/zig/vendor/webgpu-headers/webgpu.h" },
+        "path": { "const": "runtime/vendor/webgpu-headers/webgpu.h" },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "repository": { "const": "https://chromium.googlesource.com/external/github.com/webgpu-native/webgpu-headers" },
         "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-        "licensePath": { "const": "runtime/zig/vendor/webgpu-headers/LICENSE" }
+        "licensePath": { "const": "runtime/vendor/webgpu-headers/LICENSE" }
       }
     },
     "ownership": {

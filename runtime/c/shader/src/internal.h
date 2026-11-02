@@ -3,6 +3,7 @@
 #define DOE_SHADER_INTERNAL_H
 #include "doe_shader.h"
 #include "doe_shader_hlsl_profile.h"
+#include "doe_compiler_prepared.h"
 #include <limits.h>
 #include <stdalign.h>
 #include <stdatomic.h>
@@ -58,6 +59,8 @@ bool shader_layout(doe_shader_target, DoeCompilerModuleOutputCounts, size_t, siz
     size_t, size_t, size_t, size_t, size_t, size_t *, size_t [15]);
 void shader_assign_outputs(doe_shader *, const size_t [15], DoeCompilerModuleOutputCounts, size_t, size_t);
 bool shader_options_valid(const doe_shader_options *);
+DoeCompilerPrepareOptionsV20 shader_prepare_options(const doe_shader_options *, size_t,
+    uint32_t, const DoeCompilerOverrideValueV13 *, size_t, const DoeCompilerMetalPipelineOptionsV15 *);
 doe_shader_status shader_compile(const doe_shader_options *, const char *, size_t,
     const doe_shader *, const DoeCompilerOverrideValueV13 *, size_t,
     const DoeCompilerMetalPipelineOptionsV15 *, doe_shader **, doe_shader_error *);

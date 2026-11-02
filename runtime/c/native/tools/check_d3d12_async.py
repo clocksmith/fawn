@@ -46,7 +46,7 @@ def main() -> int:
     compiler = shutil.which(args.clang_cl)
     if compiler is None:
         parser.error("explicit clang-cl is unavailable")
-    includes = [ROOT / "include", REPO / "runtime/zig/vendor/webgpu-headers",
+    includes = [ROOT / "include", REPO / "runtime/vendor/webgpu-headers",
                 REPO / "runtime/c/compiler/include"]
     for owner in scope["owners"]:
         includes.append(REPO / "runtime/c" / owner / "include")

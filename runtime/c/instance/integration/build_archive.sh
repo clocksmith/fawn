@@ -13,7 +13,7 @@ mkdir -p "$out"
 for source in instance wait capabilities; do
     gcc $instrumentation -std=c11 -O2 -g -fPIC -Wall -Wextra -Wpedantic -Werror -pthread \
         -I"$here/../include" -I"$here/../../futures/include" \
-        -I"$here/../../../zig/vendor/webgpu-headers" \
+        -I"$here/../../../vendor/webgpu-headers" \
         -c "$here/../src/$source.c" -o "$out/$source.o"
 done
 ar rcs "$out/libdoe_instance.a" "$out/instance.o" "$out/wait.o" "$out/capabilities.o"

@@ -1,6 +1,6 @@
 // The Dawn extension is unadvertised: its ABI must reject in Doe, without
 // passing a Doe adapter into Dawn or modifying caller-owned output chains.
-// cc -I vendor/webgpu-headers tests/format_capability_lookup.c -o /tmp/format-capability-lookup
+// cc -I ../vendor/webgpu-headers tests/format_capability_lookup.c -o /tmp/format-capability-lookup
 // /tmp/format-capability-lookup /absolute/path/libwebgpu_doe_full.dylib
 #ifdef _WIN32
 #include <windows.h>

@@ -17,7 +17,7 @@ $(error cannot read nativeContractVersion from $(PROGRAM_SCHEMA))
 endif
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -DWGPU_SHARED_LIBRARY -DWGPU_IMPLEMENTATION \
  -DDOE_COMPUTE_PROGRAM_CONTRACT=$(PROGRAM_CONTRACT)u -Iinclude \
- -I../../zig/vendor/webgpu-headers -I../compiler/include $(addprefix -I,$(addsuffix /include,$(OWNER_DIRS)))
+ -I../../vendor/webgpu-headers -I../compiler/include $(addprefix -I,$(addsuffix /include,$(OWNER_DIRS)))
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread $(SANITIZE)
 # Debug records name the source tree relatively so the build directory does not
@@ -28,7 +28,7 @@ OBJECTS = $(patsubst src/%.c,$(BUILD)/native/%.o,$(filter src/%,$(SOURCES))) \
  $(patsubst ../%.c,$(BUILD)/owners/%.o,$(filter ../%,$(SOURCES)))
 HEADERS = sources.mk $(wildcard src/*.h include/*.h ../compiler/include/*.h ../common/include/*.h ../backends/d3d12/include/*.h) $(PROGRAM_SCHEMA) \
  $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/include/*.h $(owner)/src/*.h)) \
- ../../zig/vendor/webgpu-headers/webgpu.h
+ ../../vendor/webgpu-headers/webgpu.h
 COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
 COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) $(COMPILER_NAME_LINK) '-Wl,-rpath,$(COMPILER_RUNPATH)'
 .PHONY: all check check-build-dependencies check-empty-module clean
@@ -724,6 +724,15 @@ $(BUILD)/shared-features: tests/shared_features.c $(HEADERS) $(OBJECTS) $(COMPIL
 check-shared-features: $(BUILD)/shared-features
 	$(BUILD)/shared-features
 check: check-shared-features
+
+ifeq ($(SHARED_PLATFORM),Linux)
+$(BUILD)/feature-snapshot: tests/feature_snapshot.c $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_texture_format_caps -o $@
+.PHONY: check-feature-snapshot
+check-feature-snapshot: $(BUILD)/feature-snapshot
+	$(BUILD)/feature-snapshot
+check: check-feature-snapshot
+endif
 
 ifeq ($(SHARED_PLATFORM),Darwin)
 $(BUILD)/iosurface-shared: tests/iosurface_shared.c tests/iosurface_fixture.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)

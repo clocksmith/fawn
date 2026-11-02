@@ -12,7 +12,7 @@ def main() -> None:
         "../futures/src/internal.h",
         "../labels/src/internal.h",
         "../error-scopes/src/internal.h",
-        "../../zig/vendor/webgpu-headers/webgpu.h",
+        "../../vendor/webgpu-headers/webgpu.h",
     )
     with tempfile.TemporaryDirectory(prefix="doe-native-dependencies-") as directory:
         target = str(Path(directory) / "native/backend.o")

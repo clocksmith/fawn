@@ -33,7 +33,17 @@ enum {
     DOE_SHARED_STYPE_VK_LAYOUT_END = 0x00050028,
     DOE_SHARED_STYPE_SYNC_FD_DESCRIPTOR = 0x0005002C,
     DOE_SHARED_STYPE_SYNC_FD_EXPORT = 0x0005002D,
-    DOE_SHARED_FENCE_SYNC_FD = 2
+    DOE_SHARED_FENCE_SYNC_FD = 2,
+    DOE_SHARED_FEATURE_DXGI_MEMORY = 0x00050022,
+    DOE_SHARED_FEATURE_DXGI_FENCE = 0x00050029,
+    DOE_SHARED_FEATURE_SLOT_DXGI_MEMORY = 29,
+    DOE_SHARED_FEATURE_SLOT_DXGI_FENCE = 30,
+    DOE_SHARED_STYPE_DXGI_MEMORY = 0x00050021,
+    DOE_SHARED_STYPE_DXGI_FENCE_DESCRIPTOR = 0x00050030,
+    DOE_SHARED_STYPE_DXGI_FENCE_EXPORT = 0x00050031,
+    DOE_SHARED_STYPE_D3D_SWAPCHAIN_BEGIN = 0x00050029,
+    DOE_SHARED_STYPE_D3D11_BEGIN = 0x00050047,
+    DOE_SHARED_FENCE_DXGI = 4
 };
 typedef struct WGPUSharedFenceDescriptor {
     const WGPUChainedStruct *nextInChain;
@@ -43,6 +53,29 @@ typedef struct WGPUSharedFenceMTLSharedEventDescriptor {
     WGPUChainedStruct chain;
     void *sharedEvent;
 } WGPUSharedFenceMTLSharedEventDescriptor;
+/* Exact Dawn 758e5e6a dawn.json native DXGI descriptor layout. Handles are
+ * borrowed on entry; successful imports own independent native leases. */
+typedef struct WGPUSharedTextureMemoryDXGISharedHandleDescriptor {
+    WGPUChainedStruct chain;
+    void *handle;
+    WGPUBool useKeyedMutex;
+} WGPUSharedTextureMemoryDXGISharedHandleDescriptor;
+typedef struct WGPUSharedFenceDXGISharedHandleDescriptor {
+    WGPUChainedStruct chain;
+    void *handle;
+} WGPUSharedFenceDXGISharedHandleDescriptor;
+typedef struct WGPUSharedFenceDXGISharedHandleExportInfo {
+    WGPUChainedStruct chain;
+    void *handle;
+} WGPUSharedFenceDXGISharedHandleExportInfo;
+typedef struct WGPUSharedTextureMemoryD3D11BeginState {
+    WGPUChainedStruct chain;
+    WGPUBool requiresEndAccessFence;
+} WGPUSharedTextureMemoryD3D11BeginState;
+typedef struct WGPUSharedTextureMemoryD3DSwapchainBeginState {
+    WGPUChainedStruct chain;
+    WGPUBool isSwapchain;
+} WGPUSharedTextureMemoryD3DSwapchainBeginState;
 typedef struct WGPUSharedFenceExportInfo {
     WGPUChainedStruct *nextInChain;
     uint32_t type;
@@ -134,16 +167,14 @@ typedef struct WGPUSharedBufferMemoryProperties {
     WGPUBufferUsage usage;
     uint64_t size;
 } WGPUSharedBufferMemoryProperties;
-/* Imports borrow input native handles and return +1 objects. Fence export
- * borrows its unchanged MTLSharedEvent identity until the fence is released.
- * Texture resources and their views/commands use the canonical resource owner;
- * each imported texture retains its shared-memory provenance.
- * Compatibility is the retained Doe subset, not all Dawn shared-image policy:
- * Begin ignores concurrentRead/initialized/nextInChain and serializes one access;
- * producer synchronization comes from equal-length fence/value spans. End(NULL) merely
- * closes access, while End(state) emits a fresh native signal and initialized=true.
- * No undefined-content initialization or concurrent-read guarantee is implied.
- * allowStorageBinding is retained ABI only; storage usage is not admitted. */
+/* Imports borrow native handles; returned objects own independent leases.
+ * Exports borrow their backend handle until the shared fence is released.
+ * Texture/view/command lifetime remains with the canonical resource owner.
+ * Backend protocols remain explicit: DXGI admits the pinned simultaneous-access
+ * color subset, honors initialized/concurrentRead and exchanges timeline fences;
+ * keyed imports settle their own commands before release. Vulkan retains its
+ * external-image layout/fence protocol; Metal retains IOSurface/shared events.
+ * This subset does not imply every Dawn shared-memory policy or format. */
 DOE_LEGACY_API WGPUSharedFence wgpuDeviceImportSharedFence(WGPUDevice device, const WGPUSharedFenceDescriptor *descriptor);
 DOE_LEGACY_API void wgpuSharedFenceExportInfo(WGPUSharedFence fence, WGPUSharedFenceExportInfo *info);
 DOE_LEGACY_API void wgpuSharedFenceAddRef(WGPUSharedFence fence);

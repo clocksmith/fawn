@@ -240,7 +240,7 @@ void doeNativeAdapterGetPciIdentity(WGPUAdapter adapter, uint32_t *vendor_id, ui
     if (driver_version) *driver_version = driver;
 }
 
-WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out)
+WGPUStatus native_backend_info(const native_backend *backend, uint32_t offered_features, WGPUAdapterInfo *out)
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;
     const char *name, *architecture = "";
@@ -273,7 +273,7 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
     }
     else if (backend->kind == WGPUBackendType_D3D12) {
         const doe_dx_caps *caps = &backend->value.d3d12.caps;
-        if (native_adapter_features(backend) & NATIVE_FEATURE(WGPUFeatureName_Subgroups)) {
+        if (offered_features & NATIVE_FEATURE(WGPUFeatureName_Subgroups)) {
             result.subgroupMinSize = caps->wave_lane_count_min;
             result.subgroupMaxSize = caps->wave_lane_count_max;
         }

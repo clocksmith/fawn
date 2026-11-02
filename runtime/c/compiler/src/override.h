@@ -43,5 +43,5 @@ bool override_plan(Source *);
 bool override_reparse(Source *);
 DoeCompilerStatus compiler_specialized_text(uint32_t, const DoeCompilerTextCapacities *,
     void *, size_t, const char *, size_t, const DoeCompilerEntrySelectionV5 *, uint32_t,
-    const DoeCompilerSpecializationOutputs *, DoeCompilerTextResult *, SpecializationContext *);
+    const DoeCompilerSpecializationOutputs *, DoeCompilerTextResult *, SpecializationContext *, CompilerPrepared *);
 #endif

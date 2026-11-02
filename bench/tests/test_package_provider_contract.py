@@ -107,7 +107,7 @@ int main(void) {
         with tempfile.TemporaryDirectory() as out:
             source=Path(out)/'probe.c';source.write_text(code);binary=Path(out)/'probe'
             run=subprocess.run([shutil.which('cc') or 'cc','-std=c11','-Wall','-Wextra','-Werror',
-                '-I'+str(ROOT/'runtime/zig/vendor/webgpu-headers'),str(source),'-o',str(binary)],capture_output=True,text=True,timeout=30)
+                '-I'+str(ROOT/'runtime/vendor/webgpu-headers'),str(source),'-o',str(binary)],capture_output=True,text=True,timeout=30)
             self.assertEqual(run.returncode,0,run.stdout+run.stderr)
             run=subprocess.run([str(binary)],capture_output=True,text=True,timeout=5)
             self.assertEqual(run.returncode,0,run.stdout+run.stderr)

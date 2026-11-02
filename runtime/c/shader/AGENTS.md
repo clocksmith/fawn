@@ -1,8 +1,9 @@
 # Owned shader boundary
 
 Read the parent C guide and this component's [charter](CATSCAN.md). Compiler
-ABI13 validates the whole symbolic module; specialize the same saved source and
-policy through its typed API. Never substitute source, reinterpret stage layouts,
+ABI20 retains whole-module validation or specialization in explicit caller-owned
+compiler workspace and publishes it once into exact owned spans. ABI13/18 semantics
+remain unchanged. Never substitute source, reinterpret stage layouts,
 or infer executable support from module validation.
 
 Keep module-only and executable borrows distinct, with untouched outputs on
@@ -12,7 +13,7 @@ and retains the immutable module through the existing tagged reference owner.
 Compare double representations as bytes, preserving signed zero; conservative
 ordered identity is allowed, inferred equivalence is not. Retain legacy creation.
 
-Use the same target/semantic flags and stable input snapshots in measure and fill.
+Use the same target/semantic flags and stable input snapshots in prepare and publication.
 Revalidate post-allocator row lengths before copying into an admitted extent; never
 reread a mutable caller extent to size or advance an owned buffer. Source, identity
 and selection bytes must be saved before the first compiler pass.

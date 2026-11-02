@@ -4,7 +4,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
 #include "metal_bridge.h"
-#include "../../../vendor/webgpu-headers/webgpu.h"
+#include "../../../../vendor/webgpu-headers/webgpu.h"
 #include <string.h>
 #include <math.h>
 #include <dispatch/dispatch.h>

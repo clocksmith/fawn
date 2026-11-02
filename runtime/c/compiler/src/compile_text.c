@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "text_internal.h"
 #include "override.h"
+#include "prepared_internal.h"
 #include <errno.h>
 #include <string.h>
 
@@ -184,10 +185,49 @@ static bool lower_text(uint32_t target_kind, Source *source, const DoeCompilerTe
     }
     return true;
 }
+static void publish_text_outputs(Source *context, const CompilerMetadata *metadata, uint32_t selected,
+    uint32_t target, bool dense_metal, uint32_t flags, const TextOutputs *outputs,
+    DoeCompilerTextResult *result, const void *text_source, const void *bindings_source, const void *entries_source)
+{
+    DoeCompilerModuleResult *module = &result->stages.resources.module;
+    if (result->required_text_bytes != 0u)
+        memcpy(outputs->text, text_source, result->required_text_bytes);
+    if ((flags & DOE_COMPILER_TEXT_REFLECTION) != 0u) {
+        compiler_metadata_publish(context, metadata, selected, DOE_COMPILER_ATOMIC_SCHEMA_VERSION,
+            &outputs->stages.resources.module, module, &outputs->stages.resources, &result->stages.resources,
+            &outputs->stages, &result->stages);
+        if (dense_metal) {
+            if (result->required_bindings != 0u)
+                memcpy(outputs->value.metal12.bindings, bindings_source,
+                    result->required_bindings * sizeof(*outputs->value.metal12.bindings));
+            if (result->required_entries != 0u)
+                memcpy(outputs->value.metal12.entries, entries_source,
+                    result->required_entries * sizeof(*outputs->value.metal12.entries));
+        } else if (target == DOE_COMPILER_TARGET_METAL) {
+            if (result->required_bindings != 0u)
+                memcpy(outputs->value.metal.bindings, bindings_source,
+                    result->required_bindings * sizeof(*outputs->value.metal.bindings));
+            if (result->required_entries != 0u)
+                memcpy(outputs->value.metal.entries, entries_source,
+                    result->required_entries * sizeof(*outputs->value.metal.entries));
+        } else {
+            if (result->required_bindings != 0u)
+                memcpy(outputs->value.hlsl.bindings, bindings_source,
+                    result->required_bindings * sizeof(*outputs->value.hlsl.bindings));
+            if (result->required_entries != 0u)
+                memcpy(outputs->value.hlsl.entries, entries_source,
+                    result->required_entries * sizeof(*outputs->value.hlsl.entries));
+        }
+    }
+    result->published_text_bytes = result->required_text_bytes;
+    result->published_bindings = result->required_bindings;
+    result->published_entries = result->required_entries;
+    module->published = metadata->counts;
+}
 static DoeCompilerStatus compile_text(uint32_t target,
     const DoeCompilerTextCapacities *capacities, void *workspace, size_t workspace_size,
     const char *source, size_t length, const DoeCompilerEntrySelectionV5 *selection,
-    uint32_t flags, const TextOutputs *outputs, DoeCompilerTextResult *result, bool dense_metal, SpecializationContext *specialization) {
+    uint32_t flags, const TextOutputs *outputs, DoeCompilerTextResult *result, bool dense_metal, SpecializationContext *specialization, CompilerPrepared *prepared) {
     const int saved_errno = errno;
     memset(result, 0, sizeof(*result));
     DoeCompilerModuleResult *module = &result->stages.resources.module;
@@ -226,41 +266,19 @@ static DoeCompilerStatus compile_text(uint32_t target,
     if (!lowered || !restored) return finish(module->diagnostic.status, saved_errno);
     result->target = target;
     result->language_version = target == DOE_COMPILER_TARGET_METAL ? 300u : 600u;
-    if ((flags & DOE_COMPILER_TEXT_MEASURE) != 0u) return finish(DOE_COMPILER_OK, saved_errno);
-    const unsigned char *memory = workspace;
-    if (result->required_text_bytes != 0u)
-        memcpy(outputs->text, memory + layout.text, result->required_text_bytes);
-    if ((flags & DOE_COMPILER_TEXT_REFLECTION) != 0u) {
-        compiler_metadata_publish(&context, &metadata, selected, DOE_COMPILER_ATOMIC_SCHEMA_VERSION,
-            &outputs->stages.resources.module, module, &outputs->stages.resources, &result->stages.resources,
-            &outputs->stages, &result->stages);
-        if (dense_metal) {
-            if (result->required_bindings != 0u)
-                memcpy(outputs->value.metal12.bindings, memory + layout.bindings,
-                    result->required_bindings * sizeof(*outputs->value.metal12.bindings));
-            if (result->required_entries != 0u)
-                memcpy(outputs->value.metal12.entries, memory + layout.entries,
-                    result->required_entries * sizeof(*outputs->value.metal12.entries));
-        } else if (target == DOE_COMPILER_TARGET_METAL) {
-            if (result->required_bindings != 0u)
-                memcpy(outputs->value.metal.bindings, memory + layout.bindings,
-                    result->required_bindings * sizeof(*outputs->value.metal.bindings));
-            if (result->required_entries != 0u)
-                memcpy(outputs->value.metal.entries, memory + layout.entries,
-                    result->required_entries * sizeof(*outputs->value.metal.entries));
-        } else {
-            if (result->required_bindings != 0u)
-                memcpy(outputs->value.hlsl.bindings, memory + layout.bindings,
-                    result->required_bindings * sizeof(*outputs->value.hlsl.bindings));
-            if (result->required_entries != 0u)
-                memcpy(outputs->value.hlsl.entries, memory + layout.entries,
-                    result->required_entries * sizeof(*outputs->value.hlsl.entries));
+    if ((flags & DOE_COMPILER_TEXT_MEASURE) != 0u) {
+        if (prepared) {
+            compiler_prepared_capture(prepared, &context, &metadata, selected);
+            prepared->closure_offset = layout.closure;
+            prepared->closure_bytes = layout.closure_bytes;
+            prepared->bindings_offset = layout.bindings;
+            prepared->entries_offset = layout.entries;
         }
+        return finish(DOE_COMPILER_OK, saved_errno);
     }
-    result->published_text_bytes = result->required_text_bytes;
-    result->published_bindings = result->required_bindings;
-    result->published_entries = result->required_entries;
-    module->published = metadata.counts;
+    const unsigned char *memory = workspace;
+    publish_text_outputs(&context, &metadata, selected, target, dense_metal, flags, outputs, result,
+        memory + layout.text, memory + layout.bindings, memory + layout.entries);
     return finish(DOE_COMPILER_OK, saved_errno);
 }
 
@@ -284,7 +302,7 @@ DoeCompilerStatus doe_compiler_compile_text(uint32_t version, uint32_t target,
      * initialization. Only the additive typed ABI11 facade selects HLSL. */
     return compile_text(target == DOE_COMPILER_TARGET_METAL ? target : 0u, capacities,
         workspace, workspace_size, source, length, selection, flags,
-        outputs != NULL ? &normalized : NULL, result, false, NULL);
+        outputs != NULL ? &normalized : NULL, result, false, NULL, NULL);
 }
 
 DoeCompilerStatus doe_compiler_hlsl_requirements(uint32_t version,
@@ -324,7 +342,7 @@ DoeCompilerStatus doe_compiler_compile_hlsl(uint32_t version,
         .entry_capacity=outputs->entry_capacity,
         .value.hlsl={outputs->bindings, outputs->entries}};
     return compile_text(DOE_COMPILER_TARGET_HLSL, capacities, workspace, workspace_size,
-        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, false, NULL);
+        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, false, NULL, NULL);
 }
 
 DoeCompilerStatus doe_compiler_metal_requirements(uint32_t version,
@@ -362,14 +380,14 @@ DoeCompilerStatus doe_compiler_compile_metal(uint32_t version,
         .text_capacity=outputs->text_capacity,.binding_capacity=outputs->binding_capacity,
         .entry_capacity=outputs->entry_capacity,.value.metal12={outputs->bindings, outputs->entries}};
     return compile_text(DOE_COMPILER_TARGET_METAL, capacities, workspace, workspace_size,
-        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, true, NULL);
+        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, true, NULL, NULL);
 }
 
 DoeCompilerStatus compiler_specialized_text(uint32_t target,
     const DoeCompilerTextCapacities *caps, void *workspace, size_t workspace_size,
     const char *source, size_t length, const DoeCompilerEntrySelectionV5 *selection,
     uint32_t flags, const DoeCompilerSpecializationOutputs *outputs,
-    DoeCompilerTextResult *result, SpecializationContext *context) {
+    DoeCompilerTextResult *result, SpecializationContext *context, CompilerPrepared *prepared) {
     TextOutputs normalized = {0};
     if (outputs != NULL) {
         if (target == DOE_COMPILER_TARGET_METAL) {
@@ -385,5 +403,73 @@ DoeCompilerStatus compiler_specialized_text(uint32_t target,
         }
     }
     return compile_text(target, caps, workspace, workspace_size, source, length, selection,
-        flags, outputs != NULL ? &normalized : NULL, result, target == DOE_COMPILER_TARGET_METAL, context);
+        flags, outputs != NULL ? &normalized : NULL, result, target == DOE_COMPILER_TARGET_METAL, context, prepared);
+}
+
+DoeCompilerStatus compiler_prepare_text(CompilerPrepared *prepared,
+    void *workspace, size_t bytes, const char *source, size_t length)
+{
+    const DoeCompilerPrepareOptionsV20 *options = &prepared->options;
+    return compile_text(options->target, &options->capacities.sampling.specialization.target,
+        workspace, bytes, source, length, &options->selection,
+        prepared->flags | DOE_COMPILER_TEXT_MEASURE, NULL,
+        &prepared->result.compiled.translation.sampling.target,
+        options->target == DOE_COMPILER_TARGET_METAL, NULL, prepared);
+}
+DoeCompilerStatus compiler_publish_text(CompilerPrepared *prepared,
+    const DoeCompilerTranslationOutputsV17 *out, void *scratch, size_t scratch_size)
+{
+    const uint32_t target = prepared->options.target;
+    const bool metal = target == DOE_COMPILER_TARGET_METAL;
+    const DoeCompilerSpecializationOutputs *outputs = &out->sampling.target;
+    TextOutputs normalized = {0};
+    if (metal) normalized = (TextOutputs){.stages=outputs->metal.stages,.text=outputs->metal.text,
+        .text_capacity=outputs->metal.text_capacity,.binding_capacity=outputs->metal.binding_capacity,
+        .entry_capacity=outputs->metal.entry_capacity,
+        .value.metal12={outputs->metal.bindings,outputs->metal.entries}};
+    else normalized = (TextOutputs){.stages=outputs->hlsl.stages,.text=outputs->hlsl.text,
+        .text_capacity=outputs->hlsl.text_capacity,.binding_capacity=outputs->hlsl.binding_capacity,
+        .entry_capacity=outputs->hlsl.entry_capacity,.value.hlsl={outputs->hlsl.bindings,outputs->hlsl.entries}};
+    Source *source = &prepared->source;
+    DoeCompilerTextResult *result = &prepared->result.compiled.translation.sampling.target;
+    DoeCompilerModuleResult *module = &result->stages.resources.module;
+    if (!text_spans(source, target, prepared->flags, &normalized, metal)) return module->diagnostic.status;
+    if (!compiler_metadata_fits(&prepared->metadata, &normalized.stages.resources.module,
+            &normalized.stages.resources, &normalized.stages) || normalized.text_capacity < result->required_text_bytes ||
+        normalized.binding_capacity < result->required_bindings || normalized.entry_capacity < result->required_entries ||
+        scratch_size < result->required_text_bytes || (!scratch && result->required_text_bytes)) {
+        (void)source_error(source, DOE_COMPILER_OUTPUT_TOO_SMALL, source->length,
+            "retained text output or publication scratch capacity is too small");
+        return module->diagnostic.status;
+    }
+    unsigned char *memory = (unsigned char *)prepared + prepared->body_offset;
+    DoeTargetScratch closure = {memory + prepared->closure_offset, prepared->closure_bytes};
+    NumericEnvironment environment;
+    bool emitted = numeric_environment_begin(source, &environment);
+    size_t written = 0u;
+    if (emitted && result->required_text_bytes) {
+        if (metal) {
+            DoeMetalMetadata plan = {.bindings=(DoeCompilerMetalBindingV12 *)(memory + prepared->bindings_offset),
+                .binding_capacity=source->compiler->limits.entry_references,.binding_count=result->required_bindings,
+                .entries=(DoeCompilerMetalEntryV12 *)(memory + prepared->entries_offset),
+                .entry_capacity=source->compiler->limits.entries,.entry_count=result->required_entries};
+            DoeMetalResult emitted_text;
+            emitted = doe_metal_emit_dense(source, source->compiler, prepared->selected, closure,
+                &plan, scratch, scratch_size, &emitted_text) == DOE_COMPILER_OK;
+            written = emitted_text.written_bytes;
+        } else {
+            DoeHlslResult emitted_text;
+            emitted = doe_hlsl_emit(source, source->compiler, prepared->selected, closure,
+                scratch, scratch_size, &emitted_text) == DOE_COMPILER_OK;
+            written = emitted_text.written_bytes;
+        }
+        if (emitted && written != result->required_text_bytes)
+            emitted = source_error(source, DOE_COMPILER_INPUT_ERROR, source->length,
+                "retained text serialization changed after measurement");
+    }
+    const bool restored = numeric_environment_end(source, &environment);
+    if (!emitted || !restored) return module->diagnostic.status;
+    publish_text_outputs(source, &prepared->metadata, prepared->selected, target, metal, prepared->flags,
+        &normalized, result, scratch, memory + prepared->bindings_offset, memory + prepared->entries_offset);
+    return DOE_COMPILER_OK;
 }

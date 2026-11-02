@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_draw_guard.h"
 #include "d3d12_texture_desc.h"
+#include "shared_memory_internal.h"
 #include <stdlib.h>
 
 #if defined(_WIN32)
@@ -21,7 +22,8 @@ static native_texture *attachment_texture(doe_resource_view *view,doe_dx_texture
     doe_resource_texture *texture=doe_resource_view_texture(view);
     const doe_resource_texture_desc *desc=doe_resource_texture_description(texture);
     native_texture *native=doe_resource_texture_native(texture);
-    if (!doe_resource_view_native(view) || !span || !desc || !native || !native->d3d12 ||
+    if (!native_shared_texture_accessible(texture) ||
+        !doe_resource_view_native(view) || !span || !desc || !native || !native->d3d12 ||
         (span->dimension!=WGPUTextureViewDimension_2D && span->dimension!=WGPUTextureViewDimension_2DArray &&
          span->dimension!=WGPUTextureViewDimension_3D) ||
         span->mip_count!=1 || span->layer_count!=1 || !native_d3d12_view_descriptor(span,desc,out)) return NULL;
@@ -103,10 +105,12 @@ native_failure native_d3d12_render(native_command_handle *commands,
     const doe_resource_render_packet *begin=doe_resource_render_record_borrow(records[0].value.render);
     if (!begin || !begin->boundary_only || !begin->first_in_pass || begin->last_in_pass ||
         !same_targets(&begin->targets,&begin->targets)) return native_failure_status(NATIVE_UNSUPPORTED);
-    size_t end=0;
+    size_t end=0,draws_count=0;
     for (size_t i=1;i<count;++i) {
         if (records[i].kind==DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind==DOE_COMMAND_END_OCCLUSION) {
             if (records[i].value.timestamp.set!=begin->targets.occlusion_queries) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+            if (draws_count==SIZE_MAX) return native_failure_status(NATIVE_OUT_OF_MEMORY);
+            ++draws_count;
             continue;
         }
         if (records[i].kind!=DOE_COMMAND_RENDER) return native_failure_status(NATIVE_UNSUPPORTED);
@@ -119,6 +123,9 @@ native_failure native_d3d12_render(native_command_handle *commands,
             break;
         }
         if (packet->last_in_pass) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+        size_t draws=doe_resource_render_record_draw_count(records[i].value.render);
+        if (draws>SIZE_MAX-draws_count) return native_failure_status(NATIVE_OUT_OF_MEMORY);
+        draws_count+=draws;
     }
     if (!end) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     doe_dx_render_color colors[DOE_DX_MAX_COLOR_TARGETS]={0};
@@ -126,24 +133,31 @@ native_failure native_d3d12_render(native_command_handle *commands,
         native_failure result=color_attachment(&begin->targets.colors[i],&colors[i]);
         if (result.status!=NATIVE_OK) return result;
     }
-    size_t draws_count=end-1;
     if (draws_count>SIZE_MAX/sizeof(native_d3d12_graphics_snapshot) || draws_count>SIZE_MAX/sizeof(doe_dx_render_draw))
         return native_failure_status(NATIVE_OUT_OF_MEMORY);
     native_d3d12_graphics_snapshot *storage=draws_count ? calloc(draws_count,sizeof(*storage)) : NULL;
     doe_dx_render_draw *draws=draws_count ? calloc(draws_count,sizeof(*draws)) : NULL;
     native_failure failure=native_failure_status(draws_count && (!storage || !draws) ? NATIVE_OUT_OF_MEMORY : NATIVE_OK);
-    for (size_t i=0;failure.status==NATIVE_OK && i<draws_count;++i) {
-        const doe_resource_command *record=&records[i+1];
+    size_t draw_at=0;
+    for (size_t i=1;failure.status==NATIVE_OK && i<end;++i) {
+        const doe_resource_command *record=&records[i];
         if (record->kind==DOE_COMMAND_BEGIN_OCCLUSION || record->kind==DOE_COMMAND_END_OCCLUSION) {
             native_queries *queries=doe_resource_query_set_native(record->value.timestamp.set);
             if (!queries || !queries->d3d12_queries) { failure=native_failure_status(NATIVE_INVALID_ARGUMENT); break; }
-            draws[i].query=queries->d3d12_queries; draws[i].query_index=record->value.timestamp.index;
-            draws[i].query_begin=record->kind==DOE_COMMAND_BEGIN_OCCLUSION;
+            draws[draw_at].query=queries->d3d12_queries; draws[draw_at].query_index=record->value.timestamp.index;
+            draws[draw_at++].query_begin=record->kind==DOE_COMMAND_BEGIN_OCCLUSION;
             continue;
         }
-        const doe_resource_render_packet *packet=doe_resource_render_record_borrow(record->value.render);
-        failure=prepare_draw(packet,&draws[i],&storage[i]);
-        if (failure.status==NATIVE_OK) failure=native_d3d12_draw_prepare(commands,packet,&draws[i],&storage[i]);
+        for (size_t j=0;failure.status==NATIVE_OK && j<doe_resource_render_record_draw_count(record->value.render);++j) {
+            doe_resource_render_packet packet;
+            if (!doe_resource_render_record_draw(record->value.render,j,&packet)) {
+                failure=native_failure_status(NATIVE_INVALID_ARGUMENT); break;
+            }
+            failure=prepare_draw(&packet,&draws[draw_at],&storage[draw_at]);
+            if (failure.status==NATIVE_OK)
+                failure=native_d3d12_draw_prepare(commands,&packet,&draws[draw_at],&storage[draw_at]);
+            ++draw_at;
+        }
     }
     doe_dx_render_pass pass={.colors_explicit=true,.colors=colors,.color_count=begin->targets.color_count,
         .draws=draws,.draw_count=draws_count};
@@ -151,7 +165,8 @@ native_failure native_d3d12_render(native_command_handle *commands,
         doe_resource_view *depth_view=begin->targets.depth_stencil;
         const doe_resource_view_desc *depth_span=doe_resource_view_description(depth_view);
         native_texture *depth=doe_resource_texture_native(doe_resource_view_texture(depth_view));
-        if (!depth_span || !depth || !depth->d3d12 ||
+        if (!native_shared_texture_accessible(doe_resource_view_texture(depth_view)) ||
+            !depth_span || !depth || !depth->d3d12 ||
             (depth_span->dimension!=WGPUTextureViewDimension_2D && depth_span->dimension!=WGPUTextureViewDimension_2DArray) ||
             depth_span->mip_count!=1 || depth_span->layer_count!=1 ||
             !native_d3d12_view_descriptor(depth_span,doe_resource_texture_description(doe_resource_view_texture(depth_view)),&pass.depth_view))

@@ -2,7 +2,7 @@ CC = gcc
 CXX = g++
 AR = ar
 BUILD ?= build
-CPPFLAGS += -Iinclude -Iintegration -I../../zig/vendor/webgpu-headers
+CPPFLAGS += -Iinclude -Iintegration -I../../vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -fPIC -fno-short-enums -fstack-usage -Wall -Wextra -Wpedantic -Werror -pthread
 CXXFLAGS ?= -O2 -g
@@ -10,7 +10,7 @@ CXXFLAGS += -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Wpedantic -Werro
 LDLIBS += -pthread
 OBJECTS = $(BUILD)/error_scopes.o $(BUILD)/doe_error_scopes_zig_bridge.o
 HEADERS = $(wildcard ../platform/include/*.h) include/doe_error_scopes.h src/internal.h integration/doe_error_scopes_zig_bridge.h \
-          ../../zig/vendor/webgpu-headers/webgpu.h
+          ../../vendor/webgpu-headers/webgpu.h
 
 .PHONY: all check check-api check-faults check-concurrency check-layout native-archive
 all: $(BUILD)/libdoe_error_scopes.a

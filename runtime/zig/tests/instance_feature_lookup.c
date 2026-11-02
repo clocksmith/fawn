@@ -1,5 +1,5 @@
 // Exercise the shipped ABI, not the unit suite's wgpuGetProcAddress stub.
-// cc -I vendor/webgpu-headers tests/instance_feature_lookup.c -o /tmp/instance-feature-lookup
+// cc -I ../vendor/webgpu-headers tests/instance_feature_lookup.c -o /tmp/instance-feature-lookup
 // /tmp/instance-feature-lookup /absolute/path/libwebgpu_doe_full.dylib
 #include <dlfcn.h>
 #include <stdint.h>

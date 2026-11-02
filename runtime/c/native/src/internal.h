@@ -34,6 +34,7 @@ typedef struct native_adapter {
     doe_mutex mutex; /* Serializes surface queries on the adapter's own context. */
     doe_instance *instance;
     native_backend backend;
+    uint32_t features; /* Immutable adapter support, discovered before publication. */
     native_shared_identity *identity; /* Metal; see shader_identity_worker.h. */
 } native_adapter;
 
@@ -318,7 +319,7 @@ void native_indirect_guards_release(native_device *device);
 #define NATIVE_FEATURE(name) (UINT32_C(1) << (uint32_t)(name))
 bool native_vulkan_subgroups_supported(const doe_vk_caps *caps);
 uint32_t native_adapter_features(const native_backend *backend);
-bool native_requested_features(const native_backend *backend, const WGPUDeviceDescriptor *descriptor, uint32_t *enabled);
+bool native_requested_features(uint32_t offered, const WGPUDeviceDescriptor *descriptor, uint32_t *enabled);
 bool native_feature_enabled(const native_device *device, WGPUFeatureName feature);
 doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_command *record);
 WGPUComputePipeline native_create_compute_pipeline(native_device *device,

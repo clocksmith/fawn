@@ -148,7 +148,7 @@ def source_inputs(owners: list[Path]) -> list[Path]:
     headers |= set(C_ROOT.joinpath('common/include').glob('*.h'))
     for owner in owners:
         headers |= set(owner.joinpath('include').glob('*.h')) | set(owner.joinpath('src').glob('*.h'))
-    return sorted(headers) + [ROOT / 'sources.mk', REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h',
+    return sorted(headers) + [ROOT / 'sources.mk', REPO / 'runtime/vendor/webgpu-headers/webgpu.h',
                               ROOT / 'tests/d3d12_graphics.c', ROOT / 'tests/consumer.h',
                               ROOT / 'tests/adapter_class.h', Path(__file__).resolve(),
                               ROOT / 'tools/build_windows.py']
@@ -257,7 +257,7 @@ def main() -> int:
         source = out / 'graphics_diagnostic.c'
         source.write_text(wrapper_source(), encoding='utf-8')
         result['generated_source_sha256'] = digest(source)
-        includes = [ROOT / 'include', REPO / 'runtime/zig/vendor/webgpu-headers', C_ROOT / 'compiler/include']
+        includes = [ROOT / 'include', REPO / 'runtime/vendor/webgpu-headers', C_ROOT / 'compiler/include']
         includes.extend(owner / 'include' for owner in owners)
         executable = out / 'graphics_diagnostic.exe'
         command = [compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/MD', '/O2', '/WX',

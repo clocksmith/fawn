@@ -1,5 +1,5 @@
 // Windows public command-buffer consumption: duplicate/reused submission must not execute.
-// zig cc -I vendor/webgpu-headers tests/d3d12_command_consumption.c -o readback.exe
+// zig cc -I ../vendor/webgpu-headers tests/d3d12_command_consumption.c -o readback.exe
 // readback.exe <absolute path to webgpu_doe_full.dll>
 #include <windows.h>
 #include <stdint.h>

@@ -83,7 +83,11 @@ void wgpuSharedFenceRelease(WGPUSharedFence fence)
     native_lock(device);
     if (doe_label_store_remove(device->labels, fence) != DOE_LABEL_OK) abort();
     if (device->backend.kind == WGPUBackendType_Metal) doe_mtl_shared_event_release(metal_context(device), fence->event);
-    else doe_vk_external_close_fd(fence->sync_fd);
+    else if (device->backend.kind==WGPUBackendType_D3D12) {
+#if defined(_WIN32)
+        doe_dx_shared_fence_release(fence->d3d12);
+#endif
+    } else doe_vk_external_close_fd(fence->sync_fd);
     native_unlock(device);
     fence->magic = 0;
     free(fence);
@@ -102,6 +106,8 @@ WGPUSharedFence wgpuDeviceImportSharedFence(WGPUDevice handle,
     native_device *device = (native_device *)handle;
     if (device && device->backend.kind == WGPUBackendType_Vulkan && descriptor)
         return native_vulkan_import_shared_fence(device, descriptor);
+    if (device && device->backend.kind==WGPUBackendType_D3D12 && descriptor)
+        return native_d3d12_import_shared_fence(device,descriptor);
     if (!device || device->backend.kind != WGPUBackendType_Metal || !descriptor) return NULL;
     const WGPUSharedFenceMTLSharedEventDescriptor *source = (const void *)native_shared_find_chain(
         descriptor->nextInChain, DOE_SHARED_STYPE_MTL_EVENT_DESCRIPTOR);
@@ -136,6 +142,17 @@ void wgpuSharedFenceExportInfo(WGPUSharedFence fence, WGPUSharedFenceExportInfo 
         if (output) output->handle = fence->sync_fd;
         return;
     }
+    if (fence->device->backend.kind==WGPUBackendType_D3D12) {
+        info->type=DOE_SHARED_FENCE_DXGI;
+        WGPUSharedFenceDXGISharedHandleExportInfo *output=(void *)native_shared_find_chain(
+            info->nextInChain,DOE_SHARED_STYPE_DXGI_FENCE_EXPORT);
+#if defined(_WIN32)
+        if (output) output->handle=doe_dx_shared_fence_handle(fence->d3d12);
+#else
+        if (output) output->handle=NULL;
+#endif
+        return;
+    }
     info->type = DOE_SHARED_FENCE_MTL_EVENT;
     WGPUSharedFenceMTLSharedEventExportInfo *output = (void *)native_shared_find_chain(
         info->nextInChain, DOE_SHARED_STYPE_MTL_EVENT_EXPORT);
@@ -154,7 +171,11 @@ void wgpuSharedTextureMemoryRelease(WGPUSharedTextureMemory memory)
     if (doe_label_store_remove(device->labels, memory) != DOE_LABEL_OK) abort();
     if (device->access_batch_memory == memory) device->access_batch_memory = NULL;
     if (device->backend.kind == WGPUBackendType_Metal) doe_mtl_shared_surface_release(metal_context(device), memory->surface);
-    else doe_vk_texture_release(memory->vulkan);
+    else if (device->backend.kind==WGPUBackendType_D3D12) {
+#if defined(_WIN32)
+        doe_dx_texture_release(memory->d3d12);
+#endif
+    } else doe_vk_texture_release(memory->vulkan);
     native_unlock(device);
     memory->magic = 0;
     free(memory);
@@ -173,6 +194,8 @@ WGPUSharedTextureMemory wgpuDeviceImportSharedTextureMemory(WGPUDevice handle,
     native_device *device = (native_device *)handle;
     if (device && device->backend.kind == WGPUBackendType_Vulkan && descriptor)
         return native_vulkan_import_shared_memory(device, descriptor);
+    if (device && device->backend.kind==WGPUBackendType_D3D12 && descriptor)
+        return native_d3d12_import_shared_memory(device,descriptor);
     if (!device || device->backend.kind != WGPUBackendType_Metal || !descriptor) return NULL;
     const WGPUSharedTextureMemoryIOSurfaceDescriptor *source = (const void *)native_shared_find_chain(
         descriptor->nextInChain, DOE_SHARED_STYPE_IOSURFACE);
@@ -219,6 +242,10 @@ void native_shared_texture_finalize(void *userdata, void *handle)
         memory->access = SHARED_IDLE;
         /* The access ended without End: no queue release of it is handed out. */
         if (memory->device->backend.kind == WGPUBackendType_Vulkan) doe_vk_texture_external_reset(memory->vulkan);
+#if defined(_WIN32)
+        if (memory->device->backend.kind==WGPUBackendType_D3D12)
+            (void)doe_dx_shared_texture_end(memory->d3d12,NULL);
+#endif
     }
     native_unlock(memory->device);
     native_texture_release(NULL, &payload->texture);
@@ -242,6 +269,8 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
     if (!valid_memory(memory) || !descriptor) return NULL;
     if (memory->device->backend.kind == WGPUBackendType_Vulkan)
         return native_vulkan_shared_create_texture(memory, descriptor);
+    if (memory->device->backend.kind==WGPUBackendType_D3D12)
+        return native_d3d12_shared_create_texture(memory,descriptor);
     wgpuSharedTextureMemoryAddRef(memory);
     native_device *device = memory->device;
     doe_resource_texture *texture = NULL;
@@ -300,12 +329,22 @@ WGPUTexture wgpuSharedTextureMemoryCreateTexture(WGPUSharedTextureMemory memory,
     return (WGPUTexture)texture;
 }
 
+bool native_shared_texture_accessible(doe_resource_texture *texture)
+{
+    native_texture *payload=doe_resource_texture_native(texture);
+    if (!payload) return false;
+    WGPUSharedTextureMemory memory=payload->shared_memory;
+    return !memory || (memory->access==SHARED_ACTIVE && memory->active_texture==texture);
+}
 bool native_shared_matches_texture(WGPUSharedTextureMemory memory, doe_resource_texture *texture)
 {
     if (!texture || doe_resource_texture_device(texture) != memory->device ||
         !doe_resource_texture_available(texture)) return false;
     native_texture *payload = doe_resource_texture_native(texture);
-    return payload && payload->shared_memory == memory && payload->metal;
+    if (!payload || payload->shared_memory!=memory) return false;
+    if (memory->device->backend.kind==WGPUBackendType_Metal) return payload->metal!=NULL;
+    if (memory->device->backend.kind==WGPUBackendType_D3D12) return payload->d3d12!=NULL;
+    return memory->device->backend.kind==WGPUBackendType_Vulkan && payload->texture!=NULL;
 }
 WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WGPUTexture handle,
     const WGPUSharedTextureMemoryBeginAccessDescriptor *descriptor)
@@ -313,6 +352,8 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     if (!valid_memory(memory) || !handle) return WGPUStatus_Error;
     if (memory->device->backend.kind == WGPUBackendType_Vulkan)
         return native_vulkan_shared_begin(memory, (doe_resource_texture *)handle, descriptor);
+    if (memory->device->backend.kind==WGPUBackendType_D3D12)
+        return native_d3d12_shared_begin(memory,(doe_resource_texture *)handle,descriptor);
     size_t count = descriptor ? descriptor->fenceCount : 0;
     if (descriptor && count != descriptor->signaledValueCount) return WGPUStatus_Error;
     if (count && (!descriptor->fences || !descriptor->signaledValues || count > SIZE_MAX / sizeof(shared_wait)))
@@ -398,6 +439,8 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
     if (!valid_memory(memory) || !handle) return WGPUStatus_Error;
     if (memory->device->backend.kind == WGPUBackendType_Vulkan)
         return native_vulkan_shared_end(memory, (doe_resource_texture *)handle, state);
+    if (memory->device->backend.kind==WGPUBackendType_D3D12)
+        return native_d3d12_shared_end(memory,(doe_resource_texture *)handle,state);
     wgpuSharedTextureMemoryAddRef(memory);
     doe_resource_texture *texture = (doe_resource_texture *)handle;
     doe_resource_texture_retain(texture);
@@ -475,7 +518,7 @@ WGPUStatus wgpuSharedTextureMemoryGetProperties(WGPUSharedTextureMemory memory,
     if (!valid_memory(memory)) return WGPUStatus_Error;
     native_lock(memory->device);
     if (properties) {
-        properties->usage = memory->device->backend.kind == WGPUBackendType_Vulkan ? memory->usage : shared_usage;
+        properties->usage = memory->device->backend.kind != WGPUBackendType_Metal ? memory->usage : shared_usage;
         properties->size = (WGPUExtent3D){memory->width,memory->height,1};
         properties->format = memory->format;
     }

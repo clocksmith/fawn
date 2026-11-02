@@ -1346,7 +1346,7 @@ index 6030a9f57c..f04c8db797 100644
                             /*x*/ 0, /*y*/ 0);
  
        // It's ok to pass in empty GrFlushInfo here since SignalSemaphores()
-@@ -1545,6 +1581,23 @@ WGPUFuture WebGPUDecoderImpl::RequestDeviceImpl(
+@@ -1545,6 +1581,32 @@ WGPUFuture WebGPUDecoderImpl::RequestDeviceImpl(
      }
    }
  
@@ -1364,6 +1364,15 @@ index 6030a9f57c..f04c8db797 100644
 +    required_features.push_back(wgpu::FeatureName::SharedFenceSyncFD);
 +    required_features.push_back(
 +        wgpu::FeatureName::SharedFenceVkSemaphoreOpaqueFD);
++  }
++#elif BUILDFLAG(IS_WIN)
++  if (use_doe_runtime_ &&
++      adapter_obj.HasFeature(
++          wgpu::FeatureName::SharedTextureMemoryDXGISharedHandle) &&
++      adapter_obj.HasFeature(wgpu::FeatureName::SharedFenceDXGISharedHandle)) {
++    required_features.push_back(
++        wgpu::FeatureName::SharedTextureMemoryDXGISharedHandle);
++    required_features.push_back(wgpu::FeatureName::SharedFenceDXGISharedHandle);
 +  }
 +#endif
 +
@@ -1486,7 +1495,7 @@ index 6030a9f57c..f04c8db797 100644
      for (dawn::native::Adapter& native_adapter :
           dawn_instance_->EnumerateAdapters(&adapter_options)) {
        native_adapter.SetUseTieredLimits(tiered_adapter_limits_);
-@@ -2114,11 +2210,70 @@ WebGPUDecoderImpl::AssociateMailboxDawn(
+@@ -2114,11 +2210,75 @@ WebGPUDecoderImpl::AssociateMailboxDawn(
      wgpu::TextureUsage usage,
      wgpu::TextureUsage internal_usage,
      std::vector<wgpu::TextureFormat> view_formats) {
@@ -1527,6 +1536,11 @@ index 6030a9f57c..f04c8db797 100644
 +                                             internal_usage,
 +                                             std::move(view_formats));
 +  }
++#elif BUILDFLAG(IS_WIN)
++  const bool interop =
++      backendType == wgpu::BackendType::D3D12 &&
++      device.HasFeature(wgpu::FeatureName::SharedTextureMemoryDXGISharedHandle) &&
++      device.HasFeature(wgpu::FeatureName::SharedFenceDXGISharedHandle);
 +#else
 +  const bool interop =
 +      device.HasFeature(wgpu::FeatureName::SharedTextureMemoryOpaqueFD) &&

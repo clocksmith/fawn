@@ -1,5 +1,5 @@
 // Windows public ABI compute oracle: one 32-byte storage array, bounded dispatch.
-// zig cc -I vendor/webgpu-headers tests/d3d12_compute_readback.c -o compute.exe
+// zig cc -I ../vendor/webgpu-headers tests/d3d12_compute_readback.c -o compute.exe
 // With DXC on process PATH: compute.exe <DLL> [float|int|repeat|reject|unsupported]
 #include <windows.h>
 #include <stdint.h>

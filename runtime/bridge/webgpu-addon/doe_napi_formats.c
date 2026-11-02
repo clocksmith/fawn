@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "../../zig/vendor/webgpu-headers/webgpu.h"
+#include "../../vendor/webgpu-headers/webgpu.h"
 
 /* Texture / primitive format converters */
 

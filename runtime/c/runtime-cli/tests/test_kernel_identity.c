@@ -19,6 +19,104 @@ void *__wrap_realloc(void *memory, size_t size)
     if (fail_allocation && ++allocation == fail_allocation) return NULL;
     return __real_realloc(memory, size);
 }
+static unsigned group_creations, view_creations;
+static bool reject_group;
+WGPUBindGroup __real_wgpuDeviceCreateBindGroup(WGPUDevice device, const WGPUBindGroupDescriptor *descriptor);
+WGPUBindGroup __wrap_wgpuDeviceCreateBindGroup(WGPUDevice device, const WGPUBindGroupDescriptor *descriptor)
+{
+    ++group_creations;
+    if (reject_group) return NULL;
+    return __real_wgpuDeviceCreateBindGroup(device, descriptor);
+}
+WGPUTextureView __real_wgpuTextureCreateView(WGPUTexture texture, const WGPUTextureViewDescriptor *descriptor);
+WGPUTextureView __wrap_wgpuTextureCreateView(WGPUTexture texture, const WGPUTextureViewDescriptor *descriptor)
+{
+    ++view_creations;
+    return __real_wgpuTextureCreateView(texture, descriptor);
+}
+
+static void binding_reuse(doe_runtime *runtime, doe_command *command)
+{
+    doe_trace_execution execution;
+    doe_kernel_binding *binding = command->as.dispatch.bindings;
+    pipeline_entry *pipeline = &runtime->pipelines[1];
+    WGPUBindGroup saved = pipeline->bound_groups[0];
+    WGPUBuffer saved_buffer = pipeline->bound_resources[0].buffer;
+    unsigned groups = group_creations;
+    doe_output_oracle oracle = {.group=0,.binding=0,.dispatch_count=1};
+    char actual[65], expected[65];
+    assert(runtime_validate_oracle(runtime, command, &oracle, actual, &execution));
+    uint32_t value = 22;
+    uint8_t digest[32];
+    doe_sha256(&value, sizeof(value), digest);
+    doe_sha256_hex(digest, expected);
+    assert(!strcmp(actual, expected) && group_creations == groups + 1);
+    assert(pipeline->bound_groups[0] == saved && pipeline->bound_resources[0].buffer == saved_buffer);
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 1);
+    /* Stream handle names do not invalidate groups when the native object is
+     * identical; clearing/recreating that handle must invalidate them. */
+    runtime->buffers.entries[0].handle = binding->handle = 2;
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 1);
+    runtime_buffer_table_clear(&runtime->buffers);
+    assert(runtime_create_buffer(runtime, 2, 512, &execution));
+    reject_group = true;
+    assert(!doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 2);
+    assert(pipeline->bound_groups[0] == saved && pipeline->bound_resources[0].buffer == saved_buffer);
+    reject_group = false;
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 3);
+    assert(pipeline->bound_resources[0].buffer != saved_buffer);
+    binding->buffer_size = 8;
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 4);
+    binding->buffer_offset = 256;
+    binding->buffer_size = 4;
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 5);
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 5);
+    binding->buffer_offset = 0;
+    binding->buffer_size = UINT64_MAX;
+    assert(doe_runtime_execute(runtime, command, &execution) && group_creations == groups + 6);
+}
+
+static void texture_reuse(doe_runtime *runtime, doe_command *command)
+{
+    doe_kernel_binding *original = command->as.dispatch.bindings;
+    doe_kernel_binding bindings[2] = {original[0],
+        {.binding=1,.handle=3,.resource=DOE_RESOURCE_TEXTURE,.sample_type=WGPUTextureSampleType_Float}};
+    bindings[0].buffer_size = 4;
+    command->as.dispatch.bindings = bindings;
+    command->as.dispatch.binding_count = 2;
+    unsigned groups = group_creations, views = view_creations;
+    doe_trace_execution execution;
+    doe_texture_desc desc = {.handle=3,.width=1,.height=1,.depth=1,.format=DOE_FORMAT_RGBA8_UNORM,
+        .usage=WGPUTextureUsage_TextureBinding};
+    assert(runtime_ensure_texture(runtime, &desc, &execution));
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(group_creations == groups + 1 && view_creations == views + 1);
+    pipeline_entry *pipeline = &runtime->pipelines[2];
+    WGPUTexture first = pipeline->bound_resources[1].texture;
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(group_creations == groups + 1 && view_creations == views + 1);
+    desc.width = 2;
+    assert(runtime_ensure_texture(runtime, &desc, &execution));
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(group_creations == groups + 2 && view_creations == views + 2);
+    assert(pipeline->bound_resources[1].texture != first);
+    desc.format = DOE_FORMAT_R8_UNORM;
+    assert(runtime_ensure_texture(runtime, &desc, &execution));
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(group_creations == groups + 3 && view_creations == views + 3);
+    assert(pipeline->bound_resources[1].format == WGPUTextureFormat_R8Unorm);
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(group_creations == groups + 3 && view_creations == views + 3);
+    /* Signature remains part of pipeline identity even for unused bindings. */
+    bindings[1].sample_type = WGPUTextureSampleType_UnfilterableFloat;
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(runtime->pipeline_count == 4 && group_creations == groups + 4 && view_creations == views + 4);
+    command->as.dispatch.binding_count = 1;
+    command->as.dispatch.bindings = original;
+    assert(doe_runtime_execute(runtime, command, &execution));
+    assert(group_creations == groups + 4 && view_creations == views + 4);
+}
+
 static void source_hash(unsigned value, char source[256], char hash[65])
 {
     int length = snprintf(source, 256, "@group(0) @binding(0) var<storage, read_write> out:array<u32>; "
@@ -94,10 +192,14 @@ int main(int argc, char **argv)
     command.as.dispatch.binding_count = 1;
     doe_trace_execution execution;
     assert(doe_runtime_prewarm_kernel(runtime, &command, &execution));
+    char *source_workspace = runtime->kernel_workspace.bytes;
+    char *path_workspace = runtime->kernel_workspace.paths[0];
     replace_source(argv[1], source[1]);
     for (size_t i = 0; i < 2; i++) {
         assert(doe_runtime_execute(runtime, &command, &execution));
         assert(!strcmp(execution.shader_source_sha256, hashes[1]));
+        assert(group_creations == 1 && !view_creations);
+        assert(runtime->kernel_workspace.bytes == source_workspace && runtime->kernel_workspace.paths[0] == path_workspace);
         doe_host_output row_output;
         FILE *row = doe_host_output_open(&row_output);
         const doe_trace_identity identity = {"doe-c-runtime", "doe_c_vulkan"};
@@ -127,6 +229,9 @@ int main(int argc, char **argv)
         assert(result == 22);
     }
     assert(runtime->pipeline_count == 2 && doe_runtime_source_receipt_count(runtime) == 2);
+    binding_reuse(runtime, &command);
+    texture_reuse(runtime, &command);
+    assert(doe_runtime_source_receipt_count(runtime) == 2);
     doe_command barrier = {.kind=DOE_COMMAND_BARRIER,.label="barrier"};
     assert(doe_runtime_execute(runtime, &barrier, &execution) && !execution.shader_source_sha256[0]);
     replace_source(argv[1], source[2]);
@@ -146,6 +251,6 @@ int main(int argc, char **argv)
     free(receipt_bytes);
     doe_runtime_close(runtime);
     assert(!remove(argv[1]));
-    puts("PASS exact source cache identity, same-path replacement, immutable receipts and allocation rollback; CPU Vulkan");
+    puts("PASS exact source cache identity, same-path replacement, immutable receipts, transactional binding/view reuse, isolated oracle and allocation rollback; CPU Vulkan");
     return 0;
 }

@@ -9,7 +9,7 @@ BUILD ?= $(DOE_C_TMP)/runtime-cli
 NATIVE_BUILD ?= $(BUILD)/native
 NATIVE_LIBRARY_NAME = $(NATIVE_LIBRARY_BASENAME)
 NATIVE_LIBRARY = $(NATIVE_BUILD)/$(NATIVE_LIBRARY_NAME)
-CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I../native/include
+CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../vendor/webgpu-headers -I../native/include
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -ffp-contract=off
 include sources.mk
@@ -32,7 +32,7 @@ DAWN_SURFACE_CPPFLAGS = -DDOE_SURFACE_XLIB
 DAWN_SURFACE_LIBS = -lX11-xcb -lX11
 LDLIBS += -lxcb
 endif
-RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/render_public.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
+RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/render_public.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h ../native/include/doe_native_pipeline_cache.h ../native/include/doe_native_device_policy.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
@@ -98,7 +98,7 @@ $(BUILD)/test_map: tests/test_map.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME
 	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm -o $@
 $(BUILD)/test_kernel_identity: tests/test_kernel_identity.c src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_kernel_identity.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
-	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm -Wl,--wrap=malloc,--wrap=realloc -o $@
+	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm -Wl,--wrap=malloc,--wrap=realloc,--wrap=wgpuDeviceCreateBindGroup,--wrap=wgpuTextureCreateView -o $@
 .PHONY: check-kernel-identity
 check-kernel-identity: $(BUILD)/test_kernel_identity
 	$(BUILD)/test_kernel_identity '$(abspath $(BUILD))/kernel-identity.wgsl'

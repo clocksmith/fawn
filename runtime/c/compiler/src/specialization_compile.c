@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "override.h"
 #include "compile_internal.h"
+#include "prepared_internal.h"
 #include <errno.h>
 #include <string.h>
 
@@ -26,7 +27,7 @@ static DoeCompilerStatus specialize(bool all_entries, bool metal_pipeline, uint3
     const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
     const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
     uint32_t flags, const DoeCompilerSpecializationOutputs *outputs, size_t outputs_size,
-    DoeCompilerTextResult *result, size_t result_size, SamplingContext *sampling) {
+    DoeCompilerTextResult *result, size_t result_size, SamplingContext *sampling, CompilerPrepared *prepared) {
     const int saved_errno = errno;
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != (metal_pipeline ? DOE_COMPILER_METAL_PIPELINE_ABI_VERSION :
@@ -62,9 +63,9 @@ static DoeCompilerStatus specialize(bool all_entries, bool metal_pipeline, uint3
         status = compiler_compile_module(&caps->target.stages.module, workspace, workspace_size,
             source, length, selection, flags, out != NULL ? &out->resources.module : NULL, module,
             out != NULL ? &out->resources : NULL, &result->stages.resources, &caps->target.stages,
-            out, &result->stages, DOE_COMPILER_ATOMIC_ABI_VERSION, &context);
+            out, &result->stages, DOE_COMPILER_ATOMIC_ABI_VERSION, &context, prepared);
     } else status = compiler_specialized_text(target, &caps->target, workspace, workspace_size,
-        source, length, selection, flags, outputs, result, &context);
+        source, length, selection, flags, outputs, result, &context, prepared);
     errno = saved_errno;
     return status;
 }
@@ -78,7 +79,7 @@ DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
     DoeCompilerTextResult *result, size_t result_size) {
     return specialize(false, false, UINT32_MAX, version, target, caps, capacities_size, workspace, workspace_size,
         source, length, selection, selection_size, values, value_count, value_record_size,
-        flags, outputs, outputs_size, result, result_size, NULL);
+        flags, outputs, outputs_size, result, result_size, NULL, NULL);
 }
 DoeCompilerStatus doe_compiler_specialize_module(uint32_t version, uint32_t target,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
@@ -89,7 +90,7 @@ DoeCompilerStatus doe_compiler_specialize_module(uint32_t version, uint32_t targ
     const DoeCompilerEntrySelectionV5 selection = {.mode = DOE_COMPILER_SELECT_NONE};
     return specialize(true, false, UINT32_MAX, version, target, caps, capacities_size, workspace, workspace_size,
         source, length, &selection, sizeof(selection), values, value_count, value_record_size,
-        flags, outputs, outputs_size, result, result_size, NULL);
+        flags, outputs, outputs_size, result, result_size, NULL, NULL);
 }
 
 DoeCompilerStatus doe_compiler_specialize_metal_pipeline(uint32_t version,
@@ -105,7 +106,7 @@ DoeCompilerStatus doe_compiler_specialize_metal_pipeline(uint32_t version,
     const uint32_t sample_mask = options->sample_mask;
     return specialize(false, true, sample_mask, version, DOE_COMPILER_TARGET_METAL,
         caps, capacities_size, workspace, workspace_size, source, length, selection, selection_size,
-        values, value_count, value_record_size, flags, outputs, outputs_size, result, result_size, NULL);
+        values, value_count, value_record_size, flags, outputs, outputs_size, result, result_size, NULL, NULL);
 }
 
 static DoeCompilerStatus sampling_compile(uint32_t version, uint32_t target,
@@ -115,7 +116,7 @@ static DoeCompilerStatus sampling_compile(uint32_t version, uint32_t target,
     const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
     const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
     uint32_t flags, const DoeCompilerSamplingOutputsV16 *outputs, size_t outputs_size,
-    DoeCompilerSamplingResultV16 *result, size_t result_size, TranslationContext *translation) {
+    DoeCompilerSamplingResultV16 *result, size_t result_size, TranslationContext *translation, CompilerPrepared *prepared) {
     const int saved_errno = errno;
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != DOE_COMPILER_SAMPLING_ABI_VERSION || options_size != sizeof(*options) ||
@@ -149,7 +150,7 @@ static DoeCompilerStatus sampling_compile(uint32_t version, uint32_t target,
         target, &caps->specialization, sizeof(caps->specialization), workspace, workspace_size,
         source, length, selection, selection_size, values, value_count, value_record_size,
         flags, outputs != NULL ? &outputs->target : NULL, outputs != NULL ? sizeof(outputs->target) : 0u,
-        &result->target, sizeof(result->target), &sampling);
+        &result->target, sizeof(result->target), &sampling, prepared);
     result->required_pairs = sampling.count;
     if (status == DOE_COMPILER_OK && (flags & DOE_COMPILER_MODULE_MEASURE) == 0u)
         result->published_pairs = sampling.count;
@@ -167,7 +168,7 @@ DoeCompilerStatus doe_compiler_specialize_sampling(uint32_t version, uint32_t ta
     DoeCompilerSamplingResultV16 *result, size_t result_size) {
     return sampling_compile(version,target,options,options_size,caps,capacities_size,
         workspace,workspace_size,source,length,selection,selection_size,values,value_count,
-        value_record_size,flags,outputs,outputs_size,result,result_size,NULL);
+        value_record_size,flags,outputs,outputs_size,result,result_size,NULL,NULL);
 }
 static DoeCompilerStatus translation_compile(uint32_t version, uint32_t target,
     const DoeCompilerSamplingOptionsV16 *options, size_t options_size,
@@ -176,7 +177,7 @@ static DoeCompilerStatus translation_compile(uint32_t version, uint32_t target,
     const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
     const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
     uint32_t flags, const DoeCompilerTranslationOutputsV17 *outputs, size_t outputs_size,
-    DoeCompilerTranslationResultV17 *result, size_t result_size, DoeCompilerHlslProfileV19 *profile) {
+    DoeCompilerTranslationResultV17 *result, size_t result_size, DoeCompilerHlslProfileV19 *profile, CompilerPrepared *prepared) {
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != DOE_COMPILER_TRANSLATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
         result_size != sizeof(*result) || (outputs != NULL ? outputs_size != sizeof(*outputs) ||
@@ -200,7 +201,7 @@ static DoeCompilerStatus translation_compile(uint32_t version, uint32_t target,
     const DoeCompilerStatus status = sampling_compile(DOE_COMPILER_SAMPLING_ABI_VERSION,target,options,options_size,
         &caps->sampling,sizeof(caps->sampling),workspace,workspace_size,source,length,selection,selection_size,
         values,value_count,value_record_size,flags,outputs != NULL ? &outputs->sampling : NULL,
-        outputs != NULL ? sizeof(outputs->sampling) : 0u,&result->sampling,sizeof(result->sampling),&translation);
+        outputs != NULL ? sizeof(outputs->sampling) : 0u,&result->sampling,sizeof(result->sampling),&translation,prepared);
     result->required_entries = translation.count;
     if (status == DOE_COMPILER_OK && (flags & DOE_COMPILER_MODULE_MEASURE) == 0u)
         result->published_entries = translation.count;
@@ -218,7 +219,7 @@ DoeCompilerStatus doe_compiler_specialize_translation(uint32_t version, uint32_t
     DoeCompilerTranslationResultV17 *result, size_t result_size) {
     return translation_compile(version,target,options,options_size,caps,capacities_size,
         workspace,workspace_size,source,length,selection,selection_size,values,value_count,
-        value_record_size,flags,outputs,outputs_size,result,result_size,NULL);
+        value_record_size,flags,outputs,outputs_size,result,result_size,NULL,NULL);
 }
 
 DoeCompilerStatus doe_compiler_specialize_hlsl_profile(uint32_t version,
@@ -243,8 +244,21 @@ DoeCompilerStatus doe_compiler_specialize_hlsl_profile(uint32_t version,
     const DoeCompilerStatus status = translation_compile(DOE_COMPILER_TRANSLATION_ABI_VERSION,
         DOE_COMPILER_TARGET_HLSL,options,options_size,caps,capacities_size,
         workspace,workspace_size,source,length,selection,selection_size,values,value_count,
-        value_record_size,flags,outputs,outputs_size,&result->translation,sizeof(result->translation),&profile);
+        value_record_size,flags,outputs,outputs_size,&result->translation,sizeof(result->translation),&profile,NULL);
     if (status == DOE_COMPILER_OK) result->profile = profile;
     errno = saved_errno;
     return status;
+}
+
+DoeCompilerStatus compiler_prepare_translation(CompilerPrepared *prepared,
+    void *workspace, size_t bytes, const char *source, size_t length)
+{
+    const DoeCompilerPrepareOptionsV20 *options = &prepared->options;
+    return translation_compile(DOE_COMPILER_TRANSLATION_ABI_VERSION, options->target,
+        &options->sampling, sizeof(options->sampling), &options->capacities, sizeof(options->capacities),
+        workspace, bytes, source, length, &options->selection, sizeof(options->selection),
+        options->values, options->value_count, options->value_record_size,
+        prepared->flags | DOE_COMPILER_MODULE_MEASURE, NULL, 0u,
+        &prepared->result.compiled.translation, sizeof(prepared->result.compiled.translation),
+        options->target == DOE_COMPILER_TARGET_HLSL ? &prepared->result.compiled.profile : NULL, prepared);
 }

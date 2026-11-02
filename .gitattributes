@@ -1,6 +1,8 @@
 # Zig formatting and pinned source identities require deterministic checkout bytes.
 runtime/zig/**/*.zig text eol=lf
 # This upstream header is admitted by its exact SHA-256, including line endings.
+runtime/vendor/webgpu-headers/webgpu.h -text
+# Frozen independent reference copy retains the same admitted bytes.
 runtime/zig/vendor/webgpu-headers/webgpu.h -text
 # The workspace's independent fixture is frozen by its exact SHA-256.
 browser/workspace/qualification/fixture-site.js text eol=lf

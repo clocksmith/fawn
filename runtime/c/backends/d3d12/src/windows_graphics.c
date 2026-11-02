@@ -154,7 +154,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     commands->descriptors = rtv;
     /* All fallible preparation is complete; no rejected call partially records. */
     ID3D12GraphicsCommandList *list = commands->list;
-    doe_dx_transition(list, color->resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    doe_dx_transition(list, color->resource, doe_dx_texture_rest(color), D3D12_RESOURCE_STATE_RENDER_TARGET);
     doe_dx_geometry_transition(commands, geometry, mesh, false);
     doe_dx_transition_resources(commands, pipeline, resources, true, false);
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(list, pipeline->root);
@@ -178,7 +178,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
         draw->first_vertex, draw->first_instance);
     doe_dx_transition_resources(commands, pipeline, resources, true, true);
     doe_dx_geometry_transition(commands, geometry, mesh, true);
-    doe_dx_transition(list, color->resource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_DEST);
+    doe_dx_transition(list, color->resource, D3D12_RESOURCE_STATE_RENDER_TARGET, doe_dx_texture_rest(color));
     return doe_dx_fail(DOE_DX_OK, 0, "native.draw", error);
 fail:
     if (dsv) {

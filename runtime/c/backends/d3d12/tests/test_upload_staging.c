@@ -21,7 +21,7 @@ static void caller_leases_and_independent_zero_cache(void)
     assert(first->size == PAGE_BYTES && first->initialized && !first->immutable_zero);
     assert(first->memory == DOE_DX_UPLOAD && !first->owner && !first->pending);
     assert(doe_dx_upload_acquire(context,19,&busy,NULL) == DOE_DX_OK);
-    assert(busy != first && busy->size == 19 && busy->references == 1);
+    assert(busy != first && busy->size == PAGE_BYTES && busy->references == 2);
     assert(context->upload_staging == first && first->references == 2);
     unsigned char data = 0x6d;
     mock.failure = MOCK_WRITE;
@@ -131,7 +131,7 @@ static void recorded_and_pending_exclude_reuse(bool unknown_signal, bool lose)
     doe_dx_buffer_release(staging); /* The cache and recorded command now own it. */
     assert(staging->references == 2 && staging->owner == commands);
     assert(doe_dx_upload_acquire(context,32,&other,NULL) == DOE_DX_OK);
-    assert(other != staging && other->size == 32 && other->references == 1);
+    assert(other != staging && other->size == PAGE_BYTES && other->references == 2);
     doe_dx_buffer_release(other);
     unsigned char data = 0x7b;
     assert(doe_dx_buffer_write(staging,0,&data,1,NULL) == DOE_DX_BUSY);
@@ -143,7 +143,7 @@ static void recorded_and_pending_exclude_reuse(bool unknown_signal, bool lose)
     assert(doe_dx_buffer_write(staging,0,&data,1,NULL) == DOE_DX_BUSY);
     size_t waits = mock.waits, signals = mock.signals;
     assert(doe_dx_upload_acquire(context,17,&other,NULL) == DOE_DX_OK);
-    assert(other != staging && other->size == 17 && other->references == 1);
+    assert(other != staging && other->size == PAGE_BYTES && other->references == 2);
     assert(mock.waits == waits && mock.signals == signals && context->upload_staging == staging);
     doe_dx_buffer_release(other);
     doe_dx_buffer_release(destination);
@@ -166,7 +166,7 @@ static void recorded_and_pending_exclude_reuse(bool unknown_signal, bool lose)
         assert(doe_dx_buffer_write(other,0,&data,1,NULL) == DOE_DX_OK);
         doe_dx_buffer_release(other);
     }
-    assert(mock.buffers == 1 && !mock.commands);
+    assert(mock.buffers == 2 && !mock.commands);
     assert(doe_dx_context_destroy(context) == DOE_DX_OK);
     mock_reset();
 }
@@ -198,6 +198,46 @@ static void teardown_pending_lease(bool lose)
     mock_reset();
 }
 
+static void queued_pages_reuse_after_retirement(void)
+{
+    doe_dx_context *context = create_context();
+    doe_dx_buffer *pages[DOE_DX_UPLOAD_PAGES] = {0}, *destination = NULL;
+    assert(doe_dx_buffer_create(context,64,DOE_DX_DEFAULT,&destination,NULL) == DOE_DX_OK);
+    for (size_t i = 0; i < DOE_DX_UPLOAD_PAGES; ++i) {
+        assert(doe_dx_upload_acquire(context,64,&pages[i],NULL) == DOE_DX_OK);
+        for (size_t j = 0; j < i; ++j) assert(pages[i] != pages[j]);
+        doe_dx_commands *commands = NULL;
+        assert(doe_dx_commands_create(context,&commands,NULL) == DOE_DX_OK);
+        assert(doe_dx_commands_copy(commands,pages[i],0,destination,0,64,NULL) == DOE_DX_OK);
+        assert(doe_dx_commands_submit(commands,NULL) == DOE_DX_OK);
+        doe_dx_commands_release(commands);
+        doe_dx_buffer_release(pages[i]);
+    }
+    doe_dx_buffer *overflow = NULL;
+    assert(doe_dx_upload_acquire(context,17,&overflow,NULL) == DOE_DX_OK);
+    assert(overflow->size == 17 && overflow->references == 1);
+    for (size_t i = 0; i < DOE_DX_UPLOAD_PAGES; ++i) assert(overflow != pages[i]);
+    doe_dx_buffer_release(overflow);
+    size_t allocations = mock.allocation_attempts;
+    mock.completed = mock.last_signal;
+    assert(doe_dx_context_poll(context,0,NULL) == DOE_DX_OK);
+    for (size_t i = 0; i < DOE_DX_UPLOAD_PAGES; ++i) {
+        doe_dx_buffer *reused = NULL;
+        assert(doe_dx_upload_acquire(context,64,&reused,NULL) == DOE_DX_OK);
+        assert(reused == pages[i] && reused->references == 2);
+    }
+    assert(mock.allocation_attempts == allocations && !mock.waits);
+    doe_dx_buffer_release(destination);
+    assert(doe_dx_context_destroy(context) == DOE_DX_BUSY);
+    for (size_t i = 0; i < DOE_DX_UPLOAD_PAGES; ++i) {
+        assert(pages[i]->references == 1);
+        doe_dx_buffer_release(pages[i]);
+    }
+    assert(doe_dx_context_destroy(context) == DOE_DX_OK);
+    printf("Upload pool: %u queued pages reused with zero allocations after retirement; no waits\n",DOE_DX_UPLOAD_PAGES);
+    mock_reset();
+}
+
 int main(void)
 {
     mock_reset();
@@ -211,6 +251,7 @@ int main(void)
     recorded_and_pending_exclude_reuse(true,true);
     teardown_pending_lease(false);
     teardown_pending_lease(true);
+    queued_pages_reuse_after_retirement();
     puts("PASS D3D12 caller upload-staging owner: caller/recording/pending exclusion, completion/recovery reuse, exact uncached sizes, bounded cache, OOM retry/rollback, zero-cache isolation and terminal leases; no SDK/GPU/data oracle");
     return 0;
 }

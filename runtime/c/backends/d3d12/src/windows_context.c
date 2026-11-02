@@ -77,7 +77,7 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
         &IID_ID3D12CommandQueue, (void **)&context->queue);
     if (FAILED(result)) goto fail;
     operation = "ID3D12Device.CreateFence";
-    result = ID3D12Device_CreateFence(context->device, 0, D3D12_FENCE_FLAG_NONE,
+    result = ID3D12Device_CreateFence(context->device, 0, D3D12_FENCE_FLAG_SHARED,
         &IID_ID3D12Fence, (void **)&context->fence);
     if (FAILED(result)) goto fail;
     doe_dx_status caps_status = doe_dx_query_caps(context, &found, error);
@@ -89,6 +89,10 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
         doe_dx_native_close(context);
         return caps_status;
     }
+    /* OpenSharedHandle is the SDK path; each supplied handle still earns its
+     * resource/shape/format validation. The queue fence was created SHARED. */
+    found.shared_texture_import = true;
+    found.shared_fence_import = true;
     doe_dx_cache_adapter(context,adapter);
     IDXGIAdapter1_Release(adapter);
     IDXGIFactory4_Release(factory);

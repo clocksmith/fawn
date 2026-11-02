@@ -80,13 +80,19 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST,0,"upload.acquire",error);
     if (size > SIZE_MAX || size > context->caps.limits.max_buffer_size)
         return doe_dx_fail(DOE_DX_RANGE,0,"upload.acquire",error);
-    doe_dx_buffer *cached = context->upload_staging;
-    bool idle = !cached || (cached->references == 1 && !cached->owner && !cached->pending);
-    if (cached && idle && cached->size >= size) {
-        doe_dx_status status = doe_dx_buffer_retain(cached);
-        if (status != DOE_DX_OK) return doe_dx_fail(status,0,"upload.retain",error);
-        *out = cached;
-        return doe_dx_fail(DOE_DX_OK,0,"upload.reuse",error);
+    doe_dx_buffer **slot = NULL;
+    for (size_t i = 0; i < DOE_DX_UPLOAD_PAGES; ++i) {
+        doe_dx_buffer **candidate = i ? &context->upload_pages[i - 1] : &context->upload_staging;
+        doe_dx_buffer *page = *candidate;
+        bool idle = !page || (page->references == 1 && !page->owner && !page->pending);
+        if (!idle) continue;
+        if (page && !page->evict_requested && page->size >= size) {
+            doe_dx_status status = doe_dx_buffer_retain(page);
+            if (status != DOE_DX_OK) return doe_dx_fail(status,0,"upload.retain",error);
+            *out = page;
+            return doe_dx_fail(DOE_DX_OK,0,"upload.reuse",error);
+        }
+        if (!slot) slot = candidate;
     }
     /* Amortize small caller writes without ever reusing memory still held by
      * a caller, recording, or pending command. This is not a second queue. */
@@ -94,7 +100,7 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
     if (limit > context->caps.limits.max_buffer_size) limit = context->caps.limits.max_buffer_size;
     if (limit > context->caps.limits.max_buffer_allocation_bytes)
         limit = context->caps.limits.max_buffer_allocation_bytes;
-    bool cacheable = idle && size <= limit;
+    bool cacheable = slot && size <= limit;
     uint64_t capacity = cacheable ? limit : size;
     doe_dx_buffer *prepared = NULL;
     doe_dx_status status = doe_dx_buffer_create(context,capacity,DOE_DX_UPLOAD,&prepared,error);
@@ -109,8 +115,9 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
             doe_dx_buffer_release(prepared);
             return doe_dx_fail(status,0,"upload.retain",error);
         }
-        context->upload_staging = prepared;
-        doe_dx_buffer_release(cached);
+        doe_dx_buffer *previous = *slot;
+        *slot = prepared;
+        doe_dx_buffer_release(previous);
     }
     *out = prepared;
     return doe_dx_fail(DOE_DX_OK,0,"upload.acquire",error);
@@ -128,9 +135,23 @@ void doe_dx_buffer_release(doe_dx_buffer *buffer) {
     buffer->references--;
     if (buffer->references) return;
     doe_dx_buffer_return_read(buffer);
-    doe_dx_native_buffer_destroy(buffer->native);
+    if (buffer->native) doe_dx_native_buffer_destroy(buffer->native);
     buffer->context->objects--;
     free(buffer);
+}
+
+void doe_dx_buffer_try_evict(doe_dx_buffer *buffer) {
+    if (!buffer->evict_requested || buffer->owner || buffer->pending || !buffer->native) return;
+    doe_dx_buffer_return_read(buffer);
+    doe_dx_native_buffer_destroy(buffer->native);
+    buffer->native = NULL;
+}
+
+doe_dx_status doe_dx_buffer_evict(doe_dx_buffer *buffer) {
+    if (!buffer) return DOE_DX_INVALID_ARGUMENT;
+    buffer->evict_requested = true;
+    doe_dx_buffer_try_evict(buffer);
+    return DOE_DX_OK;
 }
 
 uint64_t doe_dx_buffer_size(const doe_dx_buffer *buffer) {
@@ -140,6 +161,7 @@ uint64_t doe_dx_buffer_size(const doe_dx_buffer *buffer) {
 static doe_dx_status host_access(doe_dx_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, bool write) {
     if (!buffer || (!bytes && size)) return DOE_DX_INVALID_ARGUMENT;
+    if (buffer->evict_requested) return DOE_DX_INVALID_STATE;
     if (buffer->context->lost) return DOE_DX_DEVICE_LOST;
     if (buffer->memory != (write ? DOE_DX_UPLOAD : DOE_DX_READBACK)) return DOE_DX_UNSUPPORTED;
     if (!doe_dx_range(buffer->size, offset, size)) return DOE_DX_RANGE;

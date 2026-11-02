@@ -36,7 +36,7 @@ def main() -> None:
               'runtime/c/shader/include/doe_shader.h']
     inputs += [str(path.relative_to(ROOT)) for path in (ROOT/'runtime/c/compiler/include').glob('*.h')]
     hashes = {name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in inputs}
-    includes = [ROOT/'runtime/zig/vendor/webgpu-headers']
+    includes = [ROOT/'runtime/vendor/webgpu-headers']
     includes += list((ROOT/'runtime/c').glob('*/include'))
     includes += list((ROOT/'runtime/c/backends').glob('*/include'))
     flags = ['-std=c11','-O2','-g','-Wall','-Wextra','-Wpedantic','-Werror']

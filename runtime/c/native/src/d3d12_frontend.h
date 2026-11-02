@@ -57,6 +57,7 @@ native_result native_d3d12_command_release(native_command_handle *commands);
 native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
     bool direct_readback);
 void native_d3d12_buffer_close(native_buffer *buffer);
+native_failure native_d3d12_buffer_evict(native_buffer *buffer);
 native_failure native_d3d12_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
 native_failure native_d3d12_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
 native_failure native_d3d12_record_commands(native_command_handle *commands, doe_resource_commands *resources);

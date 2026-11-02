@@ -3,6 +3,7 @@
 #include "compile_internal.h"
 #include "text_internal.h"
 #include "diagnostics_internal.h"
+#include "prepared_internal.h"
 #include <errno.h>
 #include <string.h>
 
@@ -130,7 +131,8 @@ static DoeCompilerStatus validate_module(uint32_t version,
     void *workspace, size_t workspace_size, const char *source, size_t length,
     uint32_t flags, const DoeCompilerValidationOutputs *outputs, size_t outputs_size,
     DoeCompilerValidationResult *result, size_t result_size,
-    const DoeCompilerDiagnosticOutputsV18 *notices, DoeCompilerDiagnosticResultV18 *notice_result) {
+    const DoeCompilerDiagnosticOutputsV18 *notices, DoeCompilerDiagnosticResultV18 *notice_result,
+    CompilerPrepared *prepared) {
     const int saved_errno = errno;
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != DOE_COMPILER_SPECIALIZATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
@@ -182,6 +184,7 @@ static DoeCompilerStatus validate_module(uint32_t version,
         }
         if (analyzed) analyzed=validation_metadata(&s,outputs,result);
         const bool restored = numeric_environment_end(&s, &environment);
+        if (analyzed && restored && prepared) compiler_prepared_capture(prepared, &s, NULL, NO_ID);
         if (analyzed && restored && outputs != NULL) {
             validation_publish(&s, outputs, result);
             if (notices != NULL) {
@@ -200,7 +203,7 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
     uint32_t flags, const DoeCompilerValidationOutputs *outputs, size_t outputs_size,
     DoeCompilerValidationResult *result, size_t result_size) {
     return validate_module(version,caps,capacities_size,workspace,workspace_size,source,length,
-        flags,outputs,outputs_size,result,result_size,NULL,NULL);
+        flags,outputs,outputs_size,result,result_size,NULL,NULL,NULL);
 }
 DoeCompilerStatus doe_compiler_validate_module_diagnostics(uint32_t version,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
@@ -217,7 +220,43 @@ DoeCompilerStatus doe_compiler_validate_module_diagnostics(uint32_t version,
     result->published_notices=0u;
     return validate_module(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,caps,capacities_size,
         workspace,workspace_size,source,length,flags,outputs!=NULL?&outputs->metadata:NULL,
-        outputs!=NULL?sizeof(outputs->metadata):0u,&result->validation,sizeof(result->validation),outputs,result);
+        outputs!=NULL?sizeof(outputs->metadata):0u,&result->validation,sizeof(result->validation),outputs,result,NULL);
+}
+
+DoeCompilerStatus compiler_prepare_validation(CompilerPrepared *prepared,
+    void *workspace, size_t bytes, const char *source, size_t length)
+{
+    DoeCompilerDiagnosticResultV18 *result = &prepared->result.validation;
+    const DoeCompilerSpecializationCapacities *caps = &prepared->options.capacities.sampling.specialization;
+    return validate_module(DOE_COMPILER_SPECIALIZATION_ABI_VERSION, caps, sizeof(*caps),
+        workspace, bytes, source, length, prepared->options.semantic_flags, NULL, 0u,
+        &result->validation, sizeof(result->validation), NULL, result, prepared);
+}
+DoeCompilerStatus compiler_publish_validation(CompilerPrepared *prepared,
+    const DoeCompilerDiagnosticOutputsV18 *outputs)
+{
+    Source *source = &prepared->source;
+    DoeCompilerDiagnosticResultV18 *report = &prepared->result.validation;
+    const DoeCompilerValidationOutputs *metadata = &outputs->metadata;
+    if (!compiler_valid_span(metadata->overrides, metadata->override_capacity,
+            sizeof(DoeCompilerOverrideV13), _Alignof(DoeCompilerOverrideV13), true) ||
+        !compiler_valid_span(metadata->entries, metadata->entry_capacity,
+            sizeof(DoeCompilerModuleEntryV13), _Alignof(DoeCompilerModuleEntryV13), true) ||
+        !compiler_valid_span(metadata->names, metadata->name_capacity, 1u, 1u, true) ||
+        !compiler_valid_span(outputs->notices, outputs->notice_capacity,
+            sizeof(DoeCompilerNoticeV18), _Alignof(DoeCompilerNoticeV18), true))
+        (void)source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "invalid retained validation output spans");
+    else if (metadata->override_capacity < report->validation.required_overrides ||
+        metadata->entry_capacity < report->validation.required_entries ||
+        metadata->name_capacity < report->validation.required_name_bytes ||
+        outputs->notice_capacity < report->required_notices)
+        (void)source_error(source, DOE_COMPILER_OUTPUT_TOO_SMALL, source->length, "retained validation output capacity is too small");
+    else {
+        validation_publish(source, metadata, &report->validation);
+        if (report->required_notices) compiler_notices_publish(source, outputs->notices);
+        report->published_notices = report->required_notices;
+    }
+    return report->validation.diagnostic.status;
 }
 
 bool sampling_layout(uint32_t target, const DoeCompilerSamplingCapacitiesV16 *caps,

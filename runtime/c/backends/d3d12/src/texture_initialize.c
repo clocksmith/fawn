@@ -5,6 +5,7 @@ doe_dx_status doe_dx_commands_initialize_texture(doe_dx_commands *commands,doe_d
 {
     doe_dx_status status=doe_dx_recording(commands,error);
     if (status!=DOE_DX_OK) return status;
+    if (texture && texture->shared_read_only) return DOE_DX_INVALID_STATE;
     status=doe_dx_texture_preflight(commands,texture,0,false);
     if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"texture.initialize",error);
     uint64_t bytes=doe_dx_native_texture_upload_bytes(texture->native);

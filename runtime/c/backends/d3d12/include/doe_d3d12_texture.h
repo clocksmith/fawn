@@ -72,6 +72,9 @@ uint32_t doe_dx_texture_samples(const doe_dx_texture *);
 doe_dx_status doe_dx_commands_initialize_texture(doe_dx_commands *,doe_dx_texture *,doe_dx_error *);
 doe_dx_status doe_dx_texture_retain(doe_dx_texture *texture);
 void doe_dx_texture_release(doe_dx_texture *texture);
+/* Borrowed surface images return BUSY. Other allocations retire after their
+ * accepted/recorded use; evicted descriptions remain available for validation. */
+doe_dx_status doe_dx_texture_evict(doe_dx_texture *texture);
 doe_dx_status doe_dx_texture_description(const doe_dx_texture *texture, doe_dx_texture_desc *out);
 
 typedef struct doe_dx_texture_layout {

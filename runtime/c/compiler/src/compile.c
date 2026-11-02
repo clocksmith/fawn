@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "compile_internal.h"
 #include "override.h"
+#include "prepared_internal.h"
 #include <errno.h>
 #include <string.h>
 
@@ -237,7 +238,7 @@ DoeCompilerStatus compiler_compile_module(const DoeCompilerModuleCapacities *cap
     DoeCompilerModuleResult *result, const DoeCompilerResourceOutputs *resource_outputs,
     DoeCompilerResourceResult *resource_result, const DoeCompilerStageCapacities *stage_capacities,
     const DoeCompilerStageOutputs *stage_outputs, DoeCompilerStageResult *stage_result, uint32_t version,
-    SpecializationContext *specialization) {
+    SpecializationContext *specialization, CompilerPrepared *prepared) {
     const int saved_errno=errno;
     memset(result,0,sizeof(*result));
     Source context={.source=source,.length=length,.diagnostic=&result->diagnostic,
@@ -295,7 +296,10 @@ DoeCompilerStatus compiler_compile_module(const DoeCompilerModuleCapacities *cap
     if (resource_result != NULL) resource_result->required_handles = metadata.handles;
     result->required = metadata.counts;
     result->required_is_exact = 1u;
-    if ((flags&DOE_COMPILER_MODULE_MEASURE)!=0u) return compiler_return(DOE_COMPILER_OK,saved_errno);
+    if ((flags&DOE_COMPILER_MODULE_MEASURE)!=0u) {
+        if (prepared) compiler_prepared_capture(prepared, &context, &metadata, selected);
+        return compiler_return(DOE_COMPILER_OK,saved_errno);
+    }
     if (!compiler_metadata_fits(&metadata, outputs, resource_outputs, stage_outputs)) {
         (void)source_error(&context,DOE_COMPILER_OUTPUT_TOO_SMALL,length,"selected module output capacity is too small");
         return compiler_return(result->diagnostic.status,saved_errno);
@@ -322,7 +326,7 @@ DoeCompilerStatus doe_compiler_compile_module(uint32_t version,
         return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     if (!compiler_module_records(outputs)) return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     return compiler_return(compiler_compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL, version, NULL), saved_errno);
+        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL, version, NULL, NULL), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_resource_requirements(uint32_t version,
@@ -354,7 +358,7 @@ DoeCompilerStatus doe_compiler_compile_resources(uint32_t version,
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
     return compiler_return(compiler_compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL, version, NULL), saved_errno);
+        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL, version, NULL, NULL), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_stage_requirements(uint32_t version,
@@ -394,5 +398,5 @@ DoeCompilerStatus doe_compiler_compile_stages(uint32_t version,
     return compiler_return(compiler_compile_module(capacities != NULL ? &capacities->module : NULL,
         workspace, workspace_size, source, length, selection, flags,
         outputs != NULL ? &outputs->resources.module : NULL, &result->resources.module,
-        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result, version, NULL), saved_errno);
+        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result, version, NULL, NULL), saved_errno);
 }

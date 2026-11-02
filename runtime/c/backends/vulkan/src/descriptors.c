@@ -195,13 +195,14 @@ static bool buffers_only(const doe_vk_binding_resource *bindings, size_t count) 
     return true;
 }
 
-/* The latest use of this recording binds the same compute pipeline to the
+/* The latest use of this recording binds the same pipeline to the
  * same exact buffer ranges: its descriptor sets already hold these
  * descriptors, and its buffers are already recorded uses. Images are excluded
- * because their layouts may change between uses; draws keep one use each. */
+ * because their layouts may change between uses. Graphics prepares every draw's
+ * resources before beginning the render pass, so its barrier stays outside. */
 static bool same_buffer_use(const doe_vk_dispatch_use *use, const doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t count) {
-    if (use == NULL || pipeline->graphics || !use->buffers_only || use->pipeline != pipeline ||
+    if (use == NULL || !use->buffers_only || use->pipeline != pipeline ||
         use->buffer_count != count) return false;
     for (size_t i = 0; i < count; ++i) {
         const doe_vk_buffer_binding *a = &use->buffers[i], *b = &bindings[i].value.buffer;

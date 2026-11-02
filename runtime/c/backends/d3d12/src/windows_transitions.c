@@ -40,8 +40,8 @@ static void transition_textures(ID3D12GraphicsCommandList *list,const texture_us
         }
         if (whole) {
             D3D12_RESOURCE_STATES state=uses[i].access==DOE_DX_READ_ONLY ? read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-            doe_dx_transition(list,texture->resource,restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
-                restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
+            doe_dx_transition(list,texture->resource,restore ? state : doe_dx_texture_rest(texture),
+                restore ? doe_dx_texture_rest(texture) : state);
             continue;
         }
         for (uint32_t plane=0;plane<planes;++plane) for (uint32_t layer=0;layer<layers;++layer)
@@ -55,8 +55,8 @@ static void transition_textures(ID3D12GraphicsCommandList *list,const texture_us
                 if (!active) continue;
                 D3D12_RESOURCE_BARRIER barrier={0}; barrier.Type=D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 barrier.Transition.pResource=texture->resource; barrier.Transition.Subresource=mip+layer*mips+plane*mips*layers;
-                barrier.Transition.StateBefore=restore ? state : D3D12_RESOURCE_STATE_COPY_DEST;
-                barrier.Transition.StateAfter=restore ? D3D12_RESOURCE_STATE_COPY_DEST : state;
+                barrier.Transition.StateBefore=restore ? state : doe_dx_texture_rest(texture);
+                barrier.Transition.StateAfter=restore ? doe_dx_texture_rest(texture) : state;
                 ID3D12GraphicsCommandList_ResourceBarrier(list,1,&barrier);
             }
     }

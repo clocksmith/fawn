@@ -194,8 +194,8 @@ static void depth_transitions(ID3D12GraphicsCommandList *list,const doe_dx_nativ
         for (uint32_t slice=0;slice<slices;++slice) {
             D3D12_RESOURCE_BARRIER barrier={0}; barrier.Type=D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
             barrier.Transition.pResource=texture->resource; barrier.Transition.Subresource=plane*slices+slice;
-            barrier.Transition.StateBefore=restore ? state : D3D12_RESOURCE_STATE_COPY_DEST;
-            barrier.Transition.StateAfter=restore ? D3D12_RESOURCE_STATE_COPY_DEST : state;
+            barrier.Transition.StateBefore=restore ? state : doe_dx_texture_rest(texture);
+            barrier.Transition.StateAfter=restore ? doe_dx_texture_rest(texture) : state;
             ID3D12GraphicsCommandList_ResourceBarrier(list,1,&barrier);
         }
     }
@@ -273,7 +273,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     for (uint32_t i=0;i<color_count;++i) if (colors[i].texture) {
         bool prior=false;
         for (uint32_t j=0;j<i;++j) if (colors[j].texture==colors[i].texture) prior=true;
-        if (!prior) doe_dx_transition(list,colors[i].texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
+        if (!prior) doe_dx_transition(list,colors[i].texture->resource,doe_dx_texture_rest(colors[i].texture),D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
     uint32_t sampled_planes=0;
     if (depth) {
@@ -304,12 +304,12 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         if (!color->texture) continue;
         if (color->resolve) {
             doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
-            doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RESOLVE_DEST);
+            doe_dx_transition(list,color->resolve->resource,doe_dx_texture_rest(color->resolve),D3D12_RESOURCE_STATE_RESOLVE_DEST);
             ID3D12GraphicsCommandList_ResolveSubresource(list,color->resolve->resource,
                 color->resolve_view.base_mip+color->resolve_view.base_layer*color->resolve->description.MipLevels,
                 color->texture->resource,color->view.base_mip+color->view.base_layer*color->texture->description.MipLevels,
                 doe_dx_texture_format(color->view.dimension ? color->view.format : color->texture->format));
-            doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_RESOLVE_DEST,D3D12_RESOURCE_STATE_COPY_DEST);
+            doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_RESOLVE_DEST,doe_dx_texture_rest(color->resolve));
             doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RESOLVE_SOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (color->discard) {
@@ -318,7 +318,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         }
         bool later=false;
         for (uint32_t j=i+1;j<color_count;++j) if (colors[j].texture==color->texture) later=true;
-        if (!later) doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
+        if (!later) doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,doe_dx_texture_rest(color->texture));
     }
     if (depth) {
         if (depth->discard || depth->discard_stencil) {

@@ -72,9 +72,9 @@
   caller data. Copies still cover the whole destination allocation/padding.
   Context destruction drops only its cache lease before checking outstanding
   caller/command/event obligations; failed native close remains retryable.
-- Caller-data staging may retain one ordinary UPLOAD page up to one MiB. Reuse
-  requires exactly its cache lease and no recording/pending use. Busy/oversized
-  requests allocate independently; no CPU write overlaps GPU use. Only a larger
+- Caller-data staging retains up to eight ordinary UPLOAD pages of at most one MiB. Reuse
+  requires exactly its cache lease and no recording/pending use. Oversized
+  requests and requests while every cached page is busy allocate independently; no CPU write overlaps GPU use. Only a larger
   speculative page's OOM may retry the exact requested size. Keep immutable zero
   storage separate, copy only caller bytes, and release both caches at teardown.
 - Shader-visible CBV/SRV/UAV descriptors come from context-owned 4096-entry
@@ -128,7 +128,8 @@
   keeps one Map open, and while lent rejects GPU recording, host reads/writes and a
   second lend. The frontend returns it on unmap, destroy, release, aborted delivery
   or refused admission; return is idempotent and final release returns implicitly.
-- Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
+- Ordinary default-buffer/texture operations begin/end at COPY_DEST; imported
+  simultaneous-access DXGI textures begin/end at COMMON. Upload/readback heap
   states stay fixed. Descriptor heaps/ranges and allocators survive their whole submission.
   Only successful terminal retirement may transfer a closed native command
   allocator/list pair to the serialized context for reuse; at most four pairs are
@@ -218,3 +219,11 @@
   profiles explicitly use verified `-pack-prefix-stable`; compute remains outside
   this policy. Never rewrite shader text, infer WGSL fields or cache DXIL without
   its entry/projection identity. Actual SDK construction/pixels remain separate.
+
+- DXGI NT-handle imports own native leases and admit only pinned Dawn's single-mip,
+  single-sample simultaneous-access 2D color subset. Existing texture commands own
+  imports through retirement. A canonical shared texture records only inside its
+  matching access. Producer fence waits retain imports outside device locking;
+  EndAccess exports the existing known queue timeline, without guessing an unknown
+  signal. Keyed imports use SDK D3D11On12 wrapping, acquire/release key zero, and
+  settle their own texture before release. No CPU copy substitutes for sharing.

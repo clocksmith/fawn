@@ -173,7 +173,7 @@ def main() -> int:
     if args.out.exists():
         parser.error(f'Refusing to replace build directory: {args.out}')
     repo = Path(__file__).resolve().parents[3]
-    doe_header = repo / 'runtime/zig/vendor/webgpu-headers/webgpu.h'
+    doe_header = repo / 'runtime/vendor/webgpu-headers/webgpu.h'
     if identity(doe_header)['sha256'] != DOE_HEADER_HASH:
         raise ValueError('Doe header changed; requalify the adapter ABI first')
     if generator_tree_hash(args.dawn_source) != GENERATOR_TREE_HASH:

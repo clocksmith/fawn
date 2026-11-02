@@ -2,6 +2,10 @@
  * Copyright (c) 2026 Doe contributors */
 {
     global:
+    doe_compiler_prepare_requirements;
+    doe_compiler_prepare;
+    doe_compiler_publish_module;
+    doe_compiler_publish;
     doe_compiler_translation_requirements;
     doe_compiler_specialize_translation;
     doe_compiler_hlsl_profile_requirements;

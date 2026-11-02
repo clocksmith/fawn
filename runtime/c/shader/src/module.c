@@ -22,30 +22,32 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
         options->selection.mode != DOE_COMPILER_SELECT_NONE || options->selection.reserved || options->selection.name || options->selection.name_length)
         return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
     doe_shader_options saved = *options;
-    DoeCompilerSpecializationCapacities capacities = {.target={.stages={.module=saved.capacities,
-        .interface_attributes=saved.interface_attributes,.stage_interfaces=saved.stage_interfaces}},.overrides=override_capacity};
+    DoeCompilerPrepareOptionsV20 request = shader_prepare_options(&saved, override_capacity,
+        DOE_COMPILER_PREPARE_MODULE, NULL, 0u, NULL);
+    DoeCompilerSpecializationCapacities *capacities = &request.capacities.sampling.specialization;
     DoeCompilerWorkspaceRequirements requirements;
-    DoeCompilerStatus status = doe_compiler_specialization_requirements(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
-        (uint32_t)saved.target,&capacities,sizeof(capacities),&requirements,sizeof(requirements));
+    DoeCompilerStatus status = doe_compiler_prepare_requirements(DOE_COMPILER_PREPARED_ABI_VERSION,
+        &request, sizeof(request), &requirements, sizeof(requirements));
     if (status != DOE_COMPILER_OK) return shader_fail(error,DOE_SHADER_COMPILE_FAILED,status,NULL);
     shader_input input;
     doe_shader_status acquired = shader_input_allocate(&saved.allocator,&requirements,source,source_size,
         saved.compiler_identity,saved.compiler_identity_size,source_size <= saved.capacities.typed.source_bytes,NULL,0,&input);
     if (acquired != DOE_SHADER_OK) return shader_fail(error,acquired,DOE_COMPILER_OK,NULL);
     void *workspace = input.allocation;
-    DoeCompilerDiagnosticResultV18 report = {0};
-    DoeCompilerValidationResult *result = &report.validation;
+    DoeCompilerPreparedResultV20 prepared = {0};
+    DoeCompilerDiagnosticResultV18 *report = &prepared.validation;
+    DoeCompilerValidationResult *result = &report->validation;
     doe_shader *module = NULL;
     doe_shader_status outcome = DOE_SHADER_COMPILE_FAILED;
     for (;;) {
-        status = doe_compiler_validate_module_diagnostics(DOE_COMPILER_DIAGNOSTICS_ABI_VERSION,&capacities,sizeof(capacities),
-            workspace,requirements.size_bytes,input.source,source_size,saved.semantic_flags,NULL,0,&report,sizeof(report));
+        status = doe_compiler_prepare(DOE_COMPILER_PREPARED_ABI_VERSION,&request,sizeof(request),
+            workspace,requirements.size_bytes,input.source,source_size,&prepared,sizeof(prepared));
         if (status == DOE_COMPILER_OK) break;
-        if (!shader_grow_pools(&saved,&capacities.target.stages,&capacities.overrides,
+        if (!shader_grow_pools(&saved,&capacities->target.stages,&capacities->overrides,
                 status,result->exhausted_pool,result->minimum_pool_capacity)) goto finished;
         DoeCompilerWorkspaceRequirements next;
-        status = doe_compiler_specialization_requirements(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
-            (uint32_t)saved.target,&capacities,sizeof(capacities),&next,sizeof(next));
+        status = doe_compiler_prepare_requirements(DOE_COMPILER_PREPARED_ABI_VERSION,
+            &request,sizeof(request),&next,sizeof(next));
         if (status != DOE_COMPILER_OK) goto finished;
         outcome = shader_input_resize(&saved.allocator,&requirements,&next,source_size,
             saved.compiler_identity_size,source_size <= saved.capacities.typed.source_bytes,&input);
@@ -56,7 +58,7 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     }
     if (status != DOE_COMPILER_OK) goto finished;
     size_t bytes, offsets[6];
-    if (!result->required_is_exact || !module_layout(result,report.required_notices,source_size,saved.compiler_identity_size,&bytes,offsets)) {
+    if (!result->required_is_exact || !module_layout(result,report->required_notices,source_size,saved.compiler_identity_size,&bytes,offsets)) {
         outcome = DOE_SHADER_OVERFLOW;
         goto finished;
     }
@@ -73,7 +75,7 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     module->source_size = source_size;
     module->identity_size = saved.compiler_identity_size;
     module->semantic_flags = saved.semantic_flags;
-    module->override_capacity = capacities.overrides;
+    module->override_capacity = capacities->overrides;
     module->source = (char *)module + offsets[0];
     module->identity = (unsigned char *)module + offsets[1];
     module->options = saved;
@@ -85,16 +87,15 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
         .entries=result->required_entries ? (DoeCompilerModuleEntryV13 *)((unsigned char *)module+offsets[3]) : NULL,
         .entry_capacity=result->required_entries,.entry_record_size=sizeof(DoeCompilerModuleEntryV13),
         .names=result->required_name_bytes ? (char *)module+offsets[4] : NULL,.name_capacity=result->required_name_bytes};
-    module->notices=report.required_notices ? (DoeCompilerNoticeV18 *)((unsigned char *)module+offsets[5]) : NULL;
+    module->notices=report->required_notices ? (DoeCompilerNoticeV18 *)((unsigned char *)module+offsets[5]) : NULL;
     DoeCompilerDiagnosticOutputsV18 diagnostic_outputs={.metadata=module->validation,.notices=module->notices,
-        .notice_capacity=report.required_notices,.notice_record_size=sizeof(DoeCompilerNoticeV18)};
+        .notice_capacity=report->required_notices,.notice_record_size=sizeof(DoeCompilerNoticeV18)};
     if (source_size) memcpy(module->source,input.source,source_size);
     memcpy(module->identity,input.identity,saved.compiler_identity_size);
-    status = doe_compiler_validate_module_diagnostics(DOE_COMPILER_DIAGNOSTICS_ABI_VERSION,&capacities,sizeof(capacities),
-        workspace,requirements.size_bytes,module->source,source_size,saved.semantic_flags,
-        &diagnostic_outputs,sizeof(diagnostic_outputs),&report,sizeof(report));
+    status = doe_compiler_publish_module(DOE_COMPILER_PREPARED_ABI_VERSION,
+        workspace,requirements.size_bytes,&diagnostic_outputs,sizeof(diagnostic_outputs),&prepared,sizeof(prepared));
     if (status == DOE_COMPILER_OK) {
-        module->notice_count = report.published_notices;
+        module->notice_count = report->published_notices;
         module->override_count = result->published_overrides;
         module->module_entry_count = result->published_entries;
         module->module_name_bytes = result->published_name_bytes;

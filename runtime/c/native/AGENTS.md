@@ -256,7 +256,9 @@ initialization uses full-width zero copies accepted through the existing common
 pending/device owner; later GPU work inherits known-fenced initialization, while
 CPU maps still wait for the actual buffer owner. Keep mappedAtCreation on DEFAULT
 with its separate zeroed CPU shadow, and preserve allocation/publication-failure
-leases. Texture initialization retains its existing completion contract.
+leases. Texture creation accepts queue-ordered zero initialization asynchronously;
+its exclusive pending texture owner still gates later use. Never drain unrelated
+work merely to create a texture.
 
 D3D12 image bindings use the compiler's selected handle/class/register records.
 Runtime samplers copy canonical immutable values into the command-owned heap;
@@ -264,3 +266,11 @@ never infer a format from an unrelated bound view or cache borrowed descriptors.
 Read-storage SRVs retain logical STORAGE admission and share compatible read
 transitions with sampled aliases. Whole 2D views remain the explicit envelope;
 additional dimensions, formats and public graphics require their actual bridge.
+
+DXGI shared textures retain the existing canonical memory/texture/command owners.
+An access records only through its matching active texture. Keyed End reserves an
+exclusive ENDING state before its owner wait unlocks; recheck that reservation,
+texture availability and device state afterward. Failure retains the original
+access/key/unknown-command obligations; another End/Begin never commits its state.
+The dedicated Windows shared-memory fixture builds with the native DLL; `--warp`
+execution verifies CPU software only and carries `adapter_class_scope()` on results.

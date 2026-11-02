@@ -84,6 +84,54 @@ static void release_uses(doe_vk_commands *commands) {
     }
 }
 
+static void graphics_reuse(doe_vk_context *context) {
+    unsigned allocated = mock.sets_allocated, updates = mock.updates;
+    unsigned barriers = mock.barriers;
+    doe_vk_pipeline pipeline = { .context = context, .references = 1,
+        .graphics = true, .binding_count = 1, .group_count = 1 };
+    pipeline.bindings[0] = (doe_vk_binding_layout){0, 0, DOE_VK_BINDING_STORAGE};
+    doe_vk_pipeline other = pipeline;
+    doe_vk_buffer buffer = { .context = context, .references = 1,
+        .usage = DOE_VK_BUFFER_STORAGE, .size = 256, .buffer = 7 };
+    doe_vk_commands commands = { .context = context, .state = DOE_VK_RECORDING,
+        .uses_active = true };
+    doe_vk_binding_resource binding = { .kind = DOE_VK_BINDING_STORAGE,
+        .value.buffer = {&buffer, 0, 64} };
+    doe_vk_dispatch_use *first = NULL, *next = NULL;
+    assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &first) == DOE_VK_OK);
+    assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &next) == DOE_VK_OK);
+    assert(next == first && mock.sets_allocated == allocated + 1 && mock.updates == updates + 1);
+    assert(mock.barriers == barriers + 2 && buffer.recorded_uses == 1);
+    binding.value.buffer.offset = 64;
+    assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &next) == DOE_VK_OK);
+    assert(next != first);
+    binding.value.buffer.size = 128;
+    assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &next) == DOE_VK_OK);
+    assert(doe_vk_prepare_resources(&commands, &other, &binding, 1, &next) == DOE_VK_OK);
+    assert(mock.sets_allocated == allocated + 4 && mock.updates == updates + 4);
+    buffer.content_status = DOE_VK_OUT_OF_MEMORY;
+    assert(doe_vk_prepare_resources(&commands, &other, &binding, 1, &next) == DOE_VK_OUT_OF_MEMORY);
+    assert(commands.state == DOE_VK_POISONED && mock.sets_allocated == allocated + 4);
+    buffer.content_status = DOE_VK_OK;
+    release_uses(&commands);
+    assert(buffer.references == 1 && buffer.recorded_uses == 0);
+    assert(pipeline.references == 1 && other.references == 1);
+
+    /* Samplers, like image descriptors, remain outside buffer-only reuse. */
+    doe_vk_sampler sampler = { .context = context, .references = 1, .sampler = 11 };
+    pipeline.bindings[0].kind = DOE_VK_BINDING_SAMPLER;
+    binding.kind = DOE_VK_BINDING_SAMPLER;
+    binding.value.sampler = &sampler;
+    commands.state = DOE_VK_RECORDING;
+    assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &first) == DOE_VK_OK);
+    assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &next) == DOE_VK_OK);
+    assert(next != first && mock.sets_allocated == allocated + 6);
+    release_uses(&commands);
+    assert(sampler.references == 1 && pipeline.references == 1);
+    if (TEST_PROFILE != 0u) doe_vk_descriptor_blocks_clear(context);
+    assert(mock.pools_destroyed == mock.pools_created);
+}
+
 int main(void) {
     doe_vk_context context = { .references = 1 };
     context.caps.resource_profile = TEST_PROFILE;
@@ -139,6 +187,7 @@ int main(void) {
     assert(pipeline.references == 1 && other.references == 1);
     assert(mock.pools_destroyed == mock.pools_created);
     assert(buffer.recorded_uses == 0 && buffer.references == 1);
+    graphics_reuse(&context);
     printf("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch; %s\n",
         TEST_PROFILE != 0u ? "DESCRIPTOR_BLOCKS: sets come from and return to one context block" :
         "DEFAULT: one exact pool per use, destroyed at release");

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "d3d12_frontend.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -150,6 +151,7 @@ void wgpuBufferDestroy(WGPUBuffer handle)
     if (!device) return;
     native_lock(device);
     native_buffer *payload = doe_resource_buffer_native(buffer);
+    native_failure failure = native_failure_status(NATIVE_OK);
     doe_resource_buffer_destroy(buffer);
     native_buffer_host_return(payload);
     free(payload->mapping);
@@ -159,8 +161,15 @@ void wgpuBufferDestroy(WGPUBuffer handle)
     if (device->backend.kind == WGPUBackendType_Metal && payload->handle.metal) {
         native_progress_pending(device);
         if (doe_mtl_buffer_evict(payload->handle.metal) != DOE_MTL_OK) abort();
+    } else if (device->backend.kind == WGPUBackendType_D3D12 && payload->handle.d3d12) {
+        failure = native_d3d12_buffer_evict(payload);
     }
     native_unlock(device);
+    if (failure.status != NATIVE_OK) {
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        native_failure_format(&failure, "buffer destruction retirement failed", message);
+        native_error(device, native_result_error(failure.status), message);
+    }
 }
 
 void wgpuBufferUnmap(WGPUBuffer handle)

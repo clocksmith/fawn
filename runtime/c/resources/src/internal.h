@@ -79,6 +79,8 @@ typedef struct {
 } resource_group_references;
 doe_resource_status resource_encoder_reference_group(doe_resource_encoder *encoder, doe_resource_bind_group *group);
 
+typedef struct resource_render_chunk resource_render_chunk;
+
 struct doe_resource_encoder {
     resource_base base;
     doe_resource_status status;
@@ -88,6 +90,7 @@ struct doe_resource_encoder {
     size_t count, capacity;
     doe_resource_command *commands;
     resource_group_references groups;
+    resource_render_chunk *render_chunks;
 };
 struct doe_resource_commands {
     resource_base base;
@@ -95,6 +98,7 @@ struct doe_resource_commands {
     size_t count, capacity;
     doe_resource_command *commands;
     resource_group_references groups;
+    resource_render_chunk *render_chunks;
 };
 
 struct doe_resource_compute_pass {
@@ -151,7 +155,8 @@ struct doe_resource_render_pipeline {
     doe_resource_render_pipeline_desc desc;
 };
 struct doe_resource_render_record {
-    resource_base base;
+    const doe_resource_config *config;
+    doe_resource_render_bundle *bundle;
     doe_resource_render_packet packet;
     resource_usage_scope scope;
 };
@@ -221,8 +226,11 @@ doe_resource_status resource_record_timestamp(doe_resource_encoder *encoder,
 bool resource_query_available(const doe_resource_query_set *set);
 bool resource_external_available(const doe_resource_external_texture *texture);
 doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass);
-doe_resource_status resource_render_replay_packet(doe_resource_render_pass *pass,
-    const doe_resource_render_packet *packet);
+doe_resource_status resource_render_replay_bundle(doe_resource_render_pass *pass,
+    doe_resource_render_bundle *bundle);
+void resource_render_chunks_release(const doe_resource_config *config, resource_render_chunk *chunks);
+size_t resource_bundle_draw_count(const doe_resource_render_bundle *bundle);
+const doe_resource_render_packet *resource_bundle_draw(const doe_resource_render_bundle *bundle, size_t index);
 void resource_render_clear_bindings(doe_resource_render_packet *state);
 void resource_render_packet_retain(const doe_resource_render_packet *packet);
 void resource_render_packet_release(const doe_resource_render_packet *packet);

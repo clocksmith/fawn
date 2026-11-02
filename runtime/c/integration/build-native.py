@@ -34,7 +34,7 @@ def digest(path: Path) -> str:
 
 def inputs(root: Path) -> dict[str, str]:
     paths = {root / "runtime/zig/build.zig", root / "runtime/zig/source-layout.json"}
-    directories = [root / "runtime/zig/src", root / "runtime/zig/vendor/webgpu-headers",
+    directories = [root / "runtime/zig/src", root / "runtime/vendor/webgpu-headers",
                    root / "config", root / "pipeline/lean", root / "runtime/c/integration"]
     directories.extend(root / "runtime/c" / owner for owner in OWNERS)
     for directory in directories:
@@ -103,7 +103,7 @@ def main() -> int:
     library = out / "install/lib/libwebgpu_doe.so"
     integration = root / "runtime/c/integration"
     common = ["-O2", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-I",
-              str(root / "runtime/zig/vendor/webgpu-headers")]
+              str(root / "runtime/vendor/webgpu-headers")]
     run("consumer-c-build", ["gcc", "-std=c11", *common, str(integration / "native_smoke.c"),
                              "-ldl", "-o", str(out / "native-smoke-c")])
     run("consumer-cpp-build", ["g++", "-x", "c++", "-std=c++17", "-fno-exceptions", "-fno-rtti",

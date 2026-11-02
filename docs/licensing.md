@@ -62,10 +62,12 @@ be retained and the same attribution discipline applied.
 ## WebGPU native headers (BSD 3-Clause)
 
 Doe vendors the public WebGPU C header at
-`runtime/zig/vendor/webgpu-headers/webgpu.h` as the deterministic source for
+`runtime/vendor/webgpu-headers/webgpu.h` as the deterministic live source for
 generated runtime ABI aliases and loader metadata. Its exact upstream commit
 and content hash are declared in `config/webgpu-abi-source.json`; the upstream
-license is retained at `runtime/zig/vendor/webgpu-headers/LICENSE`.
+license is retained at `runtime/vendor/webgpu-headers/LICENSE`. The original
+byte-identical header and license under `runtime/zig/vendor/webgpu-headers/`
+remain frozen inputs for sealed independent tests and historical receipts.
 
 This header is an interface definition only. It is intentionally independent
 of the mutable Dawn benchmark checkout under `bench/vendor/dawn/`.
@@ -76,7 +78,8 @@ of the mutable Dawn benchmark checkout under `bench/vendor/dawn/`.
 `GLSL.std.450.h`, its license, and source identity. The authenticated header
 generates `glsl_std450.zig`; it supplies instruction definitions, not compiler
 implementation. Preserve its notice and license in distributions containing
-these definitions.
+these definitions. C native package archives take the same notice bytes from
+the shared `runtime/vendor/spirv-headers/LICENSE` distribution input.
 
 ## ONNX Runtime plugin EP headers (MIT)
 

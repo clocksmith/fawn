@@ -3,7 +3,7 @@ CXX = g++
 AR = ar
 BUILD ?= build
 FUTURES_ARCHIVE ?= ../futures/build/libdoe_futures.a
-CPPFLAGS += -Iinclude -I../futures/include -I../../zig/vendor/webgpu-headers
+CPPFLAGS += -Iinclude -I../futures/include -I../../vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread
 CXXFLAGS ?= -O2 -g

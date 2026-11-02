@@ -12,6 +12,12 @@ OBJECTS = $(patsubst src/%.c,$(BUILD)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(wildcard ../compiler/include/*.h) ../common/include/doe_sha256.h
 .PHONY: all test sanitize
 all: $(BUILD)/libdoe_shader.a
+COMPILER_CORE_ARCHIVE ?= ../compiler/build/libdoe_compiler_core.a
+$(BUILD)/test_single_analysis: tests/test_single_analysis.c $(BUILD)/libdoe_shader.a $(COMPILER_CORE_ARCHIVE) $(HEADERS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(BUILD)/libdoe_shader.a $(COMPILER_CORE_ARCHIVE) -Wl,--wrap=compiler_analyze -lm -o $@
+.PHONY: test-single-analysis
+test-single-analysis: $(BUILD)/test_single_analysis
+	$(BUILD)/test_single_analysis
 $(BUILD):
 	mkdir -p $@
 $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)

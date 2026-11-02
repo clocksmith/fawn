@@ -227,6 +227,7 @@ enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
 typedef struct SpecializationContext SpecializationContext;
+typedef struct CompilerPrepared CompilerPrepared;
 /* Private semantic cause for compatibility adapters. Broad public status and
  * message remain unchanged; consumers never classify diagnostics by text. */
 typedef enum { SOURCE_CAUSE_NONE, SOURCE_CAUSE_UNKNOWN_IDENTIFIER,

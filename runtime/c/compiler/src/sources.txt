@@ -69,3 +69,5 @@ src/pointer_lower.c
 src/pointer_clone.c
 src/parse_diagnostics.c
 src/diagnostics.c
+
+src/prepared.c

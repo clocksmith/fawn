@@ -28,8 +28,12 @@ def main() -> int:
         original = source / "runtime/c/error-scopes"
         for directory in ("src", "include", "integration"):
             shutil.copytree(original / directory, owner / directory)
+        # The error-scope implementation includes the actual host primitive
+        # headers; keep that existing input in the isolated build closure.
+        shutil.copytree(source / "runtime/c/platform/include",
+                        root / "runtime/c/platform/include")
         shutil.copyfile(args.makefile or original / "Makefile", owner / "Makefile")
-        header = root / "runtime/zig/vendor/webgpu-headers/webgpu.h"
+        header = root / "runtime/vendor/webgpu-headers/webgpu.h"
         header.parent.mkdir(parents=True)
         shutil.copyfile(source / header.relative_to(root), header)
         command = ["make", "--no-print-directory", "all"]
@@ -37,7 +41,9 @@ def main() -> int:
         products = [owner / "build" / name for name in
                     ("error_scopes.o", "doe_error_scopes_zig_bridge.o", "libdoe_error_scopes.a")]
         before = {path.name: path.stat().st_mtime_ns for path in products}
-        time.sleep(0.02)
+        # Older supported make versions compare whole-second timestamps.
+        next_second = max(before.values()) // 1_000_000_000 + 1
+        time.sleep(max(0, next_second - time.time()) + 0.01)
         with header.open("a", encoding="utf-8") as stream:
             stream.write("\n/* isolated incremental dependency probe */\n")
         completed = subprocess.run(command, cwd=owner, check=True, capture_output=True, text=True)

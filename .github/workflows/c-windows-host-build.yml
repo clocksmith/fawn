@@ -139,7 +139,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $output = Join-Path $env:EVIDENCE_ROOT 'native-full'
           $native = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/native'
-          $header = Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers'
+          $header = Join-Path $env:GITHUB_WORKSPACE 'runtime/vendor/webgpu-headers'
           $lines = @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if not "%errorlevel%"=="0" exit /b 1', 'set DOE_C_TEST_BACKEND=d3d12', 'set DOE_C_TEST_ADAPTER=software')
           $atomicSource = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/atomic_operations.wgsl'
           $selectRetained = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_retained.wgsl'
@@ -247,7 +247,7 @@ jobs:
           foreach ($relative in @('package.json', 'binding.gyp', 'scripts/build-addon.js', 'scripts/native-abi-layout.js', 'scripts/check-provider-loader.js', 'examples/first-kernel.js', 'test/integration/test-c-provider-warp.js', 'test/integration/test-c-provider-overrides.js')) {
             $files += Get-Item (Join-Path $package $relative)
           }
-          $files += Get-Item (Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers/webgpu.h')
+          $files += Get-Item (Join-Path $env:GITHUB_WORKSPACE 'runtime/vendor/webgpu-headers/webgpu.h')
           $sourceHashes = @{}
           foreach ($file in $files) { $sourceHashes[$file.FullName] = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
           $sourceHashes | ConvertTo-Json | Set-Content "$output/declared-source-sha256.json"

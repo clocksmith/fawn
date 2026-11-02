@@ -33,12 +33,12 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
             continue;
         }
         if (record->kind != DOE_COMMAND_RENDER) return DOE_VK_UNSUPPORTED;
-        const doe_resource_render_packet *packet = doe_resource_render_record_borrow(record->value.render);
-        if (packet->first_in_pass || packet->targets.colors[0].view != begin->targets.colors[0].view ||
-            packet->targets.occlusion_queries != queries || packet->targets.depth_stencil || packet->targets.colors[0].resolve_target)
+        const doe_resource_render_packet *envelope = doe_resource_render_record_borrow(record->value.render);
+        if (envelope->first_in_pass || envelope->targets.colors[0].view != begin->targets.colors[0].view ||
+            envelope->targets.occlusion_queries != queries || envelope->targets.depth_stencil || envelope->targets.colors[0].resolve_target)
             return DOE_VK_UNSUPPORTED;
-        if (packet->boundary_only) {
-            if (!packet->last_in_pass) return DOE_VK_UNSUPPORTED;
+        if (envelope->boundary_only) {
+            if (!envelope->last_in_pass) return DOE_VK_UNSUPPORTED;
             doe_vk_clear_color clear;
             for (size_t component = 0; component < 4; component++)
                 clear.float32[component] = (float)begin->targets.colors[0].clear[component];
@@ -48,36 +48,42 @@ static doe_vk_status lower_pass(doe_vk_commands *commands, doe_vk_draw_validator
             if (status == DOE_VK_OK) *consumed = i + 1;
             return status;
         }
-        if (packet->last_in_pass || packet->indexed || !packet->indirect ||
-            draw_count == DRAW_COUNT || op_count == DRAW_COUNT * 3 || !packet->groups[0] ||
-            packet->vertices[0].buffer || !packet->vertices[1].buffer || !packet->vertices[2].buffer)
-            return DOE_VK_UNSUPPORTED;
-        for (size_t slot = 1; slot < DOE_RESOURCE_MAX_GROUPS; slot++)
-            if (packet->groups[slot]) return DOE_VK_UNSUPPORTED;
-        for (size_t slot = 3; slot < DOE_RESOURCE_MAX_VERTEX_BUFFERS; slot++)
-            if (packet->vertices[slot].buffer) return DOE_VK_UNSUPPORTED;
-        for (size_t component = 0; component < 4; component++)
-            if (packet->state.blend[component] != 0) return DOE_VK_UNSUPPORTED;
-        doe_resource_binding resolved;
-        if (doe_resource_bind_group_resolve(packet->groups[0], packet->offsets.values[0],
-            packet->offsets.counts[0], &resolved, 1) != DOE_RESOURCE_OK ||
-            resolved.kind != DOE_BIND_BUFFER || resolved.binding != 0) return DOE_VK_UNSUPPORTED;
-        bindings[draw_count] = (doe_vk_binding_resource){.kind = DOE_VK_BINDING_UNIFORM, .value.buffer = {
-            doe_resource_buffer_native(resolved.resource.buffer.buffer), resolved.resource.buffer.offset, resolved.resource.buffer.size}};
-        vertices[draw_count][0] = (doe_vk_buffer_binding){0};
-        for (size_t slot = 1; slot < 3; slot++) vertices[draw_count][slot] = (doe_vk_buffer_binding){
-            doe_resource_buffer_native(packet->vertices[slot].buffer), packet->vertices[slot].offset, packet->vertices[slot].size};
-        indirect[draw_count] = (doe_vk_render_indirect){validator,
-            doe_resource_buffer_native(packet->indirect), packet->indirect_offset, false};
-        doe_vk_render_pass_draw *draw = &ops[op_count].value.draw;
-        *draw = (doe_vk_render_pass_draw){.pipeline = doe_resource_render_pipeline_native(packet->pipeline),
-            .bindings = &bindings[draw_count], .binding_count = 1, .vertices = vertices[draw_count],
-            .vertex_buffer_count = 3, .indirect = &indirect[draw_count],
-            .draw = {.viewport_convention = DOE_VK_VIEWPORT_WEBGPU}};
-        memcpy(draw->draw.viewport, packet->state.viewport, sizeof(draw->draw.viewport));
-        memcpy(draw->draw.scissor, packet->state.scissor, sizeof(draw->draw.scissor));
-        ops[op_count++].kind = DOE_VK_RENDER_DRAW;
-        draw_count++;
+        if (envelope->last_in_pass) return DOE_VK_UNSUPPORTED;
+        for (size_t j = 0; j < doe_resource_render_record_draw_count(record->value.render); ++j) {
+            doe_resource_render_packet materialized;
+            if (!doe_resource_render_record_draw(record->value.render, j, &materialized)) return DOE_VK_UNSUPPORTED;
+            const doe_resource_render_packet *packet = &materialized;
+            if (packet->indexed || !packet->indirect ||
+                draw_count == DRAW_COUNT || op_count == DRAW_COUNT * 3 || !packet->groups[0] ||
+                packet->vertices[0].buffer || !packet->vertices[1].buffer || !packet->vertices[2].buffer)
+                return DOE_VK_UNSUPPORTED;
+            for (size_t slot = 1; slot < DOE_RESOURCE_MAX_GROUPS; slot++)
+                if (packet->groups[slot]) return DOE_VK_UNSUPPORTED;
+            for (size_t slot = 3; slot < DOE_RESOURCE_MAX_VERTEX_BUFFERS; slot++)
+                if (packet->vertices[slot].buffer) return DOE_VK_UNSUPPORTED;
+            for (size_t component = 0; component < 4; component++)
+                if (packet->state.blend[component] != 0) return DOE_VK_UNSUPPORTED;
+            doe_resource_binding resolved;
+            if (doe_resource_bind_group_resolve(packet->groups[0], packet->offsets.values[0],
+                packet->offsets.counts[0], &resolved, 1) != DOE_RESOURCE_OK ||
+                resolved.kind != DOE_BIND_BUFFER || resolved.binding != 0) return DOE_VK_UNSUPPORTED;
+            bindings[draw_count] = (doe_vk_binding_resource){.kind = DOE_VK_BINDING_UNIFORM, .value.buffer = {
+                doe_resource_buffer_native(resolved.resource.buffer.buffer), resolved.resource.buffer.offset, resolved.resource.buffer.size}};
+            vertices[draw_count][0] = (doe_vk_buffer_binding){0};
+            for (size_t slot = 1; slot < 3; slot++) vertices[draw_count][slot] = (doe_vk_buffer_binding){
+                doe_resource_buffer_native(packet->vertices[slot].buffer), packet->vertices[slot].offset, packet->vertices[slot].size};
+            indirect[draw_count] = (doe_vk_render_indirect){validator,
+                doe_resource_buffer_native(packet->indirect), packet->indirect_offset, false};
+            doe_vk_render_pass_draw *draw = &ops[op_count].value.draw;
+            *draw = (doe_vk_render_pass_draw){.pipeline = doe_resource_render_pipeline_native(packet->pipeline),
+                .bindings = &bindings[draw_count], .binding_count = 1, .vertices = vertices[draw_count],
+                .vertex_buffer_count = 3, .indirect = &indirect[draw_count],
+                .draw = {.viewport_convention = DOE_VK_VIEWPORT_WEBGPU}};
+            memcpy(draw->draw.viewport, packet->state.viewport, sizeof(draw->draw.viewport));
+            memcpy(draw->draw.scissor, packet->state.scissor, sizeof(draw->draw.scissor));
+            ops[op_count++].kind = DOE_VK_RENDER_DRAW;
+            draw_count++;
+        }
     }
     return DOE_VK_UNSUPPORTED;
 }

@@ -36,7 +36,7 @@ def main() -> None:
                         "Darwin" if sys.platform == "darwin" else "Linux")
     args = parser.parse_args()
     owner = Path(__file__).resolve().parents[1]
-    header = owner.parents[1] / "zig/vendor/webgpu-headers/webgpu.h"
+    header = owner.parents[1] / "vendor/webgpu-headers/webgpu.h"
     declared = set(re.findall(r"WGPU_EXPORT[^;]*?\b(wgpu\w+)\(", header.read_text()))
     inventory = set((owner / "EXPORTED_SYMBOLS.txt").read_text().splitlines())
     # Doe extensions are a separate, explicit inventory: never webgpu.h names,

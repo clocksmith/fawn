@@ -29,6 +29,9 @@ Outputs:
 - Runtime behavior is native or explicitly unsupported; synthetic runtime state is forbidden.
 - Provider, backend, lifecycle, and failure state remain observable.
 - Compatibility bridges do not silently become canonical implementations.
+- Shared pinned interface inputs and distribution notices live in `vendor/`.
+  Frozen copies under `zig/vendor/` retain their independent reference and
+  historical receipt identities; live builds consume the neutral owner.
 
 ## Acceptance
 

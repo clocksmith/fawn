@@ -8,6 +8,7 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <d3dcommon.h>
+#include <d3d11on12.h>
 #include "native.h"
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +50,13 @@ struct doe_dx_native_texture {
     D3D12_RESOURCE_DESC description;
     doe_dx_format format;
     bool resolve_supported;
+    bool shared; /* Simultaneous-access imports rest at COMMON. */
+    bool keyed_acquired;
+    IDXGIKeyedMutex *keyed_mutex;
+    ID3D11Resource *wrapped;
+    ID3D11On12Device *on12;
+    ID3D11DeviceContext *on12_context;
+    HMODULE on12_module;
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT *footprints;
     uint32_t footprint_count;
     uint64_t upload_bytes;
@@ -123,6 +131,10 @@ void doe_dx_native_commands_cache_close(doe_dx_native_context *context);
 void doe_dx_buffer_heaps_close(doe_dx_native_context *context);
 doe_dx_status doe_dx_open_adapter(IDXGIFactory4 *factory, const doe_dx_options *options,
     IDXGIAdapter1 **out, doe_dx_caps *caps, doe_dx_error *error);
+static inline D3D12_RESOURCE_STATES doe_dx_texture_rest(const doe_dx_native_texture *texture) {
+    return texture->shared ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_COPY_DEST;
+}
+void doe_dx_shared_texture_native_close(doe_dx_native_texture *);
 DXGI_FORMAT doe_dx_texture_resource_format(doe_dx_format);
 void doe_dx_texture_srv(const doe_dx_native_texture *,const doe_dx_texture_view_desc *,D3D12_SHADER_RESOURCE_VIEW_DESC *);
 void doe_dx_texture_uav(const doe_dx_native_texture *,const doe_dx_texture_view_desc *,D3D12_UNORDERED_ACCESS_VIEW_DESC *);
