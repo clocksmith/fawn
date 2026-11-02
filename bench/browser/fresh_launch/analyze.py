@@ -8,6 +8,7 @@ Writes RUN_DIR/summary.json and RUN_DIR/summary.md.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import math
 import random
@@ -157,6 +158,7 @@ def main() -> int:
     summary = {"baseline": base, "candidate": cand, "control": ctrl, "bootstrap": {"resamples": B, "seed": SEED,
                "ci": "percentile 95%", "unit": "launch"}, "practicalThreshold": PRACTICAL, "arms": identity, "pages": {}}
     summary["presentationMode"] = next(iter(presentation_modes))
+    summary["reportedAt"] = datetime.now(timezone.utc).isoformat()
     summary["bootstrap"]["candidateControlSeed"] = "<seed>:<page>:<candidate>/<control>"
     for page in pages:
         pg = summary["pages"][page] = {"arms": {}, "comparisons": {}}

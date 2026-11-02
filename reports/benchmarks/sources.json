@@ -3260,6 +3260,143 @@
       "section": "workspace",
       "sha256": "0f26f4f62cdf0f790c843c0ef668bd38ca1a07b35951c988124f7e4b1f46e8ed",
       "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "fawn-macos-20261102/headed-compute",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-20261102-headed-compute",
+      "limitations": [
+        "Complete six-repetition headed compute comparison; initial/final full-buffer SHA-256 oracle retained.",
+        "Diagnostic on an active desktop; no isolated-host or release qualification.",
+        "Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.",
+        "Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.",
+        "GPU driver identity is not retained."
+      ],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261102/headed-compute-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/headed-compute-receipts.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "e5902391423ca2f82c8accf31ff03a168bbb689fb599f7f0e779df2ebaf0c937"
+        },
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/baseline-runtime-build.json.gz",
+          "required": true,
+          "role": "runtime-build",
+          "sha256": "ac7b41cddc3b6e2e058cff2f56151589549628c481b7032c0a99f77acfe0f71c"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "72bcb7feb9011f31b757c9389d75a64e512012590ce6d625b69a112508bb231d",
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "fawn-macos-20261102/headed-particles-interrupted",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-20261102-headed-particles-interrupted",
+      "limitations": [
+        "Interrupted at user request after 9 of 18 planned launches; incomplete counterbalance; never resumed as headless.",
+        "Diagnostic on an active desktop; no isolated-host or release qualification.",
+        "Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.",
+        "Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.",
+        "GPU driver identity is not retained.",
+        "No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output."
+      ],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261102/headed-particles-interrupted-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/headed-particles-interrupted-receipts.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "78d4df37983576c71ced9a0d4c54c43f1821704200d685fdb406841f98bf00ab"
+        },
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/baseline-runtime-build.json.gz",
+          "required": true,
+          "role": "runtime-build",
+          "sha256": "ac7b41cddc3b6e2e058cff2f56151589549628c481b7032c0a99f77acfe0f71c"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "03440a445beed43b3d269a52e147edd6362bf78810a4333e25d4eba9a4cb6953",
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "fawn-macos-20261102/headless-buffer-baseline",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-20261102-headless-buffer-baseline",
+      "limitations": [
+        "Complete six-repetition headless particle comparison before buffer-use change.",
+        "Diagnostic on an active desktop; no isolated-host or release qualification.",
+        "Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.",
+        "Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.",
+        "GPU driver identity is not retained.",
+        "Headless evidence cannot qualify visible presentation or headed performance.",
+        "No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output."
+      ],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-buffer-baseline-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-buffer-baseline-receipts.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "9b5b9aa9aee097db1a8b9e8984c276b8d657a200307c85cb58acbbe92691c76f"
+        },
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/baseline-runtime-build.json.gz",
+          "required": true,
+          "role": "runtime-build",
+          "sha256": "ac7b41cddc3b6e2e058cff2f56151589549628c481b7032c0a99f77acfe0f71c"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "c086070ea04dfaef6bc66f3872cd3b35bedda2555f71a8e979c871f6e37df569",
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "fawn-macos-20261102/headless-buffer-candidate",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-20261102-headless-buffer-candidate",
+      "limitations": [
+        "Complete six-repetition headless particle comparison with buffer-use change; goal remains unmet.",
+        "Diagnostic on an active desktop; no isolated-host or release qualification.",
+        "Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.",
+        "Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.",
+        "GPU driver identity is not retained.",
+        "Headless evidence cannot qualify visible presentation or headed performance.",
+        "No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output."
+      ],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-buffer-candidate-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-buffer-candidate-receipts.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "041ca11b548d2d607a696bb08b1cf206856d5eddc3d86c762f89e8c43ccb5180"
+        },
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/buffer-candidate-runtime-build.json.gz",
+          "required": true,
+          "role": "runtime-build",
+          "sha256": "4c0c2c59f7ca9ad39a69a246d22ca314503ebef7cf9bbc862a9e0628a6712f26"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "fbb40650ad3421a3ce4bcdf18546bbfea1ccb10688dc1517145c19e436ac3e1e",
+      "supersedes": []
     }
   ]
 }

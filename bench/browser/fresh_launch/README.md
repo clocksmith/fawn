@@ -42,6 +42,8 @@ with stock, and Doe directly with Dawn in the same Fawn browser.
 The additional candidate/control comparison
 uses its own recorded seed formula, preserving the original comparisons' random
 stream and classification policy. It needs no additional browser launches.
+`reportedAt` records analysis time; launch receipts retain execution times, which
+reanalyzing a run never updates.
 Resume only into an output directory with exactly matching receipt specifications.
 
 The configuration supplies actual browser/library paths and an explicit lock:

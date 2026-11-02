@@ -4,7 +4,7 @@
 
 [All families](../CURRENT.md) · [Complete execution records](../index.json)
 
-456 observations; 432 individual executions.
+531 observations; 495 individual executions.
 
 All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
 
@@ -210,6 +210,172 @@ Limitations:
 - machine.gpu is unknown.
 - machine.osVersion is unknown.
 - reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-51bd12d42f2306b5cc298254a9df95e39b13f97ac315706846e57b83d431af08"></a>
+
+## compute_atomic_canvas
+
+Observation: `51bd12d42f2306b5cc298254a9df95e39b13f97ac315706846e57b83d431af08`; execution: `browser-macos-20261102-headed-compute/compute_atomic_canvas/fawn_doe/fawn_dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: fawn_dawn unknown/unknown.
+
+Executed: 2026-11-02T17:10:53.358000Z; reported: 2026-11-02T18:15:56.498541Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `51bd12d42f2306b5cc298254a9df95e39b13f97ac315706846e57b83d431af08`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 118.5 / 118.7 | ms | 0.99832 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6918032786885245, 1.2669208767830737], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 181 / 180 | ms | 1.0056 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7383333338631524, 1.4107560410543265], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 33.3 / 33.2 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.996987954684068, 1.0182370791152993], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 35.6 / 33.7 | ms | 1.0564 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9944134064818406, 1.0682492566487212], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 45 / 56.9 | ms | 0.79086 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7708333321260633, 1.0297482882473432], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_cpu_ms_per_frame:p50 | 1.9662 / 2.1436 | ms | 0.91724 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7571408343738335, 1.0861307707291734], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 126.73 / 128.65 | MB | 0.9851 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9047376464595008, 1.0698216735253774], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 155.57 / 156.7 | MB | 0.99279 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9201174112388167, 1.0655526878431765], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 36.2 / 33.6 | ms | 1.0774 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6876267726113073, 1.4208955195412707], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 50.7 / 50.5 | ms | 1.004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.992079210753488, 1.0346938785241575], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 52 / 50.9 | ms | 1.0216 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9885931532049547, 1.039761431449224], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 787.6 / 783.4 | ms | 1.0054 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8885221979969036, 1.1113773250975463], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 3.7054 / 3.935 | ms | 0.94165 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8252487094201051, 1.1279966116052529], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_mem_mb:p50 | 326.03 / 325.69 | MB | 1.0011 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9356589966442669, 1.0257875450966116], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headed-compute-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headed-compute-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headed compute comparison; initial/final full-buffer SHA-256 oracle retained.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-11ffc8c618b356132814dcbfc548e49c5547fb3f2293bc817c3fd333ca223ce1"></a>
+
+## compute_atomic_canvas
+
+Observation: `11ffc8c618b356132814dcbfc548e49c5547fb3f2293bc817c3fd333ca223ce1`; execution: `browser-macos-20261102-headed-compute/compute_atomic_canvas/fawn_doe/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:10:58.516000Z; reported: 2026-11-02T18:15:56.498541Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `11ffc8c618b356132814dcbfc548e49c5547fb3f2293bc817c3fd333ca223ce1`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 118.5 / 109.8 | ms | 1.0792 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8979963565341746, 1.3519837216428994], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 181 / 125.8 | ms | 1.4388 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0564387928914336, 1.6380090497737556], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p50_ms:p50 | 33.3 / 33.1 | ms | 1.006 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0151515151515151], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 35.6 / 34.2 | ms | 1.0409 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9825072913858109, 1.0654761920811908], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 45 / 55.5 | ms | 0.81081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7825311973261216, 1.0344827586206897], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_cpu_ms_per_frame:p50 | 1.9662 / 1.7619 | ms | 1.116 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9074499760872589, 1.3098034609662523], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 126.73 / 127.34 | MB | 0.99524 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8994682198024816, 1.0705559368565547], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 155.57 / 154.65 | MB | 1.0059 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.919733594564764, 1.0445108324698635], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 36.2 / 33.5 | ms | 1.0806 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9766763861974216, 1.4251496936742425], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 50.7 / 50.5 | ms | 1.004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9844357939834524, 1.0119521940733311], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 52 / 51.1 | ms | 1.0176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9902343703524821, 1.033596838950351], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 787.6 / 758.3 | ms | 1.0386 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9384836610279638, 1.1521586955947312], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 3.7054 / 3.0562 | ms | 1.2124 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9898366278545002, 1.4300788781770384], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_mem_mb:p50 | 326.03 / 321.31 | MB | 1.0147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9483990301646171, 1.0808205928388557], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headed-compute-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headed-compute-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headed compute comparison; initial/final full-buffer SHA-256 oracle retained.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-b89b1fa7b27bbb54bb88c4a09d9a2ddbc01ad2e2992174262756ede111321d52"></a>
+
+## compute_atomic_canvas
+
+Observation: `b89b1fa7b27bbb54bb88c4a09d9a2ddbc01ad2e2992174262756ede111321d52`; execution: `browser-macos-20261102-headed-compute/compute_atomic_canvas/fawn_dawn/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:10:58.516000Z; reported: 2026-11-02T18:15:56.498541Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `b89b1fa7b27bbb54bb88c4a09d9a2ddbc01ad2e2992174262756ede111321d52`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 118.7 / 109.8 | ms | 1.0811 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9493212678313795, 1.4159702872096682], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 180 / 125.8 | ms | 1.4308 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0198728139979938, 1.6289592760180995], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p50_ms:p50 | 33.2 / 33.1 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9909638568709215, 1.0091185468704948], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 33.7 / 34.2 | ms | 0.98538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.968390807294833, 1.0263929575710649], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 56.9 / 55.5 | ms | 1.0252 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7789661298316067, 1.308045979203849], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_cpu_ms_per_frame:p50 | 2.1436 / 1.7619 | ms | 1.2167 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9504003455776862, 1.5207697126301785], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 128.65 / 127.34 | MB | 1.0103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230184856925803, 1.077831159917639], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 156.7 / 154.65 | MB | 1.0132 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9390689016950717, 1.0434204925206398], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 33.6 / 33.5 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9682080951542058, 1.4760478985493828], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 50.5 / 50.5 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.966469427098918, 1.0059760946619785], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 50.9 / 51.1 | ms | 0.99609 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9824218731537258, 1.015686273574829], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 783.4 / 758.3 | ms | 1.0331 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9029195029333619, 1.2127189667476281], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 3.935 / 3.0562 | ms | 1.2875 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0224298221861177, 1.4799973270370206], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| total_mem_mb:p50 | 325.69 / 321.31 | MB | 1.0136 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.99260839378372, 1.0796803192129663], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headed-compute-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headed-compute-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headed compute comparison; initial/final full-buffer SHA-256 oracle retained.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
 <a id="row-0193fa04b53fc76fe231d3ab858f8db6f51735c1cec4bf83e63535352fc8ce7d"></a>
@@ -618,6 +784,519 @@ Limitations:
 - machine.gpu is unknown.
 - machine.osVersion is unknown.
 - reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-f457c73af319f34fd2f5e06a28ebb31f03dfa00f394445a300dc141701072be6"></a>
+
+## heavy_particles
+
+Observation: `f457c73af319f34fd2f5e06a28ebb31f03dfa00f394445a300dc141701072be6`; execution: `browser-macos-20261102-headed-particles-interrupted/heavy_particles/fawn_doe/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:13:38.690000Z; reported: 2026-11-02T18:15:58.211983Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `f457c73af319f34fd2f5e06a28ebb31f03dfa00f394445a300dc141701072be6`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 94.4 / 108 | ms | 0.87407 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6211085795193585, 4.026722916684795], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 286.3 / 131.7 | ms | 2.1739 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6211085795193585, 2.65092592548441], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 3.2 / 2.9 | ms | 1.1034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999230907844, 1.1379309806188722], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 5.5 / 3.1 | ms | 1.7742 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5142857006617956, 1.8387096079529666], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| completion_p99_ms:p50 | 5.8 / 3.3 | ms | 1.7576 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5277777170693456, 1.8484848462955135], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| gpu_cpu_ms_per_frame:p50 | 1.1966 / 0.74462 | ms | 1.607 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9823984241858595, 1.7729316159653832], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 148.6 / 152.01 | MB | 0.97758 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9450689289501591, 1.0098902293228995], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 200.8 / 202.15 | MB | 0.99335 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9519780173741875, 1.0301659796531437], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999857234384, 1.0060240905886033], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19 / 17.4 | ms | 1.092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0621468870999533, 1.1279069791618974], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| interval_p99_ms:p50 | 19.2 / 17.8 | ms | 1.0787 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.061111119058397, 1.1186440620889933], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| launch_to_first_job_ms:p50 | 975.2 / 1257.7 | ms | 0.77538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.609101265840064, 2.2234190897252977], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 1.9574 / 1.1806 | ms | 1.658 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0510003431256105, 1.9062890491877773], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| total_mem_mb:p50 | 389.19 / 390.8 | MB | 0.99589 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9667199778126644, 1.0331553617199256], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headed-particles-interrupted-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headed-particles-interrupted-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Interrupted at user request after 9 of 18 planned launches; incomplete counterbalance; never resumed as headless.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-19ab1083034179ebabfb8ea614e8bff5b98535972eac0c20d02dc262e1c76236"></a>
+
+## heavy_particles
+
+Observation: `19ab1083034179ebabfb8ea614e8bff5b98535972eac0c20d02dc262e1c76236`; execution: `browser-macos-20261102-headed-particles-interrupted/heavy_particles/fawn_dawn/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:13:48.514000Z; reported: 2026-11-02T18:15:58.211983Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `19ab1083034179ebabfb8ea614e8bff5b98535972eac0c20d02dc262e1c76236`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 81.1 / 108 | ms | 0.75093 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5603644641275325, 3.3052039314653556], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 235 / 131.7 | ms | 1.7844 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5603644641275325, 2.175925925925926], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 3 / 2.9 | ms | 1.0345 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9354838585630297, 1.1034482560174792], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 3.3 / 3.1 | ms | 1.0645 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9142857279096331, 1.1612902382286023], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 3.5 / 3.3 | ms | 1.0606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666169961313, 1.1515152259525419], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_cpu_ms_per_frame:p50 | 0.94726 / 0.74462 | ms | 1.2721 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8289553636364598, 1.7667778389162767], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 153.63 / 152.01 | MB | 1.0107 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9759278897136797, 1.0448864253885446], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 205.11 / 202.15 | MB | 1.0147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9860740904939079, 1.0538846223238847], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999857234384, 1.0060240762260384], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 17.4 / 17.4 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9830508367273071, 1.011627909716817], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 17.8 / 17.8 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9888888862397935, 1.0112994376918032], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 716.1 / 1257.7 | ms | 0.56937 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5390216696656663, 1.4518428967919819], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 1.6803 / 1.1806 | ms | 1.4233 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9346011556282343, 1.9134102010678178], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| total_mem_mb:p50 | 391.95 / 390.8 | MB | 1.0029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9895771810579711, 1.0583349465874643], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headed-particles-interrupted-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headed-particles-interrupted-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Interrupted at user request after 9 of 18 planned launches; incomplete counterbalance; never resumed as headless.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-9c03e0101b932ed2b66f86c614c55cd271b546b4593bfa94a1b50772799511b4"></a>
+
+## heavy_particles
+
+Observation: `9c03e0101b932ed2b66f86c614c55cd271b546b4593bfa94a1b50772799511b4`; execution: `browser-macos-20261102-headed-particles-interrupted/heavy_particles/fawn_doe/fawn_dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: fawn_dawn unknown/unknown.
+
+Executed: 2026-11-02T17:13:48.514000Z; reported: 2026-11-02T18:15:58.211983Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `9c03e0101b932ed2b66f86c614c55cd271b546b4593bfa94a1b50772799511b4`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 94.4 / 81.1 | ms | 1.164 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.34808510618006927, 3.879403795898383], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 286.3 / 235 | ms | 1.2183 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.34808510618006927, 3.879403795898383], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 3.2 / 3 | ms | 1.0667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9687499557621784, 1.1379309806188722], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 5.5 / 3.3 | ms | 1.6667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4722222479773164, 1.781249988358468], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| completion_p99_ms:p50 | 5.8 / 3.5 | ms | 1.6571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4473683484043147, 1.8484848462955135], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| gpu_cpu_ms_per_frame:p50 | 1.1966 / 0.94726 | ms | 1.2632 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8072796610169491, 1.473134979547083], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 148.6 / 153.63 | MB | 0.96726 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9269814853338881, 1.0096707595349343], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 200.8 / 205.11 | MB | 0.97899 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9327171522393729, 1.0117694105505377], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0000000142765617], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19 / 17.4 | ms | 1.092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0804597614526215, 1.11494254338283], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| interval_p99_ms:p50 | 19.2 / 17.8 | ms | 1.0787 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.067039108451976, 1.1123595508627933], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
+| launch_to_first_job_ms:p50 | 975.2 / 716.1 | ms | 1.3618 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8390097051271542, 2.0626141774114832], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 1.9574 / 1.6803 | ms | 1.1649 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7880123685837973, 1.421753080672739], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+| total_mem_mb:p50 | 389.19 / 391.95 | MB | 0.99298 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9407263223887601, 1.0137484943980795], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headed-particles-interrupted-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headed-particles-interrupted-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Interrupted at user request after 9 of 18 planned launches; incomplete counterbalance; never resumed as headless.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-7abd28fe6e5976a8d80fe3f089f20b29448dbc7214ac2926e41d5c10f658446f"></a>
+
+## heavy_particles
+
+Observation: `7abd28fe6e5976a8d80fe3f089f20b29448dbc7214ac2926e41d5c10f658446f`; execution: `browser-macos-20261102-headless-buffer-baseline/heavy_particles/fawn_doe/fawn_dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: fawn_dawn unknown/unknown.
+
+Executed: 2026-11-02T17:31:41.589000Z; reported: 2026-11-02T18:15:59.260627Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `7abd28fe6e5976a8d80fe3f089f20b29448dbc7214ac2926e41d5c10f658446f`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 73.5 / 70.4 | ms | 1.044 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.026647964350905, 1.060085837715008], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| cold_first_job_ms:p95 | 78.7 / 71.5 | ms | 1.1007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0363636350298262, 1.1131541724837961], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p50_ms:p50 | 3.5 / 3.5 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.971428530556815, 1.0588234716633216], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 5.9 / 4.3 | ms | 1.3721 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2500000406395317, 1.4186046447155602], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p99_ms:p50 | 6.6 / 6 | ms | 1.1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0166666507720947, 1.2222221829763662], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_cpu_ms_per_frame:p50 | 1.6295 / 1.5641 | ms | 1.0418 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9789015779894461, 1.1370782947617892], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 141.74 / 148.41 | MB | 0.95507 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9405240839404153, 0.9802362813293585], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| gpu_mem_mb:p50 | 194.04 / 199.97 | MB | 0.97034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9563078068255565, 0.9874580651668757], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 16.6 / 16.7 | ms | 0.99401 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9940119959667, 1.0], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19.2 / 18.4 | ms | 1.0435 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0268817205679377, 1.0607734888865723], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| interval_p99_ms:p50 | 20.5 / 19.2 | ms | 1.0677 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0208333258310127, 1.084210521296451], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| launch_to_first_job_ms:p50 | 619.1 / 629 | ms | 0.98426 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8772482737883668, 1.1613997975054953], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 2.7135 / 2.7153 | ms | 0.99935 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9381045139966965, 1.110936812691013], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_mem_mb:p50 | 357.08 / 364.6 | MB | 0.97937 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9734589429995545, 0.9925091930417352], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headless-buffer-baseline-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headless-buffer-baseline-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headless particle comparison before buffer-use change.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Headless evidence cannot qualify visible presentation or headed performance.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-779d140536d49ccde37da9531e7d2b9550258799cd2ecf1270623c7cb77f4d9d"></a>
+
+## heavy_particles
+
+Observation: `779d140536d49ccde37da9531e7d2b9550258799cd2ecf1270623c7cb77f4d9d`; execution: `browser-macos-20261102-headless-buffer-baseline/heavy_particles/fawn_doe/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:31:51.437000Z; reported: 2026-11-02T18:15:59.260627Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `779d140536d49ccde37da9531e7d2b9550258799cd2ecf1270623c7cb77f4d9d`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 73.5 / 60.5 | ms | 1.2149 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0909090896170244, 1.2842287667832888], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| cold_first_job_ms:p95 | 78.7 / 68.6 | ms | 1.1472 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0801749272251615, 1.288052375949623], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p50_ms:p50 | 3.5 / 3.3 | ms | 1.0606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0294118080172177, 1.121212079614756], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p95_ms:p50 | 5.9 / 4.1 | ms | 1.439 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.309523794656438, 1.5789473882342313], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p99_ms:p50 | 6.6 / 5.6 | ms | 1.1786 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0847458051765362, 1.649999976158142], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_cpu_ms_per_frame:p50 | 1.6295 / 1.2567 | ms | 1.2966 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2057924869511558, 1.436059078215753], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_gfx_mem_mb:p50 | 141.74 / 150.75 | MB | 0.94022 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9391965255157437, 0.9650000000000001], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| gpu_mem_mb:p50 | 194.04 / 201.29 | MB | 0.96394 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9601926568430987, 0.9817253050506461], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| interval_p50_ms:p50 | 16.6 / 16.7 | ms | 0.99401 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9940119817756266, 1.0], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19.2 / 18.4 | ms | 1.0435 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0271739129026356, 1.0607734888865723], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| interval_p99_ms:p50 | 20.5 / 18.9 | ms | 1.0847 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0370370267583604, 1.0899470794014345], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| launch_to_first_job_ms:p50 | 619.1 / 582.1 | ms | 1.0636 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9499230147028765, 1.2570681261146814], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 2.7135 / 1.9746 | ms | 1.3742 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2949822406513385, 1.5483808683311486], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| total_mem_mb:p50 | 357.08 / 363.73 | MB | 0.98171 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9768212856401793, 0.9930481380334046], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headless-buffer-baseline-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headless-buffer-baseline-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headless particle comparison before buffer-use change.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Headless evidence cannot qualify visible presentation or headed performance.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-a90ed68ac4e68bb6a83e57b3b71e15efc9a57e79ec0102875266fdecf6cdeec7"></a>
+
+## heavy_particles
+
+Observation: `a90ed68ac4e68bb6a83e57b3b71e15efc9a57e79ec0102875266fdecf6cdeec7`; execution: `browser-macos-20261102-headless-buffer-baseline/heavy_particles/fawn_dawn/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:31:51.437000Z; reported: 2026-11-02T18:15:59.260627Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `a90ed68ac4e68bb6a83e57b3b71e15efc9a57e79ec0102875266fdecf6cdeec7`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 70.4 / 60.5 | ms | 1.1636 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0491803272281146, 1.220103986779694], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| cold_first_job_ms:p95 | 71.5 / 68.6 | ms | 1.0423 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.03061224702581, 1.1702127677839638], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p50_ms:p50 | 3.5 / 3.3 | ms | 1.0606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0294118080172177, 1.0606060759314058], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p95_ms:p50 | 4.3 / 4.1 | ms | 1.0488 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999445538212, 1.1578947137267304], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 6 / 5.6 | ms | 1.0714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9642857066830812, 1.5], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_cpu_ms_per_frame:p50 | 1.5641 / 1.2567 | ms | 1.2445 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1861065189459445, 1.3306573109648805], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_gfx_mem_mb:p50 | 148.41 / 150.75 | MB | 0.98446 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9833876221498373, 0.9996739130434783], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 199.97 / 201.29 | MB | 0.99341 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.990179219640467, 1.0079785300499842], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9940119817756266, 1.0060240762260384], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 18.4 / 18.4 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9836956546386609, 1.0165745830882298], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 19.2 / 18.9 | ms | 1.0159 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9947644028726768, 1.021164013488386], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 629 / 582.1 | ms | 1.0806 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9585781219079395, 1.2226874193176045], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 2.7153 / 1.9746 | ms | 1.3751 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3114873522081605, 1.4670229861799506], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| total_mem_mb:p50 | 364.6 / 363.73 | MB | 1.0024 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9923143876652335, 1.0105220981212955], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headless-buffer-baseline-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headless-buffer-baseline-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/baseline-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headless particle comparison before buffer-use change.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Headless evidence cannot qualify visible presentation or headed performance.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-eaed2b96af19c7a8916948f7d06c758a4e3b1400fa539e8846a8dcf2d3c5b116"></a>
+
+## heavy_particles
+
+Observation: `eaed2b96af19c7a8916948f7d06c758a4e3b1400fa539e8846a8dcf2d3c5b116`; execution: `browser-macos-20261102-headless-buffer-candidate/heavy_particles/fawn_doe/fawn_dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: fawn_dawn unknown/unknown.
+
+Executed: 2026-11-02T17:53:59.976000Z; reported: 2026-11-02T18:16:01.002341Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `eaed2b96af19c7a8916948f7d06c758a4e3b1400fa539e8846a8dcf2d3c5b116`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 75.6 / 71.9 | ms | 1.0515 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9720744662005378, 1.1100141001890824], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| cold_first_job_ms:p95 | 117 / 85.6 | ms | 1.3668 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8936915897807135, 1.5558510628432345], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 3.9 / 3.7 | ms | 1.0541 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9285713839693139, 1.1388888925681881], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 6.9 / 6.2 | ms | 1.1129 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9838710210822019, 1.4375000341484947], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 7.5 / 6.4 | ms | 1.1719 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.057142870766776, 1.4032258033504348], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_cpu_ms_per_frame:p50 | 2.0567 / 2.0954 | ms | 0.98151 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8376702369541212, 1.1768298955696912], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 141.77 / 150.83 | MB | 0.93993 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9323202931350361, 0.9800154576570608], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| gpu_mem_mb:p50 | 194.77 / 202.67 | MB | 0.96103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9509475112172497, 0.9853948763762609], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9940119817756266, 1.0060240905886033], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19.8 / 19.4 | ms | 1.0206 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9896907191155427, 1.0585106199496794], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 21 / 20.1 | ms | 1.0448 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.019512199774021, 1.1015228302913926], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| launch_to_first_job_ms:p50 | 637.3 / 718.1 | ms | 0.88748 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.825094065890652, 1.157527421177755], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 3.4326 / 3.4998 | ms | 0.98079 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8335484036113741, 1.1597214193423717], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_mem_mb:p50 | 357.84 / 364.27 | MB | 0.98232 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9718006674345818, 0.9935814253464915], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headless-buffer-candidate-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headless-buffer-candidate-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/buffer-candidate-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headless particle comparison with buffer-use change; goal remains unmet.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Headless evidence cannot qualify visible presentation or headed performance.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-35a0671fe73651e058e6b29155f400081c1d736a45d88c3bba8e8c63c61661d3"></a>
+
+## heavy_particles
+
+Observation: `35a0671fe73651e058e6b29155f400081c1d736a45d88c3bba8e8c63c61661d3`; execution: `browser-macos-20261102-headless-buffer-candidate/heavy_particles/fawn_doe/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:54:09.850000Z; reported: 2026-11-02T18:16:01.002341Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `35a0671fe73651e058e6b29155f400081c1d736a45d88c3bba8e8c63c61661d3`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 75.6 / 56.1 | ms | 1.3476 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1794071721671922, 1.4078711927549208], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| cold_first_job_ms:p95 | 117 / 106.6 | ms | 1.0976 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7176360231560892, 2.0103092767034534], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 3.9 / 3.6 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0270270009037352, 1.171428612300328], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p95_ms:p50 | 6.9 / 5.9 | ms | 1.1695 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0338983543985583, 1.468085111779506], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| completion_p99_ms:p50 | 7.5 / 6.5 | ms | 1.1538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.088235315773314, 1.3593749871943148], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_cpu_ms_per_frame:p50 | 2.0567 / 1.8251 | ms | 1.1269 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9675020396594872, 1.3065305821936721], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_gfx_mem_mb:p50 | 141.77 / 150.73 | MB | 0.94054 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9400130406433383, 0.979368932038835], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| gpu_mem_mb:p50 | 194.77 / 201.93 | MB | 0.96454 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9582024038731942, 0.9859640393182165], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | win |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9940119817756266, 1.0060240905886033], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19.8 / 19.3 | ms | 1.0259 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.994818645424963, 1.0702702676927722], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 21 / 20.4 | ms | 1.0294 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0145631161225102, 1.1015228302913926], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 637.3 / 582 | ms | 1.095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7552195965307964, 1.2520378641592043], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 3.4326 / 2.8083 | ms | 1.2223 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0776932247144495, 1.4020012963461104], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| total_mem_mb:p50 | 357.84 / 363.11 | MB | 0.98547 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9785355428251059, 0.9970127981618634], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headless-buffer-candidate-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headless-buffer-candidate-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/buffer-candidate-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headless particle comparison with buffer-use change; goal remains unmet.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Headless evidence cannot qualify visible presentation or headed performance.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="row-75c0718cacfac8dfbbb77a3c619ce8e8e3283b50af992a4dfb3d5275c049ef58"></a>
+
+## heavy_particles
+
+Observation: `75c0718cacfac8dfbbb77a3c619ce8e8e3283b50af992a4dfb3d5275c049ef58`; execution: `browser-macos-20261102-headless-buffer-candidate/heavy_particles/fawn_dawn/chrome`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: unknown; driver: unknown.
+
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/2acf677e0b33.
+
+Executed: 2026-11-02T17:54:09.850000Z; reported: 2026-11-02T18:16:01.002341Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `75c0718cacfac8dfbbb77a3c619ce8e8e3283b50af992a4dfb3d5275c049ef58`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 71.9 / 56.1 | ms | 1.2816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1060842423890922, 1.3823529396296372], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| cold_first_job_ms:p95 | 85.6 / 106.6 | ms | 0.803 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7054409016412739, 1.4707903751632272], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p50_ms:p50 | 3.7 / 3.6 | ms | 1.0278 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9729729346588117, 1.2000000136239188], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p95_ms:p50 | 6.2 / 5.9 | ms | 1.0508 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8135593336774374, 1.3191488822049395], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| completion_p99_ms:p50 | 6.4 / 6.5 | ms | 0.98462 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8461538461538461, 1.1228070718466465], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_cpu_ms_per_frame:p50 | 2.0954 / 1.8251 | ms | 1.1481 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0134483951898952, 1.2265518108806224], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| gpu_gfx_mem_mb:p50 | 150.83 / 150.73 | MB | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9842425559660944, 1.0237202118270081], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| gpu_mem_mb:p50 | 202.67 / 201.93 | MB | 1.0037 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.991745933507638, 1.0166288285450331], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p50_ms:p50 | 16.7 / 16.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9940119817756266, 1.0060240905886033], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p95_ms:p50 | 19.4 / 19.3 | ms | 1.0052 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9740932765379923, 1.0486486409161542], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| interval_p99_ms:p50 | 20.1 / 20.4 | ms | 0.98529 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9460784246123144, 1.0575916308137965], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| launch_to_first_job_ms:p50 | 718.1 / 582 | ms | 1.2338 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8299736704056825, 1.2731555248257145], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+| total_cpu_ms_per_frame:p50 | 3.4998 / 2.8083 | ms | 1.2462 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1305471219560947, 1.3422176225488796], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | loss |
+| total_mem_mb:p50 | 364.27 / 363.11 | MB | 1.0032 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9969370167902888, 1.0133152439013065], 'unit': 'ratio'} | {'implementation': 6, 'comparator': 6, 'unit': 'observations'} | inconclusive |
+
+Evidence:
+
+- [report](../fawn-vs-chromium/20261102/headless-buffer-candidate-summary.json): retained.
+- [launches](../fawn-vs-chromium/20261102/headless-buffer-candidate-receipts.tar.gz): retained.
+- [runtime-build](../fawn-vs-chromium/20261102/buffer-candidate-runtime-build.json.gz): retained.
+
+Limitations:
+
+- Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.
+- Browser integration evidence cannot qualify native runtime or workspace behavior.
+- Complete six-repetition headless particle comparison with buffer-use change; goal remains unmet.
+- Diagnostic on an active desktop; no isolated-host or release qualification.
+- Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.
+- GPU driver identity is not retained.
+- Headless evidence cannot qualify visible presentation or headed performance.
+- No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
 <a id="row-99e9cecb3f091acb292111bc101f0e6a4410fb2b51d2044998b66ce3fa0e1324"></a>
