@@ -249,7 +249,9 @@ $(BUILD)/fault-sweep: tests/fault_sweep.c tests/consumer.h tests/adapter_class.h
 $(BUILD)/pending-progress: tests/pending_progress.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/pending_progress.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=pthread_create -Wl,--wrap=native_backend_close -Wl,--wrap=native_buffer_close \
-	  -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
+	  -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release \
+	  -Wl,--wrap=calloc -Wl,--wrap=free -Wl,--wrap=doe_vk_commands_create -Wl,--wrap=doe_vk_commands_block \
+	  -Wl,--wrap=native_async_publish_ready -Wl,--wrap=pthread_cond_timedwait -o $@
 $(BUILD)/encoder-finish-oom: tests/encoder_finish_oom.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=malloc -o $@
 $(BUILD)/map-oom: tests/map_oom.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)

@@ -12,11 +12,11 @@
  * terminal, or NULL. A refused submission (uncertain, its fence never
  * signals) is skipped: only blocking recovery resolves it, and waiting for it
  * would strand later work. Caller holds the device mutex. */
-static native_command_handle *oldest_in_flight(native_device *device)
+static native_pending *oldest_in_flight(native_device *device)
 {
     for (native_pending *pending = device->pending; pending; pending = pending->next) {
         if (pending->kind != NATIVE_PENDING_COMMANDS) continue;
-        if (native_command_in_flight(&pending->native)) return &pending->native;
+        if (native_command_in_flight(&pending->native)) return pending;
     }
     return NULL;
 }
@@ -37,7 +37,7 @@ static void pending_progress(void *identity)
     native_device *device = identity;
     /* A fence that signalled while its record still reports running (a
      * backend boundary that obscures completion) falls back to timed polls. */
-    uintptr_t signalled = 0;
+    uint64_t signalled_serial = 0;
     native_lock(device);
     for (;;) {
         while (!progress_needed(device) && !device->pending_progress_join &&
@@ -95,15 +95,19 @@ static void pending_progress(void *identity)
          * through a concurrent settle; completion is observed under the
          * mutex on the next iteration. Metal no longer waits here (owner
          * decision 2026-10-31): its completed handler signals pending_changed. */
-        native_command_handle *oldest = oldest_in_flight(device);
+        native_pending *oldest_record = oldest_in_flight(device);
+        native_command_handle *oldest = oldest_record ? &oldest_record->native : NULL;
+        /* Commands can be freed and reallocated at the same address while the
+         * worker publishes a callback outside this mutex. Submission serials
+         * are never recycled, and remain valid across the unlocked fence wait. */
+        const uint64_t oldest_serial = oldest_record ? oldest_record->serial : 0;
         if (oldest && oldest->kind == WGPUBackendType_Vulkan &&
-            (uintptr_t)oldest->value.vulkan != signalled && doe_vk_commands_hold(oldest->value.vulkan) == DOE_VK_OK) {
+            oldest_serial != signalled_serial && doe_vk_commands_hold(oldest->value.vulkan) == DOE_VK_OK) {
             doe_vk_commands *command = oldest->value.vulkan;
-            const uintptr_t command_identity = (uintptr_t)command;
             native_unlock(device);
             doe_vk_status waited = doe_vk_commands_block(command, PROGRESS_FENCE_WAIT_NS);
             native_lock(device);
-            signalled = waited == DOE_VK_OK ? command_identity : 0;
+            signalled_serial = waited == DOE_VK_OK ? oldest_serial : 0;
             doe_vk_commands_unhold(command);
             continue;
         }
@@ -116,15 +120,14 @@ static void pending_progress(void *identity)
         }
 #if defined(_WIN32)
         if (oldest && oldest->kind == WGPUBackendType_D3D12 &&
-                (uintptr_t)oldest->value.d3d12.commands != signalled) {
-            const uintptr_t command_identity = (uintptr_t)oldest->value.d3d12.commands;
+                oldest_serial != signalled_serial) {
             doe_dx_wait_lease lease = {0};
             doe_dx_status held = doe_dx_commands_hold(oldest->value.d3d12.commands, &lease, NULL);
             if (held == DOE_DX_OK) {
                 native_unlock(device);
                 doe_dx_status waited = doe_dx_commands_block(&lease, 100, NULL);
                 native_lock(device);
-                signalled = waited == DOE_DX_PENDING ? 0 : command_identity;
+                signalled_serial = waited == DOE_DX_PENDING ? 0 : oldest_serial;
                 /* The ordinary worker device lease prevents final context
                  * destruction while this event obligation is transferred. */
                 doe_dx_status released = doe_dx_commands_unhold(&lease, NULL);
@@ -134,7 +137,7 @@ static void pending_progress(void *identity)
             }
         }
 #endif
-        if (!oldest) signalled = 0;
+        if (!oldest) signalled_serial = 0;
         if (device->pending) {
             struct timespec now, deadline;
             doe_host_result clock = doe_monotonic_now(&now);
