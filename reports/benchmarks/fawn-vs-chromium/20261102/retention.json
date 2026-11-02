@@ -18,6 +18,11 @@
       "originalManifestSha256": "b18236f89100a2979fbf7cdfec0105b9f8fa4c6f48eeeec36589e26d852e315e",
       "retainedPath": "buffer-candidate-runtime-build.json.gz",
       "sourceCommit": "8c4bc670ec5452f126adf99c4a5b315e0a99e922"
+    },
+    "wake-candidate": {
+      "originalManifestSha256": "bd8bebe72fc3b981a8e0b700819baf8d9c0fcc8c5326aa337a3cc5fb5a44e0e0",
+      "retainedPath": "wake-candidate-runtime-build.json.gz",
+      "sourceCommit": "aa402f004092b99cdd9f2e18c74a1f6b49fca59b"
     }
   },
   "cohorts": {
@@ -243,6 +248,54 @@
       "presentationMode": "headless",
       "runtimeBuild": "buffer-candidate",
       "scope": "Complete six-repetition headless particle comparison with buffer-use change; goal remains unmet."
+    },
+    "headless-wake-candidate": {
+      "originalFileSha256": {
+        "launches/heavy_particles.chrome.r00.json": "7153dd9918fa28351571f04a6bcd67fc7e8153e09fbcbd7d82813d8eb3876b72",
+        "launches/heavy_particles.chrome.r00.png": "c5cfe50e36036eb09c40b2bb393b5c9d8da59592c77aa7fdc81d9663ee76c66c",
+        "launches/heavy_particles.chrome.r00.spec.json": "a89356c8a2dd9cee3862a60ef12e531a3bbe471c82e3b81a20111731b28b0b37",
+        "launches/heavy_particles.chrome.r01.json": "c322c1b75a2bc5656449703f16570ea82d2ed85253980a0dfc4d162ef95487ec",
+        "launches/heavy_particles.chrome.r01.spec.json": "dfa67b6be701a0c5ab859724677ff72a754f4083bcc0e5d3887c237241fa4448",
+        "launches/heavy_particles.chrome.r02.json": "2116ea4c93adffc53e8c733fee45971295a56de9ff5e0e43cfd2ca879e6dd6b9",
+        "launches/heavy_particles.chrome.r02.spec.json": "33f28c0cd53949c286ed08e57364d3f3fdea3f2838691b2b97a2ccb1a507548e",
+        "launches/heavy_particles.chrome.r03.json": "00d97f9e9e013d8f2df280e1b33d985280fe8d46ef1a077190b7a77372270105",
+        "launches/heavy_particles.chrome.r03.spec.json": "95f98bc889e4acf1e124a2db51eb582ec8eb97d5f6ef120f7eccab3609320519",
+        "launches/heavy_particles.chrome.r04.json": "645de76fb66e43ca7ae758d30d18d9a1f1249ebc1b56d51179dd8f4dd2ad4439",
+        "launches/heavy_particles.chrome.r04.spec.json": "72b3589ab661a49948511a6cff6b3c32cfa4c50623ae99f9dab3242c4987b6e6",
+        "launches/heavy_particles.chrome.r05.json": "d812cfd7b38a8c1846a27f04b1944046f565f7e0dd08b9b65507cfa21df249ac",
+        "launches/heavy_particles.chrome.r05.spec.json": "4a6e0510748f417888ef76a65060be7101f0c18a60674f1429f03d418443fb34",
+        "launches/heavy_particles.fawn_dawn.r00.json": "822b49510fe5dfa39383e604b8876092f66e68dcf5d46d8fabe4e5d720aa0d9f",
+        "launches/heavy_particles.fawn_dawn.r00.png": "928182a5a6df9c76ec5b914484f71c9546204945c26df874e462c7a2db10112e",
+        "launches/heavy_particles.fawn_dawn.r00.spec.json": "76638ddb7742c358e28b2f35fb733dc6701c40c2faacab123a73c40b65e8799d",
+        "launches/heavy_particles.fawn_dawn.r01.json": "a1fcd332e216953c50cf5a2c3d6b266f46cf4840728e65b9bf2bdb23ce7f7013",
+        "launches/heavy_particles.fawn_dawn.r01.spec.json": "6a7aec7d12cac609dcb6ffa8055780492a3e63781657385b6b9c0da91c045830",
+        "launches/heavy_particles.fawn_dawn.r02.json": "52e69b7252205fc1814609fe84fefdff1dddd8be20bf46a4906f91711b38ea2d",
+        "launches/heavy_particles.fawn_dawn.r02.spec.json": "373a06b83508e5de81e6566f6ecb2e9f216c4894887a02caf2b13ac2865e4490",
+        "launches/heavy_particles.fawn_dawn.r03.json": "1c5759a71ac6574d20775cf0c74f615459ff6aa098894ddc368be3e8c31dad85",
+        "launches/heavy_particles.fawn_dawn.r03.spec.json": "4ed6457232ba212787ad9339f4028066d16e0c21da87a03d6a8db74a670a6a8d",
+        "launches/heavy_particles.fawn_dawn.r04.json": "1da8c35e7916f1832fc4348f9545450adf470d79f86cbebbc896bf3bad9c2d20",
+        "launches/heavy_particles.fawn_dawn.r04.spec.json": "8b7b94f22a99be61f8abe805747f86ff79bf79aca1a8011f9dafdc2d646cc9ca",
+        "launches/heavy_particles.fawn_dawn.r05.json": "29e4158b352a1a8bbe10d75192a8297d3e946e764d614e56b8414aa4826b91e5",
+        "launches/heavy_particles.fawn_dawn.r05.spec.json": "a4c93f3bc138a59efc63aee30b9e29375e11802bd10f551d1d48043815b7e53e",
+        "launches/heavy_particles.fawn_doe.r00.json": "c2b10439039675d9f9f56eb70dd59b50e5f7cb424186643acce4a0898fc744b1",
+        "launches/heavy_particles.fawn_doe.r00.png": "75ea871e5b734b5bdfbdeef97ffe457eb2189601202d75e5928a92c0a16c08eb",
+        "launches/heavy_particles.fawn_doe.r00.spec.json": "67eff2ca1457557b53dc8442918e6cb990d4744c90f1ed63749cf605f7241d5e",
+        "launches/heavy_particles.fawn_doe.r01.json": "5e61779b9125a6fa805553fa0a3975e77bf3bb6afe3146213a758248d3b85ec3",
+        "launches/heavy_particles.fawn_doe.r01.spec.json": "78cb414aa197dc557e49892cbb4efb552a3cac437b015206acf869c6e9fce415",
+        "launches/heavy_particles.fawn_doe.r02.json": "c86795d68947936ae0a05ffdfef93d5a3c5f73b4a72546781420a59db289aeb2",
+        "launches/heavy_particles.fawn_doe.r02.spec.json": "21e2014af77adcb9a599fd21fb208fbfec043efd76fe7a260c7c5ef3a3673ee1",
+        "launches/heavy_particles.fawn_doe.r03.json": "3f6b1eb54a4b904eb18a717942ee215c5962b10aae4d94d7d05f1ab4260c95da",
+        "launches/heavy_particles.fawn_doe.r03.spec.json": "fcb6e55d5f3c1f5978fc119527949feae4b216ab8b5d8466cded2f4f977c8815",
+        "launches/heavy_particles.fawn_doe.r04.json": "377633b7f6d8c4557ba5154d7f5683ac64d9e78f3f725b89d188e498db30ebf9",
+        "launches/heavy_particles.fawn_doe.r04.spec.json": "7e9327b95405a537e647fac57114f9ecff512bb8d5b24923c9c6860a12dfdd20",
+        "launches/heavy_particles.fawn_doe.r05.json": "0b7f41c518cfc7a52b34a4b39cb87b618b984cf7359bfb189978762eec91f368",
+        "launches/heavy_particles.fawn_doe.r05.spec.json": "724a9469695208b45e789c0766f16f1d283dceeb29a2cff4a08f603e3b12a46b",
+        "orchestrate.log": "560770098b7d5ef550e10c4d67c4b88023b1f494aca1d4c393ca9fa6326bc096",
+        "schedule.json": "6dcc5d65c11c4bdfbf3f5cad9ea44e2e6780b442d00070fab7fbfb5d7672f476"
+      },
+      "presentationMode": "headless",
+      "runtimeBuild": "wake-candidate",
+      "scope": "Complete six-repetition headless particle comparison with lossless Metal completion notification synchronization; diagnostic, no universal win qualification."
     }
   },
   "consumer": "reports/benchmarks/sources.json: browser-macos source-bound diagnostic comparisons and rejected all-tests win target",
@@ -256,5 +309,5 @@
   },
   "qualification": "diagnostic",
   "redaction": "Only private filesystem prefixes and JSON formatting change. Numeric samples, execution clocks, hashes, flags, errors and limitations are preserved. Original byte hashes are recorded below; unredacted originals remain local.",
-  "reportedAt": "2026-11-02T19:20:32.868874+00:00"
+  "reportedAt": "2026-11-02T19:36:15.866541+00:00"
 }

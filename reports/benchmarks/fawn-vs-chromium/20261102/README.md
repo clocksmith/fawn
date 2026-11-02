@@ -13,6 +13,7 @@ historical observations.
 | Particles, six repetitions per arm | Headless | `a3af9e521` | [baseline](headless-buffer-baseline-summary.md) |
 | Particles, six repetitions per arm | Headless | `8c4bc670e` | [buffer-use candidate](headless-buffer-candidate-summary.md) |
 | Particles, six repetitions per arm | Headless | `7c6ad42c2` | [texture-use candidate](headless-alpha-candidate-summary.md) |
+| Particles, six repetitions per arm | Headless | `aa402f004` | [completion-wake candidate](headless-wake-candidate-summary.md) |
 
 The three arms use stock Chrome for Testing 158, Fawn 158 with Dawn, and the
 same Fawn browser with an explicitly selected C payload. The stock build is
@@ -33,6 +34,11 @@ is 1.278 against both stock and the same-Fawn Dawn control. Against Dawn, the
 [1.125, 1.622]. These are losses under the existing classifier. The stock tail
 comparison is inconclusive. This separate cohort retains its own controls;
 differences across cohorts are not an isolated estimate of the patch's effect.
+
+The completion-wake candidate also loses median completion against stock and
+the same-Fawn Dawn control. Its separate metric outcomes and uncertainty are in
+the linked generated summary. This run predates the ready-callback fast path in
+`50cf8feb8`; it provides no measurement of that later change.
 
 The retained C build manifests bind the loaded runtime/compiler component hashes.
 Browser source provenance is incomplete. The receipt helper detected executable

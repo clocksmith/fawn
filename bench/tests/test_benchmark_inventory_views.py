@@ -103,6 +103,48 @@ class TestInventoryStorage(unittest.TestCase):
 
 
 class TestInventoryViews(unittest.TestCase):
+    def test_unbound_history_never_becomes_one_hosts_current_result(self) -> None:
+        value = fixture()
+        for row in value["rows"]:
+            row["machine"]["id"] = "unknown:" + row["registrationId"]
+        front = markdown.render_current(value)
+        self.assertEqual(front.count("[Fixture family]"), 1)
+        self.assertIn("unbound history (not one host)", front)
+        self.assertIn("host-specific current result unknown", front)
+        self.assertNotIn("latest qualified: workload", front)
+        self.assertIn("1/1/0/0", front)
+
+    def test_family_without_observations_remains_discoverable(self) -> None:
+        value = fixture()
+        value["rows"] = []
+        value["current"] = []
+        front = markdown.render_current(value)
+        self.assertIn("[Fixture family]", front)
+        self.assertIn("no registered observations", front)
+
+    def test_overview_keeps_actual_machines_separate(self) -> None:
+        value = fixture()
+        second = deepcopy(value["rows"][1])
+        second.update(rowId="second-host", registrationId="second-host")
+        second["machine"]["id"] = "host-b"
+        model.finalize_inventory_row(second)
+        value["rows"].append(second)
+        value["current"] = model.select_inventory_current(value["rows"], value["currentSource"])
+        front = markdown.render_current(value)
+        self.assertEqual(front.count("[Fixture family]"), 2)
+        self.assertIn("host-a / linux", front)
+        self.assertIn("host-b / linux", front)
+
+    def test_late_contract_date_does_not_make_undated_history_current(self) -> None:
+        value = fixture()
+        value["rows"][0]["executedAt"] = None
+        value["rows"][0]["contractFrozenAt"] = "2099-01-01T00:00:00Z"
+        value["current"] = model.select_inventory_current(value["rows"], value["currentSource"])
+        front = markdown.render_current(value)
+        self.assertIn("2026-11-01T00:00:00Z", front)
+        self.assertNotIn("2099", front)
+        self.assertIn("0/1/0/0", front)
+
     def test_front_page_links_history_without_hiding_older_qualified_result(
         self,
     ) -> None:
@@ -111,6 +153,9 @@ class TestInventoryViews(unittest.TestCase):
         self.assertIn("(families/fixture.md)", front)
         self.assertNotIn(value["rows"][0]["rowId"], front)
         self.assertIn("current source unmeasured", front)
+        self.assertIn("0/1/0/0", front)
+        self.assertIn("latest qualified: workload at 2026-10-01", front)
+        self.assertIn("history: 1 other failed records", front)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             pages = markdown.render_families(value, root / "CURRENT.md", root)
@@ -129,7 +174,8 @@ class TestInventoryViews(unittest.TestCase):
             row["metrics"][0]["outcome"] = "not-classified-as-loss"
         counts = markdown.outcome_counts(value["rows"])
         self.assertEqual(counts["win"], 0)
-        self.assertEqual(counts["inconclusive"], 2)
+        self.assertEqual(counts["inconclusive"], 0)
+        self.assertEqual(counts["unknown"], 2)
 
     def test_dashboard_is_self_contained_and_escapes_receipt_script_content(
         self,

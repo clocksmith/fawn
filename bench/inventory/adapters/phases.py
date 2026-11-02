@@ -14,15 +14,14 @@ def bind_phase(
     row: dict[str, Any], source: Source, provider: str, control: str
 ) -> None:
     contract = source.data("contract") or {}
-    row["workloadContractHash"] = (source.reference("contract") or {}).get(
+    row["workloadContractHash"] = (source.reference("workload-contract") or source.reference("contract") or {}).get(
         "sha256"
     )
     row["contractFrozenAt"] = reports.execution_times(contract)[
         "contractFrozenAt"
     ]
-    row["backend"] = (
-        "metal" if "metal" in source.registration["familyId"] else "vulkan"
-    )
+    row["backend"] = contract.get("backend") or (
+        "metal" if "metal" in source.registration["familyId"] else "vulkan")
     row["implementation"]["name"] = provider
     row["comparator"]["name"] = control
     if provider == "doe":
@@ -67,6 +66,7 @@ def bind_phase(
 
 def phase_cohort(source: Source) -> list[dict[str, Any]]:
     rows = []
+    executions: dict[tuple[str, str], list[dict[str, Any]]] = {}
     verdicts = source.data("verdicts") or {}
     for workload, section in source.payload["workloads"].items():
         for comparison, paired in section["paired"].items():
@@ -189,5 +189,22 @@ def phase_cohort(source: Source) -> list[dict[str, Any]]:
                     else None
                 )
                 reports.apply_provenance(row, payload)
+                executions.setdefault((payload["workload"], provider), []).append({
+                    "provenance": payload.get("provenance"), "correctness": row["correctness"],
+                    "rawEvidence": raw_ref["path"],
+                    "executionTimeSource": raw_ref["path"] + "#line=" + str(i + 1) + "/provenance/executedAt",
+                })
                 rows.append(row)
+    for row in rows:
+        if row["observationLevel"] == "aggregate":
+            observations = {
+                side: executions.get((row["workloadId"], row[side]["name"]), [])
+                for side in ("implementation", "comparator")
+            }
+            reports.apply_comparison_provenance(row, observations)
+            selected = [record for values in observations.values() for record in values]
+            if all(observations.values()) and all(record["correctness"]["status"] == "passed" for record in selected):
+                row["correctness"] = {"status": "passed", "evidence": ", ".join(
+                    sorted({record["rawEvidence"] for record in selected}))
+                    + "#all selected workload/provider oracleChecked equals iterations"}
     return rows

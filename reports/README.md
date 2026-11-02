@@ -11,6 +11,10 @@ aggregate histories. The compact v3 index expands through
 `bench.inventory.storage.load_inventory`; expanded v2 export remains available. Unknown
 dates, machines, builds and qualification remain explicit; retained historical
 wins do not qualify another binary or current source.
+The front page separates observed machines from unbound historical evidence,
+shows the newest dated campaign without pooling older wins, and distinguishes
+unknown outcomes from statistically inconclusive comparisons. Older qualified
+results remain separate; complete history lives behind the family links.
 
 Follow one flow: register retained evidence paths/checksums and provenance in
 [sources.json](benchmarks/sources.json), run `python3 bench/cli.py inventory`,

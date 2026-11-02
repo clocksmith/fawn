@@ -70,6 +70,21 @@ uncertainty. Human build hashes and values are abbreviated; JSON keeps precision
 The dashboard filters the same data and defaults to aggregates, with an explicit
 individual-execution option.
 
+The front page shows the newest dated campaign for each bound machine/adapter;
+unbound evidence is a historical bucket, never treated as one host. Its logical
+machine and execution identities remain separate in the index. Counts cover the shown
+scope, with wins, losses, inconclusive and unknown displayed separately. Older
+qualified results and historical failures remain visible without being pooled
+into a newer result. Follow each family link for every aggregate and execution
+reference, including undated history.
+
+New `phase-cohort` builds write a neighboring `.build.json` receipt binding the
+harness, actual provider library, compiler components and source receipt. Keep
+that sidecar beside a copied harness. A replaced artifact cannot inherit its
+predecessor's source identity; explicit unknowns in execution receipts override
+supplemental provenance. The phase summary's `reportedAt` records analysis time,
+while aggregate execution time comes only from the selected raw executions.
+
 Native catalog normalization calls the existing classifier and references its
 policy by identity/hash, including its **absolute Doe median floor**. The
 [reanalysis](../reports/benchmarks/catalog-20261101/REANALYSIS.md) explains

@@ -346,7 +346,8 @@ def summarize(args: argparse.Namespace) -> None:
     rows = [json.loads(line) for path in args.raw for line in Path(path).read_text().splitlines() if line.strip()]
     failed = [r for r in rows if r["returnCode"] != 0 or r["result"].get("status") != "ok"]
     ok = [r for r in rows if r not in failed]
-    report = {"schemaVersion": 1, "rawFiles": {p: sha256(Path(p)) for p in args.raw}, "failedProcesses": len(failed),
+    report = {"schemaVersion": 1, "reportedAt": datetime.now(timezone.utc).isoformat(),
+              "rawFiles": {p: sha256(Path(p)) for p in args.raw}, "failedProcesses": len(failed),
               "bootstrap": {"resamples": BOOTSTRAP_RESAMPLES, "seed": BOOTSTRAP_SEED, "interval": 0.95},
               "timing": "host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on Apple; QueryPerformanceCounter on Windows); not GPU timestamps",
               "workloads": {}}

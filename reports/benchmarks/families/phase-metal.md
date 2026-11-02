@@ -4910,7 +4910,7 @@ Build: doe dcc4c1e842b7/1e4c7b01b473; comparator: dawn d04f88359391/ea81f617e798
 
 Executed: 2026-11-02T02:01:06Z; reported: unknown; contract frozen: 2026-11-02T01:59:38.876366Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `7d0d012ee243534c5729f27e6be228fd015cac30808438ec378f2de6c999e0c7`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4995,7 +4995,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn d04f88359391/ea81f617e798.
 
 Executed: 2026-11-02T02:01:06Z; reported: unknown; contract frozen: 2026-11-02T01:59:38.876366Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `a416cddf25bead3fe1419ff7e6b12aa98b6e2be6f1fc302dbed1575fa2f855c5`; latest qualified: `None`; verdict: diagnostic.
 
@@ -10422,7 +10422,7 @@ Build: doe dcc4c1e842b7/1e4c7b01b473; comparator: dawn d04f88359391/ea81f617e798
 
 Executed: 2026-11-02T02:01:06Z; reported: unknown; contract frozen: 2026-11-02T01:59:38.876366Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `5e371aeed75a58378ca03d207712ac3ecd6ca4e1fe92b5449efd7e28458ae5c0`; latest qualified: `None`; verdict: diagnostic.
 
@@ -10507,7 +10507,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn d04f88359391/ea81f617e798.
 
 Executed: 2026-11-02T02:01:06Z; reported: unknown; contract frozen: 2026-11-02T01:59:38.876366Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `b0ce1171c3aebd0f1a1edf42afd7e7e67962573dfa03ed3722db5eef3e71c226`; latest qualified: `None`; verdict: diagnostic.
 
@@ -15484,7 +15484,7 @@ Build: doe dcc4c1e842b7/1e4c7b01b473; comparator: dawn d04f88359391/ea81f617e798
 
 Executed: 2026-11-02T02:01:06Z; reported: unknown; contract frozen: 2026-11-02T01:59:38.876366Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `837df6a43e226b6bbc0536cbde4e13c3bde7e8956e36c4fb96c5283019522c1b`; latest qualified: `None`; verdict: diagnostic.
 
@@ -15569,7 +15569,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn d04f88359391/ea81f617e798.
 
 Executed: 2026-11-02T02:01:06Z; reported: unknown; contract frozen: 2026-11-02T01:59:38.876366Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `e1746fc4633872fa9364d2bdf638e9cdb32a92a6ced29dfc4902f28b83290b9b`; latest qualified: `None`; verdict: diagnostic.
 

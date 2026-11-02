@@ -82,14 +82,42 @@ def apply_provenance(row: dict[str, Any], payload: dict[str, Any]) -> None:
 
     receipt_provenance.validate_provenance(provenance)
     for field in ("machine", "implementation", "comparator"):
-        for key, value in provenance[field].items():
-            if key == "componentHashes":
-                row[field][key].update(value)
-            elif value is not None:
-                row[field][key] = value
+        row[field] = dict(provenance[field])
+        if "componentHashes" in row[field]:
+            row[field]["componentHashes"] = dict(row[field]["componentHashes"])
     row["executedAt"] = provenance["executedAt"]
     row["executionTimeSource"] = provenance["executionTimeSource"]
     row["limitations"].extend(provenance["limitations"])
+
+
+def apply_comparison_provenance(row: dict[str, Any], observations: dict[str, list[dict[str, Any]]]) -> None:
+    """Bind a comparison only to consistent, complete execution envelopes."""
+    from bench.lib import receipt_provenance
+
+    records = [record for values in observations.values() for record in values]
+    if not all(observations.values()) or not records or not all(
+        isinstance(record.get("provenance"), dict)
+        and record["provenance"].get("kind") == "benchmark-execution-provenance" for record in records
+    ):
+        return
+    for record in records:
+        receipt_provenance.validate_provenance(record["provenance"])
+    latest = max(records, key=lambda record: parse_utc_iso(record["provenance"]["executedAt"]))
+    row["executedAt"] = latest["provenance"]["executedAt"]
+    row["executionTimeSource"] = latest["executionTimeSource"]
+    machines = [record["provenance"]["machine"] for record in records]
+    for key in row["machine"]:
+        values = [machine.get(key) for machine in machines]
+        row["machine"][key] = values[0] if all(value == values[0] for value in values) else None
+    if row["machine"]["id"] is None:
+        row["limitations"].append("Comparison executions do not bind one actual machine.")
+    for side, values in observations.items():
+        identities = [value["provenance"]["implementation"] for value in values]
+        if all(value == identities[0] for value in identities):
+            row[side] = {**identities[0], "componentHashes": dict(identities[0]["componentHashes"])}
+        else:
+            row[side].update(sourceCommit=None, binaryHash=None, componentHashes={})
+            row["limitations"].append("Comparison " + side + " executions contain different artifact identities.")
 
 
 def inventory_row(

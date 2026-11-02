@@ -304,7 +304,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -380,7 +380,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -454,7 +454,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -741,7 +741,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -815,7 +815,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -889,7 +889,7 @@ Build: doe unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1105,7 +1105,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1179,7 +1179,7 @@ Build: landed unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1324,7 +1324,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1398,7 +1398,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1474,7 +1474,7 @@ Build: combined unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1548,7 +1548,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1693,7 +1693,7 @@ Build: m2r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1840,7 +1840,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -1914,7 +1914,7 @@ Build: main2 unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2132,7 +2132,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2277,7 +2277,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2351,7 +2351,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2425,7 +2425,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2499,7 +2499,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2719,7 +2719,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -2864,7 +2864,7 @@ Build: combined unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3009,7 +3009,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T12:36:16Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3294,7 +3294,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3441,7 +3441,7 @@ Build: m2r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3588,7 +3588,7 @@ Build: doe unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3662,7 +3662,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3738,7 +3738,7 @@ Build: landed unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -3812,7 +3812,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4032,7 +4032,7 @@ Build: landed unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T12:36:16Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4175,7 +4175,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4249,7 +4249,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T12:36:16Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4321,7 +4321,7 @@ Build: m6 unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4397,7 +4397,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -4974,7 +4974,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5119,7 +5119,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5193,7 +5193,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5269,7 +5269,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5343,7 +5343,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5417,7 +5417,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5491,7 +5491,7 @@ Build: main unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5565,7 +5565,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5712,7 +5712,7 @@ Build: m2r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -5859,7 +5859,7 @@ Build: doe unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -6004,7 +6004,7 @@ Build: m7r unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -6220,7 +6220,7 @@ Build: dawn-aa unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -6294,7 +6294,7 @@ Build: combined unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T02:10:51Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 
@@ -6439,7 +6439,7 @@ Build: landed unknown/unknown; comparator: dawn unknown/unknown.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-10-31T11:55:18Z.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
 Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
 

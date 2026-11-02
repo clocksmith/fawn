@@ -19,6 +19,33 @@ from bench.tests.test_benchmark_inventory import observation
 
 
 class TestReceiptProvenance(unittest.TestCase):
+    def test_execution_unknowns_replace_supplemental_source_assertions(self) -> None:
+        row = observation("supplemental", None)
+        row["implementation"].update(sourceCommit="a" * 40, binaryHash="old-binary",
+                                     componentHashes={"old-compiler": "old-hash"})
+        envelope = provenance.capture_provenance(executed_at="2026-11-02T12:00:00Z",
+                                                implementation={"name": "doe"})
+        model.apply_provenance(row, {"provenance": envelope})
+        self.assertIsNone(row["implementation"]["sourceCommit"])
+        self.assertIsNone(row["implementation"]["binaryHash"])
+        self.assertEqual(row["implementation"]["componentHashes"], {})
+        self.assertFalse(model.inventory_qualified(row))
+
+    def test_comparison_uses_execution_clocks_and_rejects_mixed_artifacts(self) -> None:
+        row = observation("comparison", None)
+        envelope = provenance.capture_provenance(executed_at="2026-11-02T12:00:00Z",
+                                                implementation={"name": "doe"})
+        records = [{"provenance": deepcopy(envelope), "executionTimeSource": "raw#1"},
+                   {"provenance": deepcopy(envelope), "executionTimeSource": "raw#2"}]
+        records[1]["provenance"]["executedAt"] = "2026-11-02T12:01:00Z"
+        records[0]["provenance"]["implementation"]["binaryHash"] = "a" * 64
+        records[1]["provenance"]["implementation"]["binaryHash"] = "b" * 64
+        model.apply_comparison_provenance(row, {"implementation": records, "comparator": [records[0]]})
+        self.assertEqual(row["executedAt"], "2026-11-02T12:01:00Z")
+        self.assertEqual(row["executionTimeSource"], "raw#2")
+        self.assertIsNone(row["implementation"]["binaryHash"])
+        self.assertTrue(any("different artifact identities" in value for value in row["limitations"]))
+
     def test_existing_native_package_sdk_and_dawn_build_receipts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
