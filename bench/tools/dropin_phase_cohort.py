@@ -30,7 +30,7 @@ import time
 from pathlib import Path
 
 from bench.lib import synthetic_assets
-from bench.lib.receipt_provenance import artifact_stat, capture_provenance
+from bench.lib.receipt_provenance import artifact_identity, artifact_stat, capture_provenance
 from datetime import datetime, timezone
 
 if os.name == "nt":
@@ -155,12 +155,16 @@ BACKEND_DEFINES = {
     "metal": ["-DDOE_PHASE_BACKEND_METAL"],
     "d3d12": ["-DDOE_PHASE_BACKEND_D3D12"],
 }
+PROVIDER_COMPANIONS = frozenset({"libdoe_compiler.so", "libdoe_compiler.dylib", "doe_compiler.dll",
+                                 "dxcompiler.dll", "dxil.dll", "d3dcompiler_47.dll"})
 
 
 def build(library: Path, output: Path, compiler: str, backend: str,
-          upload_split: bool = False, load_provider: bool = False) -> None:
+          upload_split: bool = False, load_provider: bool = False,
+          library_build_receipt: Path | None = None) -> None:
     if load_provider and (sys.platform != "darwin" or backend != "metal"):
         raise SystemExit("--load-provider requires Apple Metal")
+    source_hash, header_hash, library_hash = sha256(HARNESS), sha256(HEADERS / "webgpu.h"), sha256(library)
     if os.name == "nt":
         # clang-cl links the provider's import library. The DLL must sit beside the
         # harness: Windows resolves it from the executable directory first, so no
@@ -180,9 +184,53 @@ def build(library: Path, output: Path, compiler: str, backend: str,
                 str(HARNESS), *([] if load_provider else [str(library.resolve())]),
                 f"-Wl,-rpath,{library.resolve().parent}", "-o", str(output)]
     subprocess.run(argv, check=True)
-    print(json.dumps({"binary": str(output), "sha256": sha256(output), "library": str(library), "backend": backend,
-                      "librarySha256": sha256(library), "harnessSha256": sha256(HARNESS), "argv": argv,
-                      "providerLoadInSetup": load_provider}))
+    if (source_hash, header_hash, library_hash) != (sha256(HARNESS), sha256(HEADERS / "webgpu.h"), sha256(library)):
+        raise SystemExit("Phase build inputs changed during compilation")
+    receipt = library_build_receipt or library.resolve().parent.parent / "MANIFEST.json"
+    components = {p.name: str(p.resolve()) for p in library.parent.iterdir()
+                  if p.is_file() and p.name in PROVIDER_COMPANIONS}
+    metadata = {"schemaVersion": 1, "kind": "dropin-phase-harness-build",
+                "binary": str(output.resolve()), "sha256": sha256(output), "library": str(library.resolve()),
+                "backend": backend, "librarySha256": library_hash, "harnessSha256": source_hash,
+                "headerSha256": header_hash, "argv": argv, "providerLoadInSetup": load_provider,
+                "componentPaths": components, "componentHashes": {k: sha256(Path(v)) for k, v in components.items()}}
+    if receipt.is_file():
+        metadata.update(libraryBuildReceipt=str(receipt.resolve()), libraryBuildReceiptSha256=sha256(receipt))
+    elif library_build_receipt is not None:
+        raise SystemExit("Requested library build receipt is missing")
+    output.with_name(output.name + ".build.json").write_text(json.dumps(metadata, indent=2) + "\n")
+    print(json.dumps(metadata))
+
+
+def provider_build(binary: Path) -> tuple[dict | None, dict | None]:
+    """Read small build metadata and stat its provider without warming artifact pages."""
+    path = binary.with_name(binary.name + ".build.json")
+    try:
+        metadata = json.loads(path.read_text())
+        if metadata.get("kind") != "dropin-phase-harness-build" or metadata.get("schemaVersion") != 1:
+            return None, None
+        metadata["componentStats"] = {k: artifact_stat(Path(v))
+                                      for k, v in metadata.get("componentPaths", {}).items()}
+        return metadata, artifact_stat(Path(metadata["library"]))
+    except (OSError, ValueError, KeyError, TypeError):
+        return None, None
+
+
+def measured_implementation(provider: str, binary: Path, before_stat: dict,
+                            metadata: dict | None, library_stat: dict | None) -> dict:
+    fallback = {"name": provider, "binaryPath": str(binary), "expectedStat": before_stat}
+    if metadata is None:
+        return fallback
+    observed, _ = artifact_identity(fallback)
+    if observed["binaryHash"] != metadata.get("sha256"):
+        return fallback  # An arbitrary replacement executable cannot borrow the provider's source.
+    return {"name": provider, "binaryPath": metadata["library"], "expectedStat": library_stat,
+            "expectedBinaryHash": metadata["librarySha256"],
+            "componentPaths": {**metadata.get("componentPaths", {}), "harness": str(binary)},
+            "expectedComponentHashes": {**metadata.get("componentHashes", {}), "harness": metadata["sha256"]},
+            "expectedComponentStats": {**metadata.get("componentStats", {}), "harness": before_stat},
+            "buildReceiptPath": metadata.get("libraryBuildReceipt"),
+            "expectedBuildReceiptHash": metadata.get("libraryBuildReceiptSha256")}
 
 
 def run_process(argv: list[str], timeout: float) -> tuple[int, str, str, int, float]:
@@ -237,6 +285,7 @@ def run(args: argparse.Namespace) -> None:
                 order = orders[pair % len(orders)]
                 for position, provider in enumerate(order):
                     before_stat = artifact_stat(Path(providers[provider]))
+                    metadata, library_stat = provider_build(Path(providers[provider]))
                     code, stdout, stderr, wall, cpu = run_process([providers[provider], *argv_tail], args.timeout)
                     executed_at = datetime.now(timezone.utc).isoformat()
                     try:
@@ -250,8 +299,8 @@ def run(args: argparse.Namespace) -> None:
                            "processWallNs": wall, "childCpuMs": cpu, "stderr": stderr[-2000:], "result": payload,
                            "provenance": capture_provenance(
                                executed_at=executed_at,
-                               implementation={"name": provider, "binaryPath": providers[provider],
-                                               "expectedStat": before_stat},
+                               implementation=measured_implementation(provider, Path(providers[provider]),
+                                   before_stat, metadata, library_stat),
                                machine_observation={"gpu": payload.get("adapterDevice"),
                                                     "driver": payload.get("adapterDriver")})}
                     stream.write(json.dumps(row) + "\n")
@@ -352,6 +401,8 @@ def main() -> None:
     b.add_argument("--library", required=True)
     b.add_argument("--output", required=True)
     b.add_argument("--cc", default="gcc")
+    b.add_argument("--library-build-receipt", type=Path,
+                   help="source-bound provider build receipt; staged C MANIFEST.json is detected automatically")
     b.add_argument("--backend", choices=sorted(BACKEND_DEFINES), default="vulkan")
     b.add_argument("--upload-split", action="store_true",
                    help="time the harness's own source read apart from the provider's queue write")
@@ -373,7 +424,8 @@ def main() -> None:
     if args.command == "prepare":
         prepare(Path(args.out), Path(args.oracle_plans) if args.oracle_plans else None)
     elif args.command == "build":
-        build(Path(args.library), Path(args.output), args.cc, args.backend, args.upload_split, args.load_provider)
+        build(Path(args.library), Path(args.output), args.cc, args.backend, args.upload_split, args.load_provider,
+              args.library_build_receipt)
     elif args.command == "run":
         run(args)
     else:

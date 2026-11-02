@@ -19,6 +19,47 @@ from bench.tests.test_benchmark_inventory import observation
 
 
 class TestReceiptProvenance(unittest.TestCase):
+    def test_existing_native_package_sdk_and_dawn_build_receipts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            library = root / "provider"
+            library.write_bytes(b"actual provider")
+            digest = hashlib.sha256(library.read_bytes()).hexdigest()
+            receipts = [
+                {"source_commit": "a" * 40, "artifacts": {"lib/provider": digest}},
+                {"commit": "b" * 40, "binary_sha256": {"provider.dll": digest}},
+                {"source": "https://dawn.googlesource.com/dawn", "revision": "c" * 40,
+                 "products_sha256": {"webgpu_dawn.dll": digest}},
+            ]
+            receipt = root / "build.json"
+            for i, binding in enumerate(receipts):
+                receipt.write_text(json.dumps(binding))
+                actual, _ = provenance.artifact_identity({"binaryPath": str(library),
+                                                          "buildReceiptPath": str(receipt)})
+                self.assertEqual(actual["sourceCommit"], "abc"[i] * 40)
+            frozen = provenance.file_hash(receipt)
+            receipt.write_text(json.dumps({"sourceCommit": "d" * 40, "binaryHash": digest}))
+            actual, _ = provenance.artifact_identity({"binaryPath": str(library),
+                "buildReceiptPath": str(receipt), "expectedBuildReceiptHash": frozen})
+            self.assertIsNone(actual["sourceCommit"])
+
+    def test_replaced_compiler_cannot_inherit_provider_source_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            library, compiler, receipt = root / "provider", root / "compiler", root / "build.json"
+            library.write_bytes(b"provider")
+            compiler.write_bytes(b"original compiler")
+            old_compiler = provenance.file_hash(compiler)
+            receipt.write_text(json.dumps({"sourceCommit": "a" * 40,
+                                          "binaryHash": provenance.file_hash(library)}))
+            compiler.write_bytes(b"replacement compiler")
+            actual, limitations = provenance.artifact_identity({"binaryPath": str(library),
+                "componentPaths": {"compiler": str(compiler)}, "expectedComponentHashes": {"compiler": old_compiler},
+                "buildReceiptPath": str(receipt)})
+            self.assertIsNone(actual["sourceCommit"])
+            self.assertNotIn("compiler", actual["componentHashes"])
+            self.assertTrue(any("Component compiler changed" in value for value in limitations))
+
     def test_binary_requires_matching_source_receipt_and_stable_bytes(
         self,
     ) -> None:

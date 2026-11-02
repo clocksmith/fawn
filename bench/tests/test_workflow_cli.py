@@ -1,4 +1,4 @@
-"""Delegated workflows preserve process identity, arguments and failed outcomes."""
+"""Workflows preserve arguments and failures; POSIX also preserves process identity."""
 from __future__ import annotations
 
 import json
@@ -8,13 +8,27 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
+from bench import cli
 from bench.cli import WORKFLOW_COMMANDS
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class WorkflowCliTests(unittest.TestCase):
+    def test_windows_dispatch_waits_and_returns_the_actual_child_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            marker = Path(temporary) / "finished"
+            command = [sys.executable, "-c", "import pathlib,sys;pathlib.Path(sys.argv[1]).write_text('done');sys.exit(17)",
+                       str(marker)]
+            with mock.patch.object(cli.os, "name", "nt"), mock.patch.object(
+                cli.os, "execvpe", side_effect=AssertionError("Windows must wait for its child")
+            ):
+                status = cli._dispatch(command, os.environ.copy())
+            self.assertEqual(status, 17)
+            self.assertEqual(marker.read_text(), "done")
+
     def test_root_help_groups_existing_commands_without_hiding_them(self) -> None:
         result = subprocess.run([sys.executable, str(ROOT / "bench/cli.py"), "--help"],
             cwd=ROOT, capture_output=True, text=True, check=False)
@@ -68,7 +82,10 @@ class WorkflowCliTests(unittest.TestCase):
                         observed = json.loads(stdout)
                         self.assertEqual(observed["args"], arguments)
                         self.assertEqual(observed["cwd"], str(ROOT))
-                        self.assertEqual(observed["pid"], process.pid)
+                        if os.name == "nt":
+                            self.assertNotEqual(observed["pid"], process.pid)
+                        else:
+                            self.assertEqual(observed["pid"], process.pid)
                         self.assertEqual(observed["policy"], "frozen")
 
 

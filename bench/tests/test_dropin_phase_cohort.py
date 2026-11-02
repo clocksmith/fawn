@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import struct
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -140,6 +142,34 @@ class WindowsBuildTest(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     cohort.build(library, away, "clang-cl", "vulkan")
             run.assert_not_called()
+
+
+class ProviderBindingTest(unittest.TestCase):
+    def test_exact_harness_selects_provider_and_replacements_lose_source(self) -> None:
+        from bench.lib.receipt_provenance import artifact_identity, artifact_stat
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary, library, receipt = root / "harness", root / "provider", root / "build.json"
+            binary.write_bytes(b"exact harness")
+            library.write_bytes(b"exact library")
+            digest = hashlib.sha256(library.read_bytes()).hexdigest()
+            receipt.write_text(json.dumps({"source_commit": "a" * 40, "artifacts": {"lib/provider": digest}}))
+            metadata = {"sha256": cohort.sha256(binary), "library": str(library), "librarySha256": digest,
+                        "libraryBuildReceipt": str(receipt), "libraryBuildReceiptSha256": cohort.sha256(receipt)}
+            before = artifact_stat(binary)
+            spec = cohort.measured_implementation("doe", binary, before, metadata, artifact_stat(library))
+            bound, _ = artifact_identity(spec)
+            self.assertEqual(bound["sourceCommit"], "a" * 40)
+            self.assertEqual(bound["binaryHash"], digest)
+            self.assertEqual(bound["componentHashes"]["harness"], metadata["sha256"])
+            library.write_bytes(b"replacement library")
+            changed, _ = artifact_identity(spec)
+            self.assertIsNone(changed["sourceCommit"])
+            self.assertIsNone(changed["binaryHash"])
+            binary.write_bytes(b"replacement executable")
+            spec = cohort.measured_implementation("doe", binary, before, metadata, artifact_stat(library))
+            self.assertEqual(spec["binaryPath"], str(binary))
+            self.assertNotIn("buildReceiptPath", spec)
 
 
 class CompleteMetricTest(unittest.TestCase):

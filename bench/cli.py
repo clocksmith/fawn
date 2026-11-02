@@ -18,12 +18,24 @@ import argparse
 import json
 import os
 import shlex
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _dispatch(command: list[str], environment: dict[str, str]) -> int:
+    # Windows CRT exec starts a replacement child without waiting for its
+    # completion. The front door must retain and propagate that child's result.
+    if os.name == "nt":
+        return subprocess.run(command, env=environment, check=False).returncode
+    os.execvpe(command[0], command, environment)
+    raise AssertionError("exec returned without replacing the process")
+
+
 WORKFLOW_COMMANDS = {
     "inventory": (
         [sys.executable, "-m", "bench.tools.build_benchmark_cube", "--inventory"],
@@ -112,11 +124,10 @@ if __name__ == "__main__" and not __package__:
     if existing_python_path:
         python_path_entries.append(existing_python_path)
     environment["PYTHONPATH"] = os.pathsep.join(python_path_entries)
-    os.execve(
-        sys.executable,
+    raise SystemExit(_dispatch(
         [sys.executable, "-m", "bench.cli", *sys.argv[1:]],
         environment,
-    )
+    ))
 
 
 def _utc_timestamp() -> str:
@@ -728,7 +739,7 @@ def main() -> int:
         if argv[0] == "browser":
             os.environ["DOE_BENCH_PYTHON"] = sys.executable
         os.chdir(REPO_ROOT)
-        os.execvpe(command[0], [*command, *argv[1:]], os.environ)
+        return _dispatch([*command, *argv[1:]], os.environ)
 
     workload_parser = subparsers.add_parser(
         "workload",
@@ -783,7 +794,7 @@ def main() -> int:
     if len(argv) >= 2 and argv[0] == "program" and argv[1] in PROGRAM_COMMANDS:
         command, _ = PROGRAM_COMMANDS[argv[1]]
         os.chdir(REPO_ROOT)
-        os.execvpe(command[0], [*command, *argv[2:]], os.environ)
+        return _dispatch([*command, *argv[2:]], os.environ)
 
     if argv and argv[0] == "compare":
         compare_parser = argparse.ArgumentParser(

@@ -73,11 +73,24 @@ def artifact_identity(
         limitations.append(
             "Measured binary path unavailable; binaryHash is unknown."
         )
+    components_match = True
     for name, value in sorted(spec.get("componentPaths", {}).items()):
         path = Path(value)
         if path.is_file():
-            result["componentHashes"][name] = file_hash(path)
+            before = artifact_stat(path)
+            observed = file_hash(path)
+            after = artifact_stat(path)
+            expected_stat = spec.get("expectedComponentStats", {}).get(name)
+            expected_hash = spec.get("expectedComponentHashes", {}).get(name)
+            if before != after or (expected_stat is not None and after != expected_stat) or (
+                expected_hash is not None and observed != expected_hash
+            ):
+                components_match = False
+                limitations.append(f"Component {name} changed; no source binding recorded.")
+            else:
+                result["componentHashes"][name] = observed
         else:
+            components_match = False
             limitations.append(
                 f"Component {name} unavailable; no hash recorded."
             )
@@ -85,23 +98,32 @@ def artifact_identity(
         Path(spec["buildReceiptPath"]) if spec.get("buildReceiptPath") else None
     )
     if receipt and receipt.is_file() and result["binaryHash"]:
-        binding = json.loads(receipt.read_text(encoding="utf-8"))
-        commit = binding.get("sourceCommit")
+        raw_receipt = receipt.read_bytes()
+        binding = json.loads(raw_receipt)
+        receipt_hash = hashlib.sha256(raw_receipt).hexdigest()
+        commit = binding.get("sourceCommit", binding.get("source_commit", binding.get("commit")))
+        if binding.get("source") == "https://dawn.googlesource.com/dawn":
+            commit = binding.get("revision", commit)
         hashes = [binding.get("binaryHash"), binding.get("native_dll_sha256")]
-        hashes += [
-            v.get("sha256")
-            for v in binding.get("artifacts", {}).values()
-            if isinstance(v, dict)
-        ]
+        for key in ("artifacts", "products_sha256", "binary_sha256"):
+            values = binding.get(key, {})
+            if isinstance(values, dict):
+                hashes += [v.get("sha256") if isinstance(v, dict) else v for v in values.values()]
+        receipt_matches = (
+            not spec.get("expectedBuildReceiptHash")
+            or receipt_hash == spec["expectedBuildReceiptHash"]
+        )
         if (
             isinstance(commit, str)
             and len(commit) == 40
             and all(c in "0123456789abcdef" for c in commit)
             and result["binaryHash"] in hashes
+            and receipt_matches
+            and components_match
             and not binding.get("sourceStatus")
         ):
             result["sourceCommit"] = commit
-            result["componentHashes"]["buildReceipt"] = file_hash(receipt)
+            result["componentHashes"]["buildReceipt"] = receipt_hash
     if result["sourceCommit"] is None:
         limitations.append(
             "No matching source-bound build receipt; sourceCommit is unknown."
