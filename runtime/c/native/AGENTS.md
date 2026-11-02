@@ -47,6 +47,10 @@ The progress owner prepares maps only after the buffer's accepted owner retires,
 and publishes readiness through the existing callback owner outside the mutex.
 Preserve callback modes, generation cancellation and exact terminal diagnostics.
 Explicit WaitAny may block; registering MapAsync or WorkDone must not.
+After callback admission, an already-complete queue obligation or available
+direct mapping may publish readiness without a worker hop. Select only that
+record through the same pending/readiness owner, outside-lock callback delivery
+and generation checks; registration never performs copy-backed readback.
 Idle final release joins the worker.
 For Metal, every committed command registers a native completed handler. Submission
 and lease drops alone do not wake a live device's worker. Pending asynchronous

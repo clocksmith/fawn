@@ -69,7 +69,7 @@ static bool buffer_busy(const native_buffer *buffer)
     }
 }
 
-static bool prepare_map(native_async *value)
+static bool prepare_map(native_async *value, bool direct_only)
 {
     native_device *device = value->pending.device;
     if (!value->began) return true;
@@ -85,12 +85,12 @@ static bool prepare_map(native_async *value)
         return true;
     }
     native_buffer *buffer = doe_resource_buffer_native(value->buffer);
-    if (buffer_busy(buffer) && earlier_commands(value)) return false;
+    if (buffer_busy(buffer) && (direct_only || earlier_commands(value))) return false;
     /* A captured submission error does not prove this buffer's owner terminal.
      * Preserve the pending map obligation until availability or cancellation. */
     if (value->failure.status != NATIVE_OK) return true;
     /* Resource map admission excludes later GPU uses. Only after the accepted
-     * owner retires may the progress owner borrow bytes or copy the range. */
+     * owner retires may this readiness owner lend bytes or copy the range. */
     if (value->mode == WGPUMapMode_Write && native_buffer_host_writable(buffer)) {
         unsigned char *direct = NULL;
         value->failure = native_buffer_host_write_range(buffer, value->offset, value->size, &direct);
@@ -98,6 +98,7 @@ static bool prepare_map(native_async *value)
     } else if (value->mode == WGPUMapMode_Read && native_buffer_host_lendable(buffer)) {
         value->failure = native_buffer_host_range(buffer, value->offset, value->size, &value->direct);
     } else {
+        if (direct_only) return false;
         value->bytes = malloc(value->size ? value->size : 1);
         value->failure = value->bytes ? native_buffer_read(buffer, value->offset, value->bytes, value->size) :
             native_failure_status(NATIVE_OUT_OF_MEMORY);
@@ -106,17 +107,18 @@ static bool prepare_map(native_async *value)
     return true;
 }
 
-native_pending *native_async_take_ready(native_device *device)
+static native_pending *take_ready(native_device *device, const native_async *candidate, bool direct_only)
 {
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
-        if (pending->kind != NATIVE_PENDING_ASYNC || !pending->async->event) {
+        if (pending->kind != NATIVE_PENDING_ASYNC || !pending->async->event ||
+                (candidate && pending->async != candidate)) {
             cursor = &pending->next;
             continue;
         }
         native_async *value = pending->async;
-        bool ready = value->kind == NATIVE_ASYNC_QUEUE ? !earlier_commands(value) : prepare_map(value);
+        bool ready = value->kind == NATIVE_ASYNC_QUEUE ? !earlier_commands(value) : prepare_map(value, direct_only);
         if (!ready) {
             cursor = &pending->next;
             continue;
@@ -137,6 +139,11 @@ native_pending *native_async_take_ready(native_device *device)
         return pending;
     }
     return NULL;
+}
+
+native_pending *native_async_take_ready(native_device *device)
+{
+    return take_ready(device, NULL, false);
 }
 
 void native_async_publish_ready(native_pending *pending)
@@ -199,9 +206,17 @@ static void publish_async(doe_callback_event *event, void *userdata)
     native_device *device = value->pending.device;
     native_lock(device);
     value->event = event;
-    native_metal_completion_observe(device, true);
-    native_pending_progress_wake(device);
+    /* Admission has transferred the callback lease. Only this operation can be
+     * selected here; a host lend may finish without readback or a worker hop.
+     * Running/unknown owners and copy-backed maps stay on the ordinary worker.
+     * The original API call lease protects device through spontaneous delivery. */
+    native_pending *ready = take_ready(device, value, true);
+    if (!ready) {
+        native_metal_completion_observe(device, true);
+        native_pending_progress_wake(device);
+    }
     native_unlock(device);
+    if (ready) native_async_publish_ready(ready);
 }
 
 static void link_async(native_async *value)

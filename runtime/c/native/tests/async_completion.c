@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Real public future admission, deferred read access and stale map generations.
- * An outer device lock deterministically excludes the existing progress worker;
- * it does not replace native command completion with a synthetic GPU result. */
+ * Exact byte readback and generation checks do not assume that real GPU work
+ * is still pending when callback registration begins. */
 #include "../src/internal.h"
 #include "consumer.h"
 
@@ -46,8 +46,10 @@ static void read_and_queue_obligations(state *s)
     native_lock(device);
     WGPUFuture map_future = wgpuBufferMapAsync(result, WGPUMapMode_Read, 0, sizeof(expected), map_info);
     WGPUFuture done_future = wgpuQueueOnSubmittedWorkDone(s->queue, done_info);
-    not_ready(s, map_future);
-    not_ready(s, done_future);
+    /* These real submissions may already be terminal. Readiness may publish
+     * during admission; WaitAnyOnly still defers the foreign callback. The
+     * controlled Metal ledger separately proves actual pending/unknown work. */
+    assert(map_future.id && done_future.id);
     assert(!observed.called && !done && wgpuBufferGetMapState(result) == WGPUBufferMapState_Pending);
     native_unlock(device);
     wait_future(s, map_future);

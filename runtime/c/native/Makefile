@@ -466,7 +466,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = encoder-finish-oom shared-memory metal-device-policy d3d12-device-policy map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
+GNU_ONLY_TESTS = encoder-finish-oom shared-memory metal-device-policy d3d12-device-policy map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare async-ready
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -782,6 +782,16 @@ $(BUILD)/metal-async-submit: tests/metal_async_submit.c tests/consumer.h tests/a
 .PHONY: check-metal-async-submit
 check-metal-async-submit: $(BUILD)/metal-async-submit
 	$(BUILD)/metal-async-submit
+
+$(BUILD)/async-ready: tests/async_ready.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/async_ready.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=native_lock -Wl,--wrap=native_unlock \
+	  -Wl,--wrap=native_pending_progress_wake -Wl,--wrap=native_buffer_host_range -Wl,--wrap=native_buffer_read \
+	  -Wl,--wrap=malloc -Wl,--wrap=native_callback_publish_admit -o $@
+.PHONY: check-async-ready
+check-async-ready: $(BUILD)/async-ready
+	$(BUILD)/async-ready
+check: check-async-ready
 
 # Explicit physical Metal developer gate; never part of ordinary check.
 ifeq ($(SHARED_PLATFORM),Darwin)
