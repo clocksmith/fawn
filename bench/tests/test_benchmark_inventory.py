@@ -251,6 +251,12 @@ class TestBenchmarkInventory(unittest.TestCase):
                 self.assertEqual(row['executionStatus'], 'failed')
                 self.assertIsNone(row['executedAt'])  # Window end cannot date each process.
                 self.assertEqual(row['contractFrozenAt'], '2026-10-01T00:00:00Z')
+                self.assertIsNone(row['backend'])  # An unknown family cannot imply Vulkan.
+            (root / 'build.json').write_text('{"backend": "d3d12"}')
+            entry['provenance'].append({'role': 'harness-build', 'path': 'build.json',
+                'sha256': sources.file_hash(root / 'build.json'), 'required': True})
+            bound = sources.normalize_source(root, entry, POLICY)
+            self.assertEqual({row['backend'] for row in bound}, {'d3d12'})
 
     def test_untracked_receipt_is_not_a_durable_public_reference(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

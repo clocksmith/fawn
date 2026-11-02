@@ -1,0 +1,55 @@
+{
+  "consumer": "Existing benchmark cube phase-metal family; preserves native operation ratios, adverse phases and identity limits.",
+  "contractPointerErratum": {
+    "hashPointer": "#/hashes/dawn-lib~1libwebgpu_dawn.dylib",
+    "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-msl-clamp.json",
+    "sourcePointer": "#/providers/dawn"
+  },
+  "limitations": [
+    "18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.",
+    "No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.",
+    "Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.",
+    "Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.",
+    "The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.",
+    "No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.",
+    "Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available."
+  ],
+  "originalRunFiles": {
+    "contract.json": {
+      "originalSha256": "a9537bfe403fa871093c41b0753c3af2c45fcf4a41f5420666e630d9ca5f5c4d",
+      "path": "contract.json.gz",
+      "retainedSha256": "9b65b191bf00928f9a5607711dcb2e0b98cb25268f1d2efedea2c8993588fc80"
+    },
+    "dawn-build.json": {
+      "originalSha256": "ea52f921dc0706bc39d01fd430da8d2ef0a7dbc734f6228ebf5619643c53d94e",
+      "path": "dawn-harness-build.json",
+      "retainedSha256": "d54222cbe575db95ea561f67ab7d9622512112aae9f7659ab2f7145d5086b1d0"
+    },
+    "doe-build.json": {
+      "originalSha256": "222921bf850f1e14965c2aaa674e64c1c6a67872d295755731fb52067c5fb354",
+      "path": "doe-harness-build.json",
+      "retainedSha256": "83e38d0dc439331198dd6afc0750ddfbe9c8c3b24b789baafc634a771fa83330"
+    },
+    "inputs/manifest.json": {
+      "originalSha256": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+      "path": "workloads.json",
+      "retainedSha256": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1"
+    },
+    "raw.jsonl": {
+      "originalSha256": "f34d0c27e2bde80e7741b74f389f7e4b96dd66a9b9660a35b276efc0da371e71",
+      "path": "raw.jsonl.gz",
+      "retainedSha256": "e49f1ea7cc5bf861e8deeb83e9d81b2fe762c2bdc45bb1f8ffd997687f5647f5"
+    },
+    "summary.json": {
+      "originalSha256": "54cd07f6fc1973715f421484441b8cc4b57beb656f02796a6d2f732ec3dd572b",
+      "path": "summary.json",
+      "retainedSha256": "6af32204cf7fe78b1e0917d6d54701f9c3e5d06dd121b955be0ea036d0e51032"
+    }
+  },
+  "redactions": [
+    "repository root",
+    "home directory prefix",
+    "local run prefix"
+  ],
+  "scope": "Diagnostic decision evidence for native-vs-browser path attribution; not release qualification."
+}

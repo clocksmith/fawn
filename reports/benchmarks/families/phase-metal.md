@@ -4,7 +4,7 @@
 
 [All families](../CURRENT.md) · [Complete execution records](../index.json)
 
-420 observations; 216 individual executions.
+588 observations; 378 individual executions.
 
 All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
 
@@ -5068,6 +5068,166 @@ Limitations:
 - machine.gpu is unknown.
 - machine.os is unknown.
 - machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
+<a id="row-0a340504e386b9d80888fc67fb3aa98d18c65966d8e8b20c631ae756f979f419"></a>
+
+## buffer_upload_readback_exact_1mb
+
+Observation: `0a340504e386b9d80888fc67fb3aa98d18c65966d8e8b20c631ae756f979f419`; execution: `phase-metal-20261102-aa402f004/buffer_upload_readback_exact_1mb/dawn-aa/dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: Apple M3; driver: unknown.
+
+Build: dawn-aa unknown/cafc66a581a9; comparator: dawn unknown/cafc66a581a9.
+
+Executed: 2026-11-02T19:40:25.773213Z; reported: unknown; contract frozen: 2026-11-02T19:40:17.818843Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `0a340504e386b9d80888fc67fb3aa98d18c65966d8e8b20c631ae756f979f419`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 8.3e-05 / 0.000125 | ms | 0.73104 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4970059880239521, 1.168], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| complete | 14.94 / 15.686 | ms | 0.98133 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.924692328289944, 1.027058107453173], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| cpuMs | 20.638 / 20.811 | ms | 0.98911 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9803199537465803, 1.0184471104772364], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.completion | 1.9423 / 1.9659 | ms | 1.0371 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9333833590238569, 1.1349938294201432], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.encode | 0.007771 / 0.0078755 | ms | 1.0081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9671155195887591, 1.0327419775632665], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.map | 0.12323 / 0.12475 | ms | 0.9583 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9458715835006806, 1.0347337904993985], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.operation | 3.5526 / 3.7222 | ms | 0.94254 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8861499084976927, 1.0314491308874394], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.submit | 0.059812 / 0.059917 | ms | 0.97505 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9341719474197943, 1.0462225502583284], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.upload | 1.4192 / 1.5563 | ms | 0.90618 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7848101265822784, 1.0346165457431777], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| imagesBeforeSetup | 45 / 45 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| maxRssMiB | 38.586 / 38.594 | MiB | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9995951417004049, 1.0002025111381125], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| pipelineNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 0.328], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
+| processInMainNs | 29.468 / 30.042 | ms | 0.99476 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9721424455961895, 1.0074861076189934], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processWall | 33.334 / 33.892 | ms | 0.99277 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9776454878946266, 1.0046259297045044], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerImagesLoaded | 473 / 473 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerLoadNs | 3.3872 / 3.3828 | ms | 0.98322 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.961788457192835, 1.036559950252914], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| resourcesNs | 0.012375 / 0.012333 | ms | 1.0135 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9782667366612631, 1.0421390117670954], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 7.4465 / 7.3586 | ms | 1.0274 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9972680860606191, 1.0355663653763374], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 0.60842 / 0.60233 | ms | 1.0154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9837872220587122, 1.0450308039250413], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupImagesLoaded | 475 / 475 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.1131 / 0.11573 | ms | 0.98123 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9535959401829835, 1.0543256187146335], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupNs | 11.607 / 11.411 | ms | 1.0153 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9797183297575113, 1.0407464807476048], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 0.48781 / 0.5804 | ms | 0.88203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7640960279409118, 1.0679076290916827], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownNs | 0.5051 / 0.59769 | ms | 0.88516 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7657669680338397, 1.0660813693126265], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.016854 / 0.017604 | ms | 0.94669 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8425542077917543, 1.1525633802816904], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.completion | 0.26973 / 0.27023 | ms | 0.99976 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9814995641415765, 1.0182281486383227], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.encode | 0.000458 / 0.000459 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9132401746724891, 1.0893246187363834], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.map | 0.016959 / 0.017062 | ms | 0.99275 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9718909599334075, 1.0000145765537418], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.operation | 0.30935 / 0.31071 | ms | 1.0027 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9761608121743441, 1.0199036750654398], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.submit | 0.003229 / 0.003375 | ms | 0.98828 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9400110811341624, 1.0345456936226167], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.upload | 0.018708 / 0.018874 | ms | 0.99097 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9544457557175363, 1.0078274266034701], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.33804 / 0.29167 | ms | 1.0108 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9668480558825985, 1.2936718598397694], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.0015 / 0.001583 | ms | 0.93354 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8394986361156573, 1.0497900419916018], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.018541 / 0.018521 | ms | 1.0116 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9274557823129254, 1.0430311808473038], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.39377 / 0.34502 | ms | 0.99189 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9544284482288148, 1.1692907617577115], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.0072705 / 0.007604 | ms | 0.92656 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8256897732947892, 1.005297474823739], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.028708 / 0.027855 | ms | 0.99416 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9099984255105027, 1.0774137478943586], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../apple-metal/20261102-phase-diagnostic/summary.json): retained.
+- [raw](../apple-metal/20261102-phase-diagnostic/raw.jsonl.gz): retained.
+- [contract](../apple-metal/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../apple-metal/20261102-phase-diagnostic/workloads.json): retained.
+- [retention](../apple-metal/20261102-phase-diagnostic/retention.json): retained.
+
+Limitations:
+
+- 18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.
+- Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.
+- No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.
+- No qualification follows from a phase summary or a valid host window.
+- No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.
+- Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available.
+- The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.
+- comparator.sourceCommit is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
+<a id="row-f58297df93eefdb2082a4bedf3c6cb874b0f93755ca9844a274746c758f75523"></a>
+
+## buffer_upload_readback_exact_1mb
+
+Observation: `f58297df93eefdb2082a4bedf3c6cb874b0f93755ca9844a274746c758f75523`; execution: `phase-metal-20261102-aa402f004/buffer_upload_readback_exact_1mb/doe/dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: Apple M3; driver: unknown.
+
+Build: doe unknown/01276e06fc68; comparator: dawn unknown/cafc66a581a9.
+
+Executed: 2026-11-02T19:40:25.773213Z; reported: unknown; contract frozen: 2026-11-02T19:40:17.818843Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `f58297df93eefdb2082a4bedf3c6cb874b0f93755ca9844a274746c758f75523`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 8.3e-05 / 0.000125 | ms | 0.82605 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| complete | 14.281 / 15.686 | ms | 0.90825 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8691985388259902, 0.936426780039195], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| cpuMs | 19.98 / 20.811 | ms | 0.96695 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.955053496369885, 0.9762769967670242], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.completion | 1.8778 / 1.9659 | ms | 0.9477 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8766195906803462, 1.017568175729976], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.encode | 0.0019375 / 0.0078755 | ms | 0.24792 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.22515391380826735, 0.28234950136227294], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.map | 0.083083 / 0.12475 | ms | 0.64103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5914798283328495, 0.6909366504493071], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.operation | 2.9605 / 3.7222 | ms | 0.81746 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7561157223224451, 0.8880164060676639], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.submit | 1.0413 / 0.059917 | ms | 14.992 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [14.115194952799564, 20.245465111049015], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.upload | 0.02748 / 1.5563 | ms | 0.017663 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.016264998983421857, 0.019989073775372252], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| imagesBeforeSetup | 45 / 45 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| maxRssMiB | 26.953 / 38.594 | MiB | 0.69858 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6979756589971412, 0.6987854251012146], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| pipelineNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 0.9761904761904763], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
+| processInMainNs | 27.441 / 30.042 | ms | 0.90203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8918878849197605, 0.9273031104600271], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processWall | 31.277 / 33.892 | ms | 0.91444 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8979193264341856, 0.9373179916002613], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerImagesLoaded | 2 / 473 | count | 0.0042283 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004228329809725159, 0.004228329809725159], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerLoadNs | 0.6451 / 3.3828 | ms | 0.19035 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18622988415558464, 0.2007419010269842], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| resourcesNs | 0.13904 / 0.012333 | ms | 11.12 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.58398689556375, 11.728910388580491], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 9.2788 / 7.3586 | ms | 1.2658 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2438192433334705, 1.3087541691672144], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 0.16877 / 0.60233 | ms | 0.28209 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.27359338151873885, 0.3033825537303216], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupImagesLoaded | 306 / 475 | count | 0.64421 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6442105263157895, 0.6442105263157895], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.004208 / 0.11573 | ms | 0.036183 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03478357600991103, 0.03813243522473054], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupNs | 10.12 / 11.411 | ms | 0.88924 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8638459511604283, 0.9045795141192625], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 0.38998 / 0.5804 | ms | 0.7329 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5972619492730525, 0.8839681970333766], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownNs | 0.40575 / 0.59769 | ms | 0.73994 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6023008433050456, 0.8876880156500038], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.016479 / 0.017604 | ms | 0.92502 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7797089274609582, 1.1367375803623614], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.completion | 0.24475 / 0.27023 | ms | 0.89861 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8624351762385587, 0.9128058557339248], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0003125 / 0.000459 | ms | 0.65178 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5801213361478593, 0.7270742358078602], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.map | 0.020875 / 0.017062 | ms | 1.2293 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2111960854070283, 1.241658083540627], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.operation | 0.2896 / 0.31071 | ms | 0.93267 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8802618438100226, 0.9405060435132956], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.submit | 0.005792 / 0.003375 | ms | 1.7538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.628709904100529, 1.863425925925926], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.upload | 0.016813 / 0.018874 | ms | 0.88898 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8636835939892252, 0.9167328869156073], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.26575 / 0.29167 | ms | 0.88534 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8183310658868156, 0.9431325198209086], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.0010415 / 0.001583 | ms | 0.63743 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5669907348915562, 0.9439601720437603], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.023937 / 0.018521 | ms | 1.301 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2478363036142288, 1.3190022598080415], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.31998 / 0.34502 | ms | 0.90067 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8338175327406704, 0.9426649674974237], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.012375 / 0.007604 | ms | 1.5916 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5130814040693883, 1.7074505131064706], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.021854 / 0.027855 | ms | 0.78201 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7675691049476232, 0.8635402959777829], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../apple-metal/20261102-phase-diagnostic/summary.json): retained.
+- [raw](../apple-metal/20261102-phase-diagnostic/raw.jsonl.gz): retained.
+- [contract](../apple-metal/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../apple-metal/20261102-phase-diagnostic/workloads.json): retained.
+- [retention](../apple-metal/20261102-phase-diagnostic/retention.json): retained.
+
+Limitations:
+
+- 18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.
+- Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.
+- No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.
+- No qualification follows from a phase summary or a valid host window.
+- No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.
+- Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available.
+- The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.
+- comparator.sourceCommit is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
 - reportedAt is unknown; no receipt value was retained.
 
 <a id="row-013b4cf79a4e59f301402e20a30deddab782453cd22124ed8aa43d1651e203c9"></a>
@@ -10582,6 +10742,166 @@ Limitations:
 - machine.osVersion is unknown.
 - reportedAt is unknown; no receipt value was retained.
 
+<a id="row-5024808681af041e1f30e2cbfbb902a11258556688742bab7ffb6d1411bdcc09"></a>
+
+## image_rgba_invert_1024
+
+Observation: `5024808681af041e1f30e2cbfbb902a11258556688742bab7ffb6d1411bdcc09`; execution: `phase-metal-20261102-aa402f004/image_rgba_invert_1024/dawn-aa/dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: Apple M3; driver: unknown.
+
+Build: dawn-aa unknown/cafc66a581a9; comparator: dawn unknown/cafc66a581a9.
+
+Executed: 2026-11-02T19:40:23.984376Z; reported: unknown; contract frozen: 2026-11-02T19:40:17.818843Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `5024808681af041e1f30e2cbfbb902a11258556688742bab7ffb6d1411bdcc09`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.24123 / 0.23592 | ms | 1.032 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9848120324718883, 1.0817496063017997], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| complete | 45.479 / 45.045 | ms | 1.0021 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9794842700822741, 1.0434830628082952], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| cpuMs | 47.079 / 47.095 | ms | 0.99631 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9909562193610014, 1.010795918267798], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.completion | 2.3634 / 2.3322 | ms | 1.01 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9738621435148136, 1.0305717626546391], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.encode | 0.015271 / 0.01525 | ms | 0.99838 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9464342863962072, 1.0764140403605489], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.map | 0.49504 / 0.48019 | ms | 1.0216 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.00520481277007, 1.047433228644608], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.operation | 3.3645 / 3.3066 | ms | 1.0042 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9792440748764597, 1.0330746562151565], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.submit | 0.14163 / 0.14348 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9469035467221433, 1.0468404614418212], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.upload | 0.34104 / 0.34169 | ms | 1.0068 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9697468373917402, 1.0817718728692935], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| imagesBeforeSetup | 45 / 45 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| maxRssMiB | 75.203 / 75.203 | MiB | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997922725384296, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.7419 / 2.8185 | ms | 0.98203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9115337306157543, 1.0519538088383302], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processInMainNs | 68.654 / 68.272 | ms | 0.99881 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9806140226852815, 1.0274432019811222], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processWall | 72.942 / 72.602 | ms | 0.99879 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9816882307315291, 1.0272075365618891], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerImagesLoaded | 473 / 473 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerLoadNs | 3.4255 / 3.5339 | ms | 0.99783 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9638523817292142, 1.0081461790639814], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| resourcesNs | 0.45058 / 0.43342 | ms | 1.0547 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9579771444587415, 1.1293831235417737], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 7.462 / 7.5028 | ms | 0.98907 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.972904418688302, 1.0075499352879578], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 0.62006 / 0.60554 | ms | 1.0408 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9946776128780033, 1.065539679522349], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupImagesLoaded | 475 / 475 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.11721 / 0.121 | ms | 0.97228 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9217069781144527, 1.0367894888454616], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupNs | 11.723 / 11.778 | ms | 0.99067 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9784958294359472, 1.0013311530413072], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 0.64435 / 0.64463 | ms | 0.99702 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.96735070502128, 1.0044641112490438], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownNs | 0.71435 / 0.72033 | ms | 0.99296 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9684156149169689, 0.998606123292308], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.070292 / 0.071854 | ms | 0.9873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9289695218406477, 1.0221158219887516], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.completion | 0.74492 / 0.73727 | ms | 1.017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9841666976865611, 1.045261284361617], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0020625 / 0.002083 | ms | 1.0192 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8430162933513188, 1.1905354687674183], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.map | 0.10042 / 0.098396 | ms | 0.99782 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8918314368093249, 1.0643171104969622], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.operation | 1.1924 / 1.1882 | ms | 0.99782 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9860338657196364, 1.0334615746560019], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.submit | 0.012458 / 0.013 | ms | 0.98115 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9298955679707014, 1.0883990265863601], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.upload | 0.32988 / 0.33069 | ms | 1.0029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9751022937046523, 1.0249578008990197], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.80554 / 0.80365 | ms | 0.99637 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9856190741247165, 1.0255547947571906], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.005042 / 0.0048335 | ms | 1.0165 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8530100777016771, 1.2574849268032906], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.12473 / 0.12265 | ms | 1.0133 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9789801932837152, 1.0617738531931682], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.operation | 1.3049 / 1.2927 | ms | 1.0098 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9882168230047876, 1.0201125582413777], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.023563 / 0.023187 | ms | 0.98529 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.880281690140845, 1.1282760306141217], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.37271 / 0.37392 | ms | 1.0117 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9761345308432595, 1.0328820457774746], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../apple-metal/20261102-phase-diagnostic/summary.json): retained.
+- [raw](../apple-metal/20261102-phase-diagnostic/raw.jsonl.gz): retained.
+- [contract](../apple-metal/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../apple-metal/20261102-phase-diagnostic/workloads.json): retained.
+- [retention](../apple-metal/20261102-phase-diagnostic/retention.json): retained.
+
+Limitations:
+
+- 18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.
+- Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.
+- No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.
+- No qualification follows from a phase summary or a valid host window.
+- No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.
+- Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available.
+- The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.
+- comparator.sourceCommit is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
+<a id="row-f5b102b708830fcef2fa37fd14144a5daf9217b2008c00c9b522933b7e861661"></a>
+
+## image_rgba_invert_1024
+
+Observation: `f5b102b708830fcef2fa37fd14144a5daf9217b2008c00c9b522933b7e861661`; execution: `phase-metal-20261102-aa402f004/image_rgba_invert_1024/doe/dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: Apple M3; driver: unknown.
+
+Build: doe unknown/01276e06fc68; comparator: dawn unknown/cafc66a581a9.
+
+Executed: 2026-11-02T19:40:23.984376Z; reported: unknown; contract frozen: 2026-11-02T19:40:17.818843Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `f5b102b708830fcef2fa37fd14144a5daf9217b2008c00c9b522933b7e861661`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.053708 / 0.23592 | ms | 0.23072 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.22083338362055566, 0.24960632524539517], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| complete | 29.677 / 45.045 | ms | 0.65648 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6410426009485477, 0.6718234161638027], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| cpuMs | 36.31 / 47.095 | ms | 0.7678 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7598607640890911, 0.780663915233526], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.completion | 2.0419 / 2.3322 | ms | 0.8757 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8381445796818812, 0.9189735064954331], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.encode | 0.0045005 / 0.01525 | ms | 0.28999 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.27455189414990405, 0.32948956010581365], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.map | 0.30483 / 0.48019 | ms | 0.63427 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6088808426720544, 0.6585824005581077], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.operation | 2.7879 / 3.3066 | ms | 0.84287 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8102292299824095, 0.878305326668603], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.submit | 0.31133 / 0.14348 | ms | 2.1786 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.160282811623195, 2.3626343793266296], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.upload | 0.11698 / 0.34169 | ms | 0.34603 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.33576856754851736, 0.3728679107394394], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| imagesBeforeSetup | 45 / 45 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| maxRssMiB | 59.742 / 75.203 | MiB | 0.79433 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7940993143569499, 0.794557540506855], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.1402 / 2.8185 | ms | 0.72696 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.679440454864086, 0.8034958991267069], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processInMainNs | 51.633 / 68.272 | ms | 0.75312 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.740461326161326, 0.7631578815856188], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processWall | 55.777 / 72.602 | ms | 0.76568 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.753377638839811, 0.7785273123146177], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerImagesLoaded | 2 / 473 | count | 0.0042283 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004228329809725159, 0.004228329809725159], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerLoadNs | 0.6979 / 3.5339 | ms | 0.19753 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.19648054999421177, 0.20637434299462992], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| resourcesNs | 0.71208 / 0.43342 | ms | 1.6685 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.594648691825765, 1.7131856351622925], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 9.5258 / 7.5028 | ms | 1.2678 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.23775234646466, 1.300532541930456], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 0.17431 / 0.60554 | ms | 0.28406 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.27824373007559355, 0.3047887588889927], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupImagesLoaded | 306 / 475 | count | 0.64421 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6442105263157895, 0.6442105263157895], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.0046665 / 0.121 | ms | 0.037935 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03650092784186122, 0.04036278870347178], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupNs | 10.42 / 11.778 | ms | 0.89201 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8627374129736858, 0.8996503145899251], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 0.59608 / 0.64463 | ms | 0.91882 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9017908980372695, 0.9393354503985264], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownNs | 0.62938 / 0.72033 | ms | 0.87455 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8561006472407441, 0.8984707407307314], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.030937 / 0.071854 | ms | 0.43893 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4044375970314813, 0.4633518374112119], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.completion | 0.48738 / 0.73727 | ms | 0.66067 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6523559867409809, 0.691888103729907], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.encode | 0.000959 / 0.002083 | ms | 0.49102 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4232633504924237, 0.6189811824764054], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.map | 0.08552 / 0.098396 | ms | 0.86586 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8120205574398083, 0.9664015767856742], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.operation | 0.68908 / 1.1882 | ms | 0.58226 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5757690933117238, 0.593734897098444], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.submit | 0.012208 / 0.013 | ms | 0.96577 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8658821594400019, 1.0935730337078653], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.upload | 0.10146 / 0.33069 | ms | 0.30608 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2984055005513524, 0.3108284472741576], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.56467 / 0.80365 | ms | 0.6841 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6576496285250739, 0.758380546992456], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.0030625 / 0.0048335 | ms | 0.6118 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5606261751152074, 0.6642241450714257], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.10292 / 0.12265 | ms | 0.80134 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7789270452527739, 0.8934117707166106], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.79554 / 1.2927 | ms | 0.60463 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5865998505969312, 0.6482217268672276], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.023437 / 0.023187 | ms | 0.96519 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071836704805334, 1.0618432256559918], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.11558 / 0.37392 | ms | 0.30847 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2977679753241502, 0.3244203950940089], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../apple-metal/20261102-phase-diagnostic/summary.json): retained.
+- [raw](../apple-metal/20261102-phase-diagnostic/raw.jsonl.gz): retained.
+- [contract](../apple-metal/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../apple-metal/20261102-phase-diagnostic/workloads.json): retained.
+- [retention](../apple-metal/20261102-phase-diagnostic/retention.json): retained.
+
+Limitations:
+
+- 18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.
+- Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.
+- No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.
+- No qualification follows from a phase summary or a valid host window.
+- No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.
+- Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available.
+- The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.
+- comparator.sourceCommit is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
 <a id="row-05d4388334cba47b910bead203fcab140fbfa136928d2d9dd61e62fee8efcb3c"></a>
 
 ## vector_scale_add_262k
@@ -15642,4 +15962,164 @@ Limitations:
 - machine.gpu is unknown.
 - machine.os is unknown.
 - machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
+<a id="row-9aad89b45799ca83e0e7900dac289033d6567b24dd38e27e0b1611cc79f5edd4"></a>
+
+## vector_scale_add_262k
+
+Observation: `9aad89b45799ca83e0e7900dac289033d6567b24dd38e27e0b1611cc79f5edd4`; execution: `phase-metal-20261102-aa402f004/vector_scale_add_262k/doe/dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: Apple M3; driver: unknown.
+
+Build: doe unknown/01276e06fc68; comparator: dawn unknown/cafc66a581a9.
+
+Executed: 2026-11-02T19:40:20.316478Z; reported: unknown; contract frozen: 2026-11-02T19:40:17.818843Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `9aad89b45799ca83e0e7900dac289033d6567b24dd38e27e0b1611cc79f5edd4`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.061312 / 0.2409 | ms | 0.24989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.24195716735995373, 0.2592857022153877], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| complete | 17.596 / 18.657 | ms | 0.92991 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8843330271809673, 0.9855813938729939], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| cpuMs | 28.747 / 30.049 | ms | 0.95399 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9407045257300455, 0.9641799084298355], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.completion | 1.8559 / 1.8979 | ms | 0.95064 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8807530017521291, 1.011104651067968], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.encode | 0.0041665 / 0.013604 | ms | 0.3184 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.28438832885306337, 0.323640651419418], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.map | 0.079 / 0.11865 | ms | 0.66743 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6275186207913734, 0.6962096885028486], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.operation | 2.2641 / 2.204 | ms | 1.0137 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9405461854928643, 1.0684560270417323], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.submit | 0.29235 / 0.12927 | ms | 2.2487 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2135211737865563, 2.422006209502488], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.upload | 0.026083 / 0.027959 | ms | 0.92138 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8107014251358388, 0.9622896883076715], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| imagesBeforeSetup | 45 / 45 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| maxRssMiB | 29.883 / 43.219 | MiB | 0.69168 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6911259940194854, 0.6918625678119349], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.049 / 2.7003 | ms | 0.75189 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7088689017003815, 0.850291709382367], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processInMainNs | 37.895 / 40.053 | ms | 0.93931 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9059015842663901, 0.9653209766234129], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processWall | 41.76 / 44.154 | ms | 0.94147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9137713035767725, 0.9636818151548858], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerImagesLoaded | 2 / 473 | count | 0.0042283 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004228329809725159, 0.004228329809725159], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerLoadNs | 0.64306 / 3.4531 | ms | 0.18875 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18401195418902946, 0.19685388334153514], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| resourcesNs | 0.21167 / 0.42406 | ms | 0.4961 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4702148904060389, 0.5113786953170488], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 9.4667 / 7.5083 | ms | 1.2573 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2459013565759243, 1.2936156949488233], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 0.17181 / 0.59696 | ms | 0.28013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2668568258602664, 0.3154512820031394], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupImagesLoaded | 306 / 475 | count | 0.64421 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6442105263157895, 0.6442105263157895], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.004271 / 0.12144 | ms | 0.03569 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03387910459427647, 0.03646211768583062], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupNs | 10.34 / 11.608 | ms | 0.8816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8627948498642091, 0.9103083980792614], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 0.52665 / 0.60888 | ms | 0.87399 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7630146064962354, 0.9359501970294262], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownNs | 0.55563 / 0.69046 | ms | 0.80846 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7164633140328589, 0.8692389825106175], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.028667 / 0.079021 | ms | 0.35782 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3059110347180332, 0.38230824372759853], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.completion | 0.29494 / 0.31256 | ms | 0.95229 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9197583694357943, 0.9692640915740875], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.encode | 0.000792 / 0.0012915 | ms | 0.6233 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5849640273602121, 0.6599590519471217], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.map | 0.021125 / 0.017105 | ms | 1.2375 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.225729048961822, 1.2451214539523503], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.operation | 0.34902 / 0.36308 | ms | 0.95978 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9430187530598015, 0.9901610548867243], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.submit | 0.0105 / 0.007896 | ms | 1.3395 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.272947915952691, 1.4371683244916003], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.upload | 0.017459 / 0.019771 | ms | 0.89804 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8491613284134811, 0.9446683046683046], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.322 / 0.34456 | ms | 0.94544 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8431036905360776, 0.9916914204823943], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.002375 / 0.003708 | ms | 0.64877 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5891020299047862, 0.7387092512129381], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.023541 / 0.019062 | ms | 1.2641 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.219221476510067, 1.332277071650275], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.38252 / 0.40877 | ms | 0.9487 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8603847757079472, 0.9937864366693556], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.021542 / 0.016146 | ms | 1.3405 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1434418842805938, 1.4303839285714284], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.024209 / 0.030354 | ms | 0.80253 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7102803319857515, 0.9005064550374136], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../apple-metal/20261102-phase-diagnostic/summary.json): retained.
+- [raw](../apple-metal/20261102-phase-diagnostic/raw.jsonl.gz): retained.
+- [contract](../apple-metal/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../apple-metal/20261102-phase-diagnostic/workloads.json): retained.
+- [retention](../apple-metal/20261102-phase-diagnostic/retention.json): retained.
+
+Limitations:
+
+- 18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.
+- Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.
+- No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.
+- No qualification follows from a phase summary or a valid host window.
+- No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.
+- Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available.
+- The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.
+- comparator.sourceCommit is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
+<a id="row-dac8857d377c863fb9f417dc0d8d6e8cf6c17b224ed6bc1e3bf69639a6566d27"></a>
+
+## vector_scale_add_262k
+
+Observation: `dac8857d377c863fb9f417dc0d8d6e8cf6c17b224ed6bc1e3bf69639a6566d27`; execution: `phase-metal-20261102-aa402f004/vector_scale_add_262k/dawn-aa/dawn`.
+
+Machine: mars; OS: darwin; backend: metal; GPU: Apple M3; driver: unknown.
+
+Build: dawn-aa unknown/cafc66a581a9; comparator: dawn unknown/cafc66a581a9.
+
+Executed: 2026-11-02T19:40:20.316478Z; reported: unknown; contract frozen: 2026-11-02T19:40:17.818843Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `dac8857d377c863fb9f417dc0d8d6e8cf6c17b224ed6bc1e3bf69639a6566d27`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.23846 / 0.2409 | ms | 0.99608 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9506847091910949, 1.0212879191059074], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| complete | 19.034 / 18.657 | ms | 1.0531 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.93121820311872, 1.081285735684435], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| cpuMs | 29.785 / 30.049 | ms | 0.99168 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9821766717273408, 1.0075066313065393], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.completion | 1.9277 / 1.8979 | ms | 1.0001 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9523856395871083, 1.0359544089934944], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.encode | 0.013458 / 0.013604 | ms | 0.97871 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9106832148163289, 1.1528408796865988], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.map | 0.11744 / 0.11865 | ms | 0.98668 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9387253546814017, 1.0473743395083335], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.operation | 2.2291 / 2.204 | ms | 0.99638 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9578243958336862, 1.0247613935448303], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.submit | 0.12935 / 0.12927 | ms | 1.019 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9370381066723079, 1.0748675367571165], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| first.upload | 0.02848 / 0.027959 | ms | 1.0247 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9687498720182819, 1.0763587443946188], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| imagesBeforeSetup | 45 / 45 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| maxRssMiB | 43.188 / 43.219 | MiB | 0.99946 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9992769342010123, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.6601 / 2.7003 | ms | 1.0047 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8712926953468682, 1.0376175689377167], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processInMainNs | 40.198 / 40.053 | ms | 1.0115 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9626654208633433, 1.0424082725108785], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| processWall | 44.312 / 44.154 | ms | 1.0093 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9671499657706191, 1.0422835363903433], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerImagesLoaded | 473 / 473 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| providerLoadNs | 3.2842 / 3.4531 | ms | 0.95783 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9251897984265349, 0.999990948700568], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| resourcesNs | 0.44188 / 0.42406 | ms | 1.0294 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9860700374836693, 1.0808530259085858], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 7.5813 / 7.5083 | ms | 0.97296 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9590784718716053, 1.055247909280041], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 0.59833 / 0.59696 | ms | 0.99771 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.954934490832281, 1.024799069065071], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupImagesLoaded | 475 / 475 | count | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.11273 / 0.12144 | ms | 0.95384 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9007324227484816, 1.0536154300702392], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| setupNs | 11.584 / 11.608 | ms | 0.97764 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9545285302172862, 1.0262803109971246], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 0.59387 / 0.60888 | ms | 0.93883 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7985470278355391, 1.097972834248535], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownNs | 0.6769 / 0.69046 | ms | 0.93755 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8050426804637582, 1.100181904693564], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.078771 / 0.079021 | ms | 0.94684 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8830803658852968, 1.1164164368630445], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.completion | 0.30975 / 0.31256 | ms | 1.0018 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9670987816007909, 1.0149790545045787], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.encode | 0.001291 / 0.0012915 | ms | 0.98388 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9349157421289356, 1.0687086092715232], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.map | 0.017146 / 0.017105 | ms | 1.0012 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9878833774982403, 1.0097758005034245], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.operation | 0.36196 / 0.36308 | ms | 1.0019 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9639522699134282, 1.0214574202980882], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.submit | 0.007917 / 0.007896 | ms | 0.98733 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9427854190092072, 1.0874754098360657], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warm.upload | 0.02025 / 0.019771 | ms | 0.99191 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9499660875463035, 1.0718997361477574], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.33206 / 0.34456 | ms | 0.98201 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9143519795229569, 1.0056835929608532], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.003729 / 0.003708 | ms | 1.0057 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9285714285714285, 1.1014023732470335], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.018771 / 0.019062 | ms | 1.0033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9300356037151702, 1.0783229549269482], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.39819 / 0.40877 | ms | 0.97698 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9294414478444467, 1.0073528423006346], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.016396 / 0.016146 | ms | 1.0383 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9096039682539683, 1.2038695436507938], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.0295 / 0.030354 | ms | 0.97426 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8713654650906628, 1.0793656976653634], 'unit': 'ratio'} | {'implementation': 18, 'comparator': 18, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../apple-metal/20261102-phase-diagnostic/summary.json): retained.
+- [raw](../apple-metal/20261102-phase-diagnostic/raw.jsonl.gz): retained.
+- [contract](../apple-metal/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../apple-metal/20261102-phase-diagnostic/workloads.json): retained.
+- [retention](../apple-metal/20261102-phase-diagnostic/retention.json): retained.
+
+Limitations:
+
+- 18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.
+- Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.
+- No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.
+- No qualification follows from a phase summary or a valid host window.
+- No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.
+- Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available.
+- The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.
+- comparator.sourceCommit is unknown.
+- implementation.sourceCommit is unknown.
+- machine.driver is unknown.
 - reportedAt is unknown; no receipt value was retained.

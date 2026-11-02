@@ -4,6 +4,11 @@
     "sha256": "9214f78d7c7557ddf229063e2c97329afdd4f90d76a7024d94e808ce4743a1d6"
   },
   "builds": {
+    "access-candidate": {
+      "originalManifestSha256": "882e494a3c6dbaa10dae38731373976756670fc4e9dca0d08a1ec338c5b7dcaf",
+      "retainedPath": "access-candidate-runtime-build.json.gz",
+      "sourceCommit": "ed71d7d22465860e55171abb74f7d4eda31fed0a"
+    },
     "alpha-candidate": {
       "originalManifestSha256": "bf73e80dec9a26e79c8124aeb6dd3363269941e0dde03e18136de152358f5afc",
       "retainedPath": "alpha-candidate-runtime-build.json.gz",
@@ -104,6 +109,54 @@
       "presentationMode": "headed",
       "runtimeBuild": "baseline",
       "scope": "Interrupted at user request after 9 of 18 planned launches; incomplete counterbalance; never resumed as headless."
+    },
+    "headless-access-candidate": {
+      "originalFileSha256": {
+        "launches/heavy_particles.chrome.r00.json": "07b9fc7db0d182fea4f466410655f0ce1187b7f77f6fc57cee711278e1e0f600",
+        "launches/heavy_particles.chrome.r00.png": "d44758f9e3d31ee824b09db5f37ffd88cfb4e997c404bf2d7283c52703bd0d16",
+        "launches/heavy_particles.chrome.r00.spec.json": "a89356c8a2dd9cee3862a60ef12e531a3bbe471c82e3b81a20111731b28b0b37",
+        "launches/heavy_particles.chrome.r01.json": "2f70f6cce987ee75f97002249d7ab46bb2dfa81e20e9851176c18960a972660b",
+        "launches/heavy_particles.chrome.r01.spec.json": "dfa67b6be701a0c5ab859724677ff72a754f4083bcc0e5d3887c237241fa4448",
+        "launches/heavy_particles.chrome.r02.json": "379e808cb298fe1d960baff4e996f169c0c70576592e0dc54accd03204202eaa",
+        "launches/heavy_particles.chrome.r02.spec.json": "33f28c0cd53949c286ed08e57364d3f3fdea3f2838691b2b97a2ccb1a507548e",
+        "launches/heavy_particles.chrome.r03.json": "8c22bcb84b33d37874ee8763d2d4f338ef3087210df5d78b3eb79c373e6c4679",
+        "launches/heavy_particles.chrome.r03.spec.json": "95f98bc889e4acf1e124a2db51eb582ec8eb97d5f6ef120f7eccab3609320519",
+        "launches/heavy_particles.chrome.r04.json": "ac3ff8b75b426b22d6f606b3355ad53d383c87eb1726e78bf1ead91813d0c9ad",
+        "launches/heavy_particles.chrome.r04.spec.json": "72b3589ab661a49948511a6cff6b3c32cfa4c50623ae99f9dab3242c4987b6e6",
+        "launches/heavy_particles.chrome.r05.json": "7a442d10744f7c783bf15f791b9d4bb101b1df914284785133425fd5222ea748",
+        "launches/heavy_particles.chrome.r05.spec.json": "4a6e0510748f417888ef76a65060be7101f0c18a60674f1429f03d418443fb34",
+        "launches/heavy_particles.fawn_dawn.r00.json": "88a0271db48f03ea941ede5c065e9fa4a2c634ea27676705d2430cb4598e81fa",
+        "launches/heavy_particles.fawn_dawn.r00.png": "7499330201707f0c53b22bd78428a73aa0984f83ac648fc438c609b2468d8194",
+        "launches/heavy_particles.fawn_dawn.r00.spec.json": "76638ddb7742c358e28b2f35fb733dc6701c40c2faacab123a73c40b65e8799d",
+        "launches/heavy_particles.fawn_dawn.r01.json": "21fb240305815bfeffce25b44005057fd4457117ae6feebc8138541d8398f8f9",
+        "launches/heavy_particles.fawn_dawn.r01.spec.json": "6a7aec7d12cac609dcb6ffa8055780492a3e63781657385b6b9c0da91c045830",
+        "launches/heavy_particles.fawn_dawn.r02.json": "9d93fc21c637eeabb2d25207fe27d47477033b1c1fdf2081a62bd3ac959684a3",
+        "launches/heavy_particles.fawn_dawn.r02.spec.json": "373a06b83508e5de81e6566f6ecb2e9f216c4894887a02caf2b13ac2865e4490",
+        "launches/heavy_particles.fawn_dawn.r03.json": "5c01db85239859a29b018aa9c91f4cf2ed52f9cdd7baf1c8f0abb23f7389e1d7",
+        "launches/heavy_particles.fawn_dawn.r03.spec.json": "4ed6457232ba212787ad9339f4028066d16e0c21da87a03d6a8db74a670a6a8d",
+        "launches/heavy_particles.fawn_dawn.r04.json": "182d6ea49326abbeabb7be768c6310acc7ae75ef2f4c8d865370bf846c0b71e3",
+        "launches/heavy_particles.fawn_dawn.r04.spec.json": "8b7b94f22a99be61f8abe805747f86ff79bf79aca1a8011f9dafdc2d646cc9ca",
+        "launches/heavy_particles.fawn_dawn.r05.json": "f6bff805b154b619ced1e97c5a318c8315e65eb604cf5da08e2ff7cb39860254",
+        "launches/heavy_particles.fawn_dawn.r05.spec.json": "a4c93f3bc138a59efc63aee30b9e29375e11802bd10f551d1d48043815b7e53e",
+        "launches/heavy_particles.fawn_doe.r00.json": "727490077de64b750204f5d00fe04d5b538bfe9074271f21fe7c5aff1ca47893",
+        "launches/heavy_particles.fawn_doe.r00.png": "99b9ae8277a04b299cf79c7c42e935201e59a34e5a356e2135f00083dc32d608",
+        "launches/heavy_particles.fawn_doe.r00.spec.json": "f7a7efc7527c134e53ff0ebc7387f6d4c797eaddbde94f68ed25526c1f1aa804",
+        "launches/heavy_particles.fawn_doe.r01.json": "9619300b8126c70b0b2557a9cb0343c33018cf00de35b921f6e8a65ddd3d873e",
+        "launches/heavy_particles.fawn_doe.r01.spec.json": "8048f28cd873250650d6152db9b76226947d2c1d10df74311b717395faea9124",
+        "launches/heavy_particles.fawn_doe.r02.json": "b590f0b3595b6278b16722c65ce0c023734f393f80d1cb97fc85181608be7ebb",
+        "launches/heavy_particles.fawn_doe.r02.spec.json": "b029510182fa946ad07fb98834ac140a45368a322a771f984b379c64febd441a",
+        "launches/heavy_particles.fawn_doe.r03.json": "60ac1f3e99925462f4ae2306736c8f53dffbf5753319a8b60e1871d10beca012",
+        "launches/heavy_particles.fawn_doe.r03.spec.json": "57b657cf7a42de40c21a75f511c7b63de4961752fc74b08bd75d38eae50e4016",
+        "launches/heavy_particles.fawn_doe.r04.json": "90f7c9880d1edaa0c78c5e15c673494935bbf5ff23a9ee8f8fb916844bdfd3bc",
+        "launches/heavy_particles.fawn_doe.r04.spec.json": "b16ba1087d2c0f94d9ca61c8627d812504dd4efc3b283cec811bd35dbfc9281a",
+        "launches/heavy_particles.fawn_doe.r05.json": "11ea63317c8ccf443178408fdb00c80d32b59fc34515434dd1ce9b99f884ccb7",
+        "launches/heavy_particles.fawn_doe.r05.spec.json": "09adb0a6a53e7d9c80ab92db185114f2cde4fd63c646d68ccb4277959123e328",
+        "orchestrate.log": "c2ca14c0f56c13dd4fff885eee4b7d547c9eb646c32aca528298c47b3a0935c5",
+        "schedule.json": "6dcc5d65c11c4bdfbf3f5cad9ea44e2e6780b442d00070fab7fbfb5d7672f476"
+      },
+      "presentationMode": "headless",
+      "runtimeBuild": "access-candidate",
+      "scope": "Complete six-repetition headless particle comparison with coalesced Metal imported producer dependencies; diagnostic, no universal win qualification."
     },
     "headless-alpha-candidate": {
       "originalFileSha256": {
@@ -309,5 +362,5 @@
   },
   "qualification": "diagnostic",
   "redaction": "Only private filesystem prefixes and JSON formatting change. Numeric samples, execution clocks, hashes, flags, errors and limitations are preserved. Original byte hashes are recorded below; unredacted originals remain local.",
-  "reportedAt": "2026-11-02T19:36:15.866541+00:00"
+  "reportedAt": "2026-11-02T22:06:39.098147+00:00"
 }

@@ -1,0 +1,46 @@
+{
+  "argv": [
+    "C:\\Users\\<user>\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\x64\\bin\\clang-cl.exe",
+    "--target=x86_64-pc-windows-msvc",
+    "/nologo",
+    "/O2",
+    "/MD",
+    "/WX",
+    "/clang:-std=c11",
+    "/clang:-Wall",
+    "/clang:-Wextra",
+    "/D_CRT_SECURE_NO_WARNINGS",
+    "-DDOE_PHASE_BACKEND_D3D12",
+    "/IC:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\source\\runtime\\vendor\\webgpu-headers",
+    "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\source\\bench\\drop-in\\dropin_phase_harness.c",
+    "/FeC:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\phase_doe.exe",
+    "/FoC:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\phase_doe.obj",
+    "/link",
+    "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\webgpu_doe_c.lib",
+    "psapi.lib"
+  ],
+  "backend": "d3d12",
+  "binary": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\phase_doe.exe",
+  "componentHashes": {
+    "d3dcompiler_47.dll": "c1de76af7f724c671cb393889a899268e17fd76d0d50a1244678af57567255a1",
+    "doe_compiler.dll": "9696e2a8104aac50b6424c44b082f90705eab2aae61b82e704afb354a15a1ef3",
+    "dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+    "dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac"
+  },
+  "componentPaths": {
+    "d3dcompiler_47.dll": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\d3dcompiler_47.dll",
+    "doe_compiler.dll": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\doe_compiler.dll",
+    "dxcompiler.dll": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\dxcompiler.dll",
+    "dxil.dll": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\dxil.dll"
+  },
+  "harnessSha256": "82a8faf6a8c73a39a406f7f555d9dbae1c6b19b879872a37cd05233a6b1cce40",
+  "headerSha256": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c",
+  "kind": "dropin-phase-harness-build",
+  "library": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\providers\\doe\\webgpu_doe_c.dll",
+  "libraryBuildReceipt": "C:\\Users\\<user>\\AppData\\Local\\Temp\\fawn-win-cohort-50cf8feb84-20261102T202125Z\\cohort\\provider-receipts\\doe-build-receipt.json",
+  "libraryBuildReceiptSha256": "a44a493a46bcbe899e15a3329160d7234156781131efa26afe947c0ecbf8e987",
+  "librarySha256": "75b051dde715f381c53714635d41ce653b0971f1a52e50248b9f22f4de754867",
+  "providerLoadInSetup": false,
+  "schemaVersion": 1,
+  "sha256": "c7e95d71ab25d1ed029c7e24393ff91d3e1d9f973c6b3174bab89fc21df7cabb"
+}

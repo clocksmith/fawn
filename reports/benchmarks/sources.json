@@ -66,6 +66,14 @@
     },
     {
       "expectedOs": [
+        "win32"
+      ],
+      "id": "phase-d3d12",
+      "label": "Windows D3D12 vector/image/upload phase cohorts",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
         "darwin"
       ],
       "id": "browser-macos",
@@ -3466,6 +3474,159 @@
       ],
       "section": "browser-integration",
       "sha256": "c13fb32091bc2cb172757c9812769e464510eef7e0a086b7f2df82f5818afa0e",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "native-metal-aa402f004-20261102",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-20261102-aa402f004",
+      "limitations": [
+        "18 interleaved pairs, 32 total iterations per process, 31 warm; single-flight only.",
+        "No AC, thermal or foreign-load window gate was enforced; GPU lock alone does not establish comparability.",
+        "Dawn contract identity is 200d6641a51e57890983d842bd871d898e48bda5 (2026-05-25), not d04f88359.",
+        "Historical execution envelopes identify harness executables; they do not independently bind each loaded provider binary. Keep that distinction and their explicit null source identities.",
+        "The frozen contract identitySource has a descriptive pointer error: the referenced artifact hash is under hashes, not artifactSha256. Original contract fields are preserved.",
+        "No reportedAt was recorded in the historical summary; report generation time remains unknown. Raw execution clocks are retained.",
+        "Phase outcomes remain unknown without a separately bound classification policy/verdict; ratios and intervals remain available."
+      ],
+      "path": "reports/benchmarks/apple-metal/20261102-phase-diagnostic/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-phase-diagnostic/raw.jsonl.gz",
+          "required": true,
+          "role": "raw",
+          "sha256": "e49f1ea7cc5bf861e8deeb83e9d81b2fe762c2bdc45bb1f8ffd997687f5647f5"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-phase-diagnostic/contract.json.gz",
+          "required": true,
+          "role": "contract",
+          "sha256": "9b65b191bf00928f9a5607711dcb2e0b98cb25268f1d2efedea2c8993588fc80"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-phase-diagnostic/workloads.json",
+          "required": true,
+          "role": "workload-contract",
+          "sha256": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-phase-diagnostic/retention.json",
+          "required": true,
+          "role": "retention",
+          "sha256": "e66a9b7f573d8df25c0ba94ffb8e5516b05bde3755297d9a0eaa07602ffc4d81"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "6af32204cf7fe78b1e0917d6d54701f9c3e5d06dd121b955be0ea036d0e51032",
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "fawn-macos-20261102/headless-access-candidate",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-20261102-headless-access-candidate",
+      "limitations": [
+        "Complete six-repetition headless particle comparison with coalesced Metal imported producer dependencies; diagnostic, no universal win qualification.",
+        "Diagnostic on an active desktop; no isolated-host or release qualification.",
+        "Fawn local non-PGO build versus stock official PGO; the same-Fawn Dawn arm is the provider control.",
+        "Browser executable metadata changed during launch; null executable hashes and unknown browser source remain unknown. Loaded runtime/compiler component hashes are retained.",
+        "GPU driver identity is not retained.",
+        "Headless evidence cannot qualify visible presentation or headed performance.",
+        "No full independent particle-state oracle retained; visual checks and separate native controls do not qualify the timed page output."
+      ],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-access-candidate-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/headless-access-candidate-receipts.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "2d7d670185a7bfb7fef91e688b86a90fb62d3d8a081b99f34e8ad7ad90e00ee5"
+        },
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261102/access-candidate-runtime-build.json.gz",
+          "required": true,
+          "role": "runtime-build",
+          "sha256": "4b3b675d487c8d5f0e89b6a5f8c3dbb2dfad31669779b0d0575390676a42162d"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "0561462cd0c81e92761b90067dbb5c96c8b1baf72244408d001b3c9bdd0e8025",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "windows-d3d12-50cf8feb8-20261102",
+      "comparisonType": "native-provider",
+      "familyId": "phase-d3d12",
+      "id": "phase-d3d12-20261102-50cf8feb8",
+      "limitations": [
+        "Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.",
+        "All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.",
+        "Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.",
+        "An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.",
+        "The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.",
+        "Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.",
+        "Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes."
+      ],
+      "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/contract.json.gz",
+          "required": true,
+          "role": "contract",
+          "sha256": "588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/contract.json.gz",
+          "required": true,
+          "role": "workload-contract",
+          "sha256": "588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/harness-build.json",
+          "required": true,
+          "role": "harness-build",
+          "sha256": "7ed0acb6fe1e30685ab03199a8444b60bb207c8e94bfa78eb64e0be590f90fd4"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/retention.json",
+          "required": true,
+          "role": "retention",
+          "sha256": "64032792645163105ae05085993efe92d8d9a665e09a608ba029f69a73fba8ed"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz",
+          "required": true,
+          "role": "host-windows",
+          "sha256": "4f7c643be84fcc46ab4dbf35f85dfbce904efcf86a6af2b3b649684c0a56b034"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz",
+          "required": true,
+          "role": "raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz",
+          "sha256": "3966db4bb5a349a62923fbb02e0aae4073f6785d6613c98c4e54a90737634c11"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz",
+          "required": true,
+          "role": "raw:raw-image_rgba_invert_1024.jsonl.gz",
+          "sha256": "be1d25d900e48982f83d4f5e3eebeca5d3830c29255716cee78f311629ce934c"
+        },
+        {
+          "path": "reports/benchmarks/windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz",
+          "required": true,
+          "role": "raw:raw-vector_scale_add_262k.jsonl.gz",
+          "sha256": "225324e6649d4df1dd6c4e2f4da5c2fd5188cae2ec7f0085c558df68be1559f3"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "220885a71dfccdb2b38612efa60a4a82e886912ecf3c44a63f3bad121fea7d11",
       "supersedes": []
     }
   ]

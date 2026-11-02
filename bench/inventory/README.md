@@ -20,7 +20,7 @@ Run everything through `python3 bench/cli.py inventory`. The maintained
 
 ## Readable views
 
-[CURRENT](../../reports/benchmarks/CURRENT.md) is a 16-family overview across five
+[CURRENT](../../reports/benchmarks/CURRENT.md) is a family overview across five
 sections. Each family links to generated `families/<id>.md`, which preserves every
 aggregate and unavailable observation. Individual executions and failures stay in
 the index. Front-page outcome counts count metrics, not campaign wins; a

@@ -20,8 +20,11 @@ def bind_phase(
     row["contractFrozenAt"] = reports.execution_times(contract)[
         "contractFrozenAt"
     ]
-    row["backend"] = contract.get("backend") or (
-        "metal" if "metal" in source.registration["familyId"] else "vulkan")
+    build = source.data("harness-build") or {}
+    legacy_backends = {"phase-metal": "metal", "phase-amd": "vulkan",
+                       "phase-intel": "vulkan", "phase-windows-vulkan": "vulkan"}
+    row["backend"] = contract.get("backend") or build.get("backend") or legacy_backends.get(
+        source.registration["familyId"])
     row["implementation"]["name"] = provider
     row["comparator"]["name"] = control
     if provider == "doe":

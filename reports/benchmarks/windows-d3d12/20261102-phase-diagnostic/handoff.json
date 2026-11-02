@@ -1,0 +1,246 @@
+{
+  "all_Dawn_AA_gates": true,
+  "failed_processes": 0,
+  "full_output_oracle_checks": 9216,
+  "limitations": [
+    "Raw machine.driver remains null; no repair or inference",
+    "Known-own PDH rate-instance missing data preserved as null own utilization, foreign coverage100%",
+    "First strict observer invalid and later7.363%CPUimage pre-admission rejected; retained separately, no timed main rerun",
+    "No Windows D3D12 phase family exists among current16; root decides registration, not WindowsVulkan mislabel",
+    "Strong completion bimodality; no demonstrated paired C50-over-AA improvement"
+  ],
+  "original_frozen_contract_sha256": "55f5bb241971f86f80ab313cec24feb91b23f467b2d6b73872e74d50111537e7",
+  "paths": {
+    "SDK_receipt": "<run>/sdk-receipt.json",
+    "phase_attribution": "<run>/host-window-v3-20261102T214224Z/phase-attribution.json",
+    "public_async_WARP_receipt": "<run>/async-consumer-receipt.json",
+    "row_verification": "<run>/host-window-v3-20261102T214224Z/verification-main.json",
+    "summary_dawn": "<run>/host-window-v3-20261102T214224Z/summary-vs-dawn.json",
+    "summary_previous": "<run>/host-window-v3-20261102T214224Z/summary-vs-previous.json"
+  },
+  "primary": "warm.operation, ratios <1 favor numerator",
+  "processes": 288,
+  "scope": "physical Windows D3D12 active-host diagnostic, no release qualification, all original results retained",
+  "source": {
+    "dawn": "f99976772eb1e7ae4ccb49cbdeb1b7b6ad32a244",
+    "dawn-aa": "same Dawn DLL and byte-identical EXE/build metadata",
+    "doe": "50cf8feb842a5e467a616a7a85362ed92488cc12",
+    "previous": "aa402f004092b99cdd9f2e18c74a1f6b49fca59b"
+  },
+  "source_and_frozen_drift": [],
+  "workloads": {
+    "buffer_upload_readback_exact_1mb": {
+      "Dawn_AA_gate": true,
+      "host_window": {
+        "cohortReturnCode": 0,
+        "failedProcesses": 0,
+        "foreignCpuPct": 2.0780716838183673,
+        "foreignGpuCoverage": 1.0,
+        "foreignGpuPct": 0.0,
+        "foreignMissingInstances": 0,
+        "gateValid": true,
+        "gpuSamples": 37,
+        "harnessChildCpuMs": 16406.25,
+        "harnessGpuPct": null,
+        "identityTrackerErrors": [],
+        "logicalCpus": 16,
+        "missingInstances": 434,
+        "preWindow": {
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 1.2565104166666667,
+          "gpuSamples": 14,
+          "wallS": 15
+        },
+        "processes": 96,
+        "samplingErrors": [],
+        "systemBusyMs": 29593.75,
+        "systemGpuPct": 3.9976172053143317,
+        "wallS": 37.21899999998277,
+        "windowTreeCpuMs": 17218.75
+      },
+      "ratios": {
+        "dawn-aa/dawn": {
+          "ci95": [
+            0.9579692051602163,
+            1.0058798824023518
+          ],
+          "median": 0.9843176752702656,
+          "n": 24,
+          "providerFasterPairs": 16
+        },
+        "doe/dawn": {
+          "ci95": [
+            5.116968698517298,
+            62.4975450081833
+          ],
+          "median": 59.457857269897886,
+          "n": 24,
+          "providerFasterPairs": 1
+        },
+        "doe/previous": {
+          "ci95": [
+            0.9234843514100944,
+            1.1921706441287783
+          ],
+          "median": 0.9986555859283428,
+          "n": 24,
+          "providerFasterPairs": 13
+        },
+        "previous/dawn": {
+          "ci95": [
+            31.391932523191805,
+            64.58051365674685
+          ],
+          "median": 62.07755853876008,
+          "n": 24,
+          "providerFasterPairs": 0
+        }
+      },
+      "raw": "<run>/host-window-v3-20261102T214224Z/retained/main-buffer_upload_readback_exact_1mb/raw.ndjson",
+      "raw_sha256": "dab7248dc53160140d6acaf3e40067183821ff54589a1940a0abc727da27f1e7"
+    },
+    "image_rgba_invert_1024": {
+      "Dawn_AA_gate": true,
+      "host_window": {
+        "cohortReturnCode": 0,
+        "failedProcesses": 0,
+        "foreignCpuPct": 2.3783939518618213,
+        "foreignGpuCoverage": 1.0,
+        "foreignGpuPct": 0.0,
+        "foreignMissingInstances": 0,
+        "gateValid": true,
+        "gpuSamples": 41,
+        "harnessChildCpuMs": 19937.5,
+        "harnessGpuPct": null,
+        "identityTrackerErrors": [],
+        "logicalCpus": 16,
+        "missingInstances": 513,
+        "preWindow": {
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 3.0208333333333335,
+          "gpuSamples": 14,
+          "wallS": 15
+        },
+        "processes": 96,
+        "samplingErrors": [],
+        "systemBusyMs": 36734.375,
+        "systemGpuPct": 7.990942782289578,
+        "wallS": 41.92200000002049,
+        "windowTreeCpuMs": 20781.25
+      },
+      "ratios": {
+        "dawn-aa/dawn": {
+          "ci95": [
+            0.9938937052393517,
+            1.0089597570235385
+          ],
+          "median": 0.9985193131479431,
+          "n": 24,
+          "providerFasterPairs": 14
+        },
+        "doe/dawn": {
+          "ci95": [
+            1.7634052793863277,
+            11.652915750360203
+          ],
+          "median": 1.7871474205231945,
+          "n": 24,
+          "providerFasterPairs": 0
+        },
+        "doe/previous": {
+          "ci95": [
+            0.15246869525725038,
+            1.0144894218521856
+          ],
+          "median": 0.9997965514528996,
+          "n": 24,
+          "providerFasterPairs": 12
+        },
+        "previous/dawn": {
+          "ci95": [
+            1.781678926215212,
+            11.930088428690198
+          ],
+          "median": 11.551354289060768,
+          "n": 24,
+          "providerFasterPairs": 0
+        }
+      },
+      "raw": "<run>/host-window-v3-20261102T214224Z/retained/main-image_rgba_invert_1024-admission2/raw.ndjson",
+      "raw_sha256": "a1b02c94f14719b779da830c24aa6a624e085b869c2405c0ba386c7e6bebe566"
+    },
+    "vector_scale_add_262k": {
+      "Dawn_AA_gate": true,
+      "host_window": {
+        "cohortReturnCode": 0,
+        "failedProcesses": 0,
+        "foreignCpuPct": 2.124548259859104,
+        "foreignGpuCoverage": 1.0,
+        "foreignGpuPct": 0.0,
+        "foreignMissingInstances": 0,
+        "gateValid": true,
+        "gpuSamples": 34,
+        "harnessChildCpuMs": 17046.875,
+        "harnessGpuPct": null,
+        "identityTrackerErrors": [],
+        "logicalCpus": 16,
+        "missingInstances": 429,
+        "preWindow": {
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 0.10416666666666667,
+          "gpuSamples": 14,
+          "wallS": 15
+        },
+        "processes": 96,
+        "samplingErrors": [],
+        "systemBusyMs": 29625.0,
+        "systemGpuPct": 4.493541289551466,
+        "wallS": 34.79599999997299,
+        "windowTreeCpuMs": 17796.875
+      },
+      "ratios": {
+        "dawn-aa/dawn": {
+          "ci95": [
+            0.9721718088324259,
+            1.0000190503474862
+          ],
+          "median": 0.9847943654548694,
+          "n": 24,
+          "providerFasterPairs": 17
+        },
+        "doe/dawn": {
+          "ci95": [
+            1.2464874770922418,
+            42.02752571082879
+          ],
+          "median": 1.3363095238095237,
+          "n": 24,
+          "providerFasterPairs": 0
+        },
+        "doe/previous": {
+          "ci95": [
+            0.028396189481926137,
+            1.0569272170991333
+          ],
+          "median": 0.9102396129691127,
+          "n": 24,
+          "providerFasterPairs": 14
+        },
+        "previous/dawn": {
+          "ci95": [
+            20.98502232364065,
+            44.44517750549795
+          ],
+          "median": 42.620044857867605,
+          "n": 24,
+          "providerFasterPairs": 0
+        }
+      },
+      "raw": "<run>/host-window-v3-20261102T214224Z/retained/main-vector_scale_add_262k/raw.ndjson",
+      "raw_sha256": "3e967341614b3aeadcd38fa946aa9fb2074ffb6bd46fad223903f6fa87fcf3c3"
+    }
+  }
+}

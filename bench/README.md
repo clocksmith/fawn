@@ -7,7 +7,7 @@ package.
 Measured coverage and current-result status live in the existing cube's
 [CURRENT](../reports/benchmarks/CURRENT.md), backed by its
 [inventory](../reports/benchmarks/index.json). Use that projection for the
-sixteen benchmark categories across operating systems; benchmark recipes below
+registered benchmark categories across operating systems; benchmark recipes below
 describe how to run work, rather than a second current-results scoreboard.
 
 ## Register evidence → generate inventory → inspect CURRENT
@@ -63,7 +63,7 @@ The current product-source frontier is the latest commit touching the policy's
 therefore do not change the target they describe. Coverage requires that exact
 source and a recorded binary identity; otherwise CURRENT says **current source
 unmeasured**. This is coverage, not a winning result or a release qualification.
-CURRENT is the 16-family front page and missing-measurement queue. Generated
+CURRENT is the family front page and missing-measurement queue. Generated
 `reports/benchmarks/families/` pages contain every aggregate and unavailable
 observation. The index retains all executions, failures, exact values, units and
 uncertainty. Human build hashes and values are abbreviated; JSON keeps precision.
