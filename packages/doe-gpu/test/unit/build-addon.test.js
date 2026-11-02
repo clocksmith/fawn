@@ -50,7 +50,3 @@ const addonDiscovery = providerSource.slice(providerSource.indexOf('function loa
   providerSource.indexOf('function currentAddon()'));
 assert.match(addonDiscovery, /'build', 'Release', 'doe_napi\.node'/);
 assert.doesNotMatch(addonDiscovery, /cWorkspaceLibraryCandidates/);
-const runtimeDiscovery = providerSource.slice(providerSource.indexOf('function resolveDoeLibraryPath()'),
-  providerSource.indexOf('function currentDoeLibraryPath()'));
-assert.match(runtimeDiscovery, /cWorkspaceLibraryCandidates\(WORKSPACE_ROOT\)/);
-assert.doesNotMatch(runtimeDiscovery, /zig-out/);

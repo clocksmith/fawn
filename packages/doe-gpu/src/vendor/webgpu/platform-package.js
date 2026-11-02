@@ -84,6 +84,44 @@ function cWorkspaceLibraryCandidates(root, platform = process.platform) {
     resolve(stage, platform === 'win32' ? 'bin' : 'lib', name));
 }
 
+// Resolve selection before loading: an explicit override is authoritative even
+// when absent. Discovery callbacks keep precedence testable without either FFI.
+function resolveDoeLibrarySelection({
+  environment = process.env,
+  packageRoot = PACKAGE_ROOT,
+  workspaceRoot = WORKSPACE_ROOT,
+  cwd = process.cwd(),
+  platform = process.platform,
+  arch = process.arch,
+  requireFn = require,
+  existsFn = existsSync,
+  packageLibrary = resolvePlatformPackageLibraryPath,
+  workspaceLibraries = cWorkspaceLibraryCandidates,
+} = {}) {
+  const configured = environment.DOE_WEBGPU_LIB || environment.DOE_LIB;
+  if (configured) {
+    const selected = resolve(cwd, configured);
+    return existsFn(selected)
+      ? { libraryPath: selected, missingOverride: null }
+      : { libraryPath: null, missingOverride: selected };
+  }
+  const packaged = [
+    packageLibrary({ platform, arch, requireFn, workspaceRoot }),
+    ...cLibraryBasenamesForPlatform(platform).map(name =>
+      resolve(packageRoot, 'prebuilds', `${platform}-${arch}`, name)),
+  ];
+  const workspace = workspaceLibraries(workspaceRoot, platform);
+  const candidates = [
+    ...(isInstalledPackageRoot(packageRoot)
+      ? [...packaged, ...workspace] : [...workspace, ...packaged]),
+    ...workspaceLibraries(cwd, platform),
+  ];
+  return {
+    libraryPath: candidates.find(candidate => candidate && existsFn(candidate)) ?? null,
+    missingOverride: null,
+  };
+}
+
 function resolvePlatformPackageAddonPath(options = {}) {
   const packageRoot = resolveInstalledPlatformPackageRoot(options);
   if (!packageRoot) {
@@ -116,6 +154,7 @@ export {
   packageLibraryBasenamesForPlatform,
   isInstalledPackageRoot,
   resolveInstalledPlatformPackageRoot,
+  resolveDoeLibrarySelection,
   resolvePlatformPackageAddonPath,
   resolvePlatformPackageLibraryPath,
 };

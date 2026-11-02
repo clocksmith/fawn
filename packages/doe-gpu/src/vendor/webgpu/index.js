@@ -14,10 +14,8 @@ import {
   PACKAGE_ROOT,
   WORKSPACE_ROOT,
   isInstalledPackageRoot,
-  cLibraryBasenamesForPlatform,
-    cWorkspaceLibraryCandidates,
+  resolveDoeLibrarySelection,
   resolvePlatformPackageAddonPath,
-  resolvePlatformPackageLibraryPath,
 } from './platform-package.js';
 import {
   UINT32_MAX,
@@ -289,50 +287,11 @@ function currentAddon() {
   return addon;
 }
 
-function resolveDoeLibraryPath() {
-  // Absolute, so the library checked here is the one the loader opens: dlopen
-  // would search the system library path for a bare name instead of cwd.
-  const configuredCandidates = [
-    process.env.DOE_WEBGPU_LIB,
-    process.env.DOE_LIB,
-  ].map((path) => (path ? resolve(path) : path));
-  // An explicit provider override is that provider or nothing: a missing file
-  // never falls through to another library, which would misattribute every
-  // result to a provider the caller did not select.
-  const configured = configuredCandidates.find(Boolean);
-  if (configured) {
-    if (existsSync(configured)) return configured;
-    doeLibraryOverrideMissing = configured;
-    return null;
-  }
-  const workspaceLibraryNames = cLibraryBasenamesForPlatform();
-  const packagedLibraryPath = resolvePlatformPackageLibraryPath({
-    requireFn: require,
-    workspaceRoot: WORKSPACE_ROOT,
-  });
-
-  const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
-  const packagedCandidates = [
-    packagedLibraryPath,
-    ...workspaceLibraryNames.map((name) => resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, name)),
-  ];
-  const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
-  const candidates = [
-    ...(isInstalledPackageRoot(PACKAGE_ROOT)
-      ? [...packagedCandidates, ...workspaceCandidates]
-      : [...workspaceCandidates, ...packagedCandidates]),
-    ...cwdCandidates,
-  ];
-
-  for (const candidate of candidates) {
-    if (candidate && existsSync(candidate)) return candidate;
-  }
-  return null;
-}
-
 function currentDoeLibraryPath() {
   if (doeLibraryPath === undefined) {
-    doeLibraryPath = resolveDoeLibraryPath();
+    const selection = resolveDoeLibrarySelection({ requireFn: require });
+    doeLibraryPath = selection.libraryPath;
+    doeLibraryOverrideMissing = selection.missingOverride;
   }
   return doeLibraryPath;
 }

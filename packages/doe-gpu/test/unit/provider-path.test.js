@@ -7,10 +7,10 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { runInNewContext } from 'node:vm';
+import { resolveDoeLibrarySelection } from '../../src/vendor/webgpu/platform-package.js';
 import { fileURLToPath } from 'node:url';
 
 const entry = fileURLToPath(new URL('../../src/index.js', import.meta.url));
@@ -57,27 +57,50 @@ try {
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }
-// Execute each pure resolver body with discovery spies, including Bun's body
-// without pretending Node can execute Bun FFI. Default discovery stays intact.
-for (const [name, endMarker] of [['index.js', '\nfunction currentDoeLibraryPath'],
-  ['bun-ffi.js', '\nconst DOE_LIB_PATH']]) {
-  const source = readFileSync(new URL(`../../src/vendor/webgpu/${name}`, import.meta.url), 'utf8');
-  const start = source.indexOf('function resolveDoeLibraryPath() {');
-  const body = source.slice(start, source.indexOf(endMarker, start));
-  for (const selected of ['present.so', 'missing.so', '']) {
-    let discoveryCalls = 0;
-    const context = {
-      process: { env: { DOE_WEBGPU_LIB: selected }, platform: 'linux', arch: 'x64', cwd: () => '/workspace' },
-      resolve, require: {}, PACKAGE_ROOT: '/package', WORKSPACE_ROOT: '/workspace',
-      existsSync: (path) => path.endsWith('/present.so'),
-      cLibraryBasenamesForPlatform: () => ['libwebgpu_doe_c.so'],
-      resolvePlatformPackageLibraryPath: () => null,
-      cWorkspaceLibraryCandidates: () => { discoveryCalls++; return []; },
-      isInstalledPackageRoot: () => false,
-    };
-    const result = runInNewContext(`${body}\nresolveDoeLibraryPath()`, context);
-    assert.equal(result, selected === 'present.so' ? resolve(selected) : null);
-    assert.equal(discoveryCalls, selected ? 0 : 2, `${name}: preserve default discovery only when unselected`);
-  }
+// Both execution bindings consume this resolver; exercise precedence directly.
+for (const environment of [
+  { DOE_WEBGPU_LIB: 'present.so', DOE_LIB: 'ignored.so' },
+  { DOE_WEBGPU_LIB: 'missing.so', DOE_LIB: 'present.so' },
+  { DOE_LIB: 'present.so' },
+  {},
+]) {
+  let discoveryCalls = 0;
+  const result = resolveDoeLibrarySelection({
+    environment, cwd: '/working', packageRoot: '/package', workspaceRoot: '/workspace',
+    existsFn: path => path.endsWith('/present.so'),
+    packageLibrary: () => { discoveryCalls++; return null; },
+    workspaceLibraries: () => { discoveryCalls++; return []; },
+  });
+  const configured = environment.DOE_WEBGPU_LIB || environment.DOE_LIB;
+  assert.equal(result.libraryPath, configured === 'present.so' ? '/working/present.so' : null);
+  assert.equal(result.missingOverride, configured === 'missing.so' ? '/working/missing.so' : null);
+  assert.equal(discoveryCalls, configured ? 0 : 3);
+}
+for (const [packageRoot, expected] of [
+  ['/source/package', '/workspace/provider'],
+  ['/installed/node_modules/doe-gpu', '/packaged/provider'],
+]) {
+  const options = {
+    environment: {}, packageRoot, workspaceRoot: '/workspace', cwd: '/working',
+    packageLibrary: () => '/packaged/provider',
+    workspaceLibraries: root => [root + '/provider'],
+  };
+  assert.equal(resolveDoeLibrarySelection({ ...options, existsFn: () => true }).libraryPath, expected);
+  assert.equal(resolveDoeLibrarySelection({ ...options, existsFn: path => path === '/working/provider' }).libraryPath,
+    '/working/provider');
+  assert.equal(resolveDoeLibrarySelection({ ...options, existsFn: () => false }).libraryPath, null);
+}
+for (const [platform, arch, name] of [
+  ['linux', 'x64', 'libwebgpu_doe_c.so'],
+  ['darwin', 'arm64', 'libwebgpu_doe_c.dylib'],
+  ['win32', 'x64', 'webgpu_doe_c.dll'],
+]) {
+  const expected = `/package/prebuilds/${platform}-${arch}/${name}`;
+  const result = resolveDoeLibrarySelection({
+    environment: {}, platform, arch, packageRoot: '/package',
+    packageLibrary: () => null, workspaceLibraries: () => [],
+    existsFn: path => path === expected,
+  });
+  assert.equal(result.libraryPath, expected);
 }
 console.log('provider-path.test: ok');

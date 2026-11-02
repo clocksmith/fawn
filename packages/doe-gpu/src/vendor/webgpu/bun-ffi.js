@@ -9,10 +9,7 @@ import { loadDoeBuildMetadata } from "./build-metadata.js";
 import {
     PACKAGE_ROOT,
     WORKSPACE_ROOT,
-    cLibraryBasenamesForPlatform,
-    cWorkspaceLibraryCandidates,
-    resolvePlatformPackageLibraryPath,
-    isInstalledPackageRoot,
+    resolveDoeLibrarySelection,
 } from "./platform-package.js";
 import { globals } from "./webgpu-constants.js";
 import {
@@ -265,39 +262,7 @@ const WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_SIZE = 48;
 // Library resolution
 // ---------------------------------------------------------------------------
 
-function resolveDoeLibraryPath() {
-    // Absolute, so the library checked here is the one dlopen opens.
-    const configuredCandidates = [
-        process.env.DOE_WEBGPU_LIB,
-        process.env.DOE_LIB,
-    ].map((path) => (path ? resolve(path) : path));
-    // An explicit override is that provider or nothing (see index.js).
-    const configured = configuredCandidates.find(Boolean);
-    if (configured) return existsSync(configured) ? configured : null;
-    const packagedLibraryPath = resolvePlatformPackageLibraryPath({
-        requireFn: require,
-        workspaceRoot: WORKSPACE_ROOT,
-    });
-    const libraryNames = cLibraryBasenamesForPlatform();
-    const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
-    const packagedCandidates = [
-        packagedLibraryPath,
-        ...libraryNames.map((name) => resolve(PACKAGE_ROOT, "prebuilds", `${process.platform}-${process.arch}`, name)),
-    ];
-    const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
-    const candidates = [
-        ...(isInstalledPackageRoot(PACKAGE_ROOT)
-            ? [...packagedCandidates, ...workspaceCandidates]
-            : [...workspaceCandidates, ...packagedCandidates]),
-        ...cwdCandidates,
-    ];
-    for (const c of candidates) {
-        if (c && existsSync(c)) return c;
-    }
-    return null;
-}
-
-const DOE_LIB_PATH = resolveDoeLibraryPath();
+const DOE_LIB_PATH = resolveDoeLibrarySelection({ requireFn: require }).libraryPath;
 const DOE_LIBRARY_FLAVOR = libraryFlavor(DOE_LIB_PATH);
 const DOE_BUILD_METADATA = loadDoeBuildMetadata({
     packageRoot: PACKAGE_ROOT,
