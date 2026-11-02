@@ -12,6 +12,10 @@ harness requests and asserts (Vulkan by default, Metal or D3D12). The oracle che
 runs after each iteration's host-operation interval closes and is mandatory.
 Apple Metal builds may opt into ``--load-provider``: dlopen and symbol resolution
 then happen inside setupNs, including frameworks linked by the provider.
+``run --inflight-depth 2`` uses two outstanding operations and distinct workload
+IDs. Overlapping latency intervals never become a summed complete metric;
+pipeline wall metrics include mandatory CPU oracle work. Host-load admission
+is separate from this runner.
 """
 
 from __future__ import annotations
@@ -259,7 +263,7 @@ def run_process(argv: list[str], timeout: float) -> tuple[int, str, str, int, fl
         return process.returncode, stdout, stderr, wall, sum(ticks) / 1e4
 
 
-def harness_args(inputs: Path, name: str, iterations: int) -> list[str]:
+def harness_args(inputs: Path, name: str, iterations: int, inflight_depth: int = 1) -> list[str]:
     row = json.loads((inputs / "manifest.json").read_text())["workloads"][name]
     shader = str(REPO / row["shader"]) if row.get("shader") else "-"
     sets = row["sets"]
@@ -267,11 +271,16 @@ def harness_args(inputs: Path, name: str, iterations: int) -> list[str]:
     for entry in files:
         if sha256(inputs / entry["path"]) != entry["sha256"]:
             raise AssertionError(f"frozen input changed: {entry['path']}")
-    return [shader, *(str(inputs / entry["path"]) for entry in files), str(iterations)]
+    argv = [shader, *(str(inputs / entry["path"]) for entry in files), str(iterations)]
+    return argv + [str(inflight_depth)] if inflight_depth != 1 else argv
 
 
 def run(args: argparse.Namespace) -> None:
+    if args.pairs < 1 or args.iterations < args.inflight_depth:
+        raise ValueError("pairs must be positive and iterations at least inflight-depth")
     providers = dict(item.split("=", 1) for item in args.provider)
+    if len(providers) != len(args.provider):
+        raise ValueError("provider names must be unique")
     names = sorted(providers)
     orders = list(itertools.permutations(names))
     out = Path(args.out)
@@ -280,7 +289,7 @@ def run(args: argparse.Namespace) -> None:
     failures = 0
     with out.open("x") as stream:
         for workload in workloads:
-            argv_tail = harness_args(Path(args.inputs), workload, args.iterations)
+            argv_tail = harness_args(Path(args.inputs), workload, args.iterations, args.inflight_depth)
             for pair in range(args.pairs):
                 order = orders[pair % len(orders)]
                 for position, provider in enumerate(order):
@@ -292,9 +301,12 @@ def run(args: argparse.Namespace) -> None:
                         payload = json.loads(stdout.strip().splitlines()[-1])
                     except (IndexError, ValueError):
                         payload = {"status": "failed", "error": "unparseable_stdout"}
-                    if code != 0 or payload.get("status") != "ok":
+                    admission_error = ("inflight_depth_mismatch" if payload.get("status") == "ok"
+                                       and payload.get("inflightDepth", 1) != args.inflight_depth else None)
+                    if code != 0 or payload.get("status") != "ok" or admission_error:
                         failures += 1
-                    row = {"workload": workload, "pair": pair, "position": position, "order": list(order),
+                    measured_workload = workload if args.inflight_depth == 1 else workload + "@inflight2"
+                    row = {"workload": measured_workload, "pair": pair, "position": position, "order": list(order),
                            "provider": provider, "binary": providers[provider], "returnCode": code,
                            "processWallNs": wall, "childCpuMs": cpu, "stderr": stderr[-2000:], "result": payload,
                            "provenance": capture_provenance(
@@ -303,6 +315,8 @@ def run(args: argparse.Namespace) -> None:
                                    before_stat, metadata, library_stat),
                                machine_observation={"gpu": payload.get("adapterDevice"),
                                                     "driver": payload.get("adapterDriver")})}
+                    if admission_error:
+                        row["admissionError"] = admission_error
                     stream.write(json.dumps(row) + "\n")
                     stream.flush()
     print(json.dumps({"status": "complete" if failures == 0 else "failures", "failures": failures, "out": str(out)}))
@@ -323,28 +337,38 @@ def bootstrap_median_ci(values: list[float]) -> tuple[float, float]:
 
 def process_metrics(row: dict) -> dict[str, float]:
     result = row["result"]
+    depth = result.get("inflightDepth", 1)
+    if depth not in (1, 2):
+        raise ValueError("unsupported inflight depth in receipt")
     metrics = {key: result[key] / 1e6 for key in ONE_TIME if key in result}
     metrics.update({key: float(result[key]) for key in IMAGE_COUNTS if key in result})
     # Complete operation after device acquisition: one-time preparation, every
     # iteration's host-operation interval (CPU oracle excluded) and teardown.
     if all(key in result for key in ("compileNs", "pipelineNs", "resourcesNs", "teardownNs")):
-        metrics["complete"] = (result["compileNs"] + result["pipelineNs"] + result["resourcesNs"] +
-                               sum(result["phases"]["operation"]) + result["teardownNs"]) / 1e6
+        # Overlapping per-operation intervals cannot be added. Pipeline wall
+        # includes the mandatory CPU oracle; report it under a separate scope.
+        loop = sum(result["phases"]["operation"]) if depth == 1 else result["loopNs"]
+        metrics["complete" if depth == 1 else "pipelined.completeWithOracle"] = (
+            result["compileNs"] + result["pipelineNs"] + result["resourcesNs"] +
+            loop + result["teardownNs"]) / 1e6
+    if depth == 2:
+        metrics["pipelined.wallPerOperationWithOracle"] = result["loopNs"] / result["iterations"] / 1e6
     metrics["processWall"] = row["processWallNs"] / 1e6
     metrics["cpuMs"] = row["childCpuMs"]
     metrics["maxRssMiB"] = result["maxRssKiB"] / 1024
     for phase in LOOP_PHASES + tuple(p for p in SPLIT_PHASES if p in result["phases"]):
         series = result["phases"][phase]
-        metrics[f"first.{phase}"] = series[0] / 1e6
-        warm = series[1:] or series
-        metrics[f"warm.{phase}"] = statistics.median(warm) / 1e6
-        metrics[f"warmP95.{phase}"] = percentile(warm, 0.95) / 1e6
+        prefix = "" if depth == 1 else "pipelinedLatency."
+        metrics[f"{prefix}first.{phase}"] = series[0] / 1e6
+        warm = series[depth:] or series
+        metrics[f"{prefix}warm.{phase}"] = statistics.median(warm) / 1e6
+        metrics[f"{prefix}warmP95.{phase}"] = percentile(warm, 0.95) / 1e6
     return metrics
 
 
 def summarize(args: argparse.Namespace) -> None:
     rows = [json.loads(line) for path in args.raw for line in Path(path).read_text().splitlines() if line.strip()]
-    failed = [r for r in rows if r["returnCode"] != 0 or r["result"].get("status") != "ok"]
+    failed = [r for r in rows if r["returnCode"] != 0 or r["result"].get("status") != "ok" or r.get("admissionError")]
     ok = [r for r in rows if r not in failed]
     report = {"schemaVersion": 1, "reportedAt": datetime.now(timezone.utc).isoformat(),
               "rawFiles": {p: sha256(Path(p)) for p in args.raw}, "failedProcesses": len(failed),
@@ -352,17 +376,29 @@ def summarize(args: argparse.Namespace) -> None:
               "timing": "host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on Apple; QueryPerformanceCounter on Windows); not GPU timestamps",
               "workloads": {}}
     for workload in sorted({r["workload"] for r in rows}):
+        depths = {r["result"].get("inflightDepth", 1) for r in ok if r["workload"] == workload}
+        if len(depths) > 1:
+            raise ValueError("cannot combine single-flight and pipelined receipts: " + workload)
+        depth = next(iter(depths), 1)
         by_pair: dict[int, dict[str, dict]] = {}
         for r in ok:
             if r["workload"] == workload:
-                by_pair.setdefault(r["pair"], {})[r["provider"]] = process_metrics(r)
+                pair = by_pair.setdefault(r["pair"], {})
+                if r["provider"] in pair:
+                    raise ValueError(f"duplicate workload/pair/provider: {workload}/{r['pair']}/{r['provider']}")
+                pair[r["provider"]] = process_metrics(r)
         providers = sorted({p for pair in by_pair.values() for p in pair})
         metrics = sorted(next(iter(next(iter(by_pair.values())).values())).keys()) if by_pair else []
         section = {"providers": {}, "paired": {}}
+        if depth != 1:
+            section.update(inflightDepth=depth, timingScope=(
+                "Two outstanding operations, shared input/output, separate readback slots; "
+                "inputs alternate per slot. Latency intervals overlap and include intervening host work. "
+                "Pipeline wall metrics include all independent CPU oracle checks."))
         for provider in providers:
             per = [pair[provider] for pair in by_pair.values() if provider in pair]
             pooled = {phase: [v / 1e6 for r in ok if r["workload"] == workload and r["provider"] == provider
-                              for v in r["result"]["phases"][phase][1:]] for phase in LOOP_PHASES}
+                              for v in r["result"]["phases"][phase][depth:]] for phase in LOOP_PHASES}
             section["providers"][provider] = {
                 "processes": len(per),
                 "warmIterationsPooled": len(pooled["operation"]),
@@ -415,6 +451,8 @@ def main() -> None:
     r.add_argument("--workload", action="append", choices=sorted(WORKLOADS))
     r.add_argument("--pairs", type=int, default=16)
     r.add_argument("--iterations", type=int, default=32)
+    r.add_argument("--inflight-depth", type=int, choices=(1, 2), default=1,
+                   help="outstanding operations; 2 uses separate readbacks and distinct workload/timing scopes")
     r.add_argument("--timeout", type=float, default=120)
     r.add_argument("--out", required=True)
     s = sub.add_parser("summarize")

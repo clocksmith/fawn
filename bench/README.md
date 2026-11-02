@@ -126,6 +126,23 @@ one page and repetition count, inspect the schedule with `--dry-run`, then run
 that selection. Neither command requires a full comparison campaign. Existing
 native catalog summaries can be reproduced through `catalog-report`.
 
+`phase-cohort run --inflight-depth 2` exercises two outstanding operations on
+the same input/output buffers with separate readback slots. The default remains
+single-flight. Each slot alternates independent input/oracle sets, and every
+output is checked. WorkDone futures are captured immediately after their own
+submission. This permits overlap; it does not prove each write encountered a
+busy buffer. Receipts use distinct `@inflight2` workload IDs.
+
+In that mode, `pipelinedLatency.*` intervals overlap and include intervening host
+work. Do not add them: `pipelined.wallPerOperationWithOracle` and
+`pipelined.completeWithOracle` use actual loop wall time including the mandatory
+CPU oracle. They are separate from single-flight `warm.operation` and `complete`.
+The summarizer rejects mixed modes and duplicate pair/provider members instead
+of silently replacing observations. Phase ratios are diagnostic attribution;
+end-to-end scope, full-output correctness, host-window validity and comparator
+identity remain separate requirements. The command does not enforce host-load
+gates by itself; an ungated run stays diagnostic.
+
 External application reproduction starts at
 [`external-projects/README.md`](external-projects/README.md). The
 `external reproduce` command owns source preparation, host admission, Doe

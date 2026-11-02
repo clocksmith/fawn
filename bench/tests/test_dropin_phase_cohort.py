@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import struct
 import hashlib
 import json
@@ -173,6 +174,58 @@ class ProviderBindingTest(unittest.TestCase):
 
 
 class CompleteMetricTest(unittest.TestCase):
+    def test_pipeline_uses_wall_time_instead_of_summing_overlapping_latencies(self) -> None:
+        phases = {name: [3_000_000] * 4 for name in cohort.LOOP_PHASES}
+        result = {"inflightDepth": 2, "iterations": 4, "loopNs": 4_000_000,
+                  "compileNs": 1_000_000, "pipelineNs": 2_000_000,
+                  "resourcesNs": 500_000, "teardownNs": 250_000,
+                  "maxRssKiB": 1024, "phases": phases}
+        metrics = cohort.process_metrics({"processWallNs": 1, "childCpuMs": 1, "result": result})
+        self.assertEqual(metrics["pipelined.completeWithOracle"], 7.75)
+        self.assertEqual(metrics["pipelined.wallPerOperationWithOracle"], 1)
+        self.assertEqual(metrics["pipelinedLatency.warm.operation"], 3)
+        self.assertNotIn("complete", metrics)
+        self.assertNotIn("warm.operation", metrics)
+
+    def test_summarizer_rejects_mixed_modes_and_duplicate_pair_members(self) -> None:
+        phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}
+        row = {"workload": "fixture", "pair": 0, "provider": "doe", "returnCode": 0,
+               "processWallNs": 1, "childCpuMs": 1,
+               "result": {"status": "ok", "maxRssKiB": 1024, "phases": phases}}
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory) / "raw.jsonl"
+            args = argparse.Namespace(raw=[str(raw)], control="dawn", out=None)
+            for second, message in ((row, "duplicate"),
+                                    ({**row, "result": {**row["result"], "inflightDepth": 2}}, "cannot combine")):
+                raw.write_text(json.dumps(row) + "\n" + json.dumps(second) + "\n")
+                with self.assertRaisesRegex(ValueError, message):
+                    cohort.summarize(args)
+
+    def test_old_harness_cannot_silently_satisfy_pipeline_request(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = root / "harness"
+            binary.write_bytes(b"old harness")
+            out = root / "raw.jsonl"
+            args = argparse.Namespace(provider=["doe=" + str(binary)], out=str(out),
+                                      workload=["fixture"], inputs=str(root), iterations=4,
+                                      inflight_depth=2, pairs=1, timeout=1)
+            with mock.patch.object(cohort, "harness_args", return_value=[]), \
+                    mock.patch.object(cohort, "run_process", return_value=(0, '{"status":"ok"}', "", 1, 1)), \
+                    mock.patch("builtins.print"), self.assertRaises(SystemExit):
+                cohort.run(args)
+            retained = json.loads(out.read_text())
+            self.assertEqual(retained["workload"], "fixture@inflight2")
+            self.assertEqual(retained["admissionError"], "inflight_depth_mismatch")
+            self.assertEqual(retained["result"]["status"], "ok")
+
+    def test_duplicate_provider_or_empty_campaign_is_rejected_before_execution(self) -> None:
+        for providers, pairs in ((["doe=one", "doe=two"], 1), (["doe=one"], 0)):
+            args = argparse.Namespace(provider=providers, pairs=pairs, iterations=4, inflight_depth=2)
+            with mock.patch.object(cohort, "run_process") as run, self.assertRaises(ValueError):
+                cohort.run(args)
+            run.assert_not_called()
+
     def test_provider_load_is_reported_as_nested_setup_cost(self) -> None:
         result = {"setupNs": 9_000_000, "providerLoadNs": 3_000_000,
                   "frameworkImagesBeforeSetup": 0, "setupImagesLoaded": 300,

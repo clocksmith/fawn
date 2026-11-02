@@ -156,6 +156,7 @@ def phase_cohort(source: Source) -> list[dict[str, Any]]:
                     "succeeded"
                     if payload.get("returnCode") == 0
                     and result.get("status") == "ok"
+                    and not payload.get("admissionError")
                     else "failed"
                 )
                 row["verdict"] = (
@@ -177,7 +178,7 @@ def phase_cohort(source: Source) -> list[dict[str, Any]]:
                     ]
                 else:
                     row["limitations"].append(
-                        "Process failed: " + str(payload.get("stderr", result))
+                        "Process failed: " + str(payload.get("admissionError") or payload.get("stderr", result))
                     )
                 # A whole-window timestamp is not a per-process execution timestamp.
                 row["executedAt"] = reports.execution_times(result)[

@@ -10,8 +10,11 @@
  * Windows, QueryPerformanceCounter). The
  * backend is fixed at compile time: Vulkan by default, or the explicitly
  * selected Metal/D3D12 backend; the adapter must report it. Each iteration's output is
- * checked against an independent CPU oracle after the host-operation interval
- * closes; a mismatch fails the process. Inputs alternate between two frozen
+ * checked against an independent CPU oracle after its host-operation interval
+ * closes; a mismatch fails the process. Optional depth two permits overlap,
+ * with separate readback slots and per-slot alternating inputs. Its wall time
+ * includes oracle work; overlapping latency intervals must never be summed.
+ * Inputs alternate between two frozen
  * sets so a skipped dispatch, clear or copy cannot pass on stale bytes.
  * The process prints one JSON object on stdout. */
 #define _POSIX_C_SOURCE 200809L
@@ -302,8 +305,8 @@ static long max_rss_kib(void)
 int main(int argc, char **argv)
 {
     uint64_t process_start = now_ns();
-    if (argc != 9) {
-        fprintf(stderr, "usage: %s <shader.wgsl|-> <input0> <input1> <expectA0> <expectB0> <expectA1> <expectB1> <iterations>\n"
+    if (argc != 9 && argc != 10) {
+        fprintf(stderr, "usage: %s <shader.wgsl|-> <input0> <input1> <expectA0> <expectB0> <expectA1> <expectB1> <iterations> [inflight-depth:1|2]\n"
             "shader '-' selects the copy-only workload (expected = input)\n", argv[0]);
         return 2;
     }
@@ -321,6 +324,9 @@ int main(int argc, char **argv)
     if (bytes % 256) die("input_alignment");
     const long iterations = strtol(argv[8], NULL, 10);
     if (iterations < 1 || iterations > MAX_ITERATIONS) die("iterations");
+    if (argc == 10 && strcmp(argv[9], "1") && strcmp(argv[9], "2")) die("inflight_depth");
+    const int depth = argc == 10 && !strcmp(argv[9], "2") ? 2 : 1;
+    if ((depth != 1 && depth != 2) || iterations < depth) die("inflight_depth");
     size_t shader_size = 0;
     uint8_t *shader = copy_only ? NULL : read_file(argv[1], &shader_size);
     uint8_t *host = malloc(bytes);
@@ -410,8 +416,18 @@ int main(int argc, char **argv)
     WGPUBuffer in_buffer = wgpuDeviceCreateBuffer(s.device, &buffer_desc);
     WGPUBuffer out_buffer = copy_only ? NULL : wgpuDeviceCreateBuffer(s.device, &buffer_desc);
     buffer_desc.usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst;
-    WGPUBuffer readback = wgpuDeviceCreateBuffer(s.device, &buffer_desc);
-    if (!in_buffer || !readback || (!copy_only && !out_buffer)) die("buffers");
+    struct flight {
+        WGPUBuffer readback;
+        struct state callback;
+        WGPUFuture completion;
+        uint64_t start, submitted;
+    } flights[2] = {0};
+    for (int i = 0; i < depth; ++i) {
+        flights[i].readback = wgpuDeviceCreateBuffer(s.device, &buffer_desc);
+        flights[i].callback.instance = s.instance;
+        if (!flights[i].readback) die("readback_buffer");
+    }
+    if (!in_buffer || (!copy_only && !out_buffer)) die("buffers");
     WGPUBindGroup group = NULL;
     WGPUBuffer params = NULL;
     const uint32_t elements = (uint32_t)(bytes / 4);
@@ -438,73 +454,87 @@ int main(int argc, char **argv)
     }
     uint64_t t_resources = now_ns();
 
-    for (long it = 0; it < iterations; it++) {
-        const int set = (int)(it & 1);
-        uint64_t a = now_ns();
+    for (long step = 0; step < iterations + depth - 1; ++step) {
+        if (step < iterations) {
+            const long it = step;
+            struct flight *flight = &flights[it % depth];
+            /* Alternate each slot's input, so stale readback from that slot fails.
+             * At depth two the sequence is A,A,B,B, rather than permanently A/B. */
+            const int set = (int)((it / depth) & 1);
+            uint64_t a = now_ns();
 #if defined(DOE_PHASE_UPLOAD_SPLIT)
-        {
-            uint64_t sum = 0;
-            for (size_t offset = 0; offset + sizeof(uint64_t) <= bytes; offset += 64) {
-                uint64_t word;
-                memcpy(&word, input[set] + offset, sizeof(word));
-                sum += word;
+            {
+                uint64_t sum = 0;
+                for (size_t offset = 0; offset + sizeof(uint64_t) <= bytes; offset += 64) {
+                    uint64_t word;
+                    memcpy(&word, input[set] + offset, sizeof(word));
+                    sum += word;
+                }
+                source_sink = sum;
             }
-            source_sink = sum;
-        }
-        const uint64_t a2 = now_ns();
+            const uint64_t a2 = now_ns();
 #endif
-        wgpuQueueWriteBuffer(queue, in_buffer, 0, input[set], bytes);
-        uint64_t b = now_ns();
-        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
-        WGPUBuffer source = in_buffer;
-        if (!copy_only) {
-            wgpuCommandEncoderClearBuffer(encoder, out_buffer, 0, bytes);
-            WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
-            wgpuComputePassEncoderSetPipeline(pass, pipeline);
-            wgpuComputePassEncoderSetBindGroup(pass, 0, group, 0, NULL);
-            wgpuComputePassEncoderDispatchWorkgroups(pass, (elements + 63) / 64, 1, 1);
-            wgpuComputePassEncoderEnd(pass);
-            wgpuComputePassEncoderRelease(pass);
-            source = out_buffer;
+            wgpuQueueWriteBuffer(queue, in_buffer, 0, input[set], bytes);
+            uint64_t b = now_ns();
+            WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
+            WGPUBuffer source = in_buffer;
+            if (!copy_only) {
+                wgpuCommandEncoderClearBuffer(encoder, out_buffer, 0, bytes);
+                WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
+                wgpuComputePassEncoderSetPipeline(pass, pipeline);
+                wgpuComputePassEncoderSetBindGroup(pass, 0, group, 0, NULL);
+                wgpuComputePassEncoderDispatchWorkgroups(pass, (elements + 63) / 64, 1, 1);
+                wgpuComputePassEncoderEnd(pass);
+                wgpuComputePassEncoderRelease(pass);
+                source = out_buffer;
+            }
+            wgpuCommandEncoderCopyBufferToBuffer(encoder, source, 0, flight->readback, 0, bytes);
+            WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+            wgpuCommandEncoderRelease(encoder);
+            if (!commands) die("encode");
+            uint64_t c = now_ns();
+            wgpuQueueSubmit(queue, 1, &commands);
+            wgpuCommandBufferRelease(commands);
+            uint64_t d = now_ns();
+            flight->callback.done = false;
+            WGPUQueueWorkDoneCallbackInfo done_cb = WGPU_QUEUE_WORK_DONE_CALLBACK_INFO_INIT;
+            done_cb.mode = WGPUCallbackMode_WaitAnyOnly;
+            done_cb.callback = on_work_done;
+            done_cb.userdata1 = &flight->callback;
+            /* Capture this submission's future before issuing the next operation. */
+            flight->completion = wgpuQueueOnSubmittedWorkDone(queue, done_cb);
+            flight->start = a;
+            flight->submitted = d;
+            samples[P_UPLOAD][it] = b - a;
+#if defined(DOE_PHASE_UPLOAD_SPLIT)
+            samples[P_UPLOAD_SOURCE][it] = a2 - a;
+            samples[P_UPLOAD_DOE][it] = b - a2;
+#endif
+            samples[P_ENCODE][it] = c - b;
+            samples[P_SUBMIT][it] = d - c;
         }
-        wgpuCommandEncoderCopyBufferToBuffer(encoder, source, 0, readback, 0, bytes);
-        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
-        wgpuCommandEncoderRelease(encoder);
-        if (!commands) die("encode");
-        uint64_t c = now_ns();
-        wgpuQueueSubmit(queue, 1, &commands);
-        wgpuCommandBufferRelease(commands);
-        uint64_t d = now_ns();
-        s.done = false;
-        WGPUQueueWorkDoneCallbackInfo done_cb = WGPU_QUEUE_WORK_DONE_CALLBACK_INFO_INIT;
-        done_cb.mode = WGPUCallbackMode_WaitAnyOnly;
-        done_cb.callback = on_work_done;
-        done_cb.userdata1 = &s;
-        wait_future(&s, wgpuQueueOnSubmittedWorkDone(queue, done_cb), "completion_wait");
-        if (!s.done || s.status != (int)WGPUQueueWorkDoneStatus_Success) die("completion");
+        if (step < depth - 1) continue;
+        const long it = step - depth + 1;
+        struct flight *flight = &flights[it % depth];
+        const int set = (int)((it / depth) & 1);
+        wait_future(&flight->callback, flight->completion, "completion_wait");
+        if (!flight->callback.done || flight->callback.status != (int)WGPUQueueWorkDoneStatus_Success) die("completion");
         uint64_t e = now_ns();
-        s.done = false;
+        flight->callback.done = false;
         WGPUBufferMapCallbackInfo map_cb = WGPU_BUFFER_MAP_CALLBACK_INFO_INIT;
         map_cb.mode = WGPUCallbackMode_WaitAnyOnly;
         map_cb.callback = on_map;
-        map_cb.userdata1 = &s;
-        wait_future(&s, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, bytes, map_cb), "map_wait");
-        if (!s.done || s.status != (int)WGPUMapAsyncStatus_Success) die("map");
-        const void *mapped = wgpuBufferGetConstMappedRange(readback, 0, bytes);
+        map_cb.userdata1 = &flight->callback;
+        wait_future(&flight->callback, wgpuBufferMapAsync(flight->readback, WGPUMapMode_Read, 0, bytes, map_cb), "map_wait");
+        if (!flight->callback.done || flight->callback.status != (int)WGPUMapAsyncStatus_Success) die("map");
+        const void *mapped = wgpuBufferGetConstMappedRange(flight->readback, 0, bytes);
         if (!mapped) die("mapped_range");
         memcpy(host, mapped, bytes);
-        wgpuBufferUnmap(readback);
+        wgpuBufferUnmap(flight->readback);
         uint64_t f = now_ns();
-        samples[P_UPLOAD][it] = b - a;
-#if defined(DOE_PHASE_UPLOAD_SPLIT)
-        samples[P_UPLOAD_SOURCE][it] = a2 - a;
-        samples[P_UPLOAD_DOE][it] = b - a2;
-#endif
-        samples[P_ENCODE][it] = c - b;
-        samples[P_SUBMIT][it] = d - c;
-        samples[P_COMPLETION][it] = e - d;
+        samples[P_COMPLETION][it] = e - flight->submitted;
         samples[P_MAP][it] = f - e;
-        samples[P_OPERATION][it] = f - a;
+        samples[P_OPERATION][it] = f - flight->start;
         /* Independent oracle, outside the host-operation interval: each 32-bit
          * word equals the A or B reference (B == A unless fused rounding). */
         const uint32_t *got = (const uint32_t *)host, *ea = (const uint32_t *)expect_a[set], *eb = (const uint32_t *)expect_b[set];
@@ -522,7 +552,7 @@ int main(int argc, char **argv)
     if (params) wgpuBufferRelease(params);
     if (out_buffer) wgpuBufferRelease(out_buffer);
     wgpuBufferRelease(in_buffer);
-    wgpuBufferRelease(readback);
+    for (int i = 0; i < depth; ++i) wgpuBufferRelease(flights[i].readback);
     if (pipeline) wgpuComputePipelineRelease(pipeline);
     if (module) wgpuShaderModuleRelease(module);
     wgpuQueueRelease(queue);
@@ -534,6 +564,7 @@ int main(int argc, char **argv)
     const long rss_kib = max_rss_kib();
 
     printf("{\"status\":\"ok\",");
+    printf("\"inflightDepth\":%d,", depth);
     print_json_string("adapterVendor", info.vendor);
     print_json_string("adapterArchitecture", info.architecture);
     print_json_string("adapterDevice", info.device);

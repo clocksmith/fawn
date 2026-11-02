@@ -193,6 +193,7 @@ class TestReceiptProvenance(unittest.TestCase):
                 workload=["fixture"],
                 inputs=str(root),
                 iterations=1,
+                inflight_depth=1,
                 pairs=1,
                 timeout=1,
             )
