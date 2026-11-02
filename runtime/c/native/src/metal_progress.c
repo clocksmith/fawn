@@ -113,6 +113,34 @@ uint64_t native_metal_completion_count(const native_device *device)
         (uint64_t)atomic_load_explicit(&device->metal_completion->count, memory_order_acquire) : 0;
 }
 
+void native_metal_completion_wake(native_device *device)
+{
+    native_metal_completion *completion = device->metal_completion;
+    if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
+    if (doe_condition_signal(&device->pending_changed).status != DOE_HOST_OK) abort();
+    if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
+}
+
+doe_host_result native_metal_completion_wait(native_device *device, uint64_t count,
+    const struct timespec *deadline)
+{
+    native_metal_completion *completion = device->metal_completion;
+    if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
+    doe_host_result result = doe_host_result_make(DOE_HOST_OK, 0);
+    if (native_metal_completion_count(device) == count) {
+        /* Device state is protected until the notification mutex is held.
+         * Both handlers and ordinary new-record/join wakes use that mutex, so
+         * none can signal between the final predicate check and atomic sleep.
+         * The worker's existing device lease protects the condition/detach. */
+        native_unlock(device);
+        result = deadline ? doe_condition_wait_until(&device->pending_changed, &completion->mutex, deadline) :
+            doe_condition_wait(&device->pending_changed, &completion->mutex);
+        if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
+        native_lock(device);
+    } else if (doe_mutex_unlock(&completion->mutex).status != DOE_HOST_OK) abort();
+    return result;
+}
+
 /* Only the existing pending owner can authorize waiting/retrying a conflict.
  * An unsubmitted foreign owner is BUSY, never a reason to wait or dispatch. */
 static bool accepted_owner(native_device *device, doe_mtl_commands *owner)

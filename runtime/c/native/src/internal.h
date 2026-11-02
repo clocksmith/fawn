@@ -356,6 +356,11 @@ void native_metal_completion_detach(native_device *);
 void native_metal_completion_arm(native_device *);
 bool native_metal_completion_armed(const native_device *);
 uint64_t native_metal_completion_count(const native_device *);
+/* Worker owns device mutex at depth one and its device lease. Wait switches
+ * to the completion mutex, then releases it before reacquiring device mutex. */
+doe_host_result native_metal_completion_wait(native_device *, uint64_t, const struct timespec *);
+/* Caller owns device mutex; serialize ordinary wakes with Metal handler wakes. */
+void native_metal_completion_wake(native_device *);
 native_failure native_metal_record_batch(native_device *, native_command_handle *, doe_resource_commands **, size_t);
 /* Lowers a resource command list into native commands (the one recorder for
  * queue submission and compute-program recording/replay). */

@@ -25,9 +25,11 @@ LoadLibrary fallback. This code residency survives to process exit; GPU/resource
 leases settle independently. The pending owner retains
 one device lease and observes completion; do not add a second queue or report
 unknown work as terminal. Vulkan, Metal and D3D12 submissions return once accepted.
-Metal preserves each resource's single recording owner: discard provisional
-uncommitted BUSY work before settling the specific accepted predecessor and
-recording again; unknown/failure never retries. D3D12 buffers admit later GPU
+Metal admits tracked directly bound buffers/textures after proven accepted
+predecessors on its existing ordered queue. Unsubmitted, untracked and unknown
+owners remain exclusive. Discard provisional uncommitted BUSY work before
+settling a specific accepted predecessor and recording again; unknown/failure
+never retries. D3D12 buffers admit later GPU
 uses through known-fenced acceptance on their existing ordered queue; recording
 reservations remain exclusive and completed initialization remains separate.
 D3D12 discards provisional native work before any remaining texture/query
@@ -51,7 +53,10 @@ and lease drops alone do not wake a live device's worker. Pending asynchronous
 callback obligations observe that handler and wake progress; destruction arms it
 for remaining retirement. The handler never takes the device mutex or retires
 state. Its completion record outlives the device; detach precedes destruction of
-the worker condition. Unknown completion retains all submission/resource leases.
+the worker condition. Metal idle/timed waits and all handler/new-record/join
+wakes use the completion mutex. The worker hands off its depth-one device lock
+only while holding that mutex, then releases it before reacquiring the device
+lock; handlers never acquire the device lock. Unknown completion retains all submission/resource leases.
 Settle oldest first and preserve the first background terminal error for a
 public operation to observe.
 

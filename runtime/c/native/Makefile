@@ -778,7 +778,7 @@ endif
 
 # CPU call-ledger boundary; no hardware adapter or Metal GPU execution.
 $(BUILD)/metal-async-submit: tests/metal_async_submit.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
-	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_async_submit.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=native_record_resource_commands -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_async_submit.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=native_record_resource_commands -Wl,--wrap=pthread_mutex_lock -Wl,--wrap=pthread_cond_timedwait -o $@
 .PHONY: check-metal-async-submit
 check-metal-async-submit: $(BUILD)/metal-async-submit
 	$(BUILD)/metal-async-submit

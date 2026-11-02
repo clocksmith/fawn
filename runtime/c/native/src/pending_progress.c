@@ -42,7 +42,10 @@ static void pending_progress(void *identity)
     for (;;) {
         while (!progress_needed(device) && !device->pending_progress_join &&
                 atomic_load_explicit(&device->references, memory_order_acquire) > 1) {
-            if (doe_condition_wait(&device->pending_changed, &device->mutex).status != DOE_HOST_OK) abort();
+            doe_host_result waited = device->metal_completion ?
+                native_metal_completion_wait(device, native_metal_completion_count(device), NULL) :
+                doe_condition_wait(&device->pending_changed, &device->mutex);
+            if (waited.status != DOE_HOST_OK) abort();
         }
         if (!device->pending) {
             device->pending_progress_ready = false;
@@ -106,8 +109,8 @@ static void pending_progress(void *identity)
         }
         uint64_t wait_ns = UINT64_C(10000000);
         if (oldest && oldest->kind == WGPUBackendType_Metal) {
-            /* A handler that ran since the poll above is not lost; one that
-             * signals between this check and the wait is bounded by wait_ns. */
+            /* A handler since the poll needs another observation; the actual
+             * wait below rechecks under the shared notification mutex. */
             if (native_metal_completion_count(device) != completions) continue;
             wait_ns = PROGRESS_FENCE_WAIT_NS;
         }
@@ -146,8 +149,9 @@ static void pending_progress(void *identity)
             }
             /* Only this worker waits: its recursive device mutex is held at
              * depth1 here; all recursive helpers above returned balanced. */
-            doe_host_result waited = doe_condition_wait_until_at(&device->pending_changed,
-                &device->mutex, &deadline, &now);
+            doe_host_result waited = device->metal_completion ?
+                native_metal_completion_wait(device, completions, &deadline) :
+                doe_condition_wait_until_at(&device->pending_changed, &device->mutex, &deadline, &now);
             if (waited.status != DOE_HOST_OK && waited.status != DOE_HOST_TIMED_OUT) abort();
         }
     }
@@ -179,7 +183,9 @@ void native_pending_progress_wake(native_device *device)
 {
     /* Caller holds device mutex and a live lease. A worker-less device is never
      * published, so no native submission can create an unserviceable obligation. */
-    if (device->pending_progress_ready && doe_condition_signal(&device->pending_changed).status != DOE_HOST_OK) abort();
+    if (!device->pending_progress_ready) return;
+    if (device->metal_completion) native_metal_completion_wake(device);
+    else if (doe_condition_signal(&device->pending_changed).status != DOE_HOST_OK) abort();
 }
 
 void native_pending_progress_destroy(native_device *device)

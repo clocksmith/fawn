@@ -16,6 +16,20 @@ static atomic_uint race_action;
 static WGPUBuffer raced_buffer;
 static state *raced_state;
 static WGPUFuture raced_future;
+static void *wake_command;
+static atomic_bool wake_armed, notify_active, notify_lock_seen, notify_finished, wake_returned;
+static atomic_uintptr_t notify_mutex;
+static atomic_uintptr_t wake_condition;
+
+int __real_pthread_mutex_lock(pthread_mutex_t *);
+int __wrap_pthread_mutex_lock(pthread_mutex_t *mutex)
+{
+    if (atomic_load(&notify_active) && !atomic_load(&notify_lock_seen)) {
+        atomic_store(&notify_mutex,(uintptr_t)mutex);
+        atomic_store(&notify_lock_seen,true);
+    }
+    return __real_pthread_mutex_lock(mutex);
+}
 
 native_failure __real_native_record_resource_commands(native_command_handle *, doe_resource_commands *);
 native_failure __wrap_native_record_resource_commands(native_command_handle *native, doe_resource_commands *resources)
@@ -65,6 +79,35 @@ static bool await_flag(atomic_bool *flag)
     }
     return true;
 }
+static void notify_at_sleep(void *unused)
+{
+    (void)unused;
+    atomic_store(&notify_active,true);
+    mock_command_result(wake_command,4,0);
+    atomic_store(&notify_active,false);
+    atomic_store(&notify_finished,true);
+}
+int __real_pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const struct timespec *);
+int __wrap_pthread_cond_timedwait(pthread_cond_t *condition, pthread_mutex_t *mutex,
+    const struct timespec *deadline)
+{
+    if ((uintptr_t)condition != atomic_load(&wake_condition) || !atomic_exchange(&wake_armed,false))
+        return __real_pthread_cond_timedwait(condition,mutex,deadline);
+    /* The worker reached the actual host sleep, after its final count check.
+     * Force a completed handler here, before entering pthread's atomic wait.
+     * Old code signals under a different mutex: finish that signal first so
+     * the subsequent wait deterministically times out. Correct code holds the
+     * same mutex: the notifier signals only when the real wait releases it. */
+    doe_thread sender={0};
+    assert(doe_thread_create(&sender,notify_at_sleep,NULL).status==DOE_HOST_OK);
+    assert(await_flag(&notify_lock_seen));
+    if (atomic_load(&notify_mutex)!=(uintptr_t)mutex) assert(await_flag(&notify_finished));
+    int result=__real_pthread_cond_timedwait(condition,mutex,deadline);
+    assert(doe_thread_join(&sender).status==DOE_HOST_OK);
+    assert(result==0); /* Notification, never fallback timeout; no elapsed-time threshold. */
+    atomic_store(&wake_returned,true);
+    return result;
+}
 static size_t observe(void *userdata, void *command, bool wait, doe_mtl_error *error)
 {
     mock_native *mock = userdata;
@@ -104,6 +147,28 @@ static WGPUCommandBuffer copy(state *s, WGPUBuffer source, WGPUBuffer target, WG
     assert(command);
     return command;
 }
+static WGPUCommandBuffer image_copy(state *s, WGPUTexture source, WGPUBuffer target, WGPUBuffer scratch)
+{
+    WGPUCommandEncoder encoder=wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    if (scratch) wgpuCommandEncoderClearBuffer(encoder,scratch,0,16);
+    texture_to_buffer(encoder,source,target,0,1,1);
+    WGPUCommandBuffer command=wgpuCommandEncoderFinish(encoder,NULL);
+    wgpuCommandEncoderRelease(encoder);
+    assert(command);
+    return command;
+}
+static WGPUTexture untracked_image(state *s)
+{
+    mocks[1].untracked_textures=true;
+    WGPUTextureDescriptor desc=WGPU_TEXTURE_DESCRIPTOR_INIT;
+    desc.format=WGPUTextureFormat_RGBA8Unorm;
+    desc.size=(WGPUExtent3D){1,1,1};
+    desc.usage=WGPUTextureUsage_CopySrc|WGPUTextureUsage_RenderAttachment;
+    WGPUTexture image=wgpuDeviceCreateTexture(s->device,&desc);
+    assert(image);
+    mocks[1].untracked_textures=false;
+    return image;
+}
 static size_t pending_count(native_device *device,native_pending_kind kind)
 {
     size_t count = 0;
@@ -117,13 +182,35 @@ static void queue_reply(WGPUQueueWorkDoneStatus status,WGPUStringView message,vo
     assert(status==result->expected && ++result->calls==1);
     if (result->message) assert(message.length==strlen(result->message) && !memcmp(message.data,result->message,message.length));
 }
+static void completion_at_wait_boundary(state *s, WGPUBuffer source, WGPUBuffer target)
+{
+    native_device *device=(native_device *)s->device;
+    WGPUCommandBuffer command=copy(s,source,target,NULL);
+    queue_result result={.expected=WGPUQueueWorkDoneStatus_Success};
+    WGPUQueueWorkDoneCallbackInfo callback={.mode=WGPUCallbackMode_WaitAnyOnly,
+        .callback=queue_reply,.userdata1=&result};
+    native_lock(device);
+    atomic_store(&automatic_terminal,false);
+    wgpuQueueSubmit(s->queue,1,&command);
+    atomic_store(&wake_condition,(uintptr_t)&device->pending_changed.native);
+    wake_command=mocks[1].last_command;
+    WGPUFuture future=wgpuQueueOnSubmittedWorkDone(s->queue,callback);
+    assert(future.id);
+    atomic_store(&wake_armed,true);
+    native_unlock(device);
+    assert(await_flag(&wake_returned));
+    wait_future(s,future);
+    assert(result.calls==1 && atomic_load(&notify_finished));
+    wgpuCommandBufferRelease(command);
+}
 static void unlocked_race(state *s, bool write, bool destroy)
 {
     native_device *device = (native_device *)s->device;
     atomic_store(&automatic_terminal,false);
     WGPUBuffer source = buffer(s,16,WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
     WGPUBuffer target = buffer(s,16,WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead);
-    WGPUCommandBuffer preceding = copy(s,source,target,NULL);
+    WGPUTexture image=write ? NULL : untracked_image(s);
+    WGPUCommandBuffer preceding = image ? image_copy(s,image,target,NULL) : copy(s,source,target,NULL);
     wgpuQueueSubmit(s->queue,1,&preceding);
     wgpuCommandBufferRelease(preceding);
     native_lock(device);
@@ -137,7 +224,7 @@ static void unlocked_race(state *s, bool write, bool destroy)
         const uint32_t input[4] = {11,22,33,44};
         wgpuQueueWriteBuffer(s->queue,target,0,input,sizeof(input));
     } else {
-        WGPUCommandBuffer retry = copy(s,source,target,NULL);
+        WGPUCommandBuffer retry = image_copy(s,image,target,NULL);
         wgpuQueueSubmit(s->queue,1,&retry);
         wgpuCommandBufferRelease(retry);
     }
@@ -151,6 +238,7 @@ static void unlocked_race(state *s, bool write, bool destroy)
         wgpuBufferUnmap(target);
     }
     wgpuBufferRelease(source); wgpuBufferRelease(target);
+    wgpuTextureRelease(image);
 }
 int main(void)
 {
@@ -192,13 +280,21 @@ int main(void)
     native_unlock(device);
     wgpuCommandBufferRelease(a); wgpuCommandBufferRelease(b);
 
-    /* A partially recorded clear must be abandoned before the shared-resource
-     * predecessor settles. Exactly one additional native commit is allowed. */
-    WGPUCommandBuffer shared = copy(&s,source_a,target_a,scratch);
+    /* Tracked submitted buffers now overlap safely. An untracked native image
+     * remains exclusive: abandon a partially recorded scratch clear before
+     * settling its accepted predecessor, then commit exactly one retry. */
+    WGPUTexture image=untracked_image(&s);
+    WGPUBuffer image_target=buffer(&s,256,WGPUBufferUsage_CopyDst|WGPUBufferUsage_MapRead);
+    WGPUCommandBuffer image_first=image_copy(&s,image,image_target,NULL);
+    wgpuQueueSubmit(s.queue,1,&image_first);
+    wgpuCommandBufferRelease(image_first);
+    unsigned fills=mocks[1].fills;
+    WGPUCommandBuffer shared = image_copy(&s,image,image_target,scratch);
     atomic_store(&complete_conflict,true);
     wgpuQueueSubmit(s.queue,1,&shared);
     native_lock(device);
-    assert(mocks[1].commits == 3 && mocks[1].fills >= 2 && !s.errors);
+    assert(mocks[1].commits == 4 && mocks[1].fills == fills + 2 &&
+        !atomic_load(&complete_conflict) && !s.errors);
     native_unlock(device);
     wgpuCommandBufferRelease(shared);
     queue_result completed={.expected=WGPUQueueWorkDoneStatus_Success};
@@ -211,6 +307,9 @@ int main(void)
         if (pending->kind==NATIVE_PENDING_COMMANDS) mock_command_result(pending->native.value.metal->native,4,0);
     native_unlock(device);
     wait_future(&s,complete); assert(completed.calls==1);
+    wgpuTextureRelease(image);
+    wgpuBufferRelease(image_target);
+    completion_at_wait_boundary(&s,source_a,target_a);
     unlocked_race(&s,false,false);
     unlocked_race(&s,false,true);
     unlocked_race(&s,true,false);
