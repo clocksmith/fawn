@@ -14,17 +14,37 @@ typedef struct fixture {
     mock_native mock;
     doe_mtl_native base;
     doe_mtl_context *context;
-    shared_event events[12];
+    shared_event events[64];
     unsigned event_count, event_releases, surface_references, signals, producer_waits;
     uint64_t waited_value;
     bool hold, fail_signal, fail_import, fail_surface, invalid_surface_format;
     bool timeline_enabled;
     void *last_signal;
+    uint64_t waited_values[16];
+    void *waited_events[16];
 } fixture;
-static fixture fixtures[3];
+static fixture fixtures[4];
 static unsigned fixture_count;
 static unsigned physical_identity;
 static char last_message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+static _Thread_local size_t fail_allocation;
+static doe_mtl_commands *record_conflict;
+static unsigned injected_replays;
+void *__real_calloc(size_t, size_t);
+void *__wrap_calloc(size_t count, size_t size)
+{
+    if (fail_allocation && !--fail_allocation) return NULL;
+    return __real_calloc(count, size);
+}
+native_failure __real_native_record_resource_commands(native_command_handle *, doe_resource_commands *);
+native_failure __wrap_native_record_resource_commands(native_command_handle *commands, doe_resource_commands *resources)
+{
+    if (record_conflict && !injected_replays++) {
+        commands->value.metal->conflict = record_conflict;
+        return native_failure_status(NATIVE_BUSY);
+    }
+    return __real_native_record_resource_commands(commands, resources);
+}
 static fixture *driver_fixture(void *userdata) { return userdata; }
 static bool is_event(fixture *f, void *handle)
 {
@@ -44,7 +64,7 @@ static void release(void *userdata, void *handle)
 static doe_mtl_status event_create(void *userdata, void *device, void **out, doe_mtl_error *error)
 {
     fixture *f = driver_fixture(userdata);
-    assert(device && f->event_count < 12);
+    assert(device && f->event_count < sizeof(f->events) / sizeof(f->events[0]));
     shared_event *event = &f->events[f->event_count++];
     *event = (shared_event){.references=1};
     *out = event;
@@ -81,6 +101,8 @@ static doe_mtl_status event_wait(void *userdata, void *command, void *handle, ui
 {
     fixture *f = driver_fixture(userdata);
     assert(is_event(f,handle));
+    f->waited_values[f->producer_waits % 16] = value;
+    f->waited_events[f->producer_waits % 16] = handle;
     ++f->producer_waits;
     f->waited_value = value;
     assert(command && !((shared_event *)handle)->value);
@@ -122,11 +144,11 @@ static doe_mtl_status texture_import(void *userdata, void *device, void *surface
 }
 doe_mtl_status __wrap_doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error)
 {
-    assert(fixture_count < 3);
+    assert(fixture_count < sizeof(fixtures) / sizeof(fixtures[0]));
     fixture *f = &fixtures[fixture_count++];
     doe_mtl_native native = mock_driver(&f->mock);
     f->base = native;
-    f->timeline_enabled = fixture_count == 3;
+    f->timeline_enabled = fixture_count >= 3;
     if (f->timeline_enabled) native.timeline_value = event_value;
     native.release = release;
     native.shared_surface = surface_open;
@@ -259,7 +281,7 @@ static void producer_concurrency(state *s, fixture *f, WGPUSharedTextureMemory m
     assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Error);
     assert(wgpuSharedTextureMemoryEndAccess(memory,texture,NULL) == WGPUStatus_Error);
     wgpuSharedFenceRelease(fence);
-    assert(native->references == 1); /* Accepted wait retains the last native event lease. */
+    assert(native->references == 1); /* Unsubmitted access retains the last event lease. */
     assert(wgpuSharedTextureMemoryEndAccess(memory,waiting_texture,NULL) == WGPUStatus_Success);
     wgpuTextureRelease(waiting_texture);
     native_lock(device);
@@ -268,6 +290,229 @@ static void producer_concurrency(state *s, fixture *f, WGPUSharedTextureMemory m
     native_queue_settlement settled = native_poll_pending(device);
     assert(settled.complete && !native->references);
     native_unlock(device);
+}
+
+static WGPUCommandBuffer empty_commands(state *s)
+{
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    assert(encoder);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    wgpuCommandEncoderRelease(encoder);
+    assert(commands);
+    return commands;
+}
+
+static void finish_progress(native_device *device, fixture *f)
+{
+    native_lock(device);
+    f->hold = false;
+    if (f->timeline_enabled) f->events[0].value = f->context->timeline_committed;
+    assert(native_poll_pending(device).complete);
+    native_unlock(device);
+}
+
+static void replay_unblock(mock_native *mock, void *command, uint64_t timeout)
+{
+    (void)timeout;
+    fixture *f = driver_fixture(mock);
+    assert(record_conflict && f->hold);
+    f->hold = false;
+    mock_command_result(command, 4, 0);
+}
+
+static void access_batch_contract(state *s, fixture *f,
+    WGPUSharedTextureMemory memory, WGPUTexture texture)
+{
+    native_device *device = (native_device *)s->device;
+    WGPUSharedFence fences[2] = {import_fence(s, f), import_fence(s, f)};
+    shared_event *events[2] = {export_event(fences[0]), export_event(fences[1])};
+    uint64_t values[2] = {73, 91};
+    WGPUSharedTextureMemoryBeginAccessDescriptor begin = {.initialized=WGPU_TRUE,
+        .fenceCount=2,.fences=fences,.signaledValueCount=2,.signaledValues=values};
+    unsigned commits = f->mock.commits, waits = f->producer_waits;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,&begin) == WGPUStatus_Success);
+    assert(f->mock.commits == commits && f->producer_waits == waits + 2);
+    assert(device->access_batch.kind == WGPUBackendType_Metal);
+    doe_mtl_commands *source = device->access_batch.value.metal;
+    /* Invalid submission and every admission/recording allocation failure keep
+     * the original lease; each attempted public command remains single-use. */
+    unsigned errors = s->errors;
+    WGPUCommandBuffer invalid = NULL;
+    wgpuQueueSubmit(s->queue,1,&invalid);
+    assert(s->errors == ++errors && device->access_batch.value.metal == source);
+    const size_t failures[] = {1,3,5};
+    for (size_t i = 0; i < sizeof(failures) / sizeof(failures[0]); ++i) {
+        WGPUCommandBuffer commands = empty_commands(s);
+        fail_allocation = failures[i];
+        wgpuQueueSubmit(s->queue,1,&commands);
+        fail_allocation = 0;
+        assert(s->errors == ++errors && s->last_error == WGPUErrorType_OutOfMemory);
+        assert(device->access_batch.value.metal == source && f->mock.commits == commits);
+        assert(events[0]->references == 2 && events[1]->references == 2);
+        wgpuCommandBufferRelease(commands);
+    }
+    /* The standalone flush also preserves the source when allocation fails. */
+    const size_t flush_failures[] = {1,3,4};
+    native_lock(device);
+    for (size_t i = 0; i < sizeof(flush_failures) / sizeof(flush_failures[0]); ++i) {
+        fail_allocation = flush_failures[i];
+        assert(native_flush_access_batch(device).status == NATIVE_OUT_OF_MEMORY);
+        fail_allocation = 0;
+        assert(device->access_batch.value.metal == source);
+        assert(events[0]->references == 2 && events[1]->references == 2);
+    }
+    f->hold = true;
+    native_unlock(device);
+    WGPUCommandBuffer commands = empty_commands(s);
+    wgpuQueueSubmit(s->queue,1,&commands);
+    wgpuCommandBufferRelease(commands);
+    assert(s->errors == errors && f->mock.commits == commits + 1 && !device->access_batch.kind);
+    assert(f->waited_values[(f->producer_waits - 2) % 16] == 73 &&
+        f->waited_values[(f->producer_waits - 1) % 16] == 91);
+    assert(f->waited_events[(f->producer_waits - 2) % 16] == events[0] &&
+        f->waited_events[(f->producer_waits - 1) % 16] == events[1]);
+    assert(wgpuSharedTextureMemoryEndAccess(memory,texture,NULL) == WGPUStatus_Success);
+    for (size_t i = 0; i < 2; ++i) {
+        wgpuSharedFenceRelease(fences[i]);
+        assert(events[i]->references == 1);
+    }
+    finish_progress(device,f);
+    assert(!events[0]->references && !events[1]->references);
+
+    /* A BUSY provisional command may drop its copied leases, not the source.
+     * The accepted conflict is observed through the ordinary wait owner. */
+    fences[0] = import_fence(s,f);
+    begin.fenceCount = begin.signaledValueCount = 1;
+    commits = f->mock.commits;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,&begin) == WGPUStatus_Success);
+    source = device->access_batch.value.metal;
+    native_lock(device);
+    f->hold = true;
+    native_command_handle prior = {0};
+    assert(native_command_create(&device->backend,&prior).status == NATIVE_OK);
+    /* This is an accepted unrelated predecessor, not another resource owner. */
+    native_command_handle dependencies = native_take_access_batch(device);
+    assert(native_submit_backend_commands_async(device,prior).status == NATIVE_OK);
+    record_conflict = prior.value.metal;
+    device->access_batch = dependencies;
+    device->access_batch_memory = memory;
+    injected_replays = 0;
+    f->mock.block_hook = replay_unblock;
+    native_unlock(device);
+    commands = empty_commands(s);
+    wgpuQueueSubmit(s->queue,1,&commands);
+    wgpuCommandBufferRelease(commands);
+    assert(injected_replays == 2 && f->mock.commits == commits + 2);
+    assert(!device->access_batch.kind && s->errors == errors);
+    f->mock.block_hook = NULL;
+    record_conflict = NULL;
+    assert(wgpuSharedTextureMemoryEndAccess(memory,texture,NULL) == WGPUStatus_Success);
+    wgpuSharedFenceRelease(fences[0]);
+    finish_progress(device,f);
+
+    fences[0] = import_fence(s,f);
+    /* Completion registration flushes the real dependency before capturing its
+     * serial, without waiting for the held producer or publishing success. */
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,&begin) == WGPUStatus_Success);
+    native_lock(device);
+    f->hold = true;
+    uint64_t serial = device->submitted_serial;
+    native_unlock(device);
+    unsigned done = 0;
+    WGPUFuture future = wgpuQueueOnSubmittedWorkDone(s->queue,
+        (WGPUQueueWorkDoneCallbackInfo){.mode=WGPUCallbackMode_WaitAnyOnly,
+            .callback=work_done_reply,.userdata1=&done});
+    assert(future.id && device->submitted_serial == serial + 1 && !device->access_batch.kind);
+    WGPUFutureWaitInfo wait = {.future=future};
+    assert(wgpuInstanceWaitAny(s->instance,1,&wait,0) == WGPUWaitStatus_TimedOut && !done);
+    assert(wgpuSharedTextureMemoryEndAccess(memory,texture,NULL) == WGPUStatus_Success);
+    finish_progress(device,f);
+    wait_future(s,future);
+    assert(done == 1);
+
+    /* A native transfer/private submission cannot overtake an unsubmitted
+     * acquire. Its fallback flush and its own work are two ordered commits. */
+    commits = f->mock.commits;
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,&begin) == WGPUStatus_Success);
+    native_lock(device);
+    f->hold = true;
+    native_command_handle transfer = {0};
+    assert(native_command_create(&device->backend,&transfer).status == NATIVE_OK);
+    assert(native_submit_backend_commands_async(device,transfer).status == NATIVE_OK);
+    assert(f->mock.commits == commits + 2 && !device->access_batch.kind);
+    native_unlock(device);
+    assert(wgpuSharedTextureMemoryEndAccess(memory,texture,NULL) == WGPUStatus_Success);
+    finish_progress(device,f);
+
+    /* Destruction clears only the weak memory identity. The access command's
+     * event leases still have their ordinary owner and may safely flush. */
+    WGPUSharedTextureMemory temporary = import_memory(s,f);
+    WGPUTexture temporary_texture = make_texture(temporary,WGPUTextureFormat_BGRA8Unorm);
+    assert(wgpuSharedTextureMemoryBeginAccess(temporary,temporary_texture,&begin) == WGPUStatus_Success);
+    wgpuTextureRelease(temporary_texture);
+    wgpuSharedTextureMemoryRelease(temporary);
+    assert(device->access_batch.kind == WGPUBackendType_Metal && !device->access_batch_memory);
+    native_lock(device);
+    f->hold = true;
+    assert(native_flush_access_batch(device).status == NATIVE_OK && !device->access_batch.kind);
+    native_unlock(device);
+    wgpuSharedFenceRelease(fences[0]);
+    finish_progress(device,f);
+}
+
+static void unknown_access_contract(state *parent)
+{
+    state s = {.instance=parent->instance,.adapter=parent->adapter};
+    wgpuInstanceAddRef(s.instance);
+    wgpuAdapterAddRef(s.adapter);
+    WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_capture,.userdata1=&s};
+    s.device = wgpuAdapterCreateDevice(s.adapter,&descriptor);
+    assert(s.device && fixture_count == 4);
+    s.queue = wgpuDeviceGetQueue(s.device);
+    native_device *device = (native_device *)s.device;
+    fixture *f = &fixtures[3];
+    WGPUSharedTextureMemory memory = import_memory(&s,f);
+    WGPUTexture texture = make_texture(memory,WGPUTextureFormat_BGRA8Unorm);
+    WGPUSharedFence producer = import_fence(&s,f);
+    shared_event *event = export_event(producer);
+    uint64_t value = 47;
+    WGPUSharedTextureMemoryBeginAccessDescriptor begin = {.initialized=WGPU_FALSE,
+        .fenceCount=1,.fences=&producer,.signaledValueCount=1,.signaledValues=&value};
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,&begin) == WGPUStatus_Success);
+    doe_mtl_commands *source = device->access_batch.value.metal;
+    native_lock(device);
+    f->hold = true;
+    f->mock.unknown_commit = true;
+    native_unlock(device);
+    WGPUCommandBuffer commands = empty_commands(&s);
+    wgpuQueueSubmit(s.queue,1,&commands);
+    wgpuCommandBufferRelease(commands);
+    assert(s.errors == 1 && device->access_batch.value.metal == source);
+    WGPUSharedTextureMemoryEndAccessState end = {.initialized=7,.fenceCount=123};
+    assert(wgpuSharedTextureMemoryEndAccess(memory,texture,&end) == WGPUStatus_Error);
+    assert(end.initialized == 7 && end.fenceCount == 123 && s.errors == 2);
+    assert(device->access_batch.value.metal == source && event->references >= 3);
+    /* The access was not ended by the failure; a second Begin is rejected. */
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Error);
+    native_lock(device);
+    f->mock.unknown_commit = false;
+    f->hold = false;
+    f->events[0].value = f->context->timeline_committed;
+    assert(native_poll_pending(device).complete);
+    f->hold = true;
+    native_unlock(device);
+    end = (WGPUSharedTextureMemoryEndAccessState){0};
+    assert(wgpuSharedTextureMemoryEndAccess(memory,texture,&end) == WGPUStatus_Success);
+    assert(!end.initialized && end.fenceCount == 1 && end.signaledValues[0] > 0);
+    wgpuSharedTextureMemoryEndAccessStateFreeMembers(end);
+    wgpuSharedFenceRelease(producer);
+    finish_progress(device,f);
+    assert(!event->references && !device->access_batch.kind);
+    wgpuTextureRelease(texture);
+    wgpuSharedTextureMemoryRelease(memory);
+    s.errors = 0;
+    consumer_finish(&s);
 }
 
 static void unsupported_buffer_contract(void)
@@ -434,6 +679,7 @@ int main(void)
     assert(export_event(end.fences[0]) != first_event); /* No pre-access completion reuse. */
     wgpuSharedTextureMemoryEndAccessStateFreeMembers(end);
     producer_concurrency(&s,f,memory,texture);
+    access_batch_contract(&s,f,memory,texture);
     assert(wgpuSharedTextureMemoryBeginAccess(memory,texture,NULL) == WGPUStatus_Success);
     f->fail_signal = true;
     end = (WGPUSharedTextureMemoryEndAccessState){.initialized=7,.fenceCount=123};
@@ -474,6 +720,7 @@ int main(void)
     assert(!f->surface_references);
     s.errors = 0; /* Every expected failure was asserted at its operation above. */
     zero_work_timeline_forwarding(&s);
+    unknown_access_contract(&s);
     consumer_finish(&s);
     for (unsigned i = 0; i < fixture_count; ++i) {
         for (unsigned j = 0; j < fixtures[i].event_count; ++j) assert(!fixtures[i].events[j].references);

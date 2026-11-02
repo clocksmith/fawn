@@ -347,6 +347,22 @@ bool native_shared_matches_texture(WGPUSharedTextureMemory memory, doe_resource_
     if (memory->device->backend.kind==WGPUBackendType_D3D12) return payload->d3d12!=NULL;
     return memory->device->backend.kind==WGPUBackendType_Vulkan && payload->texture!=NULL;
 }
+
+native_failure native_metal_access_batch_accepted(native_device *device)
+{
+    if (device->access_batch.kind != WGPUBackendType_Metal) return native_failure_status(NATIVE_OK);
+    WGPUSharedTextureMemory memory = (WGPUSharedTextureMemory)device->access_batch_memory;
+    void *event = NULL;
+    uint64_t value = 0;
+    doe_mtl_status status = doe_mtl_context_release_point(metal_context(device), &event, &value);
+    if (status != DOE_MTL_OK && status != DOE_MTL_UNSUPPORTED)
+        return native_failure_metal(status, NULL);
+    if (status == DOE_MTL_OK && memory && memory->metal_acquire_value < value)
+        memory->metal_acquire_value = value;
+    native_release_access_batch(device);
+    return native_failure_status(NATIVE_OK);
+}
+
 WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WGPUTexture handle,
     const WGPUSharedTextureMemoryBeginAccessDescriptor *descriptor)
 {
@@ -381,6 +397,7 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     native_texture *payload = admitted ? doe_resource_texture_native(texture) : NULL;
     if (admitted && descriptor)
         failure = native_failure_metal(doe_mtl_texture_external_preflight(payload->metal), NULL);
+    if (admitted && failure.status == NATIVE_OK) failure = native_flush_access_batch(device);
     native_command_handle command = {0};
     if (admitted && failure.status == NATIVE_OK && count) {
         failure = native_command_create(&device->backend, &command);
@@ -391,24 +408,14 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
             failure = native_failure_metal(status, &detail);
         }
         if (failure.status == NATIVE_OK) {
-            /* The ordinary pending command retains every producer event until
-             * proven terminal. Queue order places these waits before first use;
-             * Begin never observes/polls the producer's CPU-visible value. */
-            failure = native_submit_backend_commands_async(device, command);
+            /* Keep the dependency on the existing access command owner. Main
+             * submission replays it before work; retries retain this source.
+             * Other native submits and no-work End flush it in queue order. */
+            device->access_batch = command;
+            device->access_batch_memory = memory;
         } else if (native_command_release(&command) != NATIVE_OK) abort();
     }
     bool success = admitted && failure.status == NATIVE_OK;
-    uint64_t acquire_value = memory->metal_acquire_value;
-    if (admitted && count) {
-        void *event = NULL;
-        doe_mtl_status point = doe_mtl_context_release_point(metal_context(device), &event, &acquire_value);
-        if (point == DOE_MTL_OK) {
-            if (memory->metal_acquire_value < acquire_value) memory->metal_acquire_value = acquire_value;
-        } else if (point != DOE_MTL_UNSUPPORTED && failure.status == NATIVE_OK) {
-            failure = native_failure_metal(point, NULL);
-            success = false;
-        }
-    }
     if (success && descriptor) {
         failure = native_failure_metal(doe_mtl_texture_external_contents(payload->metal,
             descriptor->initialized != WGPU_FALSE), NULL);
@@ -417,7 +424,6 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     if (admitted) {
         memory->access = success ? SHARED_ACTIVE : SHARED_IDLE;
         memory->active_texture = success ? texture : NULL;
-        if (success) memory->metal_acquire_value = acquire_value;
     }
     native_unlock(device);
     for (size_t i = 0; i < retained; ++i) wgpuSharedFenceRelease(waits[i].fence);
@@ -467,7 +473,10 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
     native_failure failure = native_failure_status(NATIVE_OK);
     uint64_t release_value = 1;
     bool initialized = false;
-    if (admitted && state) {
+    if (admitted && device->access_batch.kind == WGPUBackendType_Metal &&
+        device->access_batch_memory == memory)
+        failure = native_flush_access_batch(device);
+    if (admitted && state && failure.status == NATIVE_OK) {
         failure = native_failure_status(native_device_result(device));
         /* Every committed command buffer signals the queue timeline after its
          * work. The newest accepted texture use orders every earlier use on

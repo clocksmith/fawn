@@ -35,6 +35,10 @@ void doe_mtl_shared_event_release(doe_mtl_context *context, void *event);
 typedef struct doe_mtl_shared_wait { void *event; uint64_t value; } doe_mtl_shared_wait;
 doe_mtl_status doe_mtl_commands_wait_shared_events(doe_mtl_commands *commands,
     const doe_mtl_shared_wait *waits, size_t count, doe_mtl_error *error);
+/* Replay an unsubmitted dependency recording into a fresh command. The source
+ * keeps its leases, so abandoning/retrying the destination never loses waits. */
+doe_mtl_status doe_mtl_commands_replay_shared_waits(doe_mtl_commands *commands,
+    const doe_mtl_commands *source, doe_mtl_error *error);
 /* One completion signal per command. Takes an ordinary native event lease
  * before encoding and keeps it through terminal completion or abandonment;
  * unknown/pending commands cannot release that obligation. */

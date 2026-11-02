@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
+#include "doe_metal_shared.h"
 #include "../../backends/metal/src/progress.h"
 #include <limits.h>
 #include <stdlib.h>
@@ -205,6 +206,11 @@ native_failure native_metal_record_batch(native_device *device, native_command_h
             if (doe_resource_commands_validate_submission(resources[i]) != DOE_RESOURCE_OK)
                 return native_failure_status(NATIVE_INVALID_ARGUMENT);
         native_failure failure = native_command_create(&device->backend,native);
+        if (failure.status == NATIVE_OK && device->access_batch.kind == WGPUBackendType_Metal) {
+            doe_mtl_error detail = {0};
+            failure = native_failure_metal(doe_mtl_commands_replay_shared_waits(native->value.metal,
+                device->access_batch.value.metal, &detail), &detail);
+        }
         for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
             failure = native_record_resource_commands(native,resources[i]);
         if (failure.status != NATIVE_BUSY || native->kind != WGPUBackendType_Metal) return failure;

@@ -256,7 +256,7 @@ WGPUStatus native_vulkan_shared_begin(WGPUSharedTextureMemory memory, doe_resour
             (uint32_t)count, old_layout, new_layout, descriptor && descriptor->initialized);
         failure = native_failure_status(native_from_vulkan(status));
         if (failure.status == NATIVE_OK) {
-            device->access_batch = command.value.vulkan;
+            device->access_batch = command;
             device->access_batch_memory = memory;
         } else if (native_command_release(&command) != NATIVE_OK) abort();
     }
@@ -302,9 +302,9 @@ WGPUStatus native_vulkan_shared_end(WGPUSharedTextureMemory memory, doe_resource
     uint32_t layout = 0;
     bool initialized = false;
     native_command_handle command = {0};
-    if (admitted && device->access_batch && device->access_batch_memory == memory) {
+    if (admitted && device->access_batch.kind == WGPUBackendType_Vulkan && device->access_batch_memory == memory) {
         /* No work used this access: its acquire and release share one submission. */
-        command = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=native_take_access_batch(device)};
+        command = native_take_access_batch(device);
     } else if (admitted && doe_vk_texture_external_acquired(memory->vulkan)) {
         /* Acquired by an earlier submission that did not use it. */
         failure = native_command_create(&device->backend, &command);

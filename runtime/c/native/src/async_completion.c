@@ -269,7 +269,8 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
     value->callback.queue = callback;
     native_lock(device);
     native_failure flushed = device->backend.kind == WGPUBackendType_D3D12 ?
-        native_d3d12_flush_writes(device) : native_failure_status(NATIVE_OK);
+        native_d3d12_flush_writes(device) : device->backend.kind == WGPUBackendType_Metal ?
+        native_flush_access_batch(device) : native_failure_status(NATIVE_OK);
     native_queue_settlement polled = native_poll_pending(device);
     value->failure = polled.failure.status != NATIVE_OK ? polled.failure : flushed;
     value->failure_serial = polled.failure.status != NATIVE_OK ? polled.failure_serial : 0;

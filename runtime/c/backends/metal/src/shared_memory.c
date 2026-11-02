@@ -145,7 +145,7 @@ doe_mtl_status doe_mtl_commands_wait_shared_events(doe_mtl_commands *commands,
 {
     doe_mtl_status status = doe_mtl_recording(commands, error);
     if (status != DOE_MTL_OK) return status;
-    if ((!waits && count) || count > SIZE_MAX / sizeof(void *) || commands->shared_wait_events)
+    if ((!waits && count) || count > SIZE_MAX / sizeof(doe_mtl_shared_wait) || commands->shared_wait_events)
         return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "shared producer wait batch", error);
     doe_mtl_native *native = &commands->context->native;
     if (count && (!native->commands_wait_event || !native->shared_event_retain))
@@ -153,18 +153,21 @@ doe_mtl_status doe_mtl_commands_wait_shared_events(doe_mtl_commands *commands,
     for (size_t i = 0; i < count; ++i)
         if (!waits[i].event)
             return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "shared producer event", error);
-    void **retained = count ? calloc(count, sizeof(*retained)) : NULL;
+    doe_mtl_shared_wait *retained = count ? calloc(count, sizeof(*retained)) : NULL;
     if (count && !retained)
         return doe_mtl_poison(commands, DOE_MTL_OUT_OF_MEMORY, "shared producer wait leases", error);
     doe_mtl_error detail = {0};
     size_t acquired = 0;
     while (acquired < count && status == DOE_MTL_OK) {
         status = doe_mtl_shared_event_import(commands->context, waits[acquired].event,
-            &retained[acquired], &detail);
-        if (status == DOE_MTL_OK) acquired++;
+            &retained[acquired].event, &detail);
+        if (status == DOE_MTL_OK) {
+            retained[acquired].value = waits[acquired].value;
+            acquired++;
+        }
     }
     if (status != DOE_MTL_OK) {
-        for (size_t i = 0; i < acquired; ++i) doe_mtl_shared_event_release(commands->context, retained[i]);
+        for (size_t i = 0; i < acquired; ++i) doe_mtl_shared_event_release(commands->context, retained[i].event);
         free(retained);
         return doe_mtl_native_record_result(commands, status, &detail, error);
     }
@@ -174,8 +177,18 @@ doe_mtl_status doe_mtl_commands_wait_shared_events(doe_mtl_commands *commands,
     commands->shared_wait_count = count;
     for (size_t i = 0; i < count && status == DOE_MTL_OK; ++i)
         status = native->commands_wait_event(native->userdata, commands->native,
-            retained[i], waits[i].value, &detail);
+            retained[i].event, retained[i].value, &detail);
     return doe_mtl_native_record_result(commands, status, &detail, error);
+}
+
+doe_mtl_status doe_mtl_commands_replay_shared_waits(doe_mtl_commands *commands,
+    const doe_mtl_commands *source, doe_mtl_error *error)
+{
+    if (!commands || !source || commands == source || commands->context != source->context ||
+        source->state != DOE_MTL_RECORDING)
+        return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "shared dependency replay", error);
+    return doe_mtl_commands_wait_shared_events(commands, source->shared_wait_events,
+        source->shared_wait_count, error);
 }
 
 doe_mtl_status doe_mtl_commands_signal_shared_event(doe_mtl_commands *commands,

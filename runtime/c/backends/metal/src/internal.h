@@ -3,6 +3,7 @@
 #define DOE_MTL_INTERNAL_H
 #include "native.h"
 #include "progress.h"
+#include "doe_metal_shared.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -62,7 +63,7 @@ struct doe_mtl_commands {
     bool completion_unknown;
     uint64_t timeline_value;
     void *shared_signal_event; /* +1 until this recording is discarded or terminal. */
-    void **shared_wait_events;
+    doe_mtl_shared_wait *shared_wait_events;
     size_t shared_wait_count;
     doe_mtl_error failure; /* First own/predecessor error; only state proves terminality. */
     doe_mtl_texture *present_texture; /* Borrowed through the ordinary texture use. */
@@ -81,7 +82,6 @@ doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
 /* Unlinks only this existing lease; eviction requires the last use to retire. */
 void doe_mtl_buffer_use_retired(doe_mtl_buffer_use *use);
 /* Read-only native proof; never retires a command or its resource leases. */
-doe_mtl_status doe_mtl_command_submission_status(doe_mtl_commands *commands);
 doe_mtl_status doe_mtl_command_order_after(doe_mtl_commands *commands, doe_mtl_commands *earlier);
 doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer_binding *bindings, size_t count, uint32_t sizes_slot,

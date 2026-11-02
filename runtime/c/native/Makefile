@@ -674,7 +674,8 @@ PHYSICAL_CLIENTS += indexed-guard-reuse
 
 $(BUILD)/shared-memory: tests/shared_memory.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shared_memory.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
-	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_commands_poll -o $@
+	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_commands_poll \
+	  -Wl,--wrap=calloc -Wl,--wrap=native_record_resource_commands -o $@
 .PHONY: check-shared-memory
 check-shared-memory: $(BUILD)/shared-memory
 	$(BUILD)/shared-memory

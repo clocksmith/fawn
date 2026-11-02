@@ -87,10 +87,10 @@ typedef struct native_device {
      * flushed ahead of the next recording that may touch them. */
     doe_vk_commands *init_batch;
     uint32_t init_batch_textures; /* Textures recorded into init_batch. */
-    /* Vulkan: one shared-memory access acquire, unsubmitted. The next queue
-     * submission records its work into it (one submission); an access that
-     * ends first adds its release to it. Its memory pointer is weak. */
-    doe_vk_commands *access_batch;
+    /* One unsubmitted shared-memory acquire on the existing command owner.
+     * Vulkan appends work; Metal replays retained waits into its retryable
+     * recording and keeps this source until proven acceptance. */
+    native_command_handle access_batch;
     const void *access_batch_memory;
 } native_device;
 
@@ -402,8 +402,9 @@ void native_release_initialization(native_device *device);
  * release, discards the unsubmitted shared-memory acquire. Taking it hands the
  * recording to the caller, who records after the acquire and submits it. */
 native_failure native_flush_access_batch(native_device *device);
-doe_vk_commands *native_take_access_batch(native_device *device);
+native_command_handle native_take_access_batch(native_device *device);
 void native_release_access_batch(native_device *device);
+native_failure native_metal_access_batch_accepted(native_device *device);
 /* Caller holds the device mutex and one ordinary device lease. Always adopts
  * the tagged command object, including allocation failure/unknown completion. */
 native_failure native_submit_backend_commands(native_device *device, native_command_handle commands);

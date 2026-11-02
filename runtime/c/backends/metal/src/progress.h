@@ -27,6 +27,8 @@ typedef struct doe_mtl_wait_lease {
 doe_mtl_status doe_mtl_context_set_completion(doe_mtl_context *context,
     doe_mtl_completion_sink sink);
 bool doe_mtl_commands_in_flight(const doe_mtl_commands *commands);
+/* Nonwaiting accepted queue-order proof; unknown returns BUSY, never retires. */
+doe_mtl_status doe_mtl_command_submission_status(doe_mtl_commands *commands);
 doe_mtl_commands *doe_mtl_commands_conflict(const doe_mtl_commands *commands);
 doe_mtl_commands *doe_mtl_buffer_owner(const doe_mtl_buffer *buffer);
 struct doe_mtl_texture;
