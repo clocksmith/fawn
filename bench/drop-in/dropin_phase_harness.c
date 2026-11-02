@@ -8,8 +8,8 @@
  * monotonic host-clock reading, not a GPU timestamp (CLOCK_MONOTONIC; on Apple,
  * CLOCK_UPTIME_RAW, because Darwin quantizes CLOCK_MONOTONIC to 1 us; on
  * Windows, QueryPerformanceCounter). The
- * backend is fixed at compile time: Vulkan unless DOE_PHASE_BACKEND_METAL is
- * defined; the adapter must report that backend. Each iteration's output is
+ * backend is fixed at compile time: Vulkan by default, or the explicitly
+ * selected Metal/D3D12 backend; the adapter must report it. Each iteration's output is
  * checked against an independent CPU oracle after the host-operation interval
  * closes; a mismatch fails the process. Inputs alternate between two frozen
  * sets so a skipped dispatch, clear or copy cannot pass on stale bytes.
@@ -92,9 +92,14 @@ PHASE_PROCS(DECLARE_PROC)
 #undef DECLARE_PROC
 #endif
 
-#ifdef DOE_PHASE_BACKEND_METAL
+#if defined(DOE_PHASE_BACKEND_METAL) && defined(DOE_PHASE_BACKEND_D3D12)
+#error Select exactly one phase backend
+#elif defined(DOE_PHASE_BACKEND_METAL)
 #define PHASE_BACKEND WGPUBackendType_Metal
 #define PHASE_BACKEND_ERROR "adapter_not_physical_metal"
+#elif defined(DOE_PHASE_BACKEND_D3D12)
+#define PHASE_BACKEND WGPUBackendType_D3D12
+#define PHASE_BACKEND_ERROR "adapter_not_physical_d3d12"
 #else
 #define PHASE_BACKEND WGPUBackendType_Vulkan
 #define PHASE_BACKEND_ERROR "adapter_not_physical_vulkan"

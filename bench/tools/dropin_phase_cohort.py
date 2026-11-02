@@ -8,7 +8,7 @@ paired ratios with bootstrap confidence intervals and sample counts.
 
 Timing is a host monotonic clock per phase (CLOCK_MONOTONIC; CLOCK_UPTIME_RAW on
 Apple; QueryPerformanceCounter on Windows), not GPU timestamps. ``build --backend`` fixes the adapter backend the
-harness requests and asserts (Vulkan by default, or Metal). The oracle check
+harness requests and asserts (Vulkan by default, Metal or D3D12). The oracle check
 runs after each iteration's host-operation interval closes and is mandatory.
 Apple Metal builds may opt into ``--load-provider``: dlopen and symbol resolution
 then happen inside setupNs, including frameworks linked by the provider.
@@ -150,7 +150,11 @@ def prepare(out: Path, oracle_plans: Path | None) -> None:
     print(json.dumps({"status": "prepared", "out": str(out)}))
 
 
-BACKEND_DEFINES = {"vulkan": [], "metal": ["-DDOE_PHASE_BACKEND_METAL"]}
+BACKEND_DEFINES = {
+    "vulkan": [],
+    "metal": ["-DDOE_PHASE_BACKEND_METAL"],
+    "d3d12": ["-DDOE_PHASE_BACKEND_D3D12"],
+}
 
 
 def build(library: Path, output: Path, compiler: str, backend: str,

@@ -65,6 +65,14 @@ class BackendBuildTest(unittest.TestCase):
     def test_metal_selects_the_metal_backend(self) -> None:
         self.assertIn("-DDOE_PHASE_BACKEND_METAL", self.build_argv("metal"))
 
+    def test_d3d12_cli_build_dispatch(self) -> None:
+        with mock.patch.object(cohort, "build") as build, mock.patch.object(
+            cohort.sys, "argv", ["phase-cohort", "build", "--library", "provider.dll",
+                                 "--output", "harness.exe", "--backend", "d3d12"]
+        ):
+            cohort.main()
+        self.assertEqual(build.call_args.args[3], "d3d12")
+
     def test_upload_split_is_opt_in(self) -> None:
         self.assertNotIn("-DDOE_PHASE_UPLOAD_SPLIT", self.build_argv("metal"))
         self.assertIn("-DDOE_PHASE_UPLOAD_SPLIT", self.build_argv("metal", True))
@@ -85,13 +93,28 @@ class BackendBuildTest(unittest.TestCase):
 
     def test_dynamic_provider_rejects_unsupported_platform_or_backend(self) -> None:
         with mock.patch.object(cohort.subprocess, "run") as run:
-            for platform, backend in (("linux", "metal"), ("darwin", "vulkan")):
+            for platform, backend in (("linux", "metal"), ("darwin", "vulkan"), ("darwin", "d3d12")):
                 with mock.patch.object(cohort.sys, "platform", platform), self.assertRaises(SystemExit):
                     cohort.build(Path("provider"), Path("harness"), "cc", backend, load_provider=True)
             run.assert_not_called()
 
 
 class WindowsBuildTest(unittest.TestCase):
+    def test_d3d12_selects_the_requested_backend_without_dynamic_loading(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            library = Path(directory) / "webgpu_doe_c.dll"
+            library.write_bytes(b"library")
+            library.with_suffix(".lib").write_bytes(b"imports")
+            output = Path(directory) / "harness.exe"
+            output.write_bytes(b"binary")
+            with mock.patch.object(cohort.os, "name", "nt"), mock.patch.object(cohort.subprocess, "run") as run, \
+                    mock.patch("builtins.print"):
+                cohort.build(library, output, "clang-cl", "d3d12")
+            argv = run.call_args.args[0]
+        self.assertIn("-DDOE_PHASE_BACKEND_D3D12", argv)
+        self.assertIn(str(library.with_suffix(".lib").resolve()), argv)
+        self.assertFalse(any(arg.startswith("-DDOE_PHASE_LOAD_PROVIDER") for arg in argv))
+
     def test_links_the_import_library_beside_the_dll(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             library = Path(directory) / "webgpu_doe_c.dll"
