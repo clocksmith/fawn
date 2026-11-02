@@ -316,11 +316,13 @@ let browser = null; let srv = null; let beforeBrowserStat = null;
 const page_ = PAGES[spec.page];
 try {
   if (!page_) throw new Error(`unknown page: ${spec.page}`);
+  const headless = spec.headless ?? false;
+  if (typeof headless !== 'boolean') throw new Error('headless must be a boolean');
   srv = await serve();
   const artifactStat = statSync(spec.browserPath, { bigint: true });
   beforeBrowserStat = Object.fromEntries(["dev", "ino", "size", "mtimeNs", "ctimeNs"].map(key => [key, String(artifactStat[key])]));
   const launchStartEpoch = Date.now();
-  browser = await chromium.launch({ executablePath: spec.browserPath, headless: false, chromiumSandbox: true,
+  browser = await chromium.launch({ executablePath: spec.browserPath, headless, chromiumSandbox: true,
     ignoreDefaultArgs: ["--enable-unsafe-swiftshader"], args: [...spec.args, "--window-size=1280,800", "--window-position=40,40"], timeout: 120000 });
   result.launchMs = Date.now() - launchStartEpoch;
   result.browserVersion = browser.version();
@@ -333,7 +335,7 @@ try {
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 400)); });
   page.on("pageerror", (e) => consoleErrors.push(`pageerror: ${String(e).slice(0, 400)}`));
   page.on("crash", () => fail("page", "page crashed"));
-  await page.bringToFront();
+  if (!headless) await page.bringToFront();
   const url = `http://127.0.0.1:${srv.port}${page_.url}`;
   const gotoStart = Date.now();
   await page.goto(url, { waitUntil: "load", timeout: 90000 });

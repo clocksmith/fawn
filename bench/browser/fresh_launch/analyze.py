@@ -114,11 +114,16 @@ def main() -> int:
     rng = random.Random(SEED)
     rows = {}
     identity = {}
+    presentation_modes = set()
     for f in sorted((run / "launches").glob("*.json")):
         if f.name.endswith(".spec.json"):
             continue
         r = json.loads(f.read_text(encoding="utf-8"))
         sp = r["spec"]
+        headless = sp.get("headless", False)
+        if not isinstance(headless, bool):
+            parser.error(f"Invalid headless mode in {f}")
+        presentation_modes.add("headless" if headless else "headed")
         key = (sp["page"], sp["arm"])
         rec = rows.setdefault(key, {"launches": 0, "ok": 0, "failures": [], "metrics": [], "provider": {},
                                     "adapters": set(), "visual": [], "oracle": [], "positions": [], "versions": set()})
@@ -145,10 +150,13 @@ def main() -> int:
                                          "browserVersion": r.get("browserVersion")})
     if not rows:
         parser.error(f"No launch receipts found under {run / 'launches'}")
+    if len(presentation_modes) != 1:
+        parser.error("Cannot combine headed and headless launch receipts")
     pages = sorted({p for p, _ in rows})
     arms = sorted({a for _, a in rows})
     summary = {"baseline": base, "candidate": cand, "control": ctrl, "bootstrap": {"resamples": B, "seed": SEED,
                "ci": "percentile 95%", "unit": "launch"}, "practicalThreshold": PRACTICAL, "arms": identity, "pages": {}}
+    summary["presentationMode"] = next(iter(presentation_modes))
     for page in pages:
         pg = summary["pages"][page] = {"arms": {}, "comparisons": {}}
         for arm in arms:
@@ -249,9 +257,10 @@ def render_md(s: dict[str, Any]) -> str:
             elif c["verdict"] == "loss":
                 losses.append(item)
         out.append("")
-    head = ["## Wins (Fawn+Doe better than stock, CI excludes 1.0)\n"] + ([f"- {w}" for w in wins] or ["- none"])
-    head += ["", "## Losses (Fawn+Doe worse than stock, CI excludes 1.0)\n"] + ([f"- {l}" for l in losses] or ["- none"])
-    return "\n".join(head + ["", "## Per page\n"] + out)
+    head = [f"## Wins ({cand} better than {base}, CI excludes 1.0)\n"] + ([f"- {w}" for w in wins] or ["- none"])
+    head += ["", f"## Losses ({cand} worse than {base}, CI excludes 1.0)\n"] + ([f"- {l}" for l in losses] or ["- none"])
+    mode = s.get("presentationMode", "unknown")
+    return "\n".join([f"Presentation mode: {mode}. Local comparisons remain diagnostic.\n"] + head + ["", "## Per page\n"] + out)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,13 @@ python3 bench/cli.py browser --config /path/to/browser.json \
 python3 bench/cli.py browser-analyze bench/out/browser-local
 ```
 
+Add `--headless` (or set the boolean `launch.headless` in the configuration) for
+background runs without visible windows or focus changes. The mode applies to
+every page and arm, is recorded in the schedule and receipts, and cannot change
+when resuming a run. The analyzer labels the mode and rejects mixed headed and
+headless receipts. Headless diagnostics do not establish visible presentation
+performance; retain them separately from headed comparisons.
+
 One page, one repetition, three arms means three fresh launches. One page with
 six repetitions covers every three-arm permutation once. The analyzer retains
 the historical launch-level bootstrap and practical-effect policy; fewer than

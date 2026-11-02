@@ -8,12 +8,14 @@ import { PAGES } from './pages.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
-const usage = `usage: doe-bench browser --config FILE --out DIR [--reps N] [--pages a,b] [--dry-run]
+const usage = `usage: doe-bench browser --config FILE --out DIR [--reps N] [--pages a,b] [--headless] [--dry-run]
 
 Run the selected pages through each configured browser arm in counterbalanced
 fresh-launch order. --dry-run prints the schedule without launching or writing.
 One page, one repetition and three arms require three launches. Partial schedules
 remain diagnostic; complete positional balance needs a multiple of arms! repeats.
+--headless runs every arm without visible windows; keep its results separate
+from headed presentation measurements.
 `;
 
 function parseArgs(argv) {
@@ -22,6 +24,7 @@ function parseArgs(argv) {
     const key = argv[i];
     if (key === '--help' || key === '-h') return { help: true };
     if (key === '--dry-run') { options.dryRun = true; continue; }
+    if (key === '--headless') { options.headless = true; continue; }
     if (!['--config', '--out', '--reps', '--pages'].includes(key)) throw new Error(`Unknown option: ${key}`);
     if (!argv[i + 1] || argv[i + 1].startsWith('--')) throw new Error(`Missing value: ${key}`);
     options[key.slice(2)] = argv[++i];
@@ -47,12 +50,20 @@ function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) { console.log(usage); return; }
   const cfg = JSON.parse(readFileSync(options.config, 'utf8'));
+  const configuredHeadless = cfg.launch?.headless;
+  if (configuredHeadless !== undefined && typeof configuredHeadless !== 'boolean')
+    throw new Error('launch.headless must be a boolean');
+  const headless = options.headless ?? configuredHeadless ?? false;
   const reps = Number(options.reps ?? cfg.reps ?? 12);
   if (!Number.isSafeInteger(reps) || reps < 1) throw new Error('--reps must be a positive integer');
   const pages = options.pages ? options.pages.split(',') : cfg.pages;
   if (!Array.isArray(pages) || !pages.length || new Set(pages).size !== pages.length)
     throw new Error('Select a nonempty, unique page list');
   for (const page of pages) if (!Object.hasOwn(PAGES, page)) throw new Error(`Unknown page: ${page}`);
+  for (const page of pages) {
+    if (Object.hasOwn(cfg.pageOverrides?.[page] ?? {}, 'headless'))
+      throw new Error('Set headless for the whole campaign, not a page override');
+  }
   const arms = cfg.arms;
   if (!Array.isArray(arms) || !arms.length || arms.length > 6 || new Set(arms.map(arm => arm.id)).size !== arms.length)
     throw new Error('Configuration needs 1..6 browser arms with unique identities');
@@ -70,7 +81,8 @@ function main() {
       perms[(rep + pageIndex) % perms.length].forEach((arm, position) => schedule.push({ rep, page, arm, position }));
     }
   }
-  const plan = { reps, pages, arms: arms.map(arm => arm.id), permutations: perms, schedule };
+  const plan = { reps, pages, arms: arms.map(arm => arm.id), permutations: perms, schedule,
+    ...(headless ? { headless: true } : {}) };
   if (options.dryRun) { console.log(JSON.stringify(plan, null, 2)); return; }
   const schedulePath = join(out, 'schedule.json');
   if (existsSync(schedulePath) && JSON.stringify(JSON.parse(readFileSync(schedulePath, 'utf8'))) !== JSON.stringify(plan))
@@ -87,6 +99,7 @@ function main() {
     const name = `${row.page}.${row.arm}.r${String(row.rep).padStart(2, '0')}`;
     const resultPath = join(out, 'launches', `${name}.json`);
     const spec = { repoRoot: ROOT, ...cfg.launch, ...cfg.pageOverrides?.[row.page],
+      ...(headless ? { headless: true } : {}),
       ...row, browserPath: arm.browserPath,
       args: arm.args, expectDoe: arm.expectDoe, keepPng: row.rep === 0 };
     if (existsSync(resultPath)) {
