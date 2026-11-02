@@ -37,6 +37,11 @@ One page, one repetition, three arms means three fresh launches. One page with
 six repetitions covers every three-arm permutation once. The analyzer retains
 the historical launch-level bootstrap and practical-effect policy; fewer than
 three valid launch observations per arm cannot produce its metric comparisons.
+With the standard three-arm configuration, the summary compares Doe and Dawn
+with stock, and Doe directly with Dawn in the same Fawn browser.
+The additional candidate/control comparison
+uses its own recorded seed formula, preserving the original comparisons' random
+stream and classification policy. It needs no additional browser launches.
 Resume only into an output directory with exactly matching receipt specifications.
 
 The configuration supplies actual browser/library paths and an explicit lock:

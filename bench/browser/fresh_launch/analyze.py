@@ -157,6 +157,7 @@ def main() -> int:
     summary = {"baseline": base, "candidate": cand, "control": ctrl, "bootstrap": {"resamples": B, "seed": SEED,
                "ci": "percentile 95%", "unit": "launch"}, "practicalThreshold": PRACTICAL, "arms": identity, "pages": {}}
     summary["presentationMode"] = next(iter(presentation_modes))
+    summary["bootstrap"]["candidateControlSeed"] = "<seed>:<page>:<candidate>/<control>"
     for page in pages:
         pg = summary["pages"][page] = {"arms": {}, "comparisons": {}}
         for arm in arms:
@@ -183,19 +184,24 @@ def main() -> int:
                 f = (lambda xs, q=q: pct(xs, q))
                 a["metrics"][f"{key}:{st}"] = {"label": label, "unit": unit, "stat": st, "n": len(vals),
                                                 "value": f(vals), "ci95": boot_ci(vals, f, rng)}
-        for other in (cand, ctrl):
-            if other == base or (page, other) not in rows or (page, base) not in rows:
+        pairs = [(cand, base, rng), (ctrl, base, rng)]
+        if len({base, cand, ctrl}) == 3:
+            # This extra comparison must not consume the original comparisons'
+            # random stream, including their results on subsequent pages.
+            pairs.append((cand, ctrl, random.Random(f"{SEED}:{page}:{cand}/{ctrl}")))
+        for other, reference, pair_rng in pairs:
+            if other == reference or (page, other) not in rows or (page, reference) not in rows:
                 continue
-            comp = pg["comparisons"][f"{other}/{base}"] = {}
+            comp = pg["comparisons"][f"{other}/{reference}"] = {}
             for key, label, unit, st, lower in METRICS:
                 va = [m[key] for m in rows[(page, other)]["metrics"] if key in m]
-                vb = [m[key] for m in rows[(page, base)]["metrics"] if key in m]
+                vb = [m[key] for m in rows[(page, reference)]["metrics"] if key in m]
                 if len(va) < 3 or len(vb) < 3:
                     continue
                 q = 0.5 if st == "p50" else (0.95 if st == "p95" else 0.99)
                 f = (lambda xs, q=q: pct(xs, q))
                 point = f(va) / f(vb) if f(vb) else math.inf
-                lo, hi = boot_ratio(va, vb, f, rng)
+                lo, hi = boot_ratio(va, vb, f, pair_rng)
                 if hi < 1 - 0 and point <= 1 - PRACTICAL:
                     verdict = "win" if lower else "loss"
                 elif lo > 1 and point >= 1 + PRACTICAL:
@@ -257,6 +263,18 @@ def render_md(s: dict[str, Any]) -> str:
             elif c["verdict"] == "loss":
                 losses.append(item)
         out.append("")
+        direct = pg["comparisons"].get(f"{cand}/{ctrl}", {})
+        if direct and ctrl != base:
+            out.append(f"Candidate/control comparison: {cand}/{ctrl}\n")
+            out.append(f"| metric | {cand} | {ctrl} | ratio (95% CI) | verdict |")
+            out.append("|---|---|---|---|---|")
+            for mk, c in direct.items():
+                name = f"{c['label']} {mk.split(':')[1]} ({c['unit']})"
+                out.append(
+                    f"| {name} | {fmt(c['candidate'])} | {fmt(c['baseline'])} | "
+                    f"{c['ratio']:.2f} [{c['ci95'][0]:.2f}, {c['ci95'][1]:.2f}] | {c['verdict']} |"
+                )
+            out.append("")
     head = [f"## Wins ({cand} better than {base}, CI excludes 1.0)\n"] + ([f"- {w}" for w in wins] or ["- none"])
     head += ["", f"## Losses ({cand} worse than {base}, CI excludes 1.0)\n"] + ([f"- {l}" for l in losses] or ["- none"])
     mode = s.get("presentationMode", "unknown")

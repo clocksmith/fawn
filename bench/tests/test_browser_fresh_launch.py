@@ -172,6 +172,38 @@ exports.chromium = {launch: async options => {
             self.assertEqual(schedule.read_bytes(), original)
             self.assertFalse((output / "launches").exists())
 
+    def test_provider_win_is_separate_from_stock_browser_loss(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            launches = directory / "launches"
+            launches.mkdir()
+            for arm, latency in (("chrome", 1), ("fawn_doe", 2), ("fawn_dawn", 4)):
+                for rep in range(3):
+                    receipt = {
+                        "spec": {"page": "fixture", "arm": arm, "rep": rep,
+                                 "browserPath": "/fixture/browser", "args": [],
+                                 "headless": True},
+                        "ok": True,
+                        "samples": {"completionLatencyMs": [latency] * 3},
+                    }
+                    (launches / f"{arm}.{rep}.json").write_text(
+                        json.dumps(receipt), encoding="utf-8",
+                    )
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "bench/cli.py"), "browser-analyze", str(directory)],
+                cwd=ROOT, capture_output=True, text=True, timeout=15,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads((directory / "summary.json").read_text())
+            self.assertEqual(summary["presentationMode"], "headless")
+            comparisons = summary["pages"]["fixture"]["comparisons"]
+            metric = "completion_p50_ms:p50"
+            stock = comparisons["fawn_doe/chrome"][metric]
+            control = comparisons["fawn_doe/fawn_dawn"][metric]
+            self.assertEqual((stock["ratio"], stock["verdict"]), (2, "loss"))
+            self.assertEqual((control["ratio"], control["verdict"]), (0.5, "win"))
+            self.assertIn("fawn_doe/fawn_dawn", result.stdout)
+
     def test_invalid_selection_and_repetitions_fail_before_output(self) -> None:
         for arguments in [("--pages", "missing"), ("--reps", "0"), ("--reps", "1.5")]:
             with self.subTest(arguments=arguments), tempfile.TemporaryDirectory() as temporary:
