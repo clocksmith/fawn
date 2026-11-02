@@ -204,7 +204,7 @@ int main(void)
     assert(IOSurfaceUnlock(surface,0,NULL)==0);
     WGPUSharedTextureMemoryIOSurfaceDescriptor native={.chain={.sType=DOE_SHARED_STYPE_IOSURFACE},.ioSurface=surface};
     WGPUSharedTextureMemoryDescriptor import={.nextInChain=&native.chain};
-    WGPUSharedTextureMemory memory=wgpuDeviceImportSharedTextureMemory(s.device,&import);assert(memory);CFRelease(surface);
+    WGPUSharedTextureMemory memory=wgpuDeviceImportSharedTextureMemory(s.device,&import);assert(memory);
     WGPUSharedTextureMemoryProperties properties={0};assert(wgpuSharedTextureMemoryGetProperties(memory,&properties)==WGPUStatus_Success);
     assert(properties.format==WGPUTextureFormat_BGRA8Unorm && properties.size.width==2 && properties.size.height==2);
     WGPUTextureDescriptor td={.dimension=WGPUTextureDimension_2D,.format=properties.format,.size=properties.size,.mipLevelCount=1,.sampleCount=1,.usage=WGPUTextureUsage_CopySrc|WGPUTextureUsage_TextureBinding};
@@ -230,7 +230,7 @@ int main(void)
     assert(exported.type==DOE_SHARED_FENCE_MTL_EVENT && event.sharedEvent);
     wgpuTextureRelease(texture);
     /* A consumer waiting on that exported point observes the producer's work:
-     * the next access begins on it (the provider waits for the value). An access
+     * the next access queues its dependency on that value. An access
      * that begins uninitialized reads zeros, not the earlier surface contents. */
     WGPUSharedFenceMTLSharedEventDescriptor imported_event={.chain={.sType=DOE_SHARED_STYPE_MTL_EVENT_DESCRIPTOR},.sharedEvent=event.sharedEvent};
     WGPUSharedFenceDescriptor fence_desc={.nextInChain=&imported_event.chain};
@@ -239,14 +239,23 @@ int main(void)
     WGPUTexture cleared=wgpuSharedTextureMemoryCreateTexture(memory,&td);assert(cleared);
     WGPUSharedTextureMemoryBeginAccessDescriptor after={.initialized=WGPU_FALSE,.fenceCount=1,.fences=&released,
         .signaledValueCount=1,.signaledValues=end.signaledValues};
+    uint64_t idle_point=committed_point(&s);
     assert(wgpuSharedTextureMemoryBeginAccess(memory,cleared,&after)==WGPUStatus_Success);
     wgpuSharedFenceRelease(released);
-    /* No texture work occurred: a fence wait cannot initialize these pixels. */
-    uint64_t idle_point=committed_point(&s);
+    /* Begin may defer its producer dependency until End. Across the complete
+     * no-work access exactly one wait-only submission forwards that point. */
     WGPUSharedTextureMemoryEndAccessState idle={0};
     assert(wgpuSharedTextureMemoryEndAccess(memory,cleared,&idle)==WGPUStatus_Success);
     assert(idle.initialized==WGPU_FALSE && idle.fenceCount==1 && idle.signaledValueCount==1);
-    assert(committed_point(&s)==idle_point); /* End must not hide an eager clear. */
+    assert(committed_point(&s)==idle_point+1 && idle.signaledValues[0]==idle_point+1);
+    /* A clear hidden inside the dependency command would still satisfy the
+     * submission count. Settle that command, then independently inspect the
+     * original producer bytes before any first-use initialization is allowed. */
+    work_done(&s);
+    assert(IOSurfaceLock(surface,0,NULL)==0);
+    pixels=IOSurfaceGetBaseAddress(surface);stride=IOSurfaceGetBytesPerRow(surface);
+    assert(pixels && stride>=8 && !memcmp(pixels,red,8) && !memcmp(pixels+stride,green,8));
+    assert(IOSurfaceUnlock(surface,0,NULL)==0);CFRelease(surface);
     WGPUSharedTextureMemoryBeginAccessDescriptor resume={.initialized=idle.initialized,
         .fenceCount=idle.fenceCount,.fences=idle.fences,
         .signaledValueCount=idle.signaledValueCount,.signaledValues=idle.signaledValues};
