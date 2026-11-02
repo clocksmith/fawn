@@ -1,25 +1,25 @@
 {
   "comparisonViews": [
     {
+      "baseline": "doe",
+      "comparison": "dawn",
       "displayName": "Doe vs Dawn",
       "id": "doe_vs_dawn",
-      "baseline": "doe",
-      "providerSet": "backend_native_providers",
-      "comparison": "dawn"
+      "providerSet": "backend_native_providers"
     },
     {
+      "baseline": "doe",
+      "comparison": "node-webgpu",
       "displayName": "Doe-backed WebGPU vs Dawn-backed node-webgpu",
       "id": "doe_vs_dawn_node_webgpu_package",
-      "baseline": "doe",
-      "providerSet": "package_node_providers",
-      "comparison": "node-webgpu"
+      "providerSet": "package_node_providers"
     },
     {
+      "baseline": "doe",
+      "comparison": "bun-webgpu",
       "displayName": "Doe-backed WebGPU vs Dawn-backed bun-webgpu",
       "id": "doe_vs_dawn_bun_webgpu_package",
-      "baseline": "doe",
-      "providerSet": "package_bun_providers",
-      "comparison": "bun-webgpu"
+      "providerSet": "package_bun_providers"
     }
   ],
   "hostProfiles": [
@@ -67,6 +67,93 @@
       "os": "win32"
     }
   ],
+  "inventory": {
+    "adapterSections": {
+      "application": [
+        "application",
+        "compiler"
+      ],
+      "browser-fresh-launch": [
+        "browser-integration"
+      ],
+      "compare-report": [
+        "native-runtime",
+        "application",
+        "browser-integration"
+      ],
+      "native-catalog": [
+        "native-runtime"
+      ],
+      "phase-cohort": [
+        "native-runtime"
+      ],
+      "workspace": [
+        "workspace"
+      ]
+    },
+    "adapters": {
+      "application": 1,
+      "browser-fresh-launch": 1,
+      "compare-report": 1,
+      "native-catalog": 1,
+      "phase-cohort": 1,
+      "workspace": 1
+    },
+    "catalogClassification": {
+      "id": "native-catalog-20261101-diagnostic-loss-v1",
+      "path": "reports/benchmarks/catalog-20261101/classification-policy.json",
+      "sha256": "0c62dac18eecff6bbb60ce51770289846bcdd4809e150a871518b77937067142"
+    },
+    "comparisonTypes": [
+      "native-provider",
+      "browser-provider",
+      "compiler-provider",
+      "package-provider",
+      "application-provider",
+      "workspace-behavior",
+      "unmeasured"
+    ],
+    "currentSelection": {
+      "currentSource": "exact-source-and-known-binary-only",
+      "latestMeasured": "all-recorded-executions-including-failures",
+      "latestQualified": "explicit-scope-bound-passing-qualification",
+      "tieBreak": "explicit-supersession-then-stable-row-id",
+      "timestamp": "executedAt",
+      "unknownDates": "retain-without-recency"
+    },
+    "currentSourcePaths": [
+      "runtime/c",
+      "runtime/vendor",
+      "runtime/bridge",
+      "packages/doe-gpu",
+      "browser/chromium",
+      "browser/workspace"
+    ],
+    "grouping": {
+      "artifactFields": [
+        "implementation",
+        "comparator"
+      ],
+      "seriesFields": [
+        "section",
+        "comparisonType",
+        "workloadId",
+        "workloadContractHash",
+        "machine.id",
+        "machine.os",
+        "machine.osVersion",
+        "machine.gpu",
+        "machine.driver",
+        "backend",
+        "observationLevel",
+        "implementation.name",
+        "comparator.name"
+      ],
+      "unknownContractRule": "isolate-by-registration",
+      "unknownMachineRule": "isolate-by-registration-and-execution"
+    },
+    "schemaVersion": 1
+  },
   "products": [
     {
       "displayName": "Doe vs Dawn",
@@ -116,7 +203,7 @@
       ]
     }
   ],
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "surfaces": [
     {
       "defaultMissingStatus": "unimplemented",

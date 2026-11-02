@@ -25,6 +25,10 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_COMMANDS = {
+    "inventory": (
+        [sys.executable, "-m", "bench.tools.build_benchmark_cube", "--inventory"],
+        "Register evidence and generate/check the existing benchmark cube inventory",
+    ),
     "phase-cohort": (
         [sys.executable, "-m", "bench.tools.dropin_phase_cohort"],
         "Prepare, build, run or summarize phase-attributed native provider cohorts",

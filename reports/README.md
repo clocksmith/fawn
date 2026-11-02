@@ -1,5 +1,23 @@
 # Reports
 
+## Benchmark evidence navigation
+
+The existing benchmark cube's [CURRENT](benchmarks/CURRENT.md) is the readable
+benchmark projection across native runtime, browser integration, compiler,
+application and workspace evidence. Its [index.json](benchmarks/index.json)
+preserves individual executions and failures as well as aggregates. Unknown
+dates, machines, builds and qualification remain explicit; retained historical
+wins do not qualify another binary or current source.
+
+Follow one flow: register retained evidence paths/checksums and provenance in
+[sources.json](benchmarks/sources.json), run `python3 bench/cli.py inventory`,
+then inspect CURRENT. `python3 bench/cli.py inventory --check` detects stale
+generated output without measurement. The [benchmark front door](../bench/README.md)
+documents adapters, clock separation, current-source targeting and v1 migration.
+Keep dated reports as historical evidence rather than competing current-result
+prose. [claim-index.json](claim-index.json) remains the narrower publication
+authority index; discovery in the cube grants no public claim authority.
+
 ## Retention
 
 Reports retain evidence needed to assess a release, qualification decision or

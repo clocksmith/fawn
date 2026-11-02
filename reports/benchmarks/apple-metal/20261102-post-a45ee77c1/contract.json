@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "scope": "Targeted native Metal diagnostic; compare current Doe with retained source-built Dawn. No before/after attribution, rendering, CLI binding reuse, browser or hardware qualification.",
+  "comparisonClass": "unchanged-workload provider comparison",
+  "frozenAtUtc": "2026-11-02T01:59:38.876366+00:00",
+  "doeCommit": "dcc4c1e842b7395c288d9c1a8f0e3791785c5af0",
+  "dawnCommitAsRecorded": "d04f88359391a12375c1a3e948a0b2dcb4c97a18",
+  "dawnIdentityBasis": "Exact library SHA matches retained setup-submit-storage build receipt. Retained exported source snapshot has no Git metadata.",
+  "workloads": [
+    "vector_scale_add_262k",
+    "image_rgba_invert_1024",
+    "buffer_upload_readback_exact_1mb"
+  ],
+  "pairs": 24,
+  "iterations": 32,
+  "providers": [
+    "doe",
+    "dawn",
+    "dawn-aa"
+  ],
+  "order": "All six permutations, four times per workload; byte-identical Dawn A/A executable.",
+  "cache": "One untimed full 32-iteration run per provider/workload; filesystem and Metal driver caches warm; no cache purge. Provider/framework loading inside setup. First iteration versus remaining31 separately retained; first use is not an empty system cache.",
+  "outputOracle": "Independent CPU full output checks each of32iterations, two alternating input sets. All216timedprocesses require oracleChecked32 and physical Apple M3.",
+  "primaryMetrics": [
+    "warm.operation",
+    "warmP95.operation",
+    "complete",
+    "processWall"
+  ],
+  "classification": {
+    "win": "ratio median<0.95 and ci95 upper<1",
+    "loss": "ratio median>1.05 and ci95 lower>1",
+    "otherwise": "no established practical difference"
+  },
+  "bootstrap": {
+    "resamples": 10000,
+    "seed": 20261029,
+    "interval": 0.95,
+    "unit": "paired process ratio"
+  },
+  "hostGate": {
+    "existingGate": "reports/benchmarks/apple-metal/20261030-dropin-phase/tools/mac_window.py",
+    "foreignCpuFractionMax": 0.2,
+    "idleGpuPercentMax": 25,
+    "powerSourceUnchanged": true,
+    "lowPowerModeOff": true,
+    "thermalWarnings": false,
+    "limitations": "No per-process GPU accounting on macOS; five-second idle GPU probes bracket the window."
+  },
+  "aaGate": "All workload warm-operation dawn-aa/dawn medians in[0.95,1.05] and95%CI includes1.",
+  "attempts": {
+    "max": 2,
+    "retry": "Only invalid host or A/A control; preserve failed attempts; never retry based on Doe effect. Timeout/oracle failure aborts."
+  },
+  "binaryManifest": {
+    "libraries/libdoe_compiler.dylib": "7726cd9d218e7602cb08aa7acba45e12f097fa87e44d1b2276f30e30daa61622",
+    "libraries/libwebgpu_dawn.dylib": "ea81f617e7989e2e35cae46a9600a7c26848ce2e5c36bde195715ce5fc8829a5",
+    "libraries/libwebgpu_doe_c.dylib": "1e4c7b01b4732b49ea273be0254613d52cb504691228dc3032854acf5a1553f4",
+    "bin/dawn": "e518ead289aa9d2ef521a91272bdc6bc29ff50647eecda002d85dce4d036c996",
+    "bin/dawn-aa": "e518ead289aa9d2ef521a91272bdc6bc29ff50647eecda002d85dce4d036c996",
+    "bin/doe": "4d844bfc282229a26033379c1c2f40832dfb50e9d32979639f28c518a2123017"
+  },
+  "inputs": {
+    "inputs/buffer_upload_readback_exact_1mb.set0.expectA.bin": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+    "inputs/buffer_upload_readback_exact_1mb.set0.expectB.bin": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+    "inputs/buffer_upload_readback_exact_1mb.set0.input.bin": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+    "inputs/buffer_upload_readback_exact_1mb.set1.expectA.bin": "7d5e3f3178f6f7d88f790c15ffb56d17728b94e08faf97862b763993299e84e2",
+    "inputs/buffer_upload_readback_exact_1mb.set1.expectB.bin": "7d5e3f3178f6f7d88f790c15ffb56d17728b94e08faf97862b763993299e84e2",
+    "inputs/buffer_upload_readback_exact_1mb.set1.input.bin": "7d5e3f3178f6f7d88f790c15ffb56d17728b94e08faf97862b763993299e84e2",
+    "inputs/image_rgba_invert_1024.set0.expectA.bin": "80d5cf280ff1801411e9f0492652de312e2d9d6f82b3d864dce1607e9bf918f7",
+    "inputs/image_rgba_invert_1024.set0.expectB.bin": "80d5cf280ff1801411e9f0492652de312e2d9d6f82b3d864dce1607e9bf918f7",
+    "inputs/image_rgba_invert_1024.set0.input.bin": "a815c15b9da2066858e9fd09191e78e0d374f173d4d92704275e6a51400ce93e",
+    "inputs/image_rgba_invert_1024.set1.expectA.bin": "c3ce26cae34a7f1db76995938aad3bfbbb56cdc628ca2759c80250942b40b9d0",
+    "inputs/image_rgba_invert_1024.set1.expectB.bin": "c3ce26cae34a7f1db76995938aad3bfbbb56cdc628ca2759c80250942b40b9d0",
+    "inputs/image_rgba_invert_1024.set1.input.bin": "423031a5bd903cb27be4be7f32c479b785722f9f31a058b8957cda5f1e46cbe1",
+    "inputs/manifest.json": "afe4e1d3a945b6431d94875aac653d43d96fdd5709ccec1bfe5bc0ab12c16ce1",
+    "inputs/vector_scale_add_262k.set0.expectA.bin": "0d07e106df39f9371d9e87415b02579a3c4178c4fcbbbe9f6fffba74a1ea0c56",
+    "inputs/vector_scale_add_262k.set0.expectB.bin": "704580d8738481ea3b0e417d21b370c45c989073cee3c02c35d57778e2f40e7f",
+    "inputs/vector_scale_add_262k.set0.input.bin": "281b805bd581f25a09b1e2dd44c4630585c32b8863721fe1e8852397fae5525e",
+    "inputs/vector_scale_add_262k.set1.expectA.bin": "21b2c3b24070e5425f96ffd1519e0f9dc8b5eb9460d354d696db8fb1c65ce3de",
+    "inputs/vector_scale_add_262k.set1.expectB.bin": "cfbaad0c72f0cb0dbb37368a6f62cf75a3772c0c38f3f8d9cbffdff7ee7a4032",
+    "inputs/vector_scale_add_262k.set1.input.bin": "280df058562ed57f4dd245083b8d526acfc94db80421e746296d99253dfb483a"
+  },
+  "sourceManifestSha256": "9a75835ac127652a561d2b11130b589776b5ed61864dc3d20244eab9b0c40f7b",
+  "gateTools": {
+    "reports/benchmarks/apple-metal/20261030-dropin-phase/tools/mac_window.py": "fc7022d1787375356540db245202339e6bb85838e12d1f52bd70e4e70b3955c8",
+    "reports/benchmarks/apple-metal/20261030-dropin-phase/tools/wait_quiet.sh": "41dbeb80bca95c2cf0beee73d9e2ba1eec26fabb42716eda8f517a6966e5c4b5"
+  },
+  "host": {
+    "system": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "display": "Graphics/Displays:\n\n    Apple M3:\n\n      Chipset Model: Apple M3\n      Type: GPU\n      Bus: Built-In\n      Total Number of Cores: 10\n      Vendor: Apple (0x106b)\n      Metal Support: Metal 4\n      Displays:\n        Color LCD:\n          Display Type: Built-in Liquid Retina Display\n          Resolution: 2560 x 1664 Retina\n          Main Display: Yes\n          Mirror: Off\n          Online: Yes\n          Automatically Adjust Brightness: Yes\n          Connection Type: Internal\n\n"
+  }
+}

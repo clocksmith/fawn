@@ -25,6 +25,7 @@ from bench.lib import compare_claim_artifacts as artifacts_mod
 from bench.lib import benchmark_cube_reports as cube_reports_mod
 from bench.lib import compare_axes as compare_axes_mod
 from bench.lib import benchmark_cube_dashboard_html
+from bench.lib import benchmark_inventory_sources
 from bench.lib import output_paths
 from bench.lib import report_conformance
 from native_compare_modules import timing_sanity
@@ -186,6 +187,18 @@ def parse_args() -> argparse.Namespace:
             "subset reruns cannot silently downgrade the latest mirror."
         ),
     )
+    parser.add_argument("--inventory", action="store_true",
+                        help="Build the registered evidence inventory in this cube")
+    parser.add_argument("--sources", default="reports/benchmarks/sources.json",
+                        help="Explicit source registration file for inventory mode")
+    parser.add_argument("--index-out", default="reports/benchmarks/index.json",
+                        help="Inventory JSON output")
+    parser.add_argument("--current-out", default="reports/benchmarks/CURRENT.md",
+                        help="Readable current-result projection")
+    parser.add_argument("--source-ref", default="HEAD",
+                        help="Resolve the latest product-source commit at this ref using policy currentSourcePaths")
+    parser.add_argument("--check", action="store_true",
+                        help="Detect stale inventory outputs without writing")
     return parser.parse_args()
 
 
@@ -308,53 +321,7 @@ def summarize_row_group(rows: list[dict[str, Any]]) -> tuple[str, str, float | N
     )
 
 
-def render_matrix_markdown(summary: dict[str, Any], policy: dict[str, Any]) -> str:
-    host_profiles = policy["hostProfiles"]
-    workload_sets = policy["workloadSets"]
-    cells = {
-        (
-            cell["surface"],
-            cell["hostProfile"],
-            cell["workloadSet"],
-        ): cell
-        for cell in summary["cells"]
-    }
-    lines = [
-        "# Benchmark Cube",
-        "",
-        f"Generated: `{summary['generatedAt']}`",
-        "",
-        f"Rows: `{summary['rowCount']}`",
-        "",
-    ]
-
-    for surface in policy["raw"]["surfaces"]:
-        lines.append(f"## {surface['displayName']}")
-        lines.append("")
-        lines.append(
-            f"Maturity: `{surface['maturity']}`. Primary support: `{surface['primarySupport']}`."
-        )
-        lines.append("")
-        header = ["Workload Set", *[host_profiles[item]["displayName"] for item in surface["expectedHostProfiles"]]]
-        lines.append("| " + " | ".join(header) + " |")
-        lines.append("| " + " | ".join("---" for _ in header) + " |")
-        for workload_set_id in surface["workloadSets"]:
-            row = [workload_sets[workload_set_id]["displayName"]]
-            for host_profile_id in surface["expectedHostProfiles"]:
-                cell = cells[(surface["id"], host_profile_id, workload_set_id)]
-                if cell["reportCount"] == 0:
-                    detail = str(cell.get("statusDetail") or "").strip()
-                    row.append(f"{cell['status']} ({detail})" if detail else cell["status"])
-                else:
-                    row.append(f"{cell['status']} ({cell['rowCount']} rows)")
-            lines.append("| " + " | ".join(row) + " |")
-        lines.append("")
-        for note in surface["notes"]:
-            lines.append(f"- {note}")
-        lines.append("")
-
-    return "\n".join(lines)
-
+render_matrix_markdown = benchmark_cube_dashboard_html.render_matrix_markdown
 
 def eligible_governed_lane_ids(
     governed_lanes: dict[str, Any],
@@ -478,14 +445,10 @@ def build_cells(
         short_key = key[:4]
         report_counts[short_key] += 1
 
-    def report_sort_key(report: dict[str, Any]) -> tuple[int, int, int, int, str]:
-        return (
-            source_conformance_rank(report.get("sourceConformance", "canonical")),
-            int(report.get("rowCount", 0)),
-            status_rank(report.get("claimStatus", "diagnostic")),
-            status_rank(report.get("comparisonStatus", "diagnostic")),
-            report["generatedAt"],
-        )
+    def report_sort_key(report: dict[str, Any]) -> tuple[str, str]:
+        # Legacy profile projection only. Inventory v2 groups measured machines
+        # and artifacts; neither view lets conformance or a win beat recency.
+        return (report.get("executedAt") or "", report["sourceReportPath"])
 
     for report in reports:
         full_key = (
@@ -499,20 +462,9 @@ def build_cells(
             latest_report_for_tuple[full_key] = report
 
     latest_row_report: dict[tuple[str, str, str, str], tuple[str, list[dict[str, Any]], str]] = {}
-    def row_group_sort_key(grouped_rows: list[dict[str, Any]], generated_at: str) -> tuple[int, int, int, int, str]:
-        status, claim_status, _delta_percent = summarize_row_group(grouped_rows)
-        comparison_status = (
-            "comparable"
-            if all(row["comparisonStatus"] == "comparable" for row in grouped_rows)
-            else "diagnostic"
-        )
-        return (
-            source_conformance_rank(grouped_rows[0].get("sourceConformance", "canonical")),
-            len(grouped_rows),
-            status_rank(claim_status),
-            status_rank(status),
-            generated_at,
-        )
+    def row_group_sort_key(grouped_rows: list[dict[str, Any]], generated_at: str | None) -> tuple[str, str]:
+        return (grouped_rows[0].get("executedAt") or "",
+                grouped_rows[0]["sourceReportPath"])
 
     for key, grouped_rows in rows_by_report.items():
         short_key = key[:4]
@@ -673,9 +625,90 @@ def build_cells(
     return cells
 
 
+
+def build_inventory(args: argparse.Namespace, root: Path) -> dict[str, Any]:
+    """Generate one deterministic view over registered, hash-bound cube sources."""
+    import subprocess
+    policy_path = root / args.policy
+    policy = load_policy(root, policy_path)["raw"]["inventory"]
+    registration_path = root / args.sources
+    registered = load_json_object(registration_path)
+    schema = load_json_object(root / "config/benchmark-cube.schema.json")
+    import jsonschema
+    jsonschema.Draft202012Validator(schema["$defs"]["sourceRegistration"]).validate(registered)
+    seen_ids: set[str] = set()
+    seen_evidence: set[tuple[str, str]] = set()
+    family_ids = {f["id"] for f in registered["families"]}
+    if len(family_ids) != len(registered["families"]):
+        raise ValueError("Duplicate inventory family")
+    rows = []
+    for entry in registered["sources"]:
+        if entry["id"] in seen_ids:
+            raise ValueError("Duplicate registration ID: " + entry["id"])
+        key = (str((root / entry["path"]).resolve()) if entry["path"] else None, entry["adapter"])
+        if entry["path"] is not None and key in seen_evidence:
+            raise ValueError("Duplicate evidence registration: " + entry["path"])
+        if entry["familyId"] not in family_ids:
+            raise ValueError("Unknown registration family: " + entry["familyId"])
+        if entry["comparisonType"] not in policy["comparisonTypes"]:
+            raise ValueError("Unknown comparison type: " + entry["comparisonType"])
+        seen_ids.add(entry["id"])
+        seen_evidence.add(key)
+        rows.extend(benchmark_inventory_sources.normalize_source(root, entry, policy))
+    rows.sort(key=lambda row: row["rowId"])
+    if len({row["rowId"] for row in rows}) != len(rows):
+        raise ValueError("Duplicate normalized observation identity")
+    # Schemas remain versioned: legacy cube rows and inventory rows validate
+    # against the same row contract, without changing old consumers' shapes.
+    row_schema = root / "config/benchmark-cube-row.schema.json"
+    validator = jsonschema.Draft202012Validator(load_json_object(row_schema),
+                                               format_checker=jsonschema.FormatChecker())
+    for row in rows:
+        validator.validate(row)
+    current_source = subprocess.check_output(
+        ["git", "-C", str(root), "log", "-1", "--format=%H", args.source_ref,
+         "--", *policy["currentSourcePaths"]], text=True).strip()
+    if not current_source:
+        current_source = subprocess.check_output(
+            ["git", "-C", str(root), "rev-parse", args.source_ref], text=True).strip()
+    selected = cube_reports_mod.select_inventory_current(rows, current_source)
+    families = []
+    for family in registered["families"]:
+        ids = [r["rowId"] for r in rows if r["familyId"] == family["id"]]
+        families.append({**family, "observations": ids})
+    payload = {
+        "schemaVersion": 2, "kind": "benchmark-cube-inventory",
+        "currentSource": current_source,
+        "policy": {"path": args.policy, "sha256": report_conformance.file_sha256(policy_path)},
+        "sources": {"path": args.sources, "sha256": report_conformance.file_sha256(registration_path)},
+        "families": families, "rows": rows, "current": selected,
+    }
+    validate_schema(root / "config/benchmark-cube.schema.json", payload)
+    outputs = {root / args.index_out: json.dumps(payload, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n",
+               root / args.current_out: benchmark_cube_dashboard_html.render_inventory_markdown(payload)}
+    if args.dashboard_html_out:
+        path = root / args.dashboard_html_out
+        outputs[path] = benchmark_cube_dashboard_html.build_dashboard_html(payload, {}, dashboard_path=path)
+    stale = [str(path) for path, body in outputs.items()
+             if not path.is_file() or path.read_text(encoding="utf-8") != body]
+    if args.check and stale:
+        raise ValueError("Stale benchmark inventory: " + ", ".join(stale))
+    if not args.check:
+        for path, body in outputs.items():
+            write_text(path, body)
+    print(f"Benchmark cube inventory: {len(rows)} observations; {len(families)} families; "
+          f"{len(selected)} current selections" + ("; check passed" if args.check else ""))
+    return payload
+
+
 def main() -> None:
     args = parse_args()
     repo_root = REPO_ROOT
+    if args.inventory:
+        build_inventory(args, repo_root)
+        return
+    if args.check:
+        raise ValueError("--check requires --inventory")
     timestamp = output_paths.resolve_timestamp(args.timestamp)
 
     policy_path = (repo_root / args.policy).resolve()

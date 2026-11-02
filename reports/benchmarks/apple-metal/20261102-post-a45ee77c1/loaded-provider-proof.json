@@ -1,0 +1,10 @@
+{
+  "libwebgpu_doe_c.dylib": {
+    "path": "/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/libraries/libwebgpu_doe_c.dylib",
+    "sha256": "1e4c7b01b4732b49ea273be0254613d52cb504691228dc3032854acf5a1553f4"
+  },
+  "libdoe_compiler.dylib": {
+    "path": "/private/tmp/doe-c-4250657442/native/libdoe_compiler.dylib",
+    "sha256": "7726cd9d218e7602cb08aa7acba45e12f097fa87e44d1b2276f30e30daa61622"
+  }
+}

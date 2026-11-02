@@ -4,16 +4,16 @@ Parent: [Doe](../CATSCAN.md)
 
 ## Target
 
-Execute governed workloads and convert correctness, reliability, comparability, and performance observations into typed evidence.
+Convert governed correctness, reliability, comparability, and performance observations into typed evidence.
 
 ## Authority
 
-- Owns workload executors, oracles, comparisons, gates, tools, raw artifacts, and evidence assembly.
-- Does not own product strategy, runtime semantics, public package APIs, or hardware behavior.
+- Owns executors, oracles, comparisons, gates, tools, artifacts, and evidence assembly.
+- Excludes strategy, runtime semantics, package APIs, and hardware behavior.
 
 ## Scope
 
-- Includes this directory; child charters narrow authority.
+- Includes this directory; children narrow scope.
 
 ## Contracts
 
@@ -27,6 +27,7 @@ Inputs:
 
 Outputs:
 - Hash-bound run, compare, claim, replay, failure, and release-admission artifacts.
+- Registered cube inventory and CURRENT preserve executions and scoped selections.
 
 ## Invariants
 
@@ -35,11 +36,11 @@ Outputs:
 - Metal setup cohorts include provider/framework loading inside setup on both
   providers; preloaded framework work cannot qualify that boundary.
 - Diagnostic evidence cannot be relabeled to promote a claim.
+- Recency requires execution receipts; unknown machines never merge by profile.
 - Three-provider package comparisons bind loaded addons, enforced backend, physical
   adapter and per-worker completion; public operations require full output validation.
-- Explicit sole-adapter experiments query hardware before/after measurement, require
-  one adapter and stable native identity, and reject ambiguity. Display names
-  cannot substitute. Historical verdicts stand.
+- Sole-adapter experiments require before/after hardware queries and stable native
+  identity. Reject ambiguity; display names cannot substitute. Historical verdicts stand.
 - Output proof belongs to its execution; preflight/replay cannot qualify timed samples.
 
 ## Acceptance
@@ -53,4 +54,4 @@ Outputs:
 
 ## Freedom
 
-Mechanisms preserve boundaries and pass acceptance.
+Preserve contracts and acceptance.

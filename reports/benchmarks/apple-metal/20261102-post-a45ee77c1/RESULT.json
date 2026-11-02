@@ -1,0 +1,1624 @@
+{
+  "schemaVersion": 1,
+  "status": "valid diagnostic window",
+  "sourceCommit": "dcc4c1e842b7395c288d9c1a8f0e3791785c5af0",
+  "dawnCommitAsRecorded": "d04f88359391a12375c1a3e948a0b2dcb4c97a18",
+  "scope": "Targeted native Metal diagnostic; compare current Doe with retained source-built Dawn. No before/after attribution, rendering, CLI binding reuse, browser or hardware qualification.",
+  "acceptedAttempt": 1,
+  "processes": 216,
+  "iterationsPerProcess": 32,
+  "fullOutputOracleChecks": 6912,
+  "allPhysicalAdapter": "Apple M3 Metal, type2",
+  "policy": {
+    "win": "ratio median<0.95 and ci95 upper<1",
+    "loss": "ratio median>1.05 and ci95 lower>1",
+    "otherwise": "no established practical difference"
+  },
+  "results": {
+    "buffer_upload_readback_exact_1mb": {
+      "compileNs": {
+        "median": 0.4632796263143816,
+        "ci95": [
+          0.3896107646107646,
+          0.5623168078257899
+        ],
+        "n": 24,
+        "providerFasterPairs": 20,
+        "classification": "win",
+        "doeMedian": 8.35e-05,
+        "dawnMedian": 0.000208
+      },
+      "complete": {
+        "median": 0.9102136785445745,
+        "ci95": [
+          0.8495795457858821,
+          1.0032169092434304
+        ],
+        "n": 24,
+        "providerFasterPairs": 16,
+        "classification": "no established practical difference",
+        "doeMedian": 15.1512505,
+        "dawnMedian": 15.5664375
+      },
+      "cpuMs": {
+        "median": 0.8823850708903134,
+        "ci95": [
+          0.8731519585428921,
+          0.9197316205048388
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 21.56950000000002,
+        "dawnMedian": 24.37250000000013
+      },
+      "first.completion": {
+        "median": 0.964778255716987,
+        "ci95": [
+          0.9183904558127473,
+          0.9968604640463035
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "no established practical difference",
+        "doeMedian": 1.8288955,
+        "dawnMedian": 1.877896
+      },
+      "first.encode": {
+        "median": 0.1453356801609253,
+        "ci95": [
+          0.1405301204819277,
+          0.15900610583446403
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.001583,
+        "dawnMedian": 0.0107085
+      },
+      "first.map": {
+        "median": 0.6203916363619669,
+        "ci95": [
+          0.549308054883605,
+          0.6552918915819566
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0800415,
+        "dawnMedian": 0.1258125
+      },
+      "first.operation": {
+        "median": 0.8874191622275963,
+        "ci95": [
+          0.8363077309392191,
+          0.9679360545367172
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "win",
+        "doeMedian": 2.8984379999999996,
+        "dawnMedian": 3.4128125000000002
+      },
+      "first.submit": {
+        "median": 14.055193711208318,
+        "ci95": [
+          13.184637078395623,
+          15.554603304936876
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.9293750000000001,
+        "dawnMedian": 0.065104
+      },
+      "first.upload": {
+        "median": 0.031216761332886724,
+        "ci95": [
+          0.027558364051255047,
+          0.034056215157437016
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0392295,
+        "dawnMedian": 1.2422505
+      },
+      "first.uploadDoe": {
+        "median": 0.014892240987003345,
+        "ci95": [
+          0.01320743015566392,
+          0.015863892401425453
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.018125,
+        "dawnMedian": 1.222959
+      },
+      "first.uploadSource": {
+        "median": 1.176941541495356,
+        "ci95": [
+          1.1192408759124086,
+          1.2211929140256785
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.0195415,
+        "dawnMedian": 0.016729
+      },
+      "imagesBeforeSetup": {
+        "median": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "no established practical difference",
+        "doeMedian": 45.0,
+        "dawnMedian": 45.0
+      },
+      "maxRssMiB": {
+        "median": 0.7038778567098226,
+        "ci95": [
+          0.7029783761729906,
+          0.7043691302572479
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 26.9375,
+        "dawnMedian": 38.265625
+      },
+      "pipelineNs": {
+        "median": 1.0,
+        "ci95": [
+          0.0,
+          1.0
+        ],
+        "n": 15,
+        "providerFasterPairs": 7,
+        "classification": "no established practical difference",
+        "doeMedian": 4.2e-05,
+        "dawnMedian": 4.2e-05
+      },
+      "processInMainNs": {
+        "median": 0.8700086654176122,
+        "ci95": [
+          0.8294365549318429,
+          0.934724875689107
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 29.336520999999998,
+        "dawnMedian": 32.878583
+      },
+      "processWall": {
+        "median": 0.8840478434020755,
+        "ci95": [
+          0.8279570291256942,
+          0.9384113284414572
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 33.1969795,
+        "dawnMedian": 36.796396
+      },
+      "providerImagesLoaded": {
+        "median": 0.004228329809725159,
+        "ci95": [
+          0.004228329809725159,
+          0.004228329809725159
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 2.0,
+        "dawnMedian": 473.0
+      },
+      "providerLoadNs": {
+        "median": 0.14241529621411886,
+        "ci95": [
+          0.13381287623711868,
+          0.14964244506870297
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.6866460000000001,
+        "dawnMedian": 4.843354
+      },
+      "resourcesNs": {
+        "median": 9.680809597444238,
+        "ci95": [
+          9.39680452363732,
+          10.348740740740741
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.1458335,
+        "dawnMedian": 0.0151665
+      },
+      "setupAdapterNs": {
+        "median": 1.2147918943218832,
+        "ci95": [
+          1.1804357418818532,
+          1.2909125174842588
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 9.8449795,
+        "dawnMedian": 8.0886045
+      },
+      "setupDeviceNs": {
+        "median": 0.2434228318386612,
+        "ci95": [
+          0.22616136743585652,
+          0.24899980333528632
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.175917,
+        "dawnMedian": 0.702125
+      },
+      "setupImagesLoaded": {
+        "median": 0.6442105263157895,
+        "ci95": [
+          0.6442105263157895,
+          0.6442105263157895
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 306.0,
+        "dawnMedian": 475.0
+      },
+      "setupInstanceNs": {
+        "median": 0.046793774555946924,
+        "ci95": [
+          0.04181775147928994,
+          0.04931715500118353
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0046665000000000005,
+        "dawnMedian": 0.099791
+      },
+      "setupNs": {
+        "median": 0.7708667198959773,
+        "ci95": [
+          0.7658187242422765,
+          0.8216395189280814
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 10.723417000000001,
+        "dawnMedian": 13.724062499999999
+      },
+      "teardownDeviceNs": {
+        "median": 0.8511308619751556,
+        "ci95": [
+          0.7668074291300098,
+          0.9154270055810927
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "win",
+        "doeMedian": 0.590979,
+        "dawnMedian": 0.69375
+      },
+      "teardownNs": {
+        "median": 0.850304899546545,
+        "ci95": [
+          0.773766672653181,
+          0.920966884274677
+        ],
+        "n": 24,
+        "providerFasterPairs": 18,
+        "classification": "win",
+        "doeMedian": 0.6145415000000001,
+        "dawnMedian": 0.7145
+      },
+      "teardownReleaseNs": {
+        "median": 0.9946285760770659,
+        "ci95": [
+          0.8733185922240647,
+          1.1428433455669307
+        ],
+        "n": 24,
+        "providerFasterPairs": 12,
+        "classification": "no established practical difference",
+        "doeMedian": 0.0231045,
+        "dawnMedian": 0.022292
+      },
+      "warm.completion": {
+        "median": 0.896887302921143,
+        "ci95": [
+          0.8888375451263537,
+          0.901869365225391
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.2459995,
+        "dawnMedian": 0.2748545
+      },
+      "warm.encode": {
+        "median": 0.4332987879987965,
+        "ci95": [
+          0.4118476727785613,
+          0.4656
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0002915,
+        "dawnMedian": 0.000625
+      },
+      "warm.map": {
+        "median": 0.9617771839671119,
+        "ci95": [
+          0.9370629370629372,
+          0.9749070631970261
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "no established practical difference",
+        "doeMedian": 0.01675,
+        "dawnMedian": 0.017521000000000002
+      },
+      "warm.operation": {
+        "median": 0.9031130725799363,
+        "ci95": [
+          0.8922773146116718,
+          0.9086148308611225
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 0.295563,
+        "dawnMedian": 0.33075
+      },
+      "warm.submit": {
+        "median": 1.5047957868757273,
+        "ci95": [
+          1.3899511798209925,
+          1.6062487431948824
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.0057915,
+        "dawnMedian": 0.003875
+      },
+      "warm.upload": {
+        "median": 0.8298811120016181,
+        "ci95": [
+          0.799169318345462,
+          0.9132118651527154
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "win",
+        "doeMedian": 0.026375,
+        "dawnMedian": 0.032604
+      },
+      "warm.uploadDoe": {
+        "median": 0.8427983144873459,
+        "ci95": [
+          0.8124967671856411,
+          0.8485221016623016
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.015875,
+        "dawnMedian": 0.0192915
+      },
+      "warm.uploadSource": {
+        "median": 0.8933676805592721,
+        "ci95": [
+          0.7989268503108424,
+          0.9624060150375939
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "win",
+        "doeMedian": 0.009875,
+        "dawnMedian": 0.0134795
+      },
+      "warmP95.completion": {
+        "median": 0.8575578553419804,
+        "ci95": [
+          0.7193301740743805,
+          0.9974440072082674
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "win",
+        "doeMedian": 0.3216245,
+        "dawnMedian": 0.3636245
+      },
+      "warmP95.encode": {
+        "median": 0.8040144492911669,
+        "ci95": [
+          0.5,
+          1.0474285714285714
+        ],
+        "n": 24,
+        "providerFasterPairs": 16,
+        "classification": "no established practical difference",
+        "doeMedian": 0.0016665,
+        "dawnMedian": 0.002
+      },
+      "warmP95.map": {
+        "median": 0.9314905752712405,
+        "ci95": [
+          0.8262849935180967,
+          1.0086515264953
+        ],
+        "n": 24,
+        "providerFasterPairs": 16,
+        "classification": "no established practical difference",
+        "doeMedian": 0.020812,
+        "dawnMedian": 0.0232085
+      },
+      "warmP95.operation": {
+        "median": 0.8630261046535118,
+        "ci95": [
+          0.7938586068082472,
+          0.9878903794030782
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "win",
+        "doeMedian": 0.3957085,
+        "dawnMedian": 0.440979
+      },
+      "warmP95.submit": {
+        "median": 1.4559174778070556,
+        "ci95": [
+          1.2952001989554836,
+          1.635611255615985
+        ],
+        "n": 24,
+        "providerFasterPairs": 1,
+        "classification": "loss",
+        "doeMedian": 0.012937500000000001,
+        "dawnMedian": 0.0086245
+      },
+      "warmP95.upload": {
+        "median": 0.8284841148551974,
+        "ci95": [
+          0.6853910957788603,
+          0.8848848108134773
+        ],
+        "n": 24,
+        "providerFasterPairs": 20,
+        "classification": "win",
+        "doeMedian": 0.0364375,
+        "dawnMedian": 0.0465415
+      },
+      "warmP95.uploadDoe": {
+        "median": 0.6389181517519675,
+        "ci95": [
+          0.39362930795528045,
+          0.7513513513513514
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 0.018604,
+        "dawnMedian": 0.028874999999999998
+      },
+      "warmP95.uploadSource": {
+        "median": 1.006319039645208,
+        "ci95": [
+          0.9597364125506318,
+          1.084847455708383
+        ],
+        "n": 24,
+        "providerFasterPairs": 11,
+        "classification": "no established practical difference",
+        "doeMedian": 0.0179165,
+        "dawnMedian": 0.017750000000000002
+      }
+    },
+    "image_rgba_invert_1024": {
+      "compileNs": {
+        "median": 0.22198135951113673,
+        "ci95": [
+          0.21491620628992933,
+          0.2330059405940594
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0573125,
+        "dawnMedian": 0.257854
+      },
+      "complete": {
+        "median": 0.6310213214294251,
+        "ci95": [
+          0.6142593014085745,
+          0.6471799572740735
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 33.073,
+        "dawnMedian": 52.9345385
+      },
+      "cpuMs": {
+        "median": 0.7429364631092286,
+        "ci95": [
+          0.7279020538932436,
+          0.7554242504844871
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 39.512499999999946,
+        "dawnMedian": 52.80749999999989
+      },
+      "first.completion": {
+        "median": 0.8795783400969045,
+        "ci95": [
+          0.837161792165165,
+          0.9441028980465627
+        ],
+        "n": 24,
+        "providerFasterPairs": 20,
+        "classification": "win",
+        "doeMedian": 2.1034165,
+        "dawnMedian": 2.3805835
+      },
+      "first.encode": {
+        "median": 0.2713795705998246,
+        "ci95": [
+          0.24304289707133309,
+          0.2998004957378635
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0045835,
+        "dawnMedian": 0.016979
+      },
+      "first.map": {
+        "median": 0.7002536716246763,
+        "ci95": [
+          0.6353306759876457,
+          0.7794451067439973
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 0.365479,
+        "dawnMedian": 0.4861875
+      },
+      "first.operation": {
+        "median": 0.8550617546885368,
+        "ci95": [
+          0.8211175879396985,
+          0.898340159418411
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "win",
+        "doeMedian": 2.9902085,
+        "dawnMedian": 3.475917
+      },
+      "first.submit": {
+        "median": 2.187135807604318,
+        "ci95": [
+          2.0877867908530643,
+          2.349156051735113
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.3322705,
+        "dawnMedian": 0.1518335
+      },
+      "first.upload": {
+        "median": 0.3948130805486364,
+        "ci95": [
+          0.37567616459147746,
+          0.43778825630582846
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.167625,
+        "dawnMedian": 0.4045835
+      },
+      "first.uploadDoe": {
+        "median": 0.25975551965208177,
+        "ci95": [
+          0.23461906693711967,
+          0.30331123005072186
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.08939549999999999,
+        "dawnMedian": 0.3257295
+      },
+      "first.uploadSource": {
+        "median": 1.0082223209135979,
+        "ci95": [
+          0.9617306808848303,
+          1.0715637189264713
+        ],
+        "n": 24,
+        "providerFasterPairs": 11,
+        "classification": "no established practical difference",
+        "doeMedian": 0.0741455,
+        "dawnMedian": 0.0727915
+      },
+      "imagesBeforeSetup": {
+        "median": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "no established practical difference",
+        "doeMedian": 45.0,
+        "dawnMedian": 45.0
+      },
+      "maxRssMiB": {
+        "median": 0.8003355704697986,
+        "ci95": [
+          0.80020964360587,
+          0.8012161878800587
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 59.625,
+        "dawnMedian": 74.5078125
+      },
+      "pipelineNs": {
+        "median": 0.9156202294530548,
+        "ci95": [
+          0.8573912698765582,
+          0.9635575218999887
+        ],
+        "n": 24,
+        "providerFasterPairs": 20,
+        "classification": "win",
+        "doeMedian": 1.707437,
+        "dawnMedian": 1.9337914999999999
+      },
+      "processInMainNs": {
+        "median": 0.7141265440007186,
+        "ci95": [
+          0.70347000690502,
+          0.7356631501997707
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 56.362145999999996,
+        "dawnMedian": 78.5411665
+      },
+      "processWall": {
+        "median": 0.7312513697253927,
+        "ci95": [
+          0.7225214542975292,
+          0.7490874550211648
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 60.788938,
+        "dawnMedian": 82.9771255
+      },
+      "providerImagesLoaded": {
+        "median": 0.004228329809725159,
+        "ci95": [
+          0.004228329809725159,
+          0.004228329809725159
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 2.0,
+        "dawnMedian": 473.0
+      },
+      "providerLoadNs": {
+        "median": 0.15129897424305344,
+        "ci95": [
+          0.1480962349492519,
+          0.15657875776080124
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.7518125,
+        "dawnMedian": 4.9195415
+      },
+      "resourcesNs": {
+        "median": 1.5817331801009522,
+        "ci95": [
+          1.5235649649411724,
+          1.668745925575331
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.7920834999999999,
+        "dawnMedian": 0.4978125
+      },
+      "setupAdapterNs": {
+        "median": 1.301166673930524,
+        "ci95": [
+          1.269442941598744,
+          1.342428311691432
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 10.073770499999998,
+        "dawnMedian": 7.679187499999999
+      },
+      "setupDeviceNs": {
+        "median": 0.27069663265394517,
+        "ci95": [
+          0.25105019740552736,
+          0.2838558466491983
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.18006250000000001,
+        "dawnMedian": 0.6989380000000001
+      },
+      "setupImagesLoaded": {
+        "median": 0.6442105263157895,
+        "ci95": [
+          0.6442105263157895,
+          0.6442105263157895
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 306.0,
+        "dawnMedian": 475.0
+      },
+      "setupInstanceNs": {
+        "median": 0.045959317108897835,
+        "ci95": [
+          0.04380510348794541,
+          0.04725733446735294
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.004729499999999999,
+        "dawnMedian": 0.10335449999999999
+      },
+      "setupNs": {
+        "median": 0.818496943080543,
+        "ci95": [
+          0.7989092649276305,
+          0.8285574229917715
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 11.0371875,
+        "dawnMedian": 13.3063545
+      },
+      "teardownDeviceNs": {
+        "median": 0.9266448071896218,
+        "ci95": [
+          0.8791523963200916,
+          0.978500355366027
+        ],
+        "n": 24,
+        "providerFasterPairs": 18,
+        "classification": "win",
+        "doeMedian": 0.6896045,
+        "dawnMedian": 0.743625
+      },
+      "teardownNs": {
+        "median": 0.9021606867519684,
+        "ci95": [
+          0.8679888469526867,
+          0.9524927854561086
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "win",
+        "doeMedian": 0.7301875,
+        "dawnMedian": 0.7974165
+      },
+      "teardownReleaseNs": {
+        "median": 0.6460296620242314,
+        "ci95": [
+          0.5902419740071488,
+          0.6902965756970638
+        ],
+        "n": 24,
+        "providerFasterPairs": 22,
+        "classification": "win",
+        "doeMedian": 0.037292,
+        "dawnMedian": 0.0563955
+      },
+      "warm.completion": {
+        "median": 0.6158995788360937,
+        "ci95": [
+          0.6121259391604142,
+          0.6244016906170752
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.468604,
+        "dawnMedian": 0.757312
+      },
+      "warm.encode": {
+        "median": 0.36389858012170384,
+        "ci95": [
+          0.30517456359102246,
+          0.38880000000000003
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.001167,
+        "dawnMedian": 0.0033334999999999997
+      },
+      "warm.map": {
+        "median": 0.9265322832620795,
+        "ci95": [
+          0.8973793074036166,
+          0.9454420556634859
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.08422950000000001,
+        "dawnMedian": 0.0917705
+      },
+      "warm.operation": {
+        "median": 0.546263068981697,
+        "ci95": [
+          0.5413510628110698,
+          0.5562249137192118
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.6982495,
+        "dawnMedian": 1.282479
+      },
+      "warm.submit": {
+        "median": 0.7908979796674435,
+        "ci95": [
+          0.6502222222222221,
+          0.8440366972477064
+        ],
+        "n": 24,
+        "providerFasterPairs": 22,
+        "classification": "win",
+        "doeMedian": 0.0139795,
+        "dawnMedian": 0.018416500000000002
+      },
+      "warm.upload": {
+        "median": 0.32525519161108307,
+        "ci95": [
+          0.32219374382487154,
+          0.3365807676205202
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.129125,
+        "dawnMedian": 0.39272850000000004
+      },
+      "warm.uploadDoe": {
+        "median": 0.19174534068524335,
+        "ci95": [
+          0.1896412432638784,
+          0.19501118395680678
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.06318750000000001,
+        "dawnMedian": 0.3259375
+      },
+      "warm.uploadSource": {
+        "median": 0.9918639355983254,
+        "ci95": [
+          0.9699705882352941,
+          1.0189753320683113
+        ],
+        "n": 24,
+        "providerFasterPairs": 13,
+        "classification": "no established practical difference",
+        "doeMedian": 0.06535450000000001,
+        "dawnMedian": 0.0652915
+      },
+      "warmP95.completion": {
+        "median": 0.6354001965914824,
+        "ci95": [
+          0.41697143849974266,
+          0.7194052044609666
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "win",
+        "doeMedian": 0.644729,
+        "dawnMedian": 1.1431665
+      },
+      "warmP95.encode": {
+        "median": 0.5059009422761147,
+        "ci95": [
+          0.41294209094442286,
+          0.6524571428571427
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.004396000000000001,
+        "dawnMedian": 0.008104
+      },
+      "warmP95.map": {
+        "median": 0.8719761613118882,
+        "ci95": [
+          0.818242036981687,
+          0.9528307434468767
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "win",
+        "doeMedian": 0.1255415,
+        "dawnMedian": 0.1479375
+      },
+      "warmP95.operation": {
+        "median": 0.5808207933721703,
+        "ci95": [
+          0.48186100671640153,
+          0.6482860942229498
+        ],
+        "n": 24,
+        "providerFasterPairs": 22,
+        "classification": "win",
+        "doeMedian": 0.9714585,
+        "dawnMedian": 1.842771
+      },
+      "warmP95.submit": {
+        "median": 0.803630692299152,
+        "ci95": [
+          0.6647065443700412,
+          0.9825422181652214
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "win",
+        "doeMedian": 0.0281875,
+        "dawnMedian": 0.035479
+      },
+      "warmP95.upload": {
+        "median": 0.33235583935508184,
+        "ci95": [
+          0.3158128217881676,
+          0.35207138607971444
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.14756249999999999,
+        "dawnMedian": 0.44695850000000004
+      },
+      "warmP95.uploadDoe": {
+        "median": 0.19459163159546428,
+        "ci95": [
+          0.18935784261101984,
+          0.1985498327759197
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0727085,
+        "dawnMedian": 0.3772295
+      },
+      "warmP95.uploadSource": {
+        "median": 1.0113393037214338,
+        "ci95": [
+          0.9608211920529801,
+          1.044761931004078
+        ],
+        "n": 24,
+        "providerFasterPairs": 12,
+        "classification": "no established practical difference",
+        "doeMedian": 0.076,
+        "dawnMedian": 0.075854
+      }
+    },
+    "vector_scale_add_262k": {
+      "compileNs": {
+        "median": 0.24446318310831194,
+        "ci95": [
+          0.23679969184920885,
+          0.26068602470630775
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.065125,
+        "dawnMedian": 0.25920849999999995
+      },
+      "complete": {
+        "median": 0.9521000992103397,
+        "ci95": [
+          0.9152216725414913,
+          1.0283870708537928
+        ],
+        "n": 24,
+        "providerFasterPairs": 15,
+        "classification": "no established practical difference",
+        "doeMedian": 19.983103999999997,
+        "dawnMedian": 21.2855615
+      },
+      "cpuMs": {
+        "median": 0.9365659378611346,
+        "ci95": [
+          0.9167322772651417,
+          0.950705383274691
+        ],
+        "n": 24,
+        "providerFasterPairs": 20,
+        "classification": "win",
+        "doeMedian": 29.672000000000033,
+        "dawnMedian": 31.981499999999993
+      },
+      "first.completion": {
+        "median": 0.9559997423147601,
+        "ci95": [
+          0.9165102225814573,
+          1.0169645186724965
+        ],
+        "n": 24,
+        "providerFasterPairs": 15,
+        "classification": "no established practical difference",
+        "doeMedian": 1.800708,
+        "dawnMedian": 1.880125
+      },
+      "first.encode": {
+        "median": 0.25870655996722536,
+        "ci95": [
+          0.23116129032258065,
+          0.27934571294496213
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0038955,
+        "dawnMedian": 0.015333
+      },
+      "first.map": {
+        "median": 0.6524041023574098,
+        "ci95": [
+          0.6013407767146937,
+          0.7311219456729939
+        ],
+        "n": 24,
+        "providerFasterPairs": 20,
+        "classification": "win",
+        "doeMedian": 0.082083,
+        "dawnMedian": 0.12302099999999999
+      },
+      "first.operation": {
+        "median": 1.017432185230693,
+        "ci95": [
+          0.9928726063453117,
+          1.0588145549965673
+        ],
+        "n": 24,
+        "providerFasterPairs": 9,
+        "classification": "no established practical difference",
+        "doeMedian": 2.2202295,
+        "dawnMedian": 2.2343335
+      },
+      "first.submit": {
+        "median": 2.2334741238238838,
+        "ci95": [
+          2.0661883015710165,
+          2.3786155585781947
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "loss",
+        "doeMedian": 0.2960005,
+        "dawnMedian": 0.135
+      },
+      "first.upload": {
+        "median": 0.9074689241917504,
+        "ci95": [
+          0.8323018867924529,
+          0.9652374100719424
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "win",
+        "doeMedian": 0.033875,
+        "dawnMedian": 0.0382085
+      },
+      "first.uploadDoe": {
+        "median": 0.8852009741286406,
+        "ci95": [
+          0.8362535839439312,
+          0.9020979020979022
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0156455,
+        "dawnMedian": 0.0178125
+      },
+      "first.uploadSource": {
+        "median": 0.9873644750501664,
+        "ci95": [
+          0.8668031585670879,
+          1.02574190647482
+        ],
+        "n": 24,
+        "providerFasterPairs": 12,
+        "classification": "no established practical difference",
+        "doeMedian": 0.01825,
+        "dawnMedian": 0.019021
+      },
+      "imagesBeforeSetup": {
+        "median": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "n": 24,
+        "providerFasterPairs": 0,
+        "classification": "no established practical difference",
+        "doeMedian": 45.0,
+        "dawnMedian": 45.0
+      },
+      "maxRssMiB": {
+        "median": 0.6994315155102371,
+        "ci95": [
+          0.6983137829912024,
+          0.6998171846435101
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 29.78125,
+        "dawnMedian": 42.609375
+      },
+      "pipelineNs": {
+        "median": 0.8599596356702548,
+        "ci95": [
+          0.7994802546958313,
+          0.9362561234772603
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "win",
+        "doeMedian": 1.688854,
+        "dawnMedian": 1.932562
+      },
+      "processInMainNs": {
+        "median": 0.9286945579265322,
+        "ci95": [
+          0.903061216731282,
+          0.9664597363605624
+        ],
+        "n": 24,
+        "providerFasterPairs": 18,
+        "classification": "win",
+        "doeMedian": 40.4662915,
+        "dawnMedian": 43.7993755
+      },
+      "processWall": {
+        "median": 0.9316294857378646,
+        "ci95": [
+          0.9103780727980514,
+          0.9719918120267592
+        ],
+        "n": 24,
+        "providerFasterPairs": 18,
+        "classification": "win",
+        "doeMedian": 44.306292,
+        "dawnMedian": 48.0776045
+      },
+      "providerImagesLoaded": {
+        "median": 0.004228329809725159,
+        "ci95": [
+          0.004228329809725159,
+          0.004228329809725159
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 2.0,
+        "dawnMedian": 473.0
+      },
+      "providerLoadNs": {
+        "median": 0.14179941903988263,
+        "ci95": [
+          0.1387093553122009,
+          0.15309615855150477
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.6883755,
+        "dawnMedian": 4.691395999999999
+      },
+      "resourcesNs": {
+        "median": 0.4536323246142616,
+        "ci95": [
+          0.43069194112213044,
+          0.4817832935560859
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.206479,
+        "dawnMedian": 0.479125
+      },
+      "setupAdapterNs": {
+        "median": 1.3097424616450282,
+        "ci95": [
+          1.144368124028089,
+          1.4081174366864888
+        ],
+        "n": 24,
+        "providerFasterPairs": 1,
+        "classification": "loss",
+        "doeMedian": 10.14875,
+        "dawnMedian": 7.887437500000001
+      },
+      "setupDeviceNs": {
+        "median": 0.26263092293132717,
+        "ci95": [
+          0.24687275693311583,
+          0.2813607370659107
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 0.1791045,
+        "dawnMedian": 0.664167
+      },
+      "setupImagesLoaded": {
+        "median": 0.6442105263157895,
+        "ci95": [
+          0.6442105263157895,
+          0.6442105263157895
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 306.0,
+        "dawnMedian": 475.0
+      },
+      "setupInstanceNs": {
+        "median": 0.04534337941071871,
+        "ci95": [
+          0.0420313764224994,
+          0.047588786338821965
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0045,
+        "dawnMedian": 0.1061455
+      },
+      "setupNs": {
+        "median": 0.8337615789590622,
+        "ci95": [
+          0.7457063376332025,
+          0.882333718939333
+        ],
+        "n": 24,
+        "providerFasterPairs": 22,
+        "classification": "win",
+        "doeMedian": 11.003896000000001,
+        "dawnMedian": 13.4794165
+      },
+      "teardownDeviceNs": {
+        "median": 0.8902771298636343,
+        "ci95": [
+          0.8177366310160428,
+          0.9854309085941366
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "win",
+        "doeMedian": 0.5862295,
+        "dawnMedian": 0.6878960000000001
+      },
+      "teardownNs": {
+        "median": 0.8650613670700874,
+        "ci95": [
+          0.7794667469154378,
+          0.9536300351209577
+        ],
+        "n": 24,
+        "providerFasterPairs": 18,
+        "classification": "win",
+        "doeMedian": 0.616021,
+        "dawnMedian": 0.7461665
+      },
+      "teardownReleaseNs": {
+        "median": 0.5737925422246828,
+        "ci95": [
+          0.5518382352941177,
+          0.5901484754913744
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0326455,
+        "dawnMedian": 0.0555835
+      },
+      "warm.completion": {
+        "median": 0.9388895802949928,
+        "ci95": [
+          0.9315412861012126,
+          0.95096580003779
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 0.28693749999999996,
+        "dawnMedian": 0.30481199999999997
+      },
+      "warm.encode": {
+        "median": 0.5534510921177588,
+        "ci95": [
+          0.5226404800872886,
+          0.6123629198080878
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.000875,
+        "dawnMedian": 0.001604
+      },
+      "warm.map": {
+        "median": 0.9769981377167698,
+        "ci95": [
+          0.9675353602851099,
+          0.9908493150684932
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "no established practical difference",
+        "doeMedian": 0.017479,
+        "dawnMedian": 0.017875000000000002
+      },
+      "warm.operation": {
+        "median": 0.9421318528941525,
+        "ci95": [
+          0.9252499611736795,
+          0.9595443296495423
+        ],
+        "n": 24,
+        "providerFasterPairs": 21,
+        "classification": "win",
+        "doeMedian": 0.3456665,
+        "dawnMedian": 0.3671875
+      },
+      "warm.submit": {
+        "median": 1.2569527969841325,
+        "ci95": [
+          1.1818181818181819,
+          1.3603701807768962
+        ],
+        "n": 24,
+        "providerFasterPairs": 1,
+        "classification": "loss",
+        "doeMedian": 0.011729,
+        "dawnMedian": 0.0096875
+      },
+      "warm.upload": {
+        "median": 0.9083921403131419,
+        "ci95": [
+          0.8474063313358755,
+          0.9675474528356315
+        ],
+        "n": 24,
+        "providerFasterPairs": 19,
+        "classification": "win",
+        "doeMedian": 0.029478999999999998,
+        "dawnMedian": 0.033188
+      },
+      "warm.uploadDoe": {
+        "median": 0.8499295698342184,
+        "ci95": [
+          0.8318908299261935,
+          0.8539259259259259
+        ],
+        "n": 24,
+        "providerFasterPairs": 24,
+        "classification": "win",
+        "doeMedian": 0.0158125,
+        "dawnMedian": 0.019
+      },
+      "warm.uploadSource": {
+        "median": 0.9758708117213766,
+        "ci95": [
+          0.8786094224924011,
+          1.1575118849876855
+        ],
+        "n": 24,
+        "providerFasterPairs": 12,
+        "classification": "no established practical difference",
+        "doeMedian": 0.0135,
+        "dawnMedian": 0.013375
+      },
+      "warmP95.completion": {
+        "median": 0.8720295443548146,
+        "ci95": [
+          0.8081143646612775,
+          1.0625766321098347
+        ],
+        "n": 24,
+        "providerFasterPairs": 16,
+        "classification": "no established practical difference",
+        "doeMedian": 0.3678745,
+        "dawnMedian": 0.4391875
+      },
+      "warmP95.encode": {
+        "median": 0.603848950851468,
+        "ci95": [
+          0.4671518489378442,
+          0.7073170731707317
+        ],
+        "n": 24,
+        "providerFasterPairs": 22,
+        "classification": "win",
+        "doeMedian": 0.003042,
+        "dawnMedian": 0.0053124999999999995
+      },
+      "warmP95.map": {
+        "median": 0.9286022718294556,
+        "ci95": [
+          0.8230321566628436,
+          1.027905979418619
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "no established practical difference",
+        "doeMedian": 0.021313,
+        "dawnMedian": 0.024125
+      },
+      "warmP95.operation": {
+        "median": 0.918087746677274,
+        "ci95": [
+          0.8254857142857144,
+          1.0615499214718422
+        ],
+        "n": 24,
+        "providerFasterPairs": 15,
+        "classification": "no established practical difference",
+        "doeMedian": 0.48912449999999996,
+        "dawnMedian": 0.5595625
+      },
+      "warmP95.submit": {
+        "median": 1.2936021722543871,
+        "ci95": [
+          1.078313253012048,
+          1.5828577950239673
+        ],
+        "n": 24,
+        "providerFasterPairs": 5,
+        "classification": "loss",
+        "doeMedian": 0.0243125,
+        "dawnMedian": 0.020937499999999998
+      },
+      "warmP95.upload": {
+        "median": 0.884463743811922,
+        "ci95": [
+          0.8137481559768368,
+          0.9885509570097204
+        ],
+        "n": 24,
+        "providerFasterPairs": 17,
+        "classification": "win",
+        "doeMedian": 0.037708,
+        "dawnMedian": 0.0455415
+      },
+      "warmP95.uploadDoe": {
+        "median": 0.6877107344820566,
+        "ci95": [
+          0.6291510607896751,
+          0.7879928440324342
+        ],
+        "n": 24,
+        "providerFasterPairs": 23,
+        "classification": "win",
+        "doeMedian": 0.0184585,
+        "dawnMedian": 0.026354000000000002
+      },
+      "warmP95.uploadSource": {
+        "median": 1.0364476921988248,
+        "ci95": [
+          0.9956315789473684,
+          1.15828509406657
+        ],
+        "n": 24,
+        "providerFasterPairs": 9,
+        "classification": "no established practical difference",
+        "doeMedian": 0.0191255,
+        "dawnMedian": 0.0194995
+      }
+    }
+  },
+  "aa": {
+    "buffer_upload_readback_exact_1mb": {
+      "median": 0.9923069284910112,
+      "ci95": [
+        0.9765595463137997,
+        1.0194426383470596
+      ],
+      "n": 24,
+      "providerFasterPairs": 13,
+      "valid": true
+    },
+    "image_rgba_invert_1024": {
+      "median": 0.9933669260789342,
+      "ci95": [
+        0.9885047734217864,
+        1.007863306665775
+      ],
+      "n": 24,
+      "providerFasterPairs": 15,
+      "valid": true
+    },
+    "vector_scale_add_262k": {
+      "median": 0.9933327702599434,
+      "ci95": [
+        0.9852777863235138,
+        1.0106461079637006
+      ],
+      "n": 24,
+      "providerFasterPairs": 15,
+      "valid": true
+    }
+  },
+  "sourceDrift": [],
+  "binaryDrift": [],
+  "limitations": [
+    "Only three native public-ABI drop-in workloads. No render, CLI binding reuse, DXGI or browser timing.",
+    "This compares current Doe with Dawn; no pre-a45ee77c1 provider arm isolates the delta.",
+    "Driver/filesystem caches warm; first use means first iteration in a fresh process, not empty system caches.",
+    "Vector warm p95 and vector/copy setup-excluded complete metrics have confidence intervals crossing1.",
+    "Host CPU and bracketed idle-GPU gates passed; macOS provides no per-process foreignGPU accounting here.",
+    "Not release or cross-machine qualification."
+  ],
+  "evidence": {
+    "contract.json": "c4832553d99322f3133831406e8501a601952a2326d1cce7afe23f8244a3e83b",
+    "source-manifest.json": "9a75835ac127652a561d2b11130b589776b5ed61864dc3d20244eab9b0c40f7b",
+    "binary-manifest.json": "aac8c0c28c8d98ce37b7200dc781c2c3250bbd825594ab3a5606555c84121270",
+    "attempt1-raw.jsonl": "0bfc49f1ce35fd02c95dc4b01bc68f5de0863b62b6d84a261a527071e59605ca",
+    "attempt1-summary.json": "965390c7eb35cec30e63a31b17b083186861c9ee9b5c5ddab1f19da50db09939",
+    "gate.json": "ae588c70ee738c7829a01c9328f545ffbca73bd27a33cbee65c252f993b07d01",
+    "loaded-provider-proof.json": "d45322cff36919a0ff378e43c0407dbc0275e17a5a1da678b712c639c0560b33"
+  }
+}

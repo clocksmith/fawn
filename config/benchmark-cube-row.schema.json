@@ -1,249 +1,942 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Fawn Benchmark Cube Row",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "runId",
-    "generatedAt",
-    "sourceReportType",
-    "sourceReportPath",
-    "sourceConformance",
-    "host",
-    "surface",
-    "providerPair",
-    "comparisonView",
-    "providerSet",
-    "providers",
-    "governedLaneIds",
-    "workloadSet",
-    "workloadId",
-    "workloadDomain",
-    "comparisonStatus",
-    "claimStatus",
-    "maturity",
-    "metrics"
-  ],
-  "properties": {
-    "schemaVersion": {
-      "type": "integer",
-      "const": 1
-    },
-    "runId": {
-      "type": "string",
-      "minLength": 1
-    },
-    "generatedAt": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "sourceReportType": {
-      "type": "string",
-      "enum": [
-        "backend_compare_report",
-        "node_package_compare_report",
-        "bun_package_compare_report"
-      ]
-    },
-    "sourceReportPath": {
-      "type": "string",
-      "minLength": 1
-    },
-    "sourceConformance": {
-      "type": "string",
-      "enum": [
-        "canonical",
-        "legacy_nonconformant"
-      ]
-    },
-    "sourceConformanceReason": {
-      "type": "string"
-    },
-    "host": {
-      "type": "object",
+  "$defs": {
+    "inventory": {
       "additionalProperties": false,
-      "required": [
-        "profileId",
-        "os",
-        "arch"
-      ],
       "properties": {
-        "profileId": {
-          "type": "string",
-          "minLength": 1
+        "acceptance": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "type": "object"
         },
-        "os": {
-          "type": "string",
-          "minLength": 1
-        },
-        "arch": {
-          "type": "string",
-          "minLength": 1
+        "artifactKey": {
+          "minLength": 1,
+          "type": "string"
         },
         "backend": {
-          "type": "string",
-          "minLength": 1
+          "type": [
+            "string",
+            "null"
+          ]
         },
-        "gpuVendor": {
-          "type": "string",
-          "minLength": 1
+        "campaignId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "comparator": {
+          "additionalProperties": false,
+          "properties": {
+            "binaryHash": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "componentHashes": {
+              "additionalProperties": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": "object"
+            },
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sourceCommit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "sourceCommit",
+            "binaryHash",
+            "componentHashes"
+          ],
+          "type": "object"
+        },
+        "comparisonType": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "contractFrozenAt": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "correctness": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "type": "object"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "availability": {
+                "enum": [
+                  "retained",
+                  "missing",
+                  "ephemeral"
+                ]
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "role": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "sha256": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "role",
+              "path",
+              "sha256",
+              "required",
+              "availability"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "executedAt": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executionId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "executionStatus": {
+          "enum": [
+            "unknown",
+            "not-run",
+            "succeeded",
+            "failed",
+            "partially-failed"
+          ]
+        },
+        "executionTimeSource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fallback": {
+          "additionalProperties": false,
+          "properties": {
+            "evidence": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "type": "object"
+        },
+        "familyId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "implementation": {
+          "additionalProperties": false,
+          "properties": {
+            "binaryHash": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "componentHashes": {
+              "additionalProperties": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": "object"
+            },
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sourceCommit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "sourceCommit",
+            "binaryHash",
+            "componentHashes"
+          ],
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "machine": {
+          "additionalProperties": false,
+          "properties": {
+            "architecture": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "driver": {
+              "type": [
+                "string",
+                "object",
+                "null"
+              ]
+            },
+            "gpu": {
+              "type": [
+                "string",
+                "object",
+                "null"
+              ]
+            },
+            "id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "identitySource": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "label": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "os": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "osVersion": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "label",
+            "os",
+            "osVersion",
+            "architecture",
+            "gpu",
+            "driver",
+            "identitySource"
+          ],
+          "type": "object"
+        },
+        "metrics": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "comparatorValue": {
+                "type": [
+                  "number",
+                  "boolean",
+                  "null"
+                ]
+              },
+              "direction": {
+                "enum": [
+                  "lower",
+                  "higher",
+                  "unspecified"
+                ]
+              },
+              "implementationValue": {
+                "type": [
+                  "number",
+                  "boolean",
+                  "null"
+                ]
+              },
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "outcome": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "policy": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "path": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "sha256": {
+                        "pattern": "^[0-9a-f]{64}$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "path",
+                      "sha256"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "ratio": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "samples": {
+                "additionalProperties": false,
+                "properties": {
+                  "comparator": {
+                    "minimum": 0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "implementation": {
+                    "minimum": 0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "unit": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "implementation",
+                  "comparator",
+                  "unit"
+                ],
+                "type": "object"
+              },
+              "scope": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "uncertainty": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "bounds": {
+                        "items": {
+                          "type": "number"
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "type": "array"
+                      },
+                      "kind": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "level": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "unit": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "level",
+                      "bounds",
+                      "unit"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "unit": {
+                "enum": [
+                  "ms",
+                  "ns",
+                  "s",
+                  "bytes",
+                  "MB",
+                  "MiB",
+                  "count",
+                  "ratio",
+                  "boolean",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "unit",
+              "scope",
+              "direction",
+              "outcome"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "observationLevel": {
+          "enum": [
+            "aggregate",
+            "execution",
+            "unavailable"
+          ]
+        },
+        "qualification": {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "scope": {
+              "enum": [
+                "native-runtime",
+                "browser-integration",
+                "compiler",
+                "application",
+                "workspace",
+                null
+              ]
+            },
+            "status": {
+              "enum": [
+                "qualified",
+                "unqualified"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "scope",
+            "reason"
+          ],
+          "type": "object"
+        },
+        "registrationId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "reportedAt": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rowId": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "schemaVersion": {
+          "const": 2
+        },
+        "section": {
+          "enum": [
+            "native-runtime",
+            "browser-integration",
+            "compiler",
+            "application",
+            "workspace"
+          ]
+        },
+        "seriesKey": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "supersedes": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "verdict": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "workloadContractHash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workloadId": {
+          "minLength": 1,
+          "type": "string"
         }
-      }
-    },
-    "surface": {
-      "type": "string",
-      "enum": [
-        "backend_native",
-        "node_package",
-        "bun_package"
-      ]
-    },
-    "providerPair": {
-      "type": "string",
-      "minLength": 1
-    },
-    "comparisonView": {
-      "type": "string",
-      "minLength": 1
-    },
-    "providerSet": {
-      "type": "string",
-      "minLength": 1
-    },
-    "providers": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "minLength": 1
       },
-      "uniqueItems": true
-    },
-    "governedLaneIds": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
-    },
-    "workloadSet": {
-      "type": "string",
-      "minLength": 1
-    },
-    "workloadId": {
-      "type": "string",
-      "minLength": 1
-    },
-    "sourceWorkloadId": {
-      "type": "string",
-      "minLength": 1
-    },
-    "workloadDomain": {
-      "type": "string",
-      "minLength": 1
-    },
-    "comparisonStatus": {
-      "type": "string",
-      "enum": [
-        "unsupported",
-        "unimplemented",
-        "diagnostic",
-        "comparable",
-        "claimable"
-      ]
-    },
-    "claimStatus": {
-      "type": "string",
-      "enum": [
-        "unsupported",
-        "unimplemented",
-        "diagnostic",
-        "comparable",
-        "claimable"
-      ]
-    },
-    "maturity": {
-      "type": "string",
-      "enum": [
-        "primary",
-        "secondary",
-        "prototype"
-      ]
-    },
-    "metrics": {
-      "type": "object",
-      "additionalProperties": false,
       "required": [
-        "baselineP50Ms",
-        "comparisonP50Ms",
-        "deltaP50Percent",
-        "baselineP95Ms",
-        "comparisonP95Ms",
-        "baselineP99Ms",
-        "comparisonP99Ms",
-        "baselineSampleCount",
-        "comparisonSampleCount"
+        "schemaVersion",
+        "rowId",
+        "registrationId",
+        "familyId",
+        "section",
+        "comparisonType",
+        "workloadId",
+        "workloadContractHash",
+        "campaignId",
+        "executionId",
+        "observationLevel",
+        "machine",
+        "backend",
+        "implementation",
+        "comparator",
+        "executedAt",
+        "executionTimeSource",
+        "reportedAt",
+        "contractFrozenAt",
+        "executionStatus",
+        "metrics",
+        "correctness",
+        "fallback",
+        "acceptance",
+        "qualification",
+        "verdict",
+        "evidence",
+        "limitations",
+        "supersedes",
+        "seriesKey",
+        "artifactKey"
       ],
+      "type": "object"
+    },
+    "legacy": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
       "properties": {
-        "baselineP50Ms": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "comparisonP50Ms": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "deltaP50Percent": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "baselineP95Ms": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "comparisonP95Ms": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "baselineP99Ms": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "comparisonP99Ms": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "baselineSampleCount": {
-          "type": [
-            "integer",
-            "null"
+        "claimStatus": {
+          "enum": [
+            "unsupported",
+            "unimplemented",
+            "diagnostic",
+            "comparable",
+            "claimable"
           ],
-          "minimum": 0
+          "type": "string"
         },
-        "comparisonSampleCount": {
-          "type": [
-            "integer",
-            "null"
+        "comparisonStatus": {
+          "enum": [
+            "unsupported",
+            "unimplemented",
+            "diagnostic",
+            "comparable",
+            "claimable"
           ],
-          "minimum": 0
+          "type": "string"
+        },
+        "comparisonView": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "executedAt": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generatedAt": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "governedLaneIds": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "host": {
+          "additionalProperties": false,
+          "properties": {
+            "arch": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "backend": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "gpuVendor": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "os": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "profileId": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "profileId",
+            "os",
+            "arch"
+          ],
+          "type": "object"
+        },
+        "maturity": {
+          "enum": [
+            "primary",
+            "secondary",
+            "prototype"
+          ],
+          "type": "string"
+        },
+        "metrics": {
+          "additionalProperties": false,
+          "properties": {
+            "baselineP50Ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "baselineP95Ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "baselineP99Ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "baselineSampleCount": {
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "comparisonP50Ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "comparisonP95Ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "comparisonP99Ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "comparisonSampleCount": {
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "deltaP50Percent": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "baselineP50Ms",
+            "comparisonP50Ms",
+            "deltaP50Percent",
+            "baselineP95Ms",
+            "comparisonP95Ms",
+            "baselineP99Ms",
+            "comparisonP99Ms",
+            "baselineSampleCount",
+            "comparisonSampleCount"
+          ],
+          "type": "object"
+        },
+        "providerPair": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "providerSet": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "providers": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "runId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "schemaVersion": {
+          "const": 1,
+          "type": "integer"
+        },
+        "sourceConformance": {
+          "enum": [
+            "canonical",
+            "legacy_nonconformant"
+          ],
+          "type": "string"
+        },
+        "sourceConformanceReason": {
+          "type": "string"
+        },
+        "sourceReportPath": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "sourceReportType": {
+          "enum": [
+            "backend_compare_report",
+            "node_package_compare_report",
+            "bun_package_compare_report"
+          ],
+          "type": "string"
+        },
+        "sourceWorkloadId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "surface": {
+          "enum": [
+            "backend_native",
+            "node_package",
+            "bun_package"
+          ],
+          "type": "string"
+        },
+        "workloadDomain": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "workloadId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "workloadSet": {
+          "minLength": 1,
+          "type": "string"
         }
-      }
+      },
+      "required": [
+        "schemaVersion",
+        "runId",
+        "generatedAt",
+        "sourceReportType",
+        "sourceReportPath",
+        "sourceConformance",
+        "host",
+        "surface",
+        "providerPair",
+        "comparisonView",
+        "providerSet",
+        "providers",
+        "governedLaneIds",
+        "workloadSet",
+        "workloadId",
+        "workloadDomain",
+        "comparisonStatus",
+        "claimStatus",
+        "maturity",
+        "metrics"
+      ],
+      "title": "Fawn Benchmark Cube Row",
+      "type": "object"
     }
-  }
+  },
+  "$id": "urn:doe:benchmark-cube-row",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "$ref": "#/$defs/legacy"
+    },
+    {
+      "$ref": "#/$defs/inventory"
+    }
+  ],
+  "properties": {
+    "acceptance": {},
+    "artifactKey": {},
+    "backend": {},
+    "campaignId": {},
+    "claimStatus": {},
+    "comparator": {},
+    "comparisonStatus": {},
+    "comparisonType": {},
+    "comparisonView": {},
+    "contractFrozenAt": {},
+    "correctness": {},
+    "evidence": {},
+    "executedAt": {},
+    "executionId": {},
+    "executionStatus": {},
+    "executionTimeSource": {},
+    "fallback": {},
+    "familyId": {},
+    "generatedAt": {},
+    "governedLaneIds": {},
+    "host": {},
+    "implementation": {},
+    "limitations": {},
+    "machine": {},
+    "maturity": {},
+    "metrics": {},
+    "observationLevel": {},
+    "providerPair": {},
+    "providerSet": {},
+    "providers": {},
+    "qualification": {},
+    "registrationId": {},
+    "reportedAt": {},
+    "rowId": {},
+    "runId": {},
+    "schemaVersion": {},
+    "section": {},
+    "seriesKey": {},
+    "sourceConformance": {},
+    "sourceConformanceReason": {},
+    "sourceReportPath": {},
+    "sourceReportType": {},
+    "sourceWorkloadId": {},
+    "supersedes": {},
+    "surface": {},
+    "verdict": {},
+    "workloadContractHash": {},
+    "workloadDomain": {},
+    "workloadId": {},
+    "workloadSet": {}
+  },
+  "required": [
+    "schemaVersion"
+  ],
+  "title": "Fawn Benchmark Cube Row (legacy v1 / inventory v2)",
+  "type": "object"
 }

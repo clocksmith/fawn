@@ -1,0 +1,8 @@
+{
+  "libraries/libdoe_compiler.dylib": "7726cd9d218e7602cb08aa7acba45e12f097fa87e44d1b2276f30e30daa61622",
+  "libraries/libwebgpu_dawn.dylib": "ea81f617e7989e2e35cae46a9600a7c26848ce2e5c36bde195715ce5fc8829a5",
+  "libraries/libwebgpu_doe_c.dylib": "1e4c7b01b4732b49ea273be0254613d52cb504691228dc3032854acf5a1553f4",
+  "bin/dawn": "e518ead289aa9d2ef521a91272bdc6bc29ff50647eecda002d85dce4d036c996",
+  "bin/dawn-aa": "e518ead289aa9d2ef521a91272bdc6bc29ff50647eecda002d85dce4d036c996",
+  "bin/doe": "4d844bfc282229a26033379c1c2f40832dfb50e9d32979639f28c518a2123017"
+}

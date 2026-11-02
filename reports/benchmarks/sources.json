@@ -1,0 +1,3263 @@
+{
+  "families": [
+    {
+      "expectedOs": [
+        "darwin"
+      ],
+      "id": "catalog-macos",
+      "label": "macOS native 127-workload catalog",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "linux"
+      ],
+      "id": "catalog-intel",
+      "label": "Linux Intel native 127-workload catalog",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "win32"
+      ],
+      "id": "catalog-d3d12",
+      "label": "Windows D3D12 native 127-workload catalog",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "win32"
+      ],
+      "id": "catalog-windows-vulkan",
+      "label": "Windows AMD Vulkan native 127-workload catalog",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "darwin"
+      ],
+      "id": "phase-metal",
+      "label": "Native Metal vector/image/upload phase cohorts",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "linux"
+      ],
+      "id": "phase-amd",
+      "label": "Linux AMD vector/image/upload phase experiments",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "linux"
+      ],
+      "id": "phase-intel",
+      "label": "Linux Intel vector/image/upload phase experiments",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "win32"
+      ],
+      "id": "phase-windows-vulkan",
+      "label": "Windows Vulkan vector/image/upload phase experiments",
+      "section": "native-runtime"
+    },
+    {
+      "expectedOs": [
+        "darwin"
+      ],
+      "id": "browser-macos",
+      "label": "macOS Fawn/Chrome fresh-launch and retained browser diagnostics",
+      "section": "browser-integration"
+    },
+    {
+      "expectedOs": [
+        "win32"
+      ],
+      "id": "browser-windows",
+      "label": "Windows Fawn/Chrome fresh-launch diagnostics",
+      "section": "browser-integration"
+    },
+    {
+      "expectedOs": [
+        "linux"
+      ],
+      "id": "browser-linux",
+      "label": "Linux Fawn/Chromium integrated comparison gaps",
+      "section": "browser-integration"
+    },
+    {
+      "expectedOs": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "id": "legacy-package-native",
+      "label": "Historical native and Gemma64 Node/Bun/Deno comparisons",
+      "section": "application"
+    },
+    {
+      "expectedOs": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "id": "onnx-ort",
+      "label": "ONNX/ORT native, package and browser comparisons",
+      "section": "application"
+    },
+    {
+      "expectedOs": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "id": "doppler",
+      "label": "Doppler generation and memory comparisons",
+      "section": "application"
+    },
+    {
+      "expectedOs": [
+        "darwin",
+        "linux",
+        "win32"
+      ],
+      "id": "compiler-ecosystem",
+      "label": "Compiler/Tint, UMAP and ecosystem/projection diagnostics",
+      "section": "compiler"
+    },
+    {
+      "expectedOs": [
+        "linux",
+        "darwin",
+        "win32"
+      ],
+      "id": "workspace",
+      "label": "Fawn workspace behavioral comparisons and platform compatibility",
+      "section": "workspace"
+    }
+  ],
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "browser-linux-unmeasured",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-linux",
+      "id": "browser-linux-9c5936f81ed650",
+      "limitations": [
+        "No registered retained integrated Linux Fawn-versus-Chromium timing receipt."
+      ],
+      "path": null,
+      "provenance": [],
+      "section": "browser-integration",
+      "sha256": null,
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/fawn-vs-chromium/20261031",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-5cb2d979b92ed2",
+      "limitations": [],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261031/macos-after-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261031/raw-evidence-macos-after.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "ba2d059a613fb75d3441a4a15311a21d7d1b9998468fc56409b3764381c43af8"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "4edb968edb5a2da7bb2350c41af97203e622e0edee5dac5f99fdff79472158ec",
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/fawn-vs-chromium/20261031",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-macos",
+      "id": "browser-macos-9883d6fd0ebcec",
+      "limitations": [],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261031/macos-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261031/raw-evidence-macos.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "83ff429d2c49b986f0e08484f05fafd3ee2899a578577dd718a0db62cd26e63e"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "3aa944743c98cecbbba0595ae8b76524f15186d68ab6d7da75e33e86f678e480",
+      "supersedes": []
+    },
+    {
+      "adapter": "browser-fresh-launch",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/fawn-vs-chromium/20261031",
+      "comparisonType": "browser-provider",
+      "familyId": "browser-windows",
+      "id": "browser-windows-677deadff37ef4",
+      "limitations": [],
+      "path": "reports/benchmarks/fawn-vs-chromium/20261031/windows-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz",
+          "required": true,
+          "role": "launches",
+          "sha256": "b446f083ba52d43c096c4ed2453fc0158f8b4c21b98a4acf2b65007ecb3b0230"
+        }
+      ],
+      "section": "browser-integration",
+      "sha256": "13d30a6caefcc8954a1da1e9a2a2d2287afab253e0ba2fc3d5dddfbb0fa7912b",
+      "supersedes": []
+    },
+    {
+      "adapter": "native-catalog",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/catalog-20261101",
+      "comparisonType": "native-provider",
+      "familyId": "catalog-d3d12",
+      "id": "catalog-d3d12-be4d0f6d1d7730",
+      "limitations": [],
+      "path": "reports/benchmarks/catalog-20261101/catalog_windows-d3d12.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/catalog-20261101/REANALYSIS.md",
+          "required": false,
+          "role": "reanalysis",
+          "sha256": "1fdfa8d69ccd98dd8904bf455f0718da9a034d946a2a52026075392143a0fc17"
+        },
+        {
+          "path": "reports/benchmarks/catalog-20261101/classification-policy.json",
+          "required": false,
+          "role": "policy",
+          "sha256": "0c62dac18eecff6bbb60ce51770289846bcdd4809e150a871518b77937067142"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "7add2bedaa7125ddc9a7c578e52ff4db8af54b6ea8283a362d21235a2683500e",
+      "supersedes": []
+    },
+    {
+      "adapter": "native-catalog",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/catalog-20261101",
+      "comparisonType": "native-provider",
+      "familyId": "catalog-intel",
+      "id": "catalog-intel-7cd54ed63563f8",
+      "limitations": [],
+      "path": "reports/benchmarks/catalog-20261101/catalog_intel-vulkan.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/catalog-20261101/REANALYSIS.md",
+          "required": false,
+          "role": "reanalysis",
+          "sha256": "1fdfa8d69ccd98dd8904bf455f0718da9a034d946a2a52026075392143a0fc17"
+        },
+        {
+          "path": "reports/benchmarks/catalog-20261101/classification-policy.json",
+          "required": false,
+          "role": "policy",
+          "sha256": "0c62dac18eecff6bbb60ce51770289846bcdd4809e150a871518b77937067142"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "3de61a10c63293ca2e47967d579251ca05888dc81638f71a3c341a9e4fe58ebc",
+      "supersedes": []
+    },
+    {
+      "adapter": "native-catalog",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/catalog-20261101",
+      "comparisonType": "native-provider",
+      "familyId": "catalog-macos",
+      "id": "catalog-macos-53b0612c864ddd",
+      "limitations": [],
+      "path": "reports/benchmarks/catalog-20261101/catalog_apple-metal.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/catalog-20261101/REANALYSIS.md",
+          "required": false,
+          "role": "reanalysis",
+          "sha256": "1fdfa8d69ccd98dd8904bf455f0718da9a034d946a2a52026075392143a0fc17"
+        },
+        {
+          "path": "reports/benchmarks/catalog-20261101/classification-policy.json",
+          "required": false,
+          "role": "policy",
+          "sha256": "0c62dac18eecff6bbb60ce51770289846bcdd4809e150a871518b77937067142"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "6dd7ddb57cea5e495c45bbb63e7c7fe0c5d6a68eb180b4a428122086dcfcefb6",
+      "supersedes": []
+    },
+    {
+      "adapter": "native-catalog",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/catalog-20261101",
+      "comparisonType": "native-provider",
+      "familyId": "catalog-windows-vulkan",
+      "id": "catalog-windows-vulkan-c97410509717e0",
+      "limitations": [],
+      "path": "reports/benchmarks/catalog-20261101/catalog_windows-amd-vulkan.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/catalog-20261101/REANALYSIS.md",
+          "required": false,
+          "role": "reanalysis",
+          "sha256": "1fdfa8d69ccd98dd8904bf455f0718da9a034d946a2a52026075392143a0fc17"
+        },
+        {
+          "path": "reports/benchmarks/catalog-20261101/classification-policy.json",
+          "required": false,
+          "role": "policy",
+          "sha256": "0c62dac18eecff6bbb60ce51770289846bcdd4809e150a871518b77937067142"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "ddd988422cb06325befcb86ffb86689fff8b299985cd97da0e8d3bdb71cf5680",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-06b445bb282c91",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-3-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "fc27d01fc55a16fcdc2ffc2bb01c1d65b4d1fa66cf2d7cc6a5dc41f420a0bbb3",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-1045f673ae318e",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-5-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "c470a27722c528f84f34a82ac84135eb0dec54eeb1545410825f0a3ceea74506",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/maintenance/20261011-intel-vulkan-projection",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-2f758586dafa31",
+      "limitations": [],
+      "path": "reports/maintenance/20261011-intel-vulkan-projection/doe.json",
+      "provenance": [
+        {
+          "path": "reports/maintenance/20261011-intel-vulkan-projection/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "18120a160f5044e73b32c69cbcf6caa42efa3dc622a5dcf6c1ebee92c7367616"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "d594e6f60e84ce893b60c63a8a1825f08c39cb2ad7aee88af5d7db84b14559dd",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-35499972f2ec3c",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-1-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "d38b7f4b431fb89bfdd0aafed52cd928c75fa056bf2ef6847857aba45ba56e86",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-361fdf9b98de69",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-4-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "47e35950a6731bb4f7e1911cdea181640fa08e5d3888e6afc34d91be8fa2f680",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/ecosystem/wgsl-fns",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-37622a1e1f0da0",
+      "limitations": [],
+      "path": "reports/ecosystem/wgsl-fns/wgsl-fns-public-compilation-observer-amd-vulkan-2026-08-16-diagnostic.json",
+      "provenance": [],
+      "section": "compiler",
+      "sha256": "baa3797d6ca85375f9d54f69b95fad1d03c9b8005fe1fba9c6a05b877cbebcee",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/maintenance/20261011-intel-vulkan-projection",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-3a7d4c19173a9a",
+      "limitations": [],
+      "path": "reports/maintenance/20261011-intel-vulkan-projection/dawn.json",
+      "provenance": [
+        {
+          "path": "reports/maintenance/20261011-intel-vulkan-projection/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "18120a160f5044e73b32c69cbcf6caa42efa3dc622a5dcf6c1ebee92c7367616"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "1abca6d8ca4fe8591d37922e1c8724feda79dc78aa4515057e3405ab0d128d42",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-457d4f3418a0f5",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-5-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "a467de94110f057a1b4126ac36a88414f2e95bf28169ec2a5c2b3436b7ba1b6d",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-4e3422f2a61d32",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-0-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "32136402c33947ec52475cfe4a125021d4aa4afc641ce89415c357ad5c99bdef",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-54836155d35d60",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-1-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "259128cd53c1b6264d44e74fcf20995618b5fa989494ee417c2cc61edaf233f6",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-5e380c6193fb1a",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-0-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "c1e68268438cac8f5844217f546f2567e8022c80d8c240cf290986c3aa6302b6",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-650cf948f57d56",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-3-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "8c65346f0308500c145db702c11d94fe66234148faf600baa2a962b19f347a22",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-70b4a95c2d5131",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-2-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "6951a94d7784f487d991f4411cca6560631e74da162820cf4cd94e2335d4a9ce",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/maintenance/20261011-intel-vulkan-projection",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-719e6b2b94436a",
+      "limitations": [],
+      "path": "reports/maintenance/20261011-intel-vulkan-projection/matrix.json",
+      "provenance": [
+        {
+          "path": "reports/maintenance/20261011-intel-vulkan-projection/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "18120a160f5044e73b32c69cbcf6caa42efa3dc622a5dcf6c1ebee92c7367616"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "ef27003d75f4e86dec306af82d853f42add09dabc35739afb9380d5613e61fb2",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/direct-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-8675e4179f000b",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/direct-output/session-1-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "8a837e53e2506b3c947cb773bd65f8def89b62ff18a1cebac00be1678f8a796f",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/direct-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-86af6f30c21a10",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/direct-output/session-2-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "473663144f833434baef62cd72521b9fd27e073d47f9a2460acabe442f08efad",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/direct-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-87cd37c66946ae",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/direct-output/session-2-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "d59a4f8f0777464198361c137092632537679f949160ef94461a36ebb57e902e",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/maintenance/20260927-implementation-quality",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-9f56e8cded9ad7",
+      "limitations": [],
+      "path": "reports/maintenance/20260927-implementation-quality/compiler-timing-summary.json",
+      "provenance": [],
+      "section": "compiler",
+      "sha256": "f1ac38150cfb6931e727d937ef07f9ec9301f5ca92353654cde9a3154fb84aec",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/direct-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-a6211d6bcd0f30",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/direct-output/session-0-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "5de502c33509d5015e02eac819521092ccc68a809cd011d22ab2976551485fba",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/ecosystem/umap-gpu",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-a646840baa8cbf",
+      "limitations": [],
+      "path": "reports/ecosystem/umap-gpu/umap-sgd-governed-benchmark-amd-vulkan-2026-08-16-diagnostic.json",
+      "provenance": [],
+      "section": "compiler",
+      "sha256": "f1b403f3e276f9a2b5b066951db477892205442772462842412bd93b6483f578",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/ecosystem/wgsl-fns",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-adda17f9be4ef5",
+      "limitations": [],
+      "path": "reports/ecosystem/wgsl-fns/wgsl-fns-compilation-suite-amd-vulkan-2026-08-10-diagnostic.json",
+      "provenance": [],
+      "section": "compiler",
+      "sha256": "98dcfc08ab0e226f10e48877fdd4035117ea2507f4fc30d40c5f6d49e3eb684d",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-ae0d67e3a9ebdf",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-2-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "89ad18e6ec843fb01549c4781664b567658187947b2c03f6f0776669c529d6f9",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/maintenance/20261012-amd-projection-cost",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-ba05e5cddc45d5",
+      "limitations": [],
+      "path": "reports/maintenance/20261012-amd-projection-cost/analysis.json",
+      "provenance": [
+        {
+          "path": "reports/maintenance/20261012-amd-projection-cost/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "94b4d7d09e8185ef450a2d5b4ad4caebd75d80dd1c55f22dc215872c35979bb1"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "addfe3c9f560fd4cef8926bdc979bf2cfca462554722efa8189e4daa08bb1602",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/direct-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-bd31b7c8616be0",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/direct-output/session-1-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "2f683c72f68418c7aede99585edb9fed18050f7091d8946e689d8b71cd85c875",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/ecosystem/world-lab-runtime-webgpu",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-d92e19db5f4e38",
+      "limitations": [],
+      "path": "reports/ecosystem/world-lab-runtime-webgpu/world-lab-package-compilation-observer-amd-vulkan-2026-08-16-diagnostic.json",
+      "provenance": [],
+      "section": "compiler",
+      "sha256": "04c16d4925d5eff7de286d073cd123b7a51f72ad26779931809786f2e13b337b",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "compiler-ecosystem-unmeasured",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-db26701c643241",
+      "limitations": [
+        "Projection candidates remain diagnostic; Windows standalone compiler timing is not established by SDK compilation."
+      ],
+      "path": null,
+      "provenance": [],
+      "section": "compiler",
+      "sha256": null,
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/direct-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-e239c9c8864344",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/direct-output/session-0-plain.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "d1465cc82d9c1f40a130fea381204693411c1da34c747e492ff4c5829d308779",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/browser-compiler/20261004/paired-output",
+      "comparisonType": "compiler-provider",
+      "familyId": "compiler-ecosystem",
+      "id": "compiler-ecosystem-fa62401f4aa5b4",
+      "limitations": [
+        "Browser compiler experiment, not a standalone native compiler or native runtime qualification."
+      ],
+      "path": "reports/browser-compiler/20261004/paired-output/session-4-timestamped.json",
+      "provenance": [
+        {
+          "path": "reports/browser-compiler/20261004/manifest.json",
+          "required": true,
+          "role": "provenance",
+          "sha256": "9d3fa4c2940995eb3012589f99f2cfdb9c6779322bad8b4296ecdc47e17e4a76"
+        }
+      ],
+      "section": "compiler",
+      "sha256": "1714b02cc9df45b03daa2266cabaeffe243763a33349f024a67d7429656f7a69",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement",
+      "comparisonType": "application-provider",
+      "familyId": "doppler",
+      "id": "doppler-0240a997bb333c",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement/candidate-summary.json",
+      "provenance": [],
+      "section": "application",
+      "sha256": "5338cac3ec6f131bf40444181be5a255bfd1be828abacae24c683d09da8d9172",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "doppler-unmeasured",
+      "comparisonType": "application-provider",
+      "familyId": "doppler",
+      "id": "doppler-2a9084c742ed26",
+      "limitations": [
+        "Windows and complete-generation-v2 provider comparison evidence is not registered; no execution date or winner known."
+      ],
+      "path": null,
+      "provenance": [],
+      "section": "application",
+      "sha256": null,
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement",
+      "comparisonType": "application-provider",
+      "familyId": "doppler",
+      "id": "doppler-5f8fe0e941c9ae",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement/baseline-summary.json",
+      "provenance": [],
+      "section": "application",
+      "sha256": "ea49196a724c9a0feea205fd3b54944a8f32c54e3e86e5376710e02dbefc0f7c",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/maintenance/20261011-doppler-generation-memory",
+      "comparisonType": "application-provider",
+      "familyId": "doppler",
+      "id": "doppler-756b1cd704f1d3",
+      "limitations": [],
+      "path": "reports/maintenance/20261011-doppler-generation-memory/summary.json",
+      "provenance": [],
+      "section": "application",
+      "sha256": "516b38fafa1343d4a8dff19dce4a8d597c3e4e72e18499a62906eb45efe7f4c0",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20260810T162200Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-05cdc409430aeb",
+      "limitations": [
+        "Historical publication entry package-bun-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "reports/benchmarks/amd-vulkan/20260810T162200Z/gemma64.bun-package.warm.ir.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "34807c83b918d216591a4e7475ace2ecac2f999e115835ba288da3f4bb9e13aa",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20260810T223806Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-227092949543e0",
+      "limitations": [
+        "Historical publication entry package-node-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "reports/benchmarks/amd-vulkan/20260810T223806Z/gemma64.node-package.warm.ir.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "20fadbd389cb93759c9375de54657ad089a0c9b4a4c682d6b8e94ca7a4fb2eac",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "bench/out/apple-metal/20260706T001434Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-4e0d8c7de34400",
+      "limitations": [
+        "Historical publication entry package-node-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "bench/out/apple-metal/20260706T001434Z/gemma64.node-package.warm.ir.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "96cf8ff8f56231793b43953c989dfd2779a568a54329e16a0e710083d00c5b66",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20260810T224707Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-5133f61dff97ef",
+      "limitations": [
+        "Historical publication entry package-deno-amd-vulkan; recorded claimState=diagnostic. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "reports/benchmarks/amd-vulkan/20260810T224707Z/gemma64.deno-package.warm.ir.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "96d02aeeed777f7fa6aa0fef8f2b8a1de3382f67abea877e11856996c87b5a23",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "bench/out/apple-metal/20260705T163736Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-5eaf3b588715c5",
+      "limitations": [
+        "Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "c513a4690d44afb50035ca226206ce27ab91c3296c1bec7d48f8409ced7abfd8",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20260810T221159Z/dropin",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-83e53732afca2e",
+      "limitations": [
+        "Historical publication entry dropin-cutover-linux-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "reports/benchmarks/amd-vulkan/20260810T221159Z/dropin/dropin-cutover-rehearsal-receipt.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "4691e8b32437d49b54eb860572505d5bf91f0d39295645e8dd20cb88380138df",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "legacy-package-native-unmeasured",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-a3f2d1c02cba29",
+      "limitations": [
+        "Historical publication entry browser-chromium-release; recorded claimState=scaffolded. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": null,
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": null,
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20260810T222323Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-b09e34b03a0f3a",
+      "limitations": [
+        "Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "reports/benchmarks/amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "5e5f9a43e6e3b87ef329850487f6a57d29c140fdfe754bff6819ab764ed6671c",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "legacy-package-native-unmeasured",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-c022b77d958d2b",
+      "limitations": [
+        "Historical publication entry native-d3d12; recorded claimState=scaffolded. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": null,
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": null,
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "bench/out/apple-metal/20260705T163736Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-d0e02b20f2ab87",
+      "limitations": [
+        "Historical publication entry package-bun-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "bench/out/apple-metal/20260705T163736Z/gemma64.bun-package.warm.ir.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "095500ad09b22d92e64efaac2ec56122d58a95ef7f5db4e8a292d8a06e523318",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "bench/out/apple-metal/release/20260706T001555Z",
+      "comparisonType": "application-provider",
+      "familyId": "legacy-package-native",
+      "id": "legacy-package-native-e811d6a7a41021",
+      "limitations": [
+        "Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "ee06f4b62564edb8fe6fb458ff25dbcaa12c4427363a706e723d6c1a74835ff8",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "bench/out/apple-metal-ort-bun/20260705T163736Z",
+      "comparisonType": "application-provider",
+      "familyId": "onnx-ort",
+      "id": "onnx-ort-262626f9594da9",
+      "limitations": [
+        "Historical publication entry ort-bun-apple-metal; recorded claimState=diagnostic. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "bench/out/apple-metal-ort-bun/20260705T163736Z/gemma270m-prefill32-decode1.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "b6ba81a26870d389bf946502b56c048cb1674a53ff0ed44ae4e8db2ae6cda9c7",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign",
+      "comparisonType": "application-provider",
+      "familyId": "onnx-ort",
+      "id": "onnx-ort-2f12b3d3d57dab",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/measurement-summary.json",
+      "provenance": [],
+      "section": "application",
+      "sha256": "19b32b004087b6a211f97b4362375f91341e21fd900473e251cf30a21fc16117",
+      "supersedes": []
+    },
+    {
+      "adapter": "application",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/raw/measurement-qualified",
+      "comparisonType": "application-provider",
+      "familyId": "onnx-ort",
+      "id": "onnx-ort-43bb6f4b77d684",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/raw/measurement-qualified/measurement.json.gz",
+      "provenance": [],
+      "section": "application",
+      "sha256": "4457ef4360b6529e57f55d8f183600e34cc625862f20bed5635ffba2bb7abced",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "bench/out/apple-metal-ort-node/20260705T163736Z",
+      "comparisonType": "application-provider",
+      "familyId": "onnx-ort",
+      "id": "onnx-ort-b7b9aa4bab6d30",
+      "limitations": [
+        "Historical publication entry ort-node-apple-metal; recorded claimState=diagnostic. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": "bench/out/apple-metal-ort-node/20260705T163736Z/gemma270m.compare.json",
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": "a3a4b868adbf8af0623d4702e51fb5de5ec56f2868b83f6a7292c37ee3501262",
+      "supersedes": []
+    },
+    {
+      "adapter": "compare-report",
+      "adapterVersion": 1,
+      "campaignId": "onnx-ort-unmeasured",
+      "comparisonType": "application-provider",
+      "familyId": "onnx-ort",
+      "id": "onnx-ort-bc93a6508fe29b",
+      "limitations": [
+        "Historical publication entry ort-browser-apple-metal; recorded claimState=scaffolded. Publication authority stays in reports/claim-index.json."
+      ],
+      "path": null,
+      "provenance": [
+        {
+          "path": "reports/claim-index.json",
+          "required": false,
+          "role": "publication-index",
+          "sha256": "a5510780fb6513d3148aad6b3bf568bea53e66b723eb77d7ac249eb01c75e075"
+        }
+      ],
+      "section": "application",
+      "sha256": null,
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-12cf958b90a2b4",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "5ad168fc03918c76cd217ba8580af6631f817e1697300b7c42600f629d43f3f5"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "4fdf5110f63d3ac807f7bcd74a8f5c2c96482e054e540073a81fd17d41a8143e",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m1",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-1cdd3500a1fe72",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m1/summary-vs-base.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m1/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "b37bf3f4ccbaa886727a6ac130f0c23c056c1038ffb1acdc43d2f64318b1951e"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m1.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "26f9479894b044db3cdd8667ca30d1be6111b9bd385651c9c0ec87df2c2c503b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "41b89a902caa8331c4a27e2be741b384bea3a4fe7a5f12ab5f068a4729c127a5",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m7r2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-2df60358c0fd5c",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m7r2/summary-vs-main.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "742067c5d22c3376bb8e1bee67fc2921873d7e07c1874bc94b5f6a91cca19f5d",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m3",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-3124f17398d9c6",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m3/summary-vs-m1.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m3/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "8a4b2e20f4bc3aa5c333a10aac24754555fa4b6f22a5dea096207770059af2e4"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m3.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "5d120c2d505a1fd6ec9e7fdd5655826287cae12faad05d2db3272dc636eb2a10"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "32083e4d5dec2563d8df285f3966d5bdd6a0537fa836766c501e06ecf4a80338",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r-run2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-383e6e936afed1",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r-run2/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r-run2/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "8d57eb8219ded6a0475124ac1665b8ff021c0648a5d82cf37cb82db48a44b959"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "91c99fc72e5bcc741bdde330a2647bfa1b7040bdc1594a3d26dfb149d5d2ca99",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-3e2b9c05487f22",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m2/summary-vs-m1.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m2/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "6632af3510fc40646cbb11fb81bd4f81983497c2fbe9c07fdc1847f486d3fe04"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m2.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "c099f268f8cee4beff298e94e2550943979bc32fba680b1b4145bfa3e3f5c30b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "569eee50cc1bd6d548622a524bf8a203eb75126d2afcb44391ab8de86a1b9d30",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-490cbcaab7b7f1",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "cbaeecf94db666d3597c9a5dafad2bddb320d0f9f935a476ba5bd37dacacd5ee"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "f30ff8efb5b453be07c480f54a6034098f37035f54da2464a477ca219ac05624",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/combined",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-4b94a2b9335cea",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/combined/summary-vs-dawn.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "d8030034ffe054ecb136148f235062964b7bab13c2beaf21e1d2f80dbec48682",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-610d3c757104cd",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "cc1883c7918913087908098a6859eafef722e37c879daddfd191b139f28f96e8"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m7.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "fd8563d3ecccfb2eb6a3607fb42b9e95835e7cfc2da17e18535c11e74d6bf4fa"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "312352028075fb8909560552629f4657089f0122c1d6d196ca873ebd84fa4fd8",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-6e3f11fddae52f",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m2/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m2/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "6632af3510fc40646cbb11fb81bd4f81983497c2fbe9c07fdc1847f486d3fe04"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m2.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "c099f268f8cee4beff298e94e2550943979bc32fba680b1b4145bfa3e3f5c30b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "06c1012767b6353d7d0e84e6d13d8751cca0336e3f2cdd030dee4817a6b51345",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round4/vdiag",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-7377e1e93c19c2",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round4/vdiag/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round4/vdiag/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "315961be8ad69e068101810b1bb44778c8c9d0de66f5327d25cf7bb4323b3bc4"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "523d4ecc60debb49172aadb98e4fe646f9b6447b27f95cc6856b125b2ac0606f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7b",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-75fd0e68fc7ff5",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7b/summary-vs-m3.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7b/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "5d69ba8f9702d46bdadca61c11009c93552524a6bb10999daeec0bf476d1299f"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m7b.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "baeff5f6cde72da2167dc8a4faf48d1766377379547bcca7e9986cd06234e473"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "18abbedfb1bef14b8517b0365703ad441df839e330fe8e827e0da91d2cb3aa0d",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m7r2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-8935000e65fd1f",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m7r2/summary-vs-dawn.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "f531ce995387307b0ecdfb21a25b73a9706adfa833198e909fd70993f576d7ab",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m2r2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-90f823adc2745e",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m2r2/summary-vs-dawn.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "3a54b21e49c0a50996e2a816f599b9959aa7e901d76a3f1b9ce48558e734a42f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/baseline",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-a152e1d4079a07",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/baseline/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/baseline/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "09b948254b4f067b4a293ca86ee72b6eaed546d6489b3528ba6b76a9508fcf91"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "e338c5cc60b2e81befec6417f60b319c6bda16bfa252fbb88b1658d1710fc45f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-a2df75df6f24ba",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m2r/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "cbaeecf94db666d3597c9a5dafad2bddb320d0f9f935a476ba5bd37dacacd5ee"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "72f975cd786c01e0c4981799a630c686651b973760e1c36b717f2f2d0949fada",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-a8c84a72ab89b9",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7/summary-vs-m3.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "cc1883c7918913087908098a6859eafef722e37c879daddfd191b139f28f96e8"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m7.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "fd8563d3ecccfb2eb6a3607fb42b9e95835e7cfc2da17e18535c11e74d6bf4fa"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "fc30001562827647806b946faaf061826ebc7210b78fe9a0524f1e0a2d0b3ad4",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r-run2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-aa979e3dd54408",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r-run2/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r-run2/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "8d57eb8219ded6a0475124ac1665b8ff021c0648a5d82cf37cb82db48a44b959"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "8fc5798f9b583a81ed1b6a1ec8bc268865827fe077509fbb3c53761d7ed01131",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m5",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-ab5c25bff6e230",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m5/summary-vs-m3.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m5/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "2ba6797dda2f24800686d27c0934a3e64f9539fea8ea56285cbccf3cc513441f"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m5.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "06efbed8b34f76c65bc1b5be148e1f4c62d44d8579bdf7b8fa137afb89a54ee3"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "4ae091be57c9409f518b96dc6f46714b8aeb3fbe7f3de6bb26e2f9d3507a8737",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m5",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-af9ed2757745b9",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m5/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m5/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "2ba6797dda2f24800686d27c0934a3e64f9539fea8ea56285cbccf3cc513441f"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m5.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "06efbed8b34f76c65bc1b5be148e1f4c62d44d8579bdf7b8fa137afb89a54ee3"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "5bb6076d80e528cfb8f0f6c8a1ead32c5ebac1d6bb4fb7b8e2846638793aae2c",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/combined",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-b63103c39daaa9",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/combined/summary-vs-main.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "1b6f13915c1a001ae5b5899cb3d9be030f25a0b60fa15f0e9de48d1ea1b13045",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-c3cb04d5cb9b7d",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round3/m7r/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "5ad168fc03918c76cd217ba8580af6631f817e1697300b7c42600f629d43f3f5"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "5b7c064444b5b587bde2ad1a5e11bd089196455503a09ec9141bcca1385bc6b4",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m2r2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-cffa619b4fcd83",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/round5/m2r2/summary-vs-main.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "d7c276f321c5d1073de72a589daaa888298f7d15f50a9e4b011f96ffe75299e7",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m3",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-d8c54b0753fc4f",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m3/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m3/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "8a4b2e20f4bc3aa5c333a10aac24754555fa4b6f22a5dea096207770059af2e4"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m3.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "5d120c2d505a1fd6ec9e7fdd5655826287cae12faad05d2db3272dc636eb2a10"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "0d4726b3a8e73a4319f665e5afced08e7e319b22f4b5f7d0a29b3d86fcbb2213",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m1",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-f0a3e25e112702",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m1/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m1/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "b37bf3f4ccbaa886727a6ac130f0c23c056c1038ffb1acdc43d2f64318b1951e"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m1.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "26f9479894b044db3cdd8667ca30d1be6111b9bd385651c9c0ec87df2c2c503b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "aeebbec94af7ec8d5cc3a7283f4f7ae11acb569a71e782ec679b48d116a24c7f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7b",
+      "comparisonType": "native-provider",
+      "familyId": "phase-amd",
+      "id": "phase-amd-f778534773d799",
+      "limitations": [],
+      "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7b/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/m7b/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "5d69ba8f9702d46bdadca61c11009c93552524a6bb10999daeec0bf476d1299f"
+        },
+        {
+          "path": "reports/benchmarks/amd-vulkan/20261029-dropin-phase/contract-m7b.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "baeff5f6cde72da2167dc8a4faf48d1766377379547bcca7e9986cd06234e473"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "26c1e24617a020cda78ebcd2f8d0b33106524c726d9e196978b9dca452ea403a",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-0c26c8065b4a05",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m2r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-m2r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "62e0f35c44ee86148c6cd3d1ce38df865b77a0353581c78129ebd07e494b1dd0"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "c3d4c125411e21a580956b05c032d6abe3a1f6795046b9c8e897f22f853f8fa0",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/diagnostics/gt-frequency/pinned",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-389bf80034d1dc",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/diagnostics/gt-frequency/pinned/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/diagnostics/gt-frequency/pinned/attempt1/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "d07b7fb9a2ab5682c5288124ad4d9bac70a0c2aaf2443684b25d3fff5797a4ca"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "b04ac02cc3b00d9933b35b6317b998a722095cbc9bb492c66554f7807bae2cf1",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m6",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-3a1f527cd0cccd",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m6/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-m6.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "a29d038cd911143a1392489a969ac26d3afbed8cc83061fb541e4dd7c4631aa9"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "1590628d1ca0223c7a5ade05c09499d0d1a643a6c59afb28b1aa8055de3bcca9",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/combined",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-5511b1d972cdbb",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/combined/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-combined.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "f4f5bd2a555c7ecc10eb9c2f8f5e2276bca19cad3d8bd8d427788d93e02b806f"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "76d671b8af8a97d90ffc3f0c02a23604e9907bc7872454de831dff90b04e5bdc",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m7r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-64c870f0cd3f32",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m7r/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-m7r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "eecd0392c99b549145156d2c320dfb22d3ecef6d859be98f407ff795d947c9fc"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "666192d45c4c7f7336a25ad18c9b3aa969810745bf3468e9bd34466d59e62c46",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m7r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-6f29dc763c38a4",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m7r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-m7r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "eecd0392c99b549145156d2c320dfb22d3ecef6d859be98f407ff795d947c9fc"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "601590e79a9c32c926bdf5d71dc5916f591b42ca3ebbb97ed7caab1ee316e051",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m6",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-883a9e6814830f",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m6/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-m6.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "a29d038cd911143a1392489a969ac26d3afbed8cc83061fb541e4dd7c4631aa9"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "08d5994d9a4bfc763e50cf86088893d2a1ea4650c9ae6603ddf1202907959856",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/combined",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-a428cc961eca37",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/combined/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-combined.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "f4f5bd2a555c7ecc10eb9c2f8f5e2276bca19cad3d8bd8d427788d93e02b806f"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "97047bc719d6676a6343e0ef13fcb3d35c221043b2f94b86b94e8babaf55875a",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/baseline",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-b55fa8468e4ab0",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/baseline/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-baseline.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "2b0b4f14fc9e940ecb12b31970b5334a85b9ba6b6e35db6fbf7116de98badfba"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "897dab9d83e4084abf3c27a4e03db682a24c288a046f84ee36c8c39a9dd96529",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/spirv-clamp",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-ba777103875026",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/spirv-clamp/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-spirv-clamp.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "cb5c15f835e45f5c7de8851838c9bf0d45bd5b6def982ac2775ac49428fee308"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "f628f89d4586472130da28206fe5347c7d45a050d11acd302349a033e39df538",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/spirv-clamp",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-da5a89f189e5c7",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/spirv-clamp/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-spirv-clamp.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "cb5c15f835e45f5c7de8851838c9bf0d45bd5b6def982ac2775ac49428fee308"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "6e55bde0f12704a6451614bbc0c12eeffaaf1ca8c2dd3d9b00a0d332646430dd",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/diagnostics/gt-frequency/unpinned",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-ec7619f638e7c7",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/diagnostics/gt-frequency/unpinned/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/diagnostics/gt-frequency/unpinned/attempt1/window-start.txt",
+          "required": false,
+          "role": "execution",
+          "sha256": "54f73357b08382f6a7e0d6b3f4f4904b75e50fa389c2b3dafc78cb3c663fa17d"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "63e6f1ab3067c11326481dec8848162af1342fa98f76da92243154ebf39ecd32",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-intel",
+      "id": "phase-intel-f0661d910151a8",
+      "limitations": [],
+      "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/m2r/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/intel-vulkan/20261030-dropin-phase/contract-m2r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "62e0f35c44ee86148c6cd3d1ce38df865b77a0353581c78129ebd07e494b1dd0"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "a0f7228a309a374544e91547276cccf05d0f1351e1a5b4228e0dd54b868a3e00",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/msl-clamp/image_rgba_invert_1024",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-12ffd5b975046e",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/msl-clamp/image_rgba_invert_1024/summary-vs-main.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "f19feb99179b2d66e008fbcb06ebf8d3dd84a371abde5a3751806fbd4a79073f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1s",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-1484f8917302f1",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1s/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-m1s.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "09308a2ae315ed0c0a56a1b43937f526763c05e42fdfbf84f596f657c86b7e96"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "d7dcdc7b9983fd214e94af7551f9f3165f4f051ebb805bfe75258ce87a9c255a",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-1635fd6fb3d5f8",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity2/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-identity2.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "bfe8e3bfdae347c0921d518817f52143e23495f30026f3b85c1eeb87f4dd407d"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "7db825e96bd8eba5209ed3b9501a7f2b6fa693131a4d5846acc70d573212250b",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-2304bfa53ae6e9",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-m1r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "34ed79d000c34d110c6e4d713d4f40bb0d586a90afc95e246bbcb7596dfdfd73"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "e3c64c8d78e82f89d448b3f237ec1ac03641826fb4a9b9c7f6c0524960766d89",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/b3",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-35c9de36d4bd3b",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/b3/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-b3.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "d5ed7ddd318c7b2e90064c41f4ea943537e5b5a97e616799996f18e7b84ab3a8"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "29e036afbe4a0a756e7e69ac1c87ad05a3b3b715f3fb0f29c866b72001222640",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-48cf9e83ebbef0",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity2/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-identity2.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "bfe8e3bfdae347c0921d518817f52143e23495f30026f3b85c1eeb87f4dd407d"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "10a48c41df6d9edf1bf3db7de6384b65cb66f9c7297205c0f5b09c03fa825fa8",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/b1",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-48d02c4d3ca58e",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/b1/summary-diagnostic.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "b0eca305113e8497fcaacc9a66cf8c1f858f3b7b1338e0f6a49d5082b287b0c8",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/completion",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-4e2840305a27f5",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/completion/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-completion.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "12e8cf7acfabb1d9e7226eb8352fa8243fe95e4b26c38c5bd89339396b84eb11"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "864627da40921e68101d02e994ec7b6affbac88eb77c49f2d329500b3023856e",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-52241a86457093",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/m2r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-m2r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "1eaceaa04cbccdc21db9904b7a4223d10eebd417f92eebac7ae5050ae0995f15"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "7dc853aed7f15e427e3900a7bb66fc996b40770b342ca0818e1f0dda957ed44b",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1s",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-7b821693e60483",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1s/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-m1s.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "09308a2ae315ed0c0a56a1b43937f526763c05e42fdfbf84f596f657c86b7e96"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "88080eec2874345cac2b0d40905bb577d445881979ea213fec8c2a67157fbda4",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-825716159e448a",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-submit-sparse-r1.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "a9c02be81ef170f2e8b12991edc1b64709d3bb7f0817f195a2ea36d6816e9fdb"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "80d993e2811e23b27d4a71929fa8407f209b482b0527f2a797338901ab325a30",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/resource-lazy",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-9d133bfb14b07c",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/resource-lazy/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-resource-lazy.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "5eaae9ae4a1b4b140097ec50b277443756f9b6d20e14cd6debd6dd774878f33b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "7009adb0e94a22173e4cabc7b630e9e1bea2cb8b1a69f9630c993359f06b0f67",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-a4551d4f7b0d0f",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-sparse-r1/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-submit-sparse-r1.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "a9c02be81ef170f2e8b12991edc1b64709d3bb7f0817f195a2ea36d6816e9fdb"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "78d57ef72d69ddaa3901306401a4e828eece58bd7f71a0f7c78c0aa64b13395d",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/resource-lazy",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-ab6bdfa0fbff6a",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/resource-lazy/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-resource-lazy.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "5eaae9ae4a1b4b140097ec50b277443756f9b6d20e14cd6debd6dd774878f33b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "708a6f31e3fa45da1c663d7f4d77f3850638f2198c0703e3199d94b0d95c5335",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-pools",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-adc534280d2019",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-pools/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-submit-pools.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "76b9273886cd47cf9e1ac94f6c52ba85e9838b0fb91259a5cd2cc8e54abc8d4c"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "bf9ab68a50ec0497a7401319d6ec2ce834ee7b1a125a47354c4ade7de2bb80de",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-af74226e9fb7e6",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/m1r/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-m1r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "34ed79d000c34d110c6e4d713d4f40bb0d586a90afc95e246bbcb7596dfdfd73"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "15e5692b05990ac0d5810aa2b9b7dbe022eaf18c86988cc2d32a9650a93b3e6f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/completion",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-b27d062a444bac",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/completion/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-completion.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "12e8cf7acfabb1d9e7226eb8352fa8243fe95e4b26c38c5bd89339396b84eb11"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "e90a6da62b6b1eb4283eb4d1c4b7817a9fb08282c97c2d45e79980c459de6a62",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-pools",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-bf55dae393906b",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-pools/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-submit-pools.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "76b9273886cd47cf9e1ac94f6c52ba85e9838b0fb91259a5cd2cc8e54abc8d4c"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "4a76d3d258315e61af7541e1d299cf0dd6f2f86ff24b10e714ed66ddc264fb15",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-ca6eddf363bcac",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-identity.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "19ada9f2b7baf5ca873f302162c08d64d90b940788cb594d8f5cf2f513dc008e"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "0bd485a75b75257e7cb40c4c0c35a463dc508e844224ecf8ac79ff5d5085ded6",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/msl-clamp/image_rgba_invert_1024",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-ca94b68b7a974a",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/msl-clamp/image_rgba_invert_1024/summary-vs-dawn.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "9b0281b7f40e573b6b802720abc2f9595bd13fb7e357bec49bbb9125c53a55df",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-cc5c586ba3d6c9",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/contract.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "c4832553d99322f3133831406e8501a601952a2326d1cce7afe23f8244a3e83b"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-raw.jsonl",
+          "required": true,
+          "role": "raw",
+          "sha256": "0bfc49f1ce35fd02c95dc4b01bc68f5de0863b62b6d84a261a527071e59605ca"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-gate/gate.json",
+          "required": true,
+          "role": "execution",
+          "sha256": "ae588c70ee738c7829a01c9328f545ffbca73bd27a33cbee65c252f993b07d01"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/RESULT.json",
+          "required": true,
+          "role": "verdicts",
+          "sha256": "a2bb738c71ad13381fdd89cf06848dde2b1dfbbe75119c24c283a5d8acbc2f93"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/binary-manifest.json",
+          "required": true,
+          "role": "binary-manifest",
+          "sha256": "aac8c0c28c8d98ce37b7200dc781c2c3250bbd825594ab3a5606555c84121270"
+        },
+        {
+          "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/source-manifest.json",
+          "required": true,
+          "role": "source-manifest",
+          "sha256": "9a75835ac127652a561d2b11130b589776b5ed61864dc3d20244eab9b0c40f7b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "965390c7eb35cec30e63a31b17b083186861c9ee9b5c5ddab1f19da50db09939",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-d906d9b6f8fc03",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-submit-storage.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "c331462f12b702f36dde1a5147b23df98ea80cf4b77af1f645ca5bf71796b10b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "274b738a887cc96225b6f3d23f475888a3b76b3e83e774bae235ee8d236f58b1",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-da998bccaad612",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/identity/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-identity.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "19ada9f2b7baf5ca873f302162c08d64d90b940788cb594d8f5cf2f513dc008e"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "5b6308272c23334a30e9105dc84d494b059761cd5442f1054cda76d5dc9cf004",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-e28823a396973c",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/m2r/summary.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-m2r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "1eaceaa04cbccdc21db9904b7a4223d10eebd417f92eebac7ae5050ae0995f15"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "7d813d58c75e6d3abe2877001a0c6529508ed6f73e7ade9406943616894ce891",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage",
+      "comparisonType": "native-provider",
+      "familyId": "phase-metal",
+      "id": "phase-metal-e669f408fe4030",
+      "limitations": [],
+      "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/submit-storage/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/apple-metal/20261030-dropin-phase/contract-submit-storage.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "c331462f12b702f36dde1a5147b23df98ea80cf4b77af1f645ca5bf71796b10b"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "01aee2c8aecf3605a62892f7c44eb091016b94f46fc3a5d9991555fd0f76d82f",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/baseline",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-008b23acab46c9",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/baseline/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-baseline.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "434a5500c962e993a246d511097c2f328b49693e2bc7438464c1cfd53f858b5d"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/baseline/buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "sha256": "7d3b44b4bd94d888ce324046b764a76ef9801bd4e0c06862f4895576258ac47c"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/baseline/image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "sha256": "881f21f23af40c7a7b77b5cf7d9389a05411e3c53914ae2797d83d7348472ae7"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/baseline/vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "sha256": "03ac2adb4530e3fe78f987d85af6407c7398b9bb7f9c07c14329f0ba90a4dea0"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "586739be3ce6f3c2f492543a5f3377f908403bab68f6a475cc27390f9da6263e",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-06565d4d1ef6ed",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-combined.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "3f05511cfe00a36bc1487bc9fd72bf2d205237a6e9106e88130f8f2671eea413"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "a25046390d36243b2323cca036a6b99137a9e2b1c04ae2ceffd851ed42401315",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-0e89a0284d8ba3",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-landed.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "ac409b1b9e769225778f90f9a02f2dcbcf66cf677208f358818f82aa52fc254d"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed/buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "sha256": "75ca2a17177a1d2ca060ff7d5bb77d5e15fdf16c8728f1565c3743f11bbbe5ae"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed/image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "sha256": "0cdbd211c5b71ac6d4a16a381ee144c9bea084309d88c7f96da6e696c2ac7fc4"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed/vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "sha256": "9ac328c3fb02afb7b7a56639f420ebde76876654d8998b734f4312ea1a31dce9"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "e162eeebb4b475cf0a827ce43744ba1be917b5770c5e1995d7201d82152a5048",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-2e586e0d9ea073",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-m2r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "ae2048a70bd07b5f03c9ccf89bef0958284ae1aa60ba59f79d9613097c6ae029"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "sha256": "562d14ff62fa71d652c9661c242cb8b94c59272c573861818549e97c17043482"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "sha256": "186a34a5dccb82055f17ec063d4c8b7b456eff1d13ea4fe29fb889d37ca63138"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/image_rgba_invert_1024/attempt2/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt2/raw.jsonl.gz",
+          "sha256": "9093970722e7d9c23cc423d043159e7f9899e6eb07ef25c7b27dc44dc577c88b"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/image_rgba_invert_1024/attempt3/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt3/raw.jsonl.gz",
+          "sha256": "0fdec51eb05cd1d4bfa7ee415f4df92d559a395f101c7305fc71b2eb9d1dbd5c"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "sha256": "c39569563ca3044e4b405eec480698a5718fe7d74f99fb96b1558cfdff9de48d"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "4ac978e350ab61699e79e3c700ffcc9c1dd9c4987b736ec6480dfabadbc17927",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-34428c4df642b2",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m2r/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-m2r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "ae2048a70bd07b5f03c9ccf89bef0958284ae1aa60ba59f79d9613097c6ae029"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "30d8f113051fbfbd354ce49ef8a9e3cde83ab0137b2ea46a38d23a3661ec10f8",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-440ca9b6942564",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed/summary-vs-m7r.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-landed.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "ac409b1b9e769225778f90f9a02f2dcbcf66cf677208f358818f82aa52fc254d"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "4e56f7e84bb927b6fb93fcfb9e0b7a5c3d6575f3ca968ff658c1a8c8d3033d9d",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-56f5dd01751849",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r/summary-vs-main.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-m7r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "e4a90973a986a43aeacfb285cff882ccd4ddd404fdfac286f305b41150e68889"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "8265768ae6cbb20ba18cdd4fc64ce3e9bd4b958cf39b5f0b03d24a817d6e9077",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/diagnostics/image-ab2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-5d995061818f3a",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/diagnostics/image-ab2/summary-vs-main.json",
+      "provenance": [],
+      "section": "native-runtime",
+      "sha256": "8a3e21949648295ea1abf5fd8700db771ec9d3433231a0df2cc0f8b017ad6ddb",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-90857d4b1193d4",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-m7r.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "e4a90973a986a43aeacfb285cff882ccd4ddd404fdfac286f305b41150e68889"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r/buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "sha256": "622801335325e63b55db2ead0a50d60fdd9d95f0fff09af7826612735183d08f"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r/image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "sha256": "90d57b112a44aefa4de5d2b8fa957d282459607246744e9bae095c2b65887e49"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/m7r/vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "sha256": "dd6f7d4f0672603eeb07c9d7fbe8d12fc777b33dbaa1ce0f80da7133b0e8fabb"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "23757d4a82f6479d76df252cfcfeb95fea7bf352d66557e08bad1563a3a22c67",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed-image",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-af8276e87f3322",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed-image/summary-vs-m7r.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-landed-image.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "d66b1a09de0698dd437e35dbd2a1c92220bfb4a56cf7b36cff244695c931f10f"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "f2056b5ee291285d058e09afef41f3cac5c4a2877678f55dc0e95c28fa8a2f50",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed-image",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-da8c10767dcc6d",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed-image/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-landed-image.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "d66b1a09de0698dd437e35dbd2a1c92220bfb4a56cf7b36cff244695c931f10f"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/landed-image/image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "sha256": "0eac7cc9c044aa91f8a62326d1aedaf4960b3643a3fd41b1a94915a303c1f6d3"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "3238be5c7065873060ba2271c460e7d8bd0ae780c714f4083deaada22d343016",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/diagnostics/image-ab2",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-eac08c305f1275",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/diagnostics/image-ab2/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/diagnostics/image-ab2/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:raw.jsonl.gz",
+          "sha256": "26a42b5c39286b8e9d64307234ecac0f34608fd3f6cde06b42fa6d24040e912e"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "03f7b4769516d67fb83beef50ce1b773f2fb515f6963da77560b435fff4af75e",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined",
+      "comparisonType": "native-provider",
+      "familyId": "phase-windows-vulkan",
+      "id": "phase-windows-vulkan-f7aed1c26ca14f",
+      "limitations": [],
+      "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined/summary-vs-dawn.json",
+      "provenance": [
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/contract-combined.json",
+          "required": true,
+          "role": "contract",
+          "sha256": "3f05511cfe00a36bc1487bc9fd72bf2d205237a6e9106e88130f8f2671eea413"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined/buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:buffer_upload_readback_exact_1mb/attempt1/raw.jsonl.gz",
+          "sha256": "17eed664a8e483a3715a91748a053df5e1dec5a0e2398503f1c643f1068127e3"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined/image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:image_rgba_invert_1024/attempt1/raw.jsonl.gz",
+          "sha256": "564c97fb0f372e5c34a28c501ef9f6fdceb6b0dc3bb5409a9e68fbd7679bc7d1"
+        },
+        {
+          "path": "reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/combined/vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "required": true,
+          "role": "raw:vector_scale_add_262k/attempt1/raw.jsonl.gz",
+          "sha256": "039b9a75883377c203edc19d568c3ff47eda33fbaae728e5cce1d0130894d895"
+        }
+      ],
+      "section": "native-runtime",
+      "sha256": "50e85420c4cc6bb8475f937880f281e4f46c8c71cc003fba6f408d0218990b86",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-003efe41239ca5",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "9c3e5a3fef91824f756432c2532932dab0a761da43b97605497c9d7992fcf7ea",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261026-platforms/qualification",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-2a28dc97c75efa",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261026-platforms/qualification/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "364f3eb138745fec2d332bf45ec6d0f9662032deb378b9a2c16fa7278494571c",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-revalidated-control/differentiation",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-338289d6a1ad20",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "cd7c3628865d8d0de67b5d7ee4132049db5f9d86d3cd67bf9359d141223639f1",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-revalidated-control/qualification",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-5e9c791589528e",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-revalidated-control/qualification/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "934bba56cfec546eaab3ea568e74cd682493fbab857268ccd9e47e72122ad449",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-revalidated-control/comparison",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-799a129c5f324b",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-revalidated-control/comparison/comparison.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "2f28b5ed56e6b451d72187b252715b002565ace9e6ef80c85f9606ee5ba15532",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-service-v3-3/qualification",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-950211bbe883a5",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-service-v3-3/qualification/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "b649ec9d3c4decb9736eaa40b1e8c0b22beaeccec454c7c63acbfb8c1d8687b7",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261026-platforms/rejected-linux-lazy-recovery",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-97be08531b5460",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261026-platforms/rejected-linux-lazy-recovery/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "4c4f7c07275347c73fb1b57e861a7734f616e2615e9081c8ad4d745983657c76",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261026-platforms/compatibility-windows",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-9a720291251f48",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261026-platforms/compatibility-windows/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "825275bfcc729785d50836147d3a4b5dca8c1206cf18779f633e4fd77a4058e8",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-9abfd64f0c3993",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "6628a4dcc4495bea9ec178f8b5b63393ace191a846fc58af5497fc22edf2207b",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261026-platforms/rejected-macos-profile-race",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-a39302442e4cc4",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261026-platforms/rejected-macos-profile-race/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "5df837fa7a4ab47c440847bbd892d7355fc40a65c9d829f478f7f2486c713ee0",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-cb62df1065d867",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "b50fe4ca2c2032fdebdbac0fdc62db02392de28090baeee47851fa73d148dea8",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261026-platforms/compatibility-macos",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-cc8b6ee9073c79",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261026-platforms/compatibility-macos/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "84e9893665171d6a38cbcbb0916ce55a075919039d37d2bc854f13dcec5cfc9e",
+      "supersedes": []
+    },
+    {
+      "adapter": "workspace",
+      "adapterVersion": 1,
+      "campaignId": "reports/fawn-workspace/20261026-platforms/compatibility-linux-headed",
+      "comparisonType": "workspace-behavior",
+      "familyId": "workspace",
+      "id": "workspace-e8bb15cff0071b",
+      "limitations": [],
+      "path": "reports/fawn-workspace/20261026-platforms/compatibility-linux-headed/result.json",
+      "provenance": [],
+      "section": "workspace",
+      "sha256": "0f26f4f62cdf0f790c843c0ef668bd38ca1a07b35951c988124f7e4b1f46e8ed",
+      "supersedes": []
+    }
+  ]
+}

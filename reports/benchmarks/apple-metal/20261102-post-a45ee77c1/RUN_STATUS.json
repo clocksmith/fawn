@@ -1,0 +1,45 @@
+{
+  "contractSha256": "c4832553d99322f3133831406e8501a601952a2326d1cce7afe23f8244a3e83b",
+  "attempts": [
+    {
+      "attempt": 1,
+      "exitCode": 0,
+      "driverLog": "/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/attempt1-driver.log",
+      "aa": {
+        "buffer_upload_readback_exact_1mb": {
+          "median": 0.9923069284910112,
+          "ci95": [
+            0.9765595463137997,
+            1.0194426383470596
+          ],
+          "n": 24,
+          "providerFasterPairs": 13,
+          "valid": true
+        },
+        "image_rgba_invert_1024": {
+          "median": 0.9933669260789342,
+          "ci95": [
+            0.9885047734217864,
+            1.007863306665775
+          ],
+          "n": 24,
+          "providerFasterPairs": 15,
+          "valid": true
+        },
+        "vector_scale_add_262k": {
+          "median": 0.9933327702599434,
+          "ci95": [
+            0.9852777863235138,
+            1.0106461079637006
+          ],
+          "n": 24,
+          "providerFasterPairs": 15,
+          "valid": true
+        }
+      },
+      "hostGateValid": true,
+      "valid": true
+    }
+  ],
+  "acceptedAttempt": 1
+}

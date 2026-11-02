@@ -1,11 +1,35 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schemaVersion": {
+            "const": 3
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "inventory"
+        ]
+      }
+    }
+  ],
   "properties": {
     "comparisonViews": {
       "items": {
         "additionalProperties": false,
         "properties": {
+          "baseline": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "comparison": {
+            "minLength": 1,
+            "type": "string"
+          },
           "displayName": {
             "minLength": 1,
             "type": "string"
@@ -14,15 +38,7 @@
             "minLength": 1,
             "type": "string"
           },
-          "baseline": {
-            "minLength": 1,
-            "type": "string"
-          },
           "providerSet": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "comparison": {
             "minLength": 1,
             "type": "string"
           }
@@ -79,6 +95,237 @@
       "minItems": 1,
       "type": "array"
     },
+    "inventory": {
+      "additionalProperties": false,
+      "properties": {
+        "adapterSections": {
+          "additionalProperties": false,
+          "properties": {
+            "application": {
+              "items": {
+                "enum": [
+                  "application",
+                  "compiler"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "browser-fresh-launch": {
+              "items": {
+                "enum": [
+                  "browser-integration"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "compare-report": {
+              "items": {
+                "enum": [
+                  "native-runtime",
+                  "application",
+                  "browser-integration"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "native-catalog": {
+              "items": {
+                "enum": [
+                  "native-runtime"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "phase-cohort": {
+              "items": {
+                "enum": [
+                  "native-runtime"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "workspace": {
+              "items": {
+                "enum": [
+                  "workspace"
+                ],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "native-catalog",
+            "phase-cohort",
+            "browser-fresh-launch",
+            "workspace",
+            "compare-report",
+            "application"
+          ],
+          "type": "object"
+        },
+        "adapters": {
+          "additionalProperties": false,
+          "properties": {
+            "application": {
+              "const": 1
+            },
+            "browser-fresh-launch": {
+              "const": 1
+            },
+            "compare-report": {
+              "const": 1
+            },
+            "native-catalog": {
+              "const": 1
+            },
+            "phase-cohort": {
+              "const": 1
+            },
+            "workspace": {
+              "const": 1
+            }
+          },
+          "required": [
+            "native-catalog",
+            "phase-cohort",
+            "browser-fresh-launch",
+            "workspace",
+            "compare-report",
+            "application"
+          ],
+          "type": "object"
+        },
+        "catalogClassification": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "path": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "path",
+            "sha256"
+          ],
+          "type": "object"
+        },
+        "comparisonTypes": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "currentSelection": {
+          "additionalProperties": false,
+          "properties": {
+            "currentSource": {
+              "const": "exact-source-and-known-binary-only"
+            },
+            "latestMeasured": {
+              "const": "all-recorded-executions-including-failures"
+            },
+            "latestQualified": {
+              "const": "explicit-scope-bound-passing-qualification"
+            },
+            "tieBreak": {
+              "const": "explicit-supersession-then-stable-row-id"
+            },
+            "timestamp": {
+              "const": "executedAt"
+            },
+            "unknownDates": {
+              "const": "retain-without-recency"
+            }
+          },
+          "required": [
+            "timestamp",
+            "unknownDates",
+            "latestMeasured",
+            "latestQualified",
+            "tieBreak",
+            "currentSource"
+          ],
+          "type": "object"
+        },
+        "currentSourcePaths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "grouping": {
+          "additionalProperties": false,
+          "properties": {
+            "artifactFields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "seriesFields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "unknownContractRule": {
+              "const": "isolate-by-registration"
+            },
+            "unknownMachineRule": {
+              "const": "isolate-by-registration-and-execution"
+            }
+          },
+          "required": [
+            "seriesFields",
+            "artifactFields",
+            "unknownMachineRule",
+            "unknownContractRule"
+          ],
+          "type": "object"
+        },
+        "schemaVersion": {
+          "const": 1
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "adapters",
+        "comparisonTypes",
+        "grouping",
+        "currentSelection",
+        "currentSourcePaths",
+        "catalogClassification",
+        "adapterSections"
+      ],
+      "type": "object"
+    },
     "products": {
       "items": {
         "additionalProperties": false,
@@ -119,6 +366,37 @@
     "providerSets": {
       "items": {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "id": {
+                  "enum": [
+                    "backend_native_providers",
+                    "direct_plan_providers"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "sourceRegistryPath"
+              ]
+            }
+          }
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "providers"
+            ]
+          },
+          {
+            "required": [
+              "sourceRegistryPath"
+            ]
+          }
+        ],
         "properties": {
           "id": {
             "minLength": 1,
@@ -141,44 +419,15 @@
         "required": [
           "id"
         ],
-        "type": "object",
-        "oneOf": [
-          {
-            "required": [
-              "providers"
-            ]
-          },
-          {
-            "required": [
-              "sourceRegistryPath"
-            ]
-          }
-        ],
-        "allOf": [
-          {
-            "if": {
-              "properties": {
-                "id": {
-                  "enum": [
-                    "backend_native_providers",
-                    "direct_plan_providers"
-                  ]
-                }
-              }
-            },
-            "then": {
-              "required": [
-                "sourceRegistryPath"
-              ]
-            }
-          }
-        ]
+        "type": "object"
       },
       "type": "array"
     },
     "schemaVersion": {
-      "const": 2,
-      "type": "integer"
+      "enum": [
+        2,
+        3
+      ]
     },
     "surfaces": {
       "items": {
