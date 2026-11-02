@@ -19,6 +19,10 @@ export TMPDIR := $(CURDIR)/build/tmp
 export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+COMPILER_FLAGS_INPUT = '$(CC)' '$(CFLAGS)' '$(EXTRA_CFLAGS)'
+# Older make versions compare only whole-second mtimes. A changed command must
+# invalidate every shared object even when flags change within that same second.
+COMPILER_FLAGS_CHANGED := $(shell printf '%s\n' $(COMPILER_FLAGS_INPUT) | cmp -s - build/compiler.flags || printf '%s' compiler-flags-changed)
 include targets/metal/sources.mk
 include targets/hlsl/sources.mk
 LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) $(addprefix targets/hlsl/,$(HLSL_SOURCE_NAMES)) $(shell cat src/sources.txt)
@@ -35,8 +39,8 @@ all: compiler-core
 compiler-core: build/doe-compiler-c build/libdoe_compiler.so build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c
 build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c: build/doe-compiler-c
 	ln -sf doe-compiler-c $@
-build/test_array_length_api: $(LIB_SOURCES) tests/test_array_length_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_array_length_api.c -lm -o $@
+build/test_array_length_api: build/libdoe_compiler_core.a tests/test_array_length_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_array_length_api.c build/libdoe_compiler_core.a -lm -o $@
 .PHONY: test-array-length
 test-array-length: compiler-core build/test_array_length_api
 	build/test_array_length_api
@@ -44,8 +48,8 @@ test-array-length: compiler-core build/test_array_length_api
 build/.ready:
 	mkdir -p build/tmp build/logs
 	touch $@
-build/doe-compiler-c: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o $@
+build/doe-compiler-c: build/libdoe_compiler_core.a src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c build/libdoe_compiler_core.a -lm -o $@
 build/test_cli_faults: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o $@
 test-cli-modes: compiler-core build/test_cli_faults
@@ -62,16 +66,16 @@ $(SHARED_LIBRARY).exports: src/exports.map tools/export_symbols.py
 	mv $@.tmp $@
 .PHONY: shared
 shared: $(SHARED_LIBRARY)
-build/test_api: $(LIB_SOURCES) tests/test_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_api.c -lm -o $@
-build/test_boundaries: $(LIB_SOURCES) tests/test_boundaries.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_boundaries.c -lm -o $@
-build/test_constants: $(LIB_SOURCES) tests/test_constants.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_constants.c -lm -o $@
-build/test_expression_api: $(LIB_SOURCES) tests/test_expression_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_expression_api.c -lm -lm -o $@
-build/test_control_api: $(LIB_SOURCES) tests/test_control_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_control_api.c -lm -o $@
+build/test_api: build/libdoe_compiler_core.a tests/test_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_api.c build/libdoe_compiler_core.a -lm -o $@
+build/test_boundaries: build/libdoe_compiler_core.a tests/test_boundaries.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_boundaries.c build/libdoe_compiler_core.a -lm -o $@
+build/test_constants: build/libdoe_compiler_core.a tests/test_constants.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_constants.c build/libdoe_compiler_core.a -lm -o $@
+build/test_expression_api: build/libdoe_compiler_core.a tests/test_expression_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_expression_api.c build/libdoe_compiler_core.a -lm -lm -o $@
+build/test_control_api: build/libdoe_compiler_core.a tests/test_control_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_control_api.c build/libdoe_compiler_core.a -lm -o $@
 build/native_consumer: tests/native_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/native_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 build/test_layout: tests/test_layout.c include/doe_compiler.h | build/.ready
@@ -114,10 +118,10 @@ clean:
 	rm -rf build
 
 BROWSER_JOB_SOURCES = src/rewrite.c browser/job.c
-build/doe-emit-wgsl-c: $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) browser/emit_wgsl.c $(HEADERS) src/rewrite.h browser/job.h | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) browser/emit_wgsl.c -lm -o $@
-build/test_browser_rewrite: $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c $(HEADERS) src/rewrite.h browser/job.h | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c -lm -o $@
+build/doe-emit-wgsl-c: build/libdoe_compiler_core.a $(BROWSER_JOB_SOURCES) browser/emit_wgsl.c $(HEADERS) src/rewrite.h browser/job.h | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(BROWSER_JOB_SOURCES) browser/emit_wgsl.c build/libdoe_compiler_core.a -lm -o $@
+build/test_browser_rewrite: build/libdoe_compiler_core.a $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c $(HEADERS) src/rewrite.h browser/job.h | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c build/libdoe_compiler_core.a -lm -o $@
 .PHONY: test-browser sanitize-browser browser-wasm browser-wasm-path test-browser-wasm
 test-browser: build/test_browser_rewrite build/doe-emit-wgsl-c
 	build/test_browser_rewrite
@@ -133,8 +137,8 @@ test-browser-wasm: browser-wasm
 	node tests/test_browser_wasm.mjs '$(BROWSER_BUILD)/doe-wgsl.wasm'
 	DOE_BROWSER_COMPILER_WASM='$(BROWSER_BUILD)/doe-wgsl.wasm' node ../../../packages/doe-gpu/test/unit/browser-compiler.test.js
 
-build/test_uniform_api: $(LIB_SOURCES) tests/test_uniform_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_uniform_api.c -lm -o $@
+build/test_uniform_api: build/libdoe_compiler_core.a tests/test_uniform_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_uniform_api.c build/libdoe_compiler_core.a -lm -o $@
 build/cpp_consumer_v2: tests/cpp_consumer_v2.cpp include/doe_compiler_v2.h build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer_v2.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 test-uniform: compiler-core build/test_uniform_api build/cpp_consumer_v2 build/native_consumer_v2 build/test_layout_v2
@@ -157,10 +161,10 @@ test-compute: compiler-core build/test_compute_api
 	build/test_compute_api
 	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute
 
-build/test_index_guards: $(LIB_SOURCES) tests/test_index_guards.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_index_guards.c -lm -o $@
-build/test_compute_api: $(LIB_SOURCES) tests/test_compute_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_compute_api.c -lm -o $@
+build/test_index_guards: build/libdoe_compiler_core.a tests/test_index_guards.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_index_guards.c build/libdoe_compiler_core.a -lm -o $@
+build/test_compute_api: build/libdoe_compiler_core.a tests/test_compute_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_compute_api.c build/libdoe_compiler_core.a -lm -o $@
 .PHONY: sanitize-compute
 sanitize-compute: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_compute_api.c -lm -o build/test_compute_api_sanitize
@@ -170,8 +174,8 @@ sanitize-compute: | build/.ready
 	cd ../../.. && ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-compute-sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute
 
 .PHONY: test-job sanitize-job
-build/test_job_api: $(LIB_SOURCES) tests/test_job_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_job_api.c -lm -o $@
+build/test_job_api: build/libdoe_compiler_core.a tests/test_job_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_job_api.c build/libdoe_compiler_core.a -lm -o $@
 test-job: compiler-core build/test_job_api build/cpp_consumer_job
 	build/cpp_consumer_job
 	build/test_job_api
@@ -215,12 +219,12 @@ test-numeric-builtins: compiler-core build/test_m12_numeric build/test_m12_api
 	build/test_m12_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_m12_builtins.py
 
-build/test_m12_api: $(LIB_SOURCES) tests/test_m12_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_m12_api.c -lm -o $@
+build/test_m12_api: build/libdoe_compiler_core.a tests/test_m12_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -pthread tests/test_m12_api.c build/libdoe_compiler_core.a -lm -o $@
 
 .PHONY: test-module
-build/test_m13_module: $(LIB_SOURCES) tests/test_m13_module.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_m13_module.c -lm -o $@
+build/test_m13_module: build/libdoe_compiler_core.a tests/test_m13_module.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_m13_module.c build/libdoe_compiler_core.a -lm -o $@
 build/test_m13_cpp: tests/test_m13_cpp.cpp $(HEADERS) build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_m13_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 test-module: compiler-core build/test_m13_module build/test_m13_cpp
@@ -229,16 +233,16 @@ test-module: compiler-core build/test_m13_module build/test_m13_cpp
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_m13_modules.py
 
 .PHONY: test-subgroups
-build/test_subgroup_api: $(LIB_SOURCES) tests/test_subgroup_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_subgroup_api.c -lm -o $@
+build/test_subgroup_api: build/libdoe_compiler_core.a tests/test_subgroup_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_subgroup_api.c build/libdoe_compiler_core.a -lm -o $@
 test-subgroups: compiler-core build/test_subgroup_api
 	build/test_subgroup_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroups.py
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroup_return_dependencies.py
 
 .PHONY: test-resources
-build/test_resource_api: $(LIB_SOURCES) tests/test_resource_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_resource_api.c -lm -o $@
+build/test_resource_api: build/libdoe_compiler_core.a tests/test_resource_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_resource_api.c build/libdoe_compiler_core.a -lm -o $@
 build/test_resources_cpp: tests/test_resources_cpp.cpp include/doe_compiler_resources.h build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_resources_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 test-resources: compiler-core build/test_resource_api build/test_resources_cpp
@@ -247,8 +251,8 @@ test-resources: compiler-core build/test_resource_api build/test_resources_cpp
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_images.py
 
 .PHONY: test-stages
-build/test_stage_api: $(LIB_SOURCES) tests/test_stage_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_stage_api.c -lm -o $@
+build/test_stage_api: build/libdoe_compiler_core.a tests/test_stage_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_stage_api.c build/libdoe_compiler_core.a -lm -o $@
 build/test_stages_cpp: tests/test_stages_cpp.cpp $(HEADERS) build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_stages_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
 test-stages: compiler-core build/test_stage_api build/test_stages_cpp
@@ -257,8 +261,8 @@ test-stages: compiler-core build/test_stage_api build/test_stages_cpp
 	cd tests && DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest test_stages
 
 # ABI8 uses the existing stage front door, with an explicit matrix schema.
-build/test_matrix_api: $(LIB_SOURCES) tests/test_matrix_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_matrix_api.c -lm -o $@
+build/test_matrix_api: build/libdoe_compiler_core.a tests/test_matrix_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_matrix_api.c build/libdoe_compiler_core.a -lm -o $@
 build/test_matrix_cpp: tests/test_matrix_cpp.cpp $(HEADERS) build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_matrix_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 test-matrices: build/test_matrix_api build/test_matrix_cpp build/doe-compiler-c
@@ -267,8 +271,8 @@ test-matrices: build/test_matrix_api build/test_matrix_cpp build/doe-compiler-c
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" PYTHONPATH=tests python3 tests/test_matrices.py
 .PHONY: test-matrices
 
-build/test_library_module: $(LIB_SOURCES) tests/test_library_module.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_library_module.c -lm -o $@
+build/test_library_module: build/libdoe_compiler_core.a tests/test_library_module.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_library_module.c build/libdoe_compiler_core.a -lm -o $@
 test-library-modules: build/test_library_module
 	build/test_library_module
 .PHONY: test-library-modules
@@ -278,8 +282,8 @@ test-discard: build/doe-compiler-c
 .PHONY: test-discard
 
 
-build/test_atomic_api: $(LIB_SOURCES) tests/test_atomic_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_atomic_api.c -lm -o $@
+build/test_atomic_api: build/libdoe_compiler_core.a tests/test_atomic_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_atomic_api.c build/libdoe_compiler_core.a -lm -o $@
 test-atomics: build/doe-compiler-c build/test_atomic_api test-atomic-cpp
 	build/test_atomic_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_atomics.py
@@ -289,8 +293,8 @@ test-atomics: build/doe-compiler-c build/test_atomic_api test-atomic-cpp
 test-pointers: build/doe-compiler-c build/test_pointer_api ../../../bench/kernels/monte_carlo_paths_fixed_samples.wgsl
 	build/test_pointer_api
 	DOE_COMPILER_CLI="$(abspath build/doe-compiler-c)" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest discover -s tests -p test_pointers.py -v
-build/test_pointer_api: tests/test_pointer_api.c $(LIB_SOURCES) $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) tests/test_pointer_api.c $(LIB_SOURCES) -lm -o $@
+build/test_pointer_api: tests/test_pointer_api.c build/libdoe_compiler_core.a $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_pointer_api.c build/libdoe_compiler_core.a -lm -o $@
 
 .PHONY: print-library-sources
 print-library-sources:
@@ -303,8 +307,8 @@ test-text: build/test_text_api build/test_text_failure build/test_text_abi test-
 	build/test_text_abi
 	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itargets/metal/tests/host -Ibuild tests/test_text_host.cpp -o build/test_text_host
 	build/test_text_host
-build/test_text_api: $(LIB_SOURCES) $(HEADERS) tests/test_text_api.c | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_text_api.c -lm -o $@
+build/test_text_api: build/libdoe_compiler_core.a $(HEADERS) tests/test_text_api.c | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_text_api.c build/libdoe_compiler_core.a -lm -o $@
 build/test_text_failure: $(LIB_SOURCES) $(HEADERS) tests/test_text_failure.c tests/metal12_fixture.h tests/hlsl_fixture.h | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_text_failure.c -Wl,--wrap=fesetenv -lm -o $@
 build/test_text_abi: build/libdoe_compiler.so include/doe_compiler_text.h tests/test_text_abi.cpp | build/.ready
@@ -324,8 +328,8 @@ $(TEXT_TEST_BUILD)/test_hlsl_abi: tests/test_hlsl_abi.cpp tests/hlsl_fixture.h $
 	mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(EXTRA_CFLAGS) tests/test_hlsl_abi.cpp $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -o $@
 
-build/test_component_math_api: $(LIB_SOURCES) tests/test_component_math_api.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_component_math_api.c -lm -o $@
+build/test_component_math_api: build/libdoe_compiler_core.a tests/test_component_math_api.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_component_math_api.c build/libdoe_compiler_core.a -lm -o $@
 .PHONY: test-component-math
 test-component-math: compiler-core build/test_component_math_api
 	build/test_component_math_api
@@ -333,8 +337,8 @@ test-component-math: compiler-core build/test_component_math_api
 	python3 tests/test_export_symbols.py
 
 .PHONY: test-type-aliases test-workgroup-types
-build/test_alias_workgroup_api: $(LIB_SOURCES) $(HEADERS) tests/test_alias_workgroup_api.c | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_alias_workgroup_api.c -lm -o $@
+build/test_alias_workgroup_api: build/libdoe_compiler_core.a $(HEADERS) tests/test_alias_workgroup_api.c | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_alias_workgroup_api.c build/libdoe_compiler_core.a -lm -o $@
 test-type-aliases: build/doe-compiler-c build/test_alias_workgroup_api
 	build/test_alias_workgroup_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_type_aliases.py
@@ -449,14 +453,14 @@ test-metal-entry-host: tests/test_metal12_host.cpp
 	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itargets/metal/tests/host -I"$(METAL_ENTRY_ARTIFACTS)" $< -o $(TEXT_TEST_BUILD)/test_metal12_host
 	$(TEXT_TEST_BUILD)/test_metal12_host
 
-build/test_overrides: $(LIB_SOURCES) tests/test_overrides.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_overrides.c -lm -o $@
+build/test_overrides: build/libdoe_compiler_core.a tests/test_overrides.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_overrides.c build/libdoe_compiler_core.a -lm -o $@
 .PHONY: test-overrides
 test-overrides: build/test_overrides
 	build/test_overrides
 
-build/test_specialization: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h tests/packed_integer_fixture.h tests/integer_bits_fixture.h tests/float_math_fixture.h tests/bitfield_fixture.h $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_specialization.c -lm -o $@
+build/test_specialization: build/libdoe_compiler_core.a tests/test_specialization.c tests/hlsl_fixture.h tests/packed_integer_fixture.h tests/integer_bits_fixture.h tests/float_math_fixture.h tests/bitfield_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_specialization.c build/libdoe_compiler_core.a -lm -o $@
 .PHONY: test-specialization
 test-specialization: build/test_specialization
 	build/test_specialization
@@ -476,8 +480,8 @@ build/cpp_consumer_specialization: tests/cpp_consumer_specialization.cpp include
 test-specialization-library: build/cpp_consumer_specialization
 	build/cpp_consumer_specialization
 
-build/test_all_any: $(LIB_SOURCES) tests/test_all_any.c tests/hlsl_fixture.h tests/all_any_retained.wgsl tests/all_any_cases.wgsl $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_all_any.c -lm -o $@
+build/test_all_any: build/libdoe_compiler_core.a tests/test_all_any.c tests/hlsl_fixture.h tests/all_any_retained.wgsl tests/all_any_cases.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_all_any.c build/libdoe_compiler_core.a -lm -o $@
 build/test_all_any_sanitize: $(LIB_SOURCES) tests/test_all_any.c tests/hlsl_fixture.h tests/all_any_retained.wgsl tests/all_any_cases.wgsl $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_all_any.c -lm -o $@
 .PHONY: all-any-check sanitize-all-any
@@ -485,8 +489,8 @@ all-any-check: build/test_all_any
 	build/test_all_any
 sanitize-all-any: build/test_all_any_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_all_any_sanitize
-build/test_implicit_sampling: $(LIB_SOURCES) tests/test_implicit_sampling.c tests/hlsl_fixture.h tests/implicit_sampling.wgsl tests/implicit_sample_compute_retained.wgsl tests/implicit_compare_compute_retained.wgsl $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_implicit_sampling.c -lm -o $@
+build/test_implicit_sampling: build/libdoe_compiler_core.a tests/test_implicit_sampling.c tests/hlsl_fixture.h tests/implicit_sampling.wgsl tests/implicit_sample_compute_retained.wgsl tests/implicit_compare_compute_retained.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_implicit_sampling.c build/libdoe_compiler_core.a -lm -o $@
 build/test_implicit_sampling_sanitize: $(LIB_SOURCES) tests/test_implicit_sampling.c tests/hlsl_fixture.h tests/implicit_sampling.wgsl tests/implicit_sample_compute_retained.wgsl tests/implicit_compare_compute_retained.wgsl $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_implicit_sampling.c -lm -o $@
 .PHONY: implicit-sampling-check sanitize-implicit-sampling
@@ -494,8 +498,8 @@ implicit-sampling-check: build/test_implicit_sampling
 	build/test_implicit_sampling
 sanitize-implicit-sampling: build/test_implicit_sampling_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_implicit_sampling_sanitize
-build/test_depth_sampling: $(LIB_SOURCES) tests/test_depth_sampling.c tests/hlsl_fixture.h tests/depth_sampling.wgsl $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_depth_sampling.c -lm -o $@
+build/test_depth_sampling: build/libdoe_compiler_core.a tests/test_depth_sampling.c tests/hlsl_fixture.h tests/depth_sampling.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_depth_sampling.c build/libdoe_compiler_core.a -lm -o $@
 build/test_depth_sampling_sanitize: $(LIB_SOURCES) tests/test_depth_sampling.c tests/hlsl_fixture.h tests/depth_sampling.wgsl $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_depth_sampling.c -lm -o $@
 .PHONY: depth-sampling-check sanitize-depth-sampling
@@ -503,8 +507,8 @@ depth-sampling-check: build/test_depth_sampling
 	build/test_depth_sampling
 sanitize-depth-sampling: build/test_depth_sampling_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_depth_sampling_sanitize
-build/test_select: $(LIB_SOURCES) tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_select.c -lm -o $@
+build/test_select: build/libdoe_compiler_core.a tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_select.c build/libdoe_compiler_core.a -lm -o $@
 build/test_select_sanitize: $(LIB_SOURCES) tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_select.c -lm -o $@
 .PHONY: test-select sanitize-select
@@ -534,15 +538,15 @@ test-metal-pipeline: build/test_metal_pipeline
 	build/test_metal_pipeline $(METAL_PIPELINE_ARTIFACTS)
 
 .PHONY: test-f16
-build/test_f16: $(LIB_SOURCES) tests/test_f16.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_f16.c -lm -o $@
+build/test_f16: build/libdoe_compiler_core.a tests/test_f16.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_f16.c build/libdoe_compiler_core.a -lm -o $@
 test-f16: build/doe-compiler-c build/test_f16
 	build/test_f16
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_f16.py
 
 .PHONY: test-sampling
-build/test_sampling: $(LIB_SOURCES) tests/test_sampling.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_sampling.c -lm -o $@
+build/test_sampling: build/libdoe_compiler_core.a tests/test_sampling.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) tests/test_sampling.c build/libdoe_compiler_core.a -lm -o $@
 test-sampling: build/test_sampling
 	build/test_sampling
 
@@ -733,7 +737,7 @@ TSIR_TOOL_SOURCES = $(wildcard src/tsir/*.c)
 TSIR_TOOL_OBJECTS = $(patsubst src/tsir/%.c,build/tsir/%.o,$(TSIR_TOOL_SOURCES))
 TSIR_TOOL_HEADERS = $(wildcard src/tsir/*.h)
 TSIR_TOOL_CFLAGS = $(CFLAGS) -g -fPIC $(EXTRA_CFLAGS)
-build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile | build/.ready
+build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile build/compiler.flags $(COMPILER_FLAGS_CHANGED) | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -c $< -o $@
 build/libdoe_tsir.a: $(TSIR_TOOL_OBJECTS) build/tsir.sources
@@ -741,26 +745,26 @@ build/libdoe_tsir.a: $(TSIR_TOOL_OBJECTS) build/tsir.sources
 	$(AR) rcs $@ $(filter %.o,$^)
 build/doe-tsir-bootstrap-oracle-c: tools/tsir_bootstrap_oracle.c build/libdoe_tsir.a
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a -lm -o $@
-build/doe-tsir-bootstrap-manifest-inputs-c: tools/tsir_bootstrap_manifest_inputs.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
-build/test_bootstrap_manifest: src/tsir/tests/test_bootstrap_manifest.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+build/doe-tsir-bootstrap-manifest-inputs-c: tools/tsir_bootstrap_manifest_inputs.c build/libdoe_tsir.a build/libdoe_compiler_core.a $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a build/libdoe_compiler_core.a -lm -o $@
+build/test_bootstrap_manifest: src/tsir/tests/test_bootstrap_manifest.c build/libdoe_tsir.a build/libdoe_compiler_core.a $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a build/libdoe_compiler_core.a -lm -o $@
 build/test_bootstrap_writer: src/tsir/tests/test_bootstrap_writer.c build/libdoe_tsir.a
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a -lm -o $@
 .PHONY: tsir-bootstrap-tools test-tsir-bootstrap test-tsir-bootstrap-differential
 tsir-bootstrap-tools: build/doe-tsir-bootstrap-oracle-c build/doe-tsir-bootstrap-manifest-inputs-c
 all: tsir-bootstrap-tools
-build/test_tsir_source: src/tsir/tests/test_source.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
-build/test_tsir_source_control: src/tsir/tests/test_source_control.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
-build/test_tsir_source_expr: src/tsir/tests/test_source_expr.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
-build/test_source_differential: src/tsir/tests/test_source_differential.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+build/test_tsir_source: src/tsir/tests/test_source.c build/libdoe_tsir.a build/libdoe_compiler_core.a $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a build/libdoe_compiler_core.a -lm -o $@
+build/test_tsir_source_control: src/tsir/tests/test_source_control.c build/libdoe_tsir.a build/libdoe_compiler_core.a $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a build/libdoe_compiler_core.a -lm -o $@
+build/test_tsir_source_expr: src/tsir/tests/test_source_expr.c build/libdoe_tsir.a build/libdoe_compiler_core.a $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a build/libdoe_compiler_core.a -lm -o $@
+build/test_source_differential: src/tsir/tests/test_source_differential.c build/libdoe_tsir.a build/libdoe_compiler_core.a $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a build/libdoe_compiler_core.a -lm -o $@
 ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest format transcendental text
 ORACLE_FAULT_OBJECTS = $(addprefix build/tsir-fault/tsir_,$(addsuffix .o,$(ORACLE_FAULT_NAMES)))
-build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile src/tsir/tests/oracle_alloc.h | build/.ready
+build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile build/compiler.flags $(COMPILER_FLAGS_CHANGED) src/tsir/tests/oracle_alloc.h | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -include src/tsir/tests/oracle_alloc.h -c $< -o $@
 build/test_oracle_alloc: src/tsir/tests/test_oracle_alloc.c $(ORACLE_FAULT_OBJECTS)
@@ -794,6 +798,7 @@ test-tsir-bootstrap-differential: test-tsir-bootstrap build/test_source_differen
 # Allocating host companion. Keep its filesystem/process/allocator dependencies
 # outside src/sources.txt, the no-heap compiler ABI, and the WASI reactor.
 HOST_CORE_OBJECTS = $(patsubst %.c,build/host-core/%.o,$(LIB_SOURCES))
+CORE_INVENTORY_CHANGED := $(shell printf '%s\n' $(HOST_CORE_OBJECTS) | cmp -s - build/core.sources || printf '%s' compiler-inventory-changed)
 DXIL_HOST_OBJECTS = $(patsubst src/dxil/%.c,build/dxil/%.o,$(DXIL_PARTIAL_SOURCES))
 HOST_SOURCES = $(wildcard host/*.c)
 HOST_OBJECTS = $(patsubst host/%.c,build/host/%.o,$(HOST_SOURCES))
@@ -809,19 +814,19 @@ HOST_SHARED_FLAGS = -shared -Wl,-soname,$(notdir $(HOST_SHARED_LIBRARY)) -Wl,--v
 HOST_SHARED_EXPORTS =
 HOST_CONSUMER_RPATH = -Wl,-rpath,'$$ORIGIN'
 endif
-build/host-core/%.o: %.c $(HEADERS) Makefile | build/.ready
+build/host-core/%.o: %.c $(HEADERS) Makefile build/compiler.flags $(COMPILER_FLAGS_CHANGED) | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -c $< -o $@
-build/libdoe_compiler_core.a: $(HOST_CORE_OBJECTS) build/core.sources
+build/libdoe_compiler_core.a: $(HOST_CORE_OBJECTS) build/core.sources $(CORE_INVENTORY_CHANGED)
 	rm -f $@
 	$(AR) rcs $@ $(filter %.o,$^)
-build/dxil/%.o: src/dxil/%.c $(wildcard src/dxil/*.h) $(HEADERS) Makefile | build/.ready
+build/dxil/%.o: src/dxil/%.c $(wildcard src/dxil/*.h) $(HEADERS) Makefile build/compiler.flags $(COMPILER_FLAGS_CHANGED) | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -c $< -o $@
 build/libdoe_dxil.a: $(DXIL_HOST_OBJECTS) build/dxil.sources
 	rm -f $@
 	$(AR) rcs $@ $(filter %.o,$^)
-build/host/%.o: host/%.c $(HOST_HEADERS) $(HEADERS) $(TSIR_TOOL_HEADERS) $(wildcard src/dxil/*.h) Makefile | build/.ready
+build/host/%.o: host/%.c $(HOST_HEADERS) $(HEADERS) $(TSIR_TOOL_HEADERS) $(wildcard src/dxil/*.h) Makefile build/compiler.flags $(COMPILER_FLAGS_CHANGED) | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -c $< -o $@
 $(HOST_SHARED_LIBRARY): $(HOST_OBJECTS) build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a host/exports.map $(HOST_SHARED_EXPORTS)
@@ -877,8 +882,14 @@ test-header-dependencies:
 # Wildcard source removal is also an archive change, even when every remaining
 # object is older. Compare the actual object inventory without touching stable
 # timestamps, then recreate the archive rather than retaining obsolete members.
-.PHONY: compiler-inventory-force
+.PHONY: compiler-inventory-force compiler-flags-changed compiler-inventory-changed
 compiler-inventory-force:
+compiler-flags-changed:
+compiler-inventory-changed:
+# A shared archive cannot keep objects compiled for a previous compiler/ABI
+# configuration. Preserve timestamps on an unchanged invocation.
+build/compiler.flags: compiler-inventory-force | build/.ready
+	@printf '%s\n' $(COMPILER_FLAGS_INPUT) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
 build/core.sources: compiler-inventory-force | build/.ready
 	@printf '%s\n' $(HOST_CORE_OBJECTS) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
 build/tsir.sources: compiler-inventory-force | build/.ready

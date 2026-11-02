@@ -177,7 +177,19 @@ int main(int argc, char **argv) {
     unchanged(saved, out, &result);
     assert(compile(&capacity, workspace, requirements.size_bytes,
         "fn f(p:ptr<function,u32>){*p=1u;}@compute @workgroup_size(1) fn main(){var x=0u;f(&x);}",
-        "main", 3u, &outputs, &result) == DOE_COMPILER_UNSUPPORTED);
+        "main", 3u, &outputs, &result) == DOE_COMPILER_OK);
+    assert(result.published_entries == 1u && result.published_bindings == 0u);
+    assert(out->target_entries[0].stage == 1u && strcmp(out->target_entries[0].name, "main") == 0);
+    out->text[result.published_text_bytes] = '\0';
+    assert(strstr(out->text, "thread uint*") != NULL);
+    assert(strstr(out->text, " != nullptr)") != NULL);
+    assert(strstr(out->text, ") = 0x00000001u;") != NULL);
+    memset(out, 0xa5, sizeof(*out)); memcpy(saved, out, sizeof(*out));
+    assert(compile(&capacity, workspace, requirements.size_bytes,
+        "fn f(p:ptr<function,u32>,q:ptr<function,u32>){*p=*q;}"
+        "@compute @workgroup_size(1) fn main(){var x=0u;f(&x,&x);}",
+        "main", 3u, &outputs, &result) == DOE_COMPILER_SEMANTIC_ERROR);
+    assert(strstr(result.stages.resources.module.diagnostic.message, "alias") != NULL);
     unchanged(saved, out, &result);
     DoeCompilerTextOutputs invalid = outputs;
     invalid.bindings = (DoeCompilerTextBindingV10 *)((unsigned char *)out->bindings + 1u);

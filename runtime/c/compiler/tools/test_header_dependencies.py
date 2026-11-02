@@ -60,6 +60,19 @@ def main() -> int:
         unchanged = {path: path.stat().st_mtime_ns for path in outputs}
         build()
         assert all(path.stat().st_mtime_ns == stamp for path, stamp in unchanged.items())
+        configured = [*command, "EXTRA_CFLAGS=-DDOE_BUILD_VARIANT=1"]
+        changed_flags = subprocess.run(configured, check=True, capture_output=True,
+                                       text=True, timeout=120).stdout
+        for name in OBJECTS:
+            assert "-o " + name in changed_flags, (name, changed_flags)
+        assert "-DDOE_BUILD_VARIANT=1" in changed_flags
+        configured_stamps = {path: path.stat().st_mtime_ns for path in outputs}
+        subprocess.run(configured, check=True, capture_output=True, text=True, timeout=120)
+        assert all(path.stat().st_mtime_ns == stamp for path, stamp in configured_stamps.items())
+        restored_flags = build()
+        for name in OBJECTS:
+            assert "-o " + name in restored_flags, (name, restored_flags)
+        print("PASS: changed compiler flags rebuild real objects; unchanged flags reuse them")
         for header in ("src/internal.h", "include/doe_compiler.h",
                        "src/new_private_dependency.h", "include/new_public_dependency.h"):
             # Deterministic timestamp ordering, without touching the live tree,
@@ -94,7 +107,7 @@ def main() -> int:
         assert "numeric.o" in members.splitlines()
         build()
         members = subprocess.check_output(["ar", "t", str(owner / ARCHIVES[0])], text=True)
-        assert members.splitlines() == ["lex.o"], members
+        assert [member for member in members.splitlines() if member.endswith(".o")] == ["lex.o"], members
         print("PASS: removed source inventory drops stale archive member without cleaning")
     return 0
 
