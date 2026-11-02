@@ -2020,6 +2020,10 @@
     {
       "schema": "config/doe-chromium-proc-surface.c.schema.json",
       "data": "config/doe-chromium-proc-surface.c.json"
+    },
+    {
+      "schema": "config/refactor-receipt.schema.json",
+      "data": "reports/refactors/benchmark-inventory-ownership-storage-v3.json"
     }
   ],
   "globTargets": [

@@ -1,0 +1,101 @@
+{
+  "after": {
+    "path": "bench/cli.py",
+    "publicExports": [
+      "workload",
+      "run",
+      "run-config",
+      "phase-cohort",
+      "browser",
+      "c-vs-zig",
+      "c-vs-zig-package",
+      "graphics",
+      "generation",
+      "generation-memory",
+      "onnx-measure",
+      "external",
+      "compare",
+      "browser-analyze",
+      "catalog-report",
+      "projection-cost",
+      "compile-compare",
+      "inventory",
+      "list",
+      "claim",
+      "program"
+    ],
+    "sha256": "b663e51e0d67fc7d99b95c17cb49fce1f47199a6d8a15fe4f78aac8c1a229de4"
+  },
+  "artifactKind": "doe_refactor_receipt",
+  "before": {
+    "path": "bench/cli.py",
+    "publicExports": [
+      "workload",
+      "run",
+      "run-config",
+      "phase-cohort",
+      "browser",
+      "c-vs-zig",
+      "c-vs-zig-package",
+      "graphics",
+      "generation",
+      "generation-memory",
+      "onnx-measure",
+      "external",
+      "compare",
+      "browser-analyze",
+      "catalog-report",
+      "projection-cost",
+      "compile-compare",
+      "inventory",
+      "list",
+      "claim",
+      "program"
+    ],
+    "sha256": "c614086691b9fbd20175901056fe09551e20f622b72d011a005abaa3e127f010"
+  },
+  "characterization": {
+    "cases": [
+      {
+        "after": "547f46960606c9ac41f4029e6b0697b0f405df36ab1d46972599b3c1ce13a72a",
+        "before": "547f46960606c9ac41f4029e6b0697b0f405df36ab1d46972599b3c1ce13a72a",
+        "expectedRelationship": "equal",
+        "id": "all-normalized-observations",
+        "status": "pass"
+      },
+      {
+        "after": "efbfcbd4fe196f2f4699099e832ea45a103eb377b946583bff745938af453213",
+        "before": "efbfcbd4fe196f2f4699099e832ea45a103eb377b946583bff745938af453213",
+        "expectedRelationship": "equal",
+        "id": "all-current-selections",
+        "status": "pass"
+      },
+      {
+        "after": 8771,
+        "before": 8771,
+        "expectedRelationship": "equal",
+        "id": "observation-count",
+        "status": "pass"
+      },
+      {
+        "after": 881,
+        "before": 881,
+        "expectedRelationship": "equal",
+        "id": "recorded-execution-clocks",
+        "status": "pass"
+      },
+      {
+        "after": 67,
+        "before": 67,
+        "expectedRelationship": "equal",
+        "id": "receipt-bound-machine-identities",
+        "status": "pass"
+      }
+    ],
+    "publicExportsPreserved": true
+  },
+  "classification": "intentional_behavior_change",
+  "refactorId": "benchmark-inventory-ownership-storage-v3",
+  "schemaVersion": 1,
+  "status": "pass"
+}

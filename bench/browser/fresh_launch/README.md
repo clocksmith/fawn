@@ -72,3 +72,9 @@ python3 bench/cli.py phase-cohort run --help
 
 It delegates to the existing `bench.tools.dropin_phase_cohort` owner without
 changing its preparation, provider build, oracle, sampling or timing boundaries.
+
+New launches record the shared [execution provenance envelope](../../inventory/README.md#new-execution-receipts)
+after measured work and browser close. The CLI passes its Python executable;
+direct Node launchers require `python3` or `DOE_BENCH_PYTHON`. Host identity and
+actual executable/module hashes are observed; missing GPU/driver/source bindings
+stay null. This metadata does not upgrade historical receipts or qualification.

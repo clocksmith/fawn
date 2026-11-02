@@ -709,20 +709,24 @@ def _cmd_external(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
+    from bench.cli_help import WorkflowHelpFormatter
     argv = sys.argv[1:]
     parser = argparse.ArgumentParser(
+        formatter_class=WorkflowHelpFormatter,
         prog="doe-bench",
         description=(
             "Doe workload and benchmark CLI: execute correctness workloads, "
             "run products independently, compare receipts, and evaluate claims."
         ),
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     for name, (_, description) in WORKFLOW_COMMANDS.items():
         subparsers.add_parser(name, help=description, add_help=False)
     if argv and argv[0] in WORKFLOW_COMMANDS:
         command, _ = WORKFLOW_COMMANDS[argv[0]]
+        if argv[0] == "browser":
+            os.environ["DOE_BENCH_PYTHON"] = sys.executable
         os.chdir(REPO_ROOT)
         os.execvpe(command[0], [*command, *argv[1:]], os.environ)
 

@@ -149,6 +149,149 @@
       ],
       "type": "object"
     },
+    "compactInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "$ref": "#/$defs/inventory/properties/current"
+        },
+        "currentSource": {
+          "$ref": "#/$defs/inventory/properties/currentSource"
+        },
+        "families": {
+          "$ref": "#/$defs/inventory/properties/families"
+        },
+        "kind": {
+          "$ref": "#/$defs/inventory/properties/kind"
+        },
+        "policy": {
+          "$ref": "#/$defs/inventory/properties/policy"
+        },
+        "rows": {
+          "items": {
+            "$ref": "urn:doe:benchmark-cube-row#/$defs/compactInventory"
+          },
+          "type": "array"
+        },
+        "schemaVersion": {
+          "const": 3
+        },
+        "sources": {
+          "$ref": "#/$defs/inventory/properties/sources"
+        },
+        "tables": {
+          "additionalProperties": false,
+          "properties": {
+            "acceptance": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/acceptance"
+              },
+              "type": "array"
+            },
+            "comparator": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/comparator"
+              },
+              "type": "array"
+            },
+            "correctness": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/correctness"
+              },
+              "type": "array"
+            },
+            "evidence": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/evidence"
+              },
+              "type": "array"
+            },
+            "fallback": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/fallback"
+              },
+              "type": "array"
+            },
+            "implementation": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/implementation"
+              },
+              "type": "array"
+            },
+            "limitations": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/limitations"
+              },
+              "type": "array"
+            },
+            "machine": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/machine"
+              },
+              "type": "array"
+            },
+            "metricTemplates": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "fields": {
+                    "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/metrics/items"
+                  },
+                  "valueKeys": {
+                    "items": {
+                      "enum": [
+                        "implementationValue",
+                        "comparatorValue",
+                        "ratio"
+                      ]
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "fields",
+                  "valueKeys"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "qualification": {
+              "items": {
+                "$ref": "urn:doe:benchmark-cube-row#/$defs/inventory/properties/qualification"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "machine",
+            "implementation",
+            "comparator",
+            "evidence",
+            "limitations",
+            "correctness",
+            "fallback",
+            "acceptance",
+            "qualification",
+            "metricTemplates"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "currentSource",
+        "policy",
+        "sources",
+        "families",
+        "rows",
+        "current",
+        "tables"
+      ],
+      "type": "object"
+    },
     "inventory": {
       "additionalProperties": false,
       "properties": {
@@ -672,6 +815,9 @@
     },
     {
       "$ref": "#/$defs/inventory"
+    },
+    {
+      "$ref": "#/$defs/compactInventory"
     }
   ],
   "properties": {
@@ -688,11 +834,12 @@
     "schemaVersion": {},
     "sourceCounts": {},
     "sources": {},
-    "statusCounts": {}
+    "statusCounts": {},
+    "tables": {}
   },
   "required": [
     "schemaVersion"
   ],
-  "title": "Fawn Benchmark Cube Summary (legacy v1 / inventory v2)",
+  "title": "Fawn Benchmark Cube Summary (legacy v1 / logical v2 / compact v3)",
   "type": "object"
 }

@@ -25,6 +25,7 @@ import struct
 import subprocess
 from typing import Any, Iterator
 
+from bench.lib.receipt_provenance import capture_provenance
 from bench.lib import synthetic_assets
 from bench.tools import physical_adapter_inventory
 from bench.tools.compare_c_vs_zig_compilation import process_sample, stats, write_json
@@ -388,6 +389,7 @@ def run(args: argparse.Namespace) -> int:
                                       "error": str(error), "wallNs": 0, "launchFailed": True}
                         finally:
                             workers.child = None
+                    executed_at = datetime.now(timezone.utc).isoformat()
                     meta_path = folder / "meta.json"
                     try:
                         meta = json.loads(meta_path.read_text())
@@ -402,6 +404,15 @@ def run(args: argparse.Namespace) -> int:
                     sample["providerOrder"] = list(order)
                     sample["sampleIndex"] = sample_index
                     sample["operationMs"] = meta.get("timingMs")
+                    sample["provenance"] = capture_provenance(
+                        executed_at=executed_at,
+                        implementation={"name": arm, "binaryPath": str(libraries[arm])
+                            if arm in libraries else None,
+                            "componentPaths": {"hostExecutable": str(hosts[case["host"]])},
+                            "buildReceiptPath": str(args.build_inputs) if arm in libraries else None,
+                            "expectedBinaryHash": inputs[str(libraries[arm])] if arm in libraries else None},
+                        machine_observation={"gpu": (meta.get("adapterInfo") or {}).get("device"),
+                                             "driver": (meta.get("adapterInfo") or {}).get("driver")})
                     failures = sample_failures(meta, libraries.get(arm, Path()), arm, case["prepared"], case["fullOutputBytes"], case["expectedSha256"],
                                                dawn_inputs=dawn_inputs, backend=backend if include_dawn else "")
                     if sample["exitCode"] != 0 or sample["timedOut"]:
@@ -476,6 +487,15 @@ def run(args: argparse.Namespace) -> int:
     elif not stopped:
         report["status"] = "compared_with_gaps" if report["drift"] or any(r["failures"] for r in report["rows"]) else "compared"
     report["endedAt"] = datetime.now(timezone.utc).isoformat()
+    # Metadata is outside worker/process and operation timing boundaries.
+    report["provenance"] = capture_provenance(
+        executed_at=report["endedAt"],
+        implementation={"name": "doe-c", "binaryPath": str(libraries["c"]),
+                        "buildReceiptPath": str(args.build_inputs),
+                        "expectedBinaryHash": inputs[str(libraries["c"])]},
+        comparator={"name": "doe-zig", "binaryPath": str(libraries["zig"]),
+                    "buildReceiptPath": str(args.build_inputs),
+                    "expectedBinaryHash": inputs[str(libraries["zig"])]})
     checkpoint(args.out / "report.json", report)
     return int(report["status"] != "compared")
 

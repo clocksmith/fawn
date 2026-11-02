@@ -15,6 +15,19 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class WorkflowCliTests(unittest.TestCase):
+    def test_root_help_groups_existing_commands_without_hiding_them(self) -> None:
+        result = subprocess.run([sys.executable, str(ROOT / "bench/cli.py"), "--help"],
+            cwd=ROOT, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for label in ("Run Workloads & Campaigns", "Analyze & Compare Receipts",
+                      "Inventory & Evidence Inspection", "Qualification & Program Gates"):
+            self.assertIn(label + ":", result.stdout)
+        commands = [line.split()[0] for line in result.stdout.splitlines()
+                    if line.startswith("  ") and line.split()]
+        for name in (*WORKFLOW_COMMANDS, "workload", "run", "run-config", "compare",
+                     "claim", "list", "external", "program"):
+            self.assertEqual(commands.count(name), 1, name)
+
     def test_real_workflows_expose_their_existing_help(self) -> None:
         for name in WORKFLOW_COMMANDS:
             with self.subTest(workflow=name):

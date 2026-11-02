@@ -279,7 +279,8 @@ function providerModules(gpuPid) {
       const names = out.split("\n").filter((l) => l.startsWith("n/")).map((l) => l.slice(1));
       return { doeRuntimeMapped: names.some((n) => /libwebgpu_doe_c\.dylib$/.test(n)),
         doeCompilerMapped: names.some((n) => /libdoe_compiler\.dylib$/.test(n)),
-        matches: [...new Set(names.filter((n) => /doe|webgpu/i.test(n)).map((n) => n.split("/").pop()))] };
+        matches: [...new Set(names.filter((n) => /doe|webgpu/i.test(n)).map((n) => n.split("/").pop()))],
+        loadedArtifacts: [...new Set(names.filter((n) => /doe|webgpu/i.test(n)))].sort() };
     }
     if (process.platform === "linux") {
       const maps = readFileSync(`/proc/${gpuPid}/maps`, "utf8");
@@ -288,6 +289,7 @@ function providerModules(gpuPid) {
         doeRuntimeMapped: names.some((n) => /libwebgpu_doe_c\.so/.test(n)),
         doeCompilerMapped: names.some((n) => /libdoe_compiler\.so/.test(n)),
         matches: [...new Set(names.filter((n) => /doe|webgpu|vulkan|mesa/i.test(n)).map((n) => n.split("/").pop()))],
+        loadedArtifacts: names.filter((n) => /doe|webgpu|vulkan|mesa/i.test(n)).sort(),
       };
     }
     if (process.platform === "win32") {
@@ -310,11 +312,13 @@ function pct(values, q) {
 const result = { spec, startedAt: new Date().toISOString(), host: { platform: process.platform, arch: process.arch,
   cpus: os.cpus()[0]?.model, node: process.version }, failures: [] };
 const fail = (stage, e) => result.failures.push({ stage, error: String(e?.stack ?? e) });
-let browser = null; let srv = null;
+let browser = null; let srv = null; let beforeBrowserStat = null;
 const page_ = PAGES[spec.page];
 try {
   if (!page_) throw new Error(`unknown page: ${spec.page}`);
   srv = await serve();
+  const artifactStat = statSync(spec.browserPath, { bigint: true });
+  beforeBrowserStat = Object.fromEntries(["dev", "ino", "size", "mtimeNs", "ctimeNs"].map(key => [key, String(artifactStat[key])]));
   const launchStartEpoch = Date.now();
   browser = await chromium.launch({ executablePath: spec.browserPath, headless: false, chromiumSandbox: true,
     ignoreDefaultArgs: ["--enable-unsafe-swiftshader"], args: [...spec.args, "--window-size=1280,800", "--window-position=40,40"], timeout: 120000 });
@@ -543,6 +547,16 @@ try {
   try { if (browser) await browser.close(); } catch (e) { fail("close", e); }
   if (srv) srv.server.close();
   result.finishedAt = new Date().toISOString();
+  // The shared provenance implementation runs after timed work and browser close.
+  // Requested library paths are not evidence that those bytes were loaded.
+  try {
+    result.provenance = JSON.parse(execFileSync(process.env.DOE_BENCH_PYTHON ?? "python3",
+      ["-m", "bench.lib.receipt_provenance"], { cwd: ROOT, encoding: "utf8", timeout: 60000,
+        input: JSON.stringify({ executedAt: result.finishedAt,
+          implementation: { name: spec.arm, binaryPath: spec.browserPath, expectedStat: beforeBrowserStat,
+            componentPaths: Object.fromEntries((result.provider?.loadedArtifacts ?? []).map((path, i) => [`loaded-${i}`, path])) },
+          machine: { gpu: result.adapterInfo?.description || result.adapterInfo?.device || null } }) }));
+  } catch (error) { fail("provenance", error); }
   result.ok = result.failures.length === 0;
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(result));

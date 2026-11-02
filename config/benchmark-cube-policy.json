@@ -152,7 +152,8 @@
       "unknownContractRule": "isolate-by-registration",
       "unknownMachineRule": "isolate-by-registration-and-execution"
     },
-    "schemaVersion": 1
+    "schemaVersion": 2,
+    "storageVersion": 3
   },
   "products": [
     {
@@ -203,7 +204,7 @@
       ]
     }
   ],
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "surfaces": [
     {
       "defaultMissingStatus": "unimplemented",

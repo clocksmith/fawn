@@ -1,5 +1,11 @@
 # Doe status: runtime backends and benchmarks
 
+Benchmark discovery and current coverage route to the generated
+[family overview](../../reports/benchmarks/CURRENT.md). The
+[inventory owner](../../bench/inventory/README.md#storage-migration) defines compact
+storage, expanded-reader compatibility and receipt provenance; historical evidence
+keeps its original scope.
+
 ## Windows native correctness boundary
 
 The native Windows lane exercises the bounded D3D12 copy and scalar-storage

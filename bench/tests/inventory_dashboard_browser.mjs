@@ -1,0 +1,51 @@
+// Focused UI control over the synthetic fixture emitted by test_benchmark_inventory_views.
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+const require = createRequire(new URL('../../browser/chromium/package.json', import.meta.url));
+const { chromium } = require('playwright-core');
+const [fixture, executable] = process.argv.slice(2);
+if (!fixture || !executable) throw new Error('Expected synthetic fixture HTML and installed Chrome executable');
+const browser = await chromium.launch({ executablePath: executable, headless: true });
+try {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const errors = [];
+  page.on('pageerror', error => errors.push(String(error)));
+  await page.goto(pathToFileURL(fixture).href);
+  const rows = page.locator('#results tr');
+  assert.equal(await rows.count(), 100);
+  assert.match(await page.locator('#count').innerText(), /103 matching \/ 104 total/);
+  await page.locator('#next').click();
+  assert.equal(await rows.count(), 3);
+  await page.locator('#reset').click();
+  await page.locator('#workload').fill('new-render');
+  assert.equal(await rows.count(), 1);
+  assert.match(await rows.innerText(), /loss/);
+  await page.locator('#metric').fill('operation');
+  assert.match(await rows.innerText(), /3 \/ 2 ms; loss/);
+  await page.locator('#build').fill('b'.repeat(40));
+  assert.equal(await rows.count(), 1);
+  await page.locator('#build').fill('missing-build');
+  assert.equal(await rows.count(), 0);
+  await page.locator('#reset').click();
+  await page.locator('#level').selectOption('execution');
+  assert.equal(await rows.count(), 1);
+  assert.match(await rows.innerText(), /failed-process/);
+  await page.locator('#machine').selectOption('unknown');
+  assert.equal(await rows.count(), 1);
+  await page.locator('#status').selectOption('failed');
+  assert.equal(await rows.count(), 1);
+  await page.locator('#reset').click();
+  await page.locator('#os').selectOption('linux');
+  await page.locator('#section').selectOption('application');
+  await page.locator('#family').selectOption('fixture');
+  assert.equal(await rows.count(), 100);
+  await page.locator('#workload').fill('</script><script>bad()</script>');
+  assert.equal(await rows.count(), 0);
+  await page.locator('#reset').click();
+  assert.deepEqual(errors, []);
+  await page.screenshot({ path: fixture + '.png', fullPage: false });
+  console.log('PASS dashboard filters, exact build selection, aggregate default, execution opt-in, failures, pagination, empty/reset and safe rendering; no GPU workload');
+} finally {
+  await browser.close();
+}

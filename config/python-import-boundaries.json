@@ -6,7 +6,9 @@
     "bench/lib",
     "bench/native_compare_modules",
     "bench/workload_runner.py",
-    "pipeline"
+    "pipeline",
+    "bench/inventory",
+    "bench/cli_help.py"
   ],
   "legacyDirectScriptRoots": [
     "bench/browser/browser_gate.py",

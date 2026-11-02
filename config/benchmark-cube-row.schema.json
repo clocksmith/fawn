@@ -1,5 +1,166 @@
 {
   "$defs": {
+    "compactInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptanceRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "artifactKey": {
+          "$ref": "#/$defs/inventory/properties/artifactKey"
+        },
+        "backend": {
+          "$ref": "#/$defs/inventory/properties/backend"
+        },
+        "campaignId": {
+          "$ref": "#/$defs/inventory/properties/campaignId"
+        },
+        "comparatorRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "comparisonType": {
+          "$ref": "#/$defs/inventory/properties/comparisonType"
+        },
+        "contractFrozenAt": {
+          "$ref": "#/$defs/inventory/properties/contractFrozenAt"
+        },
+        "correctnessRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "evidenceRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "executedAt": {
+          "$ref": "#/$defs/inventory/properties/executedAt"
+        },
+        "executionId": {
+          "$ref": "#/$defs/inventory/properties/executionId"
+        },
+        "executionStatus": {
+          "$ref": "#/$defs/inventory/properties/executionStatus"
+        },
+        "executionTimeSource": {
+          "$ref": "#/$defs/inventory/properties/executionTimeSource"
+        },
+        "fallbackRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "familyId": {
+          "$ref": "#/$defs/inventory/properties/familyId"
+        },
+        "implementationRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "limitationsRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "machineRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "metrics": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "items": {
+                  "type": [
+                    "number",
+                    "boolean"
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "observationLevel": {
+          "$ref": "#/$defs/inventory/properties/observationLevel"
+        },
+        "qualificationRef": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "registrationId": {
+          "$ref": "#/$defs/inventory/properties/registrationId"
+        },
+        "reportedAt": {
+          "$ref": "#/$defs/inventory/properties/reportedAt"
+        },
+        "rowId": {
+          "$ref": "#/$defs/inventory/properties/rowId"
+        },
+        "schemaVersion": {
+          "const": 3
+        },
+        "section": {
+          "$ref": "#/$defs/inventory/properties/section"
+        },
+        "seriesKey": {
+          "$ref": "#/$defs/inventory/properties/seriesKey"
+        },
+        "supersedes": {
+          "$ref": "#/$defs/inventory/properties/supersedes"
+        },
+        "verdict": {
+          "$ref": "#/$defs/inventory/properties/verdict"
+        },
+        "workloadContractHash": {
+          "$ref": "#/$defs/inventory/properties/workloadContractHash"
+        },
+        "workloadId": {
+          "$ref": "#/$defs/inventory/properties/workloadId"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "rowId",
+        "registrationId",
+        "familyId",
+        "section",
+        "comparisonType",
+        "workloadId",
+        "workloadContractHash",
+        "campaignId",
+        "executionId",
+        "observationLevel",
+        "backend",
+        "executedAt",
+        "executionTimeSource",
+        "reportedAt",
+        "contractFrozenAt",
+        "executionStatus",
+        "metrics",
+        "verdict",
+        "supersedes",
+        "seriesKey",
+        "artifactKey",
+        "machineRef",
+        "implementationRef",
+        "comparatorRef",
+        "evidenceRef",
+        "limitationsRef",
+        "correctnessRef",
+        "fallbackRef",
+        "acceptanceRef",
+        "qualificationRef"
+      ],
+      "type": "object"
+    },
     "inventory": {
       "additionalProperties": false,
       "properties": {
@@ -880,33 +1041,44 @@
     },
     {
       "$ref": "#/$defs/inventory"
+    },
+    {
+      "$ref": "#/$defs/compactInventory"
     }
   ],
   "properties": {
     "acceptance": {},
+    "acceptanceRef": {},
     "artifactKey": {},
     "backend": {},
     "campaignId": {},
     "claimStatus": {},
     "comparator": {},
+    "comparatorRef": {},
     "comparisonStatus": {},
     "comparisonType": {},
     "comparisonView": {},
     "contractFrozenAt": {},
     "correctness": {},
+    "correctnessRef": {},
     "evidence": {},
+    "evidenceRef": {},
     "executedAt": {},
     "executionId": {},
     "executionStatus": {},
     "executionTimeSource": {},
     "fallback": {},
+    "fallbackRef": {},
     "familyId": {},
     "generatedAt": {},
     "governedLaneIds": {},
     "host": {},
     "implementation": {},
+    "implementationRef": {},
     "limitations": {},
+    "limitationsRef": {},
     "machine": {},
+    "machineRef": {},
     "maturity": {},
     "metrics": {},
     "observationLevel": {},
@@ -914,6 +1086,7 @@
     "providerSet": {},
     "providers": {},
     "qualification": {},
+    "qualificationRef": {},
     "registrationId": {},
     "reportedAt": {},
     "rowId": {},
@@ -937,6 +1110,6 @@
   "required": [
     "schemaVersion"
   ],
-  "title": "Fawn Benchmark Cube Row (legacy v1 / inventory v2)",
+  "title": "Fawn Benchmark Cube Row (legacy v1 / logical v2 / compact v3)",
   "type": "object"
 }

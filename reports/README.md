@@ -5,7 +5,10 @@
 The existing benchmark cube's [CURRENT](benchmarks/CURRENT.md) is the readable
 benchmark projection across native runtime, browser integration, compiler,
 application and workspace evidence. Its [index.json](benchmarks/index.json)
-preserves individual executions and failures as well as aggregates. Unknown
+preserves individual executions and failures as well as aggregates. CURRENT is
+the 16-family front page; generated `benchmarks/families/` pages provide complete
+aggregate histories. The compact v3 index expands through
+`bench.inventory.storage.load_inventory`; expanded v2 export remains available. Unknown
 dates, machines, builds and qualification remain explicit; retained historical
 wins do not qualify another binary or current source.
 

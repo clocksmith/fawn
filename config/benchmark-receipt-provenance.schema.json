@@ -1,0 +1,188 @@
+{
+  "$id": "urn:doe:benchmark-receipt-provenance",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "comparator": {
+      "additionalProperties": false,
+      "properties": {
+        "binaryHash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "componentHashes": {
+          "additionalProperties": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceCommit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "sourceCommit",
+        "binaryHash",
+        "componentHashes"
+      ],
+      "type": "object"
+    },
+    "executedAt": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "executionTimeSource": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "implementation": {
+      "additionalProperties": false,
+      "properties": {
+        "binaryHash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "componentHashes": {
+          "additionalProperties": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceCommit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "sourceCommit",
+        "binaryHash",
+        "componentHashes"
+      ],
+      "type": "object"
+    },
+    "kind": {
+      "const": "benchmark-execution-provenance"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "machine": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "driver": {
+          "type": [
+            "string",
+            "object",
+            "null"
+          ]
+        },
+        "gpu": {
+          "type": [
+            "string",
+            "object",
+            "null"
+          ]
+        },
+        "id": {
+          "minLength": 1,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "identitySource": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "os": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "osVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "os",
+        "osVersion",
+        "architecture",
+        "gpu",
+        "driver",
+        "identitySource"
+      ],
+      "type": "object"
+    },
+    "schemaVersion": {
+      "const": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "executedAt",
+    "executionTimeSource",
+    "machine",
+    "implementation",
+    "comparator",
+    "limitations",
+    "kind"
+  ],
+  "title": "Observed benchmark execution provenance",
+  "type": "object"
+}

@@ -30,6 +30,8 @@ import time
 from pathlib import Path
 
 from bench.lib import synthetic_assets
+from bench.lib.receipt_provenance import artifact_stat, capture_provenance
+from datetime import datetime, timezone
 
 if os.name == "nt":
     import ctypes
@@ -230,7 +232,9 @@ def run(args: argparse.Namespace) -> None:
             for pair in range(args.pairs):
                 order = orders[pair % len(orders)]
                 for position, provider in enumerate(order):
+                    before_stat = artifact_stat(Path(providers[provider]))
                     code, stdout, stderr, wall, cpu = run_process([providers[provider], *argv_tail], args.timeout)
+                    executed_at = datetime.now(timezone.utc).isoformat()
                     try:
                         payload = json.loads(stdout.strip().splitlines()[-1])
                     except (IndexError, ValueError):
@@ -239,7 +243,13 @@ def run(args: argparse.Namespace) -> None:
                         failures += 1
                     row = {"workload": workload, "pair": pair, "position": position, "order": list(order),
                            "provider": provider, "binary": providers[provider], "returnCode": code,
-                           "processWallNs": wall, "childCpuMs": cpu, "stderr": stderr[-2000:], "result": payload}
+                           "processWallNs": wall, "childCpuMs": cpu, "stderr": stderr[-2000:], "result": payload,
+                           "provenance": capture_provenance(
+                               executed_at=executed_at,
+                               implementation={"name": provider, "binaryPath": providers[provider],
+                                               "expectedStat": before_stat},
+                               machine_observation={"gpu": payload.get("adapterDevice"),
+                                                    "driver": payload.get("adapterDriver")})}
                     stream.write(json.dumps(row) + "\n")
                     stream.flush()
     print(json.dumps({"status": "complete" if failures == 0 else "failures", "failures": failures, "out": str(out)}))
