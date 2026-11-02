@@ -42,6 +42,12 @@ $(BUILD)/shader-image-reuse: tests/shader_image_reuse.c src/shader_cache_identit
 check-shader-image-reuse: $(BUILD)/shader-image-reuse
 	$(BUILD)/shader-image-reuse
 check: check-shader-image-reuse
+$(BUILD)/shader-image-memory: tests/shader_image_memory.c src/shader_cache_identity.c $(SHADER_IDENTITY_HEADERS) $(wildcard ../shader/src/*.c ../shader/src/*.h) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_image_memory.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-shader-image-memory
+check-shader-image-memory: $(BUILD)/shader-image-memory
+	$(BUILD)/shader-image-memory
+check: check-shader-image-memory
 .PHONY: check-shader-cache
 check-shader-cache: $(BUILD)/shader-cache
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache

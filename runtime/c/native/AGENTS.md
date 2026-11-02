@@ -181,6 +181,13 @@ index zero. Keep ordinary module/device call leases through preparation. Tempora
 executable artifacts outlive native pipeline creation and drop outside every owner
 lock; frontend code converts ABI spans without evaluating override expressions.
 
+Loaded-image cache identity hashes validated readonly loader memory, including
+mapped padding, with the same domain/offset/length/content keys. Normal builds
+hash without copying. ASan builds alone copy each budget-checked foreign extent
+into owned bytes before normally instrumented SHA; only the private foreign
+copy boundary excludes address instrumentation. Never unpoison globals, omit
+padding, substitute file bytes or publish identity after extent/allocation failure.
+
 Native shader semantic policy has one owner, native_shader_semantic_flags.
 Every target's measure/fill and WGSL feature reporting must consume that policy;
 an advertised compiler language capability must have public module, pipeline and

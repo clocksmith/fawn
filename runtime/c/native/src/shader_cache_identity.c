@@ -11,6 +11,15 @@
 #include "../../common/include/doe_sha256.h"
 
 #include <limits.h>
+#include <stdlib.h>
+
+#if defined(__SANITIZE_ADDRESS__)
+#define NATIVE_IMAGE_ASAN 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define NATIVE_IMAGE_ASAN 1
+#endif
+#endif
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -62,15 +71,20 @@ static void little64(uint8_t out[8], uint64_t value)
     for (size_t i = 0; i < 8; ++i) out[i] = (uint8_t)(value >> (i * 8));
 }
 
-/* A domain-separated sequence of position/length/content hashes; the common
- * SHA-256 implementation streams each span in constant space. No second hash
- * implementation or image-sized allocation lives in the native adapter. */
+static bool span_extent(const image_hash *hash, uintptr_t base, uintptr_t address, size_t size)
+{
+    return address && address >= base && size <= UINTPTR_MAX - address &&
+        hash->bytes <= IMAGE_LIMIT && size <= IMAGE_LIMIT - hash->bytes && hash->spans != SIZE_MAX;
+}
+
+/* A domain-separated sequence of position/length/content hashes. The common
+ * SHA-256 engine and its metadata remain normally instrumented. */
 static bool span_bytes(image_hash *hash, uintptr_t base, uintptr_t address,
     const void *bytes, size_t size)
 {
     uint8_t record[88] = {0};
     if (!size) return true;
-    if (address < base || size > IMAGE_LIMIT - hash->bytes) return false;
+    if (!span_extent(hash, base, address, size)) return false;
     memcpy(record, "DOE-IMAGE-SPAN-v1", 17);
     memcpy(record + 24, hash->digest, 32);
     little64(record + 56, (uint64_t)(address - base));
@@ -85,12 +99,56 @@ static bool span_bytes(image_hash *hash, uintptr_t base, uintptr_t address,
     return true;
 }
 
+#if defined(NATIVE_IMAGE_ASAN)
+/* The loader's validated readonly extent is a mapped byte sequence, including
+ * padding that ASan poisons between individual C globals. Copy only that
+ * foreign extent into ordinary owned bytes; never unpoison it or exempt SHA.
+ * Volatile byte loads prevent an intercepted memcpy or widened source reads.
+ * This private boundary is used only after platform loader/region validation. */
+__attribute__((no_sanitize_address, noinline))
+static void loaded_memory_copy(uint8_t *owned, uintptr_t address, size_t size)
+{
+    const volatile uint8_t *source = (const volatile uint8_t *)address;
+    for (size_t i = 0; i < size; ++i) owned[i] = source[i];
+}
+#endif
+
 static bool span(image_hash *hash, uintptr_t base, uintptr_t address, size_t size)
 {
+    if (!size) return true;
+    if (!span_extent(hash, base, address, size)) return false;
+#if defined(NATIVE_IMAGE_ASAN)
+    /* Preserve the exact loaded-memory digest scheme. Only sanitizer builds
+     * need an owned span; ordinary builds keep constant-space zero-copy SHA.
+     * Enforce the existing total image budget before allocation or raw reads. */
+    uint8_t *owned = malloc(size);
+    if (!owned) return false;
+    loaded_memory_copy(owned, address, size);
+    bool valid = span_bytes(hash, base, address, owned, size);
+    free(owned);
+    return valid;
+#else
     return span_bytes(hash, base, address, (const void *)address, size);
+#endif
 }
 
 #if defined(__linux__)
+static bool elf_readonly_extent(const struct dl_phdr_info *info, uintptr_t address, size_t size)
+{
+    if (!address || size > UINTPTR_MAX - address) return false;
+    const uintptr_t base = (uintptr_t)info->dlpi_addr;
+    for (size_t i = 0; i < info->dlpi_phnum; ++i) {
+        const ElfW(Phdr) *p = &info->dlpi_phdr[i];
+        if (p->p_type != PT_LOAD || !(p->p_flags & PF_R) || (p->p_flags & PF_W) ||
+            p->p_vaddr > UINTPTR_MAX - base) continue;
+        uintptr_t start = base + p->p_vaddr;
+        if (p->p_memsz > UINTPTR_MAX - start) continue;
+        if (address >= start && address - start <= p->p_memsz && size <= p->p_memsz - (address - start))
+            return true;
+    }
+    return false;
+}
+
 /* A linker build ID binds relocation-bearing tables/configuration without
  * hashing loader addresses. Require it: code/rodata alone is not the whole
  * artifact identity. These notes are read from the loaded image, never disk. */
@@ -102,6 +160,8 @@ static bool elf_build_id(const struct dl_phdr_info *info, image_hash *hash)
         if (p->p_type != PT_NOTE) continue;
         if (p->p_vaddr > UINTPTR_MAX - base || p->p_memsz > IMAGE_LIMIT) return false;
         uintptr_t address = base + p->p_vaddr;
+        if (p->p_memsz > UINTPTR_MAX - address || !elf_readonly_extent(info, address, (size_t)p->p_memsz))
+            return false;
         size_t offset = 0;
         while (offset < p->p_memsz) {
             if (p->p_memsz - offset < sizeof(ElfW(Nhdr))) return false;
@@ -143,6 +203,7 @@ static int elf_image(struct dl_phdr_info *info, size_t size, void *opaque)
         const ElfW(Phdr) *p = &info->dlpi_phdr[i];
         if (p->p_type != PT_LOAD || p->p_vaddr > UINTPTR_MAX - base) continue;
         uintptr_t start = base + p->p_vaddr;
+        if (p->p_memsz > UINTPTR_MAX - start) continue;
         if (search->anchor >= start && search->anchor - start < p->p_memsz)
             search->found = true;
     }
