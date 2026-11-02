@@ -15,7 +15,7 @@
 static native_command_handle *oldest_in_flight(native_device *device)
 {
     for (native_pending *pending = device->pending; pending; pending = pending->next) {
-        if (pending->kind == NATIVE_PENDING_SURFACE) continue;
+        if (pending->kind != NATIVE_PENDING_COMMANDS) continue;
         if (native_command_in_flight(&pending->native)) return &pending->native;
     }
     return NULL;
@@ -24,12 +24,12 @@ static native_command_handle *oldest_in_flight(native_device *device)
 /* Bounds one unlocked fence wait so join requests and new records are seen. */
 #define PROGRESS_FENCE_WAIT_NS UINT64_C(100000000)
 
-/* Live Metal devices retire through public calls; their completed handlers
- * report completion without this thread (metal_progress.c). */
+/* Live Metal devices observe completed handlers only for an admitted async
+ * callback obligation; ordinary submissions retain public-call retirement. */
 static bool progress_needed(const native_device *device)
 {
     return device->pending && (device->backend.kind != WGPUBackendType_Metal ||
-        native_metal_completion_armed(device));
+        native_metal_completion_armed(device) || native_async_pending(device));
 }
 
 static void pending_progress(void *identity)
@@ -56,6 +56,13 @@ static void pending_progress(void *identity)
         }
         const uint64_t completions = native_metal_completion_count(device);
         native_progress_pending(device);
+        native_pending *completion = native_async_take_ready(device);
+        if (completion) {
+            native_unlock(device);
+            native_async_publish_ready(completion);
+            native_lock(device);
+            continue;
+        }
         native_surface *surface = native_surface_retirement_peek(device);
         if (surface) {
             /* A temporary existing surface lease permits lock-order reversal.
@@ -81,8 +88,7 @@ static void pending_progress(void *identity)
             continue;
         }
         /* Wait for the oldest accepted submission's fence outside the device
-         * mutex (owner authorized 2026-10-24: async submit A+B, D2,
-         * fence-wait completion; futures later; reconfirmed after the section 7 risk review). The hold keeps its fence alive
+         * mutex. The hold keeps its fence alive
          * through a concurrent settle; completion is observed under the
          * mutex on the next iteration. Metal no longer waits here (owner
          * decision 2026-10-31): its completed handler signals pending_changed. */

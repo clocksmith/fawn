@@ -282,7 +282,10 @@
       "VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT": 2,
       "VK_SEMAPHORE_IMPORT_TEMPORARY_BIT": 1,
       "VK_QUEUE_FAMILY_EXTERNAL": 4294967294,
-      "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT": 1
+      "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT": 1,
+      "VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS": 1000127000,
+      "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2": 1000146000,
+      "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2": 1000146003
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
@@ -330,6 +333,12 @@
       "verified_utc": "2026-10-30",
       "signature": "VkResult(VkDevice, const VkSemaphoreGetFdInfoKHR*, int*)",
       "scope": "VK_KHR_external_semaphore_fd via vkGetDeviceProcAddr when selected."
+    },
+    "vkGetBufferMemoryRequirements2": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-11-02",
+      "signature": "void(VkDevice, const VkBufferMemoryRequirementsInfo2*, VkMemoryRequirements2*)",
+      "scope": "Core1.1, optional availability; absent queries retain exclusive allocation and never enter the slice pool."
     }
   },
   "official_structs": {
@@ -866,6 +875,64 @@
         [
           "buffer",
           "u64"
+        ]
+      ]
+    },
+    "VkMemoryDedicatedRequirements": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-11-02",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "prefersDedicatedAllocation",
+          "VkBool32"
+        ],
+        [
+          "requiresDedicatedAllocation",
+          "VkBool32"
+        ]
+      ]
+    },
+    "VkBufferMemoryRequirementsInfo2": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-11-02",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "buffer",
+          "VkBuffer"
+        ]
+      ]
+    },
+    "VkMemoryRequirements2": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-11-02",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "memoryRequirements",
+          "VkMemoryRequirements"
         ]
       ]
     }

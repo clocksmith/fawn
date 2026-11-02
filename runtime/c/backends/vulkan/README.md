@@ -45,10 +45,12 @@ it never recognizes shader source patterns or executes a CPU shader interpreter.
 Read `include/doe_vk.h`. A context and all its objects require caller serialization.
 Resources retain their creating context. Recording retains exact buffers and
 pipelines, image views and samplers; descriptor pools belong to each dispatch until
-command retirement. A compute dispatch that binds the same pipeline to the same
-exact buffer ranges as the latest use in its recording reuses that use's
-descriptor sets and still records its own barrier, binds and dispatch; image and
-sampler bindings and draws always get their own (`tests/descriptor_reuse.c`).
+command retirement. An exact repeat of the latest pipeline and tagged buffer ranges, texture views
+and samplers reuses that use's descriptor sets. Initialization and image layout
+remain per-use checks. Compute dispatches keep their conservative synchronization;
+render passes aggregate preparation dependencies before native begin and retain
+unchanged pipeline/descriptors and dynamic/vertex/index state between draws
+(`tests/descriptor_reuse.c`, `tests/pass_contract.c`, `tests/indexed_contract.c`).
 A one-shot recording takes a spare command pool and fence when one exists; they
 return to its context's bounded spares (8) only when its fence proved completion or it never reached
 `vkQueueSubmit`; the pool is reset and the fence unsignaled first. Submitted,
@@ -66,6 +68,18 @@ rest with the device. A failed creation (no native pipeline) and a lost context
 destroy at release instead.
 `tests/pipeline_sharing.c` checks sharing, the bound, failed creation and complete
 teardown.
+Buffer allocations with an available core1.1 requirements query use up to eight
+4 MiB context blocks, grouped by actual memory type, with aligned nonoverlapping
+leases. Large requests, required/preferred dedicated allocations, unavailable
+queries and the block budget take exclusive allocations. The selected memory type
+and adapter resource-profile policy remain unchanged. Mapped coherent slices are
+cleared before exposure. Unmapped slices initialize through their first ordinary
+command owner; accepted submission publishes that initialization, abandonment does
+not, and pending/uncertain uses retain the lease. Reusable recordings require
+ordinary initialization or a deliberate full write rather than an implicit clear
+that would repeat on replay. Only the native allocation gains hidden transfer usage;
+public usage admission stays exact (`tests/memory_slices.c`).
+
 Host accesses are blocked while commands may use a buffer. Successful fence
 completion unlocks host access. Pending/uncertain command release returns `BUSY`
 and does not consume the handle. A timed-out waiter must retain and settle it.
@@ -768,3 +782,10 @@ list. Graphics draws push their own immutable packet snapshot after binding.
 Zero extent creates no range or command. Wrong sizes, foreign contexts and invalid
 stage ranges fail before recording. `check-immediates` is a typed-call control;
 physical-device qualification is separate.
+
+Explicit batched draw guards use `doe_vk_draw_validator_batch_source` and
+`doe_vk_draw_validator_create_batch`. One admitted pass allocates a retained scratch
+span with distinct 32-byte records, groups compatible copies/normalization, and
+carries each record's offset to its native indirect draw. Legacy source/create APIs
+retain their single-record semantics; their records use aligned bindings in the
+same span. GPU argument contents never deduplicate input offsets or capacity tuples.

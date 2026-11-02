@@ -423,7 +423,44 @@ static void test_unknown_commit_and_reference_overflow(void) {
     mock_assert_closed(&mock);
 }
 
+static void test_host_write_range(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_create(&mock);
+    doe_mtl_buffer *buffer = buffer_create(context, DOE_MTL_SHARED);
+    doe_mtl_buffer *private_buffer = buffer_create(context, DOE_MTL_PRIVATE);
+    void *range = (void *)(uintptr_t)1;
+    assert(doe_mtl_buffer_host_write_range(buffer, 60, 8, &range) == DOE_MTL_RANGE && range == (void *)(uintptr_t)1);
+    assert(doe_mtl_buffer_host_write_range(private_buffer, 0, 4, &range) == DOE_MTL_UNSUPPORTED && range == (void *)(uintptr_t)1);
+    assert(doe_mtl_buffer_host_write_range(buffer, 4, 8, &range) == DOE_MTL_OK);
+    unsigned char *bytes = range;
+    for (size_t i = 0; i < 8; ++i) assert(!bytes[i]);
+    memset(bytes, 0x5a, 8);
+    unsigned char result[8];
+    assert(doe_mtl_buffer_read(buffer, 4, result, sizeof(result)) == DOE_MTL_OK && !memcmp(bytes, result, sizeof(result)));
+    doe_mtl_commands *commands = command_create(context);
+    assert(doe_mtl_commands_fill(commands, buffer, 0, 64, 0, NULL) == DOE_MTL_OK);
+    range = (void *)(uintptr_t)1;
+    assert(doe_mtl_buffer_host_write_range(buffer, 0, 4, &range) == DOE_MTL_BUSY && range == (void *)(uintptr_t)1);
+    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+    mock_result(&mock, 0, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
+    assert(doe_mtl_buffer_host_write_range(buffer, 0, 4, &range) == DOE_MTL_BUSY && range == (void *)(uintptr_t)1);
+    mock_result(&mock, 5, -71);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_EXECUTION_FAILED);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    assert(doe_mtl_buffer_host_write_range(buffer, 0, 4, &range) == DOE_MTL_EXECUTION_FAILED && range == (void *)(uintptr_t)1);
+    unsigned char recovery[64] = {0};
+    assert(doe_mtl_buffer_write(buffer, 0, recovery, sizeof(recovery)) == DOE_MTL_OK);
+    assert(doe_mtl_buffer_host_write_range(buffer, 0, 64, &range) == DOE_MTL_OK);
+    assert(doe_mtl_buffer_evict(buffer) == DOE_MTL_OK);
+    range = (void *)(uintptr_t)1;
+    assert(doe_mtl_buffer_host_write_range(buffer, 0, 4, &range) == DOE_MTL_INVALID_STATE && range == (void *)(uintptr_t)1);
+    doe_mtl_buffer_release(private_buffer); doe_mtl_buffer_release(buffer); doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
+
 int main(void) {
+    test_host_write_range();
     test_acquisition_failures();
     test_host_access();
     test_pipeline_limits();
@@ -434,6 +471,6 @@ int main(void) {
     test_recording_failures();
     test_validation_and_empty_work();
     test_unknown_commit_and_reference_overflow();
-    puts("Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution");
+    puts("Metal developer controls: 11 scenario groups passed; mocked calls, no GPU execution");
     return 0;
 }

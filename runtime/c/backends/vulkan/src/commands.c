@@ -18,9 +18,13 @@ doe_vk_status doe_vk_recording(doe_vk_commands *commands) {
     return DOE_VK_OK;
 }
 
-doe_vk_status doe_vk_use_buffer(doe_vk_commands *commands, doe_vk_buffer *buffer) {
+static doe_vk_status use_buffer(doe_vk_commands *commands, doe_vk_buffer *buffer, bool full_write) {
     if (buffer == NULL || buffer->context != commands->context) return DOE_VK_INVALID_ARGUMENT;
     if (buffer->content_status != DOE_VK_OK) return buffer->content_status;
+    if (buffer->needs_zero && buffer->zero_owner && buffer->zero_owner!=commands) return DOE_VK_BUSY;
+    /* An implicit once-only clear must never become part of a reusable replay.
+     * Ordinary initialization or a deliberate full write establishes it first. */
+    if (buffer->needs_zero && !full_write && commands->reusable) return DOE_VK_BUSY;
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) {
         if (use->buffer == buffer) return DOE_VK_OK;
     }
@@ -35,7 +39,15 @@ doe_vk_status doe_vk_use_buffer(doe_vk_commands *commands, doe_vk_buffer *buffer
     ++buffer->recorded_uses;
     *use = (doe_vk_buffer_use){ buffer, commands->buffers };
     commands->buffers = use;
+    if (buffer->needs_zero) {
+        buffer->zero_owner=commands;
+        if (!full_write) commands->context->vk.vkCmdFillBuffer(commands->command,buffer->buffer,0,buffer->native_size,0);
+    }
     return DOE_VK_OK;
+}
+
+doe_vk_status doe_vk_use_buffer(doe_vk_commands *commands, doe_vk_buffer *buffer) {
+    return use_buffer(commands,buffer,false);
 }
 
 /* Deliberately conservative synchronization. The production optimization and
@@ -138,7 +150,7 @@ doe_vk_status doe_vk_commands_copy(doe_vk_commands *commands,
     if (source == destination && source_offset < destination_offset + size && destination_offset < source_offset + size)
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     status = doe_vk_use_buffer(commands, source);
-    if (status == DOE_VK_OK) status = doe_vk_use_buffer(commands, destination);
+    if (status == DOE_VK_OK) status = use_buffer(commands, destination, destination_offset==0 && size==destination->size);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     const VkBufferCopy copy = { source_offset, destination_offset, size };
     doe_vk_barrier(commands);
@@ -154,7 +166,7 @@ doe_vk_status doe_vk_commands_fill(doe_vk_commands *commands,
         !(destination->usage & DOE_VK_BUFFER_COPY_DST) || size == 0 ||
         ((offset | size) & 3) != 0 || !doe_vk_range(destination->size, offset, size))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
-    status = doe_vk_use_buffer(commands, destination);
+    status = use_buffer(commands,destination,offset==0 && size==destination->size);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     doe_vk_barrier(commands);
     commands->context->vk.vkCmdFillBuffer(commands->command, destination->buffer, offset, size, value);
@@ -279,7 +291,13 @@ static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error
     doe_vk_textures_complete(commands, status);
     doe_vk_queries_complete(commands, status);
     commands->committed = true;
-    if (status == DOE_VK_OK) doe_vk_external_publish(commands);
+    if (status == DOE_VK_OK) {
+        for (doe_vk_buffer_use *use=commands->buffers;use;use=use->next)
+            if (use->buffer->zero_owner==commands) {
+                use->buffer->needs_zero=false; use->buffer->zero_owner=NULL;
+            }
+        doe_vk_external_publish(commands);
+    }
     return status;
 }
 
@@ -521,6 +539,7 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         doe_vk_buffer_use *use = commands->buffers;
         commands->buffers = use->next;
         if (commands->uses_active) --use->buffer->recorded_uses;
+        if (use->buffer->zero_owner==commands) use->buffer->zero_owner=NULL;
         doe_vk_buffer_release(use->buffer);
         free(use);
     }

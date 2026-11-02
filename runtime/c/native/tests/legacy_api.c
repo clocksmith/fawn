@@ -30,7 +30,7 @@ static void read_words(state *s, WGPUBuffer readback, const uint32_t *expected, 
     WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=mapped,.userdata1=s};
     size_t bytes = count * sizeof(*expected);
-    assert(wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, bytes, callback).id);
+    wait_future(s, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, bytes, callback));
     assert(s->mapped == before + 1);
     const void *actual = wgpuBufferGetConstMappedRange(readback, 0, bytes);
     assert(actual && !memcmp(actual, expected, bytes));
@@ -180,7 +180,8 @@ static void copies(state *s)
     submit(s,encoder);
     unsigned before=s->mapped;
     WGPUBufferMapCallbackInfo callback={.mode=WGPUCallbackMode_AllowSpontaneous,.callback=mapped,.userdata1=s};
-    assert(wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,512,callback).id && s->mapped==before+1);
+    wait_future(s, wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,512,callback));
+    assert(s->mapped==before+1);
     const unsigned char *bytes=wgpuBufferGetConstMappedRange(readback,0,512);
     assert(bytes && !memcmp(bytes,pixels+2,8) && !memcmp(bytes+256,pixels,8));
     wgpuBufferUnmap(readback); wgpuBufferRelease(readback); wgpuTextureRelease(destination);

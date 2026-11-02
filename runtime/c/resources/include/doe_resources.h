@@ -155,6 +155,8 @@ void *doe_resource_buffer_native(const doe_resource_buffer *buffer);
  * Completion consumes token zero even when an empty mapping has a NULL pointer. */
 doe_resource_status doe_resource_buffer_map_begin(doe_resource_buffer *buffer,
     WGPUMapMode mode, uint64_t offset, uint64_t size, uint64_t *generation);
+/* Read-only generation check under the same caller serialization as map_begin. */
+bool doe_resource_buffer_map_pending(const doe_resource_buffer *buffer, uint64_t generation);
 doe_resource_status doe_resource_buffer_map_complete(doe_resource_buffer *buffer,
     uint64_t generation, bool success, unsigned char *mapped_bytes);
 doe_resource_status doe_resource_buffer_mapped_range(doe_resource_buffer *buffer,

@@ -70,7 +70,8 @@ native_presentation native_submit_present(native_device *device, doe_vk_commands
  * retirement reserves storage before any acquisition can become uncertain. */
 typedef enum native_pending_kind {
     NATIVE_PENDING_COMMANDS,
-    NATIVE_PENDING_SURFACE
+    NATIVE_PENDING_SURFACE,
+    NATIVE_PENDING_ASYNC
 } native_pending_kind;
 struct native_pending {
     native_pending *next;
@@ -79,6 +80,8 @@ struct native_pending {
     doe_resource_commands **resources;
     size_t count;
     native_pending_kind kind;
+    uint64_t serial;
+    struct native_async *async; /* Only NATIVE_PENDING_ASYNC; owns this embedded record. */
     bool replay; /* Command variant: settle the resource owner's open replay. */
     doe_vk_surface *frame; /* Present commands borrow their backend surface lease. */
     native_surface *surface;

@@ -3,6 +3,7 @@
 #include "../src/feature_internal.h"
 #include <assert.h>
 #include <stdio.h>
+#include "feature_stub.h"
 
 static bool maintenance_extension = true, maintenance_feature = true;
 static bool truncated, unterminated, missing_proc;
@@ -22,6 +23,7 @@ static VkResult enumerate(VkPhysicalDevice device, const uint8_t *layer, uint32_
 }
 static void features(VkPhysicalDevice device, VkPhysicalDeviceFeatures2 *info) {
     (void)device;
+    if (unsupported_feature_query(info)) return;
     info->features.robustBufferAccess = 1;
     if (info->pNext == NULL) return;
     VkStructureType type;
@@ -50,6 +52,7 @@ int main(void) {
     context.vk.vkEnumerateDeviceExtensionProperties = enumerate;
     context.vk.vkGetPhysicalDeviceFeatures2 = features;
     context.vk.vkGetDeviceProcAddr = get_proc;
+    context.vk.vkGetPhysicalDeviceProperties2=unsupported_subgroup_properties;
     doe_vk_options options = {.surface_platforms = DOE_VK_SURFACE_XCB, .enable_shader_demote_if_supported = true};
     doe_vk_feature_selection selection;
     assert(doe_vk_prepare_features(&context, &options, &selection, NULL) == DOE_VK_OK);

@@ -35,6 +35,7 @@ doe_dx_status doe_dx_native_close(doe_dx_native_context *context) {
     if (context->draw_signature) ID3D12CommandSignature_Release(context->draw_signature);
     if (context->draw_indexed_signature) ID3D12CommandSignature_Release(context->draw_indexed_signature);
     if (context->dispatch_signature) ID3D12CommandSignature_Release(context->dispatch_signature);
+    if (context->shared_timeline_handle) CloseHandle(context->shared_timeline_handle);
     if (context->fence) ID3D12Fence_Release(context->fence);
     if (context->queue) ID3D12CommandQueue_Release(context->queue);
     if (context->device) ID3D12Device_Release(context->device);

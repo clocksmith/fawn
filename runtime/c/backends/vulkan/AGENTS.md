@@ -88,14 +88,16 @@ never replace them with CPU reads or unchecked native forwarding. Newly admitted
 product-sensitive builtins require reflected usage and matching guard semantics.
 
 Indirect graphics guards observe preceding producers and run before the same
-render pass, never inside it or hoisted across producers. Use distinct scratch
-for every draw, exact bound fetch capacities and overflow-safe comparisons. A
+render pass, never inside it or hoisted across producers. Use a distinct scratch record
+for every draw (one retained span per admitted batch), exact bound fetch capacities
+and overflow-safe comparisons. A
 nonzero unsupported firstInstance suppresses the entire draw, not just that field.
 Indexed variants share that guard owner and mode word; the native index bind has
 no size, so the bound index range is enforced only by direct admission and the
 GPU guard. Never read index values on the host.
 The argument normalizer source lives in common/doe_draw_guard.h. Keep the Vulkan
-wrapper's exact retained bytes/record layout and native capacities unchanged;
+legacy wrapper's exact retained bytes/record layout and native capacities unchanged;
+explicit batch sources use global invocation index with the same per-record rule;
 sharing that source never establishes another backend's indexed-fetch proof.
 
 Viewport physical bounds and logical requested limits are distinct. An empty
@@ -107,3 +109,11 @@ Never retire it from draw completion or queue idle; preserve unknown ownership a
 original errors. Borrow real platform handles, require the complete extension and
 feature chain, and keep stale acquired-image generations unusable. No headless or
 CPU image may stand in for an unsupported native surface.
+
+Buffer memory blocks are context-owned and bounded; each buffer carries one aligned
+slice lease grouped by its actual memory type. Dedicated requirements are queried,
+not inferred. Unknown submissions retain their slices. Coherent mapped slices are
+cleared before publication; unmapped slices reserve initialization on the existing
+command owner and publish it only after accepted queue submission. An abandoned
+recording must not publish initialization, and an implicit once-only clear must not
+be replayed by a reusable recording. Hidden transfer usage never widens public usage.

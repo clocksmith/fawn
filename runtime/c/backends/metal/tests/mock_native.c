@@ -241,6 +241,33 @@ static doe_mtl_status dispatch(void *userdata, void *command, void *pipeline,
     return doe_mtl_fail(DOE_MTL_OK, "mock dispatch", error);
 }
 
+static doe_mtl_status guard_batch(void *userdata, void *command,
+    const doe_mtl_native_guard_copy *copies, size_t copy_count,
+    const doe_mtl_native_guard_dispatch *steps, size_t step_count, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    ++mock->guard_batches;
+    mock->guard_normalizations = 0;
+    doe_mtl_status status = DOE_MTL_OK;
+    for (size_t i = 0; i < copy_count && status == DOE_MTL_OK; ++i)
+        status = copy_buffer(userdata, command, copies[i].source, copies[i].source_offset,
+            copies[i].destination, copies[i].destination_offset, copies[i].size, error);
+    for (size_t i = 0; i < step_count && status == DOE_MTL_OK; ++i) {
+        if (steps[i].binding_count == 1) {
+            unsigned at = mock->guard_normalizations++;
+            assert(at < 8 && steps[i].bindings[0].size == steps[i].groups.x * 40u);
+            mock->guard_normal_groups[at] = steps[i].groups.x;
+            mock->guard_normal_offsets[at] = steps[i].bindings[0].offset;
+            mock->guard_normal_sizes[at] = steps[i].bindings[0].size;
+        }
+        doe_mtl_native_resources resources = {0};
+        for (uint32_t j = 0; j < steps[i].binding_count; ++j)
+            resources.buffers[steps[i].slots[j]] = steps[i].bindings[j];
+        status = dispatch(userdata, command, steps[i].pipeline, &resources, steps[i].sizes_slot,
+            steps[i].groups, steps[i].workgroup, 1, NULL, error);
+    }
+    return status;
+}
+
 static doe_mtl_status dispatch_indirect(void *userdata, void *command, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error) {
@@ -343,6 +370,31 @@ static doe_mtl_status render_pipeline_create(void *userdata, void *device,
     *out_depth = depth;
     return doe_mtl_fail(DOE_MTL_OK, "mock render pipeline", error);
 }
+static void capture_render_bindings(mock_render_bindings *storage, doe_mtl_native_resources *native,
+    doe_mtl_render_bindings *bindings) {
+    *native = (doe_mtl_native_resources){0};
+    for (size_t i = 0; i < bindings->buffer_count; ++i) {
+        storage->buffers[i] = bindings->buffers[i];
+        const doe_mtl_buffer_binding *binding = &bindings->buffers[i];
+        native->buffers[binding->slot] = (doe_mtl_native_binding){doe_mtl_buffer_native(binding->buffer),
+            (size_t)binding->offset,(uint32_t)binding->size};
+    }
+    for (size_t i = 0; i < bindings->texture_count; ++i) {
+        storage->textures[i] = bindings->textures[i];
+        uint32_t slot = bindings->textures[i].slot;
+        native->textures[slot] = doe_mtl_texture_view_native(bindings->textures[i].view);
+        if (slot >= native->texture_count) native->texture_count = slot + 1;
+    }
+    for (size_t i = 0; i < bindings->sampler_count; ++i) {
+        storage->samplers[i] = bindings->samplers[i];
+        uint32_t slot = bindings->samplers[i].slot;
+        native->samplers[slot] = doe_mtl_sampler_native(bindings->samplers[i].sampler);
+        if (slot >= native->sampler_count) native->sampler_count = slot + 1;
+    }
+    bindings->buffers = storage->buffers;
+    bindings->textures = storage->textures;
+    bindings->samplers = storage->samplers;
+}
 static doe_mtl_status render(void *userdata, void *command,
     const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
     size_t count, doe_mtl_error *error) {
@@ -354,7 +406,13 @@ static doe_mtl_status render(void *userdata, void *command,
     mock->render_sequence = ++mock->operation_sequence;
     mock->render_pass = *pass;
     mock->render_draw_count = count;
-    for (i = 0; i < count && i < 2; ++i) mock->render_draws[i] = draws[i];
+    for (i = 0; i < count && i < 2; ++i) {
+        mock->render_draws[i] = draws[i];
+        capture_render_bindings(&mock->render_bindings[i][0], &mock->render_resources[i][0], &mock->render_draws[i].values.vertex);
+        capture_render_bindings(&mock->render_bindings[i][1], &mock->render_resources[i][1], &mock->render_draws[i].values.fragment);
+        mock->render_draws[i].values.vertex.immediates.bytes = mock->render_draws[i].vertex_immediates;
+        mock->render_draws[i].values.fragment.immediates.bytes = mock->render_draws[i].fragment_immediates;
+    }
     return doe_mtl_fail(DOE_MTL_OK, "mock render", error);
 }
 
@@ -469,6 +527,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.copy = copy_buffer;
     native.fill = fill_buffer;
     native.dispatch = dispatch;
+    native.guard_batch = guard_batch;
     native.dispatch_indirect = dispatch_indirect;
     native.texture = texture_create;
     native.view = view_create;

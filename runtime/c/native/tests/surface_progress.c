@@ -284,7 +284,9 @@ static void cleanup_does_not_block_work_done(xcb_connection_t *connection, xcb_w
     wgpuDevicePushErrorScope(s.device, WGPUErrorFilter_Internal);
     WGPUQueueWorkDoneCallbackInfo work = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=completed_work,.userdata1=&completed};
-    assert(wgpuQueueOnSubmittedWorkDone(s.queue, work).id && completed == 1);
+    WGPUFuture future = wgpuQueueOnSubmittedWorkDone(s.queue, work);
+    wait_future(&s, future);
+    assert(completed == 1);
     WGPUPopErrorScopeCallbackInfo error = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=no_cleanup_error,.userdata1=&popped};
     assert(wgpuDevicePopErrorScope(s.device, error).id && popped == 1 && !s.errors);

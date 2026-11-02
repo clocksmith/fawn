@@ -31,6 +31,11 @@ struct doe_dx_buffer {
     bool immutable_zero; /* Shared zero staging is never writable through the API. */
     bool initialized; /* Completed full initialization. */
     bool accepted_initialized; /* Future GPU use, guarded by pending identity. */
+    uint64_t upload_used;
+    bool upload_slices; /* Only append API may write a live page prefix. */
+    uint64_t lend_offset;
+    size_t lend_size;
+    bool lent_write;
     bool lent; /* Mapped READBACK bytes lent to a read mapping. */
     bool evict_requested; /* Native allocation retires after its last GPU use. */
 };
@@ -48,6 +53,7 @@ struct doe_dx_texture {
     size_t owner_index;
     bool initialized;
     bool shared, shared_active, shared_read_only;
+    uint64_t shared_begin_fence;
     bool evict_requested;
 };
 struct doe_dx_timestamps {
@@ -116,6 +122,7 @@ struct doe_dx_commands {
     doe_dx_native_commands *native;
     doe_dx_command_state state;
     bool caller_owned;
+    bool work_executed;
     uint64_t fence; /* Zero after execution means signal completion is unknown. */
     doe_dx_error failure;
     doe_dx_buffer_use *buffers;

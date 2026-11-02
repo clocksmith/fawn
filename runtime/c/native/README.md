@@ -217,11 +217,13 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   destroyed state before single-use submit, and hold submission references until
   settlement. Vulkan commands separately own the actual native recording and
   completion obligations. Buffer mapping stages real coherent native contents;
-  writable maps write back on unmap. No CPU compute emulation is used.
+  shadow-backed writable maps write back on unmap. Legal D3D12 MapWrite|CopySrc
+  buffers instead lend zeroed UPLOAD memory directly; mappedAtCreation storage
+  retains its DEFAULT allocation and CPU shadow. No CPU compute emulation is used.
 - Public textures/views/samplers alias the same resource owner. Images are fully
   zero-initialized at every mip/layer through actual native uploads or attachment
   clears before any queue-ordered access, including images without public CopyDst
-  usage (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). On Vulkan, texture creation records the initialization into one
+  usage (queue-ordered initialization). On Vulkan, texture creation records the initialization into one
   device-owned batch that the next queue submission or compute-program replay
   submits ahead of its own work, without waiting; every access to texture
   contents is such a submission. The batch is also submitted once it holds 64
@@ -242,22 +244,20 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   and an explicit submission device lease. Packed queue writes and 256-byte-aligned public command
   copies retain their distinct canonical validation. Native views/samplers remain
   alive through the recorded resource and backend obligations.
-- On Vulkan, QueueSubmit returns once `vkQueueSubmit` accepts the work (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
+- On Vulkan, QueueSubmit returns once `vkQueueSubmit` accepts the work.
   The record stays on the pending list, oldest first, with its native and
   resource leases until it is proven terminal. The progress worker waits for the
   oldest accepted fence outside the device mutex under a command hold, skipping a
   refused submission whose fence never signals; routine settlement (submit,
   texture creation) polls, and running work is never reported as a failure. The
-  first terminal failure is reported once to a later public call. Buffer writes
-  and maps wait, oldest first, only while a submission still uses that buffer;
-  work done waits each pending record's own fence (queue idle only for a refused
-  submission) before admitting its callback, so map and work-done callbacks keep
-  request order. Metal, D3D12,
-  compute programs, private initialization and presentation keep their
-  synchronous wait. Uncertain completion retains both native and resource
-  obligations; if still unresolved, work-done publishes no future rather than
-  reporting success. Releasing all caller handles does not free unresolved work.
-  This is not a latency or parity claim.
+  first terminal failure is preserved for a later public observer. Synchronous
+  buffer writes and reads settle only relevant resource owners. MapAsync reserves
+  its generation and returns a future before waiting or readback. WorkDone captures
+  the accepted submission serial, so later submissions cannot delay its future.
+  Both use the existing pending/progress and callback owners; readiness publishes
+  outside the device mutex, respecting callback mode and cancellation. Unknown
+  completion keeps the admitted future pending and retains native/resource leases.
+  Explicit WaitAny can block. These are execution semantics, not a latency claim.
 - TimestampQuery is opt-in at device creation. Generated backend WGSL is compiled
   by the same C compiler before a feature-enabled device is published. Query
   sets alias the resource owner; zero-count sets need no native pool. Query resolve
@@ -384,16 +384,15 @@ and exact exports; absent platform loaders remain explicitly unavailable.
 
 - Each published device owns one progress worker and an ordinary device lease.
   It polls the existing pending list without waiting for queue idle. On Metal
-  (owner decision 2026-10-31, superseding the 2026-10-24 worker wake there),
-  every committed command buffer carries a completed handler instead: submission
-  and lease drops do not wake the worker of a live device, whose records retire
-  on later public calls (submit, write, map and work done all settle first). The
-  handler never takes the device mutex. Destroying the device, which the last
-  external device release does, arms the handler to wake the worker. Unknown
-  completion retains every submission/resource lease even after all public
-  handles disappear; terminal success or failure retires them. The first retired
-  failure remains observable by a later public operation. An idle last release
-  joins the worker before returning. Startup failure publishes no device.
+  every committed command buffer carries a completed handler. Submission and
+  lease drops alone do not wake a live worker. Pending map/work-done obligations
+  observe completion and wake progress; destruction arms the handler for remaining
+  retirement. The handler never takes the device mutex or retires state. Unknown
+  completion retains all submission/resource leases, even after public handles
+  disappear. An idle last release joins the worker; startup failure publishes no
+  device. `check-async-completion` covers deferred readiness, exact bytes and
+  generation cancellation; async-submit controls exclude later work from an
+  earlier WorkDone obligation.
 - Background execution retains provider code until process exit, independently of
   GPU/device resources. POSIX keeps one loader reference per non-main image;
   Win32 uses `InitOnce` and `GetModuleHandleEx(FROM_ADDRESS|PIN)` with no ordinary
@@ -930,6 +929,16 @@ subsequent keyed reacquisition through canonical finalization. This white-box qu
 coordination forces the race interval; it does not simulate GPU completion/data.
 This dedicated software control does not establish Chromium presentation or
 physical GPU evidence.
+
+The same builder also links `d3d12_upload_mapping_windows.exe`; explicit `--warp`
+checks zeroed MapWrite|CopySrc UPLOAD lends, exact deferred MapAsync ranges and
+GPU-gated cancellation, while mappedAtCreation storage remains DEFAULT/shadowed.
+Real copies verify caller snapshots from aligned persistent-page slices, including
+repeated/overlapping writes ordered in one open command. The shared-memory control
+also verifies an unsignaled producer never CPU-blocks Begin/End, a zero-work End
+forwards its queue dependency, foreign device/fence release is safe and repeated
+exports borrow the same cached timeline handle. These remain bounded Windows CPU
+software controls, separate from browser presentation and physical qualification.
 
 The Makefile invokes the compiler owner's canonical `shared` target for
 `libdoe_compiler.so`, without parsing or duplicating its target source lists, then links `libwebgpu_doe_c.so` from C owners only. It writes
@@ -1800,3 +1809,13 @@ shader owner's separate profile envelope for HLSL; fresh, memory and disk hits
 retain the same immutable producer requirement. Legacy artifacts remain readable
 without gaining certification. Cache identity, opt-out, lifetime, compiler entry
 indices and all native resource/output gates remain with their existing owners.
+
+The Windows builder also links `d3d12_async_signal.exe`. Run
+`C:\doe-build\native\d3d12_async_signal.exe --signal-fault --warp` explicitly.
+It uses the original SDK context with only its private C Signal entry renamed;
+one armed call returns E_FAIL after real ExecuteCommandLists. A closed actual
+queue gate proves WorkDone and MapAsync registration return admitted futures
+without recovery waits, while zero-time waits stay pending and native leases
+survive. It also checks retry, typed diagnostics, cancellation and actual42
+readback. Ordinary builds compile this control without executing a device; its
+input and binary hashes belong to `native-scope.json`. This is CPU WARP evidence.

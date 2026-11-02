@@ -2,21 +2,6 @@
 #include "metal_graphics_internal.h"
 #include "metal_indirect.h"
 
-static doe_mtl_status initialize(doe_mtl_commands *commands, native_texture *texture, doe_mtl_error *error)
-{
-    const doe_mtl_texture_desc *desc = doe_mtl_texture_description(texture->metal);
-    if (!(desc->usage & DOE_MTL_TEXTURE_RENDER_TARGET)) return DOE_MTL_OK;
-    doe_mtl_texture_view_desc span = {.type=desc->type, .format=desc->format,
-        .mip_count=desc->mip_levels, .layer_count=desc->depth_or_layers,
-        .red=DOE_MTL_SWIZZLE_RED, .green=DOE_MTL_SWIZZLE_GREEN,
-        .blue=DOE_MTL_SWIZZLE_BLUE, .alpha=DOE_MTL_SWIZZLE_ALPHA};
-    doe_mtl_texture_view *view = NULL;
-    doe_mtl_status status = doe_mtl_texture_view_create(texture->metal, &span, &view, error);
-    if (status == DOE_MTL_OK) status = doe_mtl_commands_initialize_attachment(commands, view, error);
-    doe_mtl_texture_view_release(view);
-    return status;
-}
-
 static native_failure transfer(doe_mtl_commands *commands, const doe_resource_command *record)
 {
     const doe_resource_texture_copy *copy = &record->value.texture.copy;
@@ -24,8 +9,7 @@ static native_failure transfer(doe_mtl_commands *commands, const doe_resource_co
     native_buffer *buffer = doe_resource_buffer_native(record->value.texture.buffer);
     native_texture *texture = doe_resource_texture_native(record->value.texture.texture);
     doe_mtl_error error = {0};
-    doe_mtl_status status = initialize(commands, texture, &error);
-    if (status != DOE_MTL_OK) return native_failure_metal(status, &error);
+    doe_mtl_status status = DOE_MTL_OK;
     doe_mtl_texture_region region = {copy->mip, copy->origin[0], copy->origin[1], copy->origin[2],
         copy->width, copy->height, copy->depth_or_layers};
     uint32_t pitch = record->value.texture.region.pitch;
@@ -40,8 +24,8 @@ static native_failure transfer(doe_mtl_commands *commands, const doe_resource_co
         DOE_MTL_TRANSFER_DEPTH : record->value.texture.region.aspect == WGPUTextureAspect_StencilOnly ?
         DOE_MTL_TRANSFER_STENCIL : DOE_MTL_TRANSFER_ALL;
     if (status == DOE_MTL_OK) status = record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
-        doe_mtl_commands_upload_texture_aspect(commands, buffer->handle.metal, layout, texture->metal, region, aspect, &error) :
-        doe_mtl_commands_read_texture_aspect(commands, texture->metal, region, aspect, buffer->handle.metal, layout, &error);
+        doe_mtl_commands_upload_texture_aspect_prepared(commands, buffer->handle.metal, layout, texture->metal, region, aspect, &error) :
+        doe_mtl_commands_read_texture_aspect_prepared(commands, texture->metal, region, aspect, buffer->handle.metal, layout, &error);
     return native_failure_metal(status, &error);
 }
 
@@ -84,9 +68,7 @@ native_failure native_metal_record_commands(doe_mtl_commands *commands, doe_reso
             if (!copy->width || !copy->height || !copy->depth_or_layers) continue;
             native_texture *source = doe_resource_texture_native(copy->source.texture);
             native_texture *destination = doe_resource_texture_native(copy->destination.texture);
-            status = initialize(commands, source, &error);
-            if (status == DOE_MTL_OK) status = initialize(commands, destination, &error);
-            if (status == DOE_MTL_OK) status = doe_mtl_commands_copy_texture(commands, source->metal,
+            status = doe_mtl_commands_copy_texture_prepared(commands, source->metal,
                 (doe_mtl_texture_region){copy->source.mip,copy->source.origin[0],copy->source.origin[1],
                     copy->source.origin[2],copy->width,copy->height,copy->depth_or_layers}, destination->metal,
                 (doe_mtl_texture_region){copy->destination.mip,copy->destination.origin[0],copy->destination.origin[1],

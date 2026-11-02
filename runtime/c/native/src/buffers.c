@@ -79,16 +79,25 @@ native_buffer_creation native_device_create_buffer_result(native_device *device,
         NATIVE_UNSUPPORTED : native_device_result(device));
     if (failure.status == NATIVE_OK)
         failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage,
-            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation,
+            descriptor->usage & WGPUBufferUsage_MapWrite ? NATIVE_BUFFER_MAP_WRITE :
+            (descriptor->usage & WGPUBufferUsage_MapRead) && !descriptor->mappedAtCreation ?
+                NATIVE_BUFFER_MAP_READ : NATIVE_BUFFER_GENERAL,
             (descriptor->usage & (WGPUBufferUsage_MapRead | WGPUBufferUsage_MapWrite)) != 0);
     doe_resource_status created = DOE_RESOURCE_OK;
     if (failure.status == NATIVE_OK) {
         created = doe_resource_buffer_create(&device->resources, &desc,
             (doe_resource_native){payload, NULL, native_buffer_release}, &buffer);
         if (created == DOE_RESOURCE_OK && descriptor->mappedAtCreation) {
-            payload->mapping = calloc(1, descriptor->size ? (size_t)descriptor->size : 1);
-            created = payload->mapping ? doe_resource_buffer_map_complete(buffer, 0, true,
-                payload->mapping) : DOE_RESOURCE_OUT_OF_MEMORY;
+            unsigned char *direct = NULL;
+            if (native_buffer_host_writable(payload)) {
+                failure = native_buffer_host_write_range(payload, 0, (size_t)descriptor->size, &direct);
+                created = failure.status == NATIVE_OK ?
+                    doe_resource_buffer_map_complete(buffer, 0, true, direct) : DOE_RESOURCE_EXECUTION_FAILED;
+            } else {
+                payload->mapping = calloc(1, descriptor->size ? (size_t)descriptor->size : 1);
+                created = payload->mapping ? doe_resource_buffer_map_complete(buffer, 0, true,
+                    payload->mapping) : DOE_RESOURCE_OUT_OF_MEMORY;
+            }
             if (created != DOE_RESOURCE_OK) {
                 doe_resource_buffer_release(buffer);
                 buffer = NULL;
@@ -257,126 +266,6 @@ WGPUStatus wgpuBufferWriteMappedRange(WGPUBuffer handle, size_t offset, const vo
     if (status == DOE_RESOURCE_OK && size) memmove(destination, data, size);
     native_unlock(device);
     return status == DOE_RESOURCE_OK ? WGPUStatus_Success : WGPUStatus_Error;
-}
-
-typedef struct map_delivery {
-    WGPUBufferMapCallbackInfo callback;
-    doe_resource_buffer *buffer;
-    unsigned char *bytes;
-    const unsigned char *direct; /* Backend-owned read range; never freed here. */
-    uint64_t generation, offset;
-    size_t size;
-    bool began;
-    WGPUMapAsyncStatus status;
-    char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
-} map_delivery;
-static void copy_map(void *destination, const void *source)
-{
-    *(map_delivery *)destination = *(const map_delivery *)source;
-}
-static void deliver_map(void *context)
-{
-    map_delivery value = *(map_delivery *)context;
-    native_device *device = doe_resource_buffer_device(value.buffer);
-    native_lock(device);
-    if (value.began) {
-        bool success = value.status == WGPUMapAsyncStatus_Success;
-        doe_resource_status status = doe_resource_buffer_map_complete(value.buffer,
-            value.generation, success, value.direct ? (unsigned char *)value.direct : value.bytes);
-        if (status == DOE_RESOURCE_OK) {
-            native_buffer *payload = doe_resource_buffer_native(value.buffer);
-            payload->mapping = value.bytes;
-            value.bytes = NULL;
-        } else {
-            /* Not published: end any lent range now (idempotent if destroy did). */
-            if (value.direct) native_buffer_host_return(doe_resource_buffer_native(value.buffer));
-            if (success) value.status = WGPUMapAsyncStatus_Aborted;
-        }
-    }
-    native_unlock(device);
-    free(value.bytes);
-    if (value.status != WGPUMapAsyncStatus_Success && !value.message[0]) {
-        native_failure failure = native_failure_status(NATIVE_INVALID_STATE);
-        native_failure_format(&failure, "buffer map failed or aborted", value.message);
-    }
-    if (value.callback.callback)
-        value.callback.callback(value.status, native_string(value.message),
-            value.callback.userdata1, value.callback.userdata2);
-    doe_resource_buffer_release(value.buffer);
-}
-
-WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
-    size_t offset, size_t size, WGPUBufferMapCallbackInfo callback)
-{
-    doe_resource_buffer *buffer = (doe_resource_buffer *)handle;
-    native_device *device = doe_resource_buffer_device(buffer);
-    if (!device || callback.nextInChain) return (WGPUFuture){0};
-    doe_resource_buffer_retain(buffer);
-    map_delivery delivery = {.callback = callback, .buffer = buffer, .offset = offset,
-        .status = WGPUMapAsyncStatus_Error};
-    native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
-    native_failure consumed_failure = native_failure_status(NATIVE_OK);
-    native_lock(device);
-    uint64_t requested = size == WGPU_WHOLE_MAP_SIZE ? UINT64_MAX : size;
-    const native_result device_status = native_device_result(device);
-    doe_resource_status status = device_status == NATIVE_OK ?
-        doe_resource_buffer_map_begin(buffer, mode, offset, requested, &delivery.generation) :
-        DOE_RESOURCE_UNAVAILABLE;
-    const bool rejected = device_status == NATIVE_OK && status != DOE_RESOURCE_OK;
-    if (device_status != NATIVE_OK) {
-        delivery.status = WGPUMapAsyncStatus_Aborted;
-        failure = native_failure_status(device_status);
-    }
-    if (status == DOE_RESOURCE_OK) {
-        delivery.began = true;
-        const doe_resource_buffer_desc *desc = doe_resource_buffer_description(buffer);
-        delivery.size = size == WGPU_WHOLE_MAP_SIZE ? (size_t)(desc->size - offset) : size;
-        native_buffer *payload = doe_resource_buffer_native(buffer);
-        /* Read mappings expose only const ranges and mapped buffers are refused
-         * by submission and queue writes, so a backend's persistent coherent
-         * bytes can be lent directly instead of copied into a host shadow. */
-        const bool direct = mode == WGPUMapMode_Read && native_buffer_host_lendable(payload);
-        delivery.bytes = direct ? NULL : malloc(delivery.size ? delivery.size : 1);
-        if (direct || delivery.bytes) {
-            failure = native_settle_for_buffer(device, payload);
-            consumed_failure = failure;
-            if (failure.status == NATIVE_OK)
-                failure = direct ? native_buffer_host_range(payload, offset, delivery.size, &delivery.direct) :
-                    native_buffer_read(payload, offset, delivery.bytes, delivery.size);
-            if (failure.status != NATIVE_OK) consumed_failure = failure;
-            if (failure.status == NATIVE_OK) delivery.status = WGPUMapAsyncStatus_Success;
-            else if (native_device_result(device) != NATIVE_OK)
-                delivery.status = WGPUMapAsyncStatus_Aborted;
-        } else {
-            failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
-            consumed_failure = failure;
-        }
-    }
-    native_unlock(device);
-    native_failure_format(&failure, "buffer map failed or aborted", delivery.message);
-    /* Invalid arguments generate a device error independently of callback
-     * delivery. Publish before admission: a spontaneous callback may pop its
-     * error scope or release all public handles. This buffer lease protects the
-     * device through reporting and then transfers to the callback owner. */
-    if (rejected) native_error(device, native_resource_error(status), delivery.message);
-    doe_callback_status admitted;
-    WGPUFuture future = native_callback_admit(device->instance, callback.mode, &delivery,
-        sizeof(delivery), _Alignof(map_delivery), copy_map, deliver_map, &admitted);
-    if (!future.id) {
-        native_lock(device);
-        if (delivery.began)
-            (void)doe_resource_buffer_map_complete(buffer, delivery.generation, false, NULL);
-        if (delivery.direct) native_buffer_host_return(doe_resource_buffer_native(buffer));
-        native_unlock(device);
-        free(delivery.bytes);
-        /* Admission did not transfer a callback obligation. The buffer lease
-         * still protects device storage while this consumed error is reported. */
-        if (consumed_failure.status != NATIVE_OK)
-            native_error(device, native_result_error(consumed_failure.status), delivery.message);
-        else if (!rejected) native_callback_refused(device, admitted);
-        doe_resource_buffer_release(buffer);
-    }
-    return future;
 }
 
 /* Queue-write staging uses the ordinary command and pending owners. Both

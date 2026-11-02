@@ -160,6 +160,13 @@ doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_e
     return outcome(MOCK_ZERO_READBACK,error);
 }
 
+doe_dx_status doe_dx_native_write_upload_slice(doe_dx_native_buffer *buffer,uint64_t offset,
+    const void *bytes,size_t size,doe_dx_error *error) {
+    assert(buffer && bytes && size && buffer->memory==DOE_DX_UPLOAD);
+    mock.slice_writes++; mock.slice_offset=offset; mock.slice_size=size;
+    return outcome(MOCK_WRITE,error);
+}
+
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error) {
     assert(buffer && bytes && size && !buffer->recorded);
@@ -178,6 +185,16 @@ doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offs
     return DOE_DX_OK;
 }
 
+doe_dx_status doe_dx_native_map_write(doe_dx_native_buffer *buffer,uint64_t offset,size_t size,
+    void **out,doe_dx_error *error) {
+    const void *bytes=NULL;
+    doe_dx_status status=doe_dx_native_map_read(buffer,offset,size,&bytes,error);
+    if (status==DOE_DX_OK) *out=(void *)bytes;
+    return status;
+}
+void doe_dx_native_unmap_write(doe_dx_native_buffer *buffer,uint64_t offset,size_t size) {
+    (void)offset; (void)size; doe_dx_native_unmap_read(buffer);
+}
 void doe_dx_native_unmap_read(doe_dx_native_buffer *buffer) {
     assert(buffer && buffer->lends == 1 && mock.lends);
     buffer->lends--;
@@ -367,10 +384,14 @@ doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_erro
     return outcome(MOCK_FINISH, error);
 }
 
-void doe_dx_native_execute(doe_dx_native_context *context, doe_dx_native_commands *commands) {
+doe_dx_status doe_dx_native_execute(doe_dx_native_context *context,doe_dx_native_commands *commands,doe_dx_error *error) {
     assert(context && !commands->execution);
+    doe_dx_status status=mock.execute_status!=DOE_DX_OK ?
+        doe_dx_fail(mock.execute_status,-901,"mock.queue_wait",error) : outcome(MOCK_EXECUTE,error);
+    if (status!=DOE_DX_OK) return status;
     mock.executes++;
     commands->execution = mock.executes;
+    return DOE_DX_OK;
 }
 
 doe_dx_status doe_dx_native_signal(doe_dx_native_context *context, uint64_t value,

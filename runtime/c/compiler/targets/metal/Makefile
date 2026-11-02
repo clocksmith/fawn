@@ -6,15 +6,21 @@ OUT ?= $(DOE_C_TMP)/metal-target
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 include sources.mk
 SOURCES = $(METAL_SOURCE_NAMES)
-CORE = $(filter-out ../../src/specialization.c ../../src/specialization_compile.c ../../src/cli.c ../../src/cli_%.c ../../src/compile_text.c ../../src/text_metal.c ../../src/text_hlsl.c,$(wildcard ../../src/*.c))
-.PHONY: all check style clean
+CORE = ../../build/libdoe_compiler_core.a
 all: $(OUT)/test_metal $(OUT)/test_images
+# Compose the actual compiler closure, including prepared publication, rather
+# than a wildcard subset that silently drops its private dependencies.
+.PHONY: compiler-core-check
+compiler-core-check:
+	$(MAKE) -C ../.. CC="$(CC)" build/libdoe_compiler_core.a
+$(CORE): | compiler-core-check
+.PHONY: all check style clean
 $(OUT)/test_metal: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_metal.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_metal.c $(CORE) -lm -o $@
 $(OUT)/test_images: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_images.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_images.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_images.c $(CORE) -lm -o $@
 check: atomic-control binding-work-control all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics $(OUT)/test_matrices
 	$(OUT)/test_metal
 	$(OUT)/test_images
@@ -59,7 +65,7 @@ $(OUT)/test_closure: ../tests/test_closure.c ../closure.h ../scratch.h ../stage_
 
 $(OUT)/test_graphics: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/stage_source.h tests/fixture.h tests/test_graphics.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_graphics.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_graphics.c $(CORE) -lm -o $@
 .PHONY: graphics-host-control
 graphics-host-control: $(OUT)/test_graphics
 	$(OUT)/test_graphics $(OUT)/graphics.metal
@@ -68,7 +74,7 @@ graphics-host-control: $(OUT)/test_graphics
 
 $(OUT)/test_matrices: $(SOURCES) metal.h private.h ../closure.h ../scratch.h tests/fixture.h tests/test_matrices.c ../tests/matrix_source.h $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_matrices.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_matrices.c $(CORE) -lm -o $@
 .PHONY: matrix-host-control
 matrix-host-control: $(OUT)/test_matrices
 	$(OUT)/test_matrices $(OUT)/matrices.metal
@@ -77,7 +83,7 @@ matrix-host-control: $(OUT)/test_matrices
 
 $(OUT)/test_component_math: $(SOURCES) metal.h private.h tests/fixture.h tests/test_component_math.c ../tests/component_math_source.h $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_component_math.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_component_math.c $(CORE) -lm -o $@
 .PHONY: component-math-control
 component-math-control: $(OUT)/test_component_math
 	$(OUT)/test_component_math $(OUT)/component_math.metal
@@ -86,14 +92,14 @@ component-math-control: $(OUT)/test_component_math
 
 $(OUT)/test_binding_work: $(SOURCES) metal.h private.h tests/test_binding_work.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_binding_work.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_binding_work.c $(CORE) -lm -o $@
 .PHONY: binding-work-control
 binding-work-control: $(OUT)/test_binding_work
 	$(OUT)/test_binding_work
 
 $(OUT)/test_atomics: $(SOURCES) metal.h private.h tests/fixture.h tests/test_atomics.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
-	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_atomics.c -lm -o $@
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_atomics.c $(CORE) -lm -o $@
 .PHONY: atomic-control atomic-sdk
 atomic-control: $(OUT)/test_atomics
 	$(OUT)/test_atomics $(OUT)/atomic
@@ -110,3 +116,13 @@ switch-host-control:
 	mv $(OUT)/switch_control.metal.tmp $(OUT)/switch_control.metal
 	g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -fsanitize=undefined -Itests/host -I$(OUT) tests/host/check_switch.cpp -o $(OUT)/check_switch
 	$(OUT)/check_switch
+
+$(OUT)/test_workgroup_zero: $(SOURCES) metal.h private.h tests/fixture.h tests/test_workgroup_zero.c $(CORE) $(wildcard ../../src/*.h)
+	mkdir -p $(OUT)
+	$(CC) $(CFLAGS) $(SOURCES) tests/test_workgroup_zero.c $(CORE) -lm -o $@
+.PHONY: workgroup-zero-control
+workgroup-zero-control: $(OUT)/test_workgroup_zero
+	$(OUT)/test_workgroup_zero $(OUT)/workgroup-zero
+	$(CXX) -std=c++17 -O2 -Wno-attributes -Itests/host $(OUT)/workgroup-zero.cpp -o $(OUT)/workgroup-zero-host
+	$(OUT)/workgroup-zero-host
+check: workgroup-zero-control

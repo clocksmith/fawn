@@ -6,12 +6,13 @@
 
 typedef enum mock_failure {
     MOCK_NONE, MOCK_OPEN, MOCK_BUFFER, MOCK_PIPELINE, MOCK_COMMANDS,
-    MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
+    MOCK_EXECUTE, MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
     MOCK_WRITE, MOCK_READ, MOCK_TEXTURE, MOCK_GRAPHICS, MOCK_DRAW, MOCK_TIMESTAMPS, MOCK_FREQUENCY,
     MOCK_DISPATCH_INDIRECT, MOCK_NO_HARDWARE, MOCK_ZERO_READBACK
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
+    doe_dx_status execute_status;
     size_t opens, luid_queries;
     uint32_t query_low;
     int32_t query_high;
@@ -31,6 +32,8 @@ typedef struct mock_state {
     doe_dx_format_caps reported_format_caps;
     doe_dx_format queried_format;
     size_t contexts, buffers, pipelines, commands, textures, timestamps;
+    size_t slice_writes, slice_size;
+    uint64_t slice_offset;
     size_t copies, dispatches, finishes, executes, signals, waits, recycled_commands;
     size_t buffer_orders, ordered_buffers, copies_before_order;
     bool created_zeroed; /* Native creation reports D3D12-zeroed memory. */

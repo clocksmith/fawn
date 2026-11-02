@@ -26,6 +26,10 @@ typedef struct control {
 } control;
 static control seen;
 
+/* These controls do not exercise destruction; an unexpected path must fail
+ * rather than resolving against a real backend with these ledger-only handles. */
+void native_progress_pending(native_device *device) { (void)device; abort(); }
+doe_dx_status doe_dx_buffer_evict(doe_dx_buffer *buffer) { (void)buffer; abort(); }
 uint64_t native_allocation_bound(const native_device *device)
 {
     (void)device;
@@ -64,6 +68,17 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
 {
     return doe_dx_buffer_create(context,size,DOE_DX_UPLOAD,out,error);
 }
+doe_dx_status doe_dx_upload_slice_write(doe_dx_context *context,const void *bytes,size_t size,uint64_t alignment,
+    doe_dx_upload_slice *out,doe_dx_error *error)
+{
+    (void)alignment;
+    doe_dx_buffer *staging=NULL;
+    doe_dx_status status=doe_dx_upload_acquire(context,size,&staging,error);
+    if (status==DOE_DX_OK) status=doe_dx_buffer_write(staging,0,bytes,size,error);
+    if (status==DOE_DX_OK) *out=(doe_dx_upload_slice){staging,0,size};
+    else doe_dx_buffer_release(staging);
+    return status;
+}
 void doe_dx_buffer_release(doe_dx_buffer *buffer)
 {
     if (buffer && !--buffer->references) { seen.live--; free(buffer); }
@@ -86,6 +101,13 @@ doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
     /* A call marker, never an oracle for GPU-produced or initialized data. */
     memset(bytes, 0x5a, size);
     return DOE_DX_OK;
+}
+doe_dx_status doe_dx_buffer_lend_write(doe_dx_buffer *buffer,uint64_t offset,size_t size,
+    void **out,doe_dx_error *error)
+{
+    (void)error;
+    assert(buffer->memory==DOE_DX_UPLOAD && !buffer->pending && offset+size<=buffer->size);
+    static unsigned char lent[4096]; *out=lent+offset; seen.lends++; return DOE_DX_OK;
 }
 doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, size_t size,
     const void **out, doe_dx_error *error)
@@ -203,9 +225,9 @@ int main(void)
     device.backend.kind = WGPUBackendType_D3D12;
     device.backend.value.d3d12.caps.limits.uniform_offset_alignment = 256;
     native_buffer buffer = {.device=&device};
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, true).status == NATIVE_INVALID_ARGUMENT);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, NATIVE_BUFFER_MAP_READ).status == NATIVE_INVALID_ARGUMENT);
     assert(!seen.allocations && !buffer.handle.d3d12);
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, true).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, NATIVE_BUFFER_MAP_READ).status == NATIVE_OK);
     assert(buffer.handle.d3d12->memory == DOE_DX_READBACK);
     assert(buffer.handle.d3d12->allocation_size == 16 && seen.zero_size == 16);
     assert(seen.readback_zeroes == 1 && !seen.copies && !seen.async_submissions && seen.live == 1);
@@ -231,12 +253,12 @@ int main(void)
     /* DEFAULT creation defers its zero fill: no copy or submission yet. */
     unsigned submissions = seen.async_submissions;
     copies = seen.copies;
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     assert(buffer.handle.d3d12->memory == DOE_DX_DEFAULT && buffer.handle.d3d12->allocation_size == 256);
     assert(buffer.handle.d3d12->zero_deferred && device.backend.value.d3d12.deferred_zero == buffer.handle.d3d12);
     assert(seen.copies == copies && seen.async_submissions == submissions && seen.live == 1);
     native_buffer other = {.device=&device};
-    assert(native_d3d12_buffer_create(&other, 4096, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&other, 4096, DOE_VK_BUFFER_COPY_DST, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     /* A CPU read materializes every deferred fill, whole width and padding, in one
      * submission before its own transfer. */
     assert(native_d3d12_buffer_read(&buffer, 0, bytes, sizeof(bytes)).status == NATIVE_OK);
@@ -251,7 +273,7 @@ int main(void)
     native_d3d12_buffer_close(&other);
     assert(!seen.live);
     /* A whole-allocation write is the complete initializing copy: no zero fill. */
-    assert(native_d3d12_buffer_create(&buffer, 4096, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, 4096, DOE_VK_BUFFER_COPY_DST, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     unsigned char page[4096] = {7};
     copies = seen.copies;
     assert(native_d3d12_buffer_write(&buffer, 0, page, sizeof(page)).status == NATIVE_OK);
@@ -263,7 +285,7 @@ int main(void)
     retire_pending(true);
     native_d3d12_buffer_close(&buffer);
     /* A partial write (here: uniform padding) materializes the fill first. */
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     copies = seen.copies;
     submissions = seen.async_submissions;
     assert(native_d3d12_buffer_write(&buffer, 0, page, 16).status == NATIVE_OK);
@@ -275,16 +297,16 @@ int main(void)
     native_d3d12_buffer_close(&buffer);
     /* Release before any observation unlinks without a fill. */
     copies = seen.copies;
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, false).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     native_d3d12_buffer_close(&buffer);
     assert(!device.backend.value.d3d12.deferred_zero && seen.copies == copies && !seen.live);
     assert(native_d3d12_materialize_zero(&device).status == NATIVE_OK && seen.copies == copies);
     seen.zero_status=DOE_DX_NATIVE_FAILURE;
-    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_COPY_DST,true).status == NATIVE_FAILURE);
+    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_COPY_DST,NATIVE_BUFFER_MAP_READ).status == NATIVE_FAILURE);
     assert(!buffer.handle.d3d12 && !seen.live);
     seen.zero_status=DOE_DX_OK;
     /* A failed fill recording leaves every buffer deferred and nothing submitted. */
-    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, false).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_COPY_DST, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     seen.copy_status = DOE_DX_NATIVE_FAILURE;
     submissions = seen.async_submissions;
     assert(native_d3d12_materialize_zero(&device).status == NATIVE_FAILURE);
@@ -298,6 +320,17 @@ int main(void)
     native_d3d12_buffer_close(&buffer);
     native_d3d12_writes_close(&device.backend);
     assert(!seen.live);
-    puts("PASS actual Windows frontend composition: READBACK/DEFAULT placement, full zeroing spans/padding, direct map and lent read range, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
+    copies=seen.copies; allocations=seen.allocations;
+    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_COPY_SRC,NATIVE_BUFFER_MAP_WRITE).status==NATIVE_OK);
+    assert(buffer.handle.d3d12->memory==DOE_DX_UPLOAD && native_d3d12_buffer_write_lendable(&buffer));
+    assert(!buffer.handle.d3d12->zero_deferred && !device.backend.value.d3d12.deferred_zero);
+    unsigned char *writable=NULL;
+    assert(native_d3d12_buffer_lend_write(&buffer,4,8,&writable).status==NATIVE_OK && writable);
+    native_d3d12_buffer_return(&buffer);
+    assert(native_d3d12_buffer_write(&buffer,0,page,16).status==NATIVE_OK);
+    assert(seen.copies==copies && seen.allocations==allocations+1);
+    native_d3d12_buffer_close(&buffer);
+    assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_UNIFORM,NATIVE_BUFFER_MAP_WRITE).status==NATIVE_INVALID_ARGUMENT);
+    puts("PASS actual Windows frontend composition: typed READBACK/DEFAULT/UPLOAD placement and direct mutable write lending, full zeroing spans/padding, direct map and lent read range, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
     return 0;
 }

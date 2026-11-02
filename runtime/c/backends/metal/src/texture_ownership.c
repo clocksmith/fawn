@@ -141,9 +141,13 @@ void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool succ
         doe_mtl_texture_use *use = commands->textures;
         commands->textures = use->next;
         if (completed) {
-            if (success) memcpy(use->texture->initialized, use->initialized,
+            if (success && !use->texture->discard_pending) memcpy(use->texture->initialized, use->initialized,
                 use->texture->subresource_count * sizeof(uint8_t));
-            else use->texture->poisoned = true;
+            else if (!success) use->texture->poisoned = true;
+        }
+        if (use->texture->discard_pending) {
+            memset(use->texture->initialized, 0, use->texture->subresource_count * sizeof(uint8_t));
+            use->texture->discard_pending = false;
         }
         use->texture->owner = NULL;
         if (use->texture->evict_requested) doe_mtl_texture_evict_now(use->texture);

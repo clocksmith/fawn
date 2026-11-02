@@ -52,7 +52,7 @@ typedef struct doe_mtl_color_target {
 } doe_mtl_color_target;
 typedef struct doe_mtl_vertex_layout {
     uint32_t slot, stride;
-    uint32_t step; /* Native constant=0, per-vertex=1, per-instance=2; rate=1. */
+    uint32_t step; /* Native constant=0 (rate0), per-vertex=1/per-instance=2 (rate1). */
 } doe_mtl_vertex_layout;
 typedef struct doe_mtl_vertex_attribute {
     uint32_t location, slot, offset;

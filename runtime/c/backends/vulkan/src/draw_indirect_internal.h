@@ -5,6 +5,7 @@
 #include "../include/doe_vk_indirect.h"
 struct doe_vk_draw_validator {
     uint32_t references;
+    bool batch;
     doe_vk_pipeline *pipeline;
 };
 #endif

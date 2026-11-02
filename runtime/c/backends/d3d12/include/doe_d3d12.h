@@ -160,6 +160,11 @@ doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
 doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error);
 
+typedef struct doe_dx_upload_slice { doe_dx_buffer *buffer; uint64_t offset, size; } doe_dx_upload_slice;
+/* Snapshots into an append-only aligned page range. The returned buffer lease
+ * keeps its prefix immutable through caller, recording and pending ownership. */
+doe_dx_status doe_dx_upload_slice_write(doe_dx_context *,const void *,size_t,uint64_t,
+    doe_dx_upload_slice *,doe_dx_error *);
 doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer);
 void doe_dx_buffer_release(doe_dx_buffer *buffer);
 /* Reject new use immediately; retain the native allocation while recorded or
@@ -178,6 +183,9 @@ doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
  * INVALID_STATE. Return unmaps; it is idempotent and release returns implicitly. */
 doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, size_t size,
     const void **out, doe_dx_error *error);
+/* Mutable UPLOAD lend has the same ownership/range admission as write. Return
+ * reports exactly this offset/size as written and excludes recording until then. */
+doe_dx_status doe_dx_buffer_lend_write(doe_dx_buffer *,uint64_t,size_t,void **,doe_dx_error *);
 void doe_dx_buffer_return_read(doe_dx_buffer *buffer);
 
 enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16 };

@@ -90,6 +90,26 @@ def compiler_inputs(directory: Path) -> tuple[Path, Path]:
     return library, imports
 
 
+def build_signal_control(compiler: str, strict: list[str], sources: list[Path], objects: list[Path],
+                         out: Path, compiler_imports: Path) -> Path:
+    """Build only: one explicit private Signal fault over actual SDK/WARP objects."""
+    context_source = C_ROOT / 'backends/d3d12/src/windows_context.c'
+    fault_object = out / 'd3d12_windows_context_signal_fault.obj'
+    invoke(strict + ['/Ddoe_dx_native_signal=fawn_real_native_signal', '/c', str(context_source),
+                     '/Fo' + str(fault_object)], out)
+    context_object = objects[sources.index(context_source)]
+    retained = [obj for obj in objects if obj != context_object]
+    source = ROOT / 'tests/d3d12_async.c'
+    fixture_object = out / 'd3d12_async_signal.obj'
+    fixture = out / 'd3d12_async_signal.exe'
+    invoke(strict + ['/DDOE_TEST_SIGNAL_FAULT=1', '/c', str(source),
+                     '/Fo' + str(fixture_object)], out)
+    invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', str(fixture_object),
+            *map(str, retained), str(fault_object), '/Fe' + str(fixture), '/link',
+            str(compiler_imports), 'kernel32.lib', 'user32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'], out)
+    return fixture
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True, help='fresh output outside source checkout')
@@ -218,6 +238,13 @@ def main() -> int:
     invoke(consumer_flags + [str(shared_source), '/Fo' + str(out / 'shared_memory_windows.obj'),
             '/Fe' + str(shared_fixture), '/link', str(imports),
             'kernel32.lib', 'd3d11.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'], out)
+    upload_source = ROOT / 'tests/d3d12_upload_mapping_windows.c'
+    upload_fixture = out / 'd3d12_upload_mapping_windows.exe'
+    invoke(consumer_flags + [str(upload_source), '/Fo' + str(out / 'upload_mapping_windows.obj'),
+            '/Fe' + str(upload_fixture), '/link', str(imports),
+            'kernel32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'], out)
+    # Build only. Run d3d12_async_signal.exe --signal-fault --warp explicitly.
+    signal_fixture = build_signal_control(compiler, strict, sources, objects, out, compiler_imports)
     headers = sorted(set(ROOT.joinpath('src').glob('*.h')) |
                      set(ROOT.joinpath('include').glob('*.h')) |
                      set(C_ROOT.joinpath('compiler/include').glob('*.h')) |
@@ -228,7 +255,7 @@ def main() -> int:
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
               ROOT / 'EXTENSION_SYMBOLS.txt', ROOT / 'LEGACY_SYMBOLS.txt', ROOT / 'SHARED_MEMORY_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
-              shader_adapter, fxc_source, window_source, window_host, shared_source, ROOT / 'tests/surface_consumer.h',
+              shader_adapter, fxc_source, window_source, window_host, shared_source, upload_source, ROOT / 'tests/d3d12_async.c', ROOT / 'tests/surface_consumer.h',
               ROOT / 'tests/consumer.h', ROOT / 'tests/adapter_class.h',
               C_ROOT / 'runtime-cli/src/surface_platform.h', fxc_helper,
               REPO / 'runtime/vendor/webgpu-headers/webgpu.h']
@@ -249,6 +276,8 @@ def main() -> int:
         'window_fixture_sha256': digest(window_fixture),
         'shader_fxc_fixture_sha256': digest(fxc_fixture),
         'native_dll_sha256': digest(library),
+        'signal_fault_fixture_sha256': digest(signal_fixture),
+        'signal_fault_scope': 'Build only; explicit --signal-fault --warp exercises actual SDK queue with one private Signal failure. No GPU execution during ordinary build.',
         'scope': 'Actual SDK native DLL build/export audit and Win32 loader CPU host control only; no GPU, native device execution or production qualification.'
     }, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     return 0

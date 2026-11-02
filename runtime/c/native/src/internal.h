@@ -79,8 +79,10 @@ typedef struct native_device {
     doe_mtl_draw_guard *metal_draw_guard;
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;
+    uint64_t submitted_serial; /* Accepted/attempted command order; never recycled. */
     struct native_metal_completion *metal_completion; /* Metal devices; see metal_progress.c. */
     native_failure retired_failure;
+    uint64_t retired_failure_serial;
     /* Vulkan: unsubmitted zero initialization of newly created textures,
      * flushed ahead of the next recording that may touch them. */
     doe_vk_commands *init_batch;
@@ -223,6 +225,9 @@ WGPUFuture native_callback_admit(doe_instance *instance, WGPUCallbackMode mode,
  * lost silently. Other refusals (invalid mode, released instance) remain a zero
  * future only. Call after rollback, without the device mutex. */
 void native_callback_refused(native_device *device, doe_callback_status status);
+WGPUFuture native_callback_publish_admit(doe_instance *, WGPUCallbackMode,
+    void *, size_t, size_t, doe_callback_copy_context, doe_callback_deliver_context,
+    doe_callback_publisher, void *, doe_callback_status *);
 
 /* lost_objects.c: WebGPU invalid objects of a Vulkan device that is no longer
  * alive (destroy() or loss); creation reports nothing and returns these. */
@@ -265,13 +270,15 @@ native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *
  * where the backend has no such range and the mapping must copy instead. */
 /* True when read mappings lend backend bytes (Vulkan; D3D12 READBACK memory). */
 bool native_buffer_host_lendable(const native_buffer *buffer);
+bool native_buffer_host_writable(const native_buffer *buffer);
+native_failure native_buffer_host_write_range(native_buffer *, uint64_t, size_t, unsigned char **);
 /* Ends a lent read mapping; idempotent and a no-op where nothing is lent. */
 void native_buffer_host_return(native_buffer *buffer);
 native_failure native_buffer_host_range(native_buffer *buffer, uint64_t offset, size_t size,
     const unsigned char **out);
 native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
 native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
-    bool direct_readback, bool host_mapped);
+    native_buffer_memory_intent intent, bool host_mapped);
 void native_buffer_close(native_buffer *buffer);
 native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);
@@ -329,6 +336,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
 typedef struct native_queue_settlement {
     bool complete;
     native_failure failure;
+    uint64_t failure_serial; /* Submission of failure; zero for non-submission errors. */
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
 native_queue_settlement native_d3d12_drain_pending(native_device *device);
@@ -357,6 +365,13 @@ native_failure native_record_resource_commands(native_command_handle *native, do
 native_failure native_submit_program(native_device *device, native_command_handle native,
     doe_resource_commands *commands);
 void native_progress_pending(native_device *device);
+/* Async queue/map obligations are a closed variant on the same pending list.
+ * Selection/preparation holds the device mutex; publication/delivery never does. */
+bool native_async_pending(const native_device *device);
+void native_async_submission_settled(native_device *, uint64_t, native_failure);
+native_pending *native_async_take_ready(native_device *);
+void native_async_publish_ready(native_pending *);
+void native_metal_completion_observe(native_device *, bool);
 /* Caller holds the device mutex. Blocking settlement that, like progress,
  * leaves the first terminal failure for the next public observer. */
 void native_drain_pending(native_device *device);

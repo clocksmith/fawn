@@ -52,14 +52,14 @@ doe_vk_status native_draw_guard_initialize(native_device *device)
     if (device->backend.kind != WGPUBackendType_Vulkan) return DOE_VK_UNSUPPORTED;
     if (device->draw_validator) return DOE_VK_OK;
     doe_vk_status status = doe_vk_draw_validator_validate(&device->backend.value.vulkan.caps);
-    char source[DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY];
+    char source[DOE_VK_DRAW_INDIRECT_BATCH_SOURCE_CAPACITY];
     size_t length = 0;
-    if (status == DOE_VK_OK) status = doe_vk_draw_validator_source(source,sizeof(source),&length);
+    if (status == DOE_VK_OK) status = doe_vk_draw_validator_batch_source(source,sizeof(source),&length);
     doe_shader *shader = NULL;
     doe_shader_view view;
     if (status == DOE_VK_OK) status = compile_guard(device,source,length,&shader,&view);
     if (status == DOE_VK_OK)
-        status = doe_vk_draw_validator_create(device->backend.value.vulkan.context,
+        status = doe_vk_draw_validator_create_batch(device->backend.value.vulkan.context,
             view.words,view.counts.words,&device->draw_validator,NULL);
     doe_shader_release(shader);
     return status;

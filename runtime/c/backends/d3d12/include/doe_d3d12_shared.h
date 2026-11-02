@@ -20,6 +20,9 @@ bool doe_dx_shared_texture_keyed(const doe_dx_texture *);
 doe_dx_status doe_dx_shared_texture_release_point(doe_dx_texture *,
     doe_dx_shared_fence **,uint64_t *,bool *,doe_dx_error *);
 doe_dx_status doe_dx_shared_fence_import(doe_dx_context *,void *,doe_dx_shared_fence **,doe_dx_error *);
+/* Queue waits and native fence/device leases join the existing command owner.
+ * A failed/unknown submission retains them until ordinary terminal retirement. */
+doe_dx_status doe_dx_commands_wait_shared_fence(doe_dx_commands *,doe_dx_shared_fence *,uint64_t,doe_dx_error *);
 doe_dx_status doe_dx_shared_fence_wait(doe_dx_shared_fence *,uint64_t,uint32_t,doe_dx_error *);
 void *doe_dx_shared_fence_handle(const doe_dx_shared_fence *);
 void doe_dx_shared_fence_release(doe_dx_shared_fence *);

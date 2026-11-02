@@ -109,13 +109,22 @@ static inline void work_done_reply(WGPUQueueWorkDoneStatus status, WGPUStringVie
     assert(status == WGPUQueueWorkDoneStatus_Success);
     ++*(unsigned *)userdata;
 }
+/* Explicit test waits are distinct from asynchronous callback registration. */
+static inline void wait_future(state *s, WGPUFuture future)
+{
+    assert(future.id);
+    WGPUFutureWaitInfo wait = {.future=future};
+    assert(wgpuInstanceWaitAny(s->instance, 1, &wait, UINT64_C(5000000000)) == WGPUWaitStatus_Success);
+    assert(wait.completed);
+}
 /* Vulkan submissions run asynchronously; work done waits for all of them. */
 static inline void work_done(state *s)
 {
     unsigned done = 0;
-    WGPUQueueWorkDoneCallbackInfo info = {.mode = WGPUCallbackMode_AllowSpontaneous,
+    WGPUQueueWorkDoneCallbackInfo info = {.mode = WGPUCallbackMode_WaitAnyOnly,
         .callback = work_done_reply, .userdata1 = &done};
-    assert(wgpuQueueOnSubmittedWorkDone(s->queue, info).id && done == 1);
+    wait_future(s, wgpuQueueOnSubmittedWorkDone(s->queue, info));
+    assert(done == 1);
 }
 static inline void submit(state *s, WGPUCommandEncoder encoder)
 {
@@ -190,9 +199,7 @@ static inline const void *map(state *s, WGPUBuffer buffer, size_t size)
 {
     WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,.callback=mapped,.userdata1=s};
     WGPUFuture future = wgpuBufferMapAsync(buffer,WGPUMapMode_Read,0,size,callback);
-    assert(future.id);
-    WGPUFutureWaitInfo wait = {.future=future};
-    assert(wgpuInstanceWaitAny(s->instance,1,&wait,0) == WGPUWaitStatus_Success);
+    wait_future(s, future);
     const void *data = wgpuBufferGetConstMappedRange(buffer,0,size);
     assert(data);
     return data;

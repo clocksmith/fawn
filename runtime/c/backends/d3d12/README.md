@@ -60,8 +60,9 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   propagate without a fresh-create retry. Pending/lost/discarded recordings never
   supply a pair, and context teardown releases its idle native objects.
 - Caller-data writes may reuse eight ordinary UPLOAD pages up to one MiB each
-  on the context. Reuse requires only the cache lease and no recorded/pending
-  use; requests while every page is busy and larger writes allocate independently; immutable zero data stays
+  on the context. Slice snapshots append disjoint aligned suffixes through one
+  persistent Map, even while earlier ranges are GPU-owned. Only retired prefixes
+  wrap; cache overflow and oversized writes allocate independently; immutable zero data stays
   separate. A speculative larger page's OOM alone permits an exact-size retry.
   Initial allocation zeros its full width; reuse copies only caller bytes and
   makes no zero-content promise. Teardown drops only each cache's ordinary lease.
@@ -524,8 +525,9 @@ adopts that command, orders the written DEFAULT buffers with a COPY_DEST to
 COPY_SOURCE to COPY_DEST transition pair and records its own work after them, so
 one ExecuteCommandLists call and one fence signal carry both. A READBACK
 destination, any other recording (texture/surface work, internal transfers), a
-CPU read, a map, a work-done drain, a second write to a logged destination, the
-64th write or 16 MiB of writes submit the open command on its own first. A
+CPU read, a map, a work-done drain, the 64th write or 16 MiB of writes submit the
+open command on its own first. Repeated DEFAULT destinations stay in-list behind
+ordering barriers; fixed-state READBACK still requires a separate execution. A
 retained copy log re-records the writes if the adopting submission fails to
 record, so earlier writes are never lost. `native/tests/d3d12_write_batch.c`
 (actual frontend, typed call seam), `tests/test_write_order.c` (backend seam)
@@ -902,8 +904,11 @@ SDK emitted no warnings.
 [`doe_d3d12_shared.h`](include/doe_d3d12_shared.h) imports borrowed NT handles
 through official SDK interfaces. Imports own their native leases and admit the
 pinned Dawn 758e5e6a single-mip, single-sample simultaneous-access 2D color subset.
-Producer fences are retained across bounded waits outside frontend device locking;
-EndAccess exports the existing known queue timeline. Unknown recording/signal state
+Producer fences become GPU Queue.Wait dependencies, with native fence/device leases
+on the existing command owner. Begin does not CPU-wait for producer completion.
+A zero-work End still forwards its incoming wait point. EndAccess borrows one
+cached context-owned handle for the existing known queue timeline; imports retain
+independent duplicates. Unknown recording/signal state
 rejects export. Keyed imports use D3D11On12 wrapping and key-zero acquisition;
 release waits for that texture's own commands. Imported textures return to COMMON.
 Native canonical access checks reject inactive or different shared texture aliases.
@@ -921,3 +926,15 @@ control checks COMMON transitions; [`native_shared.c`](tests/native_shared.c), r
 explicitly with `--warp`, separately exercises shared import, zero/readback, fence
 retention and keyed acquire/retire/release/reacquire on CPU software. These checks
 do not qualify browser presentation, physical hardware or performance.
+
+`doe_dx_buffer_lend_write` lends a legal UPLOAD allocation's exact mutable range,
+with CPU/GPU exclusion and exact written-range return. The frontend's typed memory
+intent selects this only for MapWrite|CopySrc; mappedAtCreation storage retains
+DEFAULT and its zeroed shadow. [`test_write_lend.c`](tests/test_write_lend.c) and
+[`test_upload_slices.c`](tests/test_upload_slices.c) cover ownership, failed-snapshot
+rollback and retirement. The SDK Map control separately checks exact writable
+ranges and one persistent Map across slices. The public explicit-WARP upload
+consumer checks cancellation, heap intent and actual copied caller snapshots.
+[`test_execute_failure.c`](tests/test_execute_failure.c) checks that failed queued
+waits never publish unexecuted initialization, including unknown-signal recovery;
+the SDK wait control separately checks native lease/call composition.

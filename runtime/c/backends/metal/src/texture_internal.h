@@ -3,6 +3,8 @@
 #define DOE_MTL_TEXTURE_INTERNAL_H
 #include "internal.h"
 
+doe_mtl_status doe_mtl_initialize_texture_region(doe_mtl_commands *, doe_mtl_texture *,
+    doe_mtl_texture_region, uint8_t, doe_mtl_error *);
 struct doe_mtl_texture {
     doe_mtl_context *context;
     uint32_t references;
@@ -12,6 +14,7 @@ struct doe_mtl_texture {
     size_t subresource_count;
     uint8_t *initialized;
     bool poisoned;
+    bool discard_pending; /* Submitted owner must not republish pre-discard contents. */
     bool evict_requested; /* Public destroy(): free native storage once unused. */
     bool evicted;         /* Native texture and every native view released. */
     doe_mtl_commands *owner;

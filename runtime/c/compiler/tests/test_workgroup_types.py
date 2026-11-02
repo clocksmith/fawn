@@ -8,13 +8,14 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import test_stages
 
 # Read-only reuse of the retained independent word executor. Neither its source,
 # frozen inputs nor acceptance receipts are changed by these developer cases.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'independent_tests_m11/oracle'))
 from target_m11 import Module
-from workgroup_vm import dispatch
+from workgroup_vm import dispatch, MemoryObserver
 
 
 def words(code):
@@ -60,8 +61,8 @@ class WorkgroupTypes(unittest.TestCase):
 
     def test_device_independent_workgroup_dimensions(self):
         for dimensions in [(512, 1, 1), (16, 32, 2), (4294967295, 1, 1)]:
-            code = self.compile('@compute @workgroup_size(' + ','.join(str(v) + 'u' for v in dimensions) +
-                                ') fn main(){}')
+            code = self.compile('var<workgroup> tile:array<u32,2>; @compute @workgroup_size(' +
+                                ','.join(str(v) + 'u' for v in dimensions) + ') fn main(){let x=tile[0];}')
             self.assertEqual([a[2:] for op, a in code if op == 16 and a[1] == 17], [dimensions])
         for dimensions in ['0,1,1', '65536u,65536u,1u', '4294967295u,2u,1u']:
             self.compile('@compute @workgroup_size(' + dimensions + ') fn main(){}', 'product must fit u32')
@@ -146,6 +147,38 @@ class WorkgroupTypes(unittest.TestCase):
                                    capture_output=True, text=True)
             self.assertEqual(valid.returncode, 0, valid.stderr)
         self.assertNotEqual(run(mutated), expected)
+
+    def test_cooperative_nested_zero_has_one_writer_per_element(self):
+        # The retained executor poisons every Workgroup object before dispatch.
+        # Observe only its existing memory boundary; do not alter the oracle.
+        code = self.compile("""
+            struct Shared { values:array<array<vec2u,17>,3>, scalar:u32 }
+            var<workgroup> tile:Shared;
+            @group(0) @binding(0) var<storage,read_write> dst:array<u32>;
+            override X:u32=1u;
+            @compute @workgroup_size(X,3,4) fn main(@builtin(local_invocation_index) lane:u32) {
+                var i=lane;
+                loop { if(i>=51u){break;} dst[i]=tile.values[i/17u][i%17u].x; i+=24u; }
+                if(lane==0u){dst[51]=tile.scalar;}
+            }
+        """, overrides='X=2')
+        original = MemoryObserver.access
+        for schedule in ['round_robin', 'reverse', 'shuffle_0x11c0ffee']:
+            writes = []
+            def observe(observer, identity, pointer, write):
+                if write and observer.module.variables[pointer.root][1] == 4 and observer.epochs[identity[1]] == 0:
+                    _, cells = observer.cells(pointer)
+                    writes.extend((identity[0], path) for _, _, path in cells)
+                return original(observer, identity, pointer, write)
+            buffers = {(0, 0): bytearray(struct.pack('<52I', *([0xdeadbeef] * 52)))}
+            with patch.object(MemoryObserver, 'access', observe):
+                dispatch(Module(words(code)), buffers, schedule=schedule, pure_quantum=1)
+            self.assertEqual(list(struct.unpack('<52I', buffers[(0, 0)])), [0] * 52)
+            self.assertEqual(len(writes), 52)
+            for element in range(51):
+                self.assertEqual([lane for lane, path in writes if path == (0, element//17, element%17)],
+                                 [element % 24])
+            self.assertEqual([lane for lane, path in writes if path == (1,)], [0])
 
     def test_matrix_and_nested_struct_transfer(self):
         self.compile('''

@@ -327,10 +327,7 @@ static bool workgroup_helper_used(MetalEmitter *e, TypeId type, bool store) {
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         if (!metal_selected_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
         const char *error = NULL;
-        /* Cooperative zeroing stores each whole root before the first barrier. */
-        bool used = store && target_memory_dependency(c, &e->closure, c->workgroups[i].type,
-            type, &e->traversal_left, &error);
-        if (error == NULL && !used) used = target_access_helper_used(c, &e->closure,
+        const bool used = target_access_helper_used(c, &e->closure,
             ROOT_WORKGROUP, i, type, store, &e->traversal_left, &error);
         if (error != NULL) { metal_error(e, error); return false; }
         if (used) return true;

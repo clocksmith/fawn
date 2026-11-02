@@ -39,24 +39,19 @@ do not expand the shared-image policy described below.
   exact memory/texture association, and End requires the same texture as Begin.
   A weak active identity avoids a reference cycle; the resource finalizer clears
   it only when that exact published texture disappears.
-- Begin snapshots and retains all input fences, reserves the access state, then
-  waits for native producer values **without a device mutex held**. Concurrent
-  Begin/End cannot observe an access as active before those waits succeed.
-- End with an output state exports, without waiting for completion or new GPU
-  work, the device queue's real timeline event and the value its queue signals
-  after the committed command buffer that owns the texture (0 when no recording
-  owns it: its uses have retired). End returns once that command buffer is
-  scheduled (bounded at five seconds), which other queues and the window server
-  rely on, as with Dawn's commands-scheduled future. The single recording owner is the texture's only
-  unretired GPU use, so that value follows all of the access's work (owner
-  authorized 2026-10-31). A device without a real timeline keeps the waited
-  fresh-event signal recorded after preceding queue work; the pending-command
-  owner retains that event and device through unknown completion. Failed End
-  leaves both access and caller output unchanged; the original native
-  operation/code/detail survives rollback.
-- Begin with `initialized=false` discards the texture's contents (settling an
-  earlier still-running use first), so its first recorded use clears them.
-  Shared textures carry a private attachment usage for that clear only.
+- Begin snapshots and retains all input fences, then records GPU-side waits on an
+  ordinary accepted command before first use. Registration never polls or sleeps
+  for producer values. The command retains native event leases through retirement,
+  including unknown completion. Failed admission preserves access state.
+- End exports the real queue timeline point after accepted producer dependencies
+  and texture work, without waiting for scheduling or GPU completion. Zero-work
+  accesses carry the accepted producer point, including across later zero-work
+  accesses. A reserved but uncommitted timeline value is never exported. Devices
+  without a timeline enqueue a fresh signal through the same pending owner.
+  Failure leaves access and caller output unchanged with the original diagnostic.
+- Begin with `initialized=false` orders discard behind any accepted predecessor;
+  only the next recorded use initializes the required aspects. An uncommitted
+  recording remains BUSY. Shared textures have private attachment usage for clears.
 - Fence export returns the original borrowed native event identity. Output-state
   free-members releases each fence and both owned arrays. Imported memory and
   fences retain their device independently of public device/queue references.
@@ -91,9 +86,9 @@ the same native plane identity. This does not imply YUV or color conversion.
 
 - `make -C runtime/c/native check-shared-memory`: public ABI over real resource,
   device and pending owners with private Metal call ledgers. Covers exact
-  provenance, sRGB channel order, no import zero-overwrite, producer lock
-  exclusion, early public fence/texture release, failure during a blocked Begin,
-  fresh completion signals, first-error detail, unknown-work retention and
+  provenance, sRGB channel order, no import zero-overwrite, queued producer dependencies, early public fence/texture release,
+  zero-work timeline forwarding, fresh asynchronous signals, first-error detail,
+  unknown-work retention and
   final cleanup. No GPU results are synthesized.
 - `make -C runtime/c/native check-iosurface-metadata` on Darwin: actual BGRA/RGBA
   IOSurface import, properties before texture creation, exact-format rejection,
@@ -109,7 +104,7 @@ the same native plane identity. This does not imply YUV or color conversion.
   native and public surface/texture leases are released early.
 - `make -C runtime/c/backends/metal check`: existing ownership/native-call tests;
   external typed-call controls include CF retain/release, single-plane admission,
-  shared format/usage arguments and event-value reads.
+  shared format/usage arguments and encoded GPU waits without producer polling.
 - `make -C runtime/c/backends/metal abi-compile`: host typed-call compilation for
   the arm64/x86_64 branches, not Apple SDK verification.
 - `make -C runtime/c/backends/metal sdk-abi`: actual Apple SDK comparison, including

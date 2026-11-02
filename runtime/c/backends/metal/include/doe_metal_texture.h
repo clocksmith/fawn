@@ -118,6 +118,10 @@ doe_mtl_status doe_mtl_texture_evict(doe_mtl_texture *texture);
 /* Marks every subresource uninitialized, so the next recorded use clears it
  * first. BUSY while a recording still owns the texture (it would publish). */
 doe_mtl_status doe_mtl_texture_discard(doe_mtl_texture *texture);
+/* Queue-ordered discard: submitted/unknown owners retain their leases and defer
+ * clearing availability until retirement; unsubmitted owners remain BUSY. */
+doe_mtl_status doe_mtl_texture_can_discard_queued(const doe_mtl_texture *texture);
+doe_mtl_status doe_mtl_texture_discard_queued(doe_mtl_texture *texture);
 const doe_mtl_texture_desc *doe_mtl_texture_description(const doe_mtl_texture *texture);
 
 typedef enum doe_mtl_swizzle {
@@ -189,6 +193,15 @@ doe_mtl_status doe_mtl_commands_upload_texture(doe_mtl_commands *commands,
 doe_mtl_status doe_mtl_commands_read_texture(doe_mtl_commands *commands,
     doe_mtl_texture *source, doe_mtl_texture_region region,
     doe_mtl_buffer *destination, doe_mtl_texture_buffer_layout layout, doe_mtl_error *error);
+/* Frontend preparation variants clear only missing touched subresources after
+ * the complete transfer preflight. Full destination overwrites skip clearing.
+ * The low-level variants retain their explicit-initialization contract. */
+doe_mtl_status doe_mtl_commands_upload_texture_aspect_prepared(doe_mtl_commands *, doe_mtl_buffer *,
+    doe_mtl_texture_buffer_layout, doe_mtl_texture *, doe_mtl_texture_region, doe_mtl_transfer_aspect, doe_mtl_error *);
+doe_mtl_status doe_mtl_commands_read_texture_aspect_prepared(doe_mtl_commands *, doe_mtl_texture *,
+    doe_mtl_texture_region, doe_mtl_transfer_aspect, doe_mtl_buffer *, doe_mtl_texture_buffer_layout, doe_mtl_error *);
+doe_mtl_status doe_mtl_commands_copy_texture_prepared(doe_mtl_commands *, doe_mtl_texture *, doe_mtl_texture_region,
+    doe_mtl_texture *, doe_mtl_texture_region, doe_mtl_error *);
 doe_mtl_status doe_mtl_commands_copy_texture(doe_mtl_commands *commands,
     doe_mtl_texture *source, doe_mtl_texture_region source_region,
     doe_mtl_texture *destination, doe_mtl_texture_region destination_region, doe_mtl_error *error);

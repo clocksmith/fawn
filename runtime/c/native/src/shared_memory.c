@@ -356,16 +356,18 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
         return native_d3d12_shared_begin(memory,(doe_resource_texture *)handle,descriptor);
     size_t count = descriptor ? descriptor->fenceCount : 0;
     if (descriptor && count != descriptor->signaledValueCount) return WGPUStatus_Error;
-    if (count && (!descriptor->fences || !descriptor->signaledValues || count > SIZE_MAX / sizeof(shared_wait)))
+    if (count && (!descriptor->fences || !descriptor->signaledValues || count > SIZE_MAX / (sizeof(shared_wait) + sizeof(doe_mtl_shared_wait))))
         return WGPUStatus_Error;
-    shared_wait *waits = count ? calloc(count, sizeof(*waits)) : NULL;
+    shared_wait *waits = count ? calloc(count, sizeof(*waits) + sizeof(doe_mtl_shared_wait)) : NULL;
+    doe_mtl_shared_wait *dependencies = waits ? (doe_mtl_shared_wait *)(waits + count) : NULL;
     if (count && !waits) return WGPUStatus_Error;
     size_t retained = 0;
     for (; retained < count; ++retained) {
         WGPUSharedFence fence = descriptor->fences[retained];
-        if (!valid_fence(fence)) break;
+        if (!valid_fence(fence) || fence->device->backend.kind != WGPUBackendType_Metal || !fence->event) break;
         wgpuSharedFenceAddRef(fence);
         waits[retained] = (shared_wait){fence,descriptor->signaledValues[retained]};
+        dependencies[retained] = (doe_mtl_shared_wait){fence->event, descriptor->signaledValues[retained]};
     }
     wgpuSharedTextureMemoryAddRef(memory);
     doe_resource_texture *texture = (doe_resource_texture *)handle;
@@ -374,37 +376,46 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
     native_lock(device);
     bool admitted = retained == count && memory->access == SHARED_IDLE && native_shared_matches_texture(memory, texture) &&
         native_device_result(device) == NATIVE_OK;
-    if (admitted) memory->access = SHARED_WAITING;
-    native_unlock(device);
     native_failure failure = native_failure_status(NATIVE_OK);
-    for (size_t i = 0; admitted && failure.status == NATIVE_OK && i < count; ++i) {
-        doe_mtl_error detail = {0};
-        WGPUSharedFence fence = waits[i].fence;
-        /* No device lock spans a producer wait. Fence leases keep its event and
-         * original context alive even across another thread's public release. */
-        doe_mtl_status status = doe_mtl_shared_event_wait(metal_context(fence->device), fence->event,
-            waits[i].value, &detail);
-        failure = native_failure_metal(status, &detail);
-    }
-    native_lock(device);
-    bool success = admitted && failure.status == NATIVE_OK && native_shared_matches_texture(memory, texture) &&
-        native_device_result(device) == NATIVE_OK;
-    if (success && descriptor && !descriptor->initialized) {
-        /* Uninitialized producer contents are undefined: the next recorded use
-         * clears them (the texture is attachment-capable for that private clear).
-         * A still-running earlier use would publish its bits, so settle first. */
-        native_texture *payload = doe_resource_texture_native(texture);
-        doe_mtl_status discarded = doe_mtl_texture_discard(payload->metal);
-        if (discarded == DOE_MTL_BUSY) {
-            failure = native_settle_pending(device).failure;
-            discarded = failure.status == NATIVE_OK ? doe_mtl_texture_discard(payload->metal) : DOE_MTL_OK;
+    native_texture *payload = admitted ? doe_resource_texture_native(texture) : NULL;
+    if (admitted && descriptor && !descriptor->initialized)
+        failure = native_failure_metal(doe_mtl_texture_can_discard_queued(payload->metal), NULL);
+    native_command_handle command = {0};
+    if (admitted && failure.status == NATIVE_OK && count) {
+        failure = native_command_create(&device->backend, &command);
+        if (failure.status == NATIVE_OK) {
+            doe_mtl_error detail = {0};
+            doe_mtl_status status = doe_mtl_commands_wait_shared_events(command.value.metal,
+                dependencies, count, &detail);
+            failure = native_failure_metal(status, &detail);
         }
-        if (failure.status == NATIVE_OK) failure = native_failure_metal(discarded, NULL);
+        if (failure.status == NATIVE_OK) {
+            /* The ordinary pending command retains every producer event until
+             * proven terminal. Queue order places these waits before first use;
+             * Begin never observes/polls the producer's CPU-visible value. */
+            failure = native_submit_backend_commands_async(device, command);
+        } else if (native_command_release(&command) != NATIVE_OK) abort();
+    }
+    bool success = admitted && failure.status == NATIVE_OK;
+    uint64_t acquire_value = memory->metal_acquire_value;
+    if (admitted && count) {
+        void *event = NULL;
+        doe_mtl_status point = doe_mtl_context_release_point(metal_context(device), &event, &acquire_value);
+        if (point == DOE_MTL_OK) {
+            if (memory->metal_acquire_value < acquire_value) memory->metal_acquire_value = acquire_value;
+        } else if (point != DOE_MTL_UNSUPPORTED && failure.status == NATIVE_OK) {
+            failure = native_failure_metal(point, NULL);
+            success = false;
+        }
+    }
+    if (success && descriptor && !descriptor->initialized) {
+        failure = native_failure_metal(doe_mtl_texture_discard_queued(payload->metal), NULL);
         success = failure.status == NATIVE_OK;
     }
     if (admitted) {
         memory->access = success ? SHARED_ACTIVE : SHARED_IDLE;
         memory->active_texture = success ? texture : NULL;
+        if (success) memory->metal_acquire_value = acquire_value;
     }
     native_unlock(device);
     for (size_t i = 0; i < retained; ++i) wgpuSharedFenceRelease(waits[i].fence);
@@ -429,7 +440,7 @@ static native_failure completion_fence(native_device *device, WGPUSharedFence fe
     if (failure.status == NATIVE_OK) {
         /* The existing pending owner adopts commands on every submit result,
          * including unknown completion. Its event lease outlives this wrapper. */
-        failure = native_submit_backend_commands(device, command);
+        failure = native_submit_backend_commands_async(device, command);
     } else if (native_command_release(&command) != NATIVE_OK) abort();
     return failure;
 }
@@ -464,27 +475,18 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
         doe_mtl_status point = failure.status == NATIVE_OK ?
             doe_mtl_texture_release_point(payload->metal, &timeline, &release_value) : DOE_MTL_UNSUPPORTED;
         if (point == DOE_MTL_OK) {
-            /* Like Dawn's commands-scheduled future, consumers on another queue
-             * or the window server rely on the owning commands being scheduled:
-             * they were committed at submit, so this rarely spins. */
-            /* Zeroed: GCC cannot see that a failed doe_time_add skips the loop. */
-            struct timespec now = {0}, deadline = {0};
-            if (doe_monotonic_now(&now).status != DOE_HOST_OK ||
-                doe_time_add(&now, UINT64_C(5000000000), &deadline).status != DOE_HOST_OK)
-                failure = native_failure_status(NATIVE_FAILURE);
-            while (failure.status == NATIVE_OK && !doe_mtl_texture_release_scheduled(payload->metal)) {
-                if (doe_monotonic_now(&now).status != DOE_HOST_OK) failure = native_failure_status(NATIVE_FAILURE);
-                else if (doe_time_reached(&now, &deadline)) failure = native_failure_status(NATIVE_TIMEOUT);
-                else (void)doe_sleep_for(UINT64_C(20000));
-            }
+            if (release_value < memory->metal_acquire_value) release_value = memory->metal_acquire_value;
+            /* The exported queue timeline orders the consumer's GPU wait even
+             * before this committed producer command has been scheduled. */
             doe_mtl_error detail = {0};
             if (failure.status == NATIVE_OK)
                 failure = native_failure_metal(doe_mtl_shared_event_import(metal_context(device), timeline,
                     &fence->event, &detail), &detail);
-        } else {
+        } else if (point == DOE_MTL_UNSUPPORTED) {
             release_value = 1;
-            if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
             if (failure.status == NATIVE_OK) failure = completion_fence(device, fence);
+        } else if (failure.status == NATIVE_OK) {
+            failure = native_failure_metal(point, NULL);
         }
     }
     bool success = admitted && failure.status == NATIVE_OK;

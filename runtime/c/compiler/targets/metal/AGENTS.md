@@ -56,8 +56,10 @@ read/write modes, including recursive aggregate children. `../closure.h` owns th
 read-only bounded call/dependency queries in explicit caller-owned scratch.
 Resolve the function closure once and remember completed DAG nodes; a depth bound
 alone does not bound repeated shared subtrees. Do not grow a second semantic graph.
-Workgroup zero initialization also requires whole-root store helpers. Keep target
-address spaces and byte-view validation local. All walks charge composed work.
+Workgroup initialization uses dedicated in-place typed leaf stores, distributing
+array elements by local index and resolved workgroup stride before one unconditional
+barrier. Do not retain whole-root transfer helpers solely for initialization. Keep
+target address spaces and byte-view validation local; charge all traversal work.
 
 Graphics consumes shared typed leaves and formal/member identities through
 `../stage_view.h`; never replay source annotations. Vertex location inputs use

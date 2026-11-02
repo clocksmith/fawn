@@ -17,7 +17,7 @@ typedef enum selector_index {
     SELECT_NEW_COMMAND, SELECT_BLIT_ENCODER, SELECT_COMPUTE_ENCODER,
     SELECT_COPY, SELECT_FILL, SELECT_END, SELECT_PIPELINE, SELECT_BUFFER,
     SELECT_BYTES, SELECT_DISPATCH, SELECT_INDIRECT, SELECT_COMMIT, SELECT_WAIT, SELECT_STATUS,
-    SELECT_ERROR, SELECT_COUNT
+    SELECT_ERROR, SELECT_BARRIER, SELECT_COUNT
 } selector_index;
 struct call_fixture {
     doe_mtl_objc runtime;
@@ -26,11 +26,12 @@ struct call_fixture {
     call_object source, name, library, function, pipeline, encoder, source_buffer,
         destination_buffer, error, description;
     unsigned pools, drains, strings, releases, retain_calls, ends, pipeline_sets;
+    unsigned blit_begins, compute_begins, barriers;
     unsigned buffer_sets, bytes_sets, dispatches, indirects, copies, fills, commits, waits;
     size_t native_status, wait_status;
     int64_t error_code;
     char diagnostic[512];
-    bool fail_pool, fail_encoder, fail_library, fail_function, fail_pipeline;
+    bool fail_pool, fail_encoder, fail_library, fail_function, fail_pipeline, fail_barrier;
     doe_mtl_native_binding bound[DOE_MTL_BUFFER_SLOTS];
     uint32_t sizes[DOE_MTL_BUFFER_SLOTS];
     size_t bytes_length, bytes_slot;
@@ -71,6 +72,7 @@ static void *object_call(void *receiver, void *selector) {
     }
     if (selector == runtime->compute_encoder || selector == runtime->blit_encoder) {
         assert(receiver == &fixture->command);
+        if (selector == runtime->compute_encoder) ++fixture->compute_begins; else ++fixture->blit_begins;
         if (!fixture->fail_encoder && selector == runtime->compute_encoder)
             memset(fixture->bound, 0, sizeof(fixture->bound));
         return fixture->fail_encoder ? NULL : &fixture->encoder;
@@ -241,6 +243,17 @@ static void fill_call(void *receiver, void *selector, void *buffer,
     fixture->fills++;
 }
 
+static doe_objc_bool responds_call(void *receiver, void *selector, void *method) {
+    call_fixture *fixture = owner(receiver);
+    assert(receiver == &fixture->encoder && selector == fixture->runtime.responds && method == fixture->runtime.buffer_barrier);
+    return !fixture->fail_barrier;
+}
+static void barrier_call(void *receiver, void *selector, size_t scope) {
+    call_fixture *fixture = owner(receiver);
+    assert(receiver == &fixture->encoder && selector == fixture->runtime.buffer_barrier && scope == 1);
+    ++fixture->barriers;
+}
+
 static void fixture_init(call_fixture *fixture) {
     doe_mtl_objc *runtime = &fixture->runtime;
     call_object *objects[] = {&fixture->pool_class, &fixture->string_class, &fixture->pool,
@@ -281,6 +294,9 @@ static void fixture_init(call_fixture *fixture) {
     runtime->wait = &fixture->selector[SELECT_WAIT];
     runtime->status = &fixture->selector[SELECT_STATUS];
     runtime->error = &fixture->selector[SELECT_ERROR];
+    runtime->buffer_barrier = &fixture->selector[SELECT_BARRIER];
+    runtime->responds_call = responds_call;
+    runtime->set_size_call = barrier_call;
     runtime->object_call = object_call;
     runtime->void_call = void_call;
     runtime->size_call = size_call;
@@ -441,7 +457,34 @@ static void immediate_controls(void) {
     assert(fixture.dispatches == 1 && fixture.pools == fixture.drains);
 }
 
+static void guard_batch_controls(void) {
+    call_fixture fixture;
+    fixture_init(&fixture);
+    doe_mtl_native_guard_copy copies[2] = {
+        {&fixture.source_buffer,&fixture.destination_buffer,4,0,20},
+        {&fixture.source_buffer,&fixture.destination_buffer,24,40,16}};
+    doe_mtl_native_guard_dispatch steps[3] = {0};
+    for (size_t i = 0; i < 3; ++i) {
+        steps[i] = (doe_mtl_native_guard_dispatch){.pipeline=&fixture.pipeline,.binding_count=1,
+            .sizes_slot=30,.groups={1,1,1},.workgroup={1,1,1}};
+        steps[i].slots[0] = 5;
+        steps[i].bindings[0] = (doe_mtl_native_binding){&fixture.destination_buffer,i == 2 ? 40 : 0,40};
+    }
+    assert(doe_mtl_objc_guard_batch(&fixture.runtime,&fixture.command,copies,2,steps,3,NULL) == DOE_MTL_OK);
+    assert(fixture.blit_begins == 1 && fixture.compute_begins == 1 && fixture.ends == 2);
+    assert(fixture.copies == 2 && fixture.dispatches == 3 && fixture.barriers == 2);
+    assert(fixture.bound[5].offset == 40 && fixture.sizes[5] == 40 && fixture.pools == fixture.drains);
+    fixture.fail_encoder = true;
+    assert(doe_mtl_objc_guard_batch(&fixture.runtime,&fixture.command,copies,2,steps,3,NULL) == DOE_MTL_NATIVE_FAILURE);
+    assert(fixture.copies == 2 && fixture.dispatches == 3 && fixture.pools == fixture.drains);
+    fixture.fail_encoder = false;
+    fixture.fail_barrier = true;
+    assert(doe_mtl_objc_guard_batch(&fixture.runtime,&fixture.command,NULL,0,steps,3,NULL) == DOE_MTL_UNSUPPORTED);
+    assert(fixture.dispatches == 3 && fixture.ends == 3 && fixture.pools == fixture.drains);
+}
+
 int main(void) {
+    guard_batch_controls();
     pipeline_controls();
     encoding_controls();
     immediate_controls();

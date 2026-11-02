@@ -196,7 +196,106 @@ static void sampled_stencil_initializes_parent(void) {
     mock_assert_closed(&mock);
 }
 
+static void queued_discard(void) {
+    for (unsigned failed = 0; failed < 2; ++failed) {
+        mock_native mock;
+        doe_mtl_context *context = context_new(&mock);
+        doe_mtl_texture_view *view = view_new(context, DOE_MTL_RGBA8_UNORM, 1, 1);
+        doe_mtl_texture *texture = view->texture;
+        doe_mtl_commands *commands = commands_new(context);
+        assert(doe_mtl_commands_initialize_attachment(commands, view, NULL) == DOE_MTL_OK);
+        complete(&mock, commands);
+        assert(texture->initialized[0] == DOE_MTL_ASPECT_COLOR);
+        commands = commands_new(context);
+        doe_mtl_render_pass_desc pass = {.color_count=1,.colors={{.view=view,.load=DOE_MTL_CLEAR,.store=DOE_MTL_STORE}}};
+        assert(doe_mtl_commands_render(commands, &pass, NULL, 0, NULL) == DOE_MTL_OK);
+        assert(doe_mtl_texture_can_discard_queued(texture) == DOE_MTL_BUSY);
+        assert(doe_mtl_texture_discard_queued(texture) == DOE_MTL_BUSY);
+        assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+        assert(doe_mtl_texture_can_discard_queued(texture) == DOE_MTL_OK);
+        assert(doe_mtl_texture_discard_queued(texture) == DOE_MTL_OK && texture->discard_pending);
+        mock_result(&mock, 0, 0);
+        assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
+        assert(texture->discard_pending && texture->initialized[0] == DOE_MTL_ASPECT_COLOR);
+        assert(doe_mtl_commands_release(commands) == DOE_MTL_BUSY);
+        mock_result(&mock, failed ? 5 : 4, failed ? -71 : 0);
+        assert(doe_mtl_commands_poll(commands, NULL) == (failed ? DOE_MTL_EXECUTION_FAILED : DOE_MTL_OK));
+        assert(!texture->discard_pending && !texture->initialized[0] && texture->poisoned == (failed != 0));
+        assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+        if (!failed) {
+            commands = commands_new(context);
+            unsigned renders = mock.renders;
+            assert(doe_mtl_commands_initialize_attachment(commands, view, NULL) == DOE_MTL_OK);
+            assert(mock.renders == renders + 1); /* Old completion cannot restore availability. */
+            assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+        } else assert(doe_mtl_texture_can_discard_queued(texture) == DOE_MTL_EXECUTION_FAILED);
+        doe_mtl_texture_view_release(view);
+        doe_mtl_context_release(context);
+        mock_assert_closed(&mock);
+    }
+}
+
+static void prepared_transfer_ranges(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_new(&mock);
+    doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D_ARRAY,DOE_MTL_RGBA8_UNORM,16,8,3,2,
+        DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST,false,1};
+    doe_mtl_texture *texture = NULL, *destination = NULL;
+    doe_mtl_buffer *buffer = NULL;
+    assert(doe_mtl_texture_create(context, &desc, &texture, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_texture_create(context, &desc, &destination, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_buffer_create(context, 4096, DOE_MTL_SHARED, &buffer, NULL) == DOE_MTL_OK);
+    doe_mtl_commands *commands = commands_new(context);
+    doe_mtl_texture_buffer_layout layout = {.bytes_per_row=256};
+    doe_mtl_texture_region full = {.mip=0,.z=1,.width=16,.height=8,.depth_or_layers=1};
+    assert(doe_mtl_commands_upload_texture_aspect_prepared(commands, buffer, layout, texture, full,
+        DOE_MTL_TRANSFER_ALL, NULL) == DOE_MTL_OK);
+    assert(!mock.renders && !mock.views && mock.uploads == 1); /* Full overwrite needs no clear or view. */
+    assert(doe_mtl_texture_region_aspects_initialized(commands, texture, full, DOE_MTL_ASPECT_COLOR));
+    assert(!texture->initialized[1]);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    assert(!texture->initialized[1]); /* Abandoned full writes never publish. */
+    commands = commands_new(context);
+    doe_mtl_texture_region partial = {.mip=1,.z=2,.width=4,.height=2,.depth_or_layers=1};
+    assert(doe_mtl_commands_upload_texture_aspect_prepared(commands, buffer, layout, texture, partial,
+        DOE_MTL_TRANSFER_ALL, NULL) == DOE_MTL_OK);
+    assert(mock.renders == 1 && mock.views == 1 && mock.uploads == 2);
+    assert(mock.render_pass.width == 8 && mock.render_pass.height == 4);
+    assert(!texture->initialized[5]);
+    assert(doe_mtl_commands_upload_texture_aspect_prepared(commands, buffer, layout, texture, partial,
+        DOE_MTL_TRANSFER_ALL, NULL) == DOE_MTL_OK);
+    assert(mock.renders == 1 && mock.views == 1); /* Already prepared subresource reuses availability. */
+    complete(&mock, commands);
+    for (size_t i = 0; i < 6; ++i) assert(texture->initialized[i] == (i == 5 ? DOE_MTL_ASPECT_COLOR : 0));
+    commands = commands_new(context);
+    doe_mtl_texture_region invalid = partial;
+    invalid.z = 0;
+    doe_mtl_texture_buffer_layout bad_layout = {.bytes_per_row=257};
+    unsigned uploads = mock.uploads;
+    assert(doe_mtl_commands_upload_texture_aspect_prepared(commands, buffer, bad_layout, texture, invalid,
+        DOE_MTL_TRANSFER_ALL, NULL) == DOE_MTL_ALIGNMENT);
+    assert(mock.renders == 1 && mock.views == 1 && mock.uploads == uploads); /* Preflight before mutation. */
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    commands = commands_new(context);
+    full = (doe_mtl_texture_region){.mip=1,.z=1,.width=8,.height=4,.depth_or_layers=1};
+    assert(doe_mtl_commands_copy_texture_prepared(commands, texture, full, destination, full, NULL) == DOE_MTL_OK);
+    assert(mock.renders == 2 && mock.views == 2 && mock.image_copies == 1); /* Clear only missing source. */
+    assert(!texture->initialized[4] && !destination->initialized[4]);
+    complete(&mock, commands);
+    for (size_t i = 0; i < 6; ++i) {
+        assert(texture->initialized[i] == (i == 4 || i == 5 ? DOE_MTL_ASPECT_COLOR : 0));
+        assert(destination->initialized[i] == (i == 4 ? DOE_MTL_ASPECT_COLOR : 0));
+    }
+    doe_mtl_buffer_release(buffer);
+    doe_mtl_texture_release(texture);
+    doe_mtl_texture_release(destination);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
+
 int main(void) {
+    prepared_transfer_ranges();
+    queued_discard();
     speculative_and_pending();
     combined_discard_preserves_other_aspect();
     ranges_and_preparation_failure();

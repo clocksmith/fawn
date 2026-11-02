@@ -55,6 +55,10 @@ _Static_assert(offsetof(MTLDrawIndexedPrimitivesIndirectArguments, baseVertex) =
 _Static_assert(offsetof(MTLDrawIndexedPrimitivesIndirectArguments, baseInstance) == 4*sizeof(uint32_t), "Indexed base-instance offset");
 _Static_assert(__builtin_types_compatible_p(__typeof__(((MTLDrawIndexedPrimitivesIndirectArguments *)0)->baseVertex), int32_t), "Indirect signed base vertex");
 
+SAME_ENUM(1, MTLBarrierScopeBuffers);
+SAME_ENUM(0, MTLVertexStepFunctionConstant);
+SAME_ENUM(1, MTLVertexStepFunctionPerVertex);
+SAME_ENUM(2, MTLVertexStepFunctionPerInstance);
 SAME_ENUM(DOE_MTL_TEXTURE_1D, MTLTextureType1D);
 SAME_ENUM(DOE_MTL_TEXTURE_2D_ARRAY, MTLTextureType2DArray);
 SAME_ENUM(DOE_MTL_TEXTURE_2D_MS, MTLTextureType2DMultisample);

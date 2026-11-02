@@ -4,6 +4,7 @@
 
 void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
     if (!commands) return;
+    doe_dx_shared_waits_close(commands);
     if (commands->list) ID3D12GraphicsCommandList_Release(commands->list);
     if (commands->allocator) ID3D12CommandAllocator_Release(commands->allocator);
     doe_dx_descriptor_use *use = commands->descriptors;
@@ -206,8 +207,11 @@ doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_erro
     return doe_dx_hresult(result, "ID3D12GraphicsCommandList.Close", error);
 }
 
-void doe_dx_native_execute(doe_dx_native_context *context, doe_dx_native_commands *commands) {
+doe_dx_status doe_dx_native_execute(doe_dx_native_context *context,doe_dx_native_commands *commands,doe_dx_error *error) {
+    doe_dx_status status=doe_dx_shared_waits_execute(context,commands,error);
+    if (status!=DOE_DX_OK) return status;
     ID3D12CommandList *list = (ID3D12CommandList *)commands->list;
     ID3D12CommandQueue_ExecuteCommandLists(context->queue, 1, &list);
+    return DOE_DX_OK;
 }
 #endif

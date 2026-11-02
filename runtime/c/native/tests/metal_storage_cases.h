@@ -94,8 +94,8 @@ static void metal_fragment_storage_draw(state *s, mock_native *mock)
     wgpuTextureRelease(target);
     submit(s, encoder);
     assert(!s->errors && mock->render_draw_count == 1);
-    assert(mock->render_draws[0].fragment.texture_count == 1 &&
-        mock->render_draws[0].fragment.textures[0] == identity);
+    assert(mock->render_resources[0][1].texture_count == 1 &&
+        mock->render_resources[0][1].textures[0] == identity);
     puts("PASS public Metal fragment storage texture stage binding and early-release ownership; host ledger only");
 }
 

@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: MIT */
+#if defined(__APPLE__)
+#define _DARWIN_C_SOURCE 1
+#endif
 #define _POSIX_C_SOURCE 200809L
 #include "../src/internal.h"
 #include "../src/cache_file.h"

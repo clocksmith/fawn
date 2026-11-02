@@ -4,7 +4,7 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
 
-Admitted D3D12 compute, offscreen graphics, transfers/timestamps preserve resource/completion obligations.
+D3D12 compute/offscreen-graphics/transfers/timestamps preserve resource/completion obligations.
 
 ## Authority
 
@@ -14,7 +14,7 @@ Admitted D3D12 compute, offscreen graphics, transfers/timestamps preserve resour
 
 ## Scope
 
-Private Windows ABI/fixtures; [guide](README.md).
+Windows ABI/fixtures; [guide](README.md).
 
 ## Contracts
 
@@ -22,16 +22,17 @@ Private Windows ABI/fixtures; [guide](README.md).
 - Outputs: identity/caps/statuses, completion-backed readback.
 
 ## Invariants
+MapWrite lends zeroed UPLOAD; mapped-at-creation storage retains DEFAULT/shadow.
 
 - Unknown completion retains dependencies/events; release/timeout cannot settle; unresolved destruction rejects.
 - Pending ordered buffers forbid CPU access; unlocked observers, context events, serialized retirement.
 - DXGI imports retain texture/command leases; COMMON states and producer/release fences preserve ownership.
 - Retain Zig intact; no hidden delegation/default change.
-- Portable controls: ownership; SDK: composition, never execution.
+- Portable: ownership; SDK: composition, never execution.
 - Compilers retain diagnostics/blobs/modules; no CLI, filesystem includes, profile fallback or source interpretation.
-- Discover LUID/software identity; construction verifies without retries.
+- Verify LUID/software identity without retries.
 - WARP requires explicit selection/software identity; CPU evidence never qualifies hardware/public integration.
-- HWND uses context/texture/command owners; exact DXGI backbuffer identity and PRESENT/COPY_DEST transitions persist.
+- HWND preserves context/texture/command owners, DXGI backbuffer identity and PRESENT/COPY_DEST transitions.
 - Execute precedes Present/signal; only completion/terminal loss retires leases; retained frames block resize.
 
 ## Acceptance

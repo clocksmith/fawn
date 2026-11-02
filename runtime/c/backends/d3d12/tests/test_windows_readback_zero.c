@@ -213,8 +213,27 @@ static void failed_map(HRESULT result, doe_dx_status expected, bool null_mapping
     assert_bytes(&resource,false);
 }
 
+static void writable_ranges_and_persistent_slices(void)
+{
+    unsigned char storage[96]; memset(storage,0xa5,sizeof(storage));
+    ID3D12ResourceVtbl methods={0}; methods.Map=map_resource; methods.Unmap=unmap_resource; methods.Release=release_resource;
+    sdk_resource resource={.iface={&methods},.bytes=storage,.width=32,.capacity=64};
+    doe_dx_native_buffer buffer={.resource=&resource.iface,.size=32,.memory=DOE_DX_UPLOAD};
+    void *out=NULL;
+    assert(doe_dx_native_map_write(&buffer,8,12,&out,NULL)==DOE_DX_OK && out==storage+24);
+    memset(out,0x11,12); doe_dx_native_unmap_write(&buffer,8,12);
+    assert(resource.maps==1 && resource.unmaps==1 && resource.written.Begin==8 && resource.written.End==20);
+    doe_dx_native_buffer *page=calloc(1,sizeof(*page)); assert(page); *page=buffer;
+    const unsigned char bytes[4]={1,2,3,4};
+    assert(doe_dx_native_write_upload_slice(page,0,bytes,4,NULL)==DOE_DX_OK);
+    assert(doe_dx_native_write_upload_slice(page,24,bytes,4,NULL)==DOE_DX_OK);
+    assert(resource.maps==2 && resource.unmaps==1 && !memcmp(storage+16,bytes,4) && !memcmp(storage+40,bytes,4));
+    doe_dx_native_buffer_destroy(page);
+    assert(resource.unmaps==2 && resource.releases==1 && resource.written.Begin==0 && resource.written.End==28);
+}
 int main(void)
 {
+    writable_ranges_and_persistent_slices();
     resource_width_and_admission(1,true);
     resource_width_and_admission(257,true);
     resource_width_and_admission(65537,true);
@@ -225,6 +244,6 @@ int main(void)
     failed_map(DXGI_ERROR_DEVICE_REMOVED,DOE_DX_DEVICE_LOST,false);
     failed_map(DXGI_ERROR_DEVICE_RESET,DOE_DX_DEVICE_LOST,false);
     failed_map(S_OK,DOE_DX_NATIVE_FAILURE,true);
-    puts("PASS official SDK CPU READBACK zero composition: READBACK/COPY_DEST, placed and committed, complete width, guard/heap slack, Map failures and null-map cleanup; no GPU");
+    puts("PASS official SDK CPU mutable UPLOAD ranges/persistent pages and READBACK zero composition: READBACK/COPY_DEST, placed and committed, complete width, guard/heap slack, Map failures and null-map cleanup; no GPU");
     return 0;
 }

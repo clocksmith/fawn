@@ -21,6 +21,17 @@ typedef struct native_metal_snapshot {
     doe_mtl_render_bindings bindings;
 } native_metal_snapshot;
 
+/* Render callers reserve occupied entries once per distinct immutable binding state. */
+typedef struct native_metal_binding_storage {
+    doe_mtl_buffer_binding *buffers;
+    doe_mtl_texture_binding *textures;
+    doe_mtl_sampler_binding *samplers;
+    size_t buffer_capacity, texture_capacity, sampler_capacity;
+    doe_mtl_render_bindings bindings;
+} native_metal_binding_storage;
+native_failure native_metal_binding_snapshot_into(doe_mtl_commands *commands,
+    const native_pipeline *pipeline, const native_metal_stage_map *map,
+    const doe_resource_binding *resolved, native_metal_binding_storage *out);
 bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_stage *stage,
     uint32_t expected_stage, native_metal_stage_map *map, doe_mtl_shader_stage *out);
 native_failure native_metal_binding_snapshot(doe_mtl_commands *commands,

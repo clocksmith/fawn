@@ -9,6 +9,7 @@ struct doe_dx_shared_fence {
     doe_dx_context *context;
     ID3D12Fence *fence;
     HANDLE handle;
+    bool owns_handle;
 };
 static doe_dx_status wrap_fence(doe_dx_context *context,ID3D12Fence *native,
     doe_dx_shared_fence **out,doe_dx_error *error)
@@ -16,9 +17,15 @@ static doe_dx_status wrap_fence(doe_dx_context *context,ID3D12Fence *native,
     if (context->objects==SIZE_MAX) { ID3D12Fence_Release(native); return DOE_DX_RANGE; }
     doe_dx_shared_fence *fence=calloc(1,sizeof(*fence));
     if (!fence) { ID3D12Fence_Release(native); return DOE_DX_OUT_OF_MEMORY; }
-    HRESULT hr=ID3D12Device_CreateSharedHandle(context->native->device,(ID3D12DeviceChild *)native,
-        NULL,GENERIC_ALL,NULL,&fence->handle);
-    if (FAILED(hr)) { ID3D12Fence_Release(native); free(fence); return doe_dx_hresult(hr,"shared.fence.handle",error); }
+    if (!context->native->shared_timeline_handle) {
+        HANDLE created=NULL;
+        HRESULT hr=ID3D12Device_CreateSharedHandle(context->native->device,(ID3D12DeviceChild *)native,
+            NULL,GENERIC_ALL,NULL,&created);
+        if (FAILED(hr)) { ID3D12Fence_Release(native); free(fence); return doe_dx_hresult(hr,"shared.timeline.handle",error); }
+        if (!created) { ID3D12Fence_Release(native); free(fence); return doe_dx_fail(DOE_DX_NATIVE_FAILURE,0,"shared.timeline.null_handle",error); }
+        context->native->shared_timeline_handle=created;
+    }
+    fence->handle=context->native->shared_timeline_handle;
     fence->context=context; fence->fence=native;
     ++context->objects; *out=fence;
     return DOE_DX_OK;
@@ -27,16 +34,27 @@ doe_dx_status doe_dx_shared_fence_import(doe_dx_context *context,void *handle,
     doe_dx_shared_fence **out,doe_dx_error *error)
 {
     if (!context || !handle || handle==INVALID_HANDLE_VALUE || !out) return DOE_DX_INVALID_ARGUMENT;
+    if (context->lost) return DOE_DX_DEVICE_LOST;
+    if (context->objects==SIZE_MAX) return DOE_DX_RANGE;
     ID3D12Fence *native=NULL;
     HRESULT hr=ID3D12Device_OpenSharedHandle(context->native->device,handle,&IID_ID3D12Fence,(void **)&native);
     if (FAILED(hr)) return doe_dx_hresult(hr,"shared.fence.open",error);
-    return wrap_fence(context,native,out,error);
+    doe_dx_shared_fence *fence=calloc(1,sizeof(*fence));
+    if (!fence) { ID3D12Fence_Release(native); return DOE_DX_OUT_OF_MEMORY; }
+    if (!DuplicateHandle(GetCurrentProcess(),handle,GetCurrentProcess(),&fence->handle,0,FALSE,DUPLICATE_SAME_ACCESS)) {
+        DWORD code=GetLastError(); ID3D12Fence_Release(native); free(fence);
+        return doe_dx_fail(DOE_DX_NATIVE_FAILURE,(int32_t)code,"shared.fence.duplicate",error);
+    }
+    fence->context=context; fence->fence=native; fence->owns_handle=true;
+    ++context->objects; *out=fence; return DOE_DX_OK;
 }
+ID3D12Fence *doe_dx_shared_fence_native(const doe_dx_shared_fence *fence) { return fence ? fence->fence : NULL; }
 void *doe_dx_shared_fence_handle(const doe_dx_shared_fence *fence) { return fence ? fence->handle : NULL; }
 void doe_dx_shared_fence_release(doe_dx_shared_fence *fence)
 {
     if (!fence) return;
-    CloseHandle(fence->handle); ID3D12Fence_Release(fence->fence);
+    if (fence->owns_handle) CloseHandle(fence->handle);
+    ID3D12Fence_Release(fence->fence);
     --fence->context->objects; free(fence);
 }
 doe_dx_status doe_dx_shared_fence_wait(doe_dx_shared_fence *fence,uint64_t value,uint32_t wait_ms,doe_dx_error *error)
@@ -151,8 +169,11 @@ doe_dx_status doe_dx_shared_texture_begin(doe_dx_texture *texture,bool initializ
 {
     if (!texture || !texture->native || !texture->native->shared || texture->evict_requested) return DOE_DX_INVALID_ARGUMENT;
     if (texture->owner || texture->shared_active) return doe_dx_fail(DOE_DX_BUSY,0,"shared.texture.pending",error);
+    for (doe_dx_commands *item=texture->context->pending;item;item=item->next)
+        if (!item->fence) return doe_dx_fail(DOE_DX_BUSY,0,"shared.texture.unknown_timeline",error);
     if (read_only && !initialized) return DOE_DX_INVALID_ARGUMENT;
-    texture->initialized=initialized; texture->shared_read_only=read_only; texture->shared_active=true; return DOE_DX_OK;
+    texture->initialized=initialized; texture->shared_read_only=read_only; texture->shared_active=true;
+    texture->shared_begin_fence=texture->context->next_fence; return DOE_DX_OK;
 }
 doe_dx_status doe_dx_shared_texture_end(doe_dx_texture *texture,doe_dx_error *error)
 {
@@ -169,9 +190,9 @@ doe_dx_status doe_dx_shared_texture_release_point(doe_dx_texture *texture,
 {
     if (!texture || !texture->native || !texture->native->shared || !out || !value || !initialized) return DOE_DX_INVALID_ARGUMENT;
     doe_dx_commands *owner=texture->owner;
-    if (owner && (owner->state!=DOE_DX_SUBMITTED || !owner->fence))
+    if (owner && (owner->state!=DOE_DX_SUBMITTED || !owner->fence || !owner->work_executed))
         return doe_dx_fail(DOE_DX_BUSY,0,"shared.texture.unresolved",error);
-    uint64_t point=owner ? owner->fence : 0;
+    uint64_t point=owner ? owner->fence : texture->shared_begin_fence;
     bool ready=owner ? owner->textures[texture->owner_index].initialized : texture->initialized;
     ID3D12Fence *timeline=texture->context->native->fence;
     ID3D12Fence_AddRef(timeline);

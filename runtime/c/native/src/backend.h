@@ -43,6 +43,10 @@ typedef struct native_backend {
             } d3d12;
     } value;
 } native_backend;
+/* Public mapped usage is retained through backend allocation selection. */
+typedef enum native_buffer_memory_intent {
+    NATIVE_BUFFER_GENERAL, NATIVE_BUFFER_MAP_READ, NATIVE_BUFFER_MAP_WRITE
+} native_buffer_memory_intent;
 typedef union native_buffer_handle {
     doe_vk_buffer *vulkan;
     doe_mtl_buffer *metal;

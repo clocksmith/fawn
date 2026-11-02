@@ -66,12 +66,14 @@ int main(void)
     wgpuTextureRelease(cleared);wgpuSharedTextureMemoryRelease(memory);
     work_done(&s);
     WGPUBufferMapCallbackInfo callback={.mode=WGPUCallbackMode_AllowSpontaneous,.callback=mapped,.userdata1=&s};
-    assert(wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,512,callback).id && s.mapped==1);
+    WGPUFuture future=wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,512,callback);
+    wait_future(&s,future);assert(s.mapped==1);
     const unsigned char *bytes=wgpuBufferGetConstMappedRange(readback,0,512);assert(bytes);
     assert(!memcmp(bytes,red,8) && !memcmp(bytes+256,green,8));
     wgpuBufferUnmap(readback);wgpuBufferRelease(readback);
     s.mapped=0;
-    assert(wgpuBufferMapAsync(zeros,WGPUMapMode_Read,0,512,callback).id && s.mapped==1);
+    future=wgpuBufferMapAsync(zeros,WGPUMapMode_Read,0,512,callback);
+    wait_future(&s,future);assert(s.mapped==1);
     const unsigned char none[8]={0};bytes=wgpuBufferGetConstMappedRange(zeros,0,512);assert(bytes);
     assert(!memcmp(bytes,none,8) && !memcmp(bytes+256,none,8));
     wgpuBufferUnmap(zeros);wgpuBufferRelease(zeros);

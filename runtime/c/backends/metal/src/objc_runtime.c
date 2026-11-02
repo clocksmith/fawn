@@ -241,6 +241,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->new_command = runtime->selector("commandBufferWithUnretainedReferences");
     runtime->blit_encoder = runtime->selector("blitCommandEncoder");
     runtime->compute_encoder = runtime->selector("computeCommandEncoder");
+    runtime->buffer_barrier = runtime->selector("memoryBarrierWithScope:");
     runtime->copy_buffer = runtime->selector("copyFromBuffer:sourceOffset:toBuffer:destinationOffset:size:");
     runtime->fill_buffer = runtime->selector("fillBuffer:range:value:");
     runtime->end_encoding = runtime->selector("endEncoding");
@@ -266,7 +267,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
         runtime->new_function != NULL && runtime->new_pipeline != NULL &&
         runtime->pipeline_max_threads != NULL && runtime->localized_description != NULL &&
         runtime->code != NULL && runtime->new_command != NULL && runtime->blit_encoder != NULL &&
-        runtime->compute_encoder != NULL && runtime->copy_buffer != NULL &&
+        runtime->compute_encoder != NULL && runtime->buffer_barrier != NULL && runtime->copy_buffer != NULL &&
         runtime->fill_buffer != NULL && runtime->end_encoding != NULL &&
         runtime->set_pipeline != NULL && runtime->set_buffer != NULL &&
         runtime->set_bytes != NULL && runtime->dispatch != NULL && runtime->dispatch_indirect != NULL &&
@@ -350,7 +351,6 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.shared_surface_release = doe_mtl_objc_shared_surface_release;
     native.shared_texture = doe_mtl_objc_shared_texture;
     native.shared_event_retain = doe_mtl_objc_shared_event_retain;
-    native.shared_event_wait = doe_mtl_objc_shared_event_wait;
     native.surface_supported = doe_mtl_objc_surface_supported;
     native.surface_configure = doe_mtl_objc_surface_configure;
     native.surface_acquire = doe_mtl_objc_surface_acquire;
@@ -370,6 +370,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.fill = doe_mtl_objc_fill;
     native.dispatch = doe_mtl_objc_dispatch;
     native.dispatch_indirect = doe_mtl_objc_dispatch_indirect;
+    native.guard_batch = doe_mtl_objc_guard_batch;
     native.texture = doe_mtl_objc_texture;
     native.view = doe_mtl_objc_view;
     native.sampler = doe_mtl_objc_sampler;
@@ -384,6 +385,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.resolve_timestamps = doe_mtl_objc_resolve_timestamps;
     native.timeline_create = doe_mtl_objc_timeline_create;
     native.timeline_signal = doe_mtl_objc_timeline_signal;
+    native.commands_wait_event = doe_mtl_objc_commands_wait_event;
     native.timeline_value = doe_mtl_objc_timeline_value;
     native.commit = doe_mtl_objc_commit;
     native.completed_handler = doe_mtl_objc_completed_handler;

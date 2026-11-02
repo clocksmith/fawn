@@ -20,18 +20,17 @@ Pinned ABI, inventoried legacy/browser signatures, [owner contracts](AGENTS.md),
 Select without fallback; use selected payloads. Windows LUID preserves exact
 words/software identity; unknown chains and forced fallback reject. Reflection
 never replaces dispatch analysis; unknown work retains resources.
-D3D12 device guards initialize lazily: compile unlocked, publish under rechecked
-device state, retain pipelines through retirement. Native acceptance, conflict
+D3D12 guards compile lazily unlocked, publish after device revalidation, retain through retirement. Native acceptance, conflict
 settlement and initialization share pending ownership; held event observers run unlocked.
 Presentation retains frame/backbuffer identity and leases across early release,
 teardown/resize until backend completion. Display timestamps never redefine
 WorkDone. Surface-before-device locking, errors, rollback and retirement ownership persist.
 Metal occlusion, calibrated timestamps, unavailable samples, ordered resolves,
 depth and raster state retain their owners.
-Provider resident; foreign callbacks unlocked.
+Provider resident; serial/generation futures return immediately; foreign callbacks unlocked.
 Cache opt-out precedes serialized access; shader profiles bind persisted artifacts;
 memory/caller/driver caches stay separate. Uncertified/imported HLSL retains SM6.
-Legacy getters retain leases. Encoded writes snapshot staging with ordered copies.
+Getters retain leases. Encoded writes snapshot staging with ordered copies.
 Unsupported external transforms yield unusable error objects; copies never imply
 conversion. Shared IOSurface properties expose physical formats before creation;
 compatible views preserve them.

@@ -51,7 +51,17 @@ static doe_mtl_status vertex_fetch(const doe_mtl_render_draw *draw) {
     }
     return DOE_MTL_OK;
 }
-static doe_mtl_status dynamic_state(const doe_mtl_render_draw *draw, const doe_mtl_native_render_pass *pass) {
+static bool viewport_axis_valid(double origin, double size, uint32_t maximum) {
+    double range = 2.0 * maximum, edge = range - 1;
+    double larger = origin > size ? origin : size;
+    double smaller = origin > size ? size : origin;
+    /* Native viewport bounds depend on the device, not the attachment. The
+     * subtraction also rejects a tiny excess that rounded origin+size loses. */
+    return size >= 0 && size <= maximum && origin >= -range && larger <= edge &&
+        !(larger > edge * 0.5 && smaller > edge - larger);
+}
+static doe_mtl_status dynamic_state(const doe_mtl_render_draw *draw, const doe_mtl_native_render_pass *pass,
+    uint32_t maximum) {
     const doe_mtl_viewport *viewport = &draw->viewport;
     const doe_mtl_scissor *scissor = &draw->scissor;
     unsigned i;
@@ -60,9 +70,8 @@ static doe_mtl_status dynamic_state(const doe_mtl_render_draw *draw, const doe_m
     for (i = 0; i < 4; ++i) if (!isfinite(draw->blend_constant[i])) return DOE_MTL_INVALID_ARGUMENT;
     if (draw->viewport_enabled && (!isfinite(viewport->x) || !isfinite(viewport->y) ||
         !isfinite(viewport->width) || !isfinite(viewport->height) || !isfinite(viewport->min_depth) || !isfinite(viewport->max_depth) ||
-        viewport->width < 0 || viewport->height < 0 || viewport->x < 0 || viewport->y < 0 ||
-        viewport->x > pass->width || viewport->width > (double)pass->width - viewport->x ||
-        viewport->y > pass->height || viewport->height > (double)pass->height - viewport->y ||
+        !viewport_axis_valid(viewport->x, viewport->width, maximum) ||
+        !viewport_axis_valid(viewport->y, viewport->height, maximum) ||
         viewport->min_depth < 0 || viewport->max_depth > 1 || viewport->min_depth > viewport->max_depth)) return DOE_MTL_RANGE;
     if (draw->scissor_enabled && (scissor->x > pass->width || scissor->width > pass->width - scissor->x ||
         scissor->y > pass->height || scissor->height > pass->height - scissor->y)) return DOE_MTL_RANGE;
@@ -84,9 +93,11 @@ doe_mtl_status doe_mtl_render_draw_preflight(doe_mtl_commands *commands,
     for (i = 0; i < pipeline->color_count; ++i)
         if (pipeline->colors[i].format != (pass->colors[i].view != NULL ? pass->colors[i].view->desc.format : 0))
             return DOE_MTL_INVALID_ARGUMENT;
-    status = dynamic_state(draw, native_pass);
-    if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->vertex, pipeline->vertex.sizes_slot, &native->vertex);
-    if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->fragment, pipeline->fragment.sizes_slot, &native->fragment);
+    doe_mtl_native_resources scratch = {0};
+    status = dynamic_state(draw, native_pass, commands->context->caps.max_texture_2d);
+    if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->vertex, pipeline->vertex.sizes_slot, &scratch);
+    memset(&scratch, 0, sizeof(scratch));
+    if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->fragment, pipeline->fragment.sizes_slot, &scratch);
     if (status == DOE_MTL_OK) status = vertex_fetch(draw);
     if (status == DOE_MTL_OK) status = doe_mtl_draw_guard_preflight(commands, draw);
     if (status != DOE_MTL_OK) return status;
@@ -107,5 +118,11 @@ doe_mtl_status doe_mtl_render_draw_preflight(doe_mtl_commands *commands,
     native->vertex_sizes_slot = pipeline->vertex.sizes_slot;
     native->fragment_sizes_slot = pipeline->fragment.sizes_slot;
     native->values = *draw;
+    if (draw->vertex.immediates.size) memcpy(native->vertex_immediates,
+        draw->vertex.immediates.bytes, draw->vertex.immediates.size);
+    if (draw->fragment.immediates.size) memcpy(native->fragment_immediates,
+        draw->fragment.immediates.bytes, draw->fragment.immediates.size);
+    native->values.vertex.immediates.bytes = native->vertex_immediates;
+    native->values.fragment.immediates.bytes = native->fragment_immediates;
     return DOE_MTL_OK;
 }

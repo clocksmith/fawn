@@ -2,11 +2,6 @@
 #include "render_internal.h"
 #include "../../../common/include/doe_draw_guard.h"
 
-struct doe_mtl_draw_guard {
-    doe_mtl_pipeline *normalize, *scan;
-    uint32_t record_slot, scan_slots[3], max_groups_x;
-};
-
 static bool slots(const doe_mtl_pipeline_desc *pipeline,const uint32_t *values,size_t count)
 {
     for (size_t i=0;i<count;++i) {
@@ -44,7 +39,7 @@ void doe_mtl_draw_guard_release(doe_mtl_draw_guard *guard)
 
 /* Native vertex formats/layouts are already admitted. Derive exact fetch
  * capacities from every actual attribute, never GPU index guesses or u32 caps. */
-static doe_mtl_status capacities(const doe_mtl_render_draw *draw,uint64_t result[2])
+doe_mtl_status doe_mtl_draw_guard_capacities(const doe_mtl_render_draw *draw,uint64_t result[2])
 {
     result[0]=result[1]=UINT64_MAX;
     const doe_mtl_render_pipeline_desc *pipeline=&draw->pipeline->desc;
@@ -87,34 +82,7 @@ doe_mtl_status doe_mtl_draw_guard_preflight(doe_mtl_commands *commands,const doe
         if (status!=DOE_MTL_OK) return status;
     }
     uint64_t limits[2];
-    return capacities(draw,limits);
-}
-
-static doe_mtl_status scan_window(doe_mtl_commands *commands,const doe_mtl_render_draw *draw,
-    doe_mtl_buffer *scratch,uint64_t first,uint32_t count,uint64_t vertex_limit,doe_mtl_error *error)
-{
-    const doe_mtl_draw_guard *guard=draw->guarded->guard;
-    uint64_t element=draw->index_type==0 ? 2 : 4;
-    uint64_t offset=draw->index_offset+first*element;
-    uint64_t aligned=offset&~UINT64_C(3);
-    uint64_t bytes=((offset-aligned)+(uint64_t)count*element+3)&~UINT64_C(3);
-    uint32_t groups=count/64+(count%64!=0);
-    if (groups>guard->max_groups_x) groups=guard->max_groups_x;
-    uint32_t params[9]={(uint32_t)first,(uint32_t)(first>>32),count,(uint32_t)((offset-aligned)/2),
-        draw->index_type==0,(uint32_t)vertex_limit,(uint32_t)(vertex_limit>>32),
-        draw->topology==2 || draw->topology==4,groups*64};
-    doe_mtl_buffer *parameter=NULL;
-    doe_mtl_status status=doe_mtl_buffer_create(commands->context,sizeof(params),DOE_MTL_SHARED,&parameter,error);
-    if (status==DOE_MTL_OK) {
-        status=doe_mtl_buffer_write(parameter,0,params,sizeof(params));
-        if (status!=DOE_MTL_OK) (void)doe_mtl_fail(status,"draw scan parameters",error);
-    }
-    const doe_mtl_buffer_binding bindings[3]={{guard->scan_slots[0],scratch,0,DOE_DRAW_GUARD_RECORD_V2_BYTES},
-        {guard->scan_slots[1],draw->index_buffer,aligned,bytes},{guard->scan_slots[2],parameter,0,sizeof(params)}};
-    if (status==DOE_MTL_OK) status=doe_mtl_commands_dispatch(commands,guard->scan,bindings,3,
-        (doe_mtl_dimensions){groups,1,1},1,error);
-    doe_mtl_buffer_release(parameter);
-    return status;
+    return doe_mtl_draw_guard_capacities(draw,limits);
 }
 
 /* Only within one pass's consecutive preparation phase: no caller buffers are
@@ -139,57 +107,4 @@ bool doe_mtl_draw_guard_same_inputs(const doe_mtl_render_draw *left,const doe_mt
             return false;
     }
     return true;
-}
-
-doe_mtl_status doe_mtl_draw_guard_prepare(doe_mtl_commands *commands,const doe_mtl_render_draw *draw,
-    doe_mtl_native_render_draw *native,doe_mtl_error *error)
-{
-    if (!draw->guarded) return DOE_MTL_OK;
-    const doe_mtl_guarded_draw *input=draw->guarded;
-    const doe_mtl_draw_guard *guard=input->guard;
-    uint64_t limits[2];
-    doe_mtl_status status=capacities(draw,limits);
-    if (status!=DOE_MTL_OK) return doe_mtl_fail(status,"draw guard capacities",error);
-    uint64_t count_limit=draw->index_buffer ? input->index_size/(draw->index_type==0 ? 2u : 4u) : limits[0];
-    uint32_t words[10]={draw->count,draw->instance_count,draw->index_buffer ? input->first_index : draw->first_vertex,
-        draw->index_buffer ? (uint32_t)draw->base_vertex : draw->first_instance,0,0,0,
-        (draw->index_buffer ? 1u : 0u)|(input->first_instance_allowed ? 2u : 0u),
-        (uint32_t)(count_limit>>32),(uint32_t)(limits[1]>>32)};
-    if (draw->index_buffer) { words[4]=draw->first_instance; words[5]=(uint32_t)count_limit; words[6]=(uint32_t)limits[1]; }
-    else { words[4]=(uint32_t)count_limit; words[5]=(uint32_t)limits[1]; }
-    doe_mtl_buffer *scratch=NULL;
-    if (status==DOE_MTL_OK) status=doe_mtl_buffer_create(commands->context,sizeof(words),DOE_MTL_SHARED,&scratch,error);
-    if (status==DOE_MTL_OK) {
-        status=doe_mtl_buffer_write(scratch,0,words,sizeof(words));
-        if (status!=DOE_MTL_OK) (void)doe_mtl_fail(status,"draw guard record",error);
-    }
-    if (status==DOE_MTL_OK && input->arguments) status=doe_mtl_commands_copy(commands,input->arguments,
-        input->argument_offset,scratch,0,draw->index_buffer ? 20 : 16,error);
-    const doe_mtl_buffer_binding binding={guard->record_slot,scratch,0,sizeof(words)};
-    if (status==DOE_MTL_OK) status=doe_mtl_commands_dispatch(commands,guard->normalize,&binding,1,
-        (doe_mtl_dimensions){1,1,1},1,error);
-    /* API firstIndex/count are u32, so no invocation can address an ordinal
-     * beyond twice UINT32_MAX - 1 even if the allocation itself is larger. */
-    uint64_t scan_count=count_limit;
-    if (scan_count>UINT64_C(2)*UINT32_MAX) scan_count=UINT64_C(2)*UINT32_MAX;
-    uint64_t first=0;
-    if (draw->index_buffer && !input->arguments) {
-        first=input->first_index;
-        uint64_t end=first+draw->count;
-        if (end<scan_count) scan_count=end;
-    }
-    while (status==DOE_MTL_OK && draw->index_buffer && limits[0]!=UINT64_MAX && first<scan_count) {
-        uint64_t element=draw->index_type==0 ? 2 : 4;
-        uint64_t offset=draw->index_offset+first*element;
-        uint64_t maximum=((UINT64_C(0xfffffffc)-(offset%4))/element);
-        uint64_t remaining=scan_count-first;
-        uint32_t count=(uint32_t)(remaining<maximum ? remaining : maximum);
-        status=scan_window(commands,draw,scratch,first,count,limits[0],error);
-        first+=count;
-    }
-    if (status==DOE_MTL_OK) native->indirect_arguments=scratch->native;
-    /* Dispatch acquired scratch/index/parameter/PSO leases. Partial failure is
-     * discarded by the whole-pass owner; unknown retains the same objects. */
-    doe_mtl_buffer_release(scratch);
-    return status;
 }

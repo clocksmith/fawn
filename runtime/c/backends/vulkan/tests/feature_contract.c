@@ -2,6 +2,7 @@
 #include "../src/feature_internal.h"
 #include <assert.h>
 #include <stdio.h>
+#include "feature_stub.h"
 
 static bool extension, demote, robust, unterminated;
 static unsigned half_mask, half_queries;
@@ -38,6 +39,7 @@ static VkResult enumerate(VkPhysicalDevice device, const uint8_t *layer,
 }
 static void features(VkPhysicalDevice device, VkPhysicalDeviceFeatures2 *out) {
     (void)device;
+    if (unsupported_feature_query(out)) return;
     if (out->pNext && *(const VkStructureType *)out->pNext ==
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES) {
         VkPhysicalDeviceShaderFloat16Int8Features *half = out->pNext;
@@ -104,19 +106,21 @@ static void maintenance5(doe_vk_context *context) {
 int main(void) {
     doe_vk_context context = {0};
     context.vk.vkEnumerateDeviceExtensionProperties = enumerate;
+    context.vk.vkGetPhysicalDeviceProperties2=unsupported_subgroup_properties;
     context.vk.vkGetPhysicalDeviceFeatures2 = features;
     doe_vk_options options = {0};
     doe_vk_feature_selection selection;
     doe_vk_error error;
     robust = extension = demote = true;
     assert(doe_vk_prepare_features(&context, &options, &selection, &error) == DOE_VK_OK);
-    /* One maintenance5 presence enumeration (count + list); nothing to chain. */
-    assert(enumerations == 2 && queries == 1 && chains == 0 && !selection.maintenance5_enabled);
+    /* Maintenance5 and external-fd presence each enumerate count + list;
+     * none of those optional features is offered by this adapter fixture. */
+    assert(enumerations == 4 && queries == 1 && chains == 0 && !selection.maintenance5_enabled);
     assert(selection.extension == NULL && selection.base.robustBufferAccess == 1);
     assert(selection.base.shaderInt64 == 0);
     options.enable_shader_demote_if_supported = true;
     assert(doe_vk_prepare_features(&context, &options, &selection, &error) == DOE_VK_OK);
-    assert(enumerations == 6 && queries == 2 && chains == 1);
+    assert(enumerations == 10 && queries == 2 && chains == 1);
     assert(selection.extension != NULL && selection.demote.shaderDemoteToHelperInvocation == 1);
     assert(selection.demote.pNext == NULL && selection.base.shaderInt64 == 0);
     extension = false;
@@ -150,7 +154,8 @@ int main(void) {
         unsigned before = half_queries;
         assert(doe_vk_prepare_features(&context, &options, &selection, &error) == DOE_VK_OK);
         assert(half_queries == before + 1 && selection.shader_f16 == ((half_mask & 7) == 7));
-        assert(selection.float16.shaderInt8 == 0 && selection.storage16.storagePushConstant16 == 0);
+        assert(selection.float16.shaderInt8 == 0);
+        assert(selection.storage16.storagePushConstant16 == ((half_mask & 7) == 7));
         assert(selection.float16.pNext == NULL && selection.storage16.pNext == NULL);
         assert(selection.float16.shaderFloat16 == ((half_mask & 7) == 7));
         assert(selection.storage16.storageBuffer16BitAccess == ((half_mask & 7) == 7));

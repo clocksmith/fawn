@@ -89,6 +89,7 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
         if (page && !page->evict_requested && page->size >= size) {
             doe_dx_status status = doe_dx_buffer_retain(page);
             if (status != DOE_DX_OK) return doe_dx_fail(status,0,"upload.retain",error);
+            page->upload_slices=false; page->upload_used=page->size;
             *out = page;
             return doe_dx_fail(DOE_DX_OK,0,"upload.reuse",error);
         }
@@ -119,6 +120,7 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
         *slot = prepared;
         doe_dx_buffer_release(previous);
     }
+    prepared->upload_used=prepared->size;
     *out = prepared;
     return doe_dx_fail(DOE_DX_OK,0,"upload.acquire",error);
 }
@@ -165,6 +167,7 @@ static doe_dx_status host_access(doe_dx_buffer *buffer, uint64_t offset,
     if (buffer->context->lost) return DOE_DX_DEVICE_LOST;
     if (buffer->memory != (write ? DOE_DX_UPLOAD : DOE_DX_READBACK)) return DOE_DX_UNSUPPORTED;
     if (!doe_dx_range(buffer->size, offset, size)) return DOE_DX_RANGE;
+    if (write && buffer->upload_slices) return DOE_DX_INVALID_STATE;
     if (write && buffer->immutable_zero) return DOE_DX_UNSUPPORTED;
     if (buffer->lent) return DOE_DX_INVALID_STATE;
     if (buffer->owner || buffer->pending) return DOE_DX_BUSY;
@@ -201,8 +204,21 @@ doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, si
     return doe_dx_context_result(buffer->context, status, error);
 }
 
+doe_dx_status doe_dx_buffer_lend_write(doe_dx_buffer *buffer,uint64_t offset,size_t size,
+    void **out,doe_dx_error *error) {
+    if (!out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"buffer.lend_write",error);
+    doe_dx_status status=host_access(buffer,offset,out,size,true);
+    if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"buffer.lend_write",error);
+    status=doe_dx_native_map_write(buffer->native,offset,size,out,error);
+    if (status==DOE_DX_OK) {
+        buffer->lent=true; buffer->lent_write=true;
+        buffer->lend_offset=offset; buffer->lend_size=size;
+    }
+    return doe_dx_context_result(buffer->context,status,error);
+}
 void doe_dx_buffer_return_read(doe_dx_buffer *buffer) {
     if (!buffer || !buffer->lent) return;
-    doe_dx_native_unmap_read(buffer->native);
-    buffer->lent = false;
+    if (buffer->lent_write) doe_dx_native_unmap_write(buffer->native,buffer->lend_offset,buffer->lend_size);
+    else doe_dx_native_unmap_read(buffer->native);
+    buffer->lent = false; buffer->lent_write=false;
 }

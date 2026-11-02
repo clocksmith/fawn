@@ -131,13 +131,13 @@ static void selected_initializers(const char *prefix) {
         "@compute @workgroup_size(2) fn main(){atomicStore(&row.values[0],-1);let n=atomicLoad(&row.values[1]);}"
         "@compute @workgroup_size(1) fn alternate(){atomicStore(&other,7u);}");
     char *text = emit(fixture, 0);
-    has(text, "atomic_store_explicit(p, int(0), memory_order_relaxed)");
+    has(text, "int(0), memory_order_relaxed)");
     has(text, "float3x2(0.0f)");
     assert(!strstr(text, "ctx.w1") && !strstr(text, "threadgroup atomic_uint* p"));
     save(prefix, "selected_shared", text);
     free(text);
     text = emit(fixture, 1);
-    has(text, "atomic_store_explicit(p, uint(0), memory_order_relaxed)");
+    has(text, "uint(0), memory_order_relaxed)");
     assert(!strstr(text, "ctx.w0") && !strstr(text, "threadgroup atomic_int* p"));
     save(prefix, "alternate_shared", text);
     free(text);

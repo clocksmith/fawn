@@ -34,7 +34,7 @@ static native_failure compile(bool scan,doe_shader **out,doe_mtl_pipeline_desc *
     char source[DOE_DRAW_INDEX_SCAN_SOURCE_CAPACITY];
     size_t length=0;
     doe_draw_guard_source_status generated=scan ? doe_draw_index_scan_source(source,sizeof(source),&length) :
-        doe_draw_argument_source_v2(source,sizeof(source),&length);
+        doe_draw_argument_source_v2_batch(source,sizeof(source),&length);
     if (generated!=DOE_DRAW_GUARD_SOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     doe_shader *shader=NULL;
     doe_shader_error error={0};

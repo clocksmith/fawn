@@ -16,6 +16,7 @@
 typedef struct native_metal_completion {
     atomic_uint references;
     atomic_bool armed;
+    atomic_bool observed; /* Live asynchronous completion obligations only. */
     atomic_uint_fast64_t count; /* Handlers run so far. */
     doe_mutex mutex;            /* Orders a wake against device detach. */
     native_device *device;      /* Guarded by mutex; NULL once detached. */
@@ -41,7 +42,8 @@ static void completion_notify(void *data)
 {
     native_metal_completion *completion = data;
     atomic_fetch_add_explicit(&completion->count, 1, memory_order_release);
-    if (atomic_load_explicit(&completion->armed, memory_order_acquire)) {
+    if (atomic_load_explicit(&completion->armed, memory_order_acquire) ||
+            atomic_load_explicit(&completion->observed, memory_order_acquire)) {
         if (doe_mutex_lock(&completion->mutex).status != DOE_HOST_OK) abort();
         if (completion->device &&
             doe_condition_signal(&completion->device->pending_changed).status != DOE_HOST_OK) abort();
@@ -61,6 +63,7 @@ bool native_metal_completion_attach(native_device *device)
     }
     atomic_init(&completion->references, 1);
     atomic_init(&completion->armed, false);
+    atomic_init(&completion->observed, false);
     atomic_init(&completion->count, 0);
     completion->device = device;
     const doe_mtl_completion_sink sink = {completion, completion_acquire, completion_notify};
@@ -88,6 +91,14 @@ void native_metal_completion_arm(native_device *device)
 {
     if (device->metal_completion)
         atomic_store_explicit(&device->metal_completion->armed, true, memory_order_release);
+}
+
+/* Device mutex held. Completed handlers wake the ordinary progress owner only
+ * while an admitted queue/map obligation needs delivery, or after destruction. */
+void native_metal_completion_observe(native_device *device, bool observed)
+{
+    if (device->metal_completion)
+        atomic_store_explicit(&device->metal_completion->observed, observed, memory_order_release);
 }
 
 bool native_metal_completion_armed(const native_device *device)

@@ -11,7 +11,7 @@ struct fixture {
     doe_mtl_objc runtime;
     object objects[OBJECTS];
     size_t count, widths[2], heights[2], expected_usage;
-    unsigned cf_references, event_references, event_reads;
+    unsigned cf_references, event_references, event_reads, event_waits;
     uint32_t format;
     bool no_backing, no_pool, no_descriptor, no_selector;
     unsigned fail_plane, imported, descriptors, released_planes, drained, pools;
@@ -72,7 +72,8 @@ static doe_objc_bool responds(void *raw, void *selector, void *query)
         return 1;
     }
     fixture *f = owner(raw, DEVICE);
-    assert(named(selector,"responds") && named(query,"newTextureWithDescriptor:iosurface:plane:"));
+    assert(named(selector,"responds"));
+    assert(named(query,"newTextureWithDescriptor:iosurface:plane:") || named(query,"waitEvent"));
     return (doe_objc_bool)!f->no_selector;
 }
 static void *texture_call(void *raw, void *selector, void *descriptor, void *surface, size_t plane)
@@ -138,7 +139,15 @@ static uint64_t event_value(void *raw, void *selector)
 {
     fixture *f = owner(raw,EVENT);
     assert(named(selector,"signaledValue"));
-    return ++f->event_reads == 3 ? 73 : 0;
+    ++f->event_reads;
+    return 0; /* Producer remains unsignaled; encoding must never inspect it. */
+}
+static void encode_event(void *command, void *selector, void *event, uint64_t value)
+{
+    fixture *f = owner(command, DEVICE);
+    assert(named(selector, "waitEvent") && owner(event, EVENT) == f && value == 73);
+    assert(f->event_references == 1 && !f->event_reads);
+    f->event_waits++;
 }
 static void initialize(fixture *f)
 {
@@ -152,6 +161,8 @@ static void initialize(fixture *f)
         .set_size_call=set_size,.responds_call=responds};
     f->runtime.queries.signaled_value = "signaledValue";
     f->runtime.queries.event_value = event_value;
+    f->runtime.queries.event = encode_event;
+    f->runtime.queries.wait_event = "waitEvent";
     f->runtime.external = (doe_mtl_objc_external){.new_texture="newTextureWithDescriptor:iosurface:plane:",
         .cf_retain=cf_retain,.cf_release=cf_release,.texture_call=texture_call,.surface_planes=surface_planes,.surface_width=surface_width,
         .surface_height=surface_height,.surface_plane_width=surface_plane_width,
@@ -240,7 +251,8 @@ int main(void)
     void *event = NULL;
     assert(doe_mtl_objc_shared_event_retain(&f.runtime,&f.objects[EVENT],&event,NULL) == DOE_MTL_OK);
     assert(event == &f.objects[EVENT] && f.event_references == 1);
-    assert(doe_mtl_objc_shared_event_wait(&f.runtime,event,73,NULL) == DOE_MTL_OK && f.event_reads == 3);
-    puts("PASS shared import typed calls: CF/native identity, packed-plane admission, sRGB/usage and producer-event reads (host only)");
+    assert(doe_mtl_objc_commands_wait_event(&f.runtime,&f.objects[DEVICE],event,73,NULL) == DOE_MTL_OK);
+    assert(f.event_waits == 1 && !f.event_reads);
+    puts("PASS shared import typed calls: CF/native identity, packed-plane admission, sRGB/usage and GPU wait encoding without producer polling (host only)");
     puts("PASS external import typed calls: exact format/dimensions/source, second-plane rollback and untouched failures (host only)");
 }

@@ -22,7 +22,7 @@ native_failure native_d3d12_materialize_zero(native_device *device);
  * its work after the writes and executes both under one fence. Every other D3D12
  * recording, CPU read, map or work-done wait first flushes it on its own. */
 typedef struct native_d3d12_writes native_d3d12_writes;
-native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging,
+native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging, uint64_t source_offset,
     doe_dx_buffer *destination, uint64_t offset, uint64_t size);
 native_failure native_d3d12_flush_writes(native_device *device);
 /* Zero fills, then open writes: precedes every D3D12 recording except submission. */
@@ -39,6 +39,8 @@ void native_d3d12_writes_close(native_backend *backend);
  * unmaps. Both run under the device mutex after the buffer owner settled. */
 native_failure native_d3d12_buffer_lend(native_buffer *buffer, uint64_t offset, size_t size,
     const unsigned char **out);
+bool native_d3d12_buffer_write_lendable(const native_buffer *);
+native_failure native_d3d12_buffer_lend_write(native_buffer *,uint64_t,size_t,unsigned char **);
 void native_d3d12_buffer_return(native_buffer *buffer);
 
 native_result native_d3d12_open(bool fallback, native_backend *out);
@@ -55,7 +57,7 @@ native_failure native_d3d12_wait_owner(native_device *, doe_dx_commands *, const
 native_failure native_d3d12_record_batch(native_device *, native_command_handle *, doe_resource_commands **, size_t);
 native_result native_d3d12_command_release(native_command_handle *commands);
 native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
-    bool direct_readback);
+    native_buffer_memory_intent intent);
 void native_d3d12_buffer_close(native_buffer *buffer);
 native_failure native_d3d12_buffer_evict(native_buffer *buffer);
 native_failure native_d3d12_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);

@@ -51,6 +51,7 @@ typedef struct prepared_draw {
     uint32_t index_limit;
     VkBuffer index_buffer;
     VkBuffer indirect;
+    VkDeviceSize indirect_offset;
     bool samples_depth_stencil; /* Samples the depth/stencil attachment's texture. */
 } prepared_draw;
 
@@ -179,7 +180,7 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
 
 static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw *draw,
     prepared_draw *prepared) {
-    doe_vk_status status = doe_vk_prepare_resources(commands, draw->pipeline, draw->bindings,
+    doe_vk_status status = doe_vk_prepare_graphics_resources(commands, draw->pipeline, draw->bindings,
         draw->binding_count, &prepared->bindings);
     if (status != DOE_VK_OK) return status;
     for (size_t i = 0; i < draw->vertex_buffer_count; ++i) {
@@ -197,37 +198,68 @@ static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_vk_render
     return DOE_VK_OK;
 }
 
+/* Native state survives between draws inside one pass; the first draw emits
+ * every applicable value. Leases and per-draw validation stay in preparation. */
+typedef struct render_state {
+    const doe_vk_dispatch_use *bindings;
+    VkViewport viewport;
+    VkRect2D scissor;
+    float blend[4];
+    VkBuffer vertices[DOE_VK_MAX_VERTEX_BUFFERS], index;
+    VkDeviceSize offsets[DOE_VK_MAX_VERTEX_BUFFERS], index_offset;
+    uint32_t index_format, stencil_reference;
+    doe_vk_pipeline *immediate_pipeline;
+    unsigned char immediates[64];
+    bool dynamic_valid, stencil_valid, index_valid;
+} render_state;
 static void record_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw *draw,
-    const prepared_draw *prepared) {
+    const prepared_draw *prepared, render_state *state) {
     doe_vk_context *context = commands->context;
-    doe_vk_bind_prepared_resources(commands, prepared->bindings);
-    doe_vk_push_immediates(commands, draw->pipeline, draw->immediates);
-    const float *blend = draw->draw.override_blend_constant ?
-        draw->draw.blend_constant : draw->pipeline->blend_constant;
-    context->vk.vkCmdSetBlendConstants(commands->command, blend);
-    if (draw->pipeline->stencil_test)
-        context->vk.vkCmdSetStencilReference(commands->command, 3, draw->draw.stencil_reference);
-    context->vk.vkCmdSetViewport(commands->command, 0, 1, &prepared->viewport);
-    context->vk.vkCmdSetScissor(commands->command, 0, 1, &prepared->scissor);
-    uint32_t slot = 0;
-    while (slot < draw->vertex_buffer_count) {
-        if (prepared->buffers[slot] == 0) {
-            ++slot;
-            continue;
-        }
-        uint32_t first = slot++;
-        while (slot < draw->vertex_buffer_count && prepared->buffers[slot] != 0) ++slot;
-        context->vk.vkCmdBindVertexBuffers(commands->command, first, slot - first,
-            prepared->buffers + first, prepared->offsets + first);
+    doe_vk_bind_prepared_resources_since(commands, prepared->bindings, state->bindings);
+    state->bindings = prepared->bindings;
+    const uint32_t bytes = draw->pipeline->immediate_bytes;
+    if (bytes && (state->immediate_pipeline != draw->pipeline || memcmp(state->immediates,draw->immediates,bytes))) {
+        doe_vk_push_immediates(commands,draw->pipeline,draw->immediates);
+        memcpy(state->immediates,draw->immediates,bytes);
+        state->immediate_pipeline=draw->pipeline;
     }
-    const doe_vk_render_indices *indices = draw->indices;
-    if (indices != NULL)
-        context->vk.vkCmdBindIndexBuffer(commands->command, prepared->index_buffer, indices->offset,
-            (uint32_t)indices->format);
+    const float *blend = draw->draw.override_blend_constant ? draw->draw.blend_constant : draw->pipeline->blend_constant;
+    if (!state->dynamic_valid || memcmp(state->blend,blend,sizeof(state->blend))) {
+        context->vk.vkCmdSetBlendConstants(commands->command,blend);
+        memcpy(state->blend,blend,sizeof(state->blend));
+    }
+    if (draw->pipeline->stencil_test && (!state->stencil_valid || state->stencil_reference!=draw->draw.stencil_reference)) {
+        context->vk.vkCmdSetStencilReference(commands->command,3,draw->draw.stencil_reference);
+        state->stencil_reference=draw->draw.stencil_reference; state->stencil_valid=true;
+    }
+    if (!state->dynamic_valid || memcmp(&state->viewport,&prepared->viewport,sizeof(state->viewport))) {
+        context->vk.vkCmdSetViewport(commands->command,0,1,&prepared->viewport); state->viewport=prepared->viewport;
+    }
+    if (!state->dynamic_valid || memcmp(&state->scissor,&prepared->scissor,sizeof(state->scissor))) {
+        context->vk.vkCmdSetScissor(commands->command,0,1,&prepared->scissor); state->scissor=prepared->scissor;
+    }
+    state->dynamic_valid=true;
+    uint32_t slot=0;
+    while (slot<draw->vertex_buffer_count) {
+        if (!prepared->buffers[slot] || (prepared->buffers[slot]==state->vertices[slot] &&
+            prepared->offsets[slot]==state->offsets[slot])) { ++slot; continue; }
+        const uint32_t first=slot++;
+        while (slot<draw->vertex_buffer_count && prepared->buffers[slot] &&
+            (prepared->buffers[slot]!=state->vertices[slot] || prepared->offsets[slot]!=state->offsets[slot])) ++slot;
+        context->vk.vkCmdBindVertexBuffers(commands->command,first,slot-first,prepared->buffers+first,prepared->offsets+first);
+        for (uint32_t i=first;i<slot;++i) { state->vertices[i]=prepared->buffers[i]; state->offsets[i]=prepared->offsets[i]; }
+    }
+    const doe_vk_render_indices *indices=draw->indices;
+    if (indices && (!state->index_valid || state->index!=prepared->index_buffer ||
+        state->index_offset!=indices->offset || state->index_format!=(uint32_t)indices->format)) {
+        context->vk.vkCmdBindIndexBuffer(commands->command,prepared->index_buffer,indices->offset,(uint32_t)indices->format);
+        state->index=prepared->index_buffer; state->index_offset=indices->offset;
+        state->index_format=(uint32_t)indices->format; state->index_valid=true;
+    }
     if (prepared->indirect != 0 && indices != NULL)
-        context->vk.vkCmdDrawIndexedIndirect(commands->command, prepared->indirect, 0, 1, 20);
+        context->vk.vkCmdDrawIndexedIndirect(commands->command, prepared->indirect, prepared->indirect_offset, 1, 20);
     else if (prepared->indirect != 0)
-        context->vk.vkCmdDrawIndirect(commands->command, prepared->indirect, 0, 1, 16);
+        context->vk.vkCmdDrawIndirect(commands->command, prepared->indirect, prepared->indirect_offset, 1, 16);
     else if (indices != NULL)
         context->vk.vkCmdDrawIndexed(commands->command, indices->index_count, draw->draw.instance_count,
             indices->first_index, indices->base_vertex, draw->draw.first_instance);
@@ -282,8 +314,11 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     prepared_draw *prepared = count != 0 ? calloc(count, sizeof(*prepared)) : NULL;
     if (count != 0 && prepared == NULL) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
+    doe_vk_draw_indirect_request *requests=NULL;
+    size_t indirect_count=0;
     for (size_t i = 0; i < count; ++i) {
         if (ops[i].kind != DOE_VK_RENDER_DRAW) continue;
+        if (ops[i].value.draw.indirect) ++indirect_count;
         status = validate_pass_draw(commands, desc, &colors, &ops[i].value.draw, width, height, &prepared[i]);
         if (status != DOE_VK_OK) goto failed;
     }
@@ -298,28 +333,41 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
         }
         if (status != DOE_VK_OK) goto failed;
     }
-    /* All target bindings are admitted before guards. Copies observe preceding
-     * producer commands, and every draw has a different retained scratch record. */
-    for (size_t i = 0; i < count; ++i) {
-        if (ops[i].kind != DOE_VK_RENDER_DRAW || ops[i].value.draw.indirect == NULL) continue;
-        const bool indexed = ops[i].value.draw.indices != NULL;
-        const uint32_t limits[2] = {indexed ? prepared[i].index_limit : prepared[i].vertex_limits[0],
-            prepared[i].vertex_limits[1]};
-        status = doe_vk_draw_indirect_prepare(commands, ops[i].value.draw.indirect,
-            limits, indexed, &prepared[i].indirect);
-        if (status != DOE_VK_OK) goto failed;
+    /* All targets are admitted before one scratch-span preparation. Distinct
+     * input offsets keep distinct records; GPU contents never deduplicate them. */
+    if (indirect_count) {
+        requests=calloc(indirect_count,sizeof(*requests));
+        if (!requests) { status=DOE_VK_OUT_OF_MEMORY; goto failed; }
+        size_t next=0;
+        for (size_t i=0;i<count;++i) {
+            if (ops[i].kind!=DOE_VK_RENDER_DRAW || !ops[i].value.draw.indirect) continue;
+            const bool indexed=ops[i].value.draw.indices!=NULL;
+            requests[next++]=(doe_vk_draw_indirect_request){.indirect=ops[i].value.draw.indirect,.indexed=indexed,
+                .limits={indexed ? prepared[i].index_limit : prepared[i].vertex_limits[0],prepared[i].vertex_limits[1]}};
+        }
+        status=doe_vk_draw_indirect_prepare_batch(commands,requests,indirect_count);
+        if (status!=DOE_VK_OK) goto failed;
+        next=0;
+        for (size_t i=0;i<count;++i) {
+            if (ops[i].kind!=DOE_VK_RENDER_DRAW || !ops[i].value.draw.indirect) continue;
+            prepared[i].indirect=requests[next].buffer; prepared[i].indirect_offset=requests[next++].offset;
+        }
+        free(requests); requests=NULL;
     }
     bool depth_stencil_sampled = false;
     for (size_t i = 0; i < count; ++i)
         if (ops[i].kind == DOE_VK_RENDER_DRAW && prepared[i].samples_depth_stencil) depth_stencil_sampled = true;
     doe_vk_render_use *use = NULL;
+    /* Attachment preparation owns the aggregate pass-boundary dependency after
+     * every draw/guard is prepared. Compute synchronization remains unchanged. */
     status = doe_vk_render_attachments_prepare(commands, desc, &colors, width, height, depth_stencil_sampled, &use);
     if (status != DOE_VK_OK) goto failed;
     doe_vk_render_attachments_begin(commands, use, desc, &colors, width, height);
+    render_state state={0};
     uint32_t active_index = 0;
     doe_vk_context *context = commands->context;
     for (size_t i = 0; i < count; ++i) {
-        if (ops[i].kind == DOE_VK_RENDER_DRAW) record_draw(commands, &ops[i].value.draw, &prepared[i]);
+        if (ops[i].kind == DOE_VK_RENDER_DRAW) record_draw(commands, &ops[i].value.draw, &prepared[i], &state);
         else if (ops[i].kind == DOE_VK_RENDER_BEGIN_OCCLUSION) {
             active_index = ops[i].value.query_index;
             context->vk.vkCmdBeginQuery(commands->command, occlusion->pool, active_index, 0);
@@ -342,6 +390,7 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     }
     return DOE_VK_OK;
 failed:
+    free(requests);
     free(prepared);
     return doe_vk_poison(commands, status);
 }

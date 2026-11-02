@@ -189,45 +189,36 @@ void doe_vk_descriptor_blocks_clear(doe_vk_context *context) {
     }
 }
 
-static bool buffers_only(const doe_vk_binding_resource *bindings, size_t count) {
-    for (size_t i = 0; i < count; ++i)
-        if (bindings[i].kind != DOE_VK_BINDING_UNIFORM && bindings[i].kind != DOE_VK_BINDING_STORAGE) return false;
-    return true;
-}
-
-/* The latest use of this recording binds the same pipeline to the
- * same exact buffer ranges: its descriptor sets already hold these
- * descriptors, and its buffers are already recorded uses. Images are excluded
- * because their layouts may change between uses. Graphics prepares every draw's
- * resources before beginning the render pass, so its barrier stays outside. */
-static bool same_buffer_use(const doe_vk_dispatch_use *use, const doe_vk_pipeline *pipeline,
+/* Descriptor identity is immutable. View initialization, owner leases and image
+ * layout are checked/prepared again on every use, independently of set reuse. */
+static bool same_use(const doe_vk_dispatch_use *use, const doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t count) {
-    if (use == NULL || !use->buffers_only || use->pipeline != pipeline ||
-        use->buffer_count != count) return false;
+    if (!use || use->pipeline != pipeline || use->binding_count != count) return false;
     for (size_t i = 0; i < count; ++i) {
-        const doe_vk_buffer_binding *a = &use->buffers[i], *b = &bindings[i].value.buffer;
-        if (a->buffer != b->buffer || a->offset != b->offset || a->size != b->size) return false;
+        const doe_vk_binding_resource *a = &use->bindings[i], *b = &bindings[i];
+        if (a->kind != b->kind) return false;
+        if (a->kind == DOE_VK_BINDING_UNIFORM || a->kind == DOE_VK_BINDING_STORAGE) {
+            if (a->value.buffer.buffer != b->value.buffer.buffer || a->value.buffer.offset != b->value.buffer.offset ||
+                a->value.buffer.size != b->value.buffer.size) return false;
+        } else if (a->kind == DOE_VK_BINDING_SAMPLER) {
+            if (a->value.sampler != b->value.sampler) return false;
+        } else if (a->value.view != b->value.view) return false;
     }
     return true;
 }
 
-doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands,
-    doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out) {
+static doe_vk_status prepare_resources(doe_vk_commands *commands,
+    doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out,
+    bool synchronize) {
     doe_vk_status status = validate_resources(commands, pipeline, bindings, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-    const bool only_buffers = buffers_only(bindings, count);
-    if (only_buffers && same_buffer_use(commands->dispatches, pipeline, bindings, count)) {
-        doe_vk_barrier(commands);
-        *out = commands->dispatches;
-        return DOE_VK_OK;
-    }
-    doe_vk_dispatch_use *use = calloc(1, sizeof(*use) + (only_buffers ? count : 0) * sizeof(doe_vk_buffer_binding));
-    if (use == NULL) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
-    use->buffers_only = only_buffers;
-    if (only_buffers) {
-        use->buffer_count = (uint32_t)count;
-        for (size_t i = 0; i < count; ++i) use->buffers[i] = bindings[i].value.buffer;
-    }
+    doe_vk_dispatch_use *use = commands->dispatches;
+    if (same_use(use, pipeline, bindings, count)) goto prepared;
+    if (count > (SIZE_MAX - sizeof(*use)) / sizeof(*bindings)) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
+    use = calloc(1, sizeof(*use) + count * sizeof(*bindings));
+    if (!use) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
+    use->binding_count = (uint32_t)count;
+    for (size_t i = 0; i < count; ++i) use->bindings[i] = bindings[i];
     status = doe_vk_pipeline_retain(pipeline);
     if (status != DOE_VK_OK) {
         free(use);
@@ -273,25 +264,48 @@ doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands,
     }
     doe_vk_context *context = commands->context;
     if (count != 0) context->vk.vkUpdateDescriptorSets(context->device, (uint32_t)count, writes, 0, NULL);
-    doe_vk_barrier(commands);
+prepared:
+    if (synchronize) doe_vk_barrier(commands);
     for (size_t i = 0; i < count; ++i) {
         if (use->views[i] == NULL) continue;
         doe_vk_texture_use *texture_use = NULL;
         status = doe_vk_use_texture(commands, use->views[i]->texture, &texture_use);
         if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-        doe_vk_texture_transition(commands, texture_use, VK_IMAGE_LAYOUT_GENERAL);
+        if (synchronize || texture_use->layout != VK_IMAGE_LAYOUT_GENERAL)
+            doe_vk_texture_transition(commands, texture_use, VK_IMAGE_LAYOUT_GENERAL);
     }
     *out = use;
     return DOE_VK_OK;
 }
 
-void doe_vk_bind_prepared_resources(doe_vk_commands *commands, const doe_vk_dispatch_use *use) {
+doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out) {
+    return prepare_resources(commands, pipeline, bindings, count, out, true);
+}
+doe_vk_status doe_vk_prepare_resources_unsynchronized(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out) {
+    return prepare_resources(commands,pipeline,bindings,count,out,false);
+}
+
+doe_vk_status doe_vk_prepare_graphics_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
+    const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out) {
+    if (!pipeline || !pipeline->graphics) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    return prepare_resources(commands, pipeline, bindings, count, out, false);
+}
+
+void doe_vk_bind_prepared_resources_since(doe_vk_commands *commands, const doe_vk_dispatch_use *use,
+    const doe_vk_dispatch_use *previous) {
     const doe_vk_pipeline *pipeline = use->pipeline;
     doe_vk_context *context = commands->context;
     int32_t bind_point = pipeline->graphics ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE;
-    context->vk.vkCmdBindPipeline(commands->command, bind_point, pipeline->pipeline);
-    if (pipeline->group_count != 0) context->vk.vkCmdBindDescriptorSets(commands->command,
+    if (!previous || previous->pipeline != pipeline)
+        context->vk.vkCmdBindPipeline(commands->command, bind_point, pipeline->pipeline);
+    if (pipeline->group_count != 0 && previous != use) context->vk.vkCmdBindDescriptorSets(commands->command,
         bind_point, pipeline->layout, 0, pipeline->group_count, use->sets, 0, NULL);
+}
+
+void doe_vk_bind_prepared_resources(doe_vk_commands *commands, const doe_vk_dispatch_use *use) {
+    doe_vk_bind_prepared_resources_since(commands, use, NULL);
 }
 
 doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands,

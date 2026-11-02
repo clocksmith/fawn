@@ -841,23 +841,7 @@ bool spirv_emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
     return !e->failed;
 }
 static bool emit_workgroup_initialization(Emitter *e) {
-    const uint32_t lane = spirv_reserve_ids(e, 1u), first_lane = spirv_reserve_ids(e, 1u);
-    const uint32_t initialize = spirv_reserve_ids(e, 1u), merge = spirv_reserve_ids(e, 1u);
-    EMIT(OP_LOAD, ID_U32, lane, e->entry->state.resolved.local_index_target);
-    e->entry->state.resolved.target_input_mask|=1u<<INPUT_LOCAL_INDEX;
-    EMIT(OP_IEQUAL, ID_BOOL, first_lane, lane, ID_ZERO_U32);
-    EMIT(OP_SELECTION_MERGE, merge, 0u);
-    EMIT(OP_BRANCH_CONDITIONAL, first_lane, initialize, merge);
-    EMIT(OP_LABEL, initialize);
-    for (uint32_t i=0u;i<e->entry->state.resolved.workgroup_count;++i) {
-        const uint32_t index=e->program->entry_references[e->entry->state.resolved.workgroup_first+i];
-        const WorkgroupRoot *root=&e->program->workgroups[index];
-        if (root->state.resolved.address_space == MODULE_WORKGROUP)
-            EMIT(OP_STORE, root->target, spirv_workgroup_zero(e, root->type));
-    }
-    EMIT(OP_BRANCH, merge);
-    EMIT(OP_LABEL, merge);
-    e->current_label = merge;
+    if (!spirv_initialize_workgroups(e)) return false;
     return emit_workgroup_barrier(e, BARRIER_WORKGROUP);
 }
 static bool emit_private_initialization(Emitter *e) {
@@ -969,7 +953,8 @@ bool emit_spirv(Source *source, CompilerWorkspace *program) {
     program->word_count = 5u;
     Emitter emitter = { .source = source, .program = program, .next_id = FIRST_DYNAMIC_ID,
                         .id_bound = bound, .values = program->values };
-    if (!spirv_plan_module(&emitter) || !spirv_module_declarations(&emitter)) return false;
+    if (!spirv_plan_module(&emitter) || !spirv_plan_workgroup_initialization(&emitter) ||
+        !spirv_module_declarations(&emitter)) return false;
     const uint32_t planned = program->target_count, constants_planned = emitter.constants_used;
     for (uint32_t f = 0u; f < program->function_count; ++f)
         if ((program->functions[f].flags & FUNCTION_REACHABLE) != 0u &&

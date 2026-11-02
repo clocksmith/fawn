@@ -32,7 +32,8 @@ int main(void) {
         wgpuQueueWriteBuffer(selected.queue, destination, 0, input, sizeof(input));
         work_done(&selected);
         WGPUBufferMapCallbackInfo mapped_info = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=mapped,.userdata1=&selected};
-        assert(wgpuBufferMapAsync(destination, WGPUMapMode_Read, 0, 16, mapped_info).id && selected.mapped == 1);
+        wait_future(&s, wgpuBufferMapAsync(destination, WGPUMapMode_Read, 0, 16, mapped_info));
+        assert(selected.mapped == 1);
         assert(!memcmp(wgpuBufferGetConstMappedRange(destination,0,16), input, sizeof(input)));
         wgpuBufferUnmap(destination);
         assert(!selected.errors);

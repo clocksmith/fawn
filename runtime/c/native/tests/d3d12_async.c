@@ -7,6 +7,29 @@
 #include "consumer.h"
 #include <d3d12sdklayers.h>
 
+#if defined(DOE_TEST_SIGNAL_FAULT)
+/* Link only this control against the official SDK implementation with its one
+ * private C entry renamed. No COM vtable or GPU object is replaced. */
+static atomic_bool fail_signal;
+static atomic_uint failed_signals,retried_signals;
+static _Atomic(doe_dx_context *) signal_context;
+doe_dx_status fawn_real_native_signal(doe_dx_native_context *,uint64_t,doe_dx_error *);
+doe_dx_status doe_dx_native_signal(doe_dx_native_context *context,uint64_t value,doe_dx_error *error)
+{
+    doe_dx_context *owner=atomic_load(&signal_context);
+    if (owner && context==owner->native) {
+        if (atomic_exchange(&fail_signal,false)) {
+            assert(owner->pending && owner->pending->state==DOE_DX_SUBMITTED &&
+                owner->pending->work_executed && !owner->pending->fence);
+            atomic_fetch_add(&failed_signals,1);
+            return doe_dx_fail(DOE_DX_NATIVE_FAILURE,(int32_t)E_FAIL,"ID3D12CommandQueue.Signal",error);
+        }
+        atomic_fetch_add(&retried_signals,1);
+    }
+    return fawn_real_native_signal(context,value,error);
+}
+#endif
+
 typedef struct gate_case {
     state *state;
     ID3D12Fence *gate;
@@ -15,7 +38,7 @@ typedef struct gate_case {
     HANDLE accepted, map_started, map_done, dependent_started, dependent_done, stop;
     atomic_bool watchdog_fired;
     WGPUMapAsyncStatus map_status;
-    bool map_future;
+    WGPUFuture map_future;
 } gate_case;
 
 static void watchdog(void *identity)
@@ -52,10 +75,10 @@ static void map_reply(WGPUMapAsyncStatus status, WGPUStringView message, void *i
 static void map_while_pending(void *identity)
 {
     gate_case *test = identity;
-    WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
+    WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,
         .callback=map_reply,.userdata1=test};
     assert(SetEvent(test->map_started));
-    test->map_future = wgpuBufferMapAsync(test->readback, WGPUMapMode_Read, 0, 4, callback).id != 0;
+    test->map_future = wgpuBufferMapAsync(test->readback,WGPUMapMode_Read,0,4,callback);
     assert(SetEvent(test->map_done));
 }
 
@@ -90,7 +113,7 @@ static void expect_value(state *s, WGPUBuffer readback, uint32_t expected)
     WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=mapped,.userdata1=s};
     unsigned before = s->mapped;
-    assert(wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, 4, callback).id);
+    wait_future(s,wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,4,callback));
     assert(s->mapped == before + 1);
     const uint32_t *value = wgpuBufferGetConstMappedRange(readback, 0, 4);
     assert(value && *value == expected);
@@ -146,12 +169,15 @@ static void ordered_work(void)
     assert(doe_thread_join(&writer).status == DOE_HOST_OK);
     assert(doe_thread_create(&mapper, map_while_pending, &test).status == DOE_HOST_OK);
     assert(WaitForSingleObject(test.map_started, 1000) == WAIT_OBJECT_0);
-    bool pending_map = false;
-    for (unsigned attempt = 0; attempt < 100 && !pending_map; ++attempt) {
-        pending_map = wgpuBufferGetMapState(readback) == WGPUBufferMapState_Pending;
-        if (!pending_map) Sleep(1);
-    }
+    bool mapper_returned=WaitForSingleObject(test.map_done,1000)==WAIT_OBJECT_0;
+    if (!mapper_returned) assert(SUCCEEDED(ID3D12Fence_Signal(test.gate,1)));
+    assert(doe_thread_join(&mapper).status==DOE_HOST_OK);
+    bool pending_map=wgpuBufferGetMapState(readback)==WGPUBufferMapState_Pending;
+    WGPUFutureWaitInfo early={.future=test.map_future};
+    bool timed_out=test.map_future.id && wgpuInstanceWaitAny(s.instance,1,&early,0)==WGPUWaitStatus_TimedOut && !early.completed;
     wgpuBufferUnmap(readback);
+    if (test.map_future.id) wait_future(&s,test.map_future);
+    bool cancelled_before_gpu=test.map_status==WGPUMapAsyncStatus_Aborted && ID3D12Fence_GetCompletedValue(test.gate)==0;
     native_lock(device);
     native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)readback);
     doe_dx_commands *owner = doe_dx_buffer_owner(payload->handle.d3d12->allocation);
@@ -173,7 +199,6 @@ static void ordered_work(void)
     assert(SUCCEEDED(ID3D12Fence_Signal(test.gate, 1)));
     assert(SetEvent(test.stop));
     assert(doe_thread_join(&dependent).status == DOE_HOST_OK);
-    assert(doe_thread_join(&mapper).status == DOE_HOST_OK);
     assert(doe_thread_join(&guard).status == DOE_HOST_OK);
     /* All gates are open and work is terminal before reporting an assertion. */
     expect_value(&s, intermediate, 11);
@@ -194,8 +219,8 @@ static void ordered_work(void)
         !staging->owner && !staging->pending);
     native_unlock(device);
     bool valid = accepted_before_gate && pending_map && held && observed == DOE_DX_PENDING &&
-        dependent_accepted && !atomic_load(&test.watchdog_fired) && test.map_future &&
-        test.map_status == WGPUMapAsyncStatus_Aborted;
+        dependent_accepted && !atomic_load(&test.watchdog_fired) && test.map_future.id &&
+        mapper_returned && timed_out && cancelled_before_gpu;
     wgpuBufferRelease(a); wgpuBufferRelease(b); wgpuBufferRelease(output);
     wgpuBufferRelease(readback); wgpuBufferRelease(final); wgpuBufferRelease(intermediate);
     wgpuBindGroupRelease(first_group); wgpuBindGroupRelease(second_group);
@@ -206,10 +231,97 @@ static void ordered_work(void)
     printf("gated acceptance: exact11/7/42 then idle-staging reuse100; writes=%u pendingMap=%u lease=%u waitStatus=%u dependent=%u watchdog=%u mapFuture=%u mapStatus=%u\n",
         (unsigned)accepted_before_gate,(unsigned)pending_map,(unsigned)held,(unsigned)observed,
         (unsigned)dependent_accepted,(unsigned)atomic_load(&test.watchdog_fired),
-        (unsigned)test.map_future,(unsigned)test.map_status);
+        (unsigned)(test.map_future.id!=0),(unsigned)test.map_status);
+    printf("map registration returned=%u zeroWaitTimeout=%u cancelledBeforeGPU=%u\n",
+        (unsigned)mapper_returned,(unsigned)timed_out,(unsigned)cancelled_before_gpu);
     fflush(stdout);
     assert(valid);
 }
+
+#if defined(DOE_TEST_SIGNAL_FAULT)
+typedef struct signal_case {
+    gate_case gate;
+    WGPUFuture future;
+    bool map_request;
+    unsigned calls;
+    WGPUQueueWorkDoneStatus queue_status;
+    char message[192];
+} signal_case;
+static void signal_queue_reply(WGPUQueueWorkDoneStatus status,WGPUStringView message,void *one,void *two)
+{
+    (void)two; signal_case *test=one; test->queue_status=status; ++test->calls;
+    size_t bytes=message.length<sizeof(test->message)-1 ? message.length : sizeof(test->message)-1;
+    memcpy(test->message,message.data,bytes); test->message[bytes]=0;
+}
+static void signal_map_reply(WGPUMapAsyncStatus status,WGPUStringView message,void *one,void *two)
+{
+    (void)message; (void)two; signal_case *test=one; test->gate.map_status=status; ++test->calls;
+}
+static void register_failed_signal(void *identity)
+{
+    signal_case *test=identity; state *s=test->gate.state;
+    if (test->map_request) {
+        WGPUBufferMapCallbackInfo info={.mode=WGPUCallbackMode_WaitAnyOnly,.callback=signal_map_reply,.userdata1=test};
+        test->future=wgpuBufferMapAsync(test->gate.readback,WGPUMapMode_Read,0,4,info);
+    } else {
+        WGPUQueueWorkDoneCallbackInfo info={.mode=WGPUCallbackMode_WaitAnyOnly,.callback=signal_queue_reply,.userdata1=test};
+        test->future=wgpuQueueOnSubmittedWorkDone(s->queue,info);
+    }
+    assert(SetEvent(test->gate.accepted));
+}
+static void failed_signal_registration(bool map_request)
+{
+    state s={0}; consumer_init(&s); native_device *device=(native_device *)s.device;
+    doe_dx_context *context=device->backend.value.d3d12.context;
+    WGPUBuffer target=buffer(&s,4,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
+    signal_case test={.gate={.state=&s,.readback=target,.map_status=WGPUMapAsyncStatus_Force32},.map_request=map_request};
+    test.gate.accepted=CreateEventW(NULL,TRUE,FALSE,NULL); test.gate.stop=CreateEventW(NULL,TRUE,FALSE,NULL);
+    assert(test.gate.accepted && test.gate.stop);
+    assert(ID3D12Device_CreateFence(context->native->device,0,D3D12_FENCE_FLAG_NONE,
+        &IID_ID3D12Fence,(void **)&test.gate.gate)==S_OK);
+    assert(ID3D12CommandQueue_Wait(context->native->queue,test.gate.gate,1)==S_OK);
+    uint32_t value=42; wgpuQueueWriteBuffer(s.queue,target,0,&value,sizeof(value));
+    native_lock(device); atomic_store(&signal_context,context); atomic_store(&failed_signals,0);
+    atomic_store(&retried_signals,0); atomic_store(&fail_signal,true); native_unlock(device);
+    doe_thread guard={0},registration={0};
+    assert(doe_thread_create(&guard,watchdog,&test.gate).status==DOE_HOST_OK);
+    assert(doe_thread_create(&registration,register_failed_signal,&test).status==DOE_HOST_OK);
+    bool returned=WaitForSingleObject(test.gate.accepted,1000)==WAIT_OBJECT_0;
+    if (!returned) assert(ID3D12Fence_Signal(test.gate.gate,1)==S_OK);
+    assert(doe_thread_join(&registration).status==DOE_HOST_OK);
+    /* Drive real readiness under serialization: an old stored-error fast path
+     * must not detach a Map obligation while its actual GPU owner is pending. */
+    if (map_request) {
+        native_lock(device); assert(native_async_take_ready(device)==NULL); native_unlock(device);
+    }
+    WGPUFutureWaitInfo early={.future=test.future};
+    bool timeout=test.future.id && wgpuInstanceWaitAny(s.instance,1,&early,0)==WGPUWaitStatus_TimedOut && !early.completed;
+    native_lock(device);
+    native_buffer *payload=doe_resource_buffer_native((doe_resource_buffer *)target);
+    doe_dx_commands *owner=doe_dx_buffer_owner(payload->handle.d3d12->allocation);
+    bool retained=owner && doe_dx_commands_result(owner,NULL)==DOE_DX_PENDING && owner->work_executed && owner->fence;
+    bool retried=atomic_load(&failed_signals)==1 && atomic_load(&retried_signals)>=1;
+    native_unlock(device);
+    bool closed=ID3D12Fence_GetCompletedValue(test.gate.gate)==0;
+    if (map_request) { wgpuBufferUnmap(target); wait_future(&s,test.future); }
+    bool cancelled=!map_request || (test.calls==1 && test.gate.map_status==WGPUMapAsyncStatus_Aborted);
+    assert(ID3D12Fence_Signal(test.gate.gate,1)==S_OK && SetEvent(test.gate.stop));
+    assert(doe_thread_join(&guard).status==DOE_HOST_OK);
+    if (!map_request) wait_future(&s,test.future);
+    bool typed=map_request || (test.calls==1 && test.queue_status==WGPUQueueWorkDoneStatus_Error &&
+        strstr(test.message,"ID3D12CommandQueue.Signal") && strstr(test.message,"native=-2147467259"));
+    expect_value(&s,target,42);
+    native_lock(device); atomic_store(&signal_context,NULL); native_unlock(device);
+    ID3D12Fence_Release(test.gate.gate); assert(CloseHandle(test.gate.accepted) && CloseHandle(test.gate.stop));
+    wgpuBufferRelease(target); consumer_finish(&s);
+    printf("failed Signal %s: returned=%u future=%u zeroWaitTimeout=%u gateClosed=%u retained=%u retry=%u cancel=%u typed=%u watchdog=%u %s\n",
+        map_request ? "MapAsync" : "WorkDone",(unsigned)returned,(unsigned)(test.future.id!=0),(unsigned)timeout,
+        (unsigned)closed,(unsigned)retained,(unsigned)retried,(unsigned)cancelled,(unsigned)typed,
+        (unsigned)atomic_load(&test.gate.watchdog_fired),adapter_class_scope()); fflush(stdout);
+    assert(returned && test.future.id && timeout && closed && retained && retried && cancelled && typed &&
+        !atomic_load(&test.gate.watchdog_fired));
+}
+#endif
 
 typedef struct initialization_case {
     gate_case gate;
@@ -378,7 +490,7 @@ static void terminal_loss(void)
     gate_case observed = {.map_status=WGPUMapAsyncStatus_Force32};
     WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=map_reply,.userdata1=&observed};
-    assert(wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, 4, callback).id);
+    wait_future(&s,wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,4,callback));
     assert(observed.map_status == WGPUMapAsyncStatus_Aborted);
     native_lock(device);
     native_drain_pending(device);
@@ -461,6 +573,14 @@ static void stale_terminal_owner(void)
 
 int main(int argc,char **argv)
 {
+#if defined(DOE_TEST_SIGNAL_FAULT)
+    if (argc==3 && !strcmp(argv[1],"--signal-fault") && !strcmp(argv[2],"--warp")) {
+        assert(_putenv_s("DOE_C_TEST_BACKEND","d3d12")==0 && _putenv_s("DOE_C_TEST_ADAPTER","software")==0);
+        failed_signal_registration(false); failed_signal_registration(true);
+        printf("PASS failed Signal asynchronous registration, retry/pending leases, cancellation and real42 readback %s\n",adapter_class_scope());
+        return 0;
+    }
+#endif
     if (argc == 2 && !strcmp(argv[1],"--initialization-debug")) {
         ID3D12Debug *debug=NULL;
         assert(SUCCEEDED(D3D12GetDebugInterface(&IID_ID3D12Debug,(void **)&debug)));

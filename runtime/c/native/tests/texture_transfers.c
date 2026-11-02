@@ -92,8 +92,9 @@ static void empty_buffer_texture_lifetimes(state *s)
                 unsigned before = s->mapped;
                 WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
                     .callback=mapped, .userdata1=s};
-                assert(wgpuBufferMapAsync(bytes, direction ? WGPUMapMode_Read : WGPUMapMode_Write,
-                    0, 256, callback).id && s->mapped == before + 1);
+                wait_future(s, wgpuBufferMapAsync(bytes, direction ? WGPUMapMode_Read : WGPUMapMode_Write,
+                    0, 256, callback));
+                assert(s->mapped == before + 1);
             }
             wgpuBufferRelease(bytes);
             wgpuTextureRelease(texture);

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
+#include "render_internal.h"
 
 static bool vertex_layout(doe_mtl_objc *r, void *descriptor, const doe_mtl_render_pipeline_desc *desc) {
     doe_mtl_objc_graphics *g = &r->graphics;
@@ -15,9 +16,26 @@ static bool vertex_layout(doe_mtl_objc *r, void *descriptor, const doe_mtl_rende
         const doe_mtl_vertex_layout *layout = &desc->layouts[i];
         void *item = g->index_object(layouts, g->index, layout->slot);
         if (item == NULL) goto cleanup;
-        r->set_size_call(item, g->set_stride, layout->stride);
+        size_t stride = layout->stride;
+        if (!stride) {
+            /* Constant stepping never advances this stride, but Metal still
+             * requires a nonzero descriptor covering its attribute extents.
+             * Preserve logical stride0 in the validated layout/guard owner. */
+            for (size_t j = 0; j < desc->attribute_count; ++j) {
+                const doe_mtl_vertex_attribute *attribute = &desc->attributes[j];
+                if (attribute->slot != layout->slot) continue;
+                uint32_t bytes = doe_mtl_vertex_format_size(attribute->format);
+                if (!bytes || attribute->offset > UINT32_MAX - bytes) goto cleanup;
+                size_t end = (size_t)attribute->offset + bytes;
+                if (end > stride) stride = end;
+            }
+            if (stride > SIZE_MAX - 3) goto cleanup;
+            stride = (stride + 3) & ~(size_t)3;
+            if (!stride) stride = 4; /* Unused layouts need no fetch, but stay legal. */
+        }
+        r->set_size_call(item, g->set_stride, stride);
         r->set_size_call(item, g->set_step, layout->step);
-        r->set_size_call(item, g->set_rate, 1);
+        r->set_size_call(item, g->set_rate, layout->step == 0 ? 0 : 1);
     }
     for (i = 0; i < desc->attribute_count; ++i) {
         const doe_mtl_vertex_attribute *attribute = &desc->attributes[i];

@@ -459,6 +459,18 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     };
     status = doe_vk_result(context, context->vk.vkCreateDevice(context->physical, &device, NULL, &context->device), "vkCreateDevice", error);
     if (status != DOE_VK_OK) goto failed;
+    /* Optional core1.1 query: without it, allocation stays exclusive because
+     * mandatory dedicated-allocation requirements cannot be inferred. */
+    if (context->caps.api_version >= ((1u<<22)|(1u<<12))) {
+        if (!context->vk.vkGetDeviceProcAddr)
+            (void)doe_vk_load_symbol(context->library,"vkGetDeviceProcAddr",
+                &context->vk.vkGetDeviceProcAddr,sizeof(context->vk.vkGetDeviceProcAddr),NULL);
+        if (context->vk.vkGetDeviceProcAddr) {
+            doe_vk_proc query=context->vk.vkGetDeviceProcAddr(context->device,"vkGetBufferMemoryRequirements2");
+            _Static_assert(sizeof(query)==sizeof(context->vk.vkGetBufferMemoryRequirements2),"Vulkan device procedure size");
+            if (query) memcpy(&context->vk.vkGetBufferMemoryRequirements2,&query,sizeof(query));
+        }
+    }
     status = doe_vk_surface_load_functions(context, options->surface_platforms, true, error);
     if (status != DOE_VK_OK) goto failed;
     context->vk.vkGetDeviceQueue(context->device, context->caps.queue_family, 0, &context->queue);
@@ -496,6 +508,7 @@ void doe_vk_context_release(doe_vk_context *context) {
      * can exist here. Unknown submissions cannot be released. */
     doe_vk_pipeline_cache_clear(context);
     doe_vk_descriptor_blocks_clear(context);
+    doe_vk_memory_blocks_clear(context);
     (void)doe_vk_context_pipeline_cache_flush(context, NULL);
     doe_vk_driver_cache_clear(context);
     doe_vk_command_spares_clear(context);

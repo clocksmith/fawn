@@ -12,6 +12,11 @@ static VkBuffer expected_buffer;
 static VkDeviceSize expected_offset;
 static uint32_t expected_type, expected_count, expected_first, expected_instances;
 static int32_t expected_base;
+static VkBuffer bound_index, bound_vertices[2];
+static VkDeviceSize bound_index_offset, bound_vertex_offsets[2];
+static uint32_t bound_index_type;
+static unsigned vertex_binds, case_draws;
+static bool cache_case;
 
 static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
     VkFlags flags, uint32_t memory_count, const void *memory, uint32_t buffer_count,
@@ -73,16 +78,26 @@ static void scissor(VkCommandBuffer command, uint32_t first, uint32_t count, con
 static void bind_index(VkCommandBuffer command, VkBuffer buffer, VkDeviceSize offset, uint32_t type) {
     (void)command;
     assert(inside && buffer == expected_buffer && offset == expected_offset && type == expected_type);
+    bound_index=buffer; bound_index_offset=offset; bound_index_type=type;
     ++binds;
+}
+static void bind_vertices(VkCommandBuffer command,uint32_t first,uint32_t count,const VkBuffer *buffers,const VkDeviceSize *offsets) {
+    (void)command; assert(inside && first+count<=2); ++vertex_binds;
+    for (uint32_t i=0;i<count;++i) { bound_vertices[first+i]=buffers[i]; bound_vertex_offsets[first+i]=offsets[i]; }
 }
 static void draw_indexed(VkCommandBuffer command, uint32_t count, uint32_t instances, uint32_t first,
     int32_t base, uint32_t first_instance) {
     (void)command;
     /* The bind must precede its draw within the same open pass. */
-    assert(inside && binds == indexed_draws + 1);
+    assert(inside && bound_index==expected_buffer && bound_index_offset==expected_offset && bound_index_type==expected_type);
+    if (cache_case) {
+        assert(bound_vertices[0]==80 && bound_vertices[1]==81);
+        assert(bound_vertex_offsets[0]==(case_draws>=2 ? 4u : 0u) && bound_vertex_offsets[1]==(case_draws>=3 ? 4u : 0u));
+    }
     assert(count == expected_count && instances == expected_instances && first == expected_first &&
         base == expected_base && first_instance == 0);
     ++indexed_draws;
+    if (cache_case && ++case_draws==3) expected_offset=4;
 }
 static void draw(VkCommandBuffer command, uint32_t count, uint32_t instances, uint32_t first, uint32_t first_instance) {
     (void)command; (void)count; (void)instances; (void)first; (void)first_instance;
@@ -218,6 +233,26 @@ int main(void) {
     indices.first_index = 0;
     rejected(&context, &view, &item, DOE_VK_UNSUPPORTED, &index_buffer);
     assert(context.references == 1 && pipeline.references == 1 && view.references == 1);
+    /* Consecutive draws retain actual native state; only changed slots/ranges
+     * rebind. The callback checks the effective bindings at every draw. */
+    context.caps.full_draw_index_uint32=true; context.vk.vkCmdBindVertexBuffers=bind_vertices;
+    pipeline.vertex_count=2; pipeline.vertices[0].stride=pipeline.vertices[1].stride=4;
+    pipeline.vertex_attribute_end[0]=pipeline.vertex_attribute_end[1]=4;
+    doe_vk_buffer vertex_buffers[2]={{.context=&context,.references=1,.usage=DOE_VK_BUFFER_VERTEX,.size=128,.buffer=80},
+        {.context=&context,.references=1,.usage=DOE_VK_BUFFER_VERTEX,.size=128,.buffer=81}};
+    doe_vk_buffer_binding vertices[4][2]; doe_vk_render_indices repeated_indices[4]; doe_vk_render_pass_draw repeated[4];
+    for (unsigned i=0;i<4;++i) {
+        vertices[i][0]=(doe_vk_buffer_binding){&vertex_buffers[0],i>=2 ? 4 : 0,i>=2 ? 60 : 64};
+        vertices[i][1]=(doe_vk_buffer_binding){&vertex_buffers[1],i>=3 ? 4 : 0,i>=3 ? 60 : 64};
+        repeated_indices[i]=(doe_vk_render_indices){&index_buffer,i==3 ? 4 : 0,i==3 ? 60 : 64,DOE_VK_INDEX_UINT32,3,0,0};
+        repeated[i]=item; repeated[i].vertices=vertices[i]; repeated[i].vertex_buffer_count=2; repeated[i].indices=&repeated_indices[i];
+    }
+    expected_offset=0; expected_type=VK_INDEX_TYPE_UINT32; expected_count=3; expected_first=0; expected_base=0;
+    const unsigned before=binds, before_draws=indexed_draws;
+    commands=recording(&context); cache_case=true;
+    assert(doe_vk_commands_render_pass(commands,&view,&clear,repeated,4)==DOE_VK_OK);
+    assert(binds==before+2 && indexed_draws==before_draws+4 && vertex_binds==3 && case_draws==4);
+    assert(doe_vk_commands_release(commands)==DOE_VK_OK && vertex_buffers[0].references==1 && vertex_buffers[1].references==1);
     puts("PASS indexed native admission: exact bound-range element capacity, uint32 full-index feature gate, alignment/usage/range/enum/identity/poison controls, first+count overflow and boundary, zero vertex fields, ordered bind-then-drawIndexed with signed base vertex in one pass, zero-count draw, preflight rollback and command-owned index lease");
     return 0;
 }

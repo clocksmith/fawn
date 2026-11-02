@@ -39,6 +39,12 @@ typedef struct shared_device {
     atomic_uint errors;
 } shared_device;
 
+static void wait_completion(shared_device *s, WGPUFuture future)
+{
+    state waiting = {.instance=s->instance};
+    wait_future(&waiting, future); /* Also joins an in-flight spontaneous callback. */
+}
+
 static void device_error(WGPUDevice const *device, WGPUErrorType type, WGPUStringView message, void *userdata, void *unused)
 {
     (void)device; (void)type; (void)unused;
@@ -183,9 +189,7 @@ static void round_trip(worker *w, unsigned round)
     WGPUMapAsyncStatus status = (WGPUMapAsyncStatus)0;
     WGPUBufferMapCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = mapped_reply, .userdata1 = &status};
     WGPUFuture future = wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, BYTES + 256, callback);
-    assert(future.id);
-    WGPUFutureWaitInfo wait = {.future = future};
-    assert(wgpuInstanceWaitAny(s->instance, 1, &wait, 0) == WGPUWaitStatus_Success && wait.completed);
+    wait_completion(s, future);
     assert(status == WGPUMapAsyncStatus_Success);
     const uint32_t *output = wgpuBufferGetConstMappedRange(readback, 0, BYTES + 256);
     assert(output);
@@ -236,8 +240,7 @@ static const uint32_t *map_wait(shared_device *s, WGPUBuffer buffer, size_t size
     WGPUMapAsyncStatus status = (WGPUMapAsyncStatus)0;
     WGPUBufferMapCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = mapped_reply, .userdata1 = &status};
     WGPUFuture future = wgpuBufferMapAsync(buffer, WGPUMapMode_Read, 0, size, callback);
-    WGPUFutureWaitInfo wait = {.future = future};
-    assert(future.id && wgpuInstanceWaitAny(s->instance, 1, &wait, 0) == WGPUWaitStatus_Success);
+    wait_completion(s, future);
     assert(status == WGPUMapAsyncStatus_Success);
     const uint32_t *output = wgpuBufferGetConstMappedRange(buffer, 0, size);
     assert(output);
@@ -391,7 +394,7 @@ static void *run_poller(void *userdata)
     while (!atomic_load(&p->stop)) {
         for (size_t i = 0; i < p->count; ++i) {
             WGPUQueueWorkDoneCallbackInfo info = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = done_reply, .userdata1 = &p->done};
-            assert(wgpuQueueOnSubmittedWorkDone(p->devices[i].queue, info).id);
+            wait_completion(&p->devices[i], wgpuQueueOnSubmittedWorkDone(p->devices[i].queue, info));
             wgpuInstanceProcessEvents(p->devices[i].instance);
         }
     }
@@ -439,9 +442,8 @@ static void *run_doomed(void *userdata)
         if (readback) {
             WGPUMapAsyncStatus status = (WGPUMapAsyncStatus)0;
             WGPUBufferMapCallbackInfo callback = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = mapped_reply, .userdata1 = &status};
-            wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, BYTES, callback);
-            wgpuInstanceProcessEvents(s->instance);
-            assert(status != 0); /* Every map settles: no pending map survives the call and event processing. */
+            wait_completion(s, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, BYTES, callback));
+            assert(status != 0); /* Callback state is read only after finite wait joins delivery. */
             if (status == WGPUMapAsyncStatus_Success) {
                 const uint32_t *output = wgpuBufferGetConstMappedRange(readback, 0, BYTES);
                 /* Destroy unmaps every buffer, so a range may vanish only once it began. */

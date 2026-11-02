@@ -1,25 +1,21 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_graphics_internal.h"
+#include "metal_render_bindings.h"
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct draw_storage {
-    doe_mtl_render_draw draw;
-    native_metal_snapshot stages[2];
     doe_mtl_guarded_draw guarded;
     uint32_t immediate_words[16];
 } draw_storage;
 
-static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resource_render_packet *packet, draw_storage *storage)
+static native_failure prepare_draw(const doe_resource_render_packet *packet, draw_storage *storage, doe_mtl_render_draw *draw,
+    const native_metal_render_binding_view *bindings)
 {
     native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
     if (!pipeline || !pipeline->metal_graphics) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     const native_metal_graphics *graphics = pipeline->metal_graphics;
-    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
-    if (native_resolve_resources(pipeline, doe_resource_render_pipeline_get_layout(packet->pipeline),
-        packet->groups, &packet->offsets, resolved) != DOE_RESOURCE_OK)
-        return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    doe_mtl_render_draw *draw = &storage->draw;
+    if (!bindings) return native_failure_status(NATIVE_INVALID_STATE);
     *draw = (doe_mtl_render_draw){.pipeline=pipeline->handle.metal_render,
         .topology=graphics->topology, .count=packet->count, .instance_count=packet->instances,
         .first_vertex=packet->indexed ? 0 : packet->first, .first_instance=packet->first_instance,
@@ -60,27 +56,13 @@ static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resourc
     if (!native_render_clear(WGPUTextureFormat_RGBA32Float, packet->state.blend, &blend))
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
     memcpy(draw->blend_constant, blend.float32, sizeof(draw->blend_constant));
-    for (size_t stage = 0; stage < 2; ++stage) {
-        native_failure failure = native_metal_binding_snapshot(commands, pipeline, &graphics->stages[stage],
-            resolved, &storage->stages[stage]);
-        if (failure.status != NATIVE_OK) return failure;
-    }
-    draw->vertex = storage->stages[0].bindings;
-    draw->fragment = storage->stages[1].bindings;
+    draw->vertex = bindings->vertex;
+    draw->fragment = bindings->fragment;
     memcpy(storage->immediate_words, packet->immediates.words, sizeof(storage->immediate_words));
     draw->vertex.immediates = (doe_mtl_immediate_binding){storage->immediate_words,
         graphics->stages[0].immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT};
     draw->fragment.immediates = (doe_mtl_immediate_binding){storage->immediate_words,
         graphics->stages[1].immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT};
-    for (size_t i = 0; i < pipeline->vertex_count; ++i) {
-        uint32_t slot = graphics->vertex_slots[i];
-        if (slot == UINT32_MAX) continue;
-        if (draw->vertex.buffer_count == DOE_MTL_BUFFER_SLOTS) return native_failure_status(NATIVE_UNSUPPORTED);
-        native_buffer *buffer = doe_resource_buffer_native(packet->vertices[i].buffer);
-        if (!buffer) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-        storage->stages[0].buffers[draw->vertex.buffer_count++] = (doe_mtl_buffer_binding){slot,
-            buffer->handle.metal, packet->vertices[i].offset, packet->vertices[i].size};
-    }
     return native_failure_status(NATIVE_OK);
 }
 
@@ -115,32 +97,45 @@ native_failure native_metal_render(doe_mtl_commands *commands,
     if (!begin || !begin->boundary_only || !begin->first_in_pass || begin->last_in_pass)
         return native_failure_status(NATIVE_UNSUPPORTED);
     size_t end = 0, draws_count = 0;
-    for (size_t i = 1; i < count; ++i) {
+    native_metal_render_binding_cache *bindings = NULL;
+    native_failure failure = native_failure_status(NATIVE_OK);
+    for (size_t i = 1; failure.status == NATIVE_OK && i < count; ++i) {
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind == DOE_COMMAND_END_OCCLUSION) {
             if (records[i].value.timestamp.set != begin->targets.occlusion_queries)
-                return native_failure_status(NATIVE_INVALID_ARGUMENT);
+                failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
             continue;
         }
-        if (records[i].kind != DOE_COMMAND_RENDER) return native_failure_status(NATIVE_UNSUPPORTED);
+        if (records[i].kind != DOE_COMMAND_RENDER) { failure = native_failure_status(NATIVE_UNSUPPORTED); break; }
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-        if (!packet || packet->first_in_pass || !same_targets(&packet->targets, &begin->targets))
-            return native_failure_status(NATIVE_INVALID_ARGUMENT);
-        if (packet->boundary_only) {
-            if (!packet->last_in_pass) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-            end = i;
-            break;
+        if (!packet || packet->first_in_pass || !same_targets(&packet->targets, &begin->targets)) {
+            failure = native_failure_status(NATIVE_INVALID_ARGUMENT); break;
         }
-        if (packet->last_in_pass) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+        if (packet->boundary_only) {
+            if (!packet->last_in_pass) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
+            end = i; break;
+        }
+        if (packet->last_in_pass) { failure = native_failure_status(NATIVE_INVALID_ARGUMENT); break; }
         size_t draws = doe_resource_render_record_draw_count(records[i].value.render);
-        if (draws > SIZE_MAX - draws_count) return native_failure_status(NATIVE_OUT_OF_MEMORY);
+        if (draws > SIZE_MAX - draws_count) { failure = native_failure_status(NATIVE_OUT_OF_MEMORY); break; }
         draws_count += draws;
+        for (size_t j = 0; failure.status == NATIVE_OK && j < draws; ++j) {
+            doe_resource_render_packet draw;
+            if (!doe_resource_render_record_draw(records[i].value.render, j, &draw))
+                failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
+            else failure = native_failure_status(native_metal_render_bindings_intern(&bindings, &draw));
+        }
     }
-    if (!end) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    if (failure.status == NATIVE_OK && !end) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (draws_count > SIZE_MAX / sizeof(draw_storage) || draws_count > SIZE_MAX / sizeof(doe_mtl_render_draw))
-        return native_failure_status(NATIVE_OUT_OF_MEMORY);
-    draw_storage *storage = draws_count ? calloc(draws_count, sizeof(*storage)) : NULL;
-    doe_mtl_render_draw *draws = draws_count ? calloc(draws_count, sizeof(*draws)) : NULL;
-    native_failure failure = native_failure_status(draws_count && (!storage || !draws) ? NATIVE_OUT_OF_MEMORY : NATIVE_OK);
+        failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+    draw_storage *storage = NULL;
+    doe_mtl_render_draw *draws = NULL;
+    if (failure.status == NATIVE_OK && draws_count) {
+        storage = calloc(draws_count, sizeof(*storage));
+        draws = calloc(draws_count, sizeof(*draws));
+        if (!storage || !draws) failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+    }
+    if (failure.status == NATIVE_OK) failure = native_metal_render_bindings_prepare(bindings, commands);
     size_t draw_index = 0;
     for (size_t i = 1; failure.status == NATIVE_OK && i < end; ++i) {
         if (records[i].kind != DOE_COMMAND_RENDER) continue;
@@ -148,11 +143,10 @@ native_failure native_metal_render(doe_mtl_commands *commands,
                 j < doe_resource_render_record_draw_count(records[i].value.render); ++j) {
             doe_resource_render_packet packet;
             if (!doe_resource_render_record_draw(records[i].value.render, j, &packet)) {
-                failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
-                break;
+                failure = native_failure_status(NATIVE_INVALID_ARGUMENT); break;
             }
-            failure = prepare_draw(commands, &packet, &storage[draw_index]);
-            draws[draw_index] = storage[draw_index].draw;
+            failure = prepare_draw(&packet, &storage[draw_index], &draws[draw_index],
+                native_metal_render_bindings_find(bindings, &packet));
             ++draw_index;
         }
     }
@@ -212,6 +206,7 @@ native_failure native_metal_render(doe_mtl_commands *commands,
         doe_mtl_status status = doe_mtl_commands_render(commands, &pass, draws, draws_count, &detail);
         failure = native_failure_metal(status, &detail);
     }
+    native_metal_render_bindings_release(bindings);
     free(draws);
     free(storage);
     if (failure.status == NATIVE_OK) *consumed = end + 1;

@@ -77,6 +77,88 @@ static inline doe_draw_guard_source_status doe_draw_argument_source_v2(
     *out_length = sizeof(doe_draw_argument_v2_wgsl) - 1;
     return DOE_DRAW_GUARD_SOURCE_OK;
 }
+/* Explicit batch entrypoints preserve every legacy byte above. One invocation
+ * owns exactly one complete record; over-dispatch and trailing partial records
+ * are inert. Backends bind the cohort's exact span and retain its native leases. */
+enum { DOE_DRAW_ARGUMENT_BATCH_SOURCE_CAPACITY = 2048 };
+static const char doe_draw_argument_batch_wgsl[] =
+    "@group(0) @binding(0) var<storage,read_write> record:array<u32>;\n"
+    "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) gid:vec3u) {\n"
+    "    if(gid.x>=arrayLength(&record)/8u) { return; }\n"
+    "    let base=gid.x*8u;\n"
+    "    let count=record[base+0u];\n"
+    "    let instance_count=record[base+1u];\n"
+    "    let first=record[base+2u];\n"
+    "    let indexed=(record[base+7u]&1u)!=0u;\n"
+    "    let first_allowed=(record[base+7u]&2u)!=0u;\n"
+    "    var first_instance=record[base+3u];\n"
+    "    var count_limit=record[base+4u];\n"
+    "    var instance_limit=record[base+5u];\n"
+    "    if(indexed) {\n"
+    "        first_instance=record[base+4u];\n"
+    "        count_limit=record[base+5u];\n"
+    "        instance_limit=record[base+6u];\n"
+    "    }\n"
+    "    if(count==0u || instance_count==0u || (first_instance!=0u && !first_allowed) ||\n"
+    "        first>count_limit || count>count_limit-first ||\n"
+    "        first_instance>instance_limit || instance_count>instance_limit-first_instance) {\n"
+    "        record[base+0u]=0u;\n"
+    "        record[base+1u]=0u;\n"
+    "        record[base+2u]=0u;\n"
+    "        record[base+3u]=0u;\n"
+    "        if(indexed) { record[base+4u]=0u; }\n"
+    "    }\n"
+    "}\n";
+static const char doe_draw_argument_v2_batch_wgsl[] =
+    "fn fits(first:u32,count:u32,low:u32,high:u32)->bool {\n"
+    "    let end=first+count;\n"
+    "    let carry=select(0u,1u,end<first);\n"
+    "    return carry<high || (carry==high && end<=low);\n"
+    "}\n"
+    "@group(0) @binding(0) var<storage,read_write> record:array<u32>;\n"
+    "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) gid:vec3u) {\n"
+    "    if(gid.x>=arrayLength(&record)/10u) { return; }\n"
+    "    let base=gid.x*10u;\n"
+    "    let count=record[base+0u];\n"
+    "    let instance_count=record[base+1u];\n"
+    "    let first=record[base+2u];\n"
+    "    let indexed=(record[base+7u]&1u)!=0u;\n"
+    "    let first_allowed=(record[base+7u]&2u)!=0u;\n"
+    "    var first_instance=record[base+3u];\n"
+    "    var count_limit=record[base+4u];\n"
+    "    var instance_limit=record[base+5u];\n"
+    "    if(indexed) {\n"
+    "        first_instance=record[base+4u];\n"
+    "        count_limit=record[base+5u];\n"
+    "        instance_limit=record[base+6u];\n"
+    "    }\n"
+    "    if(count==0u || instance_count==0u || (first_instance!=0u && !first_allowed) ||\n"
+    "        !fits(first,count,count_limit,record[base+8u]) ||\n"
+    "        !fits(first_instance,instance_count,instance_limit,record[base+9u])) {\n"
+    "        record[base+0u]=0u;\n"
+    "        record[base+1u]=0u;\n"
+    "        record[base+2u]=0u;\n"
+    "        record[base+3u]=0u;\n"
+    "        if(indexed) { record[base+4u]=0u; }\n"
+    "    }\n"
+    "}\n";
+static inline doe_draw_guard_source_status doe_draw_argument_source_batch(
+    char *out, size_t capacity, size_t *out_length) {
+    if (!out || !out_length) return DOE_DRAW_GUARD_SOURCE_INVALID_ARGUMENT;
+    if (capacity < sizeof(doe_draw_argument_batch_wgsl)) return DOE_DRAW_GUARD_SOURCE_TOO_SMALL;
+    memcpy(out, doe_draw_argument_batch_wgsl, sizeof(doe_draw_argument_batch_wgsl));
+    *out_length = sizeof(doe_draw_argument_batch_wgsl) - 1;
+    return DOE_DRAW_GUARD_SOURCE_OK;
+}
+static inline doe_draw_guard_source_status doe_draw_argument_source_v2_batch(
+    char *out, size_t capacity, size_t *out_length) {
+    if (!out || !out_length) return DOE_DRAW_GUARD_SOURCE_INVALID_ARGUMENT;
+    if (capacity < sizeof(doe_draw_argument_v2_batch_wgsl)) return DOE_DRAW_GUARD_SOURCE_TOO_SMALL;
+    memcpy(out, doe_draw_argument_v2_batch_wgsl, sizeof(doe_draw_argument_v2_batch_wgsl));
+    *out_length = sizeof(doe_draw_argument_v2_batch_wgsl) - 1;
+    return DOE_DRAW_GUARD_SOURCE_OK;
+}
+
 /* Scan runs only after the same V2 argument normalizer. Its record loads /
  * cancellation stores are atomic: a rejected index cancels the draw without
  * racing the other scanners. User indices and first/base fields never change.

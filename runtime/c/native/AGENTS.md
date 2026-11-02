@@ -32,23 +32,26 @@ uses through known-fenced acceptance on their existing ordered queue; recording
 reservations remain exclusive and completed initialization remains separate.
 D3D12 discards provisional native work before any remaining texture/query
 conflict wait matched to its accepted common pending owner. Writes/submissions
-need no device-wide drain; CPU read/map waits only for its resource's accepted
-owner. A context-owned event
+need no device-wide drain; Synchronous CPU reads wait only for their resource's accepted
+owner; MapAsync reserves its generation and returns an admitted future before
+readback or waiting. A context-owned event
 lease permits unlocked observation without retaining a command shell or creating
 another submission owner. Revalidate after every unlocked wait. The worker waits outside the
 device mutex under an actual native handle lease, then observes completion
 under that mutex. Routine settlement polls, and
-running work is never a failure (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Host buffer access waits only for
-submissions using that buffer; work done waits each record's fence. Idle final
-release joins the worker.
-For Metal, owner decision 2026-10-31 supersedes that worker wake and fence wait:
-each committed command registers a native completed handler, as Dawn does. Neither
-submission nor a lease drop wakes the worker of a live Metal device; public calls
-retire its records through routine settlement. The handler runs on a Metal thread,
-never takes the device mutex and never retires state. Device destruction arms it
-to wake the worker, which retires what remains under its ordinary lease. The
-handler's refcounted completion record outlives the device; detach precedes
-destruction of the worker condition.
+running work is never a failure. Queue completion captures the current submission
+serial and returns an admitted future; later work cannot delay that obligation.
+The progress owner prepares maps only after the buffer's accepted owner retires,
+and publishes readiness through the existing callback owner outside the mutex.
+Preserve callback modes, generation cancellation and exact terminal diagnostics.
+Explicit WaitAny may block; registering MapAsync or WorkDone must not.
+Idle final release joins the worker.
+For Metal, every committed command registers a native completed handler. Submission
+and lease drops alone do not wake a live device's worker. Pending asynchronous
+callback obligations observe that handler and wake progress; destruction arms it
+for remaining retirement. The handler never takes the device mutex or retires
+state. Its completion record outlives the device; detach precedes destruction of
+the worker condition. Unknown completion retains all submission/resource leases.
 Settle oldest first and preserve the first background terminal error for a
 public operation to observe.
 
@@ -228,7 +231,7 @@ its recording owner retires.
 On Vulkan, texture zero initialization is queue-ordered before any access
 instead: it records into one device batch that the next submission flushes
 first (as do the 64th texture it holds and any texture destroy(), so retention
-stays bounded), and a failed batch poisons its textures (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
+stays bounded), and a failed batch poisons its textures (queue-ordered initialization).
 Depth/stencil transfers, indirect/indexed render guards and sample-mask support
 must be admitted by their actual composed path, not inferred from another backend.
 
@@ -254,9 +257,10 @@ D3D12 buffer creation CPU-zeroes READBACK resources before publication unless
 D3D12 zeroed them at creation (backend AGENTS.md owns the rule). DEFAULT
 initialization uses full-width zero copies accepted through the existing common
 pending/device owner; later GPU work inherits known-fenced initialization, while
-CPU maps still wait for the actual buffer owner. Keep mappedAtCreation on DEFAULT
-with its separate zeroed CPU shadow, and preserve allocation/publication-failure
-leases. Texture creation accepts queue-ordered zero initialization asynchronously;
+CPU maps still wait for the actual buffer owner. Typed MapWrite|CopySrc intent
+selects zeroed UPLOAD and exact mutable range lending. mappedAtCreation alone keeps
+DEFAULT/storage with its zeroed CPU shadow; preserve cancellation, written ranges
+and allocation/publication-failure leases. Texture creation accepts queue-ordered zero initialization asynchronously;
 its exclusive pending texture owner still gates later use. Never drain unrelated
 work merely to create a texture.
 
@@ -268,7 +272,9 @@ transitions with sampled aliases. Whole 2D views remain the explicit envelope;
 additional dimensions, formats and public graphics require their actual bridge.
 
 DXGI shared textures retain the existing canonical memory/texture/command owners.
-An access records only through its matching active texture. Keyed End reserves an
+Producer fence waits are queued GPU dependencies on the pending command owner;
+zero-work End forwards that point, exports borrow a cached timeline handle and
+imports own independent duplicates. An access records only through its matching active texture. Keyed End reserves an
 exclusive ENDING state before its owner wait unlocks; recheck that reservation,
 texture availability and device state afterward. Failure retains the original
 access/key/unknown-command obligations; another End/Begin never commits its state.

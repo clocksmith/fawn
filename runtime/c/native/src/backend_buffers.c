@@ -3,7 +3,7 @@
 #include "d3d12_frontend.h"
 
 native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage,
-    bool direct_readback, bool host_mapped)
+    native_buffer_memory_intent intent, bool host_mapped)
 {
     native_backend *backend = &buffer->device->backend;
     if (backend->kind == WGPUBackendType_Vulkan) {
@@ -30,7 +30,7 @@ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32
             size, DOE_MTL_SHARED, &buffer->handle.metal, &error);
         return native_failure_metal(status, &error);
     }
-    if (backend->kind == WGPUBackendType_D3D12) return native_d3d12_buffer_create(buffer, size, usage, direct_readback);
+    if (backend->kind == WGPUBackendType_D3D12) return native_d3d12_buffer_create(buffer, size, usage, intent);
     return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
@@ -61,6 +61,26 @@ bool native_buffer_host_lendable(const native_buffer *buffer)
         buffer->device->backend.kind == WGPUBackendType_Metal) return true;
     return buffer->device->backend.kind == WGPUBackendType_D3D12 && buffer->handle.d3d12 &&
         buffer->handle.d3d12->memory == DOE_DX_READBACK;
+}
+
+bool native_buffer_host_writable(const native_buffer *buffer)
+{
+    return buffer->device->backend.kind == WGPUBackendType_D3D12 &&
+        native_d3d12_buffer_write_lendable(buffer);
+}
+
+native_failure native_buffer_host_write_range(native_buffer *buffer, uint64_t offset,
+    size_t size, unsigned char **out)
+{
+    if (buffer->device->backend.kind == WGPUBackendType_Metal) {
+        void *range = NULL;
+        doe_mtl_status status = doe_mtl_buffer_host_write_range(buffer->handle.metal, offset, size, &range);
+        if (status == DOE_MTL_OK) *out = range;
+        return native_failure_metal(status, NULL);
+    }
+    if (buffer->device->backend.kind == WGPUBackendType_D3D12)
+        return native_d3d12_buffer_lend_write(buffer, offset, size, out);
+    return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
 void native_buffer_host_return(native_buffer *buffer)

@@ -6,7 +6,7 @@ OUT ?= $(DOE_C_TMP)/vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
-SOURCES = src/external.c src/immediates.c src/driver_cache.c src/cache_file.c src/timeline.c src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
+SOURCES = src/external.c src/immediates.c src/driver_cache.c src/cache_file.c src/timeline.c src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/memory.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(wildcard $(REPO)/runtime/c/common/include/*.h)
 .PHONY: all check abi surface-probe native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean
@@ -17,7 +17,7 @@ $(OUT)/%.o: src/%.c $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) -c $< -o $@
 $(OUT)/libdoe_vk.a: $(OBJECTS)
 	$(AR) rcs $@ $^
-$(OUT)/surface_features: tests/surface_features.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+$(OUT)/surface_features: tests/surface_features.c tests/feature_stub.h $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/surface_contract: tests/surface_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
@@ -43,7 +43,7 @@ $(OUT)/image_format_contract: tests/image_format_contract.c $(OUT)/libdoe_vk.a $
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/depth_contract: tests/depth_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
-$(OUT)/feature_contract: tests/feature_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+$(OUT)/feature_contract: tests/feature_contract.c tests/feature_stub.h $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/external_import: tests/external_import.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) -D_POSIX_C_SOURCE=200809L $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
@@ -239,3 +239,17 @@ $(OUT)/immediate_contract: tests/immediate_contract.c $(OUT)/libdoe_vk.a
 check-immediates: $(OUT)/immediate_contract
 	$(OUT)/immediate_contract
 check: check-immediates
+
+$(OUT)/memory_slices: tests/memory_slices.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: check-memory-slices
+check-memory-slices: $(OUT)/memory_slices
+	$(OUT)/memory_slices
+check: check-memory-slices
+
+$(OUT)/native_memory_slices: tests/native_memory_slices.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: native-memory-slices
+native-memory-slices: $(OUT)/native_memory_slices
+	@test -n "$(SOFTWARE_VULKAN_ICD)" && test -f "$(SOFTWARE_VULKAN_ICD)" || { echo "set SOFTWARE_VULKAN_ICD to an explicit CPU ICD manifest" >&2; exit 2; }
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(OUT)/native_memory_slices --allow-software

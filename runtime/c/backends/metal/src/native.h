@@ -26,6 +26,18 @@ typedef struct doe_mtl_native_resources {
     uint32_t immediate_words[16], immediate_size, immediate_slot;
     uint32_t texture_count, sampler_count; /* Highest occupied slot plus one. */
 } doe_mtl_native_resources;
+/* Whole-pass guard plan, borrowed only by the native callback. All entries
+ * have already passed ordinary preflight and command-owned lease admission. */
+typedef struct doe_mtl_native_guard_copy {
+    void *source, *destination;
+    size_t source_offset, destination_offset, size;
+} doe_mtl_native_guard_copy;
+typedef struct doe_mtl_native_guard_dispatch {
+    void *pipeline;
+    doe_mtl_native_binding bindings[3];
+    uint32_t slots[3], binding_count, sizes_slot;
+    doe_mtl_dimensions groups, workgroup;
+} doe_mtl_native_guard_dispatch;
 typedef struct doe_mtl_native_texture_copy {
     size_t buffer_offset, bytes_per_row, bytes_per_image;
     doe_mtl_texture_region region;
@@ -51,11 +63,12 @@ typedef struct doe_mtl_native_render_pass {
 } doe_mtl_native_render_pass;
 typedef struct doe_mtl_native_render_draw {
     void *pipeline, *depth_stencil;
-    doe_mtl_native_resources vertex, fragment;
     uint32_t vertex_sizes_slot, fragment_sizes_slot;
+    uint32_t vertex_immediates[16], fragment_immediates[16];
     void *index_buffer;
     size_t index_offset;
     void *indirect_arguments;
+    size_t indirect_offset;
     doe_mtl_render_draw values; /* Only scalar/dynamic fields used by adapter. */
 } doe_mtl_native_render_draw;
 
@@ -84,7 +97,6 @@ typedef struct doe_mtl_native {
     void (*shared_surface_release)(void *, void *);
     doe_mtl_status (*shared_texture)(void *, void *, void *, const doe_mtl_texture_desc *, void **, doe_mtl_error *);
     doe_mtl_status (*shared_event_retain)(void *, void *, void **, doe_mtl_error *);
-    doe_mtl_status (*shared_event_wait)(void *, void *, uint64_t, doe_mtl_error *);
     bool (*surface_supported)(void *userdata, void *layer);
     doe_mtl_status (*surface_configure)(void *userdata, void *device, void *layer,
         const doe_mtl_surface_desc *desc, void **out, doe_mtl_error *error);
@@ -115,6 +127,8 @@ typedef struct doe_mtl_native {
         const doe_mtl_native_resources *resources, uint32_t sizes_slot,
         doe_mtl_dimensions groups, doe_mtl_dimensions workgroup,
         uint32_t repeat, const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error);
+    doe_mtl_status (*guard_batch)(void *, void *, const doe_mtl_native_guard_copy *, size_t,
+        const doe_mtl_native_guard_dispatch *, size_t, doe_mtl_error *);
     doe_mtl_status (*dispatch_indirect)(void *userdata, void *command, void *pipeline,
         const doe_mtl_native_resources *resources, uint32_t sizes_slot,
         void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error);
@@ -150,6 +164,7 @@ typedef struct doe_mtl_native {
     void (*pipeline_cache_stats)(void *, doe_mtl_pipeline_cache_stats *);
     doe_mtl_status (*timeline_create)(void *, void *, void **, doe_mtl_error *);
     doe_mtl_status (*timeline_signal)(void *, void *, void *, uint64_t, doe_mtl_error *);
+    doe_mtl_status (*commands_wait_event)(void *, void *, void *, uint64_t, doe_mtl_error *);
     uint64_t (*timeline_value)(void *, void *);
     void (*commit)(void *userdata, void *command);
     /* Optional. Registers one completed handler on an uncommitted command; the

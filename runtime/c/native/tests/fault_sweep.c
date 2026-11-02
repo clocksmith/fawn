@@ -170,6 +170,23 @@ static void sweep_device(WGPURequestDeviceStatus status, WGPUDevice device, WGPU
     *(WGPUDevice *)userdata = device;
 }
 
+/* Fault observers deliver on this waiting thread, after the admitted async
+ * obligation completes. A ProcessEvents turn does not settle native work. */
+static void settle_future(WGPUInstance instance, WGPUFuture future)
+{
+    if (!future.id) return; /* Admission refusal is checked and reported separately. */
+    WGPUFutureWaitInfo wait = {.future=future};
+    unsigned before = atomic_load(&failures);
+    WGPUWaitStatus status = wgpuInstanceWaitAny(instance, 1, &wait, UINT64_C(5000000000));
+    if (status == WGPUWaitStatus_Error) {
+        /* WaitAny copies the wait list with the same injected allocator. A
+         * refused wait does not consume the admitted future or its callback. */
+        assert(atomic_load(&failures) == before + 1 && !wait.completed);
+        status = wgpuInstanceWaitAny(instance, 1, &wait, UINT64_C(5000000000));
+    }
+    assert(status == WGPUWaitStatus_Success && wait.completed);
+}
+
 typedef enum outcome { EXACT, FAILED } outcome;
 
 /* Compute round; any handle may be NULL after an injected failure. */
@@ -246,17 +263,18 @@ static outcome workload_round(WGPUInstance instance, WGPUDevice device, WGPUQueu
     if (storage) wgpuBufferRelease(storage);
     if (indirect) wgpuBufferRelease(indirect);
     if (texture) wgpuTextureRelease(texture);
-    WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = done_reply, .userdata1 = seen};
-    const bool admitted = wgpuQueueOnSubmittedWorkDone(queue, done).id != 0;
+    WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = done_reply, .userdata1 = seen};
+    WGPUFuture done_future = wgpuQueueOnSubmittedWorkDone(queue, done);
+    const bool admitted = done_future.id != 0;
     seen->done_expected += admitted;
     seen->done_admitted = seen->done_admitted && admitted;
     outcome result = FAILED;
     if (readback) {
         seen->map = (WGPUMapAsyncStatus)0;
-        WGPUBufferMapCallbackInfo map = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = map_reply, .userdata1 = seen};
+        WGPUBufferMapCallbackInfo map = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = map_reply, .userdata1 = seen};
         WGPUFuture future = wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, BYTES + 256, map);
-        wgpuInstanceProcessEvents(instance);
-        assert(!future.id || seen->map != 0); /* An admitted map settles; nothing stays pending. */
+        settle_future(instance, future);
+        assert(!future.id || seen->map != 0); /* Admitted maps settle before callback state is read. */
         seen->map_refused |= !future.id;
         if (seen->map == WGPUMapAsyncStatus_Success) {
             const uint32_t *output = wgpuBufferGetConstMappedRange(readback, 0, BYTES + 256);
@@ -270,6 +288,7 @@ static outcome workload_round(WGPUInstance instance, WGPUDevice device, WGPUQueu
         }
         wgpuBufferRelease(readback);
     }
+    settle_future(instance, done_future);
     wgpuInstanceProcessEvents(instance);
     return result;
 }
@@ -278,15 +297,17 @@ static outcome workload_round(WGPUInstance instance, WGPUDevice device, WGPUQueu
 /* Requests work done, maps readback and returns its bytes, or NULL. */
 static const uint32_t *settle_and_map(WGPUInstance instance, WGPUQueue queue, WGPUBuffer readback, size_t size, observed *seen)
 {
-    WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = done_reply, .userdata1 = seen};
-    const bool admitted = wgpuQueueOnSubmittedWorkDone(queue, done).id != 0;
+    WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = done_reply, .userdata1 = seen};
+    WGPUFuture done_future = wgpuQueueOnSubmittedWorkDone(queue, done);
+    const bool admitted = done_future.id != 0;
     seen->done_expected += admitted;
     seen->done_admitted = seen->done_admitted && admitted;
-    if (!readback) return NULL;
+    if (!readback) { settle_future(instance, done_future); return NULL; }
     seen->map = (WGPUMapAsyncStatus)0;
-    WGPUBufferMapCallbackInfo map = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = map_reply, .userdata1 = seen};
+    WGPUBufferMapCallbackInfo map = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = map_reply, .userdata1 = seen};
     WGPUFuture future = wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, size, map);
-    wgpuInstanceProcessEvents(instance);
+    settle_future(instance, future);
+    settle_future(instance, done_future);
     assert(!future.id || seen->map != 0);
     seen->map_refused |= !future.id;
     return seen->map == WGPUMapAsyncStatus_Success ? wgpuBufferGetConstMappedRange(readback, 0, size) : NULL;

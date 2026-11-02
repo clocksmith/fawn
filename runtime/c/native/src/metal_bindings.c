@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_binding_internal.h"
 
-native_failure native_metal_binding_snapshot(doe_mtl_commands *commands,
+native_failure native_metal_binding_snapshot_into(doe_mtl_commands *commands,
     const native_pipeline *pipeline, const native_metal_stage_map *map,
-    const doe_resource_binding *resolved, native_metal_snapshot *out)
+    const doe_resource_binding *resolved, native_metal_binding_storage *out)
 {
     out->bindings = (doe_mtl_render_bindings){.buffers=out->buffers,
         .textures=out->textures, .samplers=out->samplers};
@@ -11,13 +11,13 @@ native_failure native_metal_binding_snapshot(doe_mtl_commands *commands,
         uint32_t table = map->tables[i], slot = map->slots[i];
         if (!table) continue;
         if (table == DOE_COMPILER_TEXT_TABLE_BUFFER) {
-            if (out->bindings.buffer_count == DOE_MTL_BUFFER_SLOTS || resolved[i].kind != DOE_BIND_BUFFER)
+            if (out->bindings.buffer_count == out->buffer_capacity || resolved[i].kind != DOE_BIND_BUFFER)
                 return native_failure_status(NATIVE_UNSUPPORTED);
             native_buffer *buffer = doe_resource_buffer_native(resolved[i].resource.buffer.buffer);
             out->buffers[out->bindings.buffer_count++] = (doe_mtl_buffer_binding){slot,
                 buffer->handle.metal, resolved[i].resource.buffer.offset, resolved[i].resource.buffer.size};
         } else if (table == DOE_COMPILER_TEXT_TABLE_TEXTURE) {
-            if (out->bindings.texture_count == DOE_MTL_TEXTURE_SLOTS ||
+            if (out->bindings.texture_count == out->texture_capacity ||
                 (resolved[i].kind != DOE_BIND_TEXTURE && resolved[i].kind != DOE_BIND_STORAGE_TEXTURE &&
                 resolved[i].kind != DOE_BIND_EXTERNAL_TEXTURE))
                 return native_failure_status(NATIVE_UNSUPPORTED);
@@ -36,11 +36,22 @@ native_failure native_metal_binding_snapshot(doe_mtl_commands *commands,
             out->textures[out->bindings.texture_count++] = (doe_mtl_texture_binding){slot,
                 view->metal, resolved[i].kind == DOE_BIND_STORAGE_TEXTURE};
         } else if (table == DOE_COMPILER_TEXT_TABLE_SAMPLER) {
-            if (out->bindings.sampler_count == DOE_MTL_SAMPLER_SLOTS || resolved[i].kind != DOE_BIND_SAMPLER)
+            if (out->bindings.sampler_count == out->sampler_capacity || resolved[i].kind != DOE_BIND_SAMPLER)
                 return native_failure_status(NATIVE_UNSUPPORTED);
             native_sampler *sampler = doe_resource_sampler_native(resolved[i].resource.sampler);
             out->samplers[out->bindings.sampler_count++] = (doe_mtl_sampler_binding){slot, sampler->metal};
         } else return native_failure_status(NATIVE_UNSUPPORTED);
     }
     return native_failure_status(NATIVE_OK);
+}
+
+native_failure native_metal_binding_snapshot(doe_mtl_commands *commands,
+    const native_pipeline *pipeline, const native_metal_stage_map *map,
+    const doe_resource_binding *resolved, native_metal_snapshot *out)
+{
+    native_metal_binding_storage storage = {.buffers=out->buffers,.textures=out->textures,.samplers=out->samplers,
+        .buffer_capacity=DOE_MTL_BUFFER_SLOTS,.texture_capacity=DOE_MTL_TEXTURE_SLOTS,.sampler_capacity=DOE_MTL_SAMPLER_SLOTS};
+    native_failure failure = native_metal_binding_snapshot_into(commands, pipeline, map, resolved, &storage);
+    out->bindings = storage.bindings;
+    return failure;
 }

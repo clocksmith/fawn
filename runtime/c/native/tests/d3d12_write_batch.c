@@ -27,6 +27,10 @@ typedef struct control {
 } control;
 static control seen;
 
+/* These controls do not exercise destruction; an unexpected path must fail
+ * rather than resolving against a real backend with these ledger-only handles. */
+void native_progress_pending(native_device *device) { (void)device; abort(); }
+doe_dx_status doe_dx_buffer_evict(doe_dx_buffer *buffer) { (void)buffer; abort(); }
 uint64_t native_allocation_bound(const native_device *device)
 {
     (void)device;
@@ -62,6 +66,17 @@ doe_dx_status doe_dx_buffer_retain(doe_dx_buffer *buffer)
     buffer->references++;
     return DOE_DX_OK;
 }
+doe_dx_status doe_dx_upload_slice_write(doe_dx_context *context,const void *bytes,size_t size,uint64_t alignment,
+    doe_dx_upload_slice *out,doe_dx_error *error)
+{
+    (void)alignment;
+    doe_dx_buffer *staging=NULL;
+    doe_dx_status status=doe_dx_upload_acquire(context,size,&staging,error);
+    if (status==DOE_DX_OK) status=doe_dx_buffer_write(staging,0,bytes,size,error);
+    if (status==DOE_DX_OK) *out=(doe_dx_upload_slice){staging,0,size};
+    else doe_dx_buffer_release(staging);
+    return status;
+}
 void doe_dx_buffer_release(doe_dx_buffer *buffer)
 {
     if (buffer && !--buffer->references) { seen.live--; free(buffer); }
@@ -85,6 +100,14 @@ doe_dx_status doe_dx_buffer_lend_read(doe_dx_buffer *buffer, uint64_t offset, si
 {
     (void)buffer; (void)offset; (void)size; (void)out; (void)error;
     return DOE_DX_UNSUPPORTED;
+}
+doe_dx_status doe_dx_buffer_lend_write(doe_dx_buffer *buffer,uint64_t offset,size_t size,
+    void **out,doe_dx_error *error)
+{
+    const void *bytes=NULL;
+    doe_dx_status status=doe_dx_buffer_lend_read(buffer,offset,size,&bytes,error);
+    if (status==DOE_DX_OK) *out=(void *)bytes;
+    return status;
 }
 void doe_dx_buffer_return_read(doe_dx_buffer *buffer) { (void)buffer; }
 
@@ -161,7 +184,7 @@ static unsigned id(const native_buffer *buffer) { return buffer->handle.d3d12->a
 static native_buffer make(native_device *device, uint64_t size, bool readback)
 {
     native_buffer buffer = {.device=device};
-    assert(native_d3d12_buffer_create(&buffer, size, DOE_VK_BUFFER_COPY_DST, readback).status == NATIVE_OK);
+    assert(native_d3d12_buffer_create(&buffer, size, DOE_VK_BUFFER_COPY_DST, readback ? NATIVE_BUFFER_MAP_READ : NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
     return buffer;
 }
 
@@ -216,10 +239,10 @@ int main(void)
     assert(copy_is(&work->ops[0], id(&a), 0, 4096) && copy_is(&work->ops[1], id(&b), 512, 64));
     retire();
 
-    /* A second write into a logged destination submits the earlier copy first. */
+    /* A repeated DEFAULT destination stays in one command behind a barrier. */
     assert(native_d3d12_buffer_write(&a, 0, bytes, 4096).status == NATIVE_OK);
     assert(native_d3d12_buffer_write(&a, 64, bytes, 64).status == NATIVE_OK);
-    assert(seen.submitted_count == 1 && seen.submitted[0]->count == 1 && copy_is(&seen.submitted[0]->ops[0], id(&a), 0, 4096));
+    assert(!seen.submitted_count);
     /* A rejected copy leaves the open command and the log unchanged. */
     seen.copy_status = DOE_DX_RANGE;
     assert(native_d3d12_buffer_write(&b, 0, bytes, 4096).status != NATIVE_OK);
@@ -227,8 +250,10 @@ int main(void)
     /* Any other recording (here a DEFAULT CPU read) submits the writes first. */
     unsigned char out[16];
     assert(native_d3d12_buffer_read(&b, 0, out, sizeof(out)).status == NATIVE_OK);
-    assert(seen.submitted_count == 3 && seen.submitted[1]->count == 1 && copy_is(&seen.submitted[1]->ops[0], id(&a), 64, 64));
-    assert(seen.submitted[2]->count == 1 && seen.submitted[2]->ops[0].source == id(&b));
+    assert(seen.submitted_count == 2 && seen.submitted[0]->count == 3);
+    assert(copy_is(&seen.submitted[0]->ops[0],id(&a),0,4096) && seen.submitted[0]->ops[1].kind=='o' &&
+        copy_is(&seen.submitted[0]->ops[2],id(&a),64,64));
+    assert(seen.submitted[1]->count == 1 && seen.submitted[1]->ops[0].source == id(&b));
     retire();
 
     /* READBACK state cannot be ordered in-list: the writes execute alone. */
@@ -263,6 +288,6 @@ int main(void)
     assert(seen.live && seen.live_commands == 1);
     native_d3d12_writes_close(&device.backend);
     assert(!seen.live && !seen.live_commands && !seen.submitted_count && !device.backend.value.d3d12.writes);
-    puts("PASS actual Windows queue-write batch owner: one open command in call order, adoption with ordering before the submission's work, rejected adoption re-recorded exactly and retained across a failed rebuild, same-destination and observation flushes, rejected copies, READBACK separation, 64-write and 16 MiB bounds and discard at final release; call ledger only, no GPU");
+    puts("PASS actual Windows queue-write batch owner: one open command in call order, adoption with ordering before the submission's work, rejected adoption re-recorded exactly and retained across a failed rebuild, in-list same-destination ordering and observation flushes, rejected copies, READBACK separation, 64-write and 16 MiB bounds and discard at final release; call ledger only, no GPU");
     return 0;
 }

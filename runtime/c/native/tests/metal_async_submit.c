@@ -15,6 +15,7 @@ static doe_thread_id caller_thread;
 static atomic_uint race_action;
 static WGPUBuffer raced_buffer;
 static state *raced_state;
+static WGPUFuture raced_future;
 
 native_failure __real_native_record_resource_commands(native_command_handle *, doe_resource_commands *);
 native_failure __wrap_native_record_resource_commands(native_command_handle *native, doe_resource_commands *resources)
@@ -37,7 +38,8 @@ static void block_hook(mock_native *mock, void *command, uint64_t timeout)
             if (action == 1) {
                 WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
                     .callback=mapped,.userdata1=raced_state};
-                assert(wgpuBufferMapAsync(raced_buffer,WGPUMapMode_Read,0,16,callback).id);
+                raced_future=wgpuBufferMapAsync(raced_buffer,WGPUMapMode_Read,0,16,callback);
+                assert(raced_future.id);
             } else wgpuBufferDestroy(raced_buffer);
         }
     }
@@ -102,16 +104,18 @@ static WGPUCommandBuffer copy(state *s, WGPUBuffer source, WGPUBuffer target, WG
     assert(command);
     return command;
 }
-static size_t pending_count(native_device *device)
+static size_t pending_count(native_device *device,native_pending_kind kind)
 {
     size_t count = 0;
-    for (native_pending *pending = device->pending; pending; pending = pending->next) ++count;
+    for (native_pending *pending=device->pending;pending;pending=pending->next) if (pending->kind==kind) ++count;
     return count;
 }
-static void queue_reply(WGPUQueueWorkDoneStatus status, WGPUStringView message, void *one, void *two)
+typedef struct queue_result { unsigned calls; WGPUQueueWorkDoneStatus expected; const char *message; } queue_result;
+static void queue_reply(WGPUQueueWorkDoneStatus status,WGPUStringView message,void *one,void *two)
 {
-    (void)status; (void)message; (void)two;
-    ++*(unsigned *)one;
+    (void)two; queue_result *result=one;
+    assert(status==result->expected && ++result->calls==1);
+    if (result->message) assert(message.length==strlen(result->message) && !memcmp(message.data,result->message,message.length));
 }
 static void unlocked_race(state *s, bool write, bool destroy)
 {
@@ -139,9 +143,10 @@ static void unlocked_race(state *s, bool write, bool destroy)
     }
     assert(!atomic_load(&race_action) && s->errors == errors + 1 && s->last_error == WGPUErrorType_Validation);
     native_lock(device);
-    assert(mocks[1].commits == committed && !device->pending);
+    assert(mocks[1].commits==committed && !pending_count(device,NATIVE_PENDING_COMMANDS));
     native_unlock(device);
     if (!destroy) {
+        wait_future(s,raced_future);
         assert(s->mapped == maps + 1 && wgpuBufferGetMapState(target) == WGPUBufferMapState_Mapped);
         wgpuBufferUnmap(target);
     }
@@ -182,7 +187,7 @@ int main(void)
     assert(doe_thread_join(&thread).status == DOE_HOST_OK);
     assert(submitted_unlocked);
     native_lock(device);
-    assert(pending_count(device) == 2 && mocks[1].commits == 2 && mocks[1].handlers == 2 &&
+    assert(pending_count(device,NATIVE_PENDING_COMMANDS)==2 && !pending_count(device,NATIVE_PENDING_ASYNC) && mocks[1].commits == 2 && mocks[1].handlers == 2 &&
         mocks[1].waits == 0 && atomic_load(&mocks[1].blocks) == 0 && !s.errors);
     native_unlock(device);
     wgpuCommandBufferRelease(a); wgpuCommandBufferRelease(b);
@@ -196,10 +201,16 @@ int main(void)
     assert(mocks[1].commits == 3 && mocks[1].fills >= 2 && !s.errors);
     native_unlock(device);
     wgpuCommandBufferRelease(shared);
-    unsigned callbacks = 0;
-    WGPUQueueWorkDoneCallbackInfo done = {.mode=WGPUCallbackMode_AllowSpontaneous,
-        .callback=queue_reply,.userdata1=&callbacks};
-    assert(wgpuQueueOnSubmittedWorkDone(s.queue,done).id && callbacks == 1);
+    queue_result completed={.expected=WGPUQueueWorkDoneStatus_Success};
+    WGPUQueueWorkDoneCallbackInfo done={.mode=WGPUCallbackMode_WaitAnyOnly,.callback=queue_reply,.userdata1=&completed};
+    WGPUFuture complete=wgpuQueueOnSubmittedWorkDone(s.queue,done); assert(complete.id);
+    native_lock(device);
+    /* Registration no longer visits the blocking wait seam. The GPU controller
+     * explicitly completes every disjoint predecessor, not only last_command. */
+    for (native_pending *pending=device->pending;pending;pending=pending->next)
+        if (pending->kind==NATIVE_PENDING_COMMANDS) mock_command_result(pending->native.value.metal->native,4,0);
+    native_unlock(device);
+    wait_future(&s,complete); assert(completed.calls==1);
     unlocked_race(&s,false,false);
     unlocked_race(&s,false,true);
     unlocked_race(&s,true,false);
@@ -212,15 +223,24 @@ int main(void)
     WGPUCommandBuffer unknown = copy(&s,source_a,target_a,NULL);
     wgpuQueueSubmit(s.queue,1,&unknown);
     wgpuCommandBufferRelease(unknown);
-    assert(!wgpuQueueOnSubmittedWorkDone(s.queue,done).id && callbacks == 1);
+    queue_result terminal={.expected=WGPUQueueWorkDoneStatus_Error,
+        .message="Metal: MTLCommandBuffer.error (native=-771): held terminal fault"};
+    done.userdata1=&terminal;
+    WGPUFuture unknown_future=wgpuQueueOnSubmittedWorkDone(s.queue,done); assert(unknown_future.id);
+    WGPUFutureWaitInfo wait={.future=unknown_future};
+    assert(wgpuInstanceWaitAny(s.instance,1,&wait,0)==WGPUWaitStatus_TimedOut && !wait.completed && !terminal.calls);
     native_lock(device);
-    assert(pending_count(device) == 1);
-    mock_command_result(device->pending->native.value.metal->native,5,-771);
-    native_queue_settlement failure = native_poll_pending(device);
-    assert(failure.failure.status == NATIVE_FAILURE && failure.failure.native_code == -771);
-    assert(!device->pending);
-    mocks[1].unknown_commit = false;
-    native_unlock(device);
+    assert(pending_count(device,NATIVE_PENDING_COMMANDS)==1 && pending_count(device,NATIVE_PENDING_ASYNC)==1);
+    native_pending *command=device->pending;
+    while (command && command->kind!=NATIVE_PENDING_COMMANDS) command=command->next;
+    assert(command); strcpy(mocks[1].completion_message,"held terminal fault");
+    mock_command_result(command->native.value.metal->native,5,-771);
+    native_queue_settlement failure=native_poll_pending(device);
+    assert(failure.failure.status==NATIVE_FAILURE && failure.failure.native_code==-771);
+    assert(!pending_count(device,NATIVE_PENDING_COMMANDS) && pending_count(device,NATIVE_PENDING_ASYNC)==1);
+    strcpy(mocks[1].completion_message,"later text must not escape");
+    mocks[1].unknown_commit=false; native_unlock(device);
+    wait_future(&s,unknown_future); assert(terminal.calls==1);
 
     /* Fresh disjoint resources survive all public handles going away. Device
      * destruction arms the worker; the command's completed handler wakes it,
@@ -241,7 +261,7 @@ int main(void)
      * run. Its status is held pending until this explicit controller signal;
      * that pending record still pins device storage while we take its mutex. */
     native_lock(device);
-    assert(pending_count(device) == 1 && native_metal_completion_armed(device));
+    assert(pending_count(device,NATIVE_PENDING_COMMANDS)==1 && !pending_count(device,NATIVE_PENDING_ASYNC) && native_metal_completion_armed(device));
     mock_command_result(device->pending->native.value.metal->native,4,0);
     native_unlock(device);
     struct timespec now, deadline;

@@ -7,6 +7,7 @@
 
 static bool inside, empty_viewport;
 static unsigned begins, ends, draws, barriers, destroyed;
+static unsigned pipeline_binds, blends, viewports, scissors;
 static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination,
     VkFlags flags, uint32_t memory_count, const void *memory, uint32_t buffer_count,
     const void *buffers, uint32_t image_count, const void *images) {
@@ -63,18 +64,22 @@ static void end(VkCommandBuffer command) {
 static void bind(VkCommandBuffer command, int32_t point, VkPipeline pipeline) {
     (void)command;
     assert(inside && point == VK_PIPELINE_BIND_POINT_GRAPHICS && pipeline == 9);
+    ++pipeline_binds;
 }
 static void blend_constants(VkCommandBuffer command, const float values[4]) {
+    ++blends;
     (void)command;
     assert(inside);
     const float expected[4] = {0.25f, 0.5f, 0.75f, 1};
     for (unsigned i = 0; i < 4; ++i) assert(values[i] == (draws == 1 ? expected[i] : 0));
 }
 static void viewport(VkCommandBuffer command, uint32_t first, uint32_t count, const VkViewport *view) {
+    ++viewports;
     (void)command;
     assert(inside && first == 0 && count == 1 && view->height == (empty_viewport ? 1 : 8));
 }
 static void scissor(VkCommandBuffer command, uint32_t first, uint32_t count, const VkRect2D *rect) {
+    ++scissors;
     (void)command;
     assert(inside && first == 0 && count == 1 && rect->extent.width == (empty_viewport ? 0 : 4));
     assert(rect->offset.x == (draws == 0 ? 0 : 4));
@@ -154,7 +159,7 @@ int main(void) {
     items[1].binding_count = 1;
     commands = recording(&context);
     assert(doe_vk_commands_render_pass(commands, &view, &blue, items, 2) == DOE_VK_INVALID_ARGUMENT);
-    assert(begins == 0 && ends == 0 && barriers == 1 && commands->renders == NULL);
+    assert(begins == 0 && ends == 0 && barriers == 0 && commands->renders == NULL);
     assert(pipeline.references == 2 && bad_pipeline.references == 1);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && pipeline.references == 1);
     items[1].pipeline = &pipeline;
@@ -171,8 +176,9 @@ int main(void) {
     barriers = 0;
     commands = recording(&context);
     assert(doe_vk_commands_render_pass(commands, &view, &blue, items, 2) == DOE_VK_OK);
-    assert(begins == 1 && ends == 1 && draws == 2 && !inside && barriers == 4);
-    assert(commands->renders->next == NULL && pipeline.references == 3 && view.references == 2 && texture.references == 2);
+    assert(begins == 1 && ends == 1 && draws == 2 && !inside && barriers == 2);
+    assert(pipeline_binds==1 && viewports==1 && scissors==2 && blends==2);
+    assert(commands->renders->next == NULL && pipeline.references == 2 && view.references == 2 && texture.references == 2);
     assert(initialized == 0 && commands->textures->initialized[0] == 1);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(destroyed == 1 && context.references == 1 && pipeline.references == 1 && texture.references == 1 && initialized == 0);

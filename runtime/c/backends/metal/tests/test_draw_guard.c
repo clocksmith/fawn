@@ -3,10 +3,21 @@
  * never backing host bytes. No GPU or large actual allocation claim. */
 #include "mock_native.h"
 #include "../src/render_internal.h"
+#include "../../../common/include/doe_draw_guard.h"
 #include <assert.h>
 #include <stdio.h>
 int main(void)
 {
+    const uint32_t span_limit = UINT32_MAX / DOE_DRAW_GUARD_RECORD_V2_BYTES;
+    assert(doe_mtl_draw_guard_cohort_limit(0) == 0);
+    assert(doe_mtl_draw_guard_cohort_limit(1) == 1);
+    assert(doe_mtl_draw_guard_cohort_limit(span_limit - 1) == span_limit - 1);
+    assert(doe_mtl_draw_guard_cohort_limit(span_limit) == span_limit);
+    assert(doe_mtl_draw_guard_cohort_limit(span_limit + 1) == span_limit);
+    assert(doe_mtl_draw_guard_cohort_limit(UINT32_MAX) == span_limit);
+    assert((uint64_t)span_limit * DOE_DRAW_GUARD_RECORD_V2_BYTES <= UINT32_MAX);
+    assert(((uint64_t)span_limit + 1) * DOE_DRAW_GUARD_RECORD_V2_BYTES > UINT32_MAX);
+
     mock_native mock;
     doe_mtl_native calls=mock_driver(&mock);
     mock.buffer_limit=UINT64_C(0x100000010);
@@ -14,7 +25,7 @@ int main(void)
     assert(doe_mtl_context_open(calls,&context,NULL)==DOE_MTL_OK);
     doe_mtl_draw_guard_desc desc={.source_version=DOE_MTL_DRAW_GUARD_SOURCE_VERSION,
         .normalize={"normalize",9,"main",{1,1,1},30},.scan={"scan",4,"main",{64,1,1},30},
-        .record_slot=5,.scan_slots={2,4,6},.max_groups_x=1};
+        .record_slot=5,.scan_slots={2,4,6},.max_groups_x=2};
     doe_mtl_draw_guard *guard=NULL;
     unsigned baseline=mock.live;
     mock.fail_pipeline_at=mock.pipeline_calls+2;
@@ -42,7 +53,7 @@ int main(void)
     doe_mtl_buffer *indices=NULL,*vertices=NULL,*arguments=NULL;
     assert(doe_mtl_buffer_create(context,UINT64_C(0x100000010),DOE_MTL_PRIVATE,&indices,NULL)==DOE_MTL_OK);
     assert(doe_mtl_buffer_create(context,16,DOE_MTL_SHARED,&vertices,NULL)==DOE_MTL_OK);
-    assert(doe_mtl_buffer_create(context,24,DOE_MTL_SHARED,&arguments,NULL)==DOE_MTL_OK);
+    assert(doe_mtl_buffer_create(context,32,DOE_MTL_SHARED,&arguments,NULL)==DOE_MTL_OK);
     doe_mtl_buffer_binding vertex={0,vertices,0,16};
     doe_mtl_guarded_draw proof={guard,arguments,4,UINT64_C(0x100000008),0,false};
     doe_mtl_render_draw draw={.pipeline=pipeline,.vertex={.buffers=&vertex,.buffer_count=1},
@@ -66,12 +77,12 @@ int main(void)
             mock.dispatches-dispatches);
         return 1;
     }
-    assert(mock.renders==1 && mock.render_draw_count==2);
+    assert(mock.renders==1 && mock.render_draw_count==2 && mock.guard_batches==2);
     assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments);
     assert(mock.copy_sequence<mock.dispatch_sequence && mock.dispatch_sequence<mock.render_sequence);
     assert(mock.last_length==20 && mock.last_source_offset==4);
     assert(mock.bindings[4].offset==UINT64_C(0xfffffffc) && mock.bindings[4].size==12);
-    assert(mock.content_queries==queries+6); /* Scratch/2params only, never PRIVATE indices. */
+    assert(mock.content_queries==queries+4); /* One record arena and one params arena, never PRIVATE indices. */
     assert(mock.render_draws[0].indirect_arguments && mock.render_draws[0].index_buffer==doe_mtl_buffer_native(indices));
     void *first_scratch=mock.render_draws[0].indirect_arguments;
     dispatches=mock.dispatches;
@@ -83,24 +94,36 @@ int main(void)
     repeated[1].guarded=&other;
     dispatches=mock.dispatches;
     assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
-    assert(mock.dispatches==dispatches+6 && mock.render_draw_count==2);
-    assert(mock.render_draws[0].indirect_arguments!=mock.render_draws[1].indirect_arguments);
+    assert(mock.dispatches==dispatches+5 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments &&
+        mock.render_draws[0].indirect_offset==0 && mock.render_draws[1].indirect_offset==40);
     repeated[1]=draw;
     doe_mtl_buffer_binding shorter=vertex;
     shorter.size=8; /* The same PSO now has a smaller safe vertex-fetch capacity. */
     repeated[1].vertex.buffers=&shorter;
     dispatches=mock.dispatches;
     assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
-    assert(mock.dispatches==dispatches+6 && mock.render_draw_count==2);
-    assert(mock.render_draws[0].indirect_arguments!=mock.render_draws[1].indirect_arguments);
+    assert(mock.dispatches==dispatches+5 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments &&
+        mock.render_draws[0].indirect_offset==0 && mock.render_draws[1].indirect_offset==40);
     other=proof;
     other.index_size=16; /* One scan window rather than the original two. */
     repeated[1]=draw;
     repeated[1].guarded=&other;
     dispatches=mock.dispatches;
     assert(doe_mtl_commands_render(commands,&pass,repeated,2,NULL)==DOE_MTL_OK);
-    assert(mock.dispatches==dispatches+5 && mock.render_draw_count==2);
-    assert(mock.render_draws[0].indirect_arguments!=mock.render_draws[1].indirect_arguments);
+    assert(mock.dispatches==dispatches+4 && mock.render_draw_count==2);
+    assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments &&
+        mock.render_draws[0].indirect_offset==0 && mock.render_draws[1].indirect_offset==40);
+    doe_mtl_render_draw cohort_draws[3] = {draw,draw,draw};
+    doe_mtl_guarded_draw cohort_inputs[3] = {proof,proof,proof};
+    cohort_inputs[1].argument_offset=0; cohort_inputs[2].argument_offset=8;
+    for (size_t i=0;i<3;++i) cohort_draws[i].guarded=&cohort_inputs[i];
+    dispatches=mock.dispatches;
+    assert(doe_mtl_commands_render(commands,&pass,cohort_draws,3,NULL)==DOE_MTL_OK);
+    assert(mock.dispatches==dispatches+8 && mock.guard_normalizations==2);
+    assert(mock.guard_normal_groups[0]==2 && mock.guard_normal_sizes[0]==80 && mock.guard_normal_offsets[0]==0);
+    assert(mock.guard_normal_groups[1]==1 && mock.guard_normal_sizes[1]==40 && mock.guard_normal_offsets[1]==80);
     doe_mtl_guarded_draw direct=proof;
     direct.arguments=NULL; direct.argument_offset=0; direct.index_size=16;
     repeated[0]=draw; repeated[0].guarded=&direct;

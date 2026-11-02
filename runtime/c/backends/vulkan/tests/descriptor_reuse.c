@@ -70,6 +70,7 @@ static void dispatch(VkCommandBuffer command, uint32_t x, uint32_t y, uint32_t z
 }
 
 static void release_uses(doe_vk_commands *commands) {
+    doe_vk_textures_release(commands);
     while (commands->dispatches != NULL) {
         doe_vk_dispatch_use *use = commands->dispatches;
         commands->dispatches = use->next;
@@ -117,7 +118,7 @@ static void graphics_reuse(doe_vk_context *context) {
     assert(buffer.references == 1 && buffer.recorded_uses == 0);
     assert(pipeline.references == 1 && other.references == 1);
 
-    /* Samplers, like image descriptors, remain outside buffer-only reuse. */
+    /* Sampler identity is reusable independently of per-use synchronization. */
     doe_vk_sampler sampler = { .context = context, .references = 1, .sampler = 11 };
     pipeline.bindings[0].kind = DOE_VK_BINDING_SAMPLER;
     binding.kind = DOE_VK_BINDING_SAMPLER;
@@ -125,11 +126,54 @@ static void graphics_reuse(doe_vk_context *context) {
     commands.state = DOE_VK_RECORDING;
     assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &first) == DOE_VK_OK);
     assert(doe_vk_prepare_resources(&commands, &pipeline, &binding, 1, &next) == DOE_VK_OK);
-    assert(next != first && mock.sets_allocated == allocated + 6);
+    assert(next == first && mock.sets_allocated == allocated + 5);
     release_uses(&commands);
     assert(sampler.references == 1 && pipeline.references == 1);
     if (TEST_PROFILE != 0u) doe_vk_descriptor_blocks_clear(context);
     assert(mock.pools_destroyed == mock.pools_created);
+}
+
+static void mixed_reuse(doe_vk_context *context) {
+    const unsigned allocated = mock.sets_allocated, barriers = mock.barriers;
+    doe_vk_pipeline pipeline = {.context=context,.references=1,.graphics=true,.binding_count=3,.group_count=1};
+    pipeline.bindings[0]=(doe_vk_binding_layout){0,0,DOE_VK_BINDING_STORAGE};
+    pipeline.bindings[1]=(doe_vk_binding_layout){0,1,DOE_VK_BINDING_SAMPLED_TEXTURE};
+    pipeline.bindings[2]=(doe_vk_binding_layout){0,2,DOE_VK_BINDING_SAMPLER};
+    doe_vk_buffer buffer={.context=context,.references=1,.usage=DOE_VK_BUFFER_STORAGE,.size=256,.buffer=41};
+    uint8_t initialized=VK_IMAGE_ASPECT_COLOR_BIT;
+    doe_vk_texture texture={.context=context,.references=1,.subresource_count=1,.initialized=&initialized,
+        .layout=VK_IMAGE_LAYOUT_GENERAL,.desc={.format=DOE_VK_FORMAT_RGBA8_UNORM,.dimension=DOE_VK_TEXTURE_2D,
+            .width=1,.height=1,.depth_or_layers=1,.mip_levels=1,.usage=DOE_VK_TEXTURE_SAMPLED}};
+    doe_vk_texture_view view={.texture=&texture,.references=1,.view=42,.aspects=VK_IMAGE_ASPECT_COLOR_BIT,
+        .desc={.mip_count=1,.layer_count=1}};
+    doe_vk_texture_view other_view=view; other_view.view=43;
+    doe_vk_sampler sampler={.context=context,.references=1,.sampler=44}, other_sampler=sampler;
+    other_sampler.sampler=45;
+    doe_vk_binding_resource bindings[3]={{.kind=DOE_VK_BINDING_STORAGE,.value.buffer={&buffer,0,64}},
+        {.kind=DOE_VK_BINDING_SAMPLED_TEXTURE,.value.view=&view},{.kind=DOE_VK_BINDING_SAMPLER,.value.sampler=&sampler}};
+    doe_vk_commands commands={.context=context,.state=DOE_VK_RECORDING,.uses_active=true};
+    doe_vk_dispatch_use *first=NULL,*next=NULL;
+    assert(doe_vk_prepare_graphics_resources(&commands,&pipeline,bindings,3,&first)==DOE_VK_OK);
+    assert(doe_vk_prepare_graphics_resources(&commands,&pipeline,bindings,3,&next)==DOE_VK_OK);
+    assert(first==next && mock.sets_allocated==allocated+1 && mock.barriers==barriers);
+    assert(view.references==2 && sampler.references==2 && texture.command_uses==1);
+    /* A layout change does not rewrite immutable descriptors, but must still
+     * transition at the next preparation, before the render pass begins. */
+    commands.textures->layout=VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    assert(doe_vk_prepare_graphics_resources(&commands,&pipeline,bindings,3,&next)==DOE_VK_OK);
+    assert(next==first && commands.textures->layout==VK_IMAGE_LAYOUT_GENERAL && mock.barriers==barriers+1);
+    bindings[1].value.view=&other_view;
+    assert(doe_vk_prepare_graphics_resources(&commands,&pipeline,bindings,3,&next)==DOE_VK_OK && next!=first);
+    bindings[2].value.sampler=&other_sampler;
+    assert(doe_vk_prepare_graphics_resources(&commands,&pipeline,bindings,3,&next)==DOE_VK_OK);
+    assert(mock.sets_allocated==allocated+3);
+    commands.textures->initialized[0]=0;
+    assert(doe_vk_prepare_graphics_resources(&commands,&pipeline,bindings,3,&next)==DOE_VK_INVALID_STATE);
+    assert(commands.state==DOE_VK_POISONED && mock.sets_allocated==allocated+3);
+    release_uses(&commands);
+    assert(texture.references==1 && texture.command_uses==0 && texture.recording_owner==NULL);
+    assert(view.references==1 && other_view.references==1 && sampler.references==1 && other_sampler.references==1);
+    if (TEST_PROFILE) doe_vk_descriptor_blocks_clear(context);
 }
 
 int main(void) {
@@ -188,6 +232,7 @@ int main(void) {
     assert(mock.pools_destroyed == mock.pools_created);
     assert(buffer.recorded_uses == 0 && buffer.references == 1);
     graphics_reuse(&context);
+    mixed_reuse(&context);
     printf("PASS identical consecutive buffer dispatches share descriptor sets; ranges, pipelines and validation stay per dispatch; %s\n",
         TEST_PROFILE != 0u ? "DESCRIPTOR_BLOCKS: sets come from and return to one context block" :
         "DEFAULT: one exact pool per use, destroyed at release");

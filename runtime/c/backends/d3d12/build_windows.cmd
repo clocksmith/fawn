@@ -6,9 +6,9 @@ if "%OUT%"=="" set "OUT=%TEMP%\doe-c-d3d12"
 if not exist "%OUT%" mkdir "%OUT%"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
-    src\windows_shared.c src\progress.c src\windows_progress.c src\surfaces.c src\windows_surface.c src\windows_storage_sizes.c ^
+    src\windows_shared_waits.c src\windows_shared.c src\progress.c src\windows_progress.c src\surfaces.c src\windows_surface.c src\windows_storage_sizes.c ^
     src\pipeline_cache.c src\texture_initialize.c src\texture_subresources.c src\texture_views.c src\windows_cache.c src\windows_cache_key.c src\windows_texture_initialize.c src\windows_texture_subresources.c src\windows_texture_views.c ^
-    src\command_storage.c src\context.c src\resources.c src\commands.c ^
+    src\upload_slices.c src\command_storage.c src\context.c src\resources.c src\commands.c ^
     src\compute.c src\pipeline.c src\textures.c ^
     src\texture_transfer.c src\texture_regions.c src\render_pipeline.c src\render_commands.c src\render_vertices.c src\samplers.c src\bindings.c src\graphics.c ^
     src\timestamps.c src\windows_context.c src\windows_caps.c src\windows_adapter.c src\windows_resources.c ^
@@ -18,9 +18,9 @@ cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     /Fo"%OUT%\\"
 if not "%errorlevel%"=="0" exit /b 1
 lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
-    "%OUT%\windows_shared.obj" "%OUT%\progress.obj" "%OUT%\windows_progress.obj" "%OUT%\surfaces.obj" "%OUT%\windows_surface.obj" "%OUT%\windows_storage_sizes.obj" ^
+    "%OUT%\windows_shared_waits.obj" "%OUT%\windows_shared.obj" "%OUT%\progress.obj" "%OUT%\windows_progress.obj" "%OUT%\surfaces.obj" "%OUT%\windows_surface.obj" "%OUT%\windows_storage_sizes.obj" ^
     "%OUT%\pipeline_cache.obj" "%OUT%\texture_initialize.obj" "%OUT%\texture_subresources.obj" "%OUT%\texture_views.obj" "%OUT%\windows_cache.obj" "%OUT%\windows_cache_key.obj" "%OUT%\windows_texture_initialize.obj" "%OUT%\windows_texture_subresources.obj" "%OUT%\windows_texture_views.obj" ^
-    "%OUT%\command_storage.obj" "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
+    "%OUT%\upload_slices.obj" "%OUT%\command_storage.obj" "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
     "%OUT%\compute.obj" "%OUT%\pipeline.obj" "%OUT%\textures.obj" ^
     "%OUT%\texture_transfer.obj" "%OUT%\texture_regions.obj" "%OUT%\render_pipeline.obj" "%OUT%\render_commands.obj" "%OUT%\render_vertices.obj" "%OUT%\samplers.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
     "%OUT%\timestamps.obj" "%OUT%\windows_context.obj" "%OUT%\windows_caps.obj" "%OUT%\windows_adapter.obj" "%OUT%\windows_resources.obj" ^
@@ -84,5 +84,14 @@ rem Build only; explicit --warp execution is a separate software fixture.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^
     tests\native_shared.c "%OUT%\doe_d3d12.lib" d3d11.lib d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\native_shared.obj" /Fe"%OUT%\native_shared.exe"
+if not "%errorlevel%"=="0" exit /b 1
+rem SDK-only composition of imported wait leases and partial Queue.Wait failure.
+cl /nologo /std:c11 /W4 /WX /Iinclude ^
+    tests\test_windows_shared_waits.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
+    /Fo"%OUT%\test_windows_shared_waits.obj" /Fe"%OUT%\test_windows_shared_waits.exe"
+if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /std:c11 /W4 /WX /Iinclude ^
+    tests\test_windows_readback_zero.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
+    /Fo"%OUT%\test_windows_readback_zero.obj" /Fe"%OUT%\test_windows_readback_zero.exe"
 if not "%errorlevel%"=="0" exit /b 1
 exit /b 0

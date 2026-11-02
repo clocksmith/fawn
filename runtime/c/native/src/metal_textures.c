@@ -115,7 +115,8 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
      * initialize by staging instead. This adds no public usage permission. */
     doe_resource_texture_desc clearing = desc;
     clearing.usage = WGPUTextureUsage_RenderAttachment;
-    if (doe_resource_texture_validate_with_features(&clearing, &limits, device->resources.format_features) == DOE_RESOURCE_OK)
+    if (native.type != DOE_MTL_TEXTURE_3D && native.type != DOE_MTL_TEXTURE_1D &&
+        doe_resource_texture_validate_with_features(&clearing, &limits, device->resources.format_features) == DOE_RESOURCE_OK)
         native.usage |= DOE_MTL_TEXTURE_RENDER_TARGET;
     else native.usage |= DOE_MTL_TEXTURE_COPY_DST;
     native_texture *payload = calloc(1, sizeof(*payload));

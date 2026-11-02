@@ -35,7 +35,7 @@ doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
     doe_mtl_status status;
     size_t i, visibility_offset = 0;
     uint32_t visibility_mode = 0;
-    const doe_mtl_native_render_draw *previous = NULL;
+    doe_mtl_objc_render_state state = {0};
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
     descriptor = doe_mtl_objc_object(r, g->pass_class, r->new_object);
     if (descriptor == NULL) goto descriptor_failure;
@@ -61,7 +61,7 @@ doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
             visibility_offset = (size_t)draw->visibility_offset;
             g->visibility(encoder, g->set_visibility, visibility_mode, visibility_offset);
         }
-        if (doe_mtl_objc_render_encode_draw(r, encoder, pass, &draws[i], previous)) previous = &draws[i];
+        (void)doe_mtl_objc_render_encode_draw(r, encoder, pass, &draws[i], &state);
     }
     doe_mtl_objc_void(r, encoder, r->end_encoding);
     status = doe_mtl_fail(DOE_MTL_OK, "render pass encode", error);

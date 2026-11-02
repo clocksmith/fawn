@@ -36,6 +36,10 @@ static void heap_free(struct doe_dx_buffer_heap *heap) {
 
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer) {
     if (!buffer) return;
+    if (buffer->upload_mapping) {
+        const D3D12_RANGE written={0,(SIZE_T)buffer->upload_written};
+        ID3D12Resource_Unmap(buffer->resource,0,&written);
+    }
     if (buffer->resource) ID3D12Resource_Release(buffer->resource);
     struct doe_dx_buffer_heap *heap = buffer->heap;
     if (heap) {
@@ -220,6 +224,23 @@ doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_e
     return doe_dx_fail(DOE_DX_OK,0,"native.readback_zero",error);
 }
 
+doe_dx_status doe_dx_native_write_upload_slice(doe_dx_native_buffer *buffer,uint64_t offset,
+    const void *bytes,size_t size,doe_dx_error *error) {
+    if (!buffer->upload_mapping) {
+        const D3D12_RANGE none={0,0}; void *mapping=NULL;
+        HRESULT status=ID3D12Resource_Map(buffer->resource,0,&none,&mapping);
+        if (FAILED(status)) return doe_dx_hresult(status,"ID3D12Resource.Map.upload_page",error);
+        if (!mapping) {
+            ID3D12Resource_Unmap(buffer->resource,0,&none);
+            return doe_dx_fail(DOE_DX_NATIVE_FAILURE,(int32_t)E_FAIL,"upload_page.pointer",error);
+        }
+        buffer->upload_mapping=mapping;
+    }
+    memcpy((unsigned char *)buffer->upload_mapping+(size_t)offset,bytes,size);
+    if (offset+size>buffer->upload_written) buffer->upload_written=offset+size;
+    return DOE_DX_OK;
+}
+
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error) {
     void *mapped = NULL;
@@ -249,6 +270,23 @@ doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offs
     return doe_dx_fail(DOE_DX_OK, 0, "native.buffer.lend", error);
 }
 
+doe_dx_status doe_dx_native_map_write(doe_dx_native_buffer *buffer,uint64_t offset,size_t size,
+    void **out,doe_dx_error *error) {
+    (void)size;
+    void *mapped=NULL; const D3D12_RANGE none={0,0};
+    HRESULT result=ID3D12Resource_Map(buffer->resource,0,&none,&mapped);
+    if (FAILED(result)) return doe_dx_hresult(result,"ID3D12Resource.Map.lend_write",error);
+    if (!mapped) {
+        ID3D12Resource_Unmap(buffer->resource,0,&none);
+        return doe_dx_fail(DOE_DX_NATIVE_FAILURE,(int32_t)E_FAIL,"buffer.lend_write.pointer",error);
+    }
+    *out=(unsigned char *)mapped+(size_t)offset;
+    return DOE_DX_OK;
+}
+void doe_dx_native_unmap_write(doe_dx_native_buffer *buffer,uint64_t offset,size_t size) {
+    const D3D12_RANGE written={(SIZE_T)offset,(SIZE_T)offset+size};
+    ID3D12Resource_Unmap(buffer->resource,0,&written);
+}
 void doe_dx_native_unmap_read(doe_dx_native_buffer *buffer) {
     const D3D12_RANGE written = {0, 0};
     ID3D12Resource_Unmap(buffer->resource, 0, &written);

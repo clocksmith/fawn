@@ -14,6 +14,7 @@ struct doe_mtl_context {
     void *queue;
     void *timeline;
     uint64_t timeline_next;
+    uint64_t timeline_committed; /* Reserved values are not accepted queue dependencies. */
     doe_mtl_completion_sink completion; /* notify == NULL: none configured. */
     doe_mtl_caps caps;
 };
@@ -55,6 +56,8 @@ struct doe_mtl_commands {
     doe_mtl_commands *conflict; /* Borrowed under caller serialization; never retained. */
     uint64_t timeline_value;
     void *shared_signal_event; /* +1 until this recording is discarded or terminal. */
+    void **shared_wait_events;
+    size_t shared_wait_count;
     doe_mtl_error failure;
     doe_mtl_texture *present_texture; /* Borrowed through the ordinary texture use. */
     doe_mtl_buffer_use *buffers;

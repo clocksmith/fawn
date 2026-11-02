@@ -114,6 +114,10 @@ doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
  * while their own state forbids GPU use of the buffer (for example a mapping). */
 doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset,
     size_t size, const void **out);
+/* Writable Shared storage with the same CPU/GPU exclusion, initialized/healthy
+ * contents and untouched-output failure rules. This is not a const read cast. */
+doe_mtl_status doe_mtl_buffer_host_write_range(doe_mtl_buffer *buffer, uint64_t offset,
+    size_t size, void **out);
 
 enum { DOE_MTL_BUFFER_SLOTS = 31 };
 /* Compiler/native validation owns shader meaning, layout, usage and robust

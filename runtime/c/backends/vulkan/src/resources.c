@@ -93,20 +93,28 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
     }
     buffer->context = context;
     buffer->references = 1;
+    if (size>UINT64_MAX-3u) { status=doe_vk_fail(DOE_VK_OUT_OF_MEMORY,"buffer native size",error); goto failed; }
     buffer->size = size;
+    buffer->native_size=(size+3u)&~UINT64_C(3);
     buffer->usage = usage;
     const VkBufferCreateInfo create = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = size,
-        .usage = usage
+        .size = buffer->native_size,
+        .usage = usage | DOE_VK_BUFFER_COPY_DST
     };
     status = doe_vk_result(context, context->vk.vkCreateBuffer(context->device, &create, NULL, &buffer->buffer), "vkCreateBuffer", error);
     if (status != DOE_VK_OK) goto failed;
     VkMemoryRequirements requirements = {0};
-    context->vk.vkGetBufferMemoryRequirements(context->device, buffer->buffer, &requirements);
-    if (requirements.size < size || requirements.size == 0) {
-        status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "buffer memory requirements", error);
-        goto failed;
+    VkMemoryDedicatedRequirements dedicated={.sType=VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS};
+    const bool queried=context->vk.vkGetBufferMemoryRequirements2!=NULL;
+    if (queried) {
+        const VkBufferMemoryRequirementsInfo2 info={.sType=VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,.buffer=buffer->buffer};
+        VkMemoryRequirements2 result={.sType=VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,.pNext=&dedicated};
+        context->vk.vkGetBufferMemoryRequirements2(context->device,&info,&result);
+        requirements=result.memoryRequirements;
+    } else context->vk.vkGetBufferMemoryRequirements(context->device,buffer->buffer,&requirements);
+    if (requirements.size<buffer->native_size || !requirements.size) {
+        status=doe_vk_fail(DOE_VK_NATIVE_FAILURE,"buffer memory requirements",error); goto failed;
     }
     const bool host = kind != DOE_VK_MEMORY_DEVICE;
     uint32_t required = host ?
@@ -123,24 +131,9 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
         doe_vk_fail(status, "compatible buffer memory", error);
         goto failed;
     }
-    const VkMemoryAllocateInfo allocate = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .allocationSize = requirements.size,
-        .memoryTypeIndex = index
-    };
-    status = doe_vk_result(context, context->vk.vkAllocateMemory(context->device, &allocate, NULL, &buffer->memory), "vkAllocateMemory", error);
-    if (status != DOE_VK_OK) goto failed;
-    status = doe_vk_result(context, context->vk.vkBindBufferMemory(context->device, buffer->buffer, buffer->memory, 0), "vkBindBufferMemory", error);
-    if (status != DOE_VK_OK) goto failed;
-    if (host) {
-        status = doe_vk_result(context, context->vk.vkMapMemory(context->device, buffer->memory, 0, size, 0, &buffer->mapped), "vkMapMemory", error);
-        if (status != DOE_VK_OK) goto failed;
-        if (buffer->mapped == NULL) {
-            status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "null mapped buffer", error);
-            goto failed;
-        }
-        memset(buffer->mapped, 0, (size_t)size);
-    }
+    status=doe_vk_buffer_allocate(buffer,&requirements,index,host,queried,
+        dedicated.requiresDedicatedAllocation || dedicated.prefersDedicatedAllocation,error);
+    if (status!=DOE_VK_OK) goto failed;
     *out = buffer;
     return doe_vk_fail(DOE_VK_OK, "buffer ready", error);
 failed:
@@ -158,9 +151,8 @@ doe_vk_status doe_vk_buffer_retain(doe_vk_buffer *buffer) {
 void doe_vk_buffer_release(doe_vk_buffer *buffer) {
     if (buffer == NULL || --buffer->references != 0) return;
     doe_vk_context *context = buffer->context;
-    if (buffer->mapped != NULL) context->vk.vkUnmapMemory(context->device, buffer->memory);
     if (buffer->buffer != 0) context->vk.vkDestroyBuffer(context->device, buffer->buffer, NULL);
-    if (buffer->memory != 0) context->vk.vkFreeMemory(context->device, buffer->memory, NULL);
+    doe_vk_buffer_memory_release(buffer);
     free(buffer);
     doe_vk_context_release(context);
 }

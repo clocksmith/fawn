@@ -161,6 +161,10 @@ static native_queue_settlement settle_pending(native_device *device, bool poll)
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
+        if (pending->kind == NATIVE_PENDING_ASYNC) {
+            cursor = &pending->next;
+            continue;
+        }
         if (pending->kind == NATIVE_PENDING_SURFACE) {
             /* This also covers an acquisition/discard with no command object.
              * Zero timeout polls existing native fences; it never starts a frame. */
@@ -186,18 +190,28 @@ static native_queue_settlement settle_pending(native_device *device, bool poll)
          * backend frame before release, including discard after enqueue failure. */
         if (pending->frame) (void)doe_vk_surface_retire_frame(pending->frame, 0, NULL);
         native_result released = native_command_release(&pending->native);
-        if (result.failure.status == NATIVE_OK && failure.status != NATIVE_OK) result.failure = failure;
+        if (result.failure.status == NATIVE_OK && failure.status != NATIVE_OK) {
+            result.failure = failure;
+            result.failure_serial = pending->serial;
+        }
         if (released == NATIVE_BUSY) {
             device->queue_failed = true;
             result.complete = false;
-            if (result.failure.status == NATIVE_OK) result.failure = native_failure_status(NATIVE_PENDING);
+            if (result.failure.status == NATIVE_OK) {
+                result.failure = native_failure_status(NATIVE_PENDING);
+                result.failure_serial = pending->serial;
+            }
             cursor = &pending->next;
             continue;
         }
         if (released != NATIVE_OK) abort();
         *cursor = pending->next;
+        native_async_submission_settled(device, pending->serial, failure);
         if (failure.status != NATIVE_OK) {
-            if (device->retired_failure.status == NATIVE_OK) device->retired_failure = failure;
+            if (device->retired_failure.status == NATIVE_OK) {
+                device->retired_failure = failure;
+                device->retired_failure_serial = pending->serial;
+            }
             device->queue_failed = true;
             /* Proven terminal failure may poison private helper scratch. Later
              * operations reconstruct helpers, never reuse failed storage. */
@@ -215,7 +229,9 @@ static native_queue_settlement consume_settlement(native_device *device, bool po
     native_queue_settlement result = settle_pending(device, poll);
     if (device->retired_failure.status != NATIVE_OK) {
         result.failure = device->retired_failure;
+        result.failure_serial = device->retired_failure_serial;
         device->retired_failure = native_failure_status(NATIVE_OK);
+        device->retired_failure_serial = 0;
     }
     return result;
 }
@@ -274,7 +290,7 @@ native_failure native_settle_for_buffer(native_device *device, const native_buff
     native_failure first = native_poll_pending(device).failure;
     while (doe_vk_buffer_busy(buffer->handle.vulkan)) {
         native_pending *oldest = device->pending;
-        while (oldest && oldest->kind == NATIVE_PENDING_SURFACE) oldest = oldest->next;
+        while (oldest && oldest->kind != NATIVE_PENDING_COMMANDS) oldest = oldest->next;
         if (!oldest) break;
         if (!native_command_in_flight(&oldest->native)) {
             native_failure recovered = native_settle_pending(device).failure;
@@ -298,6 +314,8 @@ native_failure native_settle_for_buffer(native_device *device, const native_buff
 /* Appends, keeping the list in submission order. */
 static void link_pending(native_device *device, native_pending *pending)
 {
+    if (device->submitted_serial == UINT64_MAX) abort();
+    pending->serial = ++device->submitted_serial;
     native_pending **cursor = &device->pending;
     while (*cursor) cursor = &(*cursor)->next;
     pending->next = NULL;
@@ -361,7 +379,8 @@ native_pending *native_surface_retirement_take(native_device *device, native_pen
  * the record keeps its native and resource leases on the pending list until
  * the progress worker or a later public call observes it terminal. wait keeps
  * the explicit synchronous wait (programs and private initialization).
- * A refused submission recovers before returning, as before. */
+ * Failed asynchronous submissions poll once and retain unresolved ownership;
+ * only an explicit synchronous caller may wait for recovery. */
 static native_failure submit_pending(native_device *device, native_pending *pending, bool wait)
 {
     link_pending(device, pending);
@@ -377,7 +396,7 @@ static native_failure submit_pending(native_device *device, native_pending *pend
     }
     if (failure.status != NATIVE_OK) {
         device->queue_failed = true;
-        native_queue_settlement settled = native_settle_pending(device);
+        native_queue_settlement settled = wait ? native_settle_pending(device) : native_poll_pending(device);
         (void)settled;
         return failure;
     }
@@ -619,55 +638,6 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
             native_resource_error(resource_status) : native_result_error(failure.status), message);
     }
     native_device_release(device);
-}
-
-typedef struct queue_delivery {
-    WGPUQueueWorkDoneCallbackInfo callback;
-    WGPUQueueWorkDoneStatus status;
-    char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
-} queue_delivery;
-static void copy_queue(void *destination, const void *source)
-{
-    *(queue_delivery *)destination = *(const queue_delivery *)source;
-}
-static void deliver_queue(void *context)
-{
-    queue_delivery value = *(queue_delivery *)context;
-    if (value.callback.callback)
-        value.callback.callback(value.status, native_string(value.message),
-            value.callback.userdata1, value.callback.userdata2);
-}
-WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallbackInfo callback)
-{
-    native_device *device = (native_device *)handle;
-    if (!device || callback.nextInChain) return (WGPUFuture){0};
-    native_device_retain(device);
-    native_lock(device);
-    native_queue_settlement settled = native_settle_pending(device);
-    queue_delivery delivery = {.callback = callback,
-        .status = device->queue_failed ? WGPUQueueWorkDoneStatus_Error : WGPUQueueWorkDoneStatus_Success};
-    native_unlock(device);
-    WGPUFuture future = {0};
-    native_failure failure = settled.failure;
-    if (delivery.status == WGPUQueueWorkDoneStatus_Error && failure.status == NATIVE_OK)
-        failure = native_failure_status(NATIVE_FAILURE);
-    native_failure_format(&failure, "queue work failed", delivery.message);
-    if (settled.complete) {
-        doe_callback_status admitted;
-        future = native_callback_admit(device->instance, callback.mode, &delivery,
-            sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue, &admitted);
-        /* No callback was admitted. Preserve the consumed receipt through the
-         * existing error channel while this call still owns its device lease. */
-        if (!future.id && settled.failure.status != NATIVE_OK)
-            native_error(device, native_result_error(settled.failure.status), delivery.message);
-        else if (!future.id) native_callback_refused(device, admitted);
-    } else {
-        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
-        native_failure_format(&settled.failure, "queue completion remains unknown; no completion future published", message);
-        native_error(device, native_result_error(settled.failure.status), message);
-    }
-    native_device_release(device);
-    return future;
 }
 
 uint32_t doeNativeQueueSyncInfo(WGPUQueue handle)

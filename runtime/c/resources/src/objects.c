@@ -223,6 +223,12 @@ doe_resource_status doe_resource_buffer_map_begin(doe_resource_buffer *buffer,
     return DOE_RESOURCE_OK;
 }
 
+bool doe_resource_buffer_map_pending(const doe_resource_buffer *buffer, uint64_t generation)
+{
+    return buffer && resource_buffer_available(buffer) && buffer->map_pending &&
+        buffer->generation == generation;
+}
+
 doe_resource_status doe_resource_buffer_map_complete(doe_resource_buffer *buffer,
     uint64_t generation, bool success, unsigned char *mapped_bytes)
 {

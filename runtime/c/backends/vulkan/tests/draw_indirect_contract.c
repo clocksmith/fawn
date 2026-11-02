@@ -96,10 +96,16 @@ int main(int argc, char **argv) {
     assert(shared_length == 123 && memcmp(before, source, sizeof(source)) == 0);
     assert(doe_draw_argument_source(source, sizeof(source), &shared_length) == DOE_DRAW_GUARD_SOURCE_OK);
     assert(shared_length == length && memcmp(before, source, length + 1) == 0);
+    char batch[DOE_VK_DRAW_INDIRECT_BATCH_SOURCE_CAPACITY], shared_batch[DOE_DRAW_ARGUMENT_BATCH_SOURCE_CAPACITY];
+    size_t batch_length=0, shared_batch_length=0;
+    assert(doe_vk_draw_validator_batch_source(batch,sizeof(batch),&batch_length)==DOE_VK_OK);
+    assert(doe_draw_argument_source_batch(shared_batch,sizeof(shared_batch),&shared_batch_length)==DOE_DRAW_GUARD_SOURCE_OK);
+    assert(batch_length==shared_batch_length && memcmp(batch,shared_batch,batch_length+1)==0);
+    assert(doe_vk_draw_validator_batch_source(batch,batch_length,&batch_length)==DOE_VK_INVALID_ARGUMENT);
     doe_vk_caps caps = {.max_workgroup_count = {1, 1, 1}, .max_workgroup_size = {1, 1, 1},
         .max_workgroup_invocations = 1, .max_storage_buffer_range = 32, .max_bind_groups = 1,
         .max_bindings_per_group = 1, .max_storage_buffers_per_stage = 1, .queue_flags = VK_QUEUE_GRAPHICS_BIT,
-        .max_color_attachments = 8};
+        .max_color_attachments = 8, .storage_offset_alignment=16};
     assert(doe_vk_draw_validator_validate(&caps) == DOE_VK_OK);
     caps.max_storage_buffer_range = 31;
     assert(doe_vk_draw_validator_validate(&caps) == DOE_VK_UNSUPPORTED);
@@ -113,7 +119,7 @@ int main(int argc, char **argv) {
     assert(doe_vk_draw_validator_create(&context, NULL, 0, &out, NULL) == DOE_VK_INVALID_ARGUMENT);
     assert(out == (doe_vk_draw_validator *)&context && context.references == 1);
     doe_vk_pipeline guard = {.context = &context, .references = 1};
-    doe_vk_draw_validator validator = {UINT32_MAX, &guard};
+    doe_vk_draw_validator validator = {.references=UINT32_MAX,.pipeline=&guard};
     assert(doe_vk_draw_validator_retain(&validator) == DOE_VK_OUT_OF_MEMORY);
     doe_vk_buffer arguments = {.context = &context, .references = 1, .size = 20,
         .usage = DOE_VK_BUFFER_INDIRECT | DOE_VK_BUFFER_COPY_SRC};
@@ -157,7 +163,7 @@ int main(int argc, char **argv) {
         .draw = {.viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 8, 8}}};
     const doe_vk_clear_color clear = {.float32 = {0, 0, 0, 1}};
     assert(doe_vk_commands_render_pass(commands, &view, &clear, &draw, 1) == DOE_VK_OUT_OF_MEMORY);
-    assert(allocations == 1 && barriers == 1 && commands->renders == NULL && commands->buffers == NULL);
+    assert(allocations == 1 && barriers == 0 && commands->renders == NULL && commands->buffers == NULL);
     assert(arguments.references == 1 && guard.references == 1 && target.references == 2);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && context.references == 1 && target.references == 1);
     puts("PASS draw guard nonindexed/indexed source layouts, 16/20-byte argument admission, capacity/feature admission, exact vertex-instance last-byte/stride0/hole bounds, invalid argument preflight, output preservation and scratch OOM before native pass with exact leases");

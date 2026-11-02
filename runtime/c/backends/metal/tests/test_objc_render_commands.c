@@ -1,8 +1,59 @@
 /* SPDX-License-Identifier: MIT
  * Exact render encoder ABI/argument/state controls, no rasterizer. */
 #include "../src/objc_abi.h"
+#include "../src/texture_internal.h"
 #include <assert.h>
 #include <stdio.h>
+
+/* Dense input is test construction convenience only. The call below converts
+ * occupied slots to the same compact borrowed spans production consumes. */
+typedef struct fixture_draw {
+    void *pipeline, *depth_stencil;
+    doe_mtl_native_resources vertex, fragment;
+    uint32_t vertex_sizes_slot, fragment_sizes_slot;
+    void *index_buffer;
+    size_t index_offset;
+    void *indirect_arguments;
+    size_t indirect_offset;
+    doe_mtl_render_draw values;
+} fixture_draw;
+static doe_mtl_status fixture_render(void *userdata, void *command,
+    const doe_mtl_native_render_pass *pass, const fixture_draw *inputs, size_t count, doe_mtl_error *error) {
+    assert(count <= 16);
+    doe_mtl_native_render_draw draws[16] = {0};
+    doe_mtl_buffer buffers[16][2][DOE_MTL_BUFFER_SLOTS] = {0};
+    doe_mtl_texture_view views[16][2][DOE_MTL_TEXTURE_SLOTS] = {0};
+    doe_mtl_sampler samplers[16][2][DOE_MTL_SAMPLER_SLOTS] = {0};
+    doe_mtl_buffer_binding buffer_bindings[16][2][DOE_MTL_BUFFER_SLOTS] = {0};
+    doe_mtl_texture_binding texture_bindings[16][2][DOE_MTL_TEXTURE_SLOTS] = {0};
+    doe_mtl_sampler_binding sampler_bindings[16][2][DOE_MTL_SAMPLER_SLOTS] = {0};
+    for (size_t i = 0; i < count; ++i) {
+        draws[i] = (doe_mtl_native_render_draw){.pipeline=inputs[i].pipeline,.depth_stencil=inputs[i].depth_stencil,
+            .vertex_sizes_slot=inputs[i].vertex_sizes_slot,.fragment_sizes_slot=inputs[i].fragment_sizes_slot,
+            .index_buffer=inputs[i].index_buffer,.index_offset=inputs[i].index_offset,
+            .indirect_arguments=inputs[i].indirect_arguments,.indirect_offset=inputs[i].indirect_offset,.values=inputs[i].values};
+        for (size_t stage = 0; stage < 2; ++stage) {
+            const doe_mtl_native_resources *source = stage ? &inputs[i].fragment : &inputs[i].vertex;
+            doe_mtl_render_bindings *out = stage ? &draws[i].values.fragment : &draws[i].values.vertex;
+            *out = (doe_mtl_render_bindings){.buffers=buffer_bindings[i][stage],.textures=texture_bindings[i][stage],
+                .samplers=sampler_bindings[i][stage],.immediates={source->immediate_words,source->immediate_size,source->immediate_slot}};
+            for (uint32_t slot = 0; slot < DOE_MTL_BUFFER_SLOTS; ++slot) if (source->buffers[slot].buffer) {
+                buffers[i][stage][slot].native = source->buffers[slot].buffer;
+                buffer_bindings[i][stage][out->buffer_count++] = (doe_mtl_buffer_binding){slot,
+                    &buffers[i][stage][slot],source->buffers[slot].offset,source->buffers[slot].size};
+            }
+            for (uint32_t slot = 0; slot < DOE_MTL_TEXTURE_SLOTS; ++slot) if (source->textures[slot]) {
+                views[i][stage][slot].native = source->textures[slot];
+                texture_bindings[i][stage][out->texture_count++] = (doe_mtl_texture_binding){slot,&views[i][stage][slot],false};
+            }
+            for (uint32_t slot = 0; slot < DOE_MTL_SAMPLER_SLOTS; ++slot) if (source->samplers[slot]) {
+                samplers[i][stage][slot].native = source->samplers[slot];
+                sampler_bindings[i][stage][out->sampler_count++] = (doe_mtl_sampler_binding){slot,&samplers[i][stage][slot]};
+            }
+        }
+    }
+    return doe_mtl_objc_render(userdata, command, pass, draws, count, error);
+}
 
 typedef struct token { unsigned kind, index; } token;
 typedef struct fixture {
@@ -10,6 +61,7 @@ typedef struct fixture {
     token pool, classes[5], descriptor, colors, attachments[8], depth, stencil, encoder, command;
     int pipeline, depth_state, buffer, index_buffer, texture, sampler;
     unsigned pools, drains, releases, begins, ends, draws, indexed_draws, indirect_draws, indexed_indirect_draws;
+    unsigned pipeline_sets, depth_sets, viewport_sets, scissor_sets, winding_sets, cull_sets, blend_sets, bias_sets, stencil_sets;
     unsigned buffer_sets[2], texture_sets[2], sampler_sets[2], bytes_sets[2];
     bool no_descriptor, no_encoder, no_attachment;
     size_t load[10], store[10], level[10], slice[10];
@@ -73,8 +125,8 @@ static void set_object(void *object, void *sel, void *value) {
         assert(t->index < 10); active->attachment_texture[t->index] = value;
     } else {
         assert(object == &active->encoder);
-        if (named(sel, "setRenderPipelineState:")) assert(value == &active->pipeline);
-        else { assert(named(sel, "setDepthStencilState:")); assert(value == NULL || value == &active->depth_state); }
+        if (named(sel, "setRenderPipelineState:")) { assert(value == &active->pipeline || value == &active->index_buffer); ++active->pipeline_sets; }
+        else { assert(named(sel, "setDepthStencilState:")); assert(value == NULL || value == &active->depth_state); ++active->depth_sets; }
     }
 }
 static void set_size(void *object, void *sel, size_t value) {
@@ -85,8 +137,8 @@ static void set_size(void *object, void *sel, size_t value) {
             active->depth_clip_values[active->depth_clip_count++] = value;
             active->depth_clip = value;
         }
-        else if (named(sel, "setFrontFacingWinding:")) active->winding = value;
-        else { assert(named(sel, "setCullMode:")); active->cull = value; }
+        else if (named(sel, "setFrontFacingWinding:")) { active->winding = value; ++active->winding_sets; }
+        else { assert(named(sel, "setCullMode:")); active->cull = value; ++active->cull_sets; }
     } else {
         assert(t->index < 10);
         if (named(sel, "setLoadAction:")) active->load[t->index] = value;
@@ -107,7 +159,7 @@ static void set_double(void *object, void *sel, double value) {
 }
 static void set_u32(void *object, void *sel, uint32_t value) {
     if (named(sel, "setClearStencil:")) { assert(object == &active->stencil); active->clear_stencil = value; }
-    else { assert(object == &active->encoder && named(sel, "setStencilReferenceValue:")); active->stencil_reference = value; }
+    else { assert(object == &active->encoder && named(sel, "setStencilReferenceValue:")); active->stencil_reference = value; ++active->stencil_sets; }
 }
 static void *named_call(void *object, void *sel, void *descriptor) {
     assert(object == &active->command && named(sel, "renderCommandEncoderWithDescriptor:") && descriptor == &active->descriptor);
@@ -122,17 +174,19 @@ static void *named_call(void *object, void *sel, void *descriptor) {
     return active->no_encoder ? NULL : &active->encoder;
 }
 static void viewport(void *object, void *sel, doe_mtl_viewport value) {
-    assert(object == &active->encoder && named(sel, "setViewport:")); active->viewport = value;
+    assert(object == &active->encoder && named(sel, "setViewport:")); active->viewport = value; ++active->viewport_sets;
 }
 static void scissor(void *object, void *sel, doe_mtl_scissor_abi value) {
-    assert(object == &active->encoder && named(sel, "setScissorRect:")); active->scissor = value;
+    assert(object == &active->encoder && named(sel, "setScissorRect:")); active->scissor = value; ++active->scissor_sets;
 }
 static void blend(void *object, void *sel, float r, float g, float b, float a) {
     assert(object == &active->encoder && named(sel, "setBlendColorRed:green:blue:alpha:"));
+    ++active->blend_sets;
     active->blend[0] = r; active->blend[1] = g; active->blend[2] = b; active->blend[3] = a;
 }
 static void bias(void *object, void *sel, float constant, float slope, float clamp) {
     assert(object == &active->encoder && named(sel, "setDepthBias:slopeScale:clamp:"));
+    ++active->bias_sets;
     active->bias[0] = constant; active->bias[1] = slope; active->bias[2] = clamp;
 }
 static void bind_buffer(void *object, void *sel, void *buffer, size_t offset, size_t slot) {
@@ -185,14 +239,14 @@ static void visibility(void *object, void *sel, size_t mode, size_t offset) {
 }
 static void indirect(void *object,void *sel,size_t topology,void *arguments,size_t offset) {
     assert(object==&active->encoder && named(sel,"drawPrimitives:indirectBuffer:indirectBufferOffset:"));
-    assert(topology==3 && arguments==&active->buffer && offset==0);
+    assert(topology==3 && arguments==&active->buffer && offset==40);
     ++active->indirect_draws;
 }
 static void indexed_indirect(void *object,void *sel,size_t topology,size_t type,
     void *indices,size_t offset,void *arguments,size_t argument_offset) {
     assert(object==&active->encoder && named(sel,"drawIndexedPrimitives:indexType:indexBuffer:indexBufferOffset:indirectBuffer:indirectBufferOffset:"));
     assert(topology==4 && type==0 && indices==&active->index_buffer && offset==2);
-    assert(arguments==&active->buffer && argument_offset==0);
+    assert(arguments==&active->buffer && argument_offset==80);
     ++active->indexed_indirect_draws;
 }
 static void initialize(fixture *f) {
@@ -223,7 +277,7 @@ static doe_mtl_native_render_pass pass_new(fixture *f) {
 static void encoding(void) {
     fixture f;
     doe_mtl_native_render_pass pass;
-    doe_mtl_native_render_draw draws[2] = {0};
+    fixture_draw draws[2] = {0};
     initialize(&f); pass = pass_new(&f);
     draws[0].pipeline = &f.pipeline; draws[0].depth_stencil = &f.depth_state;
     draws[0].vertex_sizes_slot = 30; draws[0].fragment_sizes_slot = UINT32_MAX;
@@ -237,7 +291,7 @@ static void encoding(void) {
     draws[1].values = (doe_mtl_render_draw){.topology = 3, .count = 6, .instance_count = 4,
         .first_instance = 8, .index_type = 1, .base_vertex = -11, .winding = 1, .cull = 2,
         .blend_constant = {0.25f, 0.5f, 0.75f, 1}, .depth_bias = -2, .depth_slope = 3, .depth_clamp = 4, .stencil_reference = 255};
-    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
     assert(f.draws == 1 && f.indexed_draws == 1 && f.index_offset == 24 && f.base_vertex == -11 && f.first_instance == 8);
     assert(f.clear.red == 1 && f.clear.blue == 0.25 && f.clear_depth == 0.75 && f.clear_stencil == 254);
     assert(f.store[8] == 0 && f.load[0] == 2 && f.attachment_texture[1] == NULL && f.level[0] == 0 && f.slice[0] == 0);
@@ -255,7 +309,7 @@ static void clear_and_failure(void) {
         doe_mtl_native_render_pass pass;
         initialize(&f); pass = pass_new(&f);
         f.no_descriptor = failure == 1; f.no_attachment = failure == 2; f.no_encoder = failure == 3;
-        assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, NULL, 0, NULL) ==
+        assert(fixture_render(&f.runtime, &f.command, &pass, NULL, 0, NULL) ==
             (failure == 0 ? DOE_MTL_OK : DOE_MTL_NATIVE_FAILURE));
         assert(f.draws == 0 && f.indexed_draws == 0 && f.pools == f.drains);
         assert(f.ends == (failure == 0 ? 1u : 0u));
@@ -265,7 +319,7 @@ static void clear_and_failure(void) {
 static void resolves_and_visibility(void) {
     fixture f;
     doe_mtl_native_render_pass pass;
-    doe_mtl_native_render_draw draws[4] = {0};
+    fixture_draw draws[4] = {0};
     unsigned i;
     initialize(&f);
     pass = pass_new(&f);
@@ -294,7 +348,7 @@ static void resolves_and_visibility(void) {
     draws[1].values = draws[0].values;
     draws[3].values.visibility_mode = 1;
     draws[3].values.visibility_offset = 48;
-    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 4, NULL) == DOE_MTL_OK);
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 4, NULL) == DOE_MTL_OK);
     assert(f.resolve_texture[0] == &f.buffer && f.resolve_texture[8] == &f.buffer && f.resolve_texture[9] == &f.buffer);
     assert(f.resolve_level[8] == 0 && f.resolve_slice[9] == 0 && f.resolve_filter[8] == 2 && f.resolve_filter[9] == 1);
     assert(f.store[0] == 3 && f.store[8] == 2 && f.store[9] == 3);
@@ -307,7 +361,7 @@ static void resolves_and_visibility(void) {
 static void empty_raster_state(void) {
     for (unsigned mode = 0; mode < 3; ++mode) {
         fixture f;
-        doe_mtl_native_render_draw draw = {0};
+        fixture_draw draw = {0};
         initialize(&f);
         doe_mtl_native_render_pass pass = pass_new(&f);
         draw.pipeline = &f.pipeline;
@@ -318,17 +372,50 @@ static void empty_raster_state(void) {
         draw.values = (doe_mtl_render_draw){.count = 3, .instance_count = 1,
             .viewport_enabled = mode != 2, .viewport = {0, 0, mode == 0 ? 0 : 8, 0, 0, 1},
             .scissor_enabled = true, .scissor = {3, 4, mode == 2 ? 0u : 8u, 9}};
-        assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, &draw, 1, NULL) == DOE_MTL_OK);
+        assert(fixture_render(&f.runtime, &f.command, &pass, &draw, 1, NULL) == DOE_MTL_OK);
         assert(f.draws == 1 && f.scissor.width == 0 && f.scissor.height == 0);
         assert(f.viewport.width > 0 && f.viewport.height > 0);
         assert(f.ends == 1 && f.pools == f.drains);
     }
 }
+static void changed_state(void) {
+    fixture f;
+    initialize(&f);
+    doe_mtl_native_render_pass pass = pass_new(&f);
+    fixture_draw draws[8] = {0};
+    draws[0].pipeline = &f.pipeline;
+    draws[0].vertex_sizes_slot = draws[0].fragment_sizes_slot = UINT32_MAX;
+    draws[0].vertex.textures[127] = &f.texture;
+    draws[0].fragment.samplers[15] = &f.sampler;
+    draws[0].values = (doe_mtl_render_draw){.count=3,.instance_count=1,.viewport_enabled=true,
+        .viewport={0,0,64,32,0,1},.scissor_enabled=true,.scissor={0,0,64,32}};
+    for (size_t i = 1; i < 8; ++i) draws[i] = draws[0];
+    draws[2].values.viewport_enabled = draws[2].values.scissor_enabled = false; /* Same effective state. */
+    draws[3].values.count = 0; /* Cannot replace last emitted encoder state. */
+    draws[3].values.cull = 2;
+    draws[5].pipeline = &f.index_buffer;
+    draws[5].depth_stencil = &f.depth_state;
+    draws[5].values.viewport = (doe_mtl_viewport){1,2,8,9,0.1,0.9};
+    draws[5].values.scissor = (doe_mtl_scissor){1,2,3,4};
+    draws[5].values.winding = 1; draws[5].values.cull = 1;
+    draws[5].values.unclipped_depth = true;
+    draws[5].values.blend_constant[0] = 0.5f;
+    draws[5].values.depth_bias = 1; draws[5].values.stencil_reference = 9;
+    draws[6] = draws[5];
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 8, NULL) == DOE_MTL_OK);
+    assert(f.draws == 7 && f.pipeline_sets == 3 && f.depth_sets == 3);
+    assert(f.viewport_sets == 3 && f.scissor_sets == 3 && f.winding_sets == 3 && f.cull_sets == 3);
+    assert(f.depth_clip_count == 3 && f.blend_sets == 3 && f.bias_sets == 3 && f.stencil_sets == 3);
+    f.releases = f.drains = 0;
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 1, NULL) == DOE_MTL_OK);
+    assert(f.pipeline_sets == 4 && f.depth_sets == 4 && f.viewport_sets == 4 && f.scissor_sets == 4);
+}
+
 static void changed_bindings(void) {
     fixture f;
     initialize(&f);
     doe_mtl_native_render_pass pass = pass_new(&f);
-    doe_mtl_native_render_draw draws[10] = {0};
+    fixture_draw draws[10] = {0};
     draws[0].pipeline = &f.pipeline;
     draws[0].vertex_sizes_slot = 30;
     draws[0].fragment_sizes_slot = UINT32_MAX;
@@ -339,12 +426,12 @@ static void changed_bindings(void) {
     draws[0].fragment.sampler_count = 16;
     draws[0].values.count = draws[0].values.instance_count = 1;
     draws[1] = draws[0];
-    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
     assert(f.buffer_sets[0] == 1 && f.bytes_sets[0] == 1);
     assert(f.texture_sets[0] == 1 && f.sampler_sets[1] == 1 && f.draws == 2);
     /* A new native encoder starts unbound, even with the same draw snapshots. */
     f.releases = f.drains = 0;
-    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 2, NULL) == DOE_MTL_OK);
     assert(f.buffer_sets[0] == 2 && f.bytes_sets[0] == 2);
     assert(f.texture_sets[0] == 2 && f.sampler_sets[1] == 2);
 
@@ -370,7 +457,7 @@ static void changed_bindings(void) {
     draws[8].vertex.buffers[6] = (doe_mtl_native_binding){0};
     draws[9] = draws[7];
     initialize(&f); pass = pass_new(&f);
-    assert(doe_mtl_objc_render(&f.runtime, &f.command, &pass, draws, 10, NULL) == DOE_MTL_OK);
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 10, NULL) == DOE_MTL_OK);
     assert(f.draws == 9 && f.buffer_sets[0] == 5 && f.bytes_sets[0] == 5);
     assert(f.texture_sets[0] == 1 && f.sampler_sets[1] == 1);
     assert(f.buffers[0][4].buffer == &f.buffer && f.buffers[0][4].offset == 16);
@@ -378,6 +465,7 @@ static void changed_bindings(void) {
     assert(f.buffers[0][30].buffer == &f.index_buffer && !f.bytes_bound[0][30]);
 }
 int main(void) {
+    changed_state();
     changed_bindings();
     empty_raster_state();
     resolves_and_visibility();
@@ -385,17 +473,18 @@ int main(void) {
     fixture f;
     initialize(&f);
     doe_mtl_native_render_pass pass=pass_new(&f);
-    doe_mtl_native_render_draw packets[2]={0};
+    fixture_draw packets[2]={0};
     for (unsigned i=0;i<2;++i) {
         packets[i].pipeline=&f.pipeline;
         packets[i].vertex_sizes_slot=packets[i].fragment_sizes_slot=UINT32_MAX;
         packets[i].indirect_arguments=&f.buffer;
+        packets[i].indirect_offset=(size_t)(i+1)*40;
         packets[i].values.topology=i ? 4 : 3;
     }
     packets[1].index_buffer=&f.index_buffer; packets[1].index_offset=2;
     /* Counts intentionally remain zero on the CPU: only GPU scratch owns the
      * actual counts, and both real indirect selectors must still be called. */
-    assert(doe_mtl_objc_render(&f.runtime,&f.command,&pass,packets,2,NULL)==DOE_MTL_OK);
+    assert(fixture_render(&f.runtime,&f.command,&pass,packets,2,NULL)==DOE_MTL_OK);
     assert(f.indirect_draws==1 && f.indexed_indirect_draws==1 && f.draws==0 && f.indexed_draws==0);
     puts("Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU");
     return 0;

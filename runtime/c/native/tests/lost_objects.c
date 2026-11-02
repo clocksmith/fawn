@@ -6,8 +6,10 @@
  * everything frees it (ASan in check-sanitizers). Objects created while the
  * device was alive are used afterwards too. */
 #include "consumer.h"
+#include <stdatomic.h>
 
-static unsigned errors, losses, callbacks;
+static unsigned errors, losses;
+static atomic_uint callbacks;
 static void on_error(WGPUDevice const *device, WGPUErrorType type, WGPUStringView message, void *userdata, void *unused)
 {
     (void)device; (void)type; (void)userdata; (void)unused;
@@ -206,11 +208,11 @@ static void use(WGPUInstance instance, WGPUDevice device, WGPUQueue queue, objec
     wgpuQueueWriteTexture(queue, &image, words, sizeof(words), &layout_bytes, &one);
     WGPUBufferMapCallbackInfo map = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_map};
     const unsigned before = callbacks;
-    wgpuBufferMapAsync(o->mappable, WGPUMapMode_Read, 0, 64, map);
+    WGPUFuture mapped_future = wgpuBufferMapAsync(o->mappable, WGPUMapMode_Read, 0, 64, map);
     assert(!wgpuBufferGetConstMappedRange(o->mappable, 0, 64));
     wgpuBufferUnmap(o->mappable);
     WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_done};
-    wgpuQueueOnSubmittedWorkDone(queue, done);
+    WGPUFuture done_future = wgpuQueueOnSubmittedWorkDone(queue, done);
     WGPUComputePipelineDescriptor compute_desc = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
     compute_desc.compute.module = o->compute_shader;
     WGPUCreateComputePipelineAsyncCallbackInfo compute_async = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_compute};
@@ -235,6 +237,9 @@ static void use(WGPUInstance instance, WGPUDevice device, WGPUQueue queue, objec
     if (invalid) wgpuBindGroupRelease(invalid);
     WGPUPopErrorScopeCallbackInfo scope = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_scope};
     wgpuDevicePopErrorScope(device, scope);
+    WGPUFutureWaitInfo map_wait = {.future=mapped_future}, done_wait = {.future=done_future};
+    assert(wgpuInstanceWaitAny(instance,1,&map_wait,UINT64_C(5000000000)) == WGPUWaitStatus_Success);
+    assert(wgpuInstanceWaitAny(instance,1,&done_wait,UINT64_C(5000000000)) == WGPUWaitStatus_Success);
     wgpuInstanceProcessEvents(instance);
     assert(callbacks == before + 6);
     wgpuBufferDestroy(o->buffer);

@@ -120,10 +120,13 @@ doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_e
 /* True when D3D12 zeroed every byte at creation and nothing has written it since
  * creation returned: a new committed resource, or never-placed heap slots. */
 bool doe_dx_native_buffer_zeroed(const doe_dx_native_buffer *buffer);
+doe_dx_status doe_dx_native_write_upload_slice(doe_dx_native_buffer *,uint64_t,const void *,size_t,doe_dx_error *);
 doe_dx_status doe_dx_native_write(doe_dx_native_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size, doe_dx_error *error);
 doe_dx_status doe_dx_native_map_read(doe_dx_native_buffer *buffer, uint64_t offset, size_t size,
     const void **out, doe_dx_error *error);
+doe_dx_status doe_dx_native_map_write(doe_dx_native_buffer *,uint64_t,size_t,void **,doe_dx_error *);
+void doe_dx_native_unmap_write(doe_dx_native_buffer *,uint64_t,size_t);
 void doe_dx_native_unmap_read(doe_dx_native_buffer *buffer);
 doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
@@ -200,7 +203,7 @@ doe_dx_status doe_dx_native_dispatch_indirect(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
     doe_dx_native_buffer *arguments, uint64_t offset, doe_dx_error *error);
 doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_error *error);
-void doe_dx_native_execute(doe_dx_native_context *context, doe_dx_native_commands *commands);
+doe_dx_status doe_dx_native_execute(doe_dx_native_context *,doe_dx_native_commands *,doe_dx_error *);
 doe_dx_status doe_dx_native_signal(doe_dx_native_context *context, uint64_t value,
     doe_dx_error *error);
 /* DEVICE_LOST must mean terminal device removal, not an arbitrary HRESULT. */

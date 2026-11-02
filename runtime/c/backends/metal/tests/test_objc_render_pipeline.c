@@ -205,6 +205,46 @@ static void construction(void) {
     assert(property("MTLStencilDescriptor", 0, "setStencilFailureOperation:") == 5);
     void_call(out, f.runtime.release); void_call(depth, f.runtime.release); assert_closed(&f);
 }
+static void vertex_steps(void) {
+    /* Public zero-stride Vertex/Instance layouts both lower to Constant. Keep
+     * that descriptor legal instead of changing vertex fetch semantics. */
+    for (uint32_t step = 0; step < 3; ++step) {
+        fixture f;
+        doe_mtl_vertex_layout layout = {5, step ? 24u : 0u, step};
+        doe_mtl_vertex_attribute attributes[2] = {{7,5,8,31},{8,5,24,29}};
+        doe_mtl_render_pipeline_desc desc = descriptor(&layout, attributes);
+        if (!step) desc.attribute_count = 2;
+        void *out = NULL, *depth = NULL;
+        initialize(&f);
+        assert(doe_mtl_objc_render_pipeline(&f.runtime, &f.device, &desc, &out, &depth, NULL) == DOE_MTL_OK);
+        assert(property("layouts", 5, "setStride:") == (step ? 24u : 32u));
+        assert(layout.stride == (step ? 24u : 0u)); /* Logical fetch/guard stride stays unchanged. */
+        assert(property("layouts", 5, "setStepFunction:") == step);
+        assert(property("layouts", 5, "setStepRate:") == (step ? 1u : 0u));
+        assert(property("attributes", 7, "setBufferIndex:") == 5 && property("attributes", 7, "setOffset:") == 8);
+        void_call(out, f.runtime.release); void_call(depth, f.runtime.release);
+        assert_closed(&f);
+    }
+}
+static void constant_byte_extents(void) {
+    fixture f;
+    doe_mtl_vertex_layout layout = {5,0,0};
+    doe_mtl_vertex_attribute attributes[] = {{7,5,2,DOE_MTL_VERTEX_UCHAR2_NORMALIZED},
+        {8,5,8,DOE_MTL_VERTEX_UCHAR2_NORMALIZED}};
+    doe_mtl_render_pipeline_desc desc = descriptor(&layout, attributes);
+    desc.attribute_count = 2;
+    void *out = NULL, *depth = NULL;
+    initialize(&f);
+    assert(doe_mtl_objc_render_pipeline(&f.runtime, &f.device, &desc, &out, &depth, NULL) == DOE_MTL_OK);
+    assert(property("layouts", 5, "setStride:") == 12 && property("layouts", 5, "setStepRate:") == 0);
+    assert(!layout.stride && property("attributes", 7, "setFormat:") == DOE_MTL_VERTEX_UCHAR2_NORMALIZED);
+    void_call(out, f.runtime.release); void_call(depth, f.runtime.release); assert_closed(&f);
+    attributes[1].offset = UINT32_MAX;
+    initialize(&f); out = &f.device; depth = &f.device;
+    assert(doe_mtl_objc_render_pipeline(&f.runtime, &f.device, &desc, &out, &depth, NULL) == DOE_MTL_NATIVE_FAILURE);
+    assert(out == &f.device && depth == &f.device);
+    assert_closed(&f);
+}
 static void failures(void) {
     unsigned failure;
     doe_mtl_vertex_layout layout = {5, 24, 2};
@@ -257,7 +297,7 @@ static void cached_construction(void) {
     }
 }
 int main(void) {
-    construction(); failures(); cached_construction();
+    construction(); vertex_steps(); constant_byte_extents(); failures(); cached_construction();
     puts("Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU");
     return 0;
 }

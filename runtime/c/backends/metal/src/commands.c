@@ -253,6 +253,7 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
     }
     commands->state = DOE_MTL_SUBMITTED;
     native->commit(native->userdata, commands->native);
+    commands->context->timeline_committed = commands->timeline_value;
     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);
 }
 
@@ -325,6 +326,9 @@ doe_mtl_status doe_mtl_commands_release(doe_mtl_commands *commands) {
     retire_uses(commands, false, false);
     if (commands->shared_signal_event)
         context->native.release(context->native.userdata, commands->shared_signal_event);
+    for (size_t i = 0; i < commands->shared_wait_count; ++i)
+        context->native.release(context->native.userdata, commands->shared_wait_events[i]);
+    free(commands->shared_wait_events);
     free(commands);
     doe_mtl_context_release(context);
     return DOE_MTL_OK;

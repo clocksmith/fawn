@@ -317,22 +317,19 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
         metal_format(e, "ctx.w%u = &w%u;\n", i, i);
     }
     if (entry->state.resolved.workgroup_storage_bytes != 0u) {
-        metal_line(e, "if (input4 == 0u) {");
-        ++e->indent;
+        uint32_t stride = 1u;
+        for (unsigned dimension = 0u; dimension < 3u; ++dimension) {
+            const uint32_t size = entry->state.resolved.workgroup_size[dimension];
+            if (!size || stride > UINT32_MAX / size) {
+                metal_error(e, "Metal workgroup initialization stride overflows"); return;
+            }
+            stride *= size;
+        }
         for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
             if (!metal_entry_workgroup(c, entry, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
             metal_indent(e);
-            const TypeId type = c->workgroups[i].type;
-            if ((type_flags(c, type) & TYPE_ATOMIC_CONTENT) != 0u)
-                metal_format(e, "doe_wzero%u(&w%u);\n", type, i);
-            else {
-                metal_format(e, "doe_wstore%u(&w%u, ", type, i);
-                metal_zero(e, type);
-                metal_text(e, ");\n");
-            }
+            metal_format(e, "doe_wzero%u(&w%u, input4, %uu);\n", c->workgroups[i].type, i, stride);
         }
-        --e->indent;
-        metal_line(e, "}");
         metal_line(e, "threadgroup_barrier(mem_flags::mem_threadgroup);");
     }
     metal_indent(e);

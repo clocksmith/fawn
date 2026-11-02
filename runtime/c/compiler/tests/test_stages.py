@@ -16,12 +16,14 @@ ROOT = Path(__file__).resolve().parents[4]
 
 
 class Stages(unittest.TestCase):
-    def compile(self, source, error=None):
+    def compile(self, source, error=None, overrides=None):
         with tempfile.TemporaryDirectory(prefix='doe-stages-') as directory:
             shader, target = Path(directory) / 'case.wgsl', Path(directory) / 'case.spv'
             shader.write_text(source)
-            result = subprocess.run([str(CLI), '--shader-path', str(shader), '--out', str(target)],
-                                    capture_output=True, text=True)
+            command = [str(CLI), '--shader-path', str(shader), '--out', str(target)]
+            if overrides is not None:
+                command.extend(['--mode', 'vulkan-compute-runtime', '--overrides', overrides])
+            result = subprocess.run(command, capture_output=True, text=True)
             if error is not None:
                 self.assertNotEqual(result.returncode, 0, source)
                 self.assertIn(error, result.stderr)

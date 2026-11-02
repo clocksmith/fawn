@@ -135,6 +135,23 @@ struct VkMemoryRequirements {
     uint32_t memoryTypeBits;
 };
 
+/* Official Vulkan 1.1 requirements/dedicated-allocation chain. */
+typedef struct VkMemoryDedicatedRequirements {
+    VkStructureType sType;
+    void *pNext;
+    VkBool32 prefersDedicatedAllocation, requiresDedicatedAllocation;
+} VkMemoryDedicatedRequirements;
+typedef struct VkBufferMemoryRequirementsInfo2 {
+    VkStructureType sType;
+    const void *pNext;
+    VkBuffer buffer;
+} VkBufferMemoryRequirementsInfo2;
+typedef struct VkMemoryRequirements2 {
+    VkStructureType sType;
+    void *pNext;
+    VkMemoryRequirements memoryRequirements;
+} VkMemoryRequirements2;
+
 struct VkCommandBufferInheritanceInfo {
     VkStructureType sType;
     const void *pNext;

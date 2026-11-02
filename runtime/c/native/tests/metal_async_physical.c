@@ -114,7 +114,9 @@ static void observe(state *s, const char *phase)
         unsigned done = 0;
         WGPUQueueWorkDoneCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
             .callback=completion_reply,.userdata1=&done};
-        REQUIRE(wgpuQueueOnSubmittedWorkDone(s->queue,callback).id && done == 1);
+        WGPUFuture future = wgpuQueueOnSubmittedWorkDone(s->queue,callback);
+        wait_future(s, future);
+        REQUIRE(done == 1);
     }
     checkpoint(phase,unresolved ? "unknown" : "completed",unresolved ? 1 : 0,s->errors);
 }
@@ -143,7 +145,9 @@ static void capture(state *s, WGPUBuffer readback, unsigned arm)
 {
     unsigned maps = s->mapped;
     WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=mapped,.userdata1=s};
-    REQUIRE(wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,BYTES,callback).id && s->mapped == maps + 1);
+    WGPUFuture future = wgpuBufferMapAsync(readback,WGPUMapMode_Read,0,BYTES,callback);
+    wait_future(s, future);
+    REQUIRE(s->mapped == maps + 1);
     const uint32_t *actual = wgpuBufferGetConstMappedRange(readback,0,BYTES);
     REQUIRE(actual);
     for (uint32_t i = 0; i < WORDS; ++i) {

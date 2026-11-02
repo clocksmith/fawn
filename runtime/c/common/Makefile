@@ -31,3 +31,11 @@ check-sha256-failure: $(BUILD)/test_sha256_failure
 	$(BUILD)/test_sha256_failure
 check-sha256: check-sha256-failure
 endif
+
+$(BUILD)/test_draw_guard: tests/test_draw_guard.c include/doe_draw_guard.h
+	mkdir -p $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@
+.PHONY: check-draw-guard
+check-draw-guard: $(BUILD)/test_draw_guard
+	$(BUILD)/test_draw_guard
+check: check-draw-guard

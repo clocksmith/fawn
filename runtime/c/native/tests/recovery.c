@@ -5,7 +5,7 @@
 #include "../src/internal.h"
 #include "consumer.h"
 
-static atomic_bool arm, hold;
+static atomic_bool arm, hold, diagnose;
 static _Atomic(doe_vk_commands *) obscured;
 static _Atomic(doe_vk_status) injected = DOE_VK_NATIVE_FAILURE;
 doe_vk_status __real_doe_vk_commands_submit(doe_vk_commands *, doe_vk_error *);
@@ -13,6 +13,13 @@ doe_vk_status __real_doe_vk_commands_poll(doe_vk_commands *, doe_vk_error *);
 doe_vk_status __real_doe_vk_commands_recover(doe_vk_commands *, doe_vk_error *);
 doe_vk_status __real_doe_vk_commands_wait(doe_vk_commands *, uint64_t, doe_vk_error *);
 doe_vk_status __real_doe_vk_commands_release(doe_vk_commands *);
+static doe_vk_status fault(doe_vk_error *error)
+{
+    doe_vk_status status=atomic_load(&injected);
+    if (error) *error=(doe_vk_error){.status=status,.native_result=status==DOE_VK_OUT_OF_MEMORY ? -72 : -71,
+        .operation=status==DOE_VK_OUT_OF_MEMORY ? "injected allocation failure" : "injected native failure"};
+    return status;
+}
 doe_vk_status __wrap_doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error)
 {
     if (arm) { obscured = commands; arm = false; }
@@ -22,13 +29,13 @@ doe_vk_status __wrap_doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_er
 doe_vk_status __wrap_doe_vk_commands_wait(doe_vk_commands *commands, uint64_t timeout, doe_vk_error *error)
 {
     doe_vk_status actual = __real_doe_vk_commands_wait(commands,timeout,error);
-    if (commands == obscured) { assert(actual == DOE_VK_OK); return injected; }
+    if (commands == obscured) { assert(actual == DOE_VK_OK); return fault(error); }
     return actual;
 }
 doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error)
 {
     doe_vk_status actual = __real_doe_vk_commands_recover(commands,error);
-    if (commands == obscured) { assert(actual == DOE_VK_OK); return injected; }
+    if (commands == obscured) { assert(actual == DOE_VK_OK); return fault(error); }
     return actual;
 }
 /* Submission no longer waits: a poll may see the real work still running.
@@ -38,7 +45,7 @@ doe_vk_status __wrap_doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_erro
     doe_vk_status actual = __real_doe_vk_commands_poll(commands,error);
     if (commands != obscured || actual == DOE_VK_PENDING) return actual;
     assert(actual == DOE_VK_OK);
-    return hold ? DOE_VK_PENDING : injected;
+    return hold && !diagnose ? DOE_VK_PENDING : fault(error);
 }
 doe_vk_status __wrap_doe_vk_commands_release(doe_vk_commands *commands)
 {
@@ -67,6 +74,25 @@ static WGPUCommandBuffer empty_commands(state *s)
     wgpuCommandEncoderRelease(encoder);
     assert(commands);
     return commands;
+}
+typedef struct completion { const char *message; unsigned calls; } completion;
+static void completed(WGPUQueueWorkDoneStatus status,WGPUStringView message,void *data,void *unused)
+{
+    (void)unused; completion *result=data;
+    if (status!=WGPUQueueWorkDoneStatus_Error || message.length!=strlen(result->message) ||
+        memcmp(message.data,result->message,message.length))
+        fprintf(stderr,"completion status=%u expected=%s actual=%.*s\n",
+            (unsigned)status,result->message,(int)message.length,message.data);
+    assert(status==WGPUQueueWorkDoneStatus_Error && message.length==strlen(result->message));
+    assert(!memcmp(message.data,result->message,message.length) && ++result->calls==1);
+}
+static WGPUFuture observe_held(state *s,completion *result)
+{
+    WGPUQueueWorkDoneCallbackInfo info={.mode=WGPUCallbackMode_WaitAnyOnly,.callback=completed,.userdata1=result};
+    WGPUFuture future=wgpuQueueOnSubmittedWorkDone(s->queue,info); assert(future.id && !result->calls);
+    WGPUFutureWaitInfo wait={.future=future};
+    assert(wgpuInstanceWaitAny(s->instance,1,&wait,0)==WGPUWaitStatus_TimedOut && !wait.completed && !result->calls);
+    return future;
 }
 int main(void)
 {
@@ -126,24 +152,29 @@ int main(void)
     wgpuQueueSubmit(s.queue,1,&commands);
     pop(&s,WGPUErrorType_NoError);
     wgpuCommandBufferRelease(commands);
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
-    assert(!wgpuQueueOnSubmittedWorkDone(s.queue,(WGPUQueueWorkDoneCallbackInfo){.mode=WGPUCallbackMode_AllowSpontaneous}).id);
-    pop(&s,WGPUErrorType_Internal);
-    injected = DOE_VK_OUT_OF_MEMORY;
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_OutOfMemory);
-    assert(!wgpuQueueOnSubmittedWorkDone(s.queue,(WGPUQueueWorkDoneCallbackInfo){.mode=WGPUCallbackMode_AllowSpontaneous}).id);
-    pop(&s,WGPUErrorType_OutOfMemory);
-    injected = DOE_VK_PENDING;
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
-    assert(!wgpuQueueOnSubmittedWorkDone(s.queue,(WGPUQueueWorkDoneCallbackInfo){.mode=WGPUCallbackMode_AllowSpontaneous}).id);
-    pop(&s,WGPUErrorType_Internal);
-    assert(device->pending && device->timestamp_normalizer && device->dispatch_validator && device->draw_validator);
-    injected = DOE_VK_NATIVE_FAILURE;
-    hold = false;
-    /* Terminal now: work done publishes its Error future and cleanup runs. */
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
-    assert(wgpuQueueOnSubmittedWorkDone(s.queue,(WGPUQueueWorkDoneCallbackInfo){.mode=WGPUCallbackMode_AllowSpontaneous}).id);
-    pop(&s,WGPUErrorType_NoError);
+    /* Establish real GPU completion before selecting diagnostics: a genuine
+     * running poll must not bypass the intended fault. The held release keeps
+     * the frontend lease unresolved, and the mutex excludes worker observation
+     * while each admission snapshots its selected typed diagnostic. */
+    native_lock(device);
+    assert(obscured && __real_doe_vk_commands_wait(obscured,UINT64_MAX,NULL)==DOE_VK_OK);
+    /* Unknown ownership admits obligations; even a known native diagnostic
+     * cannot publish completion while the accepted native lease is retained. */
+    diagnose=true;
+    completion failures[3]={{"Vulkan: injected native failure (native=-71)",0},
+        {"Vulkan: injected allocation failure (native=-72)",0},{"Vulkan: injected native failure (native=-71)",0}};
+    WGPUFuture futures[3];
+    futures[0]=observe_held(&s,&failures[0]);
+    injected=DOE_VK_OUT_OF_MEMORY; futures[1]=observe_held(&s,&failures[1]);
+    injected=DOE_VK_PENDING; futures[2]=observe_held(&s,&failures[2]);
+    assert(device->pending && device->timestamp_normalizer && device->dispatch_validator && device->draw_validator && obscured);
+    injected=DOE_VK_NATIVE_FAILURE; hold=false;
+    native_unlock(device);
+    for (unsigned i=0;i<3;++i) { wait_future(&s,futures[i]); assert(failures[i].calls==1); }
+    completion terminal={"queue work failed",0};
+    WGPUQueueWorkDoneCallbackInfo done={.mode=WGPUCallbackMode_WaitAnyOnly,.callback=completed,.userdata1=&terminal};
+    WGPUFuture terminal_future=wgpuQueueOnSubmittedWorkDone(s.queue,done);
+    wait_future(&s,terminal_future); assert(terminal.calls==1);
     assert(!device->pending && !device->timestamp_normalizer && !device->dispatch_validator &&
         !device->draw_validator && !obscured);
     const uint64_t *observed = map(&s,target,8);
@@ -173,5 +204,5 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    printf("PASS typed recovery: running work leaves submit/texture creation unblocked, unrelated buffer writes neither wait nor fail, native/OOM/pending errors survive work-done waits, unknown leases retained, terminal cleanup and fresh GPU normalizer/indirect guard recovery %s\n", adapter_class_scope());
+    printf("PASS typed recovery: running work leaves submit/texture creation unblocked, unrelated buffer writes neither wait nor fail, native/OOM diagnostic futures and pending obligations admit without premature readiness, zero waits time out while unknown leases remain, exact errors survive deferred completion, terminal cleanup and fresh GPU normalizer/indirect guard recovery %s\n", adapter_class_scope());
 }

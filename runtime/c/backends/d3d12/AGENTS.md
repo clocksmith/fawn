@@ -72,11 +72,14 @@
   caller data. Copies still cover the whole destination allocation/padding.
   Context destruction drops only its cache lease before checking outstanding
   caller/command/event obligations; failed native close remains retryable.
-- Caller-data staging retains up to eight ordinary UPLOAD pages of at most one MiB. Reuse
-  requires exactly its cache lease and no recording/pending use. Oversized
-  requests and requests while every cached page is busy allocate independently; no CPU write overlaps GPU use. Only a larger
-  speculative page's OOM may retry the exact requested size. Keep immutable zero
-  storage separate, copy only caller bytes, and release both caches at teardown.
+- Caller-data staging retains up to eight ordinary UPLOAD pages of at most one MiB.
+  Slice snapshots append aligned disjoint suffixes through one persistent native
+  Map; a live prefix is immutable. Wrap/replacement requires exactly the cache
+  lease and no recording/pending use. Caller, rebuild log and command leases use
+  the existing buffer owner, not a second retirement queue. Whole-page legacy
+  acquire excludes live slices; overflow/oversized requests allocate independently.
+  Only speculative larger-page OOM permits an exact-size retry. Keep immutable
+  zero storage separate; never expose page padding as caller data.
 - Shader-visible CBV/SRV/UAV descriptors come from context-owned 4096-entry
   heaps: each descriptor use borrows one contiguous range, rewritten before
   recording, and returns it only when its command is discarded, terminally lost
@@ -113,8 +116,9 @@
   then the submission's own work records after the writes, under one
   ExecuteCommandLists and one fence. A READBACK destination cannot transition, so
   those writes execute alone first. Every other recording, CPU read, map and
-  work-done drain submits the open command first; a second write into a logged
-  destination also does, as do the 64th write and 16 MiB. A copy log (staging and
+  work-done drain submits the open command first, as do the 64th write and 16 MiB.
+  Repeated DEFAULT destinations order their previous copies in-list; fixed-state
+  READBACK cannot transition, so repeated writes there still execute separately. A copy log (staging and
   destination leases) re-records the writes when an adopted recording fails, so a
   rejected submission or failed rebuild never loses them. Final device release
   discards a never-observed open command.
@@ -123,6 +127,11 @@
   padding, never committed-heap alignment slack. Keep ordinary READBACK create
   uninitialized and general host writes UPLOAD-only. Unmap ranges describe writes
   for tools; they are not a fence or permission for CPU/GPU overlap.
+- Legal MapWrite|CopySrc allocations use zeroed UPLOAD and lend mutable exact
+  ranges; Return reports that span as written. mappedAtCreation alone preserves
+  DEFAULT/storage allocation and its shadow. Both mutable and read lends exclude
+  GPU recording/host access, return on cancellation/destruction and retain ordinary
+  initialization and pending-use checks.
 - Public read mappings of READBACK buffers lend the mapped allocation instead of
   copying it: lend has read's admission (initialized, no recording/pending use),
   keeps one Map open, and while lent rejects GPU recording, host reads/writes and a
@@ -223,7 +232,10 @@
 - DXGI NT-handle imports own native leases and admit only pinned Dawn's single-mip,
   single-sample simultaneous-access 2D color subset. Existing texture commands own
   imports through retirement. A canonical shared texture records only inside its
-  matching access. Producer fence waits retain imports outside device locking;
-  EndAccess exports the existing known queue timeline, without guessing an unknown
-  signal. Keyed imports use SDK D3D11On12 wrapping, acquire/release key zero, and
+  matching access. Producer waits become GPU Queue.Wait dependencies on the
+  existing command owner, retaining SDK fence/device leases through retirement.
+  A wait failure suppresses work/initialization, while partial waits and unknown
+  signals retain all obligations. Zero-work End forwards the incoming queue point.
+  EndAccess borrows one context-owned cached timeline handle; imported handles
+  own independent duplicates. Never guess an unknown signal. Keyed imports use SDK D3D11On12 wrapping, acquire/release key zero, and
   settle their own texture before release. No CPU copy substitutes for sharing.

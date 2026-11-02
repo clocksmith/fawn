@@ -92,7 +92,8 @@ static void test_workgroup(void) {
     Fixture *f = prepare(source);
     char *text = emit(f, NO_ID);
     has(text, "threadgroup array<uint, 4> w0;");
-    has(text, "if (input4 == 0u)");
+    has(text, "&w0, input4, 4u)");
+    has(text, "for (uint z = lane; z < 4u;)");
     has(text, "threadgroup_barrier(mem_flags::mem_threadgroup)");
     has(text, "doe_wstore3(&((*ctx.w0)");
     has(text, "doe_wload3(&((*ctx.w0)");

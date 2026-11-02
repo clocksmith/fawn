@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
 #include "doe_metal_shared.h"
+#include <stdlib.h>
 
 doe_mtl_status doe_mtl_shared_surface_open_info(doe_mtl_context *context, void *surface,
     void **retained, doe_mtl_shared_surface_info *info, doe_mtl_error *error)
@@ -65,6 +66,16 @@ doe_mtl_status doe_mtl_shared_texture_import(doe_mtl_context *context, void *sur
     return status;
 }
 
+doe_mtl_status doe_mtl_context_release_point(const doe_mtl_context *context,
+    void **event, uint64_t *value)
+{
+    if (!context || !event || !value) return DOE_MTL_INVALID_ARGUMENT;
+    if (!context->timeline) return DOE_MTL_UNSUPPORTED;
+    *event = context->timeline;
+    *value = context->timeline_committed;
+    return DOE_MTL_OK;
+}
+
 doe_mtl_status doe_mtl_texture_release_point(const doe_mtl_texture *texture,
     void **event, uint64_t *value)
 {
@@ -75,16 +86,6 @@ doe_mtl_status doe_mtl_texture_release_point(const doe_mtl_texture *texture,
     *event = texture->context->timeline;
     *value = texture->owner ? texture->owner->timeline_value : 0;
     return DOE_MTL_OK;
-}
-
-bool doe_mtl_texture_release_scheduled(const doe_mtl_texture *texture)
-{
-    const doe_mtl_commands *owner = texture ? texture->owner : NULL;
-    if (!owner || owner->state != DOE_MTL_SUBMITTED) return true;
-    const doe_mtl_native *native = &owner->context->native;
-    doe_mtl_error detail = {0};
-    size_t status = native->observe(native->userdata, owner->native, false, &detail);
-    return status != SIZE_MAX && status >= 3; /* MTLCommandBufferStatusScheduled or later. */
 }
 
 doe_mtl_status doe_mtl_shared_event_import(doe_mtl_context *context, void *event,
@@ -112,14 +113,42 @@ void doe_mtl_shared_event_release(doe_mtl_context *context, void *event)
     if (context && event) context->native.release(context->native.userdata, event);
 }
 
-doe_mtl_status doe_mtl_shared_event_wait(doe_mtl_context *context, void *event,
-    uint64_t value, doe_mtl_error *error)
+doe_mtl_status doe_mtl_commands_wait_shared_events(doe_mtl_commands *commands,
+    const doe_mtl_shared_wait *waits, size_t count, doe_mtl_error *error)
 {
-    if (!context || !event)
-        return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "shared event wait", error);
-    if (!context->native.shared_event_wait)
-        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "shared event wait native boundary", error);
-    return context->native.shared_event_wait(context->native.userdata, event, value, error);
+    doe_mtl_status status = doe_mtl_recording(commands, error);
+    if (status != DOE_MTL_OK) return status;
+    if ((!waits && count) || count > SIZE_MAX / sizeof(void *) || commands->shared_wait_events)
+        return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "shared producer wait batch", error);
+    doe_mtl_native *native = &commands->context->native;
+    if (count && (!native->commands_wait_event || !native->shared_event_retain))
+        return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "shared producer wait boundary", error);
+    for (size_t i = 0; i < count; ++i)
+        if (!waits[i].event)
+            return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "shared producer event", error);
+    void **retained = count ? calloc(count, sizeof(*retained)) : NULL;
+    if (count && !retained)
+        return doe_mtl_poison(commands, DOE_MTL_OUT_OF_MEMORY, "shared producer wait leases", error);
+    doe_mtl_error detail = {0};
+    size_t acquired = 0;
+    while (acquired < count && status == DOE_MTL_OK) {
+        status = doe_mtl_shared_event_import(commands->context, waits[acquired].event,
+            &retained[acquired], &detail);
+        if (status == DOE_MTL_OK) acquired++;
+    }
+    if (status != DOE_MTL_OK) {
+        for (size_t i = 0; i < acquired; ++i) doe_mtl_shared_event_release(commands->context, retained[i]);
+        free(retained);
+        return doe_mtl_native_record_result(commands, status, &detail, error);
+    }
+    /* Complete lease admission precedes the first native mutation. Failure
+     * while encoding retains the whole admitted batch until command cleanup. */
+    commands->shared_wait_events = retained;
+    commands->shared_wait_count = count;
+    for (size_t i = 0; i < count && status == DOE_MTL_OK; ++i)
+        status = native->commands_wait_event(native->userdata, commands->native,
+            retained[i], waits[i].value, &detail);
+    return doe_mtl_native_record_result(commands, status, &detail, error);
 }
 
 doe_mtl_status doe_mtl_commands_signal_shared_event(doe_mtl_commands *commands,

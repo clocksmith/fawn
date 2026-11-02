@@ -93,11 +93,29 @@ $(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt LEGACY_SYMBO
 	mv $@.tmp $@
 $(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_async_driver.h tests/metal_import_cases.h tests/metal_external_cases.h tests/metal_copy_cases.h tests/metal_view_cases.h tests/metal_f16_cases.h tests/sampling_pair_cases.h tests/pipeline_cache_cases.h tests/shader_fixture.h tests/metal_storage_cases.h tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_vertex_span_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_async_diagnostics.h tests/metal_async_driver.h tests/metal_import_cases.h tests/metal_external_cases.h tests/metal_copy_cases.h tests/metal_view_cases.h tests/metal_f16_cases.h tests/sampling_pair_cases.h tests/pipeline_cache_cases.h tests/shader_fixture.h tests/metal_storage_cases.h tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_vertex_span_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_bridge.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_create \
 	  -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_buffer_create \
 	  -Wl,--wrap=doe_vk_texture_format_caps -o $@
+# Instrument allocation only in the real immutable-cache owner, on every host.
+$(BUILD)/metal-render-bindings-owner.o: src/metal_render_bindings.c $(HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Dcalloc=metal_test_calloc -Drealloc=metal_test_realloc -c $< -o $@
+$(BUILD)/metal-render-bindings: tests/metal_render_bindings.c $(BUILD)/metal-render-bindings-owner.o $(filter-out $(BUILD)/native/metal_render_bindings.o,$(OBJECTS)) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(BUILD)/metal-render-bindings-owner.o $(filter-out $(BUILD)/native/metal_render_bindings.o,$(OBJECTS)) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-metal-render-bindings
+check-metal-render-bindings: $(BUILD)/metal-render-bindings
+	$(BUILD)/metal-render-bindings
+check: check-metal-render-bindings
+# Exercise the real Metal Shared allocation/range path; inject only public submit/error delivery.
+$(BUILD)/metal-texture-write-owner.o: src/metal_texture_write.c $(HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -Dnative_error=metal_staging_error -DwgpuQueueSubmit=metal_staging_submit -c $< -o $@
+$(BUILD)/metal-texture-staging: tests/metal_texture_staging.c ../backends/metal/tests/mock_native.c ../backends/metal/tests/mock_native.h $(BUILD)/metal-texture-write-owner.o $(filter-out $(BUILD)/native/metal_texture_write.o,$(OBJECTS)) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< ../backends/metal/tests/mock_native.c $(BUILD)/metal-texture-write-owner.o $(filter-out $(BUILD)/native/metal_texture_write.o,$(OBJECTS)) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-metal-texture-staging
+check-metal-texture-staging: $(BUILD)/metal-texture-staging
+	$(BUILD)/metal-texture-staging
+check: check-metal-texture-staging
 # Host-only admission control; staging allocation is injected, no GPU is opened.
 $(BUILD)/queue-texture-admission: tests/queue_texture_admission.c ../resources/tests/fixture.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/queue_texture_admission.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
@@ -230,7 +248,7 @@ $(BUILD)/encoder-finish-oom: tests/encoder_finish_oom.c tests/consumer.h tests/a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=malloc -o $@
 $(BUILD)/map-oom: tests/map_oom.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
-	  -Wl,--wrap=malloc -Wl,--wrap=native_buffer_close -Wl,--wrap=native_backend_close -o $@
+	  -Wl,--wrap=malloc -Wl,--wrap=native_async_take_ready -Wl,--wrap=native_buffer_close -Wl,--wrap=native_backend_close -o $@
 $(BUILD)/command-resources: tests/command_resources.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/binding-aliases: tests/binding_aliases.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
@@ -650,7 +668,7 @@ PHYSICAL_CLIENTS += indexed-guard-reuse
 
 $(BUILD)/shared-memory: tests/shared_memory.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shared_memory.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
-	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -o $@
+	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_commands_poll -o $@
 .PHONY: check-shared-memory
 check-shared-memory: $(BUILD)/shared-memory
 	$(BUILD)/shared-memory
@@ -796,6 +814,14 @@ $(BUILD)/d3d12-buffer-placement.exe: tests/d3d12_buffer_placement.c src/d3d12_bu
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_buffer_placement.c src/d3d12_buffers.c src/d3d12_writes.c src/backend_status.c src/backend_failure.c -o $@
 $(BUILD)/d3d12-write-batch.exe: tests/d3d12_write_batch.c src/d3d12_buffers.c src/d3d12_writes.c src/backend_status.c src/backend_failure.c $(HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_write_batch.c src/d3d12_buffers.c src/d3d12_writes.c src/backend_status.c src/backend_failure.c -o $@
+
+$(BUILD)/async-completion: tests/async_completion.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-async-completion
+check-async-completion: $(BUILD)/async-completion
+	$(BUILD)/async-completion
+check: check-async-completion
+PHYSICAL_CLIENTS += async-completion
 
 # Prerequisites expand immediately, so they are declared after the last
 # PHYSICAL_CLIENTS append; the recipe above already reads the full list.

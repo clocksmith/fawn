@@ -52,9 +52,14 @@ doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
  * guard firstInstance+instanceCount against the instance capacity.
  * Never substitute caller-selected capacities or another shader.
  * This validator owns only its pipeline; each recorded draw allocates distinct
- * scratch on the existing command owner. */
-enum { DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY = 1024 };
+ * scratch records on the existing command owner. */
+enum { DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY = 1024, DOE_VK_DRAW_INDIRECT_BATCH_SOURCE_CAPACITY = 2048 };
 doe_vk_status doe_vk_draw_validator_source(char *out, size_t capacity, size_t *out_length);
+/* Explicit batch source: one invocation per contiguous 32-byte record. The
+ * legacy source/create pair above/below retains its one-record contract. */
+doe_vk_status doe_vk_draw_validator_batch_source(char *out, size_t capacity, size_t *out_length);
+doe_vk_status doe_vk_draw_validator_create_batch(doe_vk_context *context,
+    const uint32_t *spirv, size_t word_count, doe_vk_draw_validator **out, doe_vk_error *error);
 doe_vk_status doe_vk_draw_validator_validate(const doe_vk_caps *caps);
 doe_vk_status doe_vk_draw_validator_create(doe_vk_context *context,
     const uint32_t *spirv, size_t word_count, doe_vk_draw_validator **out, doe_vk_error *error);

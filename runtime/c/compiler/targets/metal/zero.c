@@ -35,7 +35,8 @@ static bool zero_spend(MetalEmitter *e) {
 static bool zero_used(MetalEmitter *e, TypeId type) {
     const CompilerWorkspace *c = e->module;
     for (uint32_t i = 0u; i < c->workgroup_count && zero_spend(e); ++i)
-        if (metal_selected_workgroup(e, i) && zero_dependency(e, c->workgroups[i].type, type)) return true;
+        if (metal_selected_workgroup(e, i) && c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE &&
+            zero_dependency(e, c->workgroups[i].type, type)) return true;
     for (uint32_t i = 0u; i < c->function_count && !e->failed && zero_spend(e); ++i) {
         if (!target_function_used(&e->closure, i)) continue;
         const FunctionRecord *f = &c->functions[i];
@@ -82,57 +83,77 @@ void metal_zero_helpers(MetalEmitter *e) {
     }
 }
 
-/* Atomic objects are never copied or returned by value. Initialize their
- * selected threadgroup tree in place, on lane zero before the existing barrier. */
-static bool workgroup_zero_used(MetalEmitter *e, TypeId type) {
-    for (uint32_t i = 0u; i < e->module->workgroup_count && zero_spend(e); ++i)
-        if (metal_selected_workgroup(e, i) && zero_dependency(e, e->module->workgroups[i].type, type)) return true;
-    return false;
+/* Each typed leaf path flattens its array dimensions into one index domain.
+ * Every element has one writer even inside arrays of structs or nested arrays;
+ * vectors/matrices stay typed values, and atomic objects are stored in place. */
+typedef struct { TypeId type; uint32_t child; } ZeroFrame;
+static void workgroup_zero_leaf(MetalEmitter *e, const ZeroFrame *path, uint32_t depth, TypeId type) {
+    const CompilerWorkspace *c = e->module;
+    uint32_t count = 1u;
+    for (uint32_t j = 0u; j < depth && zero_spend(e); ++j) {
+        const TypeRecord *t = &c->types[path[j].type - IR_PRIMITIVE_COUNT];
+        if (t->kind != TYPE_ARRAY) continue;
+        if (!t->count || count > UINT32_MAX / t->count) {
+            metal_error(e, "Metal workgroup initialization extent overflows"); return;
+        }
+        count *= t->count;
+    }
+    metal_format(e, "    for (uint z = lane; z < %uu;) {\n        ", count);
+    const TypeRecord *leaf = type >= IR_PRIMITIVE_COUNT ? &c->types[type - IR_PRIMITIVE_COUNT] : NULL;
+    const bool atomic = leaf != NULL && leaf->kind == TYPE_ATOMIC;
+    if (atomic) metal_text(e, "atomic_store_explicit(&(");
+    metal_text(e, "(*p)");
+    uint32_t divisor = count;
+    for (uint32_t j = 0u; j < depth && zero_spend(e); ++j) {
+        const TypeRecord *t = &c->types[path[j].type - IR_PRIMITIVE_COUNT];
+        if (t->kind == TYPE_ARRAY) {
+            divisor /= t->count;
+            metal_format(e, "[(z / %uu) %% %uu]", divisor, t->count);
+        } else metal_format(e, ".m%u", path[j].child - 1u);
+    }
+    if (atomic) metal_format(e, "), %s(0), memory_order_relaxed);\n", leaf->element == IR_I32 ? "int" : "uint");
+    else { metal_text(e, " = "); metal_zero(e, type); metal_text(e, ";\n"); }
+    metal_format(e, "        if (%uu - z <= stride) break;\n        z += stride;\n    }\n", count);
 }
-static void workgroup_zero_child(MetalEmitter *e, TypeId type) {
-    if ((type_flags(e->module, type) & TYPE_ATOMIC_CONTENT) != 0u)
-        metal_format(e, "doe_wzero%u(", type);
-    else metal_text(e, "*(");
-}
-static void workgroup_zero_finish(MetalEmitter *e, TypeId type) {
-    if ((type_flags(e->module, type) & TYPE_ATOMIC_CONTENT) != 0u) metal_text(e, ");\n");
-    else {
-        metal_text(e, ") = ");
-        metal_zero(e, type);
-        metal_text(e, ";\n");
+static void workgroup_zero_body(MetalEmitter *e, TypeId type) {
+    ZeroFrame path[TARGET_CLOSURE_DEPTH] = {{type, 0u}};
+    uint32_t depth = 0u;
+    for (;;) {
+        if (!zero_spend(e)) return;
+        const TypeId current = path[depth].type;
+        if (current >= IR_PRIMITIVE_COUNT + e->module->type_count) {
+            metal_error(e, "Metal workgroup zero type identity is invalid"); return;
+        }
+        const TypeRecord *t = current >= IR_PRIMITIVE_COUNT ? &e->module->types[current - IR_PRIMITIVE_COUNT] : NULL;
+        const uint32_t children = t && t->kind == TYPE_ARRAY ? 1u : t && t->kind == TYPE_STRUCT ? t->count : 0u;
+        if (t && t->kind == TYPE_STRUCT && (t->element > e->module->member_count ||
+            t->count > e->module->member_count - t->element)) {
+            metal_error(e, "Metal workgroup zero member range is invalid"); return;
+        }
+        if (!children || path[depth].child == children) {
+            if (!children) workgroup_zero_leaf(e, path, depth, current);
+            if (!depth || e->failed) return;
+            --depth; continue;
+        }
+        const TypeId child = type_child(e->module, current, path[depth].child++);
+        if (depth + 1u == TARGET_CLOSURE_DEPTH) {
+            metal_error(e, "Metal workgroup zero exceeds bounded nesting"); return;
+        }
+        path[++depth] = (ZeroFrame){child, 0u};
     }
 }
 void metal_workgroup_zero_helpers(MetalEmitter *e) {
     const CompilerWorkspace *c = e->module;
-    for (unsigned pass = 0u; pass < 2u; ++pass) {
-        for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
-            const TypeRecord *t = &c->types[i];
-            const TypeId type = i + IR_PRIMITIVE_COUNT;
-            if ((t->flags & (TYPE_ATOMIC_CONTENT | TYPE_FIXED)) != (TYPE_ATOMIC_CONTENT | TYPE_FIXED) ||
-                !workgroup_zero_used(e, type)) continue;
-            metal_format(e, "inline void doe_wzero%u(threadgroup ", type);
-            metal_type(e, type);
-            metal_text(e, "* p)");
-            if (pass == 0u) { metal_text(e, ";\n"); continue; }
-            metal_text(e, " {\n");
-            if (t->kind == TYPE_ATOMIC)
-                metal_format(e, "    atomic_store_explicit(p, %s(0), memory_order_relaxed);\n",
-                             t->element == IR_I32 ? "int" : "uint");
-            else if (t->kind == TYPE_ARRAY) {
-                metal_format(e, "    for (uint i = 0u; i < %uu; ++i) ", t->count);
-                workgroup_zero_child(e, t->element);
-                metal_text(e, "&((*p)[i])");
-                workgroup_zero_finish(e, t->element);
-            } else if (t->kind == TYPE_STRUCT) {
-                for (uint32_t j = 0u; j < t->count; ++j) {
-                    const TypeId child = type_child(c, type, j);
-                    metal_text(e, "    ");
-                    workgroup_zero_child(e, child);
-                    metal_format(e, "&(p->m%u)", j);
-                    workgroup_zero_finish(e, child);
-                }
-            } else metal_error(e, "Metal atomic workgroup initializer has invalid type");
-            metal_text(e, "}\n");
-        }
+    for (TypeId type = IR_BOOL; type < IR_PRIMITIVE_COUNT + c->type_count && !e->failed; ++type) {
+        bool used = false;
+        for (uint32_t i = 0u; i < c->workgroup_count && zero_spend(e); ++i)
+            if (metal_selected_workgroup(e, i) && c->workgroups[i].type == type &&
+                c->workgroups[i].state.resolved.address_space == MODULE_WORKGROUP) used = true;
+        if (!used) continue;
+        metal_format(e, "inline void doe_wzero%u(threadgroup ", type);
+        metal_type(e, type);
+        metal_text(e, "* p, uint lane, uint stride) {\n");
+        workgroup_zero_body(e, type);
+        metal_text(e, "}\n");
     }
 }

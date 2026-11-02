@@ -64,6 +64,8 @@ struct doe_vk_context {
     /* Free-able descriptor pools that dispatch uses allocate their sets from;
      * see descriptors.c. Accessed only under the owning device's serialization. */
     struct doe_vk_descriptor_block *descriptor_blocks;
+    struct doe_vk_memory_block *memory_blocks;
+    uint32_t memory_block_count;
     uint32_t retained_pipelines;
     VkPipelineCache driver_cache;
     char *driver_cache_path;
@@ -94,6 +96,15 @@ void doe_vk_pipeline_blob_close(doe_vk_context *context, VkPipelineCache cache, 
 void doe_vk_push_immediates(doe_vk_commands *commands, doe_vk_pipeline *pipeline, const void *bytes);
 /* Destroys spare command pools and fences; the context is releasing its device. */
 void doe_vk_command_spares_clear(doe_vk_context *context);
+typedef struct doe_vk_memory_slice {
+    struct doe_vk_memory_block *block;
+    struct doe_vk_memory_slice *next;
+    uint64_t offset, size;
+} doe_vk_memory_slice;
+void doe_vk_memory_blocks_clear(doe_vk_context *);
+doe_vk_status doe_vk_buffer_allocate(doe_vk_buffer *, const VkMemoryRequirements *, uint32_t,
+    bool, bool, bool, doe_vk_error *);
+void doe_vk_buffer_memory_release(doe_vk_buffer *);
 struct doe_vk_buffer {
     doe_vk_context *context;
     uint32_t references;
@@ -104,6 +115,10 @@ struct doe_vk_buffer {
     VkBuffer buffer;
     VkDeviceMemory memory;
     void *mapped;
+    doe_vk_memory_slice slice;
+    uint64_t native_size;
+    bool needs_zero, memory_bound;
+    doe_vk_commands *zero_owner;
 };
 struct doe_vk_pipeline {
     doe_vk_context *context;
@@ -145,11 +160,10 @@ typedef struct doe_vk_dispatch_use {
     struct doe_vk_texture_view *views[DOE_VK_MAX_BINDINGS];
     struct doe_vk_sampler *samplers[DOE_VK_MAX_BINDINGS];
     struct doe_vk_dispatch_use *next;
-    /* Buffer-only uses keep their exact bindings so the next identical use in
-     * the same recording reuses these descriptor sets. */
-    bool buffers_only;
-    uint32_t buffer_count;
-    doe_vk_buffer_binding buffers[];
+    /* Immutable tagged descriptor values; mutable initialization/layout checks
+     * remain per-use even when these exact sets are reused. */
+    uint32_t binding_count;
+    doe_vk_binding_resource bindings[];
 } doe_vk_dispatch_use;
 typedef enum doe_vk_command_state {
     DOE_VK_RECORDING,
@@ -209,8 +223,13 @@ doe_vk_status doe_vk_shader_module(doe_vk_context *context, const doe_vk_shader 
     VkShaderModule *out, doe_vk_error *error);
 doe_vk_status doe_vk_pipeline_layout_create(doe_vk_pipeline *pipeline,
     const doe_vk_binding_layout *layout, size_t count, uint32_t stages, doe_vk_error *error);
+doe_vk_status doe_vk_prepare_resources_unsynchronized(doe_vk_commands *, doe_vk_pipeline *,
+    const doe_vk_binding_resource *, size_t, doe_vk_dispatch_use **);
+doe_vk_status doe_vk_prepare_graphics_resources(doe_vk_commands *, doe_vk_pipeline *,
+    const doe_vk_binding_resource *, size_t, doe_vk_dispatch_use **);
 doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out);
+void doe_vk_bind_prepared_resources_since(doe_vk_commands *, const doe_vk_dispatch_use *, const doe_vk_dispatch_use *);
 void doe_vk_bind_prepared_resources(doe_vk_commands *commands, const doe_vk_dispatch_use *use);
 doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands, doe_vk_pipeline *pipeline,
     const doe_vk_binding_resource *bindings, size_t count);

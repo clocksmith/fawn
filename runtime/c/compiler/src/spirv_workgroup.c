@@ -98,3 +98,131 @@ bool spirv_workgroup_convert(Emitter *e, TypeId type, uint32_t input, uint32_t r
     EMIT(OP_COPY_OBJECT, destination, result, composite);
     return !e->failed;
 }
+
+/* Flatten only array dimensions along each typed leaf path. Struct members
+ * remain independent typed stores; no padding writes or atomic aggregate copy.
+ * The existing caller-owned walk/word/declaration pools bound this traversal. */
+static bool initialize_leaf(Emitter *e, uint32_t root, uint32_t lane, uint32_t stride, bool plan) {
+    CompilerWorkspace *c = e->program;
+    uint32_t count = 1u;
+    for (uint32_t j = 0u; j + 1u < c->walk_count; ++j) {
+        const TypeRecord *t = &c->types[c->walk[j].object - IR_PRIMITIVE_COUNT];
+        if (t->kind != TYPE_ARRAY) continue;
+        if (!t->count || count > UINT32_MAX / t->count)
+            return spirv_emit_error(e, 0u, "workgroup initialization extent overflows");
+        count *= t->count;
+    }
+    const uint32_t bound = spirv_unsigned_constant(e, count);
+    if (plan) {
+        uint32_t divisor = count;
+        for (uint32_t j = 0u; j + 1u < c->walk_count; ++j) {
+            const WalkItem *w = &c->walk[j];
+            const TypeRecord *t = &c->types[w->object - IR_PRIMITIVE_COUNT];
+            if (t->kind == TYPE_ARRAY) {
+                divisor /= t->count;
+                (void)spirv_unsigned_constant(e, divisor);
+                (void)spirv_unsigned_constant(e, t->count);
+            } else (void)spirv_unsigned_constant(e, w->cursor - 1u);
+            (void)spirv_pointer_type(e, c->walk[j+1u].object, MODULE_WORKGROUP);
+        }
+        const TypeId type = c->walk[c->walk_count-1u].object;
+        const TypeRecord *leaf = type >= IR_PRIMITIVE_COUNT ? &c->types[type-IR_PRIMITIVE_COUNT] : NULL;
+        if (leaf && leaf->kind == TYPE_ATOMIC) {
+            (void)spirv_unsigned_constant(e, 0u);
+            (void)spirv_zero_constant(e, leaf->element);
+        } else (void)spirv_workgroup_zero(e, type);
+        return !e->failed;
+    }
+    const uint32_t ids = spirv_reserve_ids(e, 10u);
+    const uint32_t header = ids, body = ids+1u, continuing = ids+2u, merge = ids+3u;
+    const uint32_t index = ids+4u, next = ids+5u, condition = ids+6u;
+    EMIT(OP_BRANCH, header);
+    EMIT(OP_LABEL, header);
+    EMIT(OP_PHI, ID_U32, index, lane, e->current_label, next, continuing);
+    EMIT(OP_ULESS_THAN, ID_BOOL, condition, index, bound);
+    EMIT(OP_LOOP_MERGE, merge, continuing, 0u);
+    EMIT(OP_BRANCH_CONDITIONAL, condition, body, merge);
+    EMIT(OP_LABEL, body);
+    uint32_t pointer = root, divisor = count;
+    for (uint32_t j = 0u; j + 1u < c->walk_count; ++j) {
+        const WalkItem *w = &c->walk[j];
+        const TypeRecord *t = &c->types[w->object - IR_PRIMITIVE_COUNT];
+        uint32_t element;
+        if (t->kind == TYPE_ARRAY) {
+            divisor /= t->count;
+            const uint32_t divided = spirv_reserve_ids(e, 1u);
+            element = spirv_reserve_ids(e, 1u);
+            EMIT(OP_UDIV, ID_U32, divided, index, spirv_unsigned_constant(e, divisor));
+            EMIT(OP_UMOD, ID_U32, element, divided, spirv_unsigned_constant(e, t->count));
+        } else element = spirv_unsigned_constant(e, w->cursor - 1u);
+        const uint32_t child = spirv_reserve_ids(e, 1u);
+        EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, c->walk[j+1u].object, MODULE_WORKGROUP), child, pointer, element);
+        pointer = child;
+    }
+    const TypeId type = c->walk[c->walk_count-1u].object;
+    const TypeRecord *leaf = type >= IR_PRIMITIVE_COUNT ? &c->types[type-IR_PRIMITIVE_COUNT] : NULL;
+    if (leaf && leaf->kind == TYPE_ATOMIC) {
+        EMIT(OP_ATOMIC_STORE, pointer, ID_TWO_U32, ID_ZERO_U32, spirv_zero_constant(e, leaf->element));
+    } else EMIT(OP_STORE, pointer, spirv_workgroup_zero(e, type));
+    EMIT(OP_BRANCH, continuing);
+    EMIT(OP_LABEL, continuing);
+    /* Select the bound for the last step instead of wrapping an index back
+     * into the domain when count + workgroup stride exceeds uint32. */
+    EMIT(OP_ISUB, ID_U32, ids+7u, bound, index);
+    EMIT(OP_UGREATER_THAN, ID_BOOL, ids+8u, ids+7u, stride);
+    EMIT(OP_IADD, ID_U32, ids+9u, index, stride);
+    EMIT(OP_SELECT, ID_U32, next, ids+8u, ids+9u, bound);
+    EMIT(OP_BRANCH, header);
+    EMIT(OP_LABEL, merge);
+    e->current_label = merge;
+    return !e->failed;
+}
+static bool initialize_workgroups(Emitter *e, bool plan) {
+    CompilerWorkspace *c = e->program;
+    uint32_t size = 1u;
+    for (unsigned dimension = 0u; dimension < 3u; ++dimension) {
+        const uint32_t value = e->entry->state.resolved.workgroup_size[dimension];
+        if (!value || size > UINT32_MAX / value)
+            return spirv_emit_error(e, 0u, "workgroup initialization stride overflows");
+        size *= value;
+    }
+    const uint32_t stride = spirv_unsigned_constant(e, size);
+    const uint32_t lane = plan ? 0u : spirv_reserve_ids(e, 1u);
+    if (!plan) {
+        EMIT(OP_LOAD, ID_U32, lane, e->entry->state.resolved.local_index_target);
+        e->entry->state.resolved.target_input_mask |= 1u << INPUT_LOCAL_INDEX;
+    }
+    for (uint32_t i = 0u; i < e->entry->state.resolved.workgroup_count; ++i) {
+        const WorkgroupRoot *root = &c->workgroups[c->entry_references[e->entry->state.resolved.workgroup_first+i]];
+        if (root->state.resolved.address_space != MODULE_WORKGROUP) continue;
+        c->walk_count = 0u;
+        if (!spirv_push_walk(e, WALK_TYPE, root->type)) return false;
+        while (c->walk_count) {
+            WalkItem *w = &c->walk[c->walk_count-1u];
+            if (w->object >= IR_PRIMITIVE_COUNT + c->type_count)
+                return spirv_emit_error(e, 0u, "workgroup zero type identity is invalid");
+            const TypeRecord *t = w->object >= IR_PRIMITIVE_COUNT ? &c->types[w->object-IR_PRIMITIVE_COUNT] : NULL;
+            const uint32_t children = t && t->kind == TYPE_ARRAY ? 1u : t && t->kind == TYPE_STRUCT ? t->count : 0u;
+            if (t && t->kind == TYPE_STRUCT && (t->element > c->member_count || t->count > c->member_count-t->element))
+                return spirv_emit_error(e, 0u, "workgroup zero member range is invalid");
+            if (!children || w->cursor == children) {
+                if (!children && !initialize_leaf(e, root->target, lane, stride, plan)) return false;
+                --c->walk_count;
+            } else {
+                const TypeId child = type_child(c, w->object, w->cursor++);
+                if (!spirv_push_walk(e, WALK_TYPE, child)) return false;
+            }
+        }
+    }
+    return !e->failed;
+}
+
+bool spirv_initialize_workgroups(Emitter *e) { return initialize_workgroups(e, false); }
+bool spirv_plan_workgroup_initialization(Emitter *e) {
+    for (uint32_t i = 0u; i < e->program->entry_count; ++i) {
+        e->entry = &e->program->entries[i];
+        if (e->entry->state.resolved.workgroup_storage_bytes && !initialize_workgroups(e, true)) return false;
+    }
+    e->entry = NULL;
+    return !e->failed;
+}

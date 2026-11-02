@@ -3,6 +3,7 @@
 #include "mock_native.h"
 #include "../src/render_internal.h"
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 
 static doe_mtl_context *context_new(mock_native *mock) {
@@ -156,8 +157,8 @@ static void mixed_draw_lifetime(void) {
     draws[0].count = 7; draws[0].first_vertex = 2; draws[0].first_instance = 3;
     draws[1].index_buffer = buffer; draws[1].index_offset = 8; draws[1].index_type = 1; draws[1].base_vertex = -2;
     assert(doe_mtl_commands_render(commands, &pass, draws, 2, NULL) == DOE_MTL_OK);
-    assert(mock.render_draws[0].vertex.buffers[4].buffer == buffer->native);
-    assert(mock.render_draws[0].vertex.buffers[4].offset == 16 && mock.render_draws[0].values.first_vertex == 2);
+    assert(mock.render_draws[0].values.vertex.buffer_count == 1 && mock.render_draws[0].values.vertex.buffers[0].buffer == buffer);
+    assert(mock.render_draws[0].values.vertex.buffers[0].offset == 16 && mock.render_draws[0].values.first_vertex == 2);
     assert(mock.render_draws[1].index_buffer == buffer->native && mock.render_draws[1].values.base_vertex == -2);
     assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
     doe_mtl_render_pipeline_release(pipeline); doe_mtl_texture_view_release(view);
@@ -344,7 +345,42 @@ static void coverage_and_empty_raster(void) {
     doe_mtl_context_release(context);
     mock_assert_closed(&mock);
 }
+static void viewport_device_bounds(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_new(&mock);
+    doe_mtl_render_pipeline *pipeline = pipeline_new(context, pipeline_desc());
+    doe_mtl_texture_view *view = view_new(context, DOE_MTL_RGBA8_UNORM);
+    doe_mtl_render_pass_desc pass = pass_new(view);
+    const doe_mtl_viewport accepted[] = {{-4,-4,16,16,0,1},{32,32,8,8,0,1},
+        {32,32,0,8,0,1},{1,1,8,0,0,1},{-32768,0,16384,8,0,1},{32766,0,1,8,0,1}};
+    doe_mtl_render_draw draw = draw_new(pipeline);
+    draw.viewport_enabled = true;
+    for (size_t i = 0; i < sizeof(accepted)/sizeof(*accepted); ++i) {
+        draw.viewport = accepted[i];
+        doe_mtl_commands *commands = commands_new(context);
+        unsigned renders = mock.renders;
+        assert(doe_mtl_commands_render(commands, &pass, &draw, 1, NULL) == DOE_MTL_OK);
+        assert(mock.renders == renders + 1 && mock.render_draws[0].values.viewport.x == accepted[i].x);
+        assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    }
+    const doe_mtl_viewport rejected[] = {{0,0,-1,8,0,1},{NAN,0,8,8,0,1},{0,0,INFINITY,8,0,1},
+        {0,0,8,8,-0.1,1},{0,0,8,8,0.9,0.1},{0,0,16385,8,0,1},
+        {-32769,0,8,8,0,1},{32768,0,0,8,0,1},{32766,0,2,8,0,1}};
+    doe_mtl_render_draw draws[2] = {draw,draw};
+    draws[0].viewport = accepted[0];
+    for (size_t i = 0; i < sizeof(rejected)/sizeof(*rejected); ++i) {
+        draws[1].viewport = rejected[i];
+        doe_mtl_commands *commands = commands_new(context);
+        unsigned renders = mock.renders;
+        assert(doe_mtl_commands_render(commands, &pass, draws, 2, NULL) == DOE_MTL_RANGE);
+        assert(mock.renders == renders); /* Entire pass preflight precedes native mutation. */
+        assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    }
+    doe_mtl_texture_view_release(view); doe_mtl_render_pipeline_release(pipeline);
+    doe_mtl_context_release(context); mock_assert_closed(&mock);
+}
 int main(void) {
+    viewport_device_bounds();
     dual_source();
     coverage_and_empty_raster();
     constructors(); clear_load_store(); mixed_draw_lifetime(); depth_stencil();

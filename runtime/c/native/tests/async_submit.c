@@ -21,7 +21,7 @@
 enum { TRACKED = 2 };
 static atomic_bool arm, hold, refused_held, later_held, first_unobserved;
 static atomic_uint later_blocks;
-static atomic_uint armed_slot, waits, submits;
+static atomic_uint armed_slot, waits, submits, recover_calls;
 static _Atomic(doe_vk_commands *) tracked[TRACKED];
 static _Atomic(doe_vk_status) injected[TRACKED];
 static _Atomic(void *) observed_buffer;
@@ -77,6 +77,7 @@ static VkResult counted_idle(VkQueue queue)
 }
 doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error)
 {
+    atomic_fetch_add(&recover_calls, 1);
     return observed(commands, __real_doe_vk_commands_recover(commands, error), error);
 }
 doe_vk_status __wrap_doe_vk_commands_release(doe_vk_commands *commands)
@@ -227,6 +228,62 @@ static void first_error_kept(void)
     consumer_finish(&s);
 }
 
+static void earliest_done(WGPUQueueWorkDoneStatus status, WGPUStringView message,
+    void *userdata, void *unused)
+{
+    (void)unused;
+    assert(status == WGPUQueueWorkDoneStatus_Error);
+    assert(message.length && strstr(message.data, "first injected fence"));
+    assert(strstr(message.data, "-900") && !strstr(message.data, "second injected fence"));
+    ++*(unsigned *)userdata;
+}
+
+/* A terminal failure consumed during registration retains its serial. The
+ * other submission retires later: earlier replaces later, never the reverse. */
+static void completion_retains_failure_serial(bool oldest_held)
+{
+    state s = {0};
+    consumer_init(&s);
+    native_device *device = (native_device *)s.device;
+    WGPUBuffer source = buffer(&s, 16, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    WGPUBuffer destination[2] = {buffer(&s, 16, WGPUBufferUsage_CopyDst),
+        buffer(&s, 16, WGPUBufferUsage_CopyDst)};
+    WGPUCommandBuffer commands[2] = {copy_commands(&s, source, destination[0], 16),
+        copy_commands(&s, source, destination[1], 16)};
+    /* Exclude background observation until registration consumes the selected
+     * terminal record. Both GPU submissions really finish before injection. */
+    native_lock(device);
+    atomic_store(&first_unobserved, true);
+    atomic_store(&later_held, true);
+    for (unsigned i = 0; i < 2; ++i) {
+        track(i, DOE_VK_NATIVE_FAILURE);
+        wgpuQueueSubmit(s.queue, 1, &commands[i]);
+    }
+    for (unsigned i = 0; i < 2; ++i)
+        assert(__real_doe_vk_commands_wait(atomic_load(&tracked[i]), UINT64_MAX, NULL) == DOE_VK_OK);
+    if (oldest_held) atomic_store(&later_held, false);
+    else atomic_store(&first_unobserved, false);
+    unsigned completed = 0;
+    WGPUQueueWorkDoneCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,
+        .callback=earliest_done,.userdata1=&completed};
+    WGPUFuture future = wgpuQueueOnSubmittedWorkDone(s.queue, callback);
+    assert(future.id && !completed);
+    assert(!atomic_load(&tracked[oldest_held ? 1 : 0])); /* Admission consumed its failure. */
+    WGPUFutureWaitInfo poll = {.future=future};
+    assert(wgpuInstanceWaitAny(s.instance,1,&poll,0) == WGPUWaitStatus_TimedOut && !poll.completed);
+    atomic_store(&first_unobserved, false);
+    atomic_store(&later_held, false);
+    native_unlock(device);
+    wait_future(&s, future);
+    assert(completed == 1 && !s.errors);
+    for (unsigned i = 0; i < 2; ++i) {
+        wgpuCommandBufferRelease(commands[i]);
+        wgpuBufferRelease(destination[i]);
+    }
+    wgpuBufferRelease(source);
+    consumer_finish(&s);
+}
+
 typedef struct order_log { char events[8]; unsigned count; } order_log;
 static void ordered_map(WGPUMapAsyncStatus status, WGPUStringView message, void *userdata, void *unused)
 {
@@ -260,9 +317,12 @@ static void map_and_work_done_order(void)
     WGPUBufferMapCallbackInfo map_b = map_a;
     map_b.userdata2 = &log;
     WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_AllowProcessEvents, .callback = ordered_done, .userdata1 = &log};
-    assert(wgpuBufferMapAsync(a, WGPUMapMode_Read, 0, sizeof(words), map_a).id);
-    assert(wgpuQueueOnSubmittedWorkDone(s.queue, done).id);
-    assert(wgpuBufferMapAsync(b, WGPUMapMode_Read, 0, sizeof(words), map_b).id);
+    WGPUFuture first_map = wgpuBufferMapAsync(a, WGPUMapMode_Read, 0, sizeof(words), map_a);
+    WGPUFuture work = wgpuQueueOnSubmittedWorkDone(s.queue, done);
+    WGPUFuture second_map = wgpuBufferMapAsync(b, WGPUMapMode_Read, 0, sizeof(words), map_b);
+    wait_future(&s, first_map);
+    wait_future(&s, work);
+    wait_future(&s, second_map);
     wgpuInstanceProcessEvents(s.instance);
     assert(log.count == 3 && !memcmp(log.events, "adb", 3));
     assert(!memcmp(wgpuBufferGetConstMappedRange(a, 0, sizeof(words)), words, sizeof(words)));
@@ -274,6 +334,57 @@ static void map_and_work_done_order(void)
     wgpuBufferRelease(source);
     wgpuBufferRelease(a);
     wgpuBufferRelease(b);
+    consumer_finish(&s);
+}
+
+/* A completion request captures only work already submitted. Withholding the
+ * later fence cannot delay it, or a map whose own producer is terminal. */
+static void completion_serial_excludes_later_work(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    native_device *device = (native_device *)s.device;
+    WGPUBuffer source[2], destination[2];
+    WGPUCommandBuffer commands[2];
+    const uint32_t words[] = {7, 11, 13, 17};
+    for (size_t i = 0; i < 2; ++i) {
+        source[i] = buffer(&s, sizeof(words), WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+        destination[i] = buffer(&s, sizeof(words), WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+        wgpuQueueWriteBuffer(s.queue, source[i], 0, words, sizeof(words));
+        commands[i] = copy_commands(&s, source[i], destination[i], sizeof(words));
+    }
+    atomic_store(&hold, false);
+    atomic_store(&first_unobserved, true);
+    track(0, DOE_VK_OK);
+    wgpuQueueSubmit(s.queue, 1, &commands[0]);
+    atomic_store(&waits, 0);
+    unsigned completed = 0;
+    WGPUQueueWorkDoneCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,
+        .callback=work_done_reply,.userdata1=&completed};
+    WGPUFuture future = wgpuQueueOnSubmittedWorkDone(s.queue, callback);
+    assert(future.id && !completed && !atomic_load(&waits));
+    WGPUFutureWaitInfo poll = {.future=future};
+    assert(wgpuInstanceWaitAny(s.instance,1,&poll,0) == WGPUWaitStatus_TimedOut && !poll.completed);
+    atomic_store(&later_held, true);
+    track(1, DOE_VK_OK);
+    wgpuQueueSubmit(s.queue, 1, &commands[1]);
+    atomic_store(&first_unobserved, false);
+    wait_future(&s, future);
+    assert(completed == 1 && !atomic_load(&waits));
+    native_lock(device);
+    assert(atomic_load(&tracked[1]) && device->pending);
+    native_unlock(device);
+    assert(!memcmp(map(&s, destination[0], sizeof(words)), words, sizeof(words)));
+    wgpuBufferUnmap(destination[0]);
+    assert(atomic_load(&tracked[1]));
+    atomic_store(&later_held, false);
+    work_done(&s);
+    for (size_t i = 0; i < 2; ++i) {
+        wgpuCommandBufferRelease(commands[i]);
+        wgpuBufferRelease(source[i]);
+        wgpuBufferRelease(destination[i]);
+    }
+    assert(!s.errors);
     consumer_finish(&s);
 }
 
@@ -329,7 +440,8 @@ static void loss_with_work_in_flight(void)
     atomic_store(&hold, false);
     unsigned failed = 0;
     WGPUQueueWorkDoneCallbackInfo done = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = failed_done, .userdata1 = &failed};
-    assert(wgpuQueueOnSubmittedWorkDone(s.queue, done).id && failed == 1);
+    wait_future(&s, wgpuQueueOnSubmittedWorkDone(s.queue, done));
+    assert(failed == 1);
     assert(!linked(device) && atomic_load(&buffers_closed) == 1 && !atomic_load(&tracked[0]));
     uint64_t value = 1;
     wgpuQueueWriteBuffer(s.queue, destination, 0, &value, sizeof(value)); /* Reports the loss. */
@@ -363,10 +475,24 @@ static void refused_submission_does_not_strand_later_work(void)
     atomic_store(&refused_held, true);
     track(0, DOE_VK_OK);
     wgpuDevicePushErrorScope(s.device, WGPUErrorFilter_OutOfMemory);
+    /* Exclude worker progress so these counters describe registration/submit,
+     * not an independent worker observation after their return. */
+    native_lock(device);
+    atomic_store(&waits, 0);
+    atomic_store(&recover_calls, 0);
     wgpuQueueSubmit(s.queue, 1, &commands[0]);
+    assert(!atomic_load(&waits) && !atomic_load(&recover_calls));
     WGPUPopErrorScopeCallbackInfo popped = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = oom_scope};
     assert(wgpuDevicePopErrorScope(s.device, popped).id);
     assert(atomic_load(&tracked[0]) && linked(device)); /* Unresolved: still linked with its leases. */
+    unsigned completed = 0;
+    WGPUQueueWorkDoneCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,
+        .callback=failed_done,.userdata1=&completed};
+    WGPUFuture future = wgpuQueueOnSubmittedWorkDone(s.queue, callback);
+    assert(future.id && !completed && !atomic_load(&waits) && !atomic_load(&recover_calls));
+    WGPUFutureWaitInfo poll = {.future=future};
+    assert(wgpuInstanceWaitAny(s.instance,1,&poll,0)==WGPUWaitStatus_TimedOut && !poll.completed);
+    native_unlock(device);
     atomic_store(&later_blocks, 0);
     atomic_store(&later_held, true);
     track(1, DOE_VK_OK);
@@ -395,8 +521,10 @@ static void refused_submission_does_not_strand_later_work(void)
     assert(retired && linked(device));
     atomic_store(&refused_held, false);
     native_lock(device);
-    (void)native_settle_pending(device); /* Recovery resolves the refused record. */
+    (void)native_settle_pending(device); /* Explicit synchronous recovery is still allowed. */
     native_unlock(device);
+    wait_future(&s, future);
+    assert(completed == 1 && atomic_load(&recover_calls));
     assert(!linked(device) && !atomic_load(&tracked[0]));
     wgpuCommandBufferRelease(commands[0]);
     wgpuCommandBufferRelease(commands[1]);
@@ -557,7 +685,10 @@ int main(void)
 {
     leases_until_completion();
     first_error_kept();
+    completion_retains_failure_serial(true);
+    completion_retains_failure_serial(false);
     map_and_work_done_order();
+    completion_serial_excludes_later_work();
     loss_with_work_in_flight();
     refused_submission_does_not_strand_later_work();
     targeted_host_access();

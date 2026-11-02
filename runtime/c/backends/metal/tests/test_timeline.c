@@ -2,6 +2,7 @@
 #include "mock_native.h"
 #include "../src/internal.h"
 #include "../src/progress.h"
+#include "doe_metal_shared.h"
 #include <assert.h>
 #include <stdio.h>
 static uint64_t signaled, observed;
@@ -57,6 +58,10 @@ int main(void) {
     assert(doe_mtl_commands_create(context,&commands,&error)==DOE_MTL_OK);
     assert(doe_mtl_commands_submit(commands,&error)==DOE_MTL_RANGE&&signals==2&&mock.commits==2);
     assert(doe_mtl_commands_release(commands)==DOE_MTL_OK);
+    void *accepted_event = NULL;
+    uint64_t accepted_value = 0;
+    assert(doe_mtl_context_release_point(context,&accepted_event,&accepted_value)==DOE_MTL_OK);
+    assert(accepted_event==&event && accepted_value==2); /* Reserved overflow is not a queue point. */
     doe_mtl_context_release(context);assert(event_releases==0);
     assert(doe_mtl_commands_block(&lease,17)==DOE_MTL_PENDING);
     doe_mtl_commands_unhold(&lease);

@@ -83,6 +83,13 @@ def main():
             '    (void)query;',
             '}'
         ])
+    if "vkGetBufferMemoryRequirements2" in manifest.get("official_functions", {}):
+        lines.extend([
+            'void doe_vk_abi_buffer_requirements_signature(doe_vk_functions *functions) {',
+            '    void (*query)(VkDevice, const VkBufferMemoryRequirementsInfo2 *, VkMemoryRequirements2 *) = functions->vkGetBufferMemoryRequirements2;',
+            '    (void)query;',
+            '}'
+        ])
     retained_lines = {}
     for name, signature in manifest.get("retained_functions", {}).items():
         file, line = signature["source"].split(":")

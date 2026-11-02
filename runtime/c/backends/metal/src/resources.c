@@ -131,6 +131,19 @@ doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset
     return DOE_MTL_OK;
 }
 
+doe_mtl_status doe_mtl_buffer_host_write_range(doe_mtl_buffer *buffer, uint64_t offset,
+    size_t size, void **out) {
+    unsigned char probe = 0;
+    doe_mtl_status status = out ? host_access(buffer, offset, &probe, size) : DOE_MTL_INVALID_ARGUMENT;
+    if (status != DOE_MTL_OK) return status;
+    if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
+    if (!buffer->initialized) return DOE_MTL_UNINITIALIZED;
+    unsigned char *contents = buffer->context->native.contents(buffer->context->native.userdata, buffer->native);
+    if (!contents) return DOE_MTL_NATIVE_FAILURE;
+    *out = contents + (size_t)offset;
+    return DOE_MTL_OK;
+}
+
 doe_mtl_status doe_mtl_buffer_read(doe_mtl_buffer *buffer, uint64_t offset,
     void *bytes, size_t size) {
     const void *source = NULL;

@@ -5,9 +5,9 @@
 static void map_exact(state *s, WGPUBuffer target, const uint32_t expected[7])
 {
     unsigned before = s->mapped;
-    WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
+    WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_WaitAnyOnly,
         .callback=mapped,.userdata1=s};
-    assert(wgpuBufferMapAsync(target, WGPUMapMode_Read, 0, 28, callback).id);
+    wait_future(s, wgpuBufferMapAsync(target, WGPUMapMode_Read, 0, 28, callback));
     assert(s->mapped == before + 1);
     const void *bytes = wgpuBufferGetConstMappedRange(target, 0, 28);
     assert(bytes && !memcmp(bytes, expected, 28));

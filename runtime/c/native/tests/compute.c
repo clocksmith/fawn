@@ -162,6 +162,7 @@ int main(void)
         .callback=done_callback,.userdata1=&result,.userdata2=instance};
     future = wgpuQueueOnSubmittedWorkDone(queue, done);
     assert(future.id && !result.done);
+    wait_ready(instance, future);
     wgpuInstanceProcessEvents(instance);
     assert(result.done == 1);
     WGPUBufferMapCallbackInfo map = {.mode=WGPUCallbackMode_WaitAnyOnly,.callback=map_callback,.userdata1=&result};

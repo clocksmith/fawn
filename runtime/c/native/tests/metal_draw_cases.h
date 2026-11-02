@@ -92,9 +92,10 @@ static void metal_draw_guard_ledger(state *s,mock_native *mock)
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Internal);
     submit(s,encoder); pop(s,WGPUErrorType_Internal);
     native_lock(device);
-    assert(device->pending && mock->renders==renders+1 && mock->dispatches==dispatches+4);
+    assert(device->pending && mock->renders==renders+1 && mock->dispatches==dispatches+3);
     assert(mock->render_draws[0].indirect_arguments && mock->render_draws[1].indirect_arguments);
-    assert(mock->render_draws[0].indirect_arguments!=mock->render_draws[1].indirect_arguments);
+    assert(mock->render_draws[0].indirect_arguments==mock->render_draws[1].indirect_arguments &&
+        mock->render_draws[0].indirect_offset==0 && mock->render_draws[1].indirect_offset==40);
     assert(mock->render_draws[0].index_buffer==index_identity && mock->render_draws[1].index_buffer==index_identity);
     assert(mock->dispatch_sequence<mock->render_sequence && mock->last_length==20 && mock->last_source_offset==4);
     hold=false;
@@ -102,6 +103,6 @@ static void metal_draw_guard_ledger(state *s,mock_native *mock)
     assert(settled.complete && settled.failure.status==NATIVE_OK && !device->pending);
     native_unlock(device);
     assert(!s->errors);
-    puts("PASS public Metal guarded indexed host: compiler-selected PSOs, exact6logical/8physical uint16 bytes, second-PSO OOM/reentry rollback, distinct GPU scratch, whole-pass ordering and unknown early releases; no GPU execution");
+    puts("PASS public Metal guarded indexed host: compiler-selected PSOs, exact6logical/8physical uint16 bytes, second-PSO OOM/reentry rollback, distinct records in one GPU scratch arena, whole-pass ordering and unknown early releases; no GPU execution");
 }
 #endif

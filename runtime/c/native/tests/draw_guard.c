@@ -44,10 +44,44 @@ static void run_case(state *s,WGPUComputePipeline normal,WGPUComputePipeline sca
     wgpuBufferRelease(readback);
 }
 
+static void run_batch(state *s, bool wide)
+{
+    char source[DOE_DRAW_ARGUMENT_BATCH_SOURCE_CAPACITY];
+    size_t length=0;
+    assert((wide ? doe_draw_argument_source_v2_batch(source,sizeof(source),&length) :
+        doe_draw_argument_source_batch(source,sizeof(source),&length))==DOE_DRAW_GUARD_SOURCE_OK);
+    WGPUComputePipeline normal=pipeline(s,source);
+    uint32_t records[31]={0};
+    size_t stride=wide ? 10u : 8u, words=3*stride+1, bytes=words*sizeof(uint32_t);
+    const uint32_t inputs[3][8]={{2,1,0,0,4,1,0,2},{3,1,0,0,1,1,0,2},{2,1,0,0,0,4,1,3}};
+    for (size_t i=0;i<3;++i) memcpy(records+i*stride,inputs[i],sizeof(inputs[i]));
+    records[words-1]=0xfeedbeefu;
+    uint32_t expected[31]; memcpy(expected,records,sizeof(records));
+    memset(expected+stride,0,4*sizeof(uint32_t));
+    WGPUBuffer record=buffer(s,bytes,WGPUBufferUsage_Storage|WGPUBufferUsage_CopyDst|WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback=buffer(s,bytes,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue,record,0,records,bytes);
+    WGPUBindGroupEntry entry={.binding=0,.buffer=record,.size=bytes};
+    WGPUBindGroup bindings=group(s,normal,&entry,1);
+    WGPUCommandEncoder encoder=wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPUComputePassEncoder pass=wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    wgpuComputePassEncoderSetPipeline(pass,normal);
+    wgpuComputePassEncoderSetBindGroup(pass,0,bindings,0,NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass,5,1,1); /* Two extra invocations and a trailing partial record. */
+    wgpuComputePassEncoderEnd(pass); wgpuComputePassEncoderRelease(pass);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,record,0,readback,0,bytes);
+    wgpuBindGroupRelease(bindings); wgpuBufferRelease(record); wgpuComputePipelineRelease(normal);
+    submit(s,encoder);
+    const void *actual=map(s,readback,bytes);
+    assert(!memcmp(actual,expected,bytes));
+    wgpuBufferUnmap(readback); wgpuBufferRelease(readback);
+}
+
 int main(void)
 {
     state s={0};
     consumer_init(&s);
+    run_batch(&s,false); run_batch(&s,true);
     char source[DOE_DRAW_INDEX_SCAN_SOURCE_CAPACITY];
     size_t length=0;
     assert(doe_draw_argument_source_v2(source,sizeof(source),&length)==DOE_DRAW_GUARD_SOURCE_OK);

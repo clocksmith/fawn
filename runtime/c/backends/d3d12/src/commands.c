@@ -66,6 +66,7 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
  * publish only future GPU-readable initialization, never CPU completion. */
 void doe_dx_commands_accept_buffers(doe_dx_commands *commands) {
     if (commands->state != DOE_DX_SUBMITTED || !commands->fence) abort();
+    if (!commands->work_executed) return;
     for (size_t index = 0; index < commands->buffer_count; ++index) {
         doe_dx_buffer_use *use = &commands->buffers[index];
         if (use->buffer->owner != commands) abort();
@@ -92,11 +93,11 @@ void doe_dx_commands_settle(doe_dx_commands *commands, bool lost, const doe_dx_e
     commands->state = lost || present_failed ? DOE_DX_FAILED : DOE_DX_COMPLETE;
     if (present_failed) commands->failure=commands->present_failure;
     else if (lost && error) commands->failure = *error;
-    if (lost) doe_dx_native_commands_destroy(commands->native);
+    if (lost || !commands->work_executed) doe_dx_native_commands_destroy(commands->native);
     else doe_dx_native_commands_recycle(commands->native);
     commands->native = NULL;
     doe_dx_surface_retire_present(commands,true,!lost&&!present_failed);
-    release_resources(commands, !lost);
+    release_resources(commands, !lost && commands->work_executed);
 }
 
 void doe_dx_commands_release(doe_dx_commands *commands) {
@@ -237,9 +238,10 @@ doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *er
     commands->next = context->pending;
     context->pending = commands;
     context->next_fence++;
-    doe_dx_native_execute(context->native, commands->native);
     doe_dx_error presentation={0};
-    doe_dx_status presented=doe_dx_surface_execute_present(commands,&presentation);
+    doe_dx_status executed=doe_dx_native_execute(context->native,commands->native,&presentation);
+    commands->work_executed=executed==DOE_DX_OK;
+    doe_dx_status presented=executed==DOE_DX_OK ? doe_dx_surface_execute_present(commands,&presentation) : executed;
     if (presented!=DOE_DX_OK) {
         presentation.status=presented;
         commands->present_failure=presentation;

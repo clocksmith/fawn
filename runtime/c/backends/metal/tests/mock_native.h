@@ -20,6 +20,12 @@ typedef enum mock_kind {
     MOCK_KIND_EVENT, MOCK_KIND_COUNT
 } mock_kind;
 typedef struct mock_object mock_object;
+/* Fixed test ledger only: capture call-borrowed compact spans before return. */
+typedef struct mock_render_bindings {
+    doe_mtl_buffer_binding buffers[DOE_MTL_BUFFER_SLOTS];
+    doe_mtl_texture_binding textures[DOE_MTL_TEXTURE_SLOTS];
+    doe_mtl_sampler_binding samplers[DOE_MTL_SAMPLER_SLOTS];
+} mock_render_bindings;
 typedef struct mock_native {
     mock_operation fail;
     doe_mtl_status pipeline_failure;
@@ -33,7 +39,9 @@ typedef struct mock_native {
     unsigned closes;
     unsigned copies;
     unsigned fills;
-    unsigned dispatches;
+    unsigned dispatches, guard_batches, guard_normalizations;
+    uint32_t guard_normal_groups[8];
+    size_t guard_normal_offsets[8], guard_normal_sizes[8];
     unsigned indirects;
     unsigned content_queries;
     unsigned operation_sequence;
@@ -72,6 +80,8 @@ typedef struct mock_native {
     doe_mtl_vertex_attribute render_attributes[DOE_MTL_VERTEX_ATTRIBUTES];
     doe_mtl_native_render_pass render_pass;
     doe_mtl_native_render_draw render_draws[2];
+    mock_render_bindings render_bindings[2][2];
+    doe_mtl_native_resources render_resources[2][2];
     size_t render_draw_count;
     unsigned renders;
     unsigned timestamps, resolves;

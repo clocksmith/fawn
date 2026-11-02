@@ -16,6 +16,7 @@ struct native_shared_texture_memory {
     native_device *device;
     doe_dx_texture *d3d12; /* DXGI import; canonical backend texture shared by views. */
     void *surface;           /* Metal IOSurface lease. */
+    uint64_t metal_acquire_value; /* Accepted queue wait, including accesses with no texture work. */
     doe_vk_texture *vulkan;  /* Vulkan OPAQUE_FD import; one image for every texture. */
     WGPUTextureUsage usage;  /* Vulkan: the producer image's WebGPU-visible usage. */
     bool mutable_format;     /* Vulkan: the producer admits its srgb/unorm view pair. */

@@ -16,7 +16,7 @@ enum { WRITE_CAPACITY = 64 };
 
 typedef struct native_d3d12_write {
     doe_dx_buffer *staging, *destination;
-    uint64_t offset, size;
+    uint64_t source_offset, offset, size;
 } native_d3d12_write;
 struct native_d3d12_writes {
     doe_dx_commands *open; /* Records every logged copy; NULL after an adopted discard. */
@@ -34,7 +34,7 @@ static native_command_handle handle(native_device *device, doe_dx_commands *comm
 static native_failure record(doe_dx_commands *commands, const native_d3d12_write *write)
 {
     doe_dx_error error = {0};
-    doe_dx_status status = doe_dx_commands_copy(commands, write->staging, 0,
+    doe_dx_status status = doe_dx_commands_copy(commands, write->staging, write->source_offset,
         write->destination, write->offset, write->size, &error);
     return native_failure_d3d12(status, &error);
 }
@@ -93,7 +93,7 @@ native_failure native_d3d12_prepare_recording(native_device *device)
 }
 
 #if defined(_WIN32)
-native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging,
+native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *staging, uint64_t source_offset,
     doe_dx_buffer *destination, uint64_t offset, uint64_t size)
 {
     native_d3d12_writes *writes = device->backend.value.d3d12.writes;
@@ -102,17 +102,22 @@ native_failure native_d3d12_write_record(native_device *device, doe_dx_buffer *s
         if (!writes) return native_failure_status(NATIVE_OUT_OF_MEMORY);
         device->backend.value.d3d12.writes = writes;
     }
-    /* Two copies into one COPY_DEST buffer are not ordered within a list: a
-     * second write into a logged destination submits the earlier ones first. */
+    /* Order repeated DEFAULT destinations in the same command. Fixed-state
+     * READBACK still requires a separate execution; no overlap is guessed safe. */
     for (size_t i = 0; i < writes->count; ++i) {
         if (writes->log[i].destination != destination) continue;
-        native_failure flushed = native_d3d12_flush_writes(device);
-        if (flushed.status != NATIVE_OK) return flushed;
+        native_failure ready=ensure_open(device,writes);
+        if (ready.status!=NATIVE_OK) return ready;
+        doe_dx_error error={0};
+        doe_dx_status ordered=doe_dx_commands_order_buffer_writes(writes->open,&error);
+        if (ordered==DOE_DX_UNSUPPORTED) ready=native_d3d12_flush_writes(device);
+        else ready=native_failure_d3d12(ordered,&error);
+        if (ready.status!=NATIVE_OK) return ready;
         break;
     }
     native_failure failure = ensure_open(device, writes);
     if (failure.status != NATIVE_OK) return failure;
-    native_d3d12_write write = {staging, destination, offset, size};
+    native_d3d12_write write = {staging, destination, source_offset, offset, size};
     if (doe_dx_buffer_retain(staging) != DOE_DX_OK) return native_failure_status(NATIVE_FAILURE);
     if (doe_dx_buffer_retain(destination) != DOE_DX_OK) {
         doe_dx_buffer_release(staging);

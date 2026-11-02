@@ -10,6 +10,7 @@
 #include <d3dcommon.h>
 #include <d3d11on12.h>
 #include "native.h"
+#include "../include/doe_d3d12_shared.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,6 +25,7 @@ struct doe_dx_native_context {
     ID3D12Device *device;
     ID3D12CommandQueue *queue;
     ID3D12Fence *fence;
+    HANDLE shared_timeline_handle;
     HANDLE completion_event;
     bool completion_registered;
     doe_dx_wait_record *waits; /* Native event registrations, never GPU submissions. */
@@ -39,6 +41,8 @@ struct doe_dx_native_context {
 };
 struct doe_dx_native_buffer {
     ID3D12Resource *resource;
+    void *upload_mapping;
+    uint64_t upload_written;
     uint64_t size;
     doe_dx_memory memory;
     struct doe_dx_buffer_heap *heap; /* Non-NULL for a placed allocation. */
@@ -119,12 +123,17 @@ doe_dx_status doe_dx_prepare_depth_view(doe_dx_native_commands *,doe_dx_native_t
     bool,bool,doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
 UINT doe_dx_storage_size_slots(const doe_dx_native_resources *);
 doe_dx_status doe_dx_write_storage_sizes(const doe_dx_native_resources *,uint8_t *,size_t,doe_dx_error *);
+struct doe_dx_shared_wait;
 struct doe_dx_native_commands {
     doe_dx_native_context *context; /* Context cannot close with live commands. */
+    struct doe_dx_shared_wait *shared_waits;
     ID3D12CommandAllocator *allocator;
     ID3D12GraphicsCommandList *list;
     doe_dx_descriptor_use *descriptors;
 };
+ID3D12Fence *doe_dx_shared_fence_native(const doe_dx_shared_fence *);
+doe_dx_status doe_dx_shared_waits_execute(doe_dx_native_context *,doe_dx_native_commands *,doe_dx_error *);
+void doe_dx_shared_waits_close(doe_dx_native_commands *);
 void doe_dx_native_commands_cache_close(doe_dx_native_context *context);
 /* Releases empty placed-buffer heaps; a heap with live placements is detached
  * and released by its last buffer. Context close normally finds none live. */

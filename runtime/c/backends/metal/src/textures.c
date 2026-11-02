@@ -183,6 +183,20 @@ doe_mtl_status doe_mtl_texture_discard(doe_mtl_texture *texture) {
     return DOE_MTL_OK;
 }
 
+doe_mtl_status doe_mtl_texture_can_discard_queued(const doe_mtl_texture *texture) {
+    if (!texture) return DOE_MTL_INVALID_ARGUMENT;
+    if (texture->evict_requested || texture->evicted) return DOE_MTL_INVALID_STATE;
+    if (texture->poisoned) return DOE_MTL_EXECUTION_FAILED;
+    return !texture->owner || texture->owner->state == DOE_MTL_SUBMITTED ? DOE_MTL_OK : DOE_MTL_BUSY;
+}
+doe_mtl_status doe_mtl_texture_discard_queued(doe_mtl_texture *texture) {
+    doe_mtl_status status = doe_mtl_texture_can_discard_queued(texture);
+    if (status != DOE_MTL_OK) return status;
+    if (!texture->owner) return doe_mtl_texture_discard(texture);
+    texture->discard_pending = true;
+    return DOE_MTL_OK;
+}
+
 const doe_mtl_texture_desc *doe_mtl_texture_description(const doe_mtl_texture *texture) {
     return texture != NULL ? &texture->desc : NULL;
 }

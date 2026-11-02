@@ -11,6 +11,7 @@
  * uses the ordinary dispatcher. No opaque guessed-size SDK structures. */
 doe_mtl_status doe_mtl_objc_timeline_create(void *, void *, void **, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_timeline_signal(void *, void *, void *, uint64_t, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_commands_wait_event(void *, void *, void *, uint64_t, doe_mtl_error *);
 uint64_t doe_mtl_objc_timeline_value(void *, void *);
 doe_mtl_status doe_mtl_objc_command_block(void *, void *, void *, uint64_t, uint64_t);
 struct doe_mtl_objc;
@@ -26,7 +27,6 @@ doe_mtl_status doe_mtl_objc_shared_surface(void *, void *, void **, uint32_t *, 
 void doe_mtl_objc_shared_surface_release(void *, void *);
 doe_mtl_status doe_mtl_objc_shared_texture(void *, void *, void *, const doe_mtl_texture_desc *, void **, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_shared_event_retain(void *, void *, void **, doe_mtl_error *);
-doe_mtl_status doe_mtl_objc_shared_event_wait(void *, void *, uint64_t, doe_mtl_error *);
 typedef struct doe_mtl_size { size_t width, height, depth; } doe_mtl_size;
 typedef struct doe_mtl_origin { size_t x, y, z; } doe_mtl_origin;
 typedef struct doe_mtl_swizzle_abi { uint8_t red, green, blue, alpha; } doe_mtl_swizzle_abi;
@@ -173,6 +173,7 @@ typedef struct doe_mtl_objc {
     void *set_bytes;
     void *dispatch;
     void *dispatch_indirect;
+    void *buffer_barrier;
     void *commit;
     void *add_completed_handler;
     /* objc_msgSend, cast at the call to take the block argument. */
@@ -254,9 +255,18 @@ doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
 doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
     const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
     size_t draw_count, doe_mtl_error *error);
-bool doe_mtl_objc_render_encode_draw(doe_mtl_objc *runtime, void *encoder,
-    const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draw,
-    const doe_mtl_native_render_draw *previous);
+typedef struct doe_mtl_objc_stage_state {
+    doe_mtl_native_resources bindings; /* One encoder-local cache, never per draw. */
+    uint64_t texture_mask[2];
+    uint32_t buffer_mask, sampler_mask, sizes_slot;
+    bool valid;
+} doe_mtl_objc_stage_state;
+typedef struct doe_mtl_objc_render_state {
+    doe_mtl_objc_stage_state vertex, fragment;
+    const doe_mtl_native_render_draw *previous;
+} doe_mtl_objc_render_state;
+bool doe_mtl_objc_render_encode_draw(doe_mtl_objc *, void *, const doe_mtl_native_render_pass *,
+    const doe_mtl_native_render_draw *, doe_mtl_objc_render_state *);
 void *doe_mtl_objc_depth_state(doe_mtl_objc *runtime, void *device,
     const doe_mtl_depth_stencil *desc);
 void doe_mtl_objc_load_queries(doe_mtl_objc *runtime, doe_objc_message message);
@@ -272,6 +282,8 @@ doe_mtl_status doe_mtl_objc_resolve_timestamps(void *userdata, void *command,
     size_t offset, void **event, uint64_t value, doe_mtl_error *error);
 void *doe_mtl_objc_timed_compute(doe_mtl_objc *runtime, void *command,
     const doe_mtl_native_timestamps *timestamps);
+doe_mtl_status doe_mtl_objc_guard_batch(void *, void *, const doe_mtl_native_guard_copy *, size_t,
+    const doe_mtl_native_guard_dispatch *, size_t, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_dispatch_indirect(void *userdata, void *command, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error);

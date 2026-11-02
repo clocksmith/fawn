@@ -118,6 +118,46 @@ static void import_copy_and_fence(state *s,ID3D12Device *producer)
     wgpuSharedTextureMemoryRelease(memory);
     printf("PASS public DXGI Import/Create/Begin/queue-copy/End, actual zero readback, alias rejection, independent exported/imported fence lifetime %s\n",adapter_class_scope());
 }
+static void queue_waits_and_cached_export(state *s,ID3D12Device *producer)
+{
+    WGPUSharedTextureMemory memory=import_memory(s,producer_texture(producer),false);
+    WGPUTexture image=shared_texture(memory);
+    ID3D12Fence *source=NULL; HANDLE handle=NULL;
+    assert(ID3D12Device_CreateFence(producer,0,D3D12_FENCE_FLAG_SHARED,&IID_ID3D12Fence,(void **)&source)==S_OK);
+    assert(ID3D12Device_CreateSharedHandle(producer,(ID3D12DeviceChild *)source,NULL,GENERIC_ALL,NULL,&handle)==S_OK);
+    state foreign={0};
+    WGPUFeatureName features[]={(WGPUFeatureName)DOE_SHARED_FEATURE_DXGI_MEMORY,(WGPUFeatureName)DOE_SHARED_FEATURE_DXGI_FENCE};
+    consumer_init_features(&foreign,features,2);
+    WGPUSharedFenceDXGISharedHandleDescriptor dxgi={.chain={.sType=(WGPUSType)DOE_SHARED_STYPE_DXGI_FENCE_DESCRIPTOR},.handle=handle};
+    WGPUSharedFenceDescriptor desc={.nextInChain=&dxgi.chain};
+    WGPUSharedFence fence=wgpuDeviceImportSharedFence(foreign.device,&desc); assert(fence); CloseHandle(handle);
+    uint64_t value=7;
+    WGPUSharedTextureMemoryBeginAccessDescriptor begin={.initialized=WGPU_TRUE,.fenceCount=1,.fences=&fence,
+        .signaledValueCount=1,.signaledValues=&value};
+    /* The producer remains unsignaled throughout Begin and both Ends. A CPU
+     * producer wait could not return success here. No consumer GPU work is needed
+     * to preserve the incoming dependency in the outgoing timeline point. */
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,image,&begin)==WGPUStatus_Success);
+    wgpuSharedFenceRelease(fence); consumer_finish(&foreign);
+    WGPUSharedTextureMemoryEndAccessState first={0},second={0};
+    assert(wgpuSharedTextureMemoryEndAccess(memory,image,&first)==WGPUStatus_Success && first.signaledValues[0]);
+    WGPUSharedFenceDXGISharedHandleExportInfo one={.chain={.sType=(WGPUSType)DOE_SHARED_STYPE_DXGI_FENCE_EXPORT}};
+    WGPUSharedFenceExportInfo export_one={.nextInChain=&one.chain}; wgpuSharedFenceExportInfo(first.fences[0],&export_one);
+    ID3D12Fence *outgoing=NULL;
+    assert(ID3D12Device_OpenSharedHandle(producer,one.handle,&IID_ID3D12Fence,(void **)&outgoing)==S_OK);
+    assert(ID3D12Fence_GetCompletedValue(outgoing)<first.signaledValues[0]);
+    begin=(WGPUSharedTextureMemoryBeginAccessDescriptor){.initialized=WGPU_TRUE};
+    assert(wgpuSharedTextureMemoryBeginAccess(memory,image,&begin)==WGPUStatus_Success);
+    assert(wgpuSharedTextureMemoryEndAccess(memory,image,&second)==WGPUStatus_Success);
+    WGPUSharedFenceDXGISharedHandleExportInfo two={.chain={.sType=(WGPUSType)DOE_SHARED_STYPE_DXGI_FENCE_EXPORT}};
+    WGPUSharedFenceExportInfo export_two={.nextInChain=&two.chain}; wgpuSharedFenceExportInfo(second.fences[0],&export_two);
+    assert(one.handle==two.handle && second.signaledValues[0]>=first.signaledValues[0]);
+    assert(ID3D12Fence_Signal(source,7)==S_OK); ID3D12Fence_Release(source);
+    wait_external(producer,two.handle,second.signaledValues[0]); ID3D12Fence_Release(outgoing);
+    wgpuSharedTextureMemoryEndAccessStateFreeMembers(first); wgpuSharedTextureMemoryEndAccessStateFreeMembers(second);
+    wgpuTextureRelease(image); wgpuSharedTextureMemoryRelease(memory); work_done(s);
+    printf("PASS imported GPU queue wait: unsignaled producer never CPU-blocks Begin/End, zero-work End forwards wait, foreign fence/device release safe, one cached timeline export handle %s\n",adapter_class_scope());
+}
 typedef struct end_call {
     WGPUSharedTextureMemory memory; WGPUTexture texture;
     WGPUSharedTextureMemoryEndAccessState output;
@@ -190,7 +230,7 @@ int main(int argc,char **argv)
     WGPUFeatureName features[]={(WGPUFeatureName)DOE_SHARED_FEATURE_DXGI_MEMORY,(WGPUFeatureName)DOE_SHARED_FEATURE_DXGI_FENCE};
     consumer_init_features(&s,features,2);
     ID3D12Device *producer=producer_device();
-    import_copy_and_fence(&s,producer); concurrent_end(&s,false); concurrent_end(&s,true);
+    import_copy_and_fence(&s,producer); queue_waits_and_cached_export(&s,producer); concurrent_end(&s,false); concurrent_end(&s,true);
     work_done(&s); ID3D12Device_Release(producer); consumer_finish(&s);
     printf("PASS public native DLL shared-memory WARP consumer %s\n",adapter_class_scope()); return 0;
 }

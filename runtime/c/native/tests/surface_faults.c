@@ -484,7 +484,7 @@ static void *run_compute(void *userdata)
         wgpuBufferRelease(storage);
         WGPUMapAsyncStatus status = (WGPUMapAsyncStatus)0;
         WGPUBufferMapCallbackInfo map = {.mode = WGPUCallbackMode_AllowSpontaneous, .callback = mapped_reply, .userdata1 = &status};
-        wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, 256, map);
+        wait_future(s, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, 256, map));
         wgpuInstanceProcessEvents(s->instance);
         assert(status == WGPUMapAsyncStatus_Success);
         const uint32_t *output = wgpuBufferGetConstMappedRange(readback, 0, 256);

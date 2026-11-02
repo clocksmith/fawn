@@ -55,6 +55,18 @@ doe_vk_status doe_vk_render_index_limit(doe_vk_commands *commands,
     const doe_vk_render_indices *indices, uint32_t *out_limit);
 doe_vk_status doe_vk_draw_indirect_validate(doe_vk_commands *commands,
     const doe_vk_render_indirect *indirect, bool indexed);
+typedef struct doe_vk_draw_indirect_request {
+    const doe_vk_render_indirect *indirect;
+    uint32_t limits[2];
+    bool indexed;
+    /* Prepared only on the existing command owner; not a second lease. */
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    uint32_t group_count;
+} doe_vk_draw_indirect_request;
+/* A batch uses one retained span and a bounded dispatch per compatible group.
+ * Caller records the aggregate dependency before rendering these offsets. */
+doe_vk_status doe_vk_draw_indirect_prepare_batch(doe_vk_commands *, doe_vk_draw_indirect_request *, size_t);
 /* limits[0] is the vertex capacity, or the index capacity when indexed. */
 doe_vk_status doe_vk_draw_indirect_prepare(doe_vk_commands *commands,
     const doe_vk_render_indirect *indirect, const uint32_t limits[2], bool indexed, VkBuffer *out);

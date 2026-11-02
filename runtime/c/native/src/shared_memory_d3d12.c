@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Pinned Dawn DXGI ABI composed with canonical resources and pending commands.
- * Fence waits retain their imports and run outside the device mutex. */
+ * Imported waits retain their native handles on the existing GPU command owner. */
 #include "shared_memory_internal.h"
 #include "d3d12_texture.h"
 #include <stdlib.h>
@@ -21,6 +21,21 @@ static native_failure settle_texture(native_device *device,doe_dx_texture *textu
         doe_time_add(&now,UINT64_C(5000000000),&deadline).status!=DOE_HOST_OK)
         return native_failure_status(NATIVE_FAILURE);
     return native_d3d12_wait_owner(device,owner,&deadline);
+}
+static native_failure queue_waits(native_device *device,WGPUSharedFence *fences,
+    const WGPUSharedTextureMemoryBeginAccessDescriptor *descriptor)
+{
+    if (!descriptor->fenceCount) return native_failure_status(NATIVE_OK);
+    native_failure failure=native_d3d12_prepare_recording(device);
+    native_command_handle commands={0};
+    if (failure.status==NATIVE_OK) failure=native_command_create(&device->backend,&commands);
+    doe_dx_error detail={0};
+    for (size_t i=0;failure.status==NATIVE_OK && i<descriptor->fenceCount;++i)
+        failure=result(doe_dx_commands_wait_shared_fence(commands.value.d3d12.commands,
+            fences[i]->d3d12,descriptor->signaledValues[i],&detail),&detail);
+    if (failure.status==NATIVE_OK) return native_submit_backend_commands_async(device,commands);
+    if (native_command_release(&commands)!=NATIVE_OK) abort();
+    return failure;
 }
 static WGPUTextureFormat public_format(doe_dx_format format)
 {
@@ -168,13 +183,12 @@ WGPUStatus native_d3d12_shared_begin(WGPUSharedTextureMemory memory,doe_resource
     if (admitted && failure.status==NATIVE_OK) failure=result(doe_dx_shared_texture_end(memory->d3d12,NULL),NULL);
     native_unlock(device);
     doe_dx_error detail={0};
-    for (size_t i=0;admitted && failure.status==NATIVE_OK && i<count;++i)
-        failure=result(doe_dx_shared_fence_wait(fences[i]->d3d12,descriptor->signaledValues[i],5000,&detail),&detail);
     if (admitted && failure.status==NATIVE_OK) failure=result(doe_dx_shared_texture_acquire(memory->d3d12,&detail),&detail);
     native_lock(device);
     bool success=admitted && failure.status==NATIVE_OK && native_shared_matches_texture(memory,texture) && native_device_result(device)==NATIVE_OK;
     if (success) {
-        failure=result(doe_dx_shared_texture_begin(memory->d3d12,descriptor->initialized!=0,descriptor->concurrentRead!=0,&detail),&detail);
+        failure=queue_waits(device,fences,descriptor);
+        if (failure.status==NATIVE_OK) failure=result(doe_dx_shared_texture_begin(memory->d3d12,descriptor->initialized!=0,descriptor->concurrentRead!=0,&detail),&detail);
         if (failure.status==NATIVE_OK && !descriptor->initialized) failure=native_d3d12_initialize_texture(device,memory->d3d12);
         success=failure.status==NATIVE_OK;
     }

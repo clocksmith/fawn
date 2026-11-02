@@ -2,10 +2,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "objc_abi.h"
 #include "texture_internal.h"
-#if !defined(_WIN32)
-#include <errno.h>
-#include <time.h>
-#endif
 
 static doe_mtl_status inspect_shared(doe_mtl_objc *runtime, void *surface,
     uint32_t *width, uint32_t *height, doe_mtl_format *format, doe_mtl_error *error)
@@ -87,24 +83,13 @@ doe_mtl_status doe_mtl_objc_shared_event_retain(void *userdata, void *event,
     return doe_mtl_fail(DOE_MTL_OK, "shared event import", error);
 }
 
-doe_mtl_status doe_mtl_objc_shared_event_wait(void *userdata, void *event,
-    uint64_t value, doe_mtl_error *error)
+doe_mtl_status doe_mtl_objc_commands_wait_event(void *userdata, void *command,
+    void *event, uint64_t value, doe_mtl_error *error)
 {
     doe_mtl_objc *runtime = userdata;
-    if (!runtime->queries.event_value || !runtime->queries.signaled_value)
-        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "MTLSharedEvent signaledValue", error);
-    /* Producer waits must not manufacture a queue command or report a timeout
-     * as completion. The native event remains retained by the caller. Sleeping
-     * polling avoids a process-global listener and works on the minimum SDK. */
-    while (runtime->queries.event_value(event, runtime->queries.signaled_value) < value) {
-#if !defined(_WIN32)
-        struct timespec delay = {0, 1000000};
-        while (nanosleep(&delay, &delay) != 0) {
-            if (errno != EINTR) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "shared event host wait", error);
-        }
-#else
-        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "Metal shared event host wait", error);
-#endif
-    }
-    return doe_mtl_fail(DOE_MTL_OK, "shared event producer completion", error);
+    if (!runtime->queries.event || !runtime->queries.wait_event ||
+        !runtime->responds_call(command, runtime->responds, runtime->queries.wait_event))
+        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "encodeWaitForEvent:value:", error);
+    runtime->queries.event(command, runtime->queries.wait_event, event, value);
+    return doe_mtl_fail(DOE_MTL_OK, "encodeWaitForEvent:value:", error);
 }
