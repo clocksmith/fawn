@@ -1211,12 +1211,12 @@ function loadWorkflowManifest(path) {
     if (workflow.scenarioTemplate === "fawn_visual_resource") {
       const resourcePath = requireString(row.resourcePath, `rows[${index}].resourcePath`);
       if (
-        !resourcePath.startsWith("browser/chromium/resources/") ||
+        !resourcePath.startsWith("bench/browser/fixtures/fawn/") ||
         !resourcePath.endsWith(".html") ||
         resourcePath.includes("..")
       ) {
         throw new Error(
-          `workflow row ${workflow.id} resourcePath must be a browser/chromium/resources/*.html path`,
+          `workflow row ${workflow.id} resourcePath must be a bench/browser/fixtures/fawn/*.html path`,
         );
       }
       const resourceSha256 = fileHashHex(resolve(ROOT, resourcePath));
@@ -1225,6 +1225,13 @@ function loadWorkflowManifest(path) {
       }
       workflow.resourcePath = resourcePath;
       workflow.resourceSha256 = resourceSha256;
+      workflow.resourceDependencies = Object.fromEntries((row.resourceDependencies ?? []).map(path => {
+        if ((!path.startsWith('browser/chromium/resources/') && !path.startsWith('bench/browser/fixtures/fawn/')) || path.includes('..'))
+          throw new Error(`Invalid visual resource dependency: ${path}`);
+        const hash = fileHashHex(resolve(ROOT, path));
+        if (!hash) throw new Error(`Missing visual resource dependency: ${path}`);
+        return [path, hash];
+      }));
       workflow.statusSelector = row.statusSelector ?? "#status";
       workflow.frameSelector = row.frameSelector ?? "#frame";
       workflow.workloadSelector = row.workloadSelector ?? "#workload";
@@ -3236,6 +3243,7 @@ async function runScenario(
         const p95Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
         result.metrics.resourcePath = scenarioConfig.resourcePath ?? "";
         result.metrics.resourceSha256 = scenarioConfig.resourceSha256 ?? "";
+        result.metrics.resourceDependencies = scenarioConfig.resourceDependencies ?? {};
         result.metrics.statusText = readText(scenarioConfig.statusSelector ?? "#status") || firstTelemetry.statusText;
         result.metrics.frameText = readText(scenarioConfig.frameSelector ?? "#frame") || firstTelemetry.frameText;
         result.metrics.workloadText = readText(scenarioConfig.workloadSelector ?? "#workload");
@@ -4359,7 +4367,9 @@ async function main() {
     projectionManifestSha256: fileHashHex(args.manifestPath), workflowManifestSha256: fileHashHex(args.workflowsPath),
     modeChromePaths: args.modeChromePaths, doeLibPath: args.doeLibPath,
     visualResourceSha256: Object.fromEntries(l2Rows.filter((row) => row.resourcePath)
-      .map((row) => [row.resourcePath, row.resourceSha256])) };
+      .map((row) => [row.resourcePath, row.resourceSha256])),
+    visualResourceDependencies: Object.fromEntries(l2Rows.filter(row => row.resourcePath)
+      .map(row => [row.resourcePath, row.resourceDependencies])) };
   mkdirSync(dirname(args.outPath), { recursive: true });
   const checkpoint = (snapshot) => {
     const fd = openSync(`${args.outPath}.checkpoints.jsonl`, "a");

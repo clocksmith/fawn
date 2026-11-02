@@ -907,7 +907,7 @@ class PackageBrowserReleaseArchiveTests(unittest.TestCase):
         (package_dir / "chrome.exe").write_bytes(b"windows chrome\n")
         (version / "chrome.dll").write_bytes(b"windows chrome.dll with built-in dawn\n")
         (private / "webgpu_doe_c.dll").write_bytes(b"windows doe c runtime\n")
-        (branding / "fawn-start.html").write_bytes(b"<!doctype html>\n")
+        (branding / "fawn-cycle.html").write_bytes(b"<!doctype html>\n")
         archive = root / "Fawn-Doe-windows-x64.zip"
         manifest = root / "Fawn-Doe-windows-x64.manifest.json"
         result = subprocess.run(
@@ -957,7 +957,7 @@ class PackageBrowserReleaseArchiveTests(unittest.TestCase):
                 "Fawn-Doe-windows-x64/158.0.8108.0/chrome.dll",
             )
             with zipfile.ZipFile(archive) as package:
-                self.assertEqual(package.read("Fawn-Doe-windows-x64/fawn/fawn-start.html"), b"<!doctype html>\n")
+                self.assertEqual(package.read("Fawn-Doe-windows-x64/fawn/fawn-cycle.html"), b"<!doctype html>\n")
                 metadata = json.loads(package.read("Fawn-Doe-windows-x64/browser-product.json"))
                 self.assertEqual(metadata["platform"], payload["platform"])
 

@@ -143,7 +143,7 @@ The installer also stages Fawn branding under `fawn/`: the same
 `resources/fawn-*.{html,svg,js}` start-page set the macOS bundle carries, the
 compiled Linux icons from `assets/logo/compiled/linux` as
 `fawn/icons/hicolor/<size>x<size>/apps/fawn.png`, and `fawn/fawn.desktop`. Like
-the macOS wrapper, the launcher opens `fawn/fawn-start.html` as the homepage and
+the macOS wrapper, the launcher opens `fawn/fawn-cycle.html` as the homepage and
 a new window, and like `scripts/chromium.sh` it selects `CHROME_DESKTOP=fawn.desktop`
 and `--class=fawn`; it fails if the start page is missing. For a desktop entry,
 link `chrome-wrapper` as `fawn` on `PATH` and copy `fawn/fawn.desktop` and
@@ -157,7 +157,7 @@ On Windows, `scripts/build-windows.py` installs the compiled
 carries the Fawn icon and the tracked source diff binds it. `Fawn.exe` embeds the
 same icon through `launcher/fawn_windows.rc`. `scripts/stage-fawn-windows.py`
 stages the start-page set under `fawn/`, and `Fawn.exe` opens
-`fawn/fawn-start.html` as the homepage and a new window, failing if it is missing.
+`fawn/fawn-cycle.html` as the homepage and a new window, failing if it is missing.
 The platform policy declares no Windows release platform, so
 `scripts/package-browser-release-archive.py --platform-os windows` packs only a
 diagnostic zip, with Dawn's fallback member being the versioned `chrome.dll`.

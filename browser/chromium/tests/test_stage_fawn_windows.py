@@ -89,9 +89,9 @@ class ProducerAdmission(unittest.TestCase):
 class StartPageResources(unittest.TestCase):
     def test_start_page_set_matches_other_platforms(self) -> None:
         names = [path.name for path in stage.start_page_resources()]
-        self.assertIn('fawn-start.html', names)
+        self.assertIn('fawn-cycle.html', names)
         self.assertIn('fawn-icon.svg', names)
-        self.assertIn('fawn-formation.js', names)
+        self.assertEqual(len(names), 2)
 
     def test_missing_start_page_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

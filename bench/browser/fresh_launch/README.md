@@ -55,8 +55,9 @@ The runner does not pause unrelated applications. The page launcher resolves
 Playwright through `browser/chromium/package.json` and uses its installed
 `playwright-core`; it does not download a browser or install dependencies.
 
-The six original anchors use current `browser/chromium/resources/` plus the
-maintained `compute-atomic-canvas.html`. `launch.repoRoot` can explicitly select
+Standalone workload anchors use `bench/browser/fixtures/fawn/`; the unified
+cycle uses `browser/chromium/resources/`, alongside the maintained
+`compute-atomic-canvas.html`. Served dependency hashes remain in each launch receipt. `launch.repoRoot` can explicitly select
 another checkout. Optional upstream pages need their pinned files supplied
 through `launch.assetsRoot`; custom workload pages also need their corresponding
 `workloads/` HTML. Selecting an unavailable page fails instead of substituting

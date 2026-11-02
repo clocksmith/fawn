@@ -1346,9 +1346,9 @@ function browserSurfaceModuleUrl(baseUrl) {
 }
 
 async function runFawnPrismaticLifecycleProbe(browser, localUrl, timeoutMs) {
-  const startUrl = new URL("/browser/chromium/resources/fawn-start.html", localUrl).href;
+  const startUrl = new URL("/bench/browser/fixtures/fawn/fawn-start.html", localUrl).href;
   const fluidUrl = new URL(
-    "/browser/chromium/resources/fawn-prismatic-fluids.html",
+    "/bench/browser/fixtures/fawn/fawn-prismatic-fluids.html",
     localUrl,
   ).href;
 

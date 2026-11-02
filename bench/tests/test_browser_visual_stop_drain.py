@@ -7,7 +7,7 @@ import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-RESOURCES = ROOT / "browser/chromium/resources"
+RESOURCES = ROOT / "bench/browser/fixtures/fawn"
 
 
 class BrowserVisualStopDrainTests(unittest.TestCase):

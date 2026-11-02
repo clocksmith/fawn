@@ -23,7 +23,7 @@ SPEC.loader.exec_module(OWNER)
 
 
 def branding(package: Path) -> list[str]:
-    start = "file://" + quote(str(package / "fawn/fawn-start.html"), safe="/")
+    start = "file://" + quote(str(package / "fawn/fawn-cycle.html"), safe="/")
     return ["--class=fawn", "--homepage=" + start, "--new-window", start]
 
 
@@ -71,7 +71,7 @@ class LinuxLauncherTests(unittest.TestCase):
     def test_relocated_default_preserves_pid_descriptors_and_arguments(self) -> None:
         receipt = self.install()
         self.assertIn("chrome-wrapper", receipt["artifacts"])
-        for member in ("fawn/fawn-start.html", "fawn/fawn-icon.svg", "fawn/fawn.desktop",
+        for member in ("fawn/fawn-cycle.html", "fawn/fawn-icon.svg", "fawn/fawn.desktop",
                        "fawn/icons/hicolor/256x256/apps/fawn.png"):
             self.assertEqual(receipt["artifacts"][member],
                              hashlib.sha256((self.package / member).read_bytes()).hexdigest())
@@ -172,7 +172,7 @@ class LinuxLauncherTests(unittest.TestCase):
 
     def test_missing_start_page_fails_without_launch(self) -> None:
         self.install()
-        (self.package / "fawn/fawn-start.html").unlink()
+        (self.package / "fawn/fawn-cycle.html").unlink()
         failed = subprocess.run([str(self.package / "chrome-wrapper")], capture_output=True, text=True)
         self.assertEqual(failed.returncode, 1)
         self.assertIn("start page", failed.stderr)

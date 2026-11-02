@@ -84,7 +84,7 @@
       "id": "fawn_visual_particle_trails",
       "scenarioTemplate": "fawn_visual_resource",
       "description": "Existing Fawn particle-trail HTML page measured as a visible WebGPU page workload.",
-      "resourcePath": "browser/chromium/resources/fawn-heavy-particles.html",
+      "resourcePath": "bench/browser/fixtures/fawn/fawn-heavy-particles.html",
       "metrics": [
         "frameCount",
         "avgFrameMs",
@@ -95,13 +95,14 @@
       "required": false,
       "requiredStatus": "optional",
       "claimScope": "l2_diagnostic_only",
-      "claimLanguage": "Optional visual page diagnostic claim only; never a substitute for L0 parity claims."
+      "claimLanguage": "Optional visual page diagnostic claim only; never a substitute for L0 parity claims.",
+      "resourceDependencies": []
     },
     {
       "id": "fawn_visual_magnetic_fluids",
       "scenarioTemplate": "fawn_visual_resource",
       "description": "Existing Fawn magnetic-fluid HTML page measured as a visible WebGPU page workload.",
-      "resourcePath": "browser/chromium/resources/fawn-magnetic-fluids.html",
+      "resourcePath": "bench/browser/fixtures/fawn/fawn-magnetic-fluids.html",
       "workloadSelector": "#load",
       "metrics": [
         "frameCount",
@@ -113,13 +114,18 @@
       "required": false,
       "requiredStatus": "optional",
       "claimScope": "l2_diagnostic_only",
-      "claimLanguage": "Optional visual page diagnostic claim only; never a substitute for L0 parity claims."
+      "claimLanguage": "Optional visual page diagnostic claim only; never a substitute for L0 parity claims.",
+      "resourceDependencies": [
+        "browser/chromium/resources/fawn-formation.js",
+        "bench/browser/fixtures/fawn/formation-material.js",
+        "browser/chromium/resources/fawn-wave-shaders.js"
+      ]
     },
     {
       "id": "fawn_visual_prismatic_fluids",
       "scenarioTemplate": "fawn_visual_resource",
       "description": "Existing Fawn prismatic-fluid HTML page measured as a visible WebGPU page workload.",
-      "resourcePath": "browser/chromium/resources/fawn-prismatic-fluids.html",
+      "resourcePath": "bench/browser/fixtures/fawn/fawn-prismatic-fluids.html",
       "workloadSelector": "#load",
       "metrics": [
         "frameCount",
@@ -131,7 +137,12 @@
       "required": false,
       "requiredStatus": "optional",
       "claimScope": "l2_diagnostic_only",
-      "claimLanguage": "Optional visual page diagnostic claim only; never a substitute for L0 parity claims."
+      "claimLanguage": "Optional visual page diagnostic claim only; never a substitute for L0 parity claims.",
+      "resourceDependencies": [
+        "browser/chromium/resources/fawn-formation.js",
+        "bench/browser/fixtures/fawn/formation-material.js",
+        "browser/chromium/resources/fawn-flow-shaders.js"
+      ]
     }
   ]
 }

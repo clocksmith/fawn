@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     if (!package_path(browser, sizeof(browser), image, "chrome") ||
         !package_path(library, sizeof(library), image, "lib/doe/libwebgpu_doe_c.so") ||
         !package_path(compiler, sizeof(compiler), image, "lib/doe/libdoe_compiler.so") ||
-        !package_path(start_page, sizeof(start_page), image, "fawn/fawn-start.html") ||
+        !package_path(start_page, sizeof(start_page), image, "fawn/fawn-cycle.html") ||
         !file_url(start_url, sizeof(start_url), "file://", start_page) ||
         !file_url(homepage_argument, sizeof(homepage_argument), "--homepage=file://", start_page)) {
         fputs("Fawn: installed package path is too long\n", stderr);

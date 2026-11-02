@@ -194,9 +194,9 @@ attribution remains closed. Proof 3 separately freezes a Three.js workload in
 the [integrated contract](../../config/fawn-doe-integrated-comparison.json),
 whose build gate and campaign are unchanged.
 
-The [image lab](../../browser/chromium/resources/fawn-image-lab.html),
-[particles](../../browser/chromium/resources/fawn-heavy-particles.html) and
-[fluids](../../browser/chromium/resources/fawn-prismatic-fluids.html) contain
+The [image lab](../../bench/browser/fixtures/fawn/fawn-image-lab.html),
+[particles](../../bench/browser/fixtures/fawn/fawn-heavy-particles.html) and
+[fluids](../../bench/browser/fixtures/fawn/fawn-prismatic-fluids.html) contain
 WebGPU paths. These are reusable application inputs, not qualified provider
 comparisons. The [render oracle runner](../../bench/tools/run_browser_render_oracle.py)
 provides a separate correctness harness. Missing acceptance work includes

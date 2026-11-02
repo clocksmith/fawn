@@ -38,7 +38,7 @@ class BrowserLayeredCompletionTests(unittest.TestCase):
             workflows.write_text(json.dumps({"schemaVersion": 3,
                 "promotionGateRequiredApprovals": ["CPU-control"], "rows": [{
                     "id": "workflow", "scenarioTemplate": "fawn_visual_resource" if case == "visual-abrupt-exit" else "startup_adapter_device",
-                    **({"resourcePath": "browser/chromium/resources/fawn-heavy-particles.html"}
+                    **({"resourcePath": "bench/browser/fixtures/fawn/fawn-heavy-particles.html"}
                        if case == "visual-abrupt-exit" else {}),
                     "description": "CPU control", "metrics": [], "required": True,
                     "requiredStatus": "ok", "comparabilityExpectation": "component",
@@ -160,7 +160,7 @@ export const chromium={async launch(options){
         visual_last = visual_checkpoints[-1]
         self.assertEqual(visual_last["runtimeEvidence"]["activeOperation"], "l2:workflow")
         self.assertEqual(visual_last["runtimeEvidence"]["gpuCompletion"], "unknown")
-        resource = "browser/chromium/resources/fawn-heavy-particles.html"
+        resource = "bench/browser/fixtures/fawn/fawn-heavy-particles.html"
         self.assertEqual(visual_checkpoints[0]["runIdentity"]["visualResourceSha256"],
                          {resource: hashlib.sha256((ROOT / resource).read_bytes()).hexdigest()})
 

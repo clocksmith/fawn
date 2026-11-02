@@ -334,7 +334,7 @@ static int launch(int count, wchar_t **args)
      * homepage and opens in a new window. */
     failure = L"Bundled Fawn start page missing, or its path exceeds the command limit";
     failure_path = path;
-    if (!sibling(path, root, L"fawn\\fawn-start.html") || !file_exists(path, &error)) goto cleanup;
+    if (!sibling(path, root, L"fawn\\fawn-cycle.html") || !file_exists(path, &error)) goto cleanup;
     error = ERROR_BUFFER_OVERFLOW;
     if (!file_url(command, L"--homepage=", path) || !argument(command, L"--new-window") ||
         !file_url(command, L"", path)) goto cleanup;

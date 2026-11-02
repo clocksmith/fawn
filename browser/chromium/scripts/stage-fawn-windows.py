@@ -57,9 +57,8 @@ def upstream_action_arguments(command: list[str], src: Path, env: dict[str, str]
 
 def start_page_resources(lane: Path = LANE) -> list[Path]:
     """The start-page resource set the macOS bundle and Linux installer carry."""
-    resources = sorted(path for suffix in ('html', 'svg', 'js')
-                       for path in (lane / 'resources').glob(f'fawn-*.{suffix}'))
-    if lane / 'resources/fawn-start.html' not in resources:
+    resources = [lane / 'resources/fawn-cycle.html', lane / 'resources/fawn-icon.svg']
+    if not (lane / 'resources/fawn-cycle.html').is_file():
         raise ValueError('Fawn start page is missing from browser resources')
     return resources
 
@@ -189,12 +188,13 @@ def stage(src: Path, browser: Path, native: Path, launcher: Path, output: Path) 
         shutil.copytree(native / 'licenses', closure / 'licenses')
         shutil.copy2(launcher, package / 'Fawn.exe')
         checked_file(package / 'Fawn.exe', launcher_record['launcherSha256'])
-        # Fawn.exe opens fawn/fawn-start.html as homepage and new window.
+        # Fawn.exe opens fawn/fawn-cycle.html as homepage and new window.
         branding = package / 'fawn'
         branding.mkdir()
         record['branding'] = {}
+        subprocess.run([sys.executable, str(LANE / 'scripts/package-fawn-resources.py'),
+                        '--output', str(branding)], check=True)
         for path in start_page_resources():
-            shutil.copy2(path, branding / path.name)
             record['branding']['fawn/' + path.name] = digest(branding / path.name)
         licenses = package / 'licenses'
         licenses.mkdir(exist_ok=True)

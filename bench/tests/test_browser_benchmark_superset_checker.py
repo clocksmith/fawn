@@ -751,7 +751,7 @@ class BrowserBenchmarkSupersetCheckerTests(unittest.TestCase):
         self.assertIn("report contains L1 row outside workloadFilter: render_triangle", errors)
 
     def test_report_coverage_accepts_cross_category_l1_and_l2_filtered_report(self) -> None:
-        resource_path = "browser/chromium/resources/fawn-heavy-particles.html"
+        resource_path = "bench/browser/fixtures/fawn/fawn-heavy-particles.html"
         resource_sha256 = self.module.file_sha256(REPO_ROOT / resource_path)
         manifest = _manifest()
         manifest["rows"].append(
@@ -832,7 +832,7 @@ class BrowserBenchmarkSupersetCheckerTests(unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_report_coverage_rejects_visual_resource_hash_drift(self) -> None:
-        resource_path = "browser/chromium/resources/fawn-heavy-particles.html"
+        resource_path = "bench/browser/fixtures/fawn/fawn-heavy-particles.html"
         resource_sha256 = self.module.file_sha256(REPO_ROOT / resource_path)
         workflow = {
             "rows": [

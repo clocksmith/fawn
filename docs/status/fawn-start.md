@@ -15,14 +15,15 @@ continuous and the field holds it; the forming mark becomes one film. The hand a
 nearby material faster than the fields do, and a held drag sweeps it along. Fluid relief carries pixel glitter. Particles follow the standalone
 particle page's galaxy with fading trails and form the mark in its positional palette.
 
-[`fawn-cycle-gpu.js`](../../browser/chromium/resources/fawn-cycle-gpu.js) runs the
-solvers and handoffs, [`fawn-parcels.js`](../../browser/chromium/resources/fawn-parcels.js)
-moves the parcels, and [`fawn-parcel-renderer.js`](../../browser/chromium/resources/fawn-parcel-renderer.js)
-shades them. Solver shaders are generated from the retained standalone pages by
-[`build-fawn-shaders.js`](../../browser/chromium/scripts/build-fawn-shaders.js).
+[`fawn-scenes.js`](../../browser/chromium/resources/fawn-scenes.js) owns cadence,
+[`fawn-cycle-clock.js`](../../browser/chromium/resources/fawn-cycle-clock.js) owns
+weights/easing, and the [source map](../../browser/chromium/resources/README.md)
+routes solver, input, resource and renderer changes. The unified app directly
+imports readable shader modules. Active historical workload fixtures belong to
+[`bench/browser/fixtures/fawn/`](../../bench/browser/fixtures/fawn/README.md), not
+the hosted product. No generated shader bundle or standalone product pages remain.
 
-Checks are local visual and lifecycle checks in a WebGPU browser; no artwork test
-suite is retained. Physical-phone, Safari, native Doe and performance qualification
+Checks are local visual and lifecycle checks in a WebGPU browser; focused clock/input contracts are retained. Physical-phone, Safari, native Doe and performance qualification
 remain separate. The [20261013 publication receipt](../../reports/releases/fawn/20261013-publication.json)
 records an earlier hosted identity. [Workspace status](fawn-workspace.md) covers the
 durable-work service.

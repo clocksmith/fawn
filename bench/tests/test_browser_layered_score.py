@@ -151,7 +151,7 @@ def _report() -> dict[str, Any]:
                 {
                     "id": "fawn_visual_particle_trails",
                     "scenarioTemplate": "fawn_visual_resource",
-                    "resourcePath": "browser/chromium/resources/fawn-heavy-particles.html",
+                    "resourcePath": "bench/browser/fixtures/fawn/fawn-heavy-particles.html",
                     "resourceSha256": HASH_A,
                     "runtimes": {
                         "dawn": _mode_result(16.0, "avgFrameMs"),
@@ -217,7 +217,7 @@ class BrowserLayeredScoreTests(unittest.TestCase):
         self.assertEqual(categories["visual"]["score"], 33.333333333333336)
         self.assertEqual(categories["visual"]["legacyRatioScore"], 200.0)
         visual_row = next(row for row in score["rows"] if row["category"] == "visual")
-        self.assertEqual(visual_row["resourcePath"], "browser/chromium/resources/fawn-heavy-particles.html")
+        self.assertEqual(visual_row["resourcePath"], "bench/browser/fixtures/fawn/fawn-heavy-particles.html")
         self.assertEqual(visual_row["resourceSha256"], HASH_A)
         self.assertAlmostEqual(visual_row["baselineScore"], 33.333333333333336)
         self.assertAlmostEqual(visual_row["comparisonScore"], 66.66666666666667)
@@ -268,7 +268,7 @@ class BrowserLayeredScoreTests(unittest.TestCase):
             {
                 "id": "fawn_visual_particle_trails",
                 "scenarioTemplate": "fawn_visual_resource",
-                "resourcePath": "browser/chromium/resources/fawn-heavy-particles.html",
+                "resourcePath": "bench/browser/fixtures/fawn/fawn-heavy-particles.html",
                 "resourceSha256": HASH_A,
                 "runtimes": {
                     "dawn": _mode_result(10.0, "avgFrameMs"),

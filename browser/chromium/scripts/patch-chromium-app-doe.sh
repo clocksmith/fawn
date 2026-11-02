@@ -326,7 +326,7 @@ if [[ "${PROFILE_SEEN}" -eq 0 ]]; then
   if [[ "${RUNTIME}" == dawn ]]; then PROFILE=dawn; fi
   SELECTED+=(--user-data-dir="${HOME}/Library/Application Support/Fawn/${PROFILE}")
 fi
-FAWN_START="${SCRIPT_DIR}/../Resources/fawn-start.html"
+FAWN_START="${SCRIPT_DIR}/../Resources/fawn-cycle.html"
 
 exec -a fawn-doe "${REAL_BINARY}" "${SELECTED[@]}" \
   --homepage="file://${FAWN_START}" \
@@ -403,11 +403,7 @@ else
 fi
 
 if [[ -d "${RESOURCES_DIR}" ]]; then
-  for RESOURCE_SRC in "${LANE_ROOT}"/resources/fawn-*.{html,svg,js}; do
-    if [[ -f "${RESOURCE_SRC}" ]]; then
-      cp -f "${RESOURCE_SRC}" "${RESOURCES_DIR}/$(basename "${RESOURCE_SRC}")"
-    fi
-  done
+  python3 "${LANE_ROOT}/scripts/package-fawn-resources.py" --output "${RESOURCES_DIR}"
 fi
 
 echo "patched app bundle: ${APP_PATH}"

@@ -1,9 +1,9 @@
 // Fullscreen cycle: one device, one canvas, one visible-time clock, resident GPU handoffs.
 import { CYCLE_POLICY, createCycleClock } from './fawn-cycle-clock.js';
 import { GPU_POLICY, createCycleGpu } from './fawn-cycle-gpu.js';
+import { SCENES } from './fawn-scenes.js';
+import { createCycleInteraction } from './fawn-cycle-interaction.js';
 const HOST_POLICY = Object.freeze({ version: 2, maxDpr: 2, metricS: 0.5, graphSamples: 60 });
-const MAGNETIC_RELEASE = Object.freeze({ chargeS: 1.5, durationS: 0.7,
-  minimumCharge: 0.2, speed: 0.21, radius: 0.65 });
 const canvas = document.querySelector('#view');
 const status = document.querySelector('#status');
 const failure = document.querySelector('#failure');
@@ -35,20 +35,10 @@ let sampleTime = 0,
   samples = 0,
   lastCompletion = 0,
   generation = 0;
-const pointer = {
-  x: 0.5,
-  y: 0.5,
-  dx: 0,
-  dy: 0,
-  hover: false,
-  down: false,
-  press: 0,
-  moved: false,
-  id: null,
-  heldS: 0,
-};
-const burst = { x: 0.5, y: 0.5, age: 0, charge: 0, strength: 0,
-  radius: MAGNETIC_RELEASE.radius };
+const interaction = createCycleInteraction(canvas, {
+  schedule, isPaused: () => paused, weights: () => clock.state().weights,
+});
+const { pointer, burst } = interaction;
 const fps = [];
 function updateControls() {
   status.textContent = paused ? 'Paused' : 'WebGPU active';
@@ -79,7 +69,7 @@ function reset() {
   formation.reset(logoEnabled);
   shape = 0;
   time = 0;
-  clearPointer();
+  interaction.clear();
   if (gpu) {
     gpu.destroy();
     gpu = null;
@@ -91,7 +81,7 @@ function reset() {
   samples = 0;
   sampleTime = 0;
   fps.length = 0;
-  document.querySelector('#effect').textContent = CYCLE_POLICY.labels.flow;
+  document.querySelector('#effect').textContent = SCENES.flow.label;
   schedule();
 }
 function meter(now) {
@@ -144,17 +134,8 @@ async function frame(now) {
     const dt = Math.min(CYCLE_POLICY.maxDtS, elapsedDt);
     lastTime = now;
     const cycle = clock.advance(elapsedDt);
-    const weights = CYCLE_POLICY.effects.map(
-      (effect) =>
-        (effect === cycle.effect ? 1 - cycle.blend : 0) +
-        (cycle.transitioning && effect === cycle.next ? cycle.blend : 0),
-    );
-    if (pointer.down)
-      pointer.heldS = Math.min(MAGNETIC_RELEASE.chargeS, pointer.heldS + elapsedDt * weights[1]);
-    const releaseProgress = Math.min(1, burst.age / MAGNETIC_RELEASE.durationS);
-    burst.strength = burst.charge * MAGNETIC_RELEASE.speed * (1 - releaseProgress) ** 2;
-    burst.age += elapsedDt;
-    const interacting = pointer.down || pointer.moved || burst.strength > 0;
+    const { weights } = cycle;
+    const interacting = interaction.advance(elapsedDt, weights);
     if (cycle.completed) formation.retarget();
     shape = formation.advance(
       elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
@@ -162,7 +143,7 @@ async function frame(now) {
     time += dt;
     gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, burst);
     const encoder = device.createCommandEncoder({ label: 'Fawn cycle frame' });
-    if (cycle.started) gpu.handoff(encoder, cycle.effect);
+    if (cycle.started) gpu.prepareScene(encoder, cycle.next);
     if (dt > 0) {
       gpu.simulate(encoder, cycle.effect, Number(stepsSelect.value));
       if (cycle.transitioning) gpu.simulate(encoder, cycle.next, Number(stepsSelect.value));
@@ -170,12 +151,9 @@ async function frame(now) {
     if (dt > 0) gpu.advanceParcels(encoder);
     gpu.draw(encoder, context.getCurrentTexture().createView(), weights, time, cycle.elapsedS, shape);
     device.queue.submit([encoder.finish()]);
-    pointer.dx = 0;
-    pointer.dy = 0;
-    pointer.press = 0;
-    pointer.moved = false;
-    document.querySelector('#effect').textContent = CYCLE_POLICY.labels[cycle.effect];
-    canvas.setAttribute('aria-label', `${CYCLE_POLICY.labels[cycle.effect]}. Drag to stir.`);
+    interaction.consume();
+    document.querySelector('#effect').textContent = SCENES[cycle.effect].label;
+    canvas.setAttribute('aria-label', `${SCENES[cycle.effect].label}. Drag to stir.`);
     await device.queue.onSubmittedWorkDone();
     if (!running || currentGeneration !== generation) return;
     if (!paused) meter(performance.now());
@@ -208,84 +186,6 @@ function fail(error) {
   context?.unconfigure();
   device?.destroy();
 }
-function clearPointer() {
-  if (pointer.id !== null && canvas.hasPointerCapture(pointer.id))
-    canvas.releasePointerCapture(pointer.id);
-  Object.assign(pointer, {
-    id: null,
-    down: false,
-    hover: false,
-    dx: 0,
-    dy: 0,
-    press: 0,
-    moved: false,
-    heldS: 0,
-  });
-  burst.charge = burst.strength = 0;
-}
-function point(event) {
-  const [x, y] = FawnFormation.screenPoint(event, canvas);
-  if (pointer.hover || pointer.down) {
-    pointer.dx += x - pointer.x;
-    pointer.dy += y - pointer.y;
-  }
-  pointer.x = x;
-  pointer.y = y;
-  pointer.moved = true;
-}
-canvas.addEventListener('pointerdown', (event) => {
-  if (pointer.id !== null && pointer.id !== event.pointerId) return;
-  pointer.id = event.pointerId;
-  point(event);
-  pointer.down = true;
-  pointer.hover = true;
-  pointer.press = 1;
-  pointer.heldS = 0;
-  burst.charge = burst.strength = 0;
-  canvas.setPointerCapture(event.pointerId);
-  canvas.focus({ preventScroll: true });
-  schedule();
-});
-canvas.addEventListener('pointermove', (event) => {
-  if (pointer.id !== null && pointer.id !== event.pointerId) return;
-  point(event);
-  pointer.hover = true;
-  schedule();
-});
-function release(event) {
-  if (pointer.id !== event.pointerId) return;
-  if (event.type === 'pointerup' && pointer.down && !paused) {
-    const cycle = clock.state();
-    const weight = (cycle.effect === 'wave' ? 1 - cycle.blend : 0)
-      + (cycle.transitioning && cycle.next === 'wave' ? cycle.blend : 0);
-    burst.x = pointer.x;
-    burst.y = pointer.y;
-    burst.age = 0;
-    burst.charge = weight * (MAGNETIC_RELEASE.minimumCharge
-      + (1 - MAGNETIC_RELEASE.minimumCharge) * pointer.heldS / MAGNETIC_RELEASE.chargeS);
-  } else burst.charge = burst.strength = 0;
-  pointer.down = false;
-  pointer.heldS = 0;
-  pointer.moved = true;
-  pointer.press = 0;
-  pointer.id = null;
-  const rect = canvas.getBoundingClientRect();
-  pointer.hover =
-    event.type === 'pointerup' &&
-    event.pointerType === 'mouse' &&
-    event.clientX >= rect.left &&
-    event.clientX <= rect.right &&
-    event.clientY >= rect.top &&
-    event.clientY <= rect.bottom;
-  schedule();
-}
-canvas.addEventListener('pointerup', release);
-canvas.addEventListener('pointercancel', release);
-canvas.addEventListener('lostpointercapture', release);
-canvas.addEventListener('pointerleave', () => {
-  pointer.hover = false;
-  if (!pointer.down) pointer.moved = false;
-});
 function toggleMotion() {
   paused = !paused;
   generation++;
@@ -296,7 +196,7 @@ function toggleMotion() {
   document.querySelector('#frame').textContent = paused ? 'Paused' : '— fps';
   updateControls();
   if (paused) {
-    clearPointer();
+    interaction.clear();
     cancelAnimationFrame(raf);
     raf = 0;
   } else schedule();
@@ -315,7 +215,7 @@ document.addEventListener('visibilitychange', () => {
   generation++;
   lastTime = 0;
   lastCompletion = 0;
-  clearPointer();
+  interaction.clear();
   if (document.hidden) {
     cancelAnimationFrame(raf);
     raf = 0;
@@ -331,7 +231,7 @@ canvas.addEventListener('keydown', (event) => {
   }
 });
 addEventListener('blur', () => {
-  clearPointer();
+  interaction.clear();
   schedule();
 });
 addEventListener('resize', () => schedule());

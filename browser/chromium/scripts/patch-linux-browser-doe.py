@@ -9,6 +9,7 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -44,12 +45,8 @@ Categories=Network;WebBrowser;
 def stage_branding(destination: Path) -> None:
     """Stage the macOS bundle's start-page resources and the compiled Linux icons."""
     destination.mkdir()
-    resources = sorted(path for suffix in ("html", "svg", "js")
-                       for path in (LANE / "resources").glob(f"fawn-*.{suffix}"))
-    if LANE / "resources/fawn-start.html" not in resources:
-        raise ValueError("Fawn start page is missing from browser resources")
-    for path in resources:
-        shutil.copy2(path, destination / path.name)
+    subprocess.run([sys.executable, str(LANE / 'scripts/package-fawn-resources.py'),
+                    '--output', str(destination)], check=True)
     for size in ICON_SIZES:
         icon = LANE / f"assets/logo/compiled/linux/fawn-icon-main-{size}.png"
         target = destination / f"icons/hicolor/{size}x{size}/apps/fawn.png"

@@ -2,7 +2,7 @@
 // One fresh, headed browser launch measuring one page. Usage:
 //   node launch.mjs --spec spec.json --out result.json
 // The spec names the arm, browser executable, extra args, page, repo root and
-// timing windows. Pages are served unchanged from browser/chromium/resources
+// timing windows. Benchmark pages live under bench/browser/fixtures; cycle uses browser/chromium/resources
 // and pinned static assets in ../assets.
 import { PAGES } from "./pages.mjs";
 import { createHash } from "node:crypto";
@@ -41,6 +41,8 @@ const sha256 = (b) => createHash("sha256").update(b).digest("hex");
 
 function serve() {
   const map = (p) => {
+    if (p.startsWith("/fixtures/")) return join(ROOT, "bench/browser/fixtures", p.slice(10));
+    if (p.startsWith("/browser/chromium/resources/")) return join(ROOT, p.slice(1));
     if (p.startsWith("/resources/")) return join(ROOT, "browser/chromium/resources", p.slice(11));
     if (p.startsWith("/harness/")) return join(HERE, p.slice(9));
     if (p.startsWith("/three/")) return join(ASSETS, "three", p.slice(7));

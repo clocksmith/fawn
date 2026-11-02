@@ -2,10 +2,10 @@
 export const PAGES = {
   // Retained anchors
   compute_atomic_canvas: { url: "/harness/compute-atomic-canvas.html", kind: "compute" },
-  heavy_particles: { url: "/resources/fawn-heavy-particles.html", kind: "animated" },
-  image_lab: { url: "/resources/fawn-image-lab.html", kind: "imagelab" },
-  magnetic_fluids: { url: "/resources/fawn-magnetic-fluids.html", kind: "animated" },
-  prismatic_fluids: { url: "/resources/fawn-prismatic-fluids.html", kind: "animated" },
+  heavy_particles: { url: "/fixtures/fawn/fawn-heavy-particles.html", kind: "animated" },
+  image_lab: { url: "/fixtures/fawn/fawn-image-lab.html", kind: "imagelab" },
+  magnetic_fluids: { url: "/fixtures/fawn/fawn-magnetic-fluids.html", kind: "animated" },
+  prismatic_fluids: { url: "/fixtures/fawn/fawn-prismatic-fluids.html", kind: "animated" },
   cycle: { url: "/resources/fawn-cycle.html", kind: "animated" },
   // Three.js WebGPU examples (pinned r186 / 3d3a92e467aafd6749eb06f732a5f42e6d117fe4)
   three_compute_birds: { url: "/three/examples/webgpu_compute_birds.html", kind: "animated" },

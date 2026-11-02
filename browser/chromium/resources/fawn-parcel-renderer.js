@@ -1,5 +1,6 @@
 // Surface and point appearances reconstruct the same independently moving parcels.
 import { PARCEL_STRUCT } from './fawn-parcels.js';
+import { packSceneWeights } from './fawn-scenes.js';
 const PARCEL_RENDER_POLICY = Object.freeze({
   version: 12,
   accumulationCapacity: 4096,
@@ -297,7 +298,7 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     const fluidRadius = (2 / Math.sqrt(count)) * PARCEL_RENDER_POLICY.fluidRadiusCells
       * (1 - (1 - PARCEL_RENDER_POLICY.formedFluidRadiusScale) * shape);
     const particleRadius = (PARCEL_RENDER_POLICY.particleRadiusPx * 2) / side;
-    const radius = fluidRadius + (particleRadius - fluidRadius) * weights[2];
+    const radius = fluidRadius + (particleRadius - fluidRadius) * weights.particles;
     const normalization = Math.min(1, PARCEL_RENDER_POLICY.accumulationCapacity / count);
     const trailRetention = Math.exp(-Math.max(0, time - (lastTime ?? time)) / PARCEL_RENDER_POLICY.particleTrailS);
     lastTime = time;
@@ -312,7 +313,7 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
         1 / canvas.height,
         Math.max(canvas.width, canvas.height),
         time,
-        ...weights,
+        ...packSceneWeights(weights),
         shape,
         shimmerTime,
         particleRadius,
