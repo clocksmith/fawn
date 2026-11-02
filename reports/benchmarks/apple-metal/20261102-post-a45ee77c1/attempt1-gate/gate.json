@@ -35,11 +35,11 @@
     ],
     [
       0.3200000000000216,
-      "/Users/xyz/.nvm/versions/node/v22.20.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex"
+      "/workspace/.nvm/versions/node/v22.20.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex"
     ],
     [
       0.3199999999999932,
-      "/Users/xyz/.nvm/versions/node/v22.20.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex"
+      "/workspace/.nvm/versions/node/v22.20.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex"
     ],
     [
       0.3100000000000023,
@@ -96,18 +96,18 @@
   },
   "command": [
     "--inputs",
-    "/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/inputs",
+    "/workspace/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/inputs",
     "--pairs",
     "24",
     "--iterations",
     "32",
     "--out",
-    "/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/attempt1-raw.jsonl",
+    "/workspace/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/attempt1-raw.jsonl",
     "--provider",
-    "doe=/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/bin/doe",
+    "doe=/workspace/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/bin/doe",
     "--provider",
-    "dawn=/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/bin/dawn",
+    "dawn=/workspace/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/bin/dawn",
     "--provider",
-    "dawn-aa=/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/bin/dawn-aa"
+    "dawn-aa=/workspace/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/bin/dawn-aa"
   ]
 }

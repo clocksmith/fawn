@@ -1616,9 +1616,90 @@
     "contract.json": "c4832553d99322f3133831406e8501a601952a2326d1cce7afe23f8244a3e83b",
     "source-manifest.json": "9a75835ac127652a561d2b11130b589776b5ed61864dc3d20244eab9b0c40f7b",
     "binary-manifest.json": "aac8c0c28c8d98ce37b7200dc781c2c3250bbd825594ab3a5606555c84121270",
-    "attempt1-raw.jsonl": "0bfc49f1ce35fd02c95dc4b01bc68f5de0863b62b6d84a261a527071e59605ca",
-    "attempt1-summary.json": "965390c7eb35cec30e63a31b17b083186861c9ee9b5c5ddab1f19da50db09939",
-    "gate.json": "ae588c70ee738c7829a01c9328f545ffbca73bd27a33cbee65c252f993b07d01",
-    "loaded-provider-proof.json": "d45322cff36919a0ff378e43c0407dbc0275e17a5a1da678b712c639c0560b33"
+    "attempt1-raw.jsonl": "e1ec399a10a0075e658da390d3c4cc6d19e857e682bb01f3fe7a1ce258045e97",
+    "attempt1-summary.json": "f899d120a7416791a25171fda11801f97d9fd3e5737e1b6d7d976386b07049bf",
+    "gate.json": "48cdb2a376967308ff0a363e7ebfe9bed70b933179995f726561f5bb4d45a444",
+    "loaded-provider-proof.json": "29f03d2dc6e1478dd3e0543e717ee4f3a6e594be3992e633f3a5ee1ff0c66a74"
+  },
+  "publicationNormalization": {
+    "schema": "fawn.evidence-path-normalization/v1",
+    "originalGitCommit": "a8a61929cab3b6998649efeaa44ccdcae0b6f442",
+    "originalResultSha256": "a2bb738c71ad13381fdd89cf06848dde2b1dfbbe75119c24c283a5d8acbc2f93",
+    "originalResultSizeBytes": 43709,
+    "normalizer": {
+      "path": "scripts/check-publication-hygiene.py",
+      "sha256": "a765cb53978f2676fe6a52584a200843a6ea0b89dd708ebdf83ddffa21bfc756",
+      "rule": "PRIVATE_HOME_PATTERNS: replace private macOS home prefixes with /workspace; no measurements rerun"
+    },
+    "derivedReferences": [
+      "attempt1-summary.json rawFiles now binds the sanitized retained raw copy",
+      "RESULT.json evidence binds the sanitized retained copies"
+    ],
+    "preserved": [
+      "execution dates",
+      "measurements",
+      "samples and ordering",
+      "correctness and acceptance decisions",
+      "verdicts",
+      "source and binary identities"
+    ],
+    "files": [
+      {
+        "path": "RUN_STATUS.json",
+        "originalSha256": "3625948e5cae2e4b7705ffe2da06b356616eb37aff634f23cbec936b75943e63",
+        "originalSizeBytes": 1167,
+        "sanitizedSha256": "3dee40844c7924a8e216e4654d7a269c4f8e697d1681e437e18b4403a1dcc3ce",
+        "sanitizedSizeBytes": 1167,
+        "privatePrefixReplacements": 1
+      },
+      {
+        "path": "attempt1-gate/gate.json",
+        "originalSha256": "ae588c70ee738c7829a01c9328f545ffbca73bd27a33cbee65c252f993b07d01",
+        "originalSizeBytes": 3601,
+        "sanitizedSha256": "48cdb2a376967308ff0a363e7ebfe9bed70b933179995f726561f5bb4d45a444",
+        "sanitizedSizeBytes": 3601,
+        "privatePrefixReplacements": 7
+      },
+      {
+        "path": "attempt1-raw.jsonl",
+        "originalSha256": "0bfc49f1ce35fd02c95dc4b01bc68f5de0863b62b6d84a261a527071e59605ca",
+        "originalSizeBytes": 650774,
+        "sanitizedSha256": "e1ec399a10a0075e658da390d3c4cc6d19e857e682bb01f3fe7a1ce258045e97",
+        "sanitizedSizeBytes": 650774,
+        "privatePrefixReplacements": 216
+      },
+      {
+        "path": "attempt1-summary.json",
+        "originalSha256": "965390c7eb35cec30e63a31b17b083186861c9ee9b5c5ddab1f19da50db09939",
+        "originalSizeBytes": 107028,
+        "sanitizedSha256": "f899d120a7416791a25171fda11801f97d9fd3e5737e1b6d7d976386b07049bf",
+        "sanitizedSizeBytes": 107015,
+        "privatePrefixReplacements": 1
+      },
+      {
+        "path": "build-dawn.json",
+        "originalSha256": "82652c11e6a8a9c7e87e498d5042e573d8aab15c99553a34f8d173dd815fac5f",
+        "originalSizeBytes": 1050,
+        "sanitizedSha256": "6b9fe8335144a3fbf6222b422aee26c4215efe38cf739d58acd74b41438700f0",
+        "sanitizedSizeBytes": 1050,
+        "privatePrefixReplacements": 7
+      },
+      {
+        "path": "build-doe.json",
+        "originalSha256": "a6152627a7e761734814f7df49d03e09c13c8b14660e01d8e49734baaf4ddb7f",
+        "originalSizeBytes": 1050,
+        "sanitizedSha256": "679e9232598c0432ee79072046ae86978a31c7101795bbb6ebfb6b8ccd2ac0c0",
+        "sanitizedSizeBytes": 1050,
+        "privatePrefixReplacements": 7
+      },
+      {
+        "path": "loaded-provider-proof.json",
+        "originalSha256": "d45322cff36919a0ff378e43c0407dbc0275e17a5a1da678b712c639c0560b33",
+        "originalSizeBytes": 422,
+        "sanitizedSha256": "29f03d2dc6e1478dd3e0543e717ee4f3a6e594be3992e633f3a5ee1ff0c66a74",
+        "sanitizedSizeBytes": 422,
+        "privatePrefixReplacements": 1
+      }
+    ]
   }
 }

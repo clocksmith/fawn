@@ -2575,7 +2575,9 @@
       "comparisonType": "native-provider",
       "familyId": "phase-metal",
       "id": "phase-metal-cc5c586ba3d6c9",
-      "limitations": [],
+      "limitations": [
+        "Private home prefixes are normalized in retained text copies; RESULT.json publicationNormalization binds original Git bytes and sanitized checksums. Execution dates and measurements are unchanged."
+      ],
       "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-summary.json",
       "provenance": [
         {
@@ -2588,19 +2590,19 @@
           "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-raw.jsonl",
           "required": true,
           "role": "raw",
-          "sha256": "0bfc49f1ce35fd02c95dc4b01bc68f5de0863b62b6d84a261a527071e59605ca"
+          "sha256": "e1ec399a10a0075e658da390d3c4cc6d19e857e682bb01f3fe7a1ce258045e97"
         },
         {
           "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-gate/gate.json",
           "required": true,
           "role": "execution",
-          "sha256": "ae588c70ee738c7829a01c9328f545ffbca73bd27a33cbee65c252f993b07d01"
+          "sha256": "48cdb2a376967308ff0a363e7ebfe9bed70b933179995f726561f5bb4d45a444"
         },
         {
           "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/RESULT.json",
           "required": true,
           "role": "verdicts",
-          "sha256": "a2bb738c71ad13381fdd89cf06848dde2b1dfbbe75119c24c283a5d8acbc2f93"
+          "sha256": "ce2c2cd36f2bcd42adcc9cea3826a712f4160ec739a14e14359442437e26d73b"
         },
         {
           "path": "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/binary-manifest.json",
@@ -2616,7 +2618,7 @@
         }
       ],
       "section": "native-runtime",
-      "sha256": "965390c7eb35cec30e63a31b17b083186861c9ee9b5c5ddab1f19da50db09939",
+      "sha256": "f899d120a7416791a25171fda11801f97d9fd3e5737e1b6d7d976386b07049bf",
       "supersedes": []
     },
     {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "rawFiles": {
-    "/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/attempt1-raw.jsonl": "0bfc49f1ce35fd02c95dc4b01bc68f5de0863b62b6d84a261a527071e59605ca"
+    "reports/benchmarks/apple-metal/20261102-post-a45ee77c1/attempt1-raw.jsonl": "e1ec399a10a0075e658da390d3c4cc6d19e857e682bb01f3fe7a1ce258045e97"
   },
   "failedProcesses": 0,
   "bootstrap": {

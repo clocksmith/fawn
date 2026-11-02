@@ -4,7 +4,7 @@
     {
       "attempt": 1,
       "exitCode": 0,
-      "driverLog": "/Users/xyz/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/attempt1-driver.log",
+      "driverLog": "/workspace/deco/doe/bench/out/post-a45ee77c1-metal-20261102T015707Z/attempt1-driver.log",
       "aa": {
         "buffer_upload_readback_exact_1mb": {
           "median": 0.9923069284910112,
