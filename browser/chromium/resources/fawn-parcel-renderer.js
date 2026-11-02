@@ -35,8 +35,8 @@ const HEADER = `
 struct Params { view:vec4<f32>, screen:vec4<f32>, theme:vec4<f32>, material:vec4<f32>, trail:vec4<f32> }
 @group(0) @binding(0) var<uniform> u:Params;
 `;
-const PARCEL_SPLATS =
-  HEADER +
+function parcelSplats(colorOnly = false) {
+  return HEADER +
   `
 ${PARCEL_STRUCT}
 @group(0) @binding(1) var<storage,read> parcels:array<Parcel>;
@@ -52,14 +52,19 @@ struct Out { @builtin(position) position:vec4<f32>, @location(0) local:vec2<f32>
  out.local=local;out.color=clamp(p.color.rgb,vec3<f32>(0),vec3<f32>(${PARCEL_RENDER_POLICY.materialBound}));
  out.material=clamp(p.material,vec4<f32>(-${PARCEL_RENDER_POLICY.materialBound}),vec4<f32>(${PARCEL_RENDER_POLICY.materialBound}));return out;
 }
-struct Moments { @location(0) color:vec4<f32>, @location(1) geometry:vec4<f32> }
-@fragment fn fs(in:Out)->Moments {
+${colorOnly ? '' : 'struct Moments { @location(0) color:vec4<f32>, @location(1) geometry:vec4<f32> }'}
+@fragment fn fs(in:Out)->${colorOnly ? '@location(0) vec4<f32>' : 'Moments'} {
  let r2=dot(in.local,in.local);
+ if(r2>=1.0){discard;}
  // The quad's radius and elongation morph; there is only one material footprint.
  let footprint=max(0.0,1.0-r2);let kernel=footprint*footprint*u.view.w;
- var out:Moments;out.color=vec4<f32>(in.color*kernel,kernel);out.geometry=in.material*kernel;return out;
+ ${colorOnly ? 'return vec4<f32>(in.color*kernel,kernel);'
+ : 'var out:Moments;out.color=vec4<f32>(in.color*kernel,kernel);out.geometry=in.material*kernel;return out;'}
 }
 `;
+}
+const PARCEL_SPLATS = parcelSplats();
+const MAGNETIC_SPLATS = parcelSplats(true);
 const PARCEL_SURFACE =
   HEADER +
   `
@@ -220,24 +225,22 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     size: 80,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
-  const module = device.createShaderModule({ label: 'Fawn parcel splats', code: PARCEL_SPLATS });
   const blend = {
     color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
     alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
   };
-  const splats = device.createRenderPipeline({
-    label: 'Fawn moving material',
-    layout: 'auto',
-    vertex: { module, entryPoint: 'vs' },
-    fragment: {
-      module,
-      entryPoint: 'fs',
-      targets: [
-        { format: 'rgba16float', blend },
-        { format: 'rgba16float', blend },
-      ],
-    },
-    primitive: { topology: 'triangle-strip' },
+  // Pure magnetic lighting uses live wave relief; only pigment/density moments contribute.
+  // Both pipelines are prepared once. Blends restore geometry moments on their first frame.
+  const splats = [PARCEL_SPLATS, MAGNETIC_SPLATS].map((code, magnetic) => {
+    const module = device.createShaderModule({ label: 'Fawn parcel splats', code });
+    return device.createRenderPipeline({
+      label: magnetic ? 'Fawn magnetic pigment' : 'Fawn moving material',
+      layout: 'auto',
+      vertex: { module, entryPoint: 'vs' },
+      fragment: { module, entryPoint: 'fs', targets:
+        Array.from({ length: magnetic ? 1 : 2 }, () => ({ format: 'rgba16float', blend })) },
+      primitive: { topology: 'triangle-strip' },
+    });
   });
   const lighting = device.createShaderModule({
     label: 'Fawn parcel surface lighting',
@@ -250,15 +253,15 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
     fragment: { module: lighting, entryPoint: 'fs', targets: [{ format }, { format: 'rgba16float' }] },
     primitive: { topology: 'triangle-strip' },
   });
-  const groups = parcels.map((buffer) =>
+  const groups = splats.map(pipeline => parcels.map((buffer) =>
     device.createBindGroup({
-      layout: splats.getBindGroupLayout(0),
+      layout: pipeline.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: uniform } },
         { binding: 1, resource: { buffer } },
       ],
     }),
-  );
+  ));
   const sampler = device.createSampler({ minFilter: 'linear', magFilter: 'linear' });
   let textures = [],
     trails = [],
@@ -335,17 +338,18 @@ function createParcelRenderer(device, canvas, format, count, parcels, waves, gri
         0,
       ]),
     );
+    const magnetic = weights.wave === 1 ? 1 : 0;
     const pass = encoder.beginRenderPass({
       label: 'Fawn per-parcel material',
-      colorAttachments: textures.map((t) => ({
+      colorAttachments: (magnetic ? textures.slice(0, 1) : textures).map((t) => ({
         view: t.createView(),
         loadOp: 'clear',
         storeOp: 'store',
         clearValue: [0, 0, 0, 0],
       })),
     });
-    pass.setPipeline(splats);
-    pass.setBindGroup(0, groups[index]);
+    pass.setPipeline(splats[magnetic]);
+    pass.setBindGroup(0, groups[magnetic][index]);
     pass.draw(4, count);
     pass.end();
     const output = encoder.beginRenderPass({
