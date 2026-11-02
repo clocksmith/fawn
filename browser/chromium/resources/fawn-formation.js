@@ -92,7 +92,11 @@
           target = Math.max(1 - ease(t), strength(idle, true, schedule));
         } else {
           if (!active && enabled) idle += settlingDt;
-          target = active || quiet > 0 ? 0 : strength(idle, enabled, schedule);
+          // The cycle's hand already displaces nearby parcels. Hold the global gather
+          // during input instead of dissolving the whole mark a second time.
+          target = active ? 0 : quiet > 0
+            ? (schedule.interaction === 'local' ? value : 0)
+            : strength(idle, enabled, schedule);
           // Scheduled release follows the appearance blend; input still releases immediately.
           if (releaseStart !== null) target = releaseStart * (1 - releaseProgress);
         }

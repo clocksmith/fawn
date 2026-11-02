@@ -28,6 +28,21 @@ Entering Flows deposits parcel pigment and momentum and clears pressure/curl.
 Both neighboring field solvers run during the blend. Parcels advance once after
 the solvers, then the shared renderer draws them; no handoff resets parcels.
 
+## Input and the mark
+
+The cycle selects local interaction in its formation policy. Pointer movement
+pauses further gathering; a held press frees nearby parcels from formation and
+return forces in `fawn-parcels.js`. It does not separately dissolve the entire
+mark. After the hand leaves, the same retained velocities carry material back.
+Scene blends still release the whole mark along the clock's smootherstep.
+Standalone demos retain their previous global interaction response.
+
+Flow relief uses the cell-centred height and central-difference normal treatment
+from the standalone shader before `8e5e6b113`, with current smooth pigment and
+lighting. The renderer's `flowCellRelief` and `flowCellPigment` switches isolate
+that appearance from solver math; they do not change simulation resolution or
+frame scheduling. The alternate full-cell pigment preview is outside the repo.
+
 ## Shader editing and packaging
 
 Edit `fawn-flow-shaders.js` and `fawn-wave-shaders.js` directly. The app imports

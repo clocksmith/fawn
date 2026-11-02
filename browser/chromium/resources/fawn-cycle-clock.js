@@ -2,8 +2,8 @@
 // gathers late in the hold; input keeps each scene's response through every blend.
 import { SCENES, SCENE_ORDER, sceneWeights } from './fawn-scenes.js';
 const CYCLE_POLICY = Object.freeze({
-  version: 12,
-  formation: Object.freeze({ delayS: 3, settleS: 2.5, responseRate: 4 }),
+  version: 13,
+  formation: Object.freeze({ delayS: 3, settleS: 2.5, responseRate: 4, interaction: 'local' }),
   maxDtS: 0.033,
   maxFrameS: 0.1,
 });

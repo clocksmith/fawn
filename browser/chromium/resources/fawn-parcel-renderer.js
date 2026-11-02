@@ -2,7 +2,7 @@
 import { PARCEL_STRUCT } from './fawn-parcels.js';
 import { packSceneWeights } from './fawn-scenes.js';
 const PARCEL_RENDER_POLICY = Object.freeze({
-  version: 12,
+  version: 13,
   accumulationCapacity: 4096,
   materialBound: 8,
   fluidRadiusCells: 2.2,
@@ -23,6 +23,8 @@ const PARCEL_RENDER_POLICY = Object.freeze({
   filmAmbientLight: 0.48,
   filmBackground: Object.freeze([0.045, 0.062, 0.085]),
   liveFlowContrast: 0.28,
+  flowCellRelief: true,
+  flowCellPigment: false,
   liveFlowWall: Object.freeze([1.5, 5]),
   particleTrailS: 0.4,
   filmDensity: Object.freeze([0.7, 1.4]),
@@ -75,6 +77,9 @@ fn flowCell(p:vec2<i32>)->u32 {
 fn flowRelief(d:vec3<f32>,v:vec2<f32>,c:f32)->f32 {
  return clamp(length(d)*0.64+abs(c)*0.016+length(v)*0.10,0.0,1.3);
 }
+fn flowReliefAt(p:vec2<i32>)->f32 {
+ let i=flowCell(p);return flowRelief(flowDye[i].rgb,flowVelocity[i].xy,flowCurl[i].y);
+}
 struct FlowState { pigment:vec3<f32>, height:f32, slope:vec2<f32>, speed:f32, curl:f32, wall:f32 }
 // Sample physical state, then interpolate surface properties before lighting it once.
 fn liveFlow(uv:vec2<f32>)->FlowState {
@@ -90,11 +95,16 @@ fn liveFlow(uv:vec2<f32>)->FlowState {
  let curl=mix(mix(c00,c10,f.x),mix(c01,c11,f.x),f.y);
  let h00=flowRelief(d00,v00,c00);let h10=flowRelief(d10,v10,c10);
  let h01=flowRelief(d01,v01,c01);let h11=flowRelief(d11,v11,c11);
- let height=mix(mix(h00,h10,f.x),mix(h01,h11,f.x),f.y);
- let slope=vec2<f32>(mix(h10-h00,h11-h01,f.y),mix(h01-h00,h11-h10,f.x));
+ ${PARCEL_RENDER_POLICY.flowCellRelief ? `// Restore the cell-centred relief from before 8e5e6b113; pigment still advects smoothly.
+ let center=vec2<i32>(round(at));
+ let height=flowReliefAt(center);
+ let slope=vec2<f32>(flowReliefAt(center+vec2<i32>(1,0))-flowReliefAt(center-vec2<i32>(1,0)),
+   flowReliefAt(center+vec2<i32>(0,1))-flowReliefAt(center-vec2<i32>(0,1)))*0.5;`
+ : `let height=mix(mix(h00,h10,f.x),mix(h01,h11,f.x),f.y);
+ let slope=vec2<f32>(mix(h10-h00,h11-h01,f.y),mix(h01-h00,h11-h10,f.x));`}
  let crisp=max(vec3<f32>(0),color+(color-(d00+d10+d01+d11)*0.25)*${PARCEL_RENDER_POLICY.liveFlowContrast});
  let inset=min(min(at.x,at.y),min(n-1.0-at.x,n-1.0-at.y));
- return FlowState(crisp,height,slope,speed,curl,
+ return FlowState(${PARCEL_RENDER_POLICY.flowCellPigment ? 'flowDye[flowCell(vec2<i32>(round(at)))].rgb' : 'crisp'},height,slope,speed,curl,
    smoothstep(${PARCEL_RENDER_POLICY.liveFlowWall[0]},${PARCEL_RENDER_POLICY.liveFlowWall[1]},inset));
 }
 fn filmAt(uv:vec2<f32>)->vec4<f32> {

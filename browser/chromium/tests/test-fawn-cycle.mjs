@@ -87,3 +87,29 @@ assert.equal(input.burst.charge, 0);
 send('pointerdown'); input.clear();
 assert.equal(captured, null); assert.equal(input.pointer.press, 0);
 console.log('ok: accumulated stroke, single consumption, weighted release, pause/cancel/blur clearing');
+
+// Local input holds the global gather while nearby parcels respond to the hand.
+// Scene changes still release it, and retained standalone callers keep their old response.
+const { readFileSync } = await import('node:fs');
+const vm = await import('node:vm');
+const sandbox = vm.createContext({});
+vm.runInContext(readFileSync(new URL('../resources/fawn-formation.js', import.meta.url), 'utf8'), sandbox);
+function gathered(interaction) {
+  const state = sandbox.FawnFormation.transition({ delayS: 0, settleS: 0.1,
+    responseRate: 4, interaction });
+  state.reset(true);
+  for (let i = 0; i < 240; i++) state.advance(1 / 60, true, false, false);
+  return state;
+}
+const local = gathered('local');
+const initial = local.advance(0, true, false, false);
+for (let i = 0; i < 120; i++) local.advance(1 / 60, true, false, true);
+near(local.advance(0, true, false, true), initial);
+const standalone = gathered(undefined);
+for (let i = 0; i < 120; i++) standalone.advance(1 / 60, true, true, true);
+assert.ok(standalone.advance(0, true, true, true) < 0.01);
+for (let i = 0; i < 240; i++) local.advance(1 / 60, true, true, false, smootherstep(i / 239));
+assert.ok(local.advance(0, true, true, false) < 0.05);
+for (let i = 0; i < 60; i++) local.advance(1 / 60, true, true, false, 1);
+assert.ok(local.advance(0, true, true, false) < 0.005);
+console.log('ok: local interaction preserves gather, scheduled blend releases, standalone response preserved');

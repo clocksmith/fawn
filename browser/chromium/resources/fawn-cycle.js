@@ -138,7 +138,7 @@ async function frame(now) {
     const interacting = interaction.advance(elapsedDt, weights);
     if (cycle.completed) formation.retarget();
     shape = formation.advance(
-      elapsedDt, logoEnabled, interacting || cycle.transitioning, interacting, cycle.blend,
+      elapsedDt, logoEnabled, cycle.transitioning, interacting, cycle.blend,
     );
     time += dt;
     gpu.uniforms(dt, time, shape, pointer, Number(stepsSelect.value), weights, burst);
