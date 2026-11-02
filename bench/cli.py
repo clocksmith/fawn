@@ -25,6 +25,22 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_COMMANDS = {
+    "phase-cohort": (
+        [sys.executable, "-m", "bench.tools.dropin_phase_cohort"],
+        "Prepare, build, run or summarize phase-attributed native provider cohorts",
+    ),
+    "browser": (
+        ["node", "bench/browser/fresh_launch/orchestrate.mjs"],
+        "Run selected browser pages and repetitions through counterbalanced fresh launches",
+    ),
+    "browser-analyze": (
+        [sys.executable, "-m", "bench.browser.fresh_launch.analyze"],
+        "Summarize existing fresh-launch browser receipts without launching workloads",
+    ),
+    "catalog-report": (
+        [sys.executable, "-m", "bench.tools.native_catalog_report"],
+        "Reproduce native catalog classifications and rankings from retained summaries",
+    ),
     "c-vs-zig-package": (
         [sys.executable, "-m", "bench.tools.compare_c_vs_zig_package"],
         "Compare explicit C and Zig providers through output-validated public package work",

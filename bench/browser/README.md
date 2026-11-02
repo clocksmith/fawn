@@ -1,5 +1,10 @@
 # Browser evidence
 
+For maintained page measurements, use the [fresh-launch comparison](fresh_launch/README.md):
+`python3 bench/cli.py browser --help` selects pages/repetitions;
+`python3 bench/cli.py browser-analyze --help` summarizes existing receipts.
+The historical raw-evidence archives remain the source record.
+
 Browser-lane gates for the Chromium WebGPU compare surface. Currently
 `browser_gate.py` and `browser_claim_gate.py`, which evaluate the
 Playwright-driven smoke output at

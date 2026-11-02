@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "native-catalog-20261101-diagnostic-loss-v1",
+  "comparison": "doe/dawn",
+  "ratioExclusiveMinimum": 1.05,
+  "confidenceLowerExclusiveMinimum": 1.0,
+  "doeMedianMinimum": {
+    "milliseconds": 0.05,
+    "max_rss_mib": 0.5
+  },
+  "operationMetrics": ["cold.operation_ms", "warm.operation_ms"],
+  "headlineMetric": "warm.operation_ms",
+  "scope": "Classification of retained aggregate summaries; not new measurement or qualification."
+}

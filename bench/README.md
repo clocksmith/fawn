@@ -4,6 +4,11 @@
 performance, comparison, and claim tooling. It is not part of the public npm
 package.
 
+The native catalog's [reconciliation](../reports/benchmarks/catalog-20261101/REANALYSIS.md)
+explains its pinned source, aggregate-only classification and sampling limits.
+`catalog-report` generates counts, rankings and text from one versioned policy;
+it does not remeasure current HEAD or reconstruct missing raw samples.
+
 ## Start here
 
 ```bash
@@ -14,11 +19,22 @@ python3 bench/cli.py claim --help
 python3 bench/cli.py external --help
 python3 bench/cli.py program --help
 python3 bench/cli.py c-vs-zig --help
+python3 bench/cli.py phase-cohort --help
+python3 bench/cli.py browser --help
+python3 bench/cli.py browser-analyze --help
+python3 bench/cli.py catalog-report --help
 ```
 
 Use [`docs/operator-runbook.md`](../docs/operator-runbook.md) for platform
 procedures and [`bench/docs/benchmark-writing-guide.md`](docs/benchmark-writing-guide.md)
 for adding workloads.
+
+Ordinary native phase attribution uses `phase-cohort`, which delegates to
+[`tools/dropin_phase_cohort.py`](tools/dropin_phase_cohort.py). Browser iteration
+uses the [maintained fresh-launch harness](browser/fresh_launch/README.md): select
+one page and repetition count, inspect the schedule with `--dry-run`, then run
+that selection. Neither command requires a full comparison campaign. Existing
+native catalog summaries can be reproduced through `catalog-report`.
 
 External application reproduction starts at
 [`external-projects/README.md`](external-projects/README.md). The

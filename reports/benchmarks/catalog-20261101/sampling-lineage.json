@@ -1,0 +1,38 @@
+{
+  "recoveredRunner": {
+    "artifact": "recovered-runner.py.gz",
+    "sha256": "6eeb0e091d99e2b0a3069ea6b7876cbcfe0d8ddfa9323dc7c19554f9e7394a8d",
+    "status": "Recovered local runner, not part of prospectively frozen contracts; identical runner copies and matching summary data corroborate lineage."
+  },
+  "schemaVersion": 1,
+  "summaryCopies": [
+    {
+      "byteIdentical": true,
+      "jsonDataMatches": true,
+      "path": "catalog_apple-metal.json",
+      "recoveredSha256": "6dd7ddb57cea5e495c45bbb63e7c7fe0c5d6a68eb180b4a428122086dcfcefb6",
+      "sha256": "6dd7ddb57cea5e495c45bbb63e7c7fe0c5d6a68eb180b4a428122086dcfcefb6"
+    },
+    {
+      "byteIdentical": true,
+      "jsonDataMatches": true,
+      "path": "catalog_intel-vulkan.json",
+      "recoveredSha256": "3de61a10c63293ca2e47967d579251ca05888dc81638f71a3c341a9e4fe58ebc",
+      "sha256": "3de61a10c63293ca2e47967d579251ca05888dc81638f71a3c341a9e4fe58ebc"
+    },
+    {
+      "byteIdentical": false,
+      "jsonDataMatches": true,
+      "path": "catalog_windows-amd-vulkan.json",
+      "recoveredSha256": "e13a0fd855898682988e4c7add6f8846ace397c8c4674ea7acf843052bc03651",
+      "sha256": "ddd988422cb06325befcb86ffb86689fff8b299985cd97da0e8d3bdb71cf5680"
+    },
+    {
+      "byteIdentical": false,
+      "jsonDataMatches": true,
+      "path": "catalog_windows-d3d12.json",
+      "recoveredSha256": "be3246149f1ecc492aff6c6dd7429fba914cb5025b779e71a053a4f9061eb0ce",
+      "sha256": "7add2bedaa7125ddc9a7c578e52ff4db8af54b6ea8283a362d21235a2683500e"
+    }
+  ]
+}
