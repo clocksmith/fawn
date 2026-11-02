@@ -18,6 +18,7 @@
 
 _Static_assert(__builtin_types_compatible_p(size_t, NSUInteger), "NSUInteger call ABI");
 SAME_ENUM(DOE_MTL_RESOURCE_HAZARD_TRACKED, MTLResourceHazardTrackingModeTracked);
+SAME_ENUM(DOE_MTL_HAZARD_TRACKED, MTLHazardTrackingModeTracked);
 _Static_assert(__builtin_types_compatible_p(intptr_t, NSInteger), "NSInteger call ABI");
 _Static_assert(__builtin_types_compatible_p(doe_objc_bool, BOOL), "BOOL call ABI");
 _Static_assert(__builtin_types_compatible_p(doe_objc_event_wait_call,

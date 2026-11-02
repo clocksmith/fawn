@@ -174,6 +174,8 @@ typedef struct doe_mtl_native {
     /* Returns native MTLCommandBufferStatus. Terminal NSError operation/code/text
      * are copied before its autorelease pool drains; no borrowed string escapes. */
     size_t (*observe)(void *userdata, void *command, bool wait, doe_mtl_error *error);
+    /* Optional actual native property. Missing/untracked textures stay exclusive. */
+    bool (*texture_hazards_tracked)(void *userdata, void *texture);
 } doe_mtl_native;
 
 doe_mtl_status doe_mtl_native_open(doe_mtl_native *out, doe_mtl_error *error);

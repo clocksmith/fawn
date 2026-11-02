@@ -4,6 +4,13 @@
 #include <stdio.h>
 #include <string.h>
 
+bool doe_mtl_objc_texture_hazards_tracked(void *userdata, void *texture) {
+    doe_mtl_objc *runtime = userdata;
+    void *selector = runtime->selector("hazardTrackingMode");
+    return selector && runtime->responds_call(texture, runtime->responds, selector) &&
+        runtime->size_call(texture, selector) == DOE_MTL_HAZARD_TRACKED;
+}
+
 bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
     r->texture_class = r->get_class("MTLTextureDescriptor");
     r->sampler_class = r->get_class("MTLSamplerDescriptor");

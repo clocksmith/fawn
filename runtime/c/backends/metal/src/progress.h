@@ -29,6 +29,15 @@ doe_mtl_status doe_mtl_context_set_completion(doe_mtl_context *context,
 bool doe_mtl_commands_in_flight(const doe_mtl_commands *commands);
 doe_mtl_commands *doe_mtl_commands_conflict(const doe_mtl_commands *commands);
 doe_mtl_commands *doe_mtl_buffer_owner(const doe_mtl_buffer *buffer);
+struct doe_mtl_texture;
+/* Validated latest queue snapshot, not CPU/GPU completion or a texture clear.
+ * Failure leaves *initialized unchanged; unknown uses retain their leases. */
+doe_mtl_status doe_mtl_texture_release_initialized(const struct doe_mtl_texture *texture,
+    bool *initialized);
+/* External contents are a fenced producer assertion, not an eager native clear.
+ * Preflight is shared by both initialized and uninitialized epoch admission. */
+doe_mtl_status doe_mtl_texture_external_preflight(const struct doe_mtl_texture *texture);
+doe_mtl_status doe_mtl_texture_external_contents(struct doe_mtl_texture *texture, bool initialized);
 bool doe_mtl_commands_matches(const doe_mtl_commands *commands, const doe_mtl_wait_lease *lease);
 doe_mtl_status doe_mtl_commands_hold(doe_mtl_commands *commands, doe_mtl_wait_lease *out);
 doe_mtl_status doe_mtl_commands_block(const doe_mtl_wait_lease *lease, uint64_t timeout_ns);

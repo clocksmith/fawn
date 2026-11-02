@@ -4,6 +4,7 @@
 #include "shared_memory_internal.h"
 #include "metal_frontend.h"
 #include "doe_metal_shared.h"
+#include "../../backends/metal/src/progress.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <time.h>
@@ -378,8 +379,8 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
         native_device_result(device) == NATIVE_OK;
     native_failure failure = native_failure_status(NATIVE_OK);
     native_texture *payload = admitted ? doe_resource_texture_native(texture) : NULL;
-    if (admitted && descriptor && !descriptor->initialized)
-        failure = native_failure_metal(doe_mtl_texture_can_discard_queued(payload->metal), NULL);
+    if (admitted && descriptor)
+        failure = native_failure_metal(doe_mtl_texture_external_preflight(payload->metal), NULL);
     native_command_handle command = {0};
     if (admitted && failure.status == NATIVE_OK && count) {
         failure = native_command_create(&device->backend, &command);
@@ -408,8 +409,9 @@ WGPUStatus wgpuSharedTextureMemoryBeginAccess(WGPUSharedTextureMemory memory, WG
             success = false;
         }
     }
-    if (success && descriptor && !descriptor->initialized) {
-        failure = native_failure_metal(doe_mtl_texture_discard_queued(payload->metal), NULL);
+    if (success && descriptor) {
+        failure = native_failure_metal(doe_mtl_texture_external_contents(payload->metal,
+            descriptor->initialized != WGPU_FALSE), NULL);
         success = failure.status == NATIVE_OK;
     }
     if (admitted) {
@@ -464,14 +466,18 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
         native_shared_matches_texture(memory, texture) && (!state || fence);
     native_failure failure = native_failure_status(NATIVE_OK);
     uint64_t release_value = 1;
+    bool initialized = false;
     if (admitted && state) {
         failure = native_failure_status(native_device_result(device));
         /* Every committed command buffer signals the queue timeline after its
-         * work, and the single recording owner is the texture's only unretired
-         * GPU use. Export that point without waiting or new GPU work. A device
+         * work. The newest accepted texture use orders every earlier use on
+         * that queue, including a separate alpha-clear pass. Export its point
+         * without waiting or new GPU work. A device
          * without a real timeline keeps the waited fresh-event signal. */
         void *timeline = NULL;
         native_texture *payload = doe_resource_texture_native(texture);
+        if (failure.status == NATIVE_OK)
+            failure = native_failure_metal(doe_mtl_texture_release_initialized(payload->metal, &initialized), NULL);
         doe_mtl_status point = failure.status == NATIVE_OK ?
             doe_mtl_texture_release_point(payload->metal, &timeline, &release_value) : DOE_MTL_UNSUPPORTED;
         if (point == DOE_MTL_OK) {
@@ -494,7 +500,7 @@ WGPUStatus wgpuSharedTextureMemoryEndAccess(WGPUSharedTextureMemory memory, WGPU
         if (state) {
             fences[0] = fence;
             values[0] = release_value;
-            state->initialized = WGPU_TRUE;
+            state->initialized = initialized ? WGPU_TRUE : WGPU_FALSE;
             state->fenceCount = 1;
             state->fences = fences;
             state->signaledValueCount = 1;

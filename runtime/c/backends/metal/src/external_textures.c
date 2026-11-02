@@ -40,6 +40,8 @@ doe_mtl_status doe_mtl_texture_adopt_external(doe_mtl_context *context,
         return doe_mtl_fail(status, "external plane format", error);
     }
     texture->native = native;
+    texture->queue_ordered = context->native.texture_hazards_tracked &&
+        context->native.texture_hazards_tracked(context->native.userdata, native);
     *out = texture;
     return DOE_MTL_OK;
 }

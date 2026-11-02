@@ -7,9 +7,13 @@ doe_mtl_status doe_mtl_texture_preflight(doe_mtl_commands *commands,
     if (texture->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
     if (texture->presentation_registered || texture->evict_requested) return DOE_MTL_INVALID_STATE;
     if (texture->poisoned) return DOE_MTL_EXECUTION_FAILED;
-    if (texture->owner != NULL && texture->owner != commands) {
+    if (texture->owner != NULL && texture->owner != commands && !texture->queue_ordered) {
         commands->conflict = texture->owner;
         return DOE_MTL_BUSY;
+    }
+    for (const doe_mtl_texture_use *use = texture->uses; use; use = use->older) {
+        doe_mtl_status status = doe_mtl_command_order_after(commands, use->commands);
+        if (status != DOE_MTL_OK) return status;
     }
     if ((texture->desc.usage & usage) != usage) return DOE_MTL_INVALID_ARGUMENT;
     return DOE_MTL_OK;
@@ -38,10 +42,17 @@ doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,
         free(use);
         return status;
     }
-    memcpy(use->initialized, texture->initialized, texture->subresource_count * sizeof(uint8_t));
+    const uint8_t *initialized = doe_mtl_texture_initialization(commands, texture);
+    if (initialized) memcpy(use->initialized, initialized, texture->subresource_count * sizeof(uint8_t));
+    else memset(use->initialized, 0, texture->subresource_count * sizeof(uint8_t));
     use->texture = texture;
+    use->commands = commands;
+    use->initialization_generation = texture->initialization_generation;
     use->next = commands->textures;
     commands->textures = use;
+    use->older = texture->uses;
+    if (use->older) use->older->newer = use;
+    texture->uses = use;
     texture->owner = commands;
     *out = use;
     return DOE_MTL_OK;
@@ -141,16 +152,21 @@ void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool succ
         doe_mtl_texture_use *use = commands->textures;
         commands->textures = use->next;
         if (completed) {
-            if (success && !use->texture->discard_pending) memcpy(use->texture->initialized, use->initialized,
+            if (success && use->initialization_generation == use->texture->initialization_generation)
+                memcpy(use->texture->initialized, use->initialized,
                 use->texture->subresource_count * sizeof(uint8_t));
-            else if (!success) use->texture->poisoned = true;
+            else if (!success) {
+                use->texture->poisoned = true;
+                for (doe_mtl_texture_use *later = use->newer; later; later = later->newer)
+                    if (later->commands->failure.status == DOE_MTL_OK)
+                        later->commands->failure = commands->failure;
+            }
         }
-        if (use->texture->discard_pending) {
-            memset(use->texture->initialized, 0, use->texture->subresource_count * sizeof(uint8_t));
-            use->texture->discard_pending = false;
-        }
-        use->texture->owner = NULL;
-        if (use->texture->evict_requested) doe_mtl_texture_evict_now(use->texture);
+        if (use->older) use->older->newer = use->newer;
+        if (use->newer) use->newer->older = use->older;
+        else use->texture->uses = use->older;
+        use->texture->owner = use->texture->uses ? use->texture->uses->commands : NULL;
+        if (!use->texture->uses && use->texture->evict_requested) doe_mtl_texture_evict_now(use->texture);
         doe_mtl_texture_release(use->texture);
         free(use->initialized);
         free(use);

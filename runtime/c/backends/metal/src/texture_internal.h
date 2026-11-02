@@ -5,6 +5,7 @@
 
 doe_mtl_status doe_mtl_initialize_texture_region(doe_mtl_commands *, doe_mtl_texture *,
     doe_mtl_texture_region, uint8_t, doe_mtl_error *);
+typedef struct doe_mtl_texture_use doe_mtl_texture_use;
 struct doe_mtl_texture {
     doe_mtl_context *context;
     uint32_t references;
@@ -14,10 +15,13 @@ struct doe_mtl_texture {
     size_t subresource_count;
     uint8_t *initialized;
     bool poisoned;
-    bool discard_pending; /* Submitted owner must not republish pre-discard contents. */
+    bool queue_ordered; /* Actual native resource reports tracked hazards. */
+    uint64_t initialization_generation;
+    uint64_t last_submission; /* Last texture use's queue point, including retired uses. */
     bool evict_requested; /* Public destroy(): free native storage once unused. */
     bool evicted;         /* Native texture and every native view released. */
     doe_mtl_commands *owner;
+    doe_mtl_texture_use *uses;
     doe_mtl_surface *surface;
     void *drawable;
     bool presentation_registered;
@@ -35,11 +39,14 @@ struct doe_mtl_sampler {
     uint32_t references;
     void *native;
 };
-typedef struct doe_mtl_texture_use {
+struct doe_mtl_texture_use {
     doe_mtl_texture *texture;
+    doe_mtl_commands *commands;
     uint8_t *initialized;
+    uint64_t initialization_generation;
     struct doe_mtl_texture_use *next;
-} doe_mtl_texture_use;
+    struct doe_mtl_texture_use *older, *newer;
+};
 typedef struct doe_mtl_view_use {
     doe_mtl_texture_view *view;
     struct doe_mtl_view_use *next;
@@ -59,6 +66,7 @@ void doe_mtl_texture_evict_now(doe_mtl_texture *texture);
 bool doe_mtl_samples_supported(const doe_mtl_caps *caps, uint32_t samples);
 bool doe_mtl_texture_aspect_initialized(const doe_mtl_commands *commands,
     const doe_mtl_texture_view *view, uint8_t aspects);
+const uint8_t *doe_mtl_texture_initialization(const doe_mtl_commands *, const doe_mtl_texture *);
 void doe_mtl_texture_aspect_publish(doe_mtl_commands *commands,
     const doe_mtl_texture_view *view, uint8_t aspects, bool initialized);
 bool doe_mtl_format_compatible(doe_mtl_format a, doe_mtl_format b);

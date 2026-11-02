@@ -86,23 +86,35 @@ static void confirm_submission(doe_mtl_commands *commands) {
     }
 }
 
+doe_mtl_status doe_mtl_command_submission_status(doe_mtl_commands *commands) {
+    if (!commands || commands->state != DOE_MTL_SUBMITTED) return DOE_MTL_INVALID_STATE;
+    confirm_submission(commands);
+    if (!commands->submission_known || commands->completion_unknown) return DOE_MTL_BUSY;
+    return commands->failure.status;
+}
+
+doe_mtl_status doe_mtl_command_order_after(doe_mtl_commands *commands, doe_mtl_commands *earlier) {
+    if (!earlier || earlier == commands) return DOE_MTL_OK;
+    if (earlier->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
+    doe_mtl_status status = doe_mtl_command_submission_status(earlier);
+    if (status == DOE_MTL_INVALID_STATE || status == DOE_MTL_BUSY) {
+        commands->conflict = earlier;
+        return DOE_MTL_BUSY;
+    }
+    if (status != DOE_MTL_OK && commands->failure.status == DOE_MTL_OK)
+        commands->failure = earlier->failure;
+    return status;
+}
+
 doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable) {
     if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (buffer->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
     if (buffer->evict_requested) return DOE_MTL_INVALID_STATE;
-    if (buffer->owner && buffer->owner != commands && buffer->owner->state == DOE_MTL_SUBMITTED)
-        confirm_submission(buffer->owner); /* Usually proved by routine frontend polling. */
-    for (const doe_mtl_buffer_use *use = buffer->uses; use; use = use->older)
-        if (use->commands != commands && (use->commands->state != DOE_MTL_SUBMITTED ||
-                !use->commands->submission_known || use->commands->completion_unknown)) {
-            commands->conflict = use->commands;
-            return DOE_MTL_BUSY;
-        }
-        else if (use->commands->failure.status != DOE_MTL_OK) {
-            if (commands->failure.status == DOE_MTL_OK) commands->failure = use->commands->failure;
-            return DOE_MTL_EXECUTION_FAILED;
-        }
+    for (const doe_mtl_buffer_use *use = buffer->uses; use; use = use->older) {
+        doe_mtl_status status = doe_mtl_command_order_after(commands, use->commands);
+        if (status != DOE_MTL_OK) return status;
+    }
     if (buffer->poisoned) return DOE_MTL_EXECUTION_FAILED;
     if (readable && !doe_mtl_buffer_initialized(commands, buffer))
         return DOE_MTL_UNINITIALIZED;
@@ -274,9 +286,15 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
     doe_mtl_native *native;
     if (status != DOE_MTL_OK) return status;
     for (doe_mtl_buffer_use *use = commands->buffers; use; use = use->next)
-        for (doe_mtl_buffer_use *earlier = use->older; earlier; earlier = earlier->older)
-            if (earlier->commands->completion_unknown)
-                return doe_mtl_poison(commands, DOE_MTL_BUSY, "unknown buffer predecessor", error);
+        for (doe_mtl_buffer_use *earlier = use->older; earlier; earlier = earlier->older) {
+            status = doe_mtl_command_order_after(commands, earlier->commands);
+            if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "buffer predecessor", error);
+        }
+    for (doe_mtl_texture_use *use = commands->textures; use; use = use->next)
+        for (doe_mtl_texture_use *earlier = use->older; earlier; earlier = earlier->older) {
+            status = doe_mtl_command_order_after(commands, earlier->commands);
+            if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "texture predecessor", error);
+        }
     native = &commands->context->native;
     if (commands->context->timeline) {
         if (commands->context->timeline_next == UINT64_MAX)
@@ -305,6 +323,8 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
     commands->state = DOE_MTL_SUBMITTED;
     native->commit(native->userdata, commands->native);
     commands->context->timeline_committed = commands->timeline_value;
+    for (doe_mtl_texture_use *use = commands->textures; use; use = use->next)
+        use->texture->last_submission = commands->timeline_value;
     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);
 }
 
@@ -365,8 +385,10 @@ static doe_mtl_status observe_terminal(doe_mtl_commands *commands, bool wait,
     return doe_mtl_fail(DOE_MTL_COMPLETION_UNKNOWN, "command completion", error);
 }
 
-static doe_mtl_commands *earlier_buffer_use(const doe_mtl_commands *commands) {
+static doe_mtl_commands *earlier_resource_use(const doe_mtl_commands *commands) {
     for (const doe_mtl_buffer_use *use = commands->buffers; use; use = use->next)
+        if (use->older) return use->older->commands;
+    for (const doe_mtl_texture_use *use = commands->textures; use; use = use->next)
         if (use->older) return use->older->commands;
     return NULL;
 }
@@ -374,14 +396,14 @@ static doe_mtl_commands *earlier_buffer_use(const doe_mtl_commands *commands) {
 static doe_mtl_status observe(doe_mtl_commands *commands, bool wait, doe_mtl_error *error) {
     if (commands && commands->state == DOE_MTL_SUBMITTED) {
         for (;;) {
-            doe_mtl_commands *earlier = earlier_buffer_use(commands);
+            doe_mtl_commands *earlier = earlier_resource_use(commands);
             if (!earlier) break;
             /* Every edge was admitted only from an already committed command
              * to a new recording. Walk backwards to its first outstanding use,
              * then retire through the ordinary observer. No recursion/queue or
              * extra resource ownership: traversal is bounded by live leases. */
             doe_mtl_commands *next;
-            while ((next = earlier_buffer_use(earlier)) != NULL) earlier = next;
+            while ((next = earlier_resource_use(earlier)) != NULL) earlier = next;
             doe_mtl_status status = observe_terminal(earlier, wait, error);
             if (status != DOE_MTL_OK && status != DOE_MTL_EXECUTION_FAILED) {
                 if (status == DOE_MTL_COMPLETION_UNKNOWN) commands->completion_unknown = true;

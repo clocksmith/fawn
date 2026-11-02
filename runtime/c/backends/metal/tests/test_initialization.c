@@ -213,14 +213,16 @@ static void queued_discard(void) {
         assert(doe_mtl_texture_discard_queued(texture) == DOE_MTL_BUSY);
         assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
         assert(doe_mtl_texture_can_discard_queued(texture) == DOE_MTL_OK);
-        assert(doe_mtl_texture_discard_queued(texture) == DOE_MTL_OK && texture->discard_pending);
+        assert(doe_mtl_texture_discard_queued(texture) == DOE_MTL_OK && !texture->initialized[0]);
+        uint64_t generation = texture->initialization_generation;
         mock_result(&mock, 0, 0);
         assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
-        assert(texture->discard_pending && texture->initialized[0] == DOE_MTL_ASPECT_COLOR);
+        assert(texture->owner == commands && !texture->initialized[0]);
+        assert(texture->initialization_generation == generation);
         assert(doe_mtl_commands_release(commands) == DOE_MTL_BUSY);
         mock_result(&mock, failed ? 5 : 4, failed ? -71 : 0);
         assert(doe_mtl_commands_poll(commands, NULL) == (failed ? DOE_MTL_EXECUTION_FAILED : DOE_MTL_OK));
-        assert(!texture->discard_pending && !texture->initialized[0] && texture->poisoned == (failed != 0));
+        assert(!texture->owner && !texture->initialized[0] && texture->poisoned == (failed != 0));
         assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
         if (!failed) {
             commands = commands_new(context);

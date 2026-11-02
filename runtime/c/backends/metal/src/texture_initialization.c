@@ -1,16 +1,21 @@
 /* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
 
-static const uint8_t *initialization(const doe_mtl_commands *commands, const doe_mtl_texture *texture) {
+const uint8_t *doe_mtl_texture_initialization(const doe_mtl_commands *commands, const doe_mtl_texture *texture) {
     const doe_mtl_texture_use *use;
-    for (use = commands->textures; use != NULL; use = use->next)
-        if (use->texture == texture) return use->initialized;
+    for (use = commands ? commands->textures : NULL; use != NULL; use = use->next)
+        if (use->texture == texture && use->initialization_generation == texture->initialization_generation)
+            return use->initialized;
+    if (texture->uses && texture->uses->initialization_generation == texture->initialization_generation &&
+        texture->owner->state == DOE_MTL_SUBMITTED && texture->owner->submission_known &&
+        !texture->owner->completion_unknown) return texture->uses->initialized;
     return texture->initialized;
 }
 
 bool doe_mtl_texture_region_aspects_initialized(const doe_mtl_commands *commands,
     const doe_mtl_texture *texture, doe_mtl_texture_region region, uint8_t aspects) {
-    const uint8_t *initialized = initialization(commands, texture);
+    const uint8_t *initialized = doe_mtl_texture_initialization(commands, texture);
+    if (!initialized) return false;
     const uint32_t layers = doe_mtl_texture_layers(&texture->desc);
     const uint32_t first = texture->desc.type == DOE_MTL_TEXTURE_3D ? 0 : region.z;
     const uint32_t count = texture->desc.type == DOE_MTL_TEXTURE_3D ? 1 : region.depth_or_layers;
@@ -42,7 +47,8 @@ void doe_mtl_texture_region_initialize(doe_mtl_texture_use *use, doe_mtl_texture
 
 bool doe_mtl_texture_aspect_initialized(const doe_mtl_commands *commands,
     const doe_mtl_texture_view *view, uint8_t aspects) {
-    const uint8_t *initialized = initialization(commands, view->texture);
+    const uint8_t *initialized = doe_mtl_texture_initialization(commands, view->texture);
+    if (!initialized) return false;
     const uint32_t layers = doe_mtl_texture_layers(&view->texture->desc);
     uint32_t mip, layer;
     for (mip = view->desc.base_mip; mip < view->desc.base_mip + view->desc.mip_count; ++mip)

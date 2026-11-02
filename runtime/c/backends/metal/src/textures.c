@@ -127,6 +127,8 @@ doe_mtl_status doe_mtl_texture_create(doe_mtl_context *context,
         doe_mtl_texture_release(texture);
         return status;
     }
+    texture->queue_ordered = context->native.texture_hazards_tracked &&
+        context->native.texture_hazards_tracked(context->native.userdata, texture->native);
     *out = texture;
     return doe_mtl_fail(DOE_MTL_OK, "texture create", error);
 }
@@ -183,18 +185,34 @@ doe_mtl_status doe_mtl_texture_discard(doe_mtl_texture *texture) {
     return DOE_MTL_OK;
 }
 
-doe_mtl_status doe_mtl_texture_can_discard_queued(const doe_mtl_texture *texture) {
+doe_mtl_status doe_mtl_texture_external_preflight(const doe_mtl_texture *texture) {
     if (!texture) return DOE_MTL_INVALID_ARGUMENT;
     if (texture->evict_requested || texture->evicted) return DOE_MTL_INVALID_STATE;
     if (texture->poisoned) return DOE_MTL_EXECUTION_FAILED;
-    return !texture->owner || texture->owner->state == DOE_MTL_SUBMITTED ? DOE_MTL_OK : DOE_MTL_BUSY;
+    for (const doe_mtl_texture_use *use = texture->uses; use; use = use->older) {
+        doe_mtl_status status = doe_mtl_command_submission_status(use->commands);
+        if (status != DOE_MTL_OK) return status == DOE_MTL_INVALID_STATE ? DOE_MTL_BUSY : status;
+    }
+    return texture->owner && texture->initialization_generation == UINT64_MAX ? DOE_MTL_RANGE : DOE_MTL_OK;
 }
-doe_mtl_status doe_mtl_texture_discard_queued(doe_mtl_texture *texture) {
-    doe_mtl_status status = doe_mtl_texture_can_discard_queued(texture);
+doe_mtl_status doe_mtl_texture_external_contents(doe_mtl_texture *texture, bool initialized) {
+    doe_mtl_status status = doe_mtl_texture_external_preflight(texture);
     if (status != DOE_MTL_OK) return status;
-    if (!texture->owner) return doe_mtl_texture_discard(texture);
-    texture->discard_pending = true;
+    if (texture->owner) ++texture->initialization_generation;
+    /* Existing uses retain their own older snapshots. The current epoch starts
+     * from the external producer's contents after its admitted queue waits;
+     * old completions cannot republish over either a true or false assertion. */
+    memset(texture->initialized, initialized ? doe_mtl_format_aspects(texture->desc.format) : 0,
+        texture->subresource_count * sizeof(uint8_t));
     return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_texture_can_discard_queued(const doe_mtl_texture *texture) {
+    return doe_mtl_texture_external_preflight(texture);
+}
+
+doe_mtl_status doe_mtl_texture_discard_queued(doe_mtl_texture *texture) {
+    return doe_mtl_texture_external_contents(texture, false);
 }
 
 const doe_mtl_texture_desc *doe_mtl_texture_description(const doe_mtl_texture *texture) {

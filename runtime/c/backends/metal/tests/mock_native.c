@@ -55,6 +55,12 @@ static mock_object *object_create(mock_native *mock, unsigned kind) {
     return object;
 }
 
+static bool texture_hazards_tracked(void *userdata, void *texture) {
+    mock_native *mock = userdata;
+    assert(texture);
+    return !mock->untracked_textures;
+}
+
 static void close_driver(void *userdata) {
     mock_native *mock = userdata;
     assert(mock->live == 0);
@@ -530,6 +536,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.guard_batch = guard_batch;
     native.dispatch_indirect = dispatch_indirect;
     native.texture = texture_create;
+    native.texture_hazards_tracked = texture_hazards_tracked;
     native.view = view_create;
     native.sampler = sampler_create;
     native.upload_texture = upload_image;

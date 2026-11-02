@@ -76,15 +76,42 @@ doe_mtl_status doe_mtl_context_release_point(const doe_mtl_context *context,
     return DOE_MTL_OK;
 }
 
+static doe_mtl_status texture_release_preflight(const doe_mtl_texture *texture) {
+    if (!texture) return DOE_MTL_INVALID_ARGUMENT;
+    if (texture->poisoned) return DOE_MTL_EXECUTION_FAILED;
+    for (const doe_mtl_texture_use *use = texture->uses; use; use = use->older) {
+        doe_mtl_status status = doe_mtl_command_submission_status(use->commands);
+        if (status != DOE_MTL_OK) return status;
+        if (texture->context->timeline &&
+            use->commands->timeline_value > texture->context->timeline_committed) return DOE_MTL_INVALID_STATE;
+    }
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_texture_release_initialized(const doe_mtl_texture *texture, bool *initialized) {
+    if (!initialized) return DOE_MTL_INVALID_ARGUMENT;
+    doe_mtl_status status = texture_release_preflight(texture);
+    if (status != DOE_MTL_OK) return status;
+    const uint8_t *snapshot = doe_mtl_texture_initialization(NULL, texture);
+    const uint8_t aspects = doe_mtl_format_aspects(texture->desc.format);
+    bool complete = snapshot != NULL;
+    for (size_t i = 0; complete && i < texture->subresource_count; ++i)
+        complete = (snapshot[i] & aspects) == aspects;
+    *initialized = complete;
+    return DOE_MTL_OK;
+}
+
 doe_mtl_status doe_mtl_texture_release_point(const doe_mtl_texture *texture,
     void **event, uint64_t *value)
 {
     if (!texture || !event || !value) return DOE_MTL_INVALID_ARGUMENT;
     if (!texture->context->timeline) return DOE_MTL_UNSUPPORTED;
-    if (texture->owner && (texture->owner->state != DOE_MTL_SUBMITTED || !texture->owner->timeline_value))
-        return DOE_MTL_INVALID_STATE;
+    doe_mtl_status status = texture_release_preflight(texture);
+    if (status != DOE_MTL_OK) return status;
+    if (texture->owner && !texture->owner->timeline_value) return DOE_MTL_INVALID_STATE;
+    if (texture->last_submission > texture->context->timeline_committed) return DOE_MTL_INVALID_STATE;
     *event = texture->context->timeline;
-    *value = texture->owner ? texture->owner->timeline_value : 0;
+    *value = texture->last_submission;
     return DOE_MTL_OK;
 }
 

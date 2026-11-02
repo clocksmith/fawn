@@ -37,6 +37,12 @@ $(BUILD)/test_buffer_reuse: tests/test_buffer_reuse.c tests/mock_native.c tests/
 check-buffer-reuse: $(BUILD)/test_buffer_reuse
 	$(BUILD)/test_buffer_reuse
 check: check-buffer-reuse
+$(BUILD)/test_texture_reuse: tests/test_texture_reuse.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_texture_reuse.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+.PHONY: check-texture-reuse
+check-texture-reuse: $(BUILD)/test_texture_reuse
+	$(BUILD)/test_texture_reuse
+check: check-texture-reuse
 $(BUILD)/test_surface: tests/test_surface.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_surface.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD):

@@ -375,6 +375,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.dispatch_indirect = doe_mtl_objc_dispatch_indirect;
     native.guard_batch = doe_mtl_objc_guard_batch;
     native.texture = doe_mtl_objc_texture;
+    native.texture_hazards_tracked = doe_mtl_objc_texture_hazards_tracked;
     native.view = doe_mtl_objc_view;
     native.sampler = doe_mtl_objc_sampler;
     native.upload_texture = doe_mtl_objc_upload_image;

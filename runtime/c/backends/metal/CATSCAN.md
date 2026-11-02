@@ -6,41 +6,38 @@ Parent: [C migration](../../CATSCAN.md)
 Execute Metal with resource/completion obligations.
 
 ## Authority
-Own loading, device/queue/resource/pipeline lifetimes, compute/render,
-queries, drawables, transfers, retirement. Exclude WGSL,
-public validation, provider selection and qualification.
+Own loading/lifetimes, compute/render, queries, drawables, transfers/retirement.
+Exclude WGSL, WebGPU validation/policy, provider selection and qualification.
 
 ## Scope
-ABI/tests, compressed transfers, equal-count whole multisample copies.
-Packed IOSurface publishes physical format/dimensions before textures.
-Capabilities check loaded APIs and selected-device selectors.
+Typed ABI, compressed transfers, whole equal-count multisample copies.
+Publish IOSurface format/dimensions before textures; query selected-device/API capabilities.
 
 ## Contracts
-MSL/workgroup/slot inputs: [compute](include/doe_metal.h).
-Stage/render inputs: [graphics](include/doe_metal_render.h). Outputs: statuses, completion-backed buffer access,
-optional nonretiring completion notification. Device workgroups/formats and pipeline maxTotalThreadsPerThreadgroup bound execution. Indirect compute guards GPU arguments in scratch,
-per [invariants](../../../../INTENT.md).
-Presentation borrows CAMetalLayer, retaining drawable leases through GPU completion;
-presentDrawable schedules without display-timestamp claims.
-Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the GPU normalizer/scan and command owner.
+Compiler inputs: [compute](include/doe_metal.h), [graphics](include/doe_metal_render.h).
+Outputs: statuses, completion-backed access, optional nonretiring notifications.
+Device workgroups/formats and pipeline maxTotalThreadsPerThreadgroup bound execution.
 
 ## Invariants
-Native samples precede timestamp resolves.
-Producer dependencies retain GPU waits; exports reference committed queue timeline values.
-Pending/unknown work retains resources; failure forbids successful readback. No interpreter, backend substitution, Zig delegation,
-production-selection change. Host/SDK/physical evidence stays distinct. Command-owned buffer leases admit queue-ordered reuse after known submission;
-unsubmitted/unknown owners exclude reuse. The ordinary queue synchronizes directly bound
-[tracked resources](https://developer.apple.com/documentation/metal/resource-synchronization).
-Earlier failure/completion precedes dependent publication,
-host access and eviction require all uses retired; unlocked waits require native leases.
-Stencil initialization uses parent-format attachments/speculative aspect ownership,
-preserving companions. Aspect transfers use those bits/native component-copy options,
-published after completion. Per-draw native encoder state controls depth clip/clamp/bias.
+Leases retain pending/unknown resources; failures forbid readback.
+No interpretation, backend/Zig substitution or default changes. Separate host, SDK and physical evidence.
+Queue-ordered buffer/texture reuse requires known submitted, directly bound
+[tracked resources](https://developer.apple.com/documentation/metal/resource-synchronization);
+unsubmitted/unknown/untracked predecessors exclude reuse.
+Earlier outcomes precede dependent publication. Host access/eviction requires all uses retired;
+unlocked waits hold native leases.
+GPU waits retain producer dependencies; export the latest accepted texture-use point.
+Generation-bound aspect snapshots preserve discards and companion depth/stencil through
+parent-format initialization/native component-copy transfers; publish after completion.
+Samples precede timestamp resolves. Native draw state controls depth clip/clamp/bias.
+Retain borrowed CAMetalLayer drawables through completion; presentDrawable proves no display timestamp.
+Indirect compute guards arguments in GPU scratch; indexed/indirect [draws](include/doe_metal_draw_guard.h)
+retain GPU normalizers/scans and command leases.
 
 ## Acceptance
-[Checks](Makefile) cover arguments, rollback, ownership, completion.
-- Evidence: [Timestamps](DEVELOPER_RECEIPT_TIMESTAMPS.json) bind host scope;
-[Graphics](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind initialization/empty raster/Apple execution.
+[Checks](Makefile): arguments, rollback, ownership, completion.
+- Evidence: [timestamps: host](DEVELOPER_RECEIPT_TIMESTAMPS.json),
+[graphics: initialization/empty-raster/Apple](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json).
 
 ## Non-goals
 WebGPU policy, duplicate lifetimes or compile-only qualification.

@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { DOE_MTL_RESOURCE_HAZARD_TRACKED = 2u << 8 };
+enum { DOE_MTL_HAZARD_TRACKED = 2u, DOE_MTL_RESOURCE_HAZARD_TRACKED = DOE_MTL_HAZARD_TRACKED << 8 };
+bool doe_mtl_objc_texture_hazards_tracked(void *, void *);
 
 /* Narrow 64-bit macOS C ABI. MTLSize and NSRange use NSUInteger fields.
  * objc_msgSend is always cast to the exact selected method signature.
