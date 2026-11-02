@@ -4,7 +4,9 @@ This is the dependency order for the authorized full C migration, not a new
 support claim or an immutable list of shader-specific milestones. The existing
 [migration gates](MIGRATION.md) remain blocking. Keep one typed pipeline and
 extend reusable owners; do not recognize filenames or copy source fragments into
-specialized emitters. All production compiler owners remain retained Zig today.
+specialized emitters. Current compiler-build and browser-Wasm build selectors default to C; explicit
+legacy routes retain Zig. Those defaults do not establish complete language
+parity, consumer acceptance or physical-backend qualification.
 
 ## Accepted function-state prerequisite
 

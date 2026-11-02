@@ -1,6 +1,6 @@
 # Common C style
 
-Prospective floor for new or deliberately changed experimental C code. Follow the
+Prospective floor for new or deliberately changed C code. Follow the
 [C charter](CATSCAN.md), [system invariants](../../INTENT.md),
 [native adapter rules](../zig/STYLE.md#native-adapter-subset) and child STYLE/contracts.
 Existing ABI, numerical, storage and lifetime obligations remain authoritative.

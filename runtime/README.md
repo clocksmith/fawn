@@ -2,8 +2,10 @@
 
 `runtime/` contains the Doe engine and native bridge surfaces:
 
+- `runtime/c/`
+  - the default-selected C runtime, compiler and backend owners
 - `runtime/zig/`
-  - the Zig runtime, compiler, and backend implementation
+  - retained reference tests, shared pinned inputs and explicit legacy routes
 - `runtime/bridge/`
   - package-facing native bridge code, addon glue, and repo-only runtime
     integration surfaces such as the ONNX Runtime plugin EP scaffold
@@ -15,8 +17,8 @@ live under `packages/`.
 
 Treat `runtime/` as several surfaces:
 
-- Authored runtime implementation: `runtime/zig/src/`, `runtime/zig/build.zig`,
-  and bridge source under `runtime/bridge/`.
+- Authored runtime implementation: `runtime/c/` and bridge source under
+  `runtime/bridge/`; retained Zig owners remain under `runtime/zig/`.
 - Runtime tests and examples: `runtime/zig/tests/` and `runtime/zig/examples/`.
   DRY repeated setup and assertions, but preserve behavioral coverage.
 - Vendor surface: pinned third-party headers under bridge vendor directories
@@ -27,3 +29,8 @@ Treat `runtime/` as several surfaces:
 
 Cleanup rule: authored source should stay explicit where backend semantics
 diverge; share helpers only when behavior is already identical.
+
+Current package, compiler-build, runtime CLI and Linux browser-launcher selectors
+default to C. Explicit legacy selection retains Zig without cross-provider
+fallback. These selectors do not establish full parity or completed qualification;
+[the migration gates](../docs/c-migration/MIGRATION.md) retain that authority.

@@ -1,14 +1,14 @@
-# CATSCAN: Experimental C migration
+# CATSCAN: C compiler and runtime
 
 Parent: [Runtime](../CATSCAN.md)
 
 ## Target
 
-Develop independently usable C compiler and runtime owners incrementally while preserving the production Zig implementation and its qualification requirements.
+Own the default-selected C compiler and runtime, with independent consumer/backend qualification and retained Zig reference and explicit legacy routes.
 
 ## Authority
 
-- Owns experimental C implementations and explicit native boundaries under this directory.
+- Owns C implementations and explicit native boundaries under this directory.
 - Does not select production providers, relax acceptance or inherit hardware qualification.
 
 ## Scope
@@ -23,7 +23,7 @@ Develop independently usable C compiler and runtime owners incrementally while p
 
 ## Invariants
 
-- Production Zig and historical evidence remain intact until separately authorized promotion.
+- Default selection is not qualification; retain Zig reference/legacy consumers and historical evidence until each retirement is proven safe.
 - No hidden Zig generation, compiler invocation, linking fallback or runtime delegation in the C path.
 - Explicit ownership, checked size arithmetic, deterministic diagnostics and original source attribution remain mandatory.
 - CPU simulation and target validation do not establish physical hardware qualification.
@@ -38,7 +38,7 @@ Develop independently usable C compiler and runtime owners incrementally while p
 
 ## Non-goals
 
-- Mechanical line translation, macro frameworks, fake backends or premature production replacement.
+- Mechanical line translation, macro frameworks, fake backends or unsupported qualification claims.
 
 ## Freedom
 

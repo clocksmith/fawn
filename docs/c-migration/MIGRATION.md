@@ -11,7 +11,9 @@ C is selected; this is not mechanical translation or a completed rewrite. The
 initial isolation branch preserved the retained implementation while owners were
 built. The subsequent explicit direction is to integrate focused-checked source
 progress into canonical main without force, rather than leave it on an unmerged
-branch. Keep retained Zig, production-default selectors and historical receipts.
+branch. Current package, compiler-build, runtime CLI and Linux browser-launcher
+selectors default to C, with retained Zig selected explicitly for legacy use.
+Preserve reference consumers, shared inputs and historical receipts.
 Source integration is not production promotion: authored, exercised, independently
 accepted and physically qualified remain distinct. System installation and
 external-machine operation require their own authorization; exposed or uncooled
@@ -39,8 +41,8 @@ are not yet audited; no achieved reduction or full feature parity is claimed.
 
 **The immutable baseline contains zero C replacements.** Current bounded-owner
 results below do not turn partial compiler/runtime coverage into complete
-production replacement. Production-default cutover and physical qualification
-remain separate gates. This inventory itself establishes no GPU execution or
+production replacement. Default C routing is implemented; complete migration,
+consumer acceptance and physical qualification remain separate obligations. This inventory itself establishes no GPU execution or
 Vulkan, Metal, or D3D12 physical qualification. Host compilation, sanitizer passes, fixture output,
 bytecode validation, and simulated completion never inherit that qualification.
 
@@ -48,13 +50,19 @@ The [current consistency audit ledger](CONSISTENCY_AUDIT.md) records concrete
 inspected paths, remaining implementation gaps, evidence and publication state.
 It is not a full-layer certification.
 
+Frozen subsystem contracts, integration results and their seals describe their
+recorded revisions, including the then-default Zig routes. They are historical
+evidence, not current selector policy. Keep those bytes and independent tests;
+current ownership follows the live architecture and executable selectors above.
+
 ## Current implementation workflow
 
 The 2026-10-25 owner-authorized [instance capability amendment](../../runtime/c/instance/CAPABILITIES.md)
 admits the timed-wait and multiple-device requirements used by ONNX consumers.
 The public two-device copy/readback and finite-wait client passes on Apple M3
 Metal, Radeon Vulkan and CPU Vulkan. This closes the descriptor admission gap;
-backend qualification and production-switch gates remain open.
+backend and full consumer qualification gates remain open; current default
+selection does not close them.
 
 The unchanged six-job ONNX consumer now passes on the Radeon with the C native
 library: callbacks, lifecycle, two application runs, native-disabled rejection
@@ -95,8 +103,8 @@ interface tests and the unchanged particle application in Chrome 146 on Radeon
 modes execute matched work, and lifecycle/cache/boundary controls pass. The
 observed optimized mode is slower in that run; no performance benefit is claimed.
 The browser owns GPU execution. This does not qualify the native C GPU backend
-or complete broader WGSL coverage. The shipped browser artifact remains Zig
-until the separately governed default switch.
+or complete broader WGSL coverage. Current browser-Wasm builds default to C;
+a previously shipped artifact is qualified only by its own source-bound receipt.
 
 The later source checkpoints add gradient/bias/gather sampling, storage/texture
 barriers and uniform workgroup loads. Backend limits and explicit requests execute
@@ -127,7 +135,8 @@ interchangeable unit of migration completion.
   and platform package/helper routes.
 - Delivery and qualification: C-only builds for every retained consumer and
   platform package; required independent and physical qualification; the audited
-  source-size target and final production switch. Zig remains the default.
+  source-size target and full consumer/backend qualification. C is the current
+  selected default; retained Zig remains an explicit legacy/reference route.
 
 The requested workflow is broad, disjoint subsystem implementation in parallel,
 with review and focused compile/behavior checks as code changes. Exhaustive

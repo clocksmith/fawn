@@ -81,8 +81,10 @@ transition, invalidation, and acceptance details.
 - Only benchmark/gate bootstrap thresholds may be placeholders, explicitly
   flagged in config and tracked in gate policy and the relevant live status shard.
 - Latency-critical behavior remains deterministic under its selected native owner.
-  C is the migration direction; retained Zig remains the production default until
-  the declared qualification gates pass. Both must preserve these invariants.
+  C is the selected default in current package, compiler-build, runtime CLI
+  and Linux browser-launcher routes; retained Zig is an explicit legacy route.
+  Selection does not discharge the declared qualification gates. Both must
+  preserve these invariants.
   A runtime condition may
   be removed only when current proof/config discharges its actual preconditions;
   otherwise retain and measure the guard. Elimination never moves hot-path

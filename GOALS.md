@@ -201,8 +201,10 @@ The independent compiler and runtime retain these outcomes:
 - Selected implementation direction: complete the incremental Doe-to-C migration
   under the [recorded decision](README.md#selected-direction-a-better-doe-in-c)
   and [owner gates](docs/c-migration/MIGRATION.md). C is selected, not awaiting a
-  further language contest. Production defaults remain retained Zig until the
-  relevant behavior, lifetime, consumer and backend gates pass. Preserve historical
+  further language contest. Current package, compiler-build, runtime CLI and Linux browser-launcher
+  selectors default to C; retained Zig requires explicit legacy selection.
+  Default selection does not establish complete parity or qualification: the
+  relevant behavior, lifetime, consumer and backend gates still apply. Preserve historical
   findings, source licenses and tests; publication is not production promotion.
   The [50% source-reduction target](docs/c-migration/QUALITY_TARGET.md) includes
   the complete delivery burden and never excuses feature or quality loss.

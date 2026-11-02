@@ -4,7 +4,8 @@ Status: authored candidate. Recovered standalone/native controls and the combine
 hybrid source recipe pass their exercised scope; final integrated acceptance is
 pending. Special-owner and incremental freshness matrices remain unrun.
 The normative [contract](CONTRACT.md) and public header are unchanged. Route-off
-keeps retained Zig; no default-provider change, physical qualification, performance
+keeps retained Zig in that explicit legacy integration. Current package defaults
+select C independently of this historical hybrid route; no physical qualification, performance
 claim, or Debug PageAllocator.map diagnosis follows from this candidate.
 
 ## Standalone GCC build

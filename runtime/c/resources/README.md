@@ -1,8 +1,8 @@
 # C resource and recorded-command ownership
 
-Status: authored and developer exercised, not independently qualified. Retained
-Zig remains authoritative until integrated qualification. No production/default
-cutover, physical GPU, performance or complete WebGPU parity claim is made here.
+Status: authored and developer exercised, not independently qualified. Current
+C default routes consume this owner. Default selection does not establish
+integrated qualification, physical GPU support, performance or complete WebGPU parity.
 
 ## Owner and use
 

@@ -13,8 +13,8 @@ ABI nor authentication against an actor able to rewrite the user's cache.
 three targets, malformed spans/cycles, callback mutation, OOM and release.
 Shader ownership still contains no cache policy or device owner.
 
-Authored and focused-host-checked, consumed by the experimental C-only native
-compute path, not independently or physically qualified.
+Authored and focused-host-checked, consumed by the current default C native
+provider. Default selection does not establish independent or physical qualification.
 This is the persistent ownership half of the standalone C compiler boundary:
 one compilation pipeline, copied source/compiler identity, exact immutable target,
 types, resource layouts, sparse texture/sampler descriptors, graphics IO leaves

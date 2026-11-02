@@ -259,10 +259,10 @@ already passed its review or physical qualification.
 | Owner | Responsibility |
 | --- | --- |
 | `packages/doe-gpu/` and native adapters | Host values, public interfaces, callbacks, and error delivery |
-| `runtime/zig/src/contracts/` | Shared command, resource, format, identity, and result meanings |
-| `runtime/zig/src/compiler/wgsl/` | Parsing, semantic validation, IR, transformations, and target shader emission |
-| `runtime/zig/src/native/` | WebGPU objects, API validation, references, and command ownership |
-| `runtime/zig/src/backend/` | Backend-private state, pipelines, recording, synchronization, submission, completion, and destruction |
+| `runtime/c/common/include/` and `runtime/c/resources/include/` | Shared command, resource, format, identity, and result meanings |
+| `runtime/c/compiler/` | Parsing, semantic validation, IR, transformations, and target shader emission |
+| `runtime/c/native/` and `runtime/c/resources/` | WebGPU objects, API validation, references, and command ownership |
+| `runtime/c/backends/` | Backend-private state, pipelines, recording, synchronization, submission, completion, and destruction |
 | `bench/` and supporting tooling | Independent evaluation and offline improvement proposals |
 
 Platform APIs and drivers still perform subsequent compilation and hardware
@@ -276,9 +276,11 @@ interpreter is not required for architectural symmetry.
 C is the selected migration direction. The [recorded decision](../README.md#selected-direction-a-better-doe-in-c)
 separates dependency removal, engineering quality and product benefit. This is not
 an ongoing language contest, a universal language ranking, or a claim of parity.
-The production compiler/runtime default remains retained Zig behind its native C
-ABI. [Owner and qualification gates](c-migration/MIGRATION.md) govern incremental
-replacement, real consumer integration and eventual production promotion.
+Current package, compiler-build, runtime CLI and Linux browser-launcher selectors
+default to C behind the native C ABI. Retained Zig is an explicit legacy and
+reference route, with shared inputs still consumed by C. Default selection does
+not complete [owner and qualification gates](c-migration/MIGRATION.md): real
+consumer behavior, lifetime and each physical backend remain independently gated.
 
 Use one semantic owner with small typed operations, consistent representations,
 explicit ownership and failure contracts, and independently tested composition.

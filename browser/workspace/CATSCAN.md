@@ -4,21 +4,20 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Provide durable browser workspaces for agents through one shared observation,
-action and recovery service above stock Chromium.
+Provide durable agent workspaces through shared observation, action and recovery
+above stock Chromium.
 
 ## Authority
 
-- Owns workspace identity, authorization, observation versions, owner generations,
-  trusted automated action dispatch and uncertain-outcome recovery.
-- Workflow adapters own task logic; Chromium owns browser semantics and security.
-- Does not own model semantics, GPU qualification or external transaction guarantees.
+- Owns workspace identity, authorization, versioned observations, owner generations,
+  trusted dispatch and uncertain-outcome recovery.
+- Adapters own task logic; Chromium owns browser semantics/security.
+- Excludes model semantics, GPU qualification and external transaction guarantees.
 
 ## Scope
 
-- The shared service, its Playwright and raw-CDP adapters, the research,
-  form-submission and export workflow adapters, and the qualification and
-  baseline-comparison harness in this directory.
+- Shared service, Playwright/raw-CDP adapters, research/form-submission/export
+  workflows, qualification and baseline-comparison harness.
 
 ## Contracts
 
@@ -30,25 +29,25 @@ Inputs:
 
 Outputs:
 - Durable authority/action records and versioned observations.
-- Workflow, fault-injection and baseline evidence, admitted only by the validator.
+- Validator-admitted workflow, fault-injection and baseline evidence.
 
 ## Invariants
 
-- All Fawn automated mutations pass the trusted dispatcher.
-- Owner generations persist; every adapter rejects stale commands identically.
-- Completed, failed and unknown outcomes survive restart and handoff; missing
-  acknowledgment never authorizes another external submission.
-- Research, form-submission and export adapters behave consistently.
-- Workspace acceptance is separate from browser/GPU recovery and artwork receipts.
-- Explicit Fawn build selection binds the browser image and private runtime
-  closure before launch; both adapters force the selected C or Dawn provider
-  without fallback. Launch identity does not establish GPU ownership.
-- Treatment and control share the requested browser launch configuration;
-  observed image mismatches cannot establish comparison advantage.
+- Automated mutations pass trusted dispatch.
+- Persist owner generations; adapters reject stale commands identically.
+- Completed/failed/unknown outcomes survive restart/handoff; missing acknowledgment
+  never authorizes resubmission.
+- Research/form-submission/export behave consistently.
+- Workspace acceptance excludes browser/GPU recovery and artwork receipts.
+- Before launch, explicit build selection binds image/private runtime closure;
+  both adapters force selected C/Dawn without fallback. Launch identity proves
+  no GPU ownership.
+- Treatment/control share requested launch configuration; image mismatches prove
+  no comparison advantage.
 
 ## Acceptance
 
-- Pass the workspace contract's behavioral gates and competent-baseline comparison.
+- Pass contract behavioral gates and competent-baseline comparison.
 - Evidence: a full [qualification](README.md#qualification) result admitted by
   `qualification/validate.js` for committed source, and a frozen-criteria comparison.
   [Development](test/run-tests.js) and [policy tests](../../bench/tests/test_fawn_workspace_strategy.py)
@@ -60,4 +59,4 @@ Outputs:
 
 ## Freedom
 
-Any implementation must preserve these boundaries and earn independent evidence.
+Preserve boundaries and earn independent evidence.

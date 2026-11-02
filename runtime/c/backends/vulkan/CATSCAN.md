@@ -4,22 +4,22 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
 
-Execute admitted native Vulkan work through an independently usable C owner while preserving resource and completion obligations.
+Execute admitted Vulkan independently in C under resource/completion obligations.
 
 ## Authority
 
-- Owns experimental Vulkan loader, native allocations, descriptors, pipelines, command recording, submission, retirement, selected Linux surfaces and fd imports.
-- Does not own WGSL meaning, public WebGPU validation, provider selection or qualification.
+- Owns Vulkan loading, native allocations, descriptors, pipelines, recording, submission, retirement, selected Linux surfaces and fd imports.
+- Excludes WGSL meaning, public WebGPU validation, provider selection and qualification.
 
 ## Scope
 
-- Includes this directory's private backend ABI and focused tests.
+- Private backend ABI and focused tests.
 
 ## Contracts
 
-- Input: compiler-validated SPIR-V and explicit typed resource/command descriptions in [the boundary](include/doe_vk.h).
-- Indirect draw arguments use the [shared normalizer source](../../common/include/doe_draw_guard.h); native bounds and retirement stay here.
-- Output: native statuses, capability observations and completion-backed readback.
+- Inputs: compiler-validated SPIR-V, typed resource/commands: [ABI](include/doe_vk.h).
+- Indirect arguments use the [shared normalizer](../../common/include/doe_draw_guard.h); native bounds/retirement stay here.
+- Output: native statuses, capabilities and completion-backed readback.
 - Lifecycle: [system invariants](../../../../INTENT.md).
 
 ## Invariants
@@ -27,20 +27,20 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 - Unknown completion retains every resource; timeout is not completion.
 - State publishes at accepted `vkQueueSubmit`; refusal poisons it (owner-authorized 2026-10-24).
 - No interpreter, silent backend substitution or production default change.
-- Adapter-dependent resource policy is the one recorded rule
+- Adapter resource policy uses one rule
   (`doe_vk_resource_profile_select`: AMD vendor for descriptor blocks; AMD plus a
   >= 4 GiB CPU-writable device-local heap for device-local host writes; owner-authorized
-  2026-10-31); other adapters keep the DEFAULT path unchanged.
-- Pinned ABI verification, software execution and physical qualification remain distinct.
-- Caller serialization and ownership transfer remain explicit.
-- Acquisition and presentation fences are distinct from command completion; unsupported WSI never fabricates a surface.
-- Presented frame handles remain stale while retaining their swapchain generation; replacement generations share one platform-surface owner and retire independently.
+  2026-10-31); other adapters keep DEFAULT unchanged.
+- Pinned ABI verification, software execution and physical qualification stay distinct.
+- Caller serialization/ownership transfer stay explicit.
+- Acquisition/presentation fences differ from command completion; unsupported WSI never fabricates surfaces.
+- Presented handles stay stale and retain their swapchain generation; replacements share one platform-surface owner and retire independently.
 
 ## Acceptance
 
 - [Host checks](Makefile) verify ABI, rollback, invalid input and submission lifetime.
 - [Native test](tests/native_compute.c) checks actual Vulkan output and early caller release.
-- Physical backend and complete retained consumer parity remain separate gates.
+- Physical backend/complete retained-consumer parity require separate gates.
 - Evidence: [focused terminal receipt](TERMINAL_RECEIPT.txt).
 
 ## Non-goals
