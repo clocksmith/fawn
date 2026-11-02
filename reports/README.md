@@ -45,6 +45,15 @@ against the event's commit range and locally against staged additions:
 A legitimate new fixture needs a narrow ignore exception and a named consumer.
 Do not force-add a run directory or duplicate source/package downloads.
 
+The retired tracked `.cache/fawn-m3-current` and `.cache/fawn-m3-proc-fix`
+libraries remain retrievable from the
+[retained source revision](https://github.com/clocksmith/fawn/tree/bd4aaf55944df1085227b78b8c67b3f228266281/.cache).
+The rejected browser comparison in
+`browser/chromium/artifacts/20261016-m3-current/` keeps its original library
+paths, hashes, lookup observations and rejection verdict. Those records are
+historical evidence; reproducing them requires that revision's cache binaries
+and source, rather than a current runtime at the old path.
+
 ## Existing governed artifacts
 
 - `refactors/` contains schema-backed characterization receipts for structural
