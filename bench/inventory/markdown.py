@@ -186,7 +186,7 @@ def render_current(
                 qualification = f"history: {qualified} qualified; host-specific current result unknown"
             gaps = []
             if any(r["acceptance"]["status"] == "failed" for r in rows):
-                gaps.append("acceptance rejected; inspect window evidence")
+                gaps.append("acceptance rejected; inspect evidence")
             if not any(
                 selected[r["seriesKey"]]["currentSourceMeasured"] for r in rows
             ):

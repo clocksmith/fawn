@@ -15,10 +15,11 @@ struct fixture {
     unsigned tokens[36];
     unsigned pools, drains, releases, ends, samples_called, resolves, compute_encoders, signals, waits, events;
     uint64_t event_value;
-    unsigned clock_samples, fills;
-    bool stopped_clock;
+    unsigned clock_samples, fills, blit_encoders, blit_ends, compute_descriptors, dispatches;
+    unsigned sequence, blit_end_sequence, compute_sequence;
+    bool stopped_clock, blit_active;
     bool wrong_set, wrong_counter, extra_counter, stage, blit, fail_pool, fail_descriptor,
-        fail_buffer, fail_encoder, missing_selector, fail_attachment, fail_event;
+        fail_buffer, fail_encoder, missing_selector, fail_attachment, fail_event, fail_blit;
     size_t count, storage, sample_index, resolve_first, resolve_count, destination_offset, begin, end;
 };
 static fixture *owner(void *receiver) { assert(receiver != NULL); return ((object *)receiver)->fixture; }
@@ -31,6 +32,7 @@ static void *object_call(void *receiver, void *selector) {
         if (f->fail_descriptor) return NULL;
         if (receiver == &f->descriptor_class) return &f->descriptor;
         assert(receiver == &f->compute_class);
+        f->compute_descriptors++;
         return &f->compute_descriptor;
     }
     if (selector == q->device) { assert(receiver == &f->command); return &f->device; }
@@ -42,7 +44,10 @@ static void *object_call(void *receiver, void *selector) {
         assert(receiver == &f->counter); return &f->counter_name;
     }
     if (selector == r->blit_encoder) {
-        assert(receiver == &f->command); return f->fail_encoder ? NULL : &f->encoder;
+        assert(receiver == &f->command);
+        f->blit_encoders++;
+        f->blit_active = true;
+        return f->fail_encoder || f->fail_blit ? NULL : &f->encoder;
     }
     if (selector == q->attachments) {
         assert(receiver == &f->compute_descriptor); return &f->attachments;
@@ -54,7 +59,15 @@ static void void_call(void *receiver, void *selector) {
     fixture *f = owner(receiver);
     if (selector == f->runtime.drain) { assert(receiver == &f->pool); f->drains++; }
     else if (selector == f->runtime.release) { assert(receiver == &f->descriptor || receiver == &f->compute_descriptor); f->releases++; }
-    else { assert(selector == f->runtime.end_encoding && receiver == &f->encoder); f->ends++; }
+    else {
+        assert(selector == f->runtime.end_encoding && receiver == &f->encoder);
+        f->ends++;
+        if (f->blit_active) {
+            f->blit_ends++;
+            f->blit_end_sequence = ++f->sequence;
+            f->blit_active = false;
+        }
+    }
 }
 static size_t size_call(void *receiver, void *selector) {
     fixture *f = owner(receiver);
@@ -91,7 +104,8 @@ static doe_objc_bool supports_call(void *receiver, void *selector, size_t point)
 }
 static void set_object(void *receiver, void *selector, void *value) {
     fixture *f = owner(receiver);
-    if (receiver == &f->descriptor) assert(selector == f->runtime.queries.set_counter_set && value == &f->set);
+    if (receiver == &f->encoder) assert(selector == f->runtime.set_pipeline && value == &f->samples);
+    else if (receiver == &f->descriptor) assert(selector == f->runtime.queries.set_counter_set && value == &f->set);
     else assert(receiver == &f->attachment && selector == f->runtime.queries.set_sample_buffer && value == &f->samples);
 }
 static void set_size(void *receiver, void *selector, size_t value) {
@@ -161,7 +175,15 @@ static void *compute_call(void *receiver, void *selector, void *descriptor) {
     fixture *f = owner(receiver);
     assert(receiver == &f->command && (selector == f->runtime.queries.compute_encoder || selector == f->runtime.queries.blit_encoder) && descriptor == &f->compute_descriptor);
     f->compute_encoders++;
+    f->compute_sequence = ++f->sequence;
     return f->fail_encoder ? NULL : &f->encoder;
+}
+static void dispatch_call(void *receiver, void *selector, doe_mtl_size grid, doe_mtl_size group) {
+    fixture *f = owner(receiver);
+    assert(receiver == &f->encoder && selector == f->runtime.dispatch);
+    assert(grid.width == 1 && grid.height == 1 && grid.depth == 1 &&
+        group.width == 1 && group.height == 1 && group.depth == 1);
+    f->dispatches++;
 }
 static void init(fixture *f) {
     doe_mtl_objc *r = &f->runtime;
@@ -216,6 +238,9 @@ static void init(fixture *f) {
     q->blit_encoder = &f->tokens[32];
     r->fill_buffer = &f->tokens[33];
     r->fill_call = fill_call;
+    r->set_pipeline = &f->tokens[34];
+    r->dispatch = &f->tokens[35];
+    r->dispatch_call = dispatch_call;
     r->object_call = object_call;
     r->void_call = void_call;
     r->size_call = size_call;
@@ -307,9 +332,37 @@ static void encoding_and_cleanup(void) {
     doe_mtl_objc_query_caps(&f.runtime, &f.device, &caps);
     assert(caps.timestamp_stage && caps.timestamp_period_ns == 0);
 }
+static void end_only_encoder_boundary(void) {
+    for (unsigned mode = 0; mode < 4; ++mode) {
+        fixture f;
+        init(&f);
+        const doe_mtl_native_timestamps writes = {&f.samples,
+            mode == 0 || mode == 3 ? UINT32_MAX : 2, mode == 1 ? UINT32_MAX : 7};
+        f.fail_blit = mode == 3;
+        const doe_mtl_native_resources resources = {0};
+        doe_mtl_error error = {0};
+        doe_mtl_status status = doe_mtl_objc_dispatch(&f.runtime, &f.command, &f.samples, &resources, UINT32_MAX,
+            (doe_mtl_dimensions){1,1,1}, (doe_mtl_dimensions){1,1,1}, 1, &writes, &error);
+        if (mode == 3) {
+            assert(status == DOE_MTL_NATIVE_FAILURE);
+            assert(error.status == DOE_MTL_NATIVE_FAILURE &&
+                !strcmp(error.operation, "end-only timestamp blitCommandEncoder"));
+            assert(f.blit_encoders == 1 && !f.ends && !f.compute_descriptors && !f.compute_encoders);
+            assert(f.pools == f.drains);
+        } else {
+            assert(status == DOE_MTL_OK);
+            assert(f.blit_encoders == (mode == 0 ? 1u : 0u));
+            assert(f.blit_ends == (mode == 0 ? 1u : 0u) && f.ends == (mode == 0 ? 2u : 1u));
+            assert(f.compute_encoders == 1 && f.dispatches == 1 && f.pools == f.drains);
+            assert(f.compute_descriptors == 1 && !f.samples_called && !f.resolves && !f.signals && !f.waits);
+            if (mode == 0) assert(f.blit_end_sequence < f.compute_sequence);
+        }
+    }
+}
 int main(void) {
     discovery_and_creation();
     encoding_and_cleanup();
+    end_only_encoder_boundary();
     puts("Metal typed timestamp controls: exact counter-set identity, descriptors, stage indices, blit sample/resolve and failures passed; no SDK/GPU");
     return 0;
 }

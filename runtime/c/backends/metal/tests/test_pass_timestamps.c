@@ -107,6 +107,33 @@ static void preparation_controls(void) {
         mock_assert_closed(&mock);
     }
 }
+static void compute_encoding_failure(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_new(&mock);
+    doe_mtl_timestamps *set = timestamps_new(context);
+    doe_mtl_pipeline *pipeline = pipeline_new(context);
+    doe_mtl_commands *commands = command_new(context);
+    const doe_mtl_pass_timestamps writes = {set,UINT32_MAX,3};
+    bool attach = false;
+    assert(doe_mtl_commands_prepare_pass_timestamps(commands, &writes, &attach, NULL) == DOE_MTL_OK && attach);
+    mock.fail = MOCK_DISPATCH;
+    const doe_mtl_compute_dispatch dispatch = {.pipeline=pipeline,.groups={1,1,1},.repeat=1,
+        .timestamps=set,.timestamp_begin=UINT32_MAX,.timestamp_end=3};
+    doe_mtl_error error = {0};
+    assert(doe_mtl_commands_compute(commands, &dispatch, &error) == DOE_MTL_NATIVE_FAILURE);
+    assert(commands->state == DOE_MTL_POISONED && commands->failure.status == DOE_MTL_NATIVE_FAILURE);
+    assert(error.native_code == commands->failure.native_code &&
+        !strcmp(error.operation, commands->failure.operation));
+    assert(!commands->timestamps->available[3] && !commands->timestamps->written[3] && !mock.dispatches);
+    mock.fail = MOCK_NONE;
+    assert(doe_mtl_commands_compute(commands, &dispatch, NULL) == DOE_MTL_NATIVE_FAILURE);
+    assert(!mock.dispatches && !set->available[3]);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK && !set->owner);
+    doe_mtl_pipeline_release(pipeline);
+    doe_mtl_timestamps_release(set);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
 static void reuse_and_resolve_fallback(void) {
     mock_native mock;
     doe_mtl_context *context = context_new(&mock);
@@ -213,6 +240,7 @@ static void allocation_rollback(void) {
 int main(void) {
     prepare_and_compute();
     preparation_controls();
+    compute_encoding_failure();
     reuse_and_resolve_fallback();
     render_and_unknown();
 #ifdef DOE_PASS_TIMESTAMP_ALLOC_WRAP

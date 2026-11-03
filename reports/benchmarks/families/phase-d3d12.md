@@ -547,6 +547,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -627,6 +628,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -707,6 +709,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -787,6 +790,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -866,6 +870,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -945,6 +950,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -1261,6 +1267,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -1340,6 +1347,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -1419,6 +1427,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -1498,6 +1507,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -1576,6 +1586,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 
@@ -1654,6 +1665,7 @@ Evidence:
 - [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
 
 Limitations:
 

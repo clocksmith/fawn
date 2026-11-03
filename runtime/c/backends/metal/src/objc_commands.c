@@ -90,6 +90,18 @@ doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeli
     const doe_mtl_size grid = {groups.x, groups.y, groups.z};
     const doe_mtl_size group = {workgroup.x, workgroup.y, workgroup.z};
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    if (timestamps != NULL && timestamps->begin == UINT32_MAX && timestamps->end != UINT32_MAX) {
+        /* An unsampled compute encoder before an end-only encoder can leave
+         * the end sample stale on Apple GPUs. Separate them with a real blit
+         * boundary, as in Dawn's macOS 26 workaround (crbug.com/448394568).
+         * No query value or availability is changed by this empty encoder. */
+        void *boundary = doe_mtl_objc_object(runtime, command, runtime->blit_encoder);
+        if (boundary == NULL) {
+            doe_mtl_objc_drain(runtime, pool);
+            return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "end-only timestamp blitCommandEncoder", error);
+        }
+        doe_mtl_objc_void(runtime, boundary, runtime->end_encoding);
+    }
     encoder = timestamps != NULL ? doe_mtl_objc_timed_compute(runtime, command, timestamps) :
         doe_mtl_objc_object(runtime, command, runtime->compute_encoder);
     if (encoder == NULL) {
