@@ -59,11 +59,14 @@ typedef struct token { unsigned kind, index; } token;
 typedef struct fixture {
     doe_mtl_objc runtime;
     token pool, classes[5], descriptor, colors, attachments[8], depth, stencil, encoder, command;
+    token timestamp_attachments, timestamp_attachment;
     int pipeline, depth_state, buffer, index_buffer, texture, sampler;
     unsigned pools, drains, releases, begins, ends, draws, indexed_draws, indirect_draws, indexed_indirect_draws;
     unsigned pipeline_sets, depth_sets, viewport_sets, scissor_sets, winding_sets, cull_sets, blend_sets, bias_sets, stencil_sets;
     unsigned buffer_sets[2], texture_sets[2], sampler_sets[2], bytes_sets[2];
-    bool no_descriptor, no_encoder, no_attachment;
+    bool no_descriptor, no_encoder, no_attachment, no_timestamp_attachment, no_timestamp_selector, timestamp_expected;
+    void *timestamp_buffer;
+    size_t timestamp_begin, timestamp_end, timestamp_vertex_end, timestamp_fragment_begin;
     size_t load[10], store[10], level[10], slice[10];
     void *attachment_texture[10], *resolve_texture[10], *visibility_buffer;
     size_t resolve_level[10], resolve_slice[10], resolve_filter[10];
@@ -101,6 +104,7 @@ static void *object_call(void *object, void *sel) {
     assert(object == &active->descriptor);
     if (named(sel, "colorAttachments")) return &active->colors;
     if (named(sel, "depthAttachment")) return &active->depth;
+    if (named(sel, "sampleBufferAttachments")) return &active->timestamp_attachments;
     assert(named(sel, "stencilAttachment")); return &active->stencil;
 }
 static void void_call(void *object, void *sel) {
@@ -109,11 +113,18 @@ static void void_call(void *object, void *sel) {
     else { assert(object == &active->encoder && named(sel, "endEncoding")); active->ends++; }
 }
 static void *indexed(void *object, void *sel, size_t index) {
+    if (object == &active->timestamp_attachments) {
+        assert(index == 0 && named(sel, "objectAtIndexedSubscript:"));
+        return active->no_timestamp_attachment ? NULL : &active->timestamp_attachment;
+    }
     assert(object == &active->colors && named(sel, "objectAtIndexedSubscript:") && index < 8);
     return active->no_attachment ? NULL : &active->attachments[index];
 }
 static void set_object(void *object, void *sel, void *value) {
-    if (named(sel, "setVisibilityResultBuffer:")) {
+    if (named(sel, "setSampleBuffer:")) {
+        assert(object == &active->timestamp_attachment);
+        active->timestamp_buffer = value;
+    } else if (named(sel, "setVisibilityResultBuffer:")) {
         assert(object == &active->descriptor);
         active->visibility_buffer = value;
     } else if (named(sel, "setResolveTexture:")) {
@@ -131,7 +142,12 @@ static void set_object(void *object, void *sel, void *value) {
 }
 static void set_size(void *object, void *sel, size_t value) {
     token *t = object;
-    if (object == &active->encoder) {
+    if (object == &active->timestamp_attachment) {
+        if (named(sel, "setStartOfVertexSampleIndex:")) active->timestamp_begin = value;
+        else if (named(sel, "setEndOfVertexSampleIndex:")) active->timestamp_vertex_end = value;
+        else if (named(sel, "setStartOfFragmentSampleIndex:")) active->timestamp_fragment_begin = value;
+        else { assert(named(sel, "setEndOfFragmentSampleIndex:")); active->timestamp_end = value; }
+    } else if (object == &active->encoder) {
         if (named(sel, "setDepthClipMode:")) {
             assert(active->depth_clip_count < 16);
             active->depth_clip_values[active->depth_clip_count++] = value;
@@ -164,6 +180,10 @@ static void set_u32(void *object, void *sel, uint32_t value) {
 static void *named_call(void *object, void *sel, void *descriptor) {
     assert(object == &active->command && named(sel, "renderCommandEncoderWithDescriptor:") && descriptor == &active->descriptor);
     assert(active->releases == 0 && active->drains == 0);
+    if (active->timestamp_expected) {
+        assert(active->timestamp_buffer == &active->buffer);
+        assert(active->timestamp_vertex_end == SIZE_MAX && active->timestamp_fragment_begin == SIZE_MAX);
+    }
     active->begins++;
     memset(active->buffers, 0, sizeof(active->buffers));
     memset(active->vertex_textures, 0, sizeof(active->vertex_textures));
@@ -249,11 +269,22 @@ static void indexed_indirect(void *object,void *sel,size_t topology,size_t type,
     assert(arguments==&active->buffer && argument_offset==80);
     ++active->indexed_indirect_draws;
 }
+static doe_objc_bool responds_call(void *object, void *sel, void *method) {
+    assert(object == &active->descriptor && named(sel, "respondsToSelector:") && named(method, "sampleBufferAttachments"));
+    return (doe_objc_bool)!active->no_timestamp_selector;
+}
 static void initialize(fixture *f) {
     doe_mtl_objc *r;
     unsigned i;
     memset(f, 0, sizeof(*f)); active = f; r = &f->runtime;
     r->get_class = get_class; r->selector = selector; assert(doe_mtl_objc_load_render(r, NULL));
+    r->responds = selector("respondsToSelector:"); r->responds_call = responds_call;
+    r->queries.attachments = selector("sampleBufferAttachments");
+    r->queries.set_sample_buffer = selector("setSampleBuffer:");
+    r->queries.set_vertex_begin = selector("setStartOfVertexSampleIndex:");
+    r->queries.set_vertex_end = selector("setEndOfVertexSampleIndex:");
+    r->queries.set_fragment_begin = selector("setStartOfFragmentSampleIndex:");
+    r->queries.set_fragment_end = selector("setEndOfFragmentSampleIndex:");
     for (i = 0; i < 8; ++i) f->attachments[i].index = i;
     f->depth.index = 8; f->stencil.index = 9;
     r->pool_class = &f->pool; r->new_object = selector("new"); r->release = selector("release");
@@ -464,7 +495,30 @@ static void changed_bindings(void) {
     assert(f.buffers[0][6].buffer == &f.buffer && !f.bytes_bound[0][6]);
     assert(f.buffers[0][30].buffer == &f.index_buffer && !f.bytes_bound[0][30]);
 }
+static void timestamp_attachments(void) {
+    for (unsigned mode = 0; mode < 5; ++mode) {
+        fixture f;
+        initialize(&f);
+        doe_mtl_native_render_pass pass = pass_new(&f);
+        pass.timestamp_buffer = &f.buffer;
+        pass.timestamp_begin = mode == 2 ? UINT32_MAX : 1;
+        pass.timestamp_end = mode == 1 ? UINT32_MAX : 3;
+        f.timestamp_expected = true;
+        f.no_timestamp_attachment = mode == 3;
+        f.no_timestamp_selector = mode == 4;
+        doe_mtl_status status = fixture_render(&f.runtime,&f.command,&pass,NULL,0,NULL);
+        assert(status == (mode >= 3 ? DOE_MTL_NATIVE_FAILURE : DOE_MTL_OK));
+        assert(f.begins == (mode >= 3 ? 0u : 1u));
+        if (mode < 3) {
+            assert(f.timestamp_begin == (mode == 2 ? SIZE_MAX : 1));
+            assert(f.timestamp_end == (mode == 1 ? SIZE_MAX : 3));
+            assert(f.ends == 1);
+        }
+        assert(f.releases == 1 && f.pools == f.drains);
+    }
+}
 int main(void) {
+    timestamp_attachments();
     changed_state();
     changed_bindings();
     empty_raster_state();

@@ -37,6 +37,7 @@ doe_resource_status doe_resource_encoder_begin_compute_with_timestamps(doe_resou
     encoder->active_pass = pass;
     if (timestamps) {
         pass->timestamps = *timestamps;
+        pass->timestamp_first = encoder->count;
         doe_resource_query_set_retain(timestamps->set);
         if (timestamps->begin_index != UINT32_MAX) {
             status = resource_record_timestamp(encoder, timestamps->set, timestamps->begin_index, DOE_TIMESTAMP_PASS_BEGIN);
@@ -210,6 +211,7 @@ static doe_resource_status compute_pass_close(doe_resource_compute_pass *pass)
             pass->timestamps.end_index, DOE_TIMESTAMP_PASS_END);
         if (status != DOE_RESOURCE_OK) return status;
     }
+    resource_pass_timestamps_finish(pass->encoder, &pass->timestamps, pass->timestamp_first);
     doe_resource_query_set_release(pass->timestamps.set);
     pass->timestamps.set = NULL;
     pass->ended = true;

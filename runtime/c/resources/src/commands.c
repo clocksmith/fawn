@@ -393,6 +393,7 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     if (!commands) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
     resource_init(&commands->base, &encoder->base.config, (doe_resource_native){0});
     atomic_init(&commands->submission_state, 0);
+    commands->pass_timestamps = encoder->pass_timestamps;
     commands->count = encoder->count;
     commands->capacity = encoder->capacity;
     commands->commands = encoder->commands;
@@ -455,6 +456,11 @@ const doe_resource_command *doe_resource_commands_borrow(const doe_resource_comm
     if (!commands || !count) return NULL;
     *count = commands->count;
     return commands->commands;
+}
+
+bool doe_resource_commands_have_pass_timestamps(const doe_resource_commands *commands)
+{
+    return commands && commands->pass_timestamps;
 }
 
 static doe_resource_status submit_buffer(const doe_resource_buffer *buffer)

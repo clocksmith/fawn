@@ -683,6 +683,15 @@ check-shared-memory: $(BUILD)/shared-memory
 	$(BUILD)/shared-memory
 check: check-shared-memory
 
+$(BUILD)/metal-pass-timestamps: tests/metal_pass_timestamps.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_pass_timestamps.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device \
+	  -Wl,--wrap=doe_mtl_commands_poll -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=calloc -o $@
+.PHONY: check-metal-pass-timestamps
+check-metal-pass-timestamps: $(BUILD)/metal-pass-timestamps
+	$(BUILD)/metal-pass-timestamps
+check: check-metal-pass-timestamps
+
 # Opt-in paired-provider diagnostic. A pixel mismatch remains a failing exit;
 # this target does not replace or change check's frozen MSAA consumer.
 MSAA_DIAGNOSTIC_LIBRARY ?= $(NATIVE_LIBRARY)

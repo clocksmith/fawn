@@ -89,8 +89,9 @@ static bool same_targets(const doe_resource_render_targets *a, const doe_resourc
     return true;
 }
 
-native_failure native_metal_render(doe_mtl_commands *commands,
-    const doe_resource_command *records, size_t count, size_t *consumed)
+native_failure native_metal_render_timed(doe_mtl_commands *commands,
+    const doe_resource_command *records, size_t count, size_t *consumed,
+    const doe_mtl_pass_timestamps *timestamps)
 {
     if (!count || records[0].kind != DOE_COMMAND_RENDER) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
@@ -151,6 +152,7 @@ native_failure native_metal_render(doe_mtl_commands *commands,
         }
     }
     doe_mtl_render_pass_desc pass = {.color_count=begin->targets.color_count};
+    if (timestamps) pass.timestamps = *timestamps;
     doe_mtl_error detail = {0};
     if (failure.status == NATIVE_OK && begin->targets.occlusion_queries) {
         native_queries *queries = doe_resource_query_set_native(begin->targets.occlusion_queries);
@@ -211,4 +213,10 @@ native_failure native_metal_render(doe_mtl_commands *commands,
     free(storage);
     if (failure.status == NATIVE_OK) *consumed = end + 1;
     return failure;
+}
+
+native_failure native_metal_render(doe_mtl_commands *commands,
+    const doe_resource_command *records, size_t count, size_t *consumed)
+{
+    return native_metal_render_timed(commands, records, count, consumed, NULL);
 }

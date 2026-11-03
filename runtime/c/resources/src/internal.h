@@ -85,6 +85,7 @@ struct doe_resource_encoder {
     resource_base base;
     doe_resource_status status;
     bool finished;
+    bool pass_timestamps;
     size_t debug_depth;
     void *active_pass; /* Exact active pass identity, not backend storage. */
     size_t count, capacity;
@@ -95,6 +96,7 @@ struct doe_resource_encoder {
 struct doe_resource_commands {
     resource_base base;
     atomic_uint submission_state;
+    bool pass_timestamps;
     size_t count, capacity;
     doe_resource_command *commands;
     resource_group_references groups;
@@ -109,6 +111,7 @@ struct doe_resource_compute_pass {
     doe_resource_bind_group *groups[DOE_RESOURCE_MAX_GROUPS];
     doe_resource_dispatch_offsets offsets;
     doe_resource_pass_timestamps timestamps;
+    size_t timestamp_first;
     size_t debug_depth;
     bool ended;
 };
@@ -169,6 +172,7 @@ struct doe_resource_render_pass {
     uint64_t draw_count;
     uint64_t occlusion_written[DOE_RESOURCE_MAX_QUERIES / 64];
     doe_resource_pass_timestamps timestamps;
+    size_t timestamp_first;
     size_t debug_depth;
     bool ended;
 };
@@ -223,6 +227,8 @@ doe_resource_status resource_pass_timestamps_validate(const void *device,
     const doe_resource_pass_timestamps *timestamps);
 doe_resource_status resource_record_timestamp(doe_resource_encoder *encoder,
     doe_resource_query_set *set, uint32_t index, doe_resource_timestamp_position position);
+void resource_pass_timestamps_finish(doe_resource_encoder *encoder,
+    const doe_resource_pass_timestamps *timestamps, size_t first);
 bool resource_query_available(const doe_resource_query_set *set);
 bool resource_external_available(const doe_resource_external_texture *texture);
 doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass);

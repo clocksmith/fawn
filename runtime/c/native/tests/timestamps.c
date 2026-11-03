@@ -266,6 +266,115 @@ static void render_and_reuse(state *s)
     wgpuBufferRelease(readback); wgpuBufferRelease(result);
     wgpuTextureViewRelease(view); wgpuTextureRelease(image); wgpuQuerySetRelease(set);
 }
+static void attachment_values(const uint64_t values[2], uint64_t previous[2], unsigned iteration)
+{
+    assert(values[0] && values[1] && values[0] != UINT64_MAX && values[1] != UINT64_MAX);
+    if (iteration == 0) assert(values[1] >= values[0]);
+    if (iteration == 1) assert(values[0] > previous[1] && values[1] == previous[1]);
+    if (iteration == 2) assert(values[0] == previous[0] && values[1] > previous[0]);
+    memcpy(previous, values, 2 * sizeof(*previous));
+}
+
+static void actual_pass_attachments(state *s)
+{
+    /* No standalone sample or resolve precedes these passes. Stage-capable
+     * Metal therefore exercises the attachment path, independently of the
+     * empty/ordered/reuse controls above. Four dispatches test both endpoints. */
+    WGPUQuerySet set = query_set(s,2);
+    WGPUBuffer resolved = buffer(s,256,WGPUBufferUsage_QueryResolve | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(s,24,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUBuffer data = buffer(s,4,WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
+    WGPUComputePipeline compute = pipeline(s,
+        "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn main(){data[0]=data[0]+1u;}");
+    WGPUBindGroupEntry entry = {.binding=0,.buffer=data,.size=4};
+    WGPUBindGroup bindings = group(s,compute,&entry,1);
+    uint64_t previous[2] = {0};
+    for (unsigned iteration = 0; iteration < 3; ++iteration) {
+        WGPUPassTimestampWrites writes = WGPU_PASS_TIMESTAMP_WRITES_INIT;
+        writes.querySet = set;
+        if (iteration != 2) writes.beginningOfPassWriteIndex = 0;
+        if (iteration != 1) writes.endOfPassWriteIndex = 1;
+        WGPUComputePassDescriptor descriptor = {.timestampWrites=&writes};
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+        WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,&descriptor);
+        assert(pass);
+        wgpuComputePassEncoderSetPipeline(pass,compute);
+        wgpuComputePassEncoderSetBindGroup(pass,0,bindings,0,NULL);
+        for (unsigned i = 0; i < 4; ++i) wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
+        wgpuComputePassEncoderEnd(pass); wgpuComputePassEncoderRelease(pass);
+        wgpuCommandEncoderResolveQuerySet(encoder,set,0,2,resolved,0);
+        wgpuCommandEncoderCopyBufferToBuffer(encoder,resolved,0,readback,0,16);
+        wgpuCommandEncoderCopyBufferToBuffer(encoder,data,0,readback,16,4);
+        submit(s,encoder);
+        const uint64_t *values = map(s,readback,24);
+        attachment_values(values,previous,iteration);
+        uint32_t result;
+        memcpy(&result,(const unsigned char *)values + 16,sizeof(result));
+        assert(result == 4 * (iteration + 1));
+        wgpuBufferUnmap(readback);
+    }
+    wgpuBindGroupRelease(bindings); wgpuComputePipelineRelease(compute);
+    wgpuBufferRelease(data); wgpuQuerySetRelease(set);
+
+    const char *code =
+        "@vertex fn vertex(@builtin(vertex_index)i:u32)->@builtin(position)vec4f{"
+        "let p=array(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));return vec4f(p[i],0,1);}"
+        "@fragment fn color()->@location(0)vec4f{return vec4f(1,0,0,1);}";
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){code,WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_desc = {.nextInChain=&source.chain};
+    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device,&shader_desc);
+    assert(module);
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = WGPUTextureFormat_RGBA8Unorm;
+    WGPUFragmentState fragment = {.module=module,.entryPoint={"color",WGPU_STRLEN},.targetCount=1,.targets=&target};
+    WGPURenderPipelineDescriptor pipeline_desc = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    pipeline_desc.vertex = (WGPUVertexState){.module=module,.entryPoint={"vertex",WGPU_STRLEN}};
+    pipeline_desc.fragment = &fragment;
+    WGPURenderPipeline render = wgpuDeviceCreateRenderPipeline(s->device,&pipeline_desc);
+    assert(render); wgpuShaderModuleRelease(module);
+    WGPUTextureDescriptor texture_desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    texture_desc.format = WGPUTextureFormat_RGBA8Unorm;
+    texture_desc.size = (WGPUExtent3D){2,2,1};
+    texture_desc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+    WGPUTexture image = wgpuDeviceCreateTexture(s->device,&texture_desc);
+    WGPUTextureView view = wgpuTextureCreateView(image,NULL);
+    WGPUBuffer pixels = buffer(s,512,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    set = query_set(s,2);
+    memset(previous,0,sizeof(previous));
+    for (unsigned iteration = 0; iteration < 3; ++iteration) {
+        WGPUPassTimestampWrites writes = WGPU_PASS_TIMESTAMP_WRITES_INIT;
+        writes.querySet = set;
+        if (iteration != 2) writes.beginningOfPassWriteIndex = 0;
+        if (iteration != 1) writes.endOfPassWriteIndex = 1;
+        WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+        color.view = view; color.loadOp = WGPULoadOp_Clear; color.storeOp = WGPUStoreOp_Store;
+        color.clearValue = (WGPUColor){0,0,1,1};
+        WGPURenderPassDescriptor descriptor = {.colorAttachmentCount=1,.colorAttachments=&color,.timestampWrites=&writes};
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+        WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder,&descriptor);
+        assert(pass);
+        wgpuRenderPassEncoderSetPipeline(pass,render);
+        wgpuRenderPassEncoderDraw(pass,3,1,0,0);
+        wgpuRenderPassEncoderEnd(pass); wgpuRenderPassEncoderRelease(pass);
+        wgpuCommandEncoderResolveQuerySet(encoder,set,0,2,resolved,0);
+        wgpuCommandEncoderCopyBufferToBuffer(encoder,resolved,0,readback,0,16);
+        texture_to_buffer(encoder,image,pixels,0,2,2);
+        submit(s,encoder);
+        const uint64_t *values = map(s,readback,24);
+        attachment_values(values,previous,iteration);
+        wgpuBufferUnmap(readback);
+        const unsigned char red[8] = {255,0,0,255,255,0,0,255};
+        const unsigned char *actual = map(s,pixels,512);
+        assert(!memcmp(actual,red,8) && !memcmp(actual + 256,red,8));
+        wgpuBufferUnmap(pixels);
+    }
+    wgpuTextureViewRelease(view); wgpuTextureRelease(image); wgpuRenderPipelineRelease(render);
+    wgpuBufferRelease(pixels); wgpuBufferRelease(readback); wgpuBufferRelease(resolved); wgpuQuerySetRelease(set);
+    puts("PASS nonempty pass timestamps: four ordered storage increments and exact render pixels, both/one-sided samples preserve omitted endpoints");
+}
+
 int main(void)
 {
     state s = {0};
@@ -314,6 +423,7 @@ int main(void)
     actual_queries(&s);
     normalization_values(&s);
     render_and_reuse(&s);
+    actual_pass_attachments(&s);
     assert(!s.errors && s.validation_errors == 6);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);

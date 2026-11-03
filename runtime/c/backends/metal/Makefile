@@ -17,6 +17,7 @@ HEADERS = $(wildcard include/*.h src/*.h ../../common/include/*.h)
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 LIBRARY_CACHE_TEST_FLAGS = -DDOE_CACHE_TEST_WRAP -Wl,--wrap=malloc
+PASS_TIMESTAMP_TEST_FLAGS = -DDOE_PASS_TIMESTAMP_ALLOC_WRAP -Wl,--wrap=calloc
 endif
 ifeq ($(UNAME_S),Darwin)
 LDLIBS =
@@ -89,6 +90,12 @@ $(BUILD)/test_visibility: tests/test_visibility.c tests/mock_native.c tests/mock
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_visibility.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_timestamps: tests/test_timestamps.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_timestamps.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+$(BUILD)/test_pass_timestamps: tests/test_pass_timestamps.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_pass_timestamps.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) $(PASS_TIMESTAMP_TEST_FLAGS) -o $@
+.PHONY: check-pass-timestamps
+check-pass-timestamps: $(BUILD)/test_pass_timestamps
+	$(BUILD)/test_pass_timestamps
+check: check-pass-timestamps
 $(BUILD)/test_objc_queries: tests/test_objc_queries.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_surface: tests/test_objc_surface.c $(BUILD)/libdoe_metal.a

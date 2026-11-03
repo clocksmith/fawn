@@ -60,6 +60,8 @@ typedef struct doe_mtl_native_render_pass {
     uint32_t color_count, width, height, samples;
     doe_mtl_native_render_attachment depth, stencil;
     void *visibility_buffer;
+    void *timestamp_buffer;
+    uint32_t timestamp_begin, timestamp_end; /* UINT32_MAX omits an endpoint. */
 } doe_mtl_native_render_pass;
 typedef struct doe_mtl_native_render_draw {
     void *pipeline, *depth_stencil;

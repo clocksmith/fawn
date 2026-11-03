@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
+#include "query_internal.h"
 
 static doe_mtl_status retain_pipeline(doe_mtl_commands *commands, doe_mtl_render_pipeline *pipeline) {
     doe_mtl_render_pipeline_use *use;
@@ -52,6 +53,7 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     doe_mtl_native_render_draw *native_draws = NULL;
     doe_mtl_native *native;
     doe_mtl_error detail = {0};
+    doe_mtl_timestamp_use *timestamp_use = NULL;
     size_t i;
     if (status != DOE_MTL_OK) return status;
     if ((draw_count != 0 && draws == NULL) || draw_count > SIZE_MAX / sizeof(*native_draws))
@@ -60,6 +62,12 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     if (native->render == NULL) return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "render native boundary", error);
     status = doe_mtl_render_pass_preflight(commands, pass, &native_pass);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "render attachments", error);
+    if (pass->timestamps.set) {
+        if (!commands->context->caps.timestamp_stage)
+            return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "render stage timestamps", error);
+        status = doe_mtl_pass_timestamps_preflight(commands, &pass->timestamps, true);
+        if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "render timestamps", error);
+    }
     if (draw_count != 0) {
         native_draws = calloc(draw_count, sizeof(*native_draws));
         if (native_draws == NULL) return doe_mtl_poison(commands, DOE_MTL_OUT_OF_MEMORY, "render draw snapshot", error);
@@ -68,6 +76,14 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
         status = doe_mtl_render_draw_preflight(commands, pass, &native_pass, &draws[i], &native_draws[i]);
     if (status == DOE_MTL_OK) status = doe_mtl_render_visibility_preflight(commands, pass, draws, draw_count);
+    if (status == DOE_MTL_OK && pass->timestamps.set) {
+        status = doe_mtl_use_timestamps(commands, pass->timestamps.set, &timestamp_use);
+        if (status == DOE_MTL_OK) {
+            native_pass.timestamp_buffer = pass->timestamps.set->native;
+            native_pass.timestamp_begin = pass->timestamps.begin;
+            native_pass.timestamp_end = pass->timestamps.end;
+        }
+    }
     if (status == DOE_MTL_OK) status = doe_mtl_render_pass_retain(commands, pass);
     for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
         status = doe_mtl_render_draw_retain(commands, &draws[i]);
@@ -82,6 +98,9 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     }
     status = native->render(native->userdata, commands->native, &native_pass, native_draws, draw_count, &detail);
     free(native_draws);
-    if (status == DOE_MTL_OK) doe_mtl_render_pass_publish(commands, pass);
+    if (status == DOE_MTL_OK) {
+        if (timestamp_use) doe_mtl_pass_timestamps_publish(timestamp_use, &pass->timestamps);
+        doe_mtl_render_pass_publish(commands, pass);
+    }
     return doe_mtl_native_record_result(commands, status, &detail, error);
 }

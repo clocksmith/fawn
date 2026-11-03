@@ -468,7 +468,13 @@ typedef struct doe_resource_immediate_state {
 typedef struct doe_resource_command {
     doe_resource_command_kind kind;
     union {
-        struct { doe_resource_query_set *set; uint32_t index, position; } timestamp;
+        struct {
+            doe_resource_query_set *set;
+            uint32_t index, position;
+            /* Immutable resource-pass span, finalized at End. Zero count is a
+             * standalone boundary; indices survive command-array growth. */
+            size_t pass_first, pass_count;
+        } timestamp;
         struct {
             doe_resource_query_set *set;
             uint32_t first, count;
@@ -564,6 +570,8 @@ void doe_resource_commands_retain(doe_resource_commands *commands);
 void doe_resource_commands_release(doe_resource_commands *commands);
 const doe_resource_command *doe_resource_commands_borrow(const doe_resource_commands *commands,
     size_t *count);
+/* Immutable recording fact; avoids scanning ordinary command buffers for pass spans. */
+bool doe_resource_commands_have_pass_timestamps(const doe_resource_commands *commands);
 /* begin_submit validates live dependencies, claims single use and adds an
  * internal submission reference. Call only immediately before backend admission.
  * settle must follow known completion or confirmed never-dispatched failure.

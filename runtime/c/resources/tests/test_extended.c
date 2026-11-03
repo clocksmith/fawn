@@ -280,6 +280,8 @@ static void test_clear_and_abandoned_pass(void)
     assert(packet->boundary_only && !packet->first_in_pass && packet->last_in_pass);
     assert(record[0].kind == DOE_COMMAND_WRITE_TIMESTAMP && record[3].kind == DOE_COMMAND_WRITE_TIMESTAMP);
     assert(record[0].value.timestamp.position == DOE_TIMESTAMP_PASS_BEGIN && record[3].value.timestamp.position == DOE_TIMESTAMP_PASS_END);
+    assert(record[0].value.timestamp.pass_first == 0 && record[0].value.timestamp.pass_count == 4);
+    assert(record[3].value.timestamp.pass_first == 0 && record[3].value.timestamp.pass_count == 4);
     assert(!timestamp_token.releases);
     doe_resource_commands_release(commands);
     assert(timestamp_token.releases == 1);
@@ -414,6 +416,8 @@ static void test_pass_timestamps(void)
     assert(count == 2 && records[0].kind == DOE_COMMAND_WRITE_TIMESTAMP && records[1].kind == DOE_COMMAND_WRITE_TIMESTAMP);
     assert(records[0].value.timestamp.position == DOE_TIMESTAMP_PASS_BEGIN && records[0].value.timestamp.index == 1);
     assert(records[1].value.timestamp.position == DOE_TIMESTAMP_PASS_END && records[1].value.timestamp.index == 3);
+    assert(records[0].value.timestamp.pass_first == 0 && records[0].value.timestamp.pass_count == 2);
+    assert(records[1].value.timestamp.pass_first == 0 && records[1].value.timestamp.pass_count == 2);
     assert(!token.releases);
     doe_resource_commands_release(commands);
     assert(token.releases == 1);
@@ -431,6 +435,67 @@ static void test_pass_timestamps(void)
     doe_resource_encoder_release(encoder);
     doe_resource_compute_pass_release(pass);
     assert(token.releases == 1);
+    empty(&f);
+}
+
+static void test_timestamp_span_growth(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    native_token query_token = {0}, pipeline_token = {0};
+    doe_resource_query_set *query;
+    doe_resource_pipeline_layout *layout;
+    doe_resource_pipeline *pipeline;
+    uint32_t workgroup[] = {1,1,1};
+    assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, 8,
+        native(&f, &query_token), &query) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_layout_create(&c, NULL, 0, 0, &layout) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_create(&c, layout, native(&f, &pipeline_token), workgroup, &pipeline) == DOE_RESOURCE_OK);
+    doe_resource_encoder *encoder;
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_write_timestamp(encoder, query, 7, DOE_TIMESTAMP_COMMAND) == DOE_RESOURCE_OK);
+    const uint32_t indices[][2] = {{0,1},{2,UINT32_MAX},{UINT32_MAX,3},{4,UINT32_MAX},{UINT32_MAX,5}};
+    for (size_t i = 0; i < sizeof(indices) / sizeof(indices[0]); ++i) {
+        doe_resource_compute_pass *pass;
+        const doe_resource_pass_timestamps writes = {query,indices[i][0],indices[i][1]};
+        assert(doe_resource_encoder_begin_compute_with_timestamps(encoder, &writes, &pass) == DOE_RESOURCE_OK);
+        if (i < 3) {
+            assert(doe_resource_compute_pass_set_pipeline(pass, pipeline) == DOE_RESOURCE_OK);
+            /* Multiple command-array reallocations occur between Begin/End. */
+            for (size_t j = 0; j < 64; ++j)
+                assert(doe_resource_compute_pass_dispatch(pass, 1, 1, 1) == DOE_RESOURCE_OK);
+        }
+        assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_OK);
+        doe_resource_compute_pass_release(pass);
+    }
+    doe_resource_pipeline_release(pipeline);
+    doe_resource_pipeline_layout_release(layout);
+    doe_resource_query_set_release(query);
+    doe_resource_commands *commands;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+    doe_resource_encoder_release(encoder);
+    size_t count;
+    const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
+    assert(count == 199 && !records[0].value.timestamp.pass_count);
+    assert(doe_resource_commands_have_pass_timestamps(commands));
+    size_t first = 1;
+    for (size_t i = 0; i < sizeof(indices) / sizeof(indices[0]); ++i) {
+        const bool begin = indices[i][0] != UINT32_MAX, end = indices[i][1] != UINT32_MAX;
+        const size_t length = (i < 3 ? 64 : 0) + (size_t)begin + (size_t)end;
+        const size_t markers[] = {first, first + length - 1};
+        for (size_t j = 0; j < 2; ++j) {
+            if ((j == 0 && !begin) || (j == 1 && !end)) continue;
+            const doe_resource_command *record = &records[markers[j]];
+            assert(record->kind == DOE_COMMAND_WRITE_TIMESTAMP && record->value.timestamp.index == indices[i][j]);
+            assert(record->value.timestamp.pass_first == first && record->value.timestamp.pass_count == length);
+        }
+        first += length;
+    }
+    assert(first == count && !query_token.releases && !pipeline_token.releases);
+    /* Replay borrows the same immutable finalized spans; it never reindexes. */
+    assert(doe_resource_commands_borrow(commands, &count) == records && count == 199);
+    doe_resource_commands_release(commands);
+    assert(query_token.releases == 1 && pipeline_token.releases == 1);
     empty(&f);
 }
 
@@ -512,6 +577,7 @@ int main(void)
 {
     test_rejected_objects_after_finish();
     test_pass_timestamps();
+    test_timestamp_span_growth();
     test_pass_rejection_and_unbind();
     test_texture_blit();
     test_shader_and_compute_pass();

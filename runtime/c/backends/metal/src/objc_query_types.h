@@ -26,5 +26,6 @@ typedef struct doe_mtl_objc_queries {
     void *counter_sets, *counters, *count, *equal, *supports;
     void *set_counter_set, *set_count, *new_buffer, *sample_counter, *resolve_counter;
     void *attachments, *set_sample_buffer, *set_begin, *set_end, *compute_encoder;
+    void *set_vertex_begin, *set_vertex_end, *set_fragment_begin, *set_fragment_end;
 } doe_mtl_objc_queries;
 #endif

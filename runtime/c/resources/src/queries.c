@@ -113,6 +113,22 @@ doe_resource_status resource_record_timestamp(doe_resource_encoder *encoder,
     return DOE_RESOURCE_OK;
 }
 
+void resource_pass_timestamps_finish(doe_resource_encoder *encoder,
+    const doe_resource_pass_timestamps *timestamps, size_t first)
+{
+    if (!timestamps->set) return;
+    encoder->pass_timestamps = true;
+    const size_t count = encoder->count - first;
+    if (timestamps->begin_index != UINT32_MAX) {
+        encoder->commands[first].value.timestamp.pass_first = first;
+        encoder->commands[first].value.timestamp.pass_count = count;
+    }
+    if (timestamps->end_index != UINT32_MAX) {
+        encoder->commands[encoder->count - 1].value.timestamp.pass_first = first;
+        encoder->commands[encoder->count - 1].value.timestamp.pass_count = count;
+    }
+}
+
 doe_resource_status doe_resource_encoder_resolve_queries(doe_resource_encoder *encoder,
     doe_resource_query_set *set, uint32_t first, uint32_t count,
     doe_resource_buffer *destination, uint64_t offset)

@@ -57,6 +57,59 @@ void doe_mtl_timestamps_release(doe_mtl_timestamps *timestamps) {
     doe_mtl_context_release(context);
 }
 
+doe_mtl_status doe_mtl_pass_timestamps_preflight(doe_mtl_commands *commands,
+    const doe_mtl_pass_timestamps *timestamps, bool strict) {
+    if (!timestamps || !timestamps->set || timestamps->begin == timestamps->end)
+        return DOE_MTL_INVALID_ARGUMENT;
+    const uint32_t indices[2] = {timestamps->begin, timestamps->end};
+    for (size_t i = 0; i < 2; ++i) {
+        if (indices[i] == UINT32_MAX) continue;
+        doe_mtl_status status = doe_mtl_timestamps_preflight(commands, timestamps->set, indices[i], strict);
+        if (status == DOE_MTL_UNINITIALIZED && !strict) status = DOE_MTL_OK;
+        if (status != DOE_MTL_OK) return status;
+    }
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_commands_prepare_pass_timestamps(doe_mtl_commands *commands,
+    const doe_mtl_pass_timestamps *timestamps, bool *attach, doe_mtl_error *error) {
+    if (!attach) return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "pass timestamp output", error);
+    doe_mtl_status status = doe_mtl_recording(commands, error);
+    if (status != DOE_MTL_OK) return status;
+    status = doe_mtl_pass_timestamps_preflight(commands, timestamps, false);
+    if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "pass timestamps", error);
+    if (!commands->context->caps.timestamp_stage) {
+        *attach = false;
+        return doe_mtl_fail(DOE_MTL_OK, "ordered pass timestamp fallback", error);
+    }
+    for (doe_mtl_timestamp_use *use = commands->timestamps; use; use = use->next) {
+        if (use->timestamps != timestamps->set) continue;
+        if (use->resolve_value ||
+            (timestamps->begin != UINT32_MAX && use->written[timestamps->begin]) ||
+            (timestamps->end != UINT32_MAX && use->written[timestamps->end])) {
+            *attach = false;
+            return doe_mtl_fail(DOE_MTL_OK, "ordered pass timestamp fallback", error);
+        }
+    }
+    doe_mtl_timestamp_use *use = NULL;
+    status = doe_mtl_use_timestamps(commands, timestamps->set, &use);
+    if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "pass timestamp lease", error);
+    *attach = true;
+    return doe_mtl_fail(DOE_MTL_OK, "pass timestamp attachment", error);
+}
+
+void doe_mtl_pass_timestamps_publish(doe_mtl_timestamp_use *use,
+    const doe_mtl_pass_timestamps *timestamps) {
+    if (timestamps->begin != UINT32_MAX) {
+        use->available[timestamps->begin] = true;
+        use->written[timestamps->begin] = true;
+    }
+    if (timestamps->end != UINT32_MAX) {
+        use->available[timestamps->end] = true;
+        use->written[timestamps->end] = true;
+    }
+}
+
 doe_mtl_status doe_mtl_timestamps_preflight(doe_mtl_commands *commands,
     const doe_mtl_timestamps *timestamps, uint32_t index, bool write) {
     const doe_mtl_timestamp_use *use;

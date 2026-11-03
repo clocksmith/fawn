@@ -47,6 +47,10 @@ void doe_mtl_objc_load_queries(doe_mtl_objc *r, doe_objc_message message) {
     q->set_sample_buffer = r->selector("setSampleBuffer:");
     q->set_begin = r->selector("setStartOfEncoderSampleIndex:");
     q->set_end = r->selector("setEndOfEncoderSampleIndex:");
+    q->set_vertex_begin = r->selector("setStartOfVertexSampleIndex:");
+    q->set_vertex_end = r->selector("setEndOfVertexSampleIndex:");
+    q->set_fragment_begin = r->selector("setStartOfFragmentSampleIndex:");
+    q->set_fragment_end = r->selector("setEndOfFragmentSampleIndex:");
     q->compute_encoder = r->selector("computeCommandEncoderWithDescriptor:");
 }
 #endif /* These symbols are resolved only by the POSIX Objective-C loader. */
@@ -211,8 +215,10 @@ void *doe_mtl_objc_timed_compute(doe_mtl_objc *r, void *command,
     attachment = attachments != NULL ? r->graphics.index_object(attachments, r->graphics.index, 0) : NULL;
     if (attachment != NULL) {
         r->set_object_call(attachment, q->set_sample_buffer, timestamps->buffer);
-        r->set_size_call(attachment, q->set_begin, timestamps->begin);
-        r->set_size_call(attachment, q->set_end, timestamps->end);
+        r->set_size_call(attachment, q->set_begin,
+            timestamps->begin == UINT32_MAX ? SIZE_MAX : timestamps->begin);
+        r->set_size_call(attachment, q->set_end,
+            timestamps->end == UINT32_MAX ? SIZE_MAX : timestamps->end);
         encoder = r->named_call(command, q->compute_encoder, descriptor);
     }
     doe_mtl_objc_void(r, descriptor, r->release);

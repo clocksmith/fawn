@@ -36,6 +36,7 @@ doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
     doe_mtl_native *native;
     doe_mtl_timestamp_use *timestamp_use = NULL;
     doe_mtl_native_timestamps timestamp_pair = {0};
+    doe_mtl_pass_timestamps pass_timestamps = {0};
     bool empty;
     size_t i;
     if (status != DOE_MTL_OK) return status;
@@ -64,11 +65,9 @@ doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
     if (dispatch->timestamps != NULL) {
         if (!commands->context->caps.timestamp_stage)
             return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "compute stage timestamps", error);
-        if (dispatch->timestamp_begin == dispatch->timestamp_end)
-            return doe_mtl_poison(commands, DOE_MTL_INVALID_ARGUMENT, "timestamp pair alias", error);
-        status = doe_mtl_timestamps_preflight(commands, dispatch->timestamps, dispatch->timestamp_begin, true);
-        if (status == DOE_MTL_OK)
-            status = doe_mtl_timestamps_preflight(commands, dispatch->timestamps, dispatch->timestamp_end, true);
+        pass_timestamps = (doe_mtl_pass_timestamps){dispatch->timestamps,
+            dispatch->timestamp_begin, dispatch->timestamp_end};
+        status = doe_mtl_pass_timestamps_preflight(commands, &pass_timestamps, true);
         if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "compute timestamps", error);
         timestamp_pair = (doe_mtl_native_timestamps){dispatch->timestamps->native,
             dispatch->timestamp_begin, dispatch->timestamp_end};
@@ -95,10 +94,7 @@ doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
         &resources, pipeline->sizes_slot, groups, pipeline->workgroup, empty ? 0 : repeat,
         dispatch->timestamps != NULL ? &timestamp_pair : NULL, &detail);
     if (status == DOE_MTL_OK && timestamp_use != NULL) {
-        timestamp_use->available[timestamp_pair.begin] = true;
-        timestamp_use->available[timestamp_pair.end] = true;
-        timestamp_use->written[timestamp_pair.begin] = true;
-        timestamp_use->written[timestamp_pair.end] = true;
+        doe_mtl_pass_timestamps_publish(timestamp_use, &pass_timestamps);
     }
     return doe_mtl_native_record_result(commands, status, &detail, error);
 }

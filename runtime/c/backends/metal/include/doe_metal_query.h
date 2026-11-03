@@ -11,11 +11,22 @@ extern "C" {
  * most once by strict operations per recording; the explicitly ordered boundary
  * below supports overwrite after all preceding work. Settled recordings may reuse it. */
 typedef struct doe_mtl_timestamps doe_mtl_timestamps;
+typedef struct doe_mtl_pass_timestamps {
+    doe_mtl_timestamps *set;
+    uint32_t begin, end; /* UINT32_MAX omits that endpoint; at least one is present. */
+} doe_mtl_pass_timestamps;
 enum { DOE_MTL_TIMESTAMP_CAPACITY = 4096 };
 doe_mtl_status doe_mtl_timestamps_create(doe_mtl_context *context, uint32_t count,
     doe_mtl_timestamps **out, doe_mtl_error *error);
 doe_mtl_status doe_mtl_timestamps_retain(doe_mtl_timestamps *timestamps);
 void doe_mtl_timestamps_release(doe_mtl_timestamps *timestamps);
+/* Caller serializes this recording. Validate and retain through the existing
+ * query-use owner before any pass encoder mutation. Unsupported stage sampling,
+ * prior resolve/ordered boundaries or an already-written endpoint return OK with
+ * attach=false, so the caller can retain explicit ordered boundaries. Success
+ * never marks a sample available. Outputs remain untouched on error. */
+doe_mtl_status doe_mtl_commands_prepare_pass_timestamps(doe_mtl_commands *commands,
+    const doe_mtl_pass_timestamps *timestamps, bool *attach, doe_mtl_error *error);
 /* Requires actual blit-boundary sampling support, not just stage sampling. */
 doe_mtl_status doe_mtl_commands_timestamp(doe_mtl_commands *commands,
     doe_mtl_timestamps *timestamps, uint32_t index, doe_mtl_error *error);
@@ -48,8 +59,9 @@ typedef struct doe_mtl_compute_dispatch {
     size_t sampler_count;
     doe_mtl_dimensions groups;
     uint32_t repeat;
-    /* Optional stage-boundary pair surrounds this one native compute encoder,
-     * including all repetitions. Distinct in-range indices are required.
+    /* Optional stage-boundary writes surround this one native compute encoder,
+     * including all repetitions. UINT32_MAX omits one endpoint. Defined indices
+     * must be distinct and in range; at least one endpoint is required.
      * Empty dispatch still emits the encoder if timestamps are requested. */
     doe_mtl_timestamps *timestamps;
     uint32_t timestamp_begin, timestamp_end;

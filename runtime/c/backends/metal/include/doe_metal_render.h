@@ -3,6 +3,7 @@
 #define DOE_METAL_RENDER_H
 #include "doe_metal_texture.h"
 #include "doe_metal_draw_guard.h"
+#include "doe_metal_query.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -109,6 +110,7 @@ typedef struct doe_mtl_render_pass_desc {
     uint32_t color_count;
     doe_mtl_render_attachment depth, stencil;
     doe_mtl_buffer *visibility_buffer; /* Optional initialized result storage; uint64 results. */
+    doe_mtl_pass_timestamps timestamps; /* Optional; leased before the native pass opens. */
 } doe_mtl_render_pass_desc;
 typedef struct doe_mtl_render_bindings {
     const doe_mtl_buffer_binding *buffers;

@@ -1,6 +1,26 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
 
+static bool timestamp_attachment(doe_mtl_objc *r, void *descriptor,
+    const doe_mtl_native_render_pass *pass) {
+    if (!pass->timestamp_buffer) return true;
+    const doe_mtl_objc_queries *q = &r->queries;
+    if (!q->attachments || !q->set_sample_buffer || !q->set_vertex_begin || !q->set_vertex_end ||
+        !q->set_fragment_begin || !q->set_fragment_end ||
+        !r->responds_call(descriptor, r->responds, q->attachments)) return false;
+    void *attachments = doe_mtl_objc_object(r, descriptor, q->attachments);
+    void *sample = attachments ? r->graphics.index_object(attachments, r->graphics.index, 0) : NULL;
+    if (!sample) return false;
+    r->set_object_call(sample, q->set_sample_buffer, pass->timestamp_buffer);
+    r->set_size_call(sample, q->set_vertex_begin,
+        pass->timestamp_begin == UINT32_MAX ? SIZE_MAX : pass->timestamp_begin);
+    r->set_size_call(sample, q->set_vertex_end, SIZE_MAX);
+    r->set_size_call(sample, q->set_fragment_begin, SIZE_MAX);
+    r->set_size_call(sample, q->set_fragment_end,
+        pass->timestamp_end == UINT32_MAX ? SIZE_MAX : pass->timestamp_end);
+    return true;
+}
+
 static bool attachment(doe_mtl_objc *r, void *descriptor,
     const doe_mtl_native_render_attachment *attachment, unsigned aspect) {
     doe_mtl_objc_graphics *g = &r->graphics;
@@ -49,6 +69,7 @@ doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
         !attachment(r, doe_mtl_objc_object(r, descriptor, g->stencil_attachment), &pass->stencil, 2)) goto descriptor_failure;
     if (pass->visibility_buffer != NULL)
         r->set_object_call(descriptor, g->set_visibility_buffer, pass->visibility_buffer);
+    if (!timestamp_attachment(r, descriptor, pass)) goto descriptor_failure;
     encoder = r->named_call(command, g->new_encoder, descriptor);
     if (encoder == NULL) {
         status = doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "renderCommandEncoderWithDescriptor:", error);

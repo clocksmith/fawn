@@ -10,6 +10,8 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     native_pipeline_error *error);
 native_failure native_metal_record_query(doe_mtl_commands *commands, const doe_resource_command *record);
 native_failure native_metal_record_commands(doe_mtl_commands *commands, doe_resource_commands *resources);
+native_failure native_metal_dispatch_timed(doe_mtl_commands *commands,
+    const doe_resource_command *record, const doe_mtl_pass_timestamps *timestamps);
 void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextureInfo *destination,
     const void *data, size_t data_size, const WGPUTexelCopyBufferLayout *layout, const WGPUExtent3D *size);
 void native_view_release(void *userdata, void *handle);

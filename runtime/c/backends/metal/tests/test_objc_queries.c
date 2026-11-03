@@ -270,8 +270,14 @@ static void encoding_and_cleanup(void) {
     assert(f.resolves == 1 && f.resolve_first == 3 && f.resolve_count == 4 && f.destination_offset == 24 && f.ends == 2);
     assert(doe_mtl_objc_timed_compute(&f.runtime, &f.command, &pair) == &f.encoder);
     assert(f.begin == 2 && f.end == 7 && f.compute_encoders == 1 && f.releases == 1);
+    pair.begin = UINT32_MAX;
+    assert(doe_mtl_objc_timed_compute(&f.runtime, &f.command, &pair) == &f.encoder);
+    assert(f.begin == SIZE_MAX && f.end == 7 && f.compute_encoders == 2 && f.releases == 2);
+    pair.begin = 2; pair.end = UINT32_MAX;
+    assert(doe_mtl_objc_timed_compute(&f.runtime, &f.command, &pair) == &f.encoder);
+    assert(f.begin == 2 && f.end == SIZE_MAX && f.compute_encoders == 3 && f.releases == 3);
     f.fail_attachment = true;
-    assert(doe_mtl_objc_timed_compute(&f.runtime, &f.command, &pair) == NULL && f.releases == 2);
+    assert(doe_mtl_objc_timed_compute(&f.runtime, &f.command, &pair) == NULL && f.releases == 4);
     f.missing_selector = true;
     assert(doe_mtl_objc_timestamp(&f.runtime, &f.command, &f.samples, 0, NULL) == DOE_MTL_UNSUPPORTED);
     assert(doe_mtl_objc_resolve_timestamps(&f.runtime, &f.command, &f.samples, 0, 1, &f.destination, 0, &event, 2, NULL) == DOE_MTL_UNSUPPORTED);

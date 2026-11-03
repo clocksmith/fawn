@@ -12,4 +12,7 @@ typedef struct native_metal_graphics {
 } native_metal_graphics;
 native_failure native_metal_render(doe_mtl_commands *commands,
     const doe_resource_command *records, size_t count, size_t *consumed);
+native_failure native_metal_render_timed(doe_mtl_commands *commands,
+    const doe_resource_command *records, size_t count, size_t *consumed,
+    const doe_mtl_pass_timestamps *timestamps);
 #endif

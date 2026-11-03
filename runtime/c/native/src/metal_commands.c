@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_graphics_internal.h"
 #include "metal_indirect.h"
+#include "metal_pass_timestamps.h"
 
 static native_failure transfer(doe_mtl_commands *commands, const doe_resource_command *record)
 {
@@ -33,7 +34,22 @@ native_failure native_metal_record_commands(doe_mtl_commands *commands, doe_reso
 {
     size_t count = 0;
     const doe_resource_command *records = doe_resource_commands_borrow(resources, &count);
+    size_t scan = 0;
+    native_metal_timestamp_span span = {0};
+    native_failure scanned = doe_resource_commands_have_pass_timestamps(resources) ?
+        native_metal_next_timestamp_span(records, count, &scan, &span) : native_failure_status(NATIVE_OK);
+    if (scanned.status != NATIVE_OK) return scanned;
     for (size_t i = 0; i < count; ++i) {
+        if (span.count && span.first < i) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+        if (span.count && span.first == i) {
+            const size_t after = span.first + span.count;
+            bool handled = false;
+            native_failure failure = native_metal_record_timestamp_span(commands, records, &span, &handled);
+            if (failure.status != NATIVE_OK) return failure;
+            scanned = native_metal_next_timestamp_span(records, count, &scan, &span);
+            if (scanned.status != NATIVE_OK) return scanned;
+            if (handled) { i = after - 1; continue; }
+        }
         const doe_resource_command *record = &records[i];
         doe_mtl_status status = DOE_MTL_OK;
         doe_mtl_error error = {0};
