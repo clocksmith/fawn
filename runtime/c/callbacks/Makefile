@@ -1,8 +1,9 @@
 CC = gcc
 CXX = g++
 AR = ar
-BUILD ?= build
-FUTURES_ARCHIVE ?= ../futures/build/libdoe_futures.a
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/callbacks
+FUTURES_ARCHIVE ?= $(DOE_C_TMP)/futures/libdoe_futures.a
 CPPFLAGS += -Iinclude -I../futures/include
 CFLAGS += -std=c11 -O2 -g -fPIC -Wall -Wextra -Wpedantic -Werror -pthread
 CXXFLAGS += -std=c++17 -O2 -g -Wall -Wextra -Wpedantic -Werror -fno-exceptions -fno-rtti -pthread

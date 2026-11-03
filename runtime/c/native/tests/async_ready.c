@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Public callback readiness and native leases over CPU Metal call ledgers.
  * Known host bytes are checked; mock commands do not claim GPU execution. */
-#include "../src/surface.h"
+#include "../src/pending.h"
 #include "../../backends/metal/src/internal.h"
 #include "../../backends/metal/tests/mock_native.h"
 #include "consumer.h"

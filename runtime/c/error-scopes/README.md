@@ -1,8 +1,10 @@
-# Experimental C error scopes
+# C error scopes
 
-Contract-only, independently reviewed specification. No C implementation, build
-or acceptance is claimed; production defaults remain retained Zig. Implementation
-begins only after independent evaluator cases bind the installed contract seal.
+This implemented C owner supplies error-scope storage to the default-selected
+native frontend. [Public push/pop conversion](../native/src/errors.c) delegates
+to its typed API; [native source composition](../native/sources.mk) includes its
+implementation. Default selection does not establish independent acceptance,
+backend qualification or complete WebGPU parity.
 
 - [Contract](CONTRACT.md) and [public declarations](include/doe_error_scopes.h).
 - [Author acceptance obligations](EVALUATION.md), not independent test results.
@@ -11,12 +13,16 @@ begins only after independent evaluator cases bind the installed contract seal.
 - [Style](STYLE.md), [charter](CATSCAN.md), and [installed seal](CONTRACT.sha256).
 - [Unchanged original draft seal](review/original-draft/DRAFT.sha256).
 
-The planned C owner uses explicit caller storage and one mutex. Native adoption
-requires final-address initialization and checked teardown. Classification remains
-one retained Zig owner with six actual consumers; public callback/future queues
-and device/GPU lifetime ownership do not migrate here. Shared candidate3 route
-inputs remain held and unaccepted. CPU scope tests cannot qualify hardware,
-package/browser adoption, full-C completion or a production-default change.
+The C owner uses explicit caller storage and one mutex. Native adoption requires
+final-address initialization and checked teardown. The native frontend converts
+public errors into the scope API; callback/future queues and device/GPU lifetimes
+stay with their existing owners. The explicit retained-Zig integration uses the
+[private bridge](integration/doe_error_scopes_zig_bridge.h) and its archive recipe.
+
+The installed contract seal and original review describe their bound historical
+source. They remain unchanged. Their original contract-only and candidate-route
+status does not describe the current implementation; current host checks and
+source-bound receipts retain their separate scopes.
 
 ## Current host primitive source extension
 

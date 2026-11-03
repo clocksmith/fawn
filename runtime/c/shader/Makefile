@@ -1,7 +1,8 @@
 CC = gcc
 CXX = g++
 AR = ar
-BUILD ?= build
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/shader
 COMPILER_LIBRARY ?= ../compiler/build/libdoe_compiler.so
 CPPFLAGS += -Iinclude -I../compiler/include
 CFLAGS ?= -O2 -g

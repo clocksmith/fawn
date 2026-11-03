@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Public pass records and real native/resource/query owners over Metal call
  * ledgers. No shader result, counter value or GPU completion is simulated. */
-#include "../src/surface.h"
+#include "../src/pending.h"
 #include "../src/metal_pass_timestamps.h"
 #include "../../backends/metal/tests/mock_native.h"
 #include "../../backends/metal/src/query_internal.h"

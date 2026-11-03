@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Actual private queue gate plus public operations; GPU output is independent. */
-#include "../src/surface.h"
+#include "../src/pending.h"
 #include "../src/d3d12_frontend.h"
 #include "../../backends/d3d12/src/internal.h"
 #include "../../backends/d3d12/src/windows_internal.h"

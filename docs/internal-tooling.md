@@ -28,8 +28,12 @@ compatibility. The tooling manifest names these entrypoints separately.
 
 Use [`bench/cli.py`](../bench/cli.py) for benchmark operations and the
 [benchmark directory map](../bench/README.md#directory-map) to find their
-implementation. The [runtime source map](../runtime/zig/src/README.md) owns
-production module placement; repository health glue belongs in `scripts/`.
+implementation. Current C implementation navigation starts at the
+[component index](component-index.md), [C compiler map](../runtime/c/compiler/README.md#storage-and-owner-map),
+[native frontend](../runtime/c/native/README.md#actual-ownership-and-execution-path),
+and [resource owner](../runtime/c/resources/README.md#owner-and-use).
+The [retained Zig source map](../runtime/zig/src/README.md) governs its explicit
+legacy and reference implementation. Repository health glue belongs in `scripts/`.
 
 `python3 scripts/check-health.py` delegates Zig size policy to
 `runtime/zig/tools/check_line_limits.py` and registered schema validation to
@@ -47,7 +51,7 @@ campaign. Proof and trace tools remain consumers of governed artifacts.
 Unless the manifest says otherwise, these are contributor/operator tooling:
 
 - `bench/` compare, claim, release, and reporting commands;
-- `runtime/zig/` build and compiler tools;
+- `runtime/c/` build, compiler and developer checks, plus `runtime/zig/` reference/legacy tools;
 - `browser/chromium/` browser contracts, scripts, and diagnostics;
 - `pipeline/` trace, proof, and upstream-intelligence tooling;
 - top-level `scripts/`, `examples/`, and `demos/`;

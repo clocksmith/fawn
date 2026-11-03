@@ -22,6 +22,12 @@ from runtime.c.native.tests.browser_required_procedures import required_names
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = ROOT / "config/doe-chromium-proc-surface.c.schema.json"
 ENTRY = re.compile(r'\{"(wgpu\w+)",\s*\(WGPUProc\)(wgpu\w+)\}')
+ACCESS_SOURCE_FILES = {
+    "sharedQueue": "queue.c",
+    "metalProgress": "metal_progress.c",
+    "asyncCompletion": "async_completion.c",
+    "metalShared": "../../backends/metal/src/shared_memory.c",
+}
 
 
 def address_image(address: int | None) -> Path | None:
@@ -60,8 +66,9 @@ def validate_config(payload: dict[str, Any]) -> list[str]:
 
 
 def function_body(text: str, name: str) -> str:
-    """Extract a definition after removing comments; declarations cannot pass."""
-    text = re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S)
+    """Extract executable definition text; comments/literals cannot pass."""
+    text = re.sub(r'/\*.*?\*/|//[^\n]*|"(?:\\.|[^"\\])*"|'
+                  r"'(?:\\.|[^'\\])*'", ' ', text, flags=re.S)
     match = re.search(r'\b' + re.escape(name) + r'\s*\([^;{}]*\)\s*\{', text)
     if not match:
         raise ValueError(f"C function definition missing: {name}")
@@ -102,9 +109,9 @@ def shared_memory_source_failures(sources: dict[str, str]) -> list[str]:
             "invalid_texture": ("doe_resource_texture_error",),
         },
         "sharedTexture": {
-            "wgpuDeviceImportSharedTextureMemory": ("doe_mtl_shared_surface_open",),
+            "wgpuDeviceImportSharedTextureMemory": ("doe_mtl_shared_surface_open_info(",),
             "wgpuSharedTextureMemoryCreateTexture": ("doe_mtl_shared_texture_import", "doe_resource_texture_create"),
-            "wgpuSharedTextureMemoryBeginAccess": ("SHARED_ACTIVE", "doe_mtl_shared_event_wait", "WGPUStatus_Error"),
+            "wgpuSharedTextureMemoryBeginAccess": ("SHARED_ACTIVE", "WGPUStatus_Error"),
             "wgpuSharedTextureMemoryEndAccess": ("completion_fence", "SHARED_IDLE", "WGPUStatus_Error"),
         },
         "sharedBuffer": {
@@ -125,6 +132,121 @@ def shared_memory_source_failures(sources: dict[str, str]) -> list[str]:
                     failures.append(f"{symbol}: unsupported buffer path can return success")
             except ValueError as error:
                 failures.append(str(error))
+    return failures + access_batch_source_failures(sources)
+
+
+def access_batch_source_failures(sources: dict[str, str]) -> list[str]:
+    """Audit retained dependency wiring, not GPU execution or lease lifetimes.
+
+    These deliberately narrow structural checks use the existing C definition
+    extractor. Calls must carry the real source dependency and stay behind the
+    existing success/acceptance guards; mentioning a symbol cannot satisfy them.
+    Runtime shared-memory fault controls remain the behavioral proof.
+    """
+    definitions = {
+        "begin": ("sharedTexture", "wgpuSharedTextureMemoryBeginAccess"),
+        "end": ("sharedTexture", "wgpuSharedTextureMemoryEndAccess"),
+        "accepted": ("sharedTexture", "native_metal_access_batch_accepted"),
+        "flush": ("sharedQueue", "native_flush_access_batch"),
+        "submit": ("sharedQueue", "submit_pending"),
+        "record": ("metalProgress", "native_metal_record_batch"),
+        "workDone": ("asyncCompletion", "wgpuQueueOnSubmittedWorkDone"),
+        "wait": ("metalShared", "doe_mtl_commands_wait_shared_events"),
+        "replay": ("metalShared", "doe_mtl_commands_replay_shared_waits"),
+    }
+    bodies = {}
+    failures = []
+    for role, (owner, name) in definitions.items():
+        try:
+            bodies[role] = re.sub(r"\s+", "", function_body(sources[owner], name))
+        except (KeyError, ValueError) as error:
+            failures.append(f"shared dependency source missing: {name}: {error}")
+    if failures:
+        return failures
+
+    def require(role: str, pattern: str, obligation: str) -> None:
+        if not re.search(pattern, bodies[role]):
+            failures.append(f"shared dependency {role}: {obligation}")
+
+    def forbid(role: str, pattern: str, obligation: str) -> None:
+        if re.search(pattern, bodies[role]):
+            failures.append(f"shared dependency {role}: {obligation}")
+
+    require("begin", r"status=doe_mtl_commands_wait_shared_events\("
+            r"command\.value\.metal,dependencies,count,&detail\);"
+            r"failure=native_failure_metal\(status,&detail\);",
+            "encode every producer wait and propagate admission failure")
+    require("begin", r"if\(failure\.status==NATIVE_OK\)\{"
+            r"device->access_batch=command;device->access_batch_memory=memory;\}",
+            "retain the admitted dependency recording before returning")
+    require("end", r"if\(admitted&&device->access_batch\.kind==WGPUBackendType_Metal&&"
+            r"device->access_batch_memory==memory\)failure=native_flush_access_batch\(device\);",
+            "flush producer waits even for a no-work End without output state")
+    require("end", r"boolsuccess=admitted&&failure\.status==NATIVE_OK;"
+            r"if\(success\)\{.*memory->access=SHARED_IDLE;memory->active_texture=NULL;\}",
+            "failed End preserves active access and initialization state")
+    require("flush", r"failure=native_failure_metal\("
+            r"doe_mtl_commands_replay_shared_waits\(commands\.value\.metal,"
+            r"device->access_batch\.value\.metal,&detail\),&detail\);.*"
+            r"if\(failure\.status==NATIVE_OK\)return"
+            r"submit_backend_commands\(device,commands,false,true\);",
+            "submit a replay and keep the original until accepted")
+    forbid("flush", r"native_release_access_batch\(device\)|"
+           r"native_command_release\(&device->access_batch\)|device->access_batch=",
+           "failed or unaccepted replay must retain the original waits")
+    if (bodies["flush"].count("native_take_access_batch(device)") != 1 or
+            "returnnative_submit_backend_commands_async(device,"
+            "native_take_access_batch(device));" not in bodies["flush"]):
+        failures.append("shared dependency flush: Metal must replay, not take original waits")
+    require("record", r"doe_mtl_commands_replay_shared_waits\(native->value\.metal,"
+            r"device->access_batch\.value\.metal,&detail\).*"
+            r"failure\.status==NATIVE_OK&&i<count.*native_record_resource_commands\(",
+            "replay producer waits before resource commands and retries")
+    for role in ("record", "begin"):
+        forbid(role, r"native_(?:take|release)_access_batch\(device\)",
+               "must not drop the original dependency on recording failure")
+    require("submit", r"link_pending\(device,pending\);"
+            r"native_failurefailure=native_command_submit\(&pending->native\);",
+            "pending owner adopts submission before uncertain completion")
+    require("submit", r"if\(failure\.status==NATIVE_OK&&access_waits\)\{"
+            r"doe_mtl_statusaccepted=doe_mtl_command_submission_status\("
+            r"pending->native\.value\.metal\);"
+            r"failure=accepted==DOE_MTL_BUSY\?native_failure_status\(NATIVE_UNKNOWN\):"
+            r"native_failure_status\(native_from_metal\(accepted\)\);"
+            r"if\(failure\.status==NATIVE_OK\)"
+            r"failure=native_metal_access_batch_accepted\(device\);\}",
+            "unknown or failed acceptance must keep the original dependency")
+    for role in ("end", "record", "submit"):
+        forbid(role, r"native_(?:take|release)_access_batch\(device\)|"
+               r"native_command_release\(&device->access_batch\)|"
+               r"device->access_batch=",
+               "only the accepted queue-point owner may release original waits")
+    if bodies["end"].count("memory->access=SHARED_IDLE;") != 1:
+        failures.append("shared dependency end: access may close outside successful End")
+    if bodies["submit"].count("native_metal_access_batch_accepted(device)") != 1:
+        failures.append("shared dependency submit: acceptance must have one guarded owner")
+    require("accepted", r"if\(status!=DOE_MTL_OK&&status!=DOE_MTL_UNSUPPORTED\)"
+            r"returnnative_failure_metal\(status,NULL\);.*"
+            r"native_release_access_batch\(device\);",
+            "publish an accepted queue point before releasing original waits")
+    require("workDone", r"native_flush_access_batch\(device\).*"
+            r"native_queue_settlementpolled=native_poll_pending\(device\);.*"
+            r"value->failure=.*flushed;",
+            "flush before capturing WorkDone and propagate failure")
+    require("wait", r"commands->shared_wait_events=retained;"
+            r"commands->shared_wait_count=count;.*"
+            r"native->commands_wait_event\(native->userdata,commands->native,"
+            r"retained\[i\]\.event,retained\[i\]\.value,&detail\);"
+            r"returndoe_mtl_native_record_result\(commands,status,&detail,error\);",
+            "retain every wait lease before native encoding and failure")
+    require("wait", r"status=doe_mtl_shared_event_import\(commands->context,"
+            r"waits\[acquired\]\.event,&retained\[acquired\]\.event,&detail\);"
+            r"if\(status==DOE_MTL_OK\)\{"
+            r"retained\[acquired\]\.value=waits\[acquired\]\.value;acquired\+\+;\}",
+            "acquire actual event leases and preserve each producer value")
+    require("replay", r"returndoe_mtl_commands_wait_shared_events\(commands,"
+            r"source->shared_wait_events,source->shared_wait_count,error\);",
+            "replay the original event identities and values")
     return failures
 
 
@@ -189,9 +311,15 @@ def check(payload: dict[str, Any], *, root: Path, config_path_text: str,
             local = local_symbols(source(payload["resolverSourcePath"]).decode())
             add("local_c_resolver_source", True, "C resolver returns exact self-mapped table exports or NULL; source audit only")
             sources = {key: source(value).decode() for key, value in payload["behaviorSources"].items()}
+            shared_directory = Path(payload["behaviorSources"]["sharedTexture"]).parent
+            sources.update({key: source(str(
+                (root / shared_directory / relative).resolve()
+                .relative_to(root.resolve()))).decode()
+                for key, relative in ACCESS_SOURCE_FILES.items()})
             failures = shared_memory_source_failures(sources)
             add("c_shared_memory_source", not failures, "; ".join(failures) or
-                "C error-object/IOSurface ownership paths present; shared buffer imports reject; source audit only")
+                "C error-object/IOSurface dependency wiring present; shared buffer imports reject; "
+                "source audit only, not runtime lifetime proof")
             library_path = legacy.resolve_path(root, library_text)
             if library_path is None:
                 raise ValueError("invalid selected C library path")

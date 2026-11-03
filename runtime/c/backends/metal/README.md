@@ -1,14 +1,37 @@
-# Experimental C Metal backend
+# C Metal backend
 
-This is a real, default-off native implementation in plain C. It dynamically
-loads the macOS Metal/Foundation/Objective-C system libraries and invokes typed
-Objective-C runtime methods. It does not compile/link Zig, embed an interpreter,
-load an alternative backend or manufacture a successful device on other hosts.
-No SDKs or dependencies were installed for this implementation.
-On Windows the POSIX-only library/symbol loader is excluded at compilation;
-`doe_mtl_native_open` retains its explicit unsupported result. Portable typed call
-and resource owners still compile, with no fake POSIX APIs, Apple loader or
-successful substitute provider.
+This directory owns the C runtime's Metal implementation in plain C. It loads
+the macOS Metal/Foundation/Objective-C system libraries and invokes typed native
+methods. The [native adapter selector](../../native/src/lifecycle.c) chooses
+Metal by default on Apple hosts when no backend is requested. Default selection
+does not establish full WebGPU conformance, hardware qualification or comparative
+performance. The loader rejects unsupported hosts; portable host controls can
+still compile there without creating an Apple device.
+
+## Owner and check map
+
+Read [AGENTS.md](AGENTS.md), [CATSCAN.md](CATSCAN.md) and [STYLE.md](STYLE.md)
+for this boundary's contracts. The [native frontend](../../native/README.md)
+owns WebGPU admission and composition; the
+[resource owner](../../resources/README.md) owns recorded public commands.
+
+| Job | Existing owner | Focused controls |
+| --- | --- | --- |
+| Device, buffer and command leases | [context.c](src/context.c), [resources.c](src/resources.c), [commands.c](src/commands.c) | `test_lifetime`, `check-buffer-reuse` |
+| Texture formats, initialization and ordered uses | [texture_formats.c](src/texture_formats.c), [texture_initialization.c](src/texture_initialization.c), [texture_ownership.c](src/texture_ownership.c) | `test_images`, `test_initialization`, `check-texture-reuse` |
+| Compute and indirect guards | [compute_commands.c](src/compute_commands.c), [indirect_commands.c](src/indirect_commands.c) | `test_indirect`, `test_draw_guard` |
+| Complete render passes and draw state | [render_commands.c](src/render_commands.c), [render_draws.c](src/render_draws.c), [objc_render_draws.c](src/objc_render_draws.c) | `test_render`, `test_objc_render_commands` |
+| Query availability and native samples | [timestamps.c](src/timestamps.c), [objc_queries.c](src/objc_queries.c) | `test_timestamps`, `test_objc_queries`, `check-pass-timestamps` |
+| IOSurface/events, external planes and presentation | [shared_memory.c](src/shared_memory.c), [external_textures.c](src/external_textures.c), [surfaces.c](src/surfaces.c) | `check-external`, `test_surface`, native [shared-memory controls](../../native/SHARED_MEMORY.md) |
+| Completion observation and wakeup | [progress.c](src/progress.c), [timeline.c](src/timeline.c) | `check-progress`, `check-timeline` |
+| Typed Objective-C ABI and caches | [objc_abi.h](src/objc_abi.h), [objc_library_cache.c](src/objc_library_cache.c), [pipeline_cache.c](src/pipeline_cache.c) | `sdk-abi`, `check-library-cache`, `test_objc_archive` |
+
+The [Makefile](Makefile)'s `check` runs these portable host controls; executable
+names beginning `test_` refer to its build-directory targets. `sdk-abi` compiles
+actual Apple SDK declarations for both supported macOS ABIs without running a
+device. `native-check`, `native-graphics-check` and `native-timestamps-check`
+are separate authorized physical checks. Their results and the historical
+receipts below apply only to their recorded sources, device and scope.
 
 ## Implemented boundary
 
@@ -20,15 +43,15 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
 - Exact-length UTF-8 MSL compilation, named entrypoint and compiler-resolved
   workgroup size; NSError code/message survives native compilation failure.
 - Sparse buffer slots, nonzero offsets and bound byte sizes. The optional
-  compiler-selected size slot receives the retained checked bridge's packed
-  uint32 lengths. Missing slots are explicitly cleared. No guessed workgroups.
+  compiler-selected size slot receives packed uint32 bound lengths. Compute
+  encoders start with empty bindings; render encoders clear removed slots.
 - Direct/repeated threadgroup dispatch, guarded GPU-generated indirect compute,
   buffer-region copy and byte-pattern fill.
   Every native operation uses the real Metal encoder and ends it before the next.
 - Private 1D/2D/array/cube/3D and device-admitted 2D multisample images, explicit mip/layer views and swizzles,
   retained samplers, staging-buffer upload/readback and texture-region copies.
-  43 uncompressed color layouts and 14 BC layouts are admitted; BC requires the
-  native capability property. Layout facts are not format-feature qualification.
+  Uncompressed color, BC, ETC2/EAC and ASTC LDR layouts use explicit native format
+  and device capability gates. Layout facts are not format-feature qualification.
 - Mixed compute uses the same dispatch and lifetime owner with separate sparse
   buffer, texture (128 slots) and sampler (16 slots) index spaces.
 - Real MSL vertex/fragment pipeline creation, explicit per-stage resource slots,
@@ -44,10 +67,14 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
   retained buffer; contiguous query runs, offsets and capability limits are
   validated without another query-set or result-aggregation authority.
 - Native timestamp-only counter-set discovery and owned sample buffers, explicit
-  blit-boundary sampling, ordered standalone stage/blit writes, compute-stage
-  begin/end pairs and GPU resolves into
-  ordinary buffers. Actual runtime sampling capabilities gate each path. A timed
-  empty dispatch still creates a real encoder, never manufactured timestamps.
+  blit-boundary sampling, ordered standalone stage/blit writes, compute/render
+  pass attachments and GPU resolves into ordinary buffers. Attachments permit
+  one-sided writes; unsupported or ineligible public pass spans keep ordered
+  boundaries. Actual sampling capabilities gate each path. A timed private empty
+  dispatch still creates a real encoder, never manufactured timestamps.
+- CAMetalLayer presentation, IOSurface/shared-event imports, external image
+  planes, completion notifications and optional library/binary-archive reuse
+  compose with the same device, resource and command owners described below.
 - One-shot submit, nonblocking poll, explicitly blocking native wait, terminal
   error and unknown-result handling, and deterministic owned cleanup.
 
@@ -75,12 +102,15 @@ must not be released, mutated or submitted independently. A shared resource
 wrapper may adopt the backend pointer and finalize it using its matching release
 function. The wrapper continues to own public destroy/map/usage policy.
 
-A buffer, texture or timestamp sample buffer has one unresolved recording owner. Competing commands and host reads or
-writes return BUSY until that recording is discarded or terminally observed.
-Unsubmitted native recordings are discarded before their resource leases. A
-recording failure poisons the entire recording, so earlier encoded operations
-cannot accidentally submit as partial success. This conservative boundary does
-not yet admit concurrent recorded use of one allocation or tuned streaming reuse.
+Buffers retain a chain of command uses. Textures admit the same ordered reuse
+only when their actual native storage reports tracked hazards. A later recording
+requires every predecessor's known submitted queue order; an unsubmitted or
+unknown predecessor remains BUSY. Each command keeps its own leases and
+speculative initialization. Host reads/writes still require all uses to retire.
+Timestamp sample buffers retain exclusive recording ownership until abandonment
+or terminal observation. Unsubmitted native recordings are discarded before
+their resource leases. Recording failure poisons the entire recording, so earlier
+encoded operations cannot accidentally submit as partial success.
 
 Shared allocations start zeroed. Private allocations require a full fill/copy
 before reads/bindings; initialization is speculative inside a command and is
@@ -106,9 +136,11 @@ row/image padding and the checked final-row footprint. Region origins
 and interior extents respect format blocks; final edge blocks may be partial.
 Array copies advance buffer image strides but pass zero native bytesPerImage for
 each 2D slice, while volume copies pass the 3D stride. Padding is neither copied
-nor declared initialized. Texture copies require identical formats. View format
-reinterpretation is limited to opt-in linear/sRGB pairs; unsupported formats and
-out-of-range layouts fail before native calls. Native driver creation may still
+nor declared initialized. Texture copies admit identical formats or their declared
+linear/sRGB counterparts with matching aspects and sample counts. View format
+reinterpretation includes opt-in linear/sRGB and combined-to-stencil pairs;
+unsupported formats and out-of-range layouts fail before native calls.
+Native driver creation may still
 reject a format/usage combination. Upstream admission remains responsible for
 shader access, filtering, sample type and per-device format feature compatibility.
 
@@ -172,10 +204,11 @@ admitted only when all active samples remain enabled; partial masks return
 UNSUPPORTED before allocation/native calls. This layer does not rewrite MSL to
 manufacture a shader sample-mask output or substitute a scissor for coverage.
 
-Visibility output uses initialized ordinary buffer storage and stays BUSY until
-completion. Each offset is 8-byte aligned and belongs to one contiguous run of
-draws in a pass. Consecutive draws share one native visibility configuration;
-disjoint reuse or changing mode at the same offset fails before native encoding.
+Visibility output uses initialized ordinary buffer storage; host reads stay BUSY
+until its command uses retire. Each offset is 8-byte aligned and belongs to one
+contiguous run of draws in a pass. Consecutive draws share one native visibility
+configuration; disjoint reuse or changing mode at the same offset fails before
+native encoding.
 The shared query owner remains responsible for reset, logical aggregation and
 public query-set policy. This backend never manufactures a visibility value.
 
@@ -265,9 +298,13 @@ must preserve these seams:
   admission and stage slots, group a complete render pass before encoding, and
   retain the existing resource snapshots. Queue/future handling polls this command
   owner; unknown completion cannot release payloads or publish map/query results.
-- This owner's `Makefile` remains its source-list authority. Darwin public
-  packaging, full frontend execution and graphics/query/presentation wiring
-  have their own native/shared acceptance; backend-only readback is not that proof.
+- This owner's [Makefile](Makefile) lists the backend archive sources and focused
+  checks. Native/package builds collect owner `src/*.c` through
+  [native/Makefile](../../native/Makefile) and the
+  [Windows producer](../../native/tools/build_windows.py), using
+  [sources.mk](../../native/sources.mk) for owner directories. Keep those build
+  routes consistent. Public packaging and frontend execution have their own
+  acceptance; backend-only readback is not that proof.
 
 Guarded indirect compute consumes the typed contract in
 [doe_metal_indirect.h](include/doe_metal_indirect.h). The caller compiles the exact
@@ -289,17 +326,18 @@ there is no second queue or scratch cache. The current compiler supplies actual
 `num_workgroups` values. Host call-order/lifetime controls and actual SDK selector
 compilation do not establish GPU execution or physical qualification.
 
-## Scope still outside this increment
+## Boundaries owned elsewhere
 
-ETC/ASTC images, surfaces, render-stage counter attachment mapping,
-external textures, shared-event notifications, async callbacks, library/binary
-caches, streamed encoder reuse, prepared-program
-caches and full native/WebGPU consumer wiring remain in their retained owners.
-Indexed/indirect draws require the typed common normalizer/scan guard described
-above. Compiler/native owners admit shader features, usage and exact layout before this API;
-it is not a standalone validation boundary for untrusted MSL. No exception bridge
-is introduced: nil/NSError/status failures are handled, but Objective-C language
-exceptions are not caught by this plain-C adapter.
+Compiler/shader owners supply validated MSL, reflection and resolved stage/slot
+facts. The resource/native owners admit WebGPU features, usage, layouts,
+query-set policy, public callbacks/futures, shared-access state and prepared
+programs. This backend supplies the native encoders, resource leases, imports,
+completion observations and cache primitives those owners compose. Indexed and
+indirect draws require the shared typed normalizer/scan guard described above.
+The backend is not a standalone validation boundary for untrusted MSL.
+Nil/NSError/status failures are handled; Objective-C language exceptions are not
+caught by this plain-C adapter. Source implementation and portable call controls
+do not substitute for current physical consumer or conformance evidence.
 
 ## ABI provenance
 
@@ -325,11 +363,13 @@ and device. Neither substitutes for complete native consumer or graphics parity.
 From this directory:
 
 ```
-make all check abi-compile probe
+make all check abi-compile
 make sanitize
 ```
 
 On an Apple SDK host, `make sdk-abi` is compile-only and creates no device.
+`make probe` performs actual device/queue discovery on Apple hosts and stays
+separate from the CPU checks; discovery does not establish GPU execution.
 `make native-check` is an explicit physical operation, excluded from `check` and
 `all`; it requires an authorized healthy Mac. Its child process is limited to
 20 seconds and polls completion for at most five seconds. The test records a
@@ -343,11 +383,12 @@ The [Apple developer receipt](DEVELOPER_RECEIPT_APPLE_COMPUTE.json) binds the
 2026-10-23 Apple clang/macOS SDK source checks and one real Apple M3 backend
 compute/readback run. It also records the reproduced completion-detail defect,
 its first-error preservation controls and the actual sanitizer boundary. All
-12 ordinary host executables pass, and the two affected completion/lifetime
-controls pass with UBSan. The combined ASan/UBSan binaries compile but the first
-executable hangs in AddressSanitizer initialization before `main`; its captured
-stack and termination are retained rather than called a pass. Earlier Linux
-sanitizer receipts remain scoped to their recorded inputs and platform.
+12 ordinary host executables passed at those recorded inputs, and the two
+affected completion/lifetime controls passed with UBSan. The combined ASan/UBSan
+binaries compiled but the first executable hung in AddressSanitizer
+initialization before `main`; its captured stack and termination are retained
+rather than called a pass. Earlier Linux sanitizer receipts remain scoped to
+their recorded inputs and platform.
 
 `make native-graphics-check` is another explicitly authorized, healthy-host-only
 operation, also excluded from `all`/`check`, with the same 20-second process and
@@ -360,9 +401,9 @@ public WGSL/graphics composition, presentation and broader hardware qualificatio
 are not established by this smoke.
 
 The [graphics prerequisites receipt](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json)
-binds the actual Apple M3 run, all13 current host controls and both real SDK ABI
-targets. Its initializer controls cover selected mip/layer ranges, partial-aspect
-Discard preservation, a failed second view preparation before any encoder,
+binds the actual Apple M3 run, all 13 host controls at that revision and both real
+SDK ABI targets. Its initializer controls cover selected mip/layer ranges,
+partial-aspect Discard preservation, a failed second view preparation before any encoder,
 abandonment, unknown completion and terminal poisoning. The retained terminal
 artifact distinguishes its first fixture assertion from the corrected host pass.
 
@@ -372,11 +413,11 @@ execute a shader. On Linux the real public constructor's probe must reject Metal
 `abi-compile` is syntax/type compilation of source branches, not cross-compilation
 or SDK verification. No target binary is executed under forged host macros.
 
-In this hosted environment LeakSanitizer fails under ptrace. The initial failure
-is retained in `TERMINAL_RECEIPT.txt`; `ASAN_OPTIONS=detect_leaks=0 make sanitize`
-passes AddressSanitizer and UndefinedBehaviorSanitizer with leak scanning disabled.
-Owned native allocations/releases are still checked by the call ledger. Run leak
-scanning in a supported environment before qualification.
+The historical `TERMINAL_RECEIPT.txt` records a LeakSanitizer failure under
+ptrace and a passing `ASAN_OPTIONS=detect_leaks=0 make sanitize` at its recorded
+inputs, with leak scanning disabled. The call ledger checks owned native
+allocations/releases separately. Run leak scanning in a supported environment
+before qualification.
 
 `TIMESTAMP_SOURCE_INPUTS.sha256` preserves the sources/tests/build/documents
 exercised by `DEVELOPER_RECEIPT_TIMESTAMPS.json` at commit `492968b3`, before
@@ -433,10 +474,11 @@ archives, with teardown failures remaining best effort.
 Both compute and render constructors attach the archive to the **actual native
 pipeline descriptor**, including the newly compiled functions and complete render
 state. Metal performs compatibility matching; there is no entry-name-only shader
-cache. Source-library compilation is not skipped. Archive pipeline failures retry
-the ordinary native constructor, and optional addition failures do not invalidate
-a successfully created pipeline. Reported counters describe load/add/serialization
-operations, not cache hits or performance improvements.
+cache. Archive reuse does not itself bypass source-library preparation; the
+context-owned library reuse described below is separate. Archive pipeline failures
+retry the ordinary native constructor, and optional addition failures do not
+invalidate a successfully created pipeline. Reported counters describe
+load/add/serialization operations, not cache hits or performance improvements.
 
 `test_objc_archive` and `test_objc_render_pipeline` cover typed selector arguments,
 load/miss/replacement, descriptor attachment, same-descriptor render fallback,
@@ -461,7 +503,10 @@ existing commit. The same command/context leases retain the event. Completion
 requires its signal value and ordinary terminal command status: an event alone
 cannot hide an NSError, release a drawable early, or retire uncertain resources.
 No event wait spins, callback queue or alternate command engine is introduced.
-Defaults do not request events. Counters cannot wrap or submit after exhaustion.
+Bare backend contexts do not request events. The
+[native device constructor](../../native/src/backend.c) requests this preference
+for ordinary Metal devices before publication. Counters cannot wrap or submit
+after exhaustion.
 
 This uses Apple's [shared-event signal value](https://developer.apple.com/documentation/metal/mtlsharedevent/signaledvalue)
 and [GPU/CPU event ordering](https://developer.apple.com/documentation/metal/synchronizing-events-between-a-gpu-and-the-cpu)

@@ -22,7 +22,9 @@ make -C runtime/c/futures all
 make -C runtime/c/futures check
 ```
 
-The static library is `runtime/c/futures/build/libdoe_futures.a`. Include
+The static library defaults to `$(DOE_C_TMP)/futures/libdoe_futures.a`, using
+the per-checkout scratch root from [build-root.mk](../build-root.mk).
+Set `BUILD=/absolute/output` to select an explicit output directory. Include
 `runtime/c/futures/include/doe_futures.h` and link the library plus `-pthread`.
 The [C++ consumer](tests/test_cpp.cpp) uses the same C header and library with
 exceptions and RTTI disabled. Requirements must be queried from the library

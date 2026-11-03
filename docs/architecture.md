@@ -24,13 +24,16 @@ experimental Chromium runtime integration are separate entry points. DoeProof
 evidence recording and DoeLab's offline improvement testing are outside the
 ordinary execution path.
 
+The following links navigate the current default-selected C implementation.
+The diagram pin above remains historical context, not qualification of current source.
+
 | Boundary | Implementation |
 | --- | --- |
 | JavaScript native provider | [native.js](../packages/doe-gpu/src/native.js), [vendor WebGPU bindings](../packages/doe-gpu/src/vendor/webgpu/) |
-| Native objects and command recording | [native API exports](../runtime/zig/src/native/api/), [doe_command_recording.zig](../runtime/zig/src/native/command/doe_command_recording.zig) |
-| Parse, type, and transform | [analysis.zig](../runtime/zig/src/compiler/wgsl/pipeline/analysis.zig) |
-| Target lowering | [translate_spirv.zig](../runtime/zig/src/compiler/wgsl/pipeline/translate_spirv.zig), [compiler architecture](shader-compiler-architecture.md) |
-| Backend-private execution | [backend implementations](../runtime/zig/src/backend/), [shared contracts](../runtime/zig/src/contracts/) |
+| Native objects and command recording | [native frontend](../runtime/c/native/README.md#actual-ownership-and-execution-path), [resource and command owner](../runtime/c/resources/README.md#owner-and-use) |
+| Parse, type, and transform | [C compiler owner map](../runtime/c/compiler/README.md#storage-and-owner-map) |
+| Target lowering | [SPIR-V](../runtime/c/compiler/src/spirv.c), [Metal](../runtime/c/compiler/targets/metal/README.md), [HLSL](../runtime/c/compiler/targets/hlsl/README.md) |
+| Backend-private execution | [Vulkan](../runtime/c/backends/vulkan/README.md), [Metal](../runtime/c/backends/metal/README.md), [D3D12](../runtime/c/backends/d3d12/README.md) |
 
 ### Native compute submission and completion
 
@@ -238,9 +241,10 @@ At a high level, Doe works like this:
    Holds schemas, policies, workload contracts, and versioned control data.
 3. `pipeline/lean`
    Formalizes selected obligations and emits proof artifacts when enabled.
-4. `runtime/zig`
-   Consumes config and optional proof artifacts, then executes the runtime on
-   Metal, Vulkan, or D3D12.
+4. `runtime/c`
+   Owns the default-selected compiler, native objects, resource admission and
+   backend execution. `runtime/zig` retains explicit legacy and reference routes;
+   neither selection nor authored backend code establishes qualification.
 5. `bench` and `pipeline/trace`
    Verify correctness, comparability, replayability, and claimability from
    emitted artifacts.
@@ -377,9 +381,11 @@ No serialized command, trace, or requirements field changes, and existing comman
 counts and capability sets retain their meaning. Compile-time structural checks
 do not prove that a declared accounting rule is semantically correct.
 
-The [source-layout manifest](../runtime/zig/source-layout.json) owns module
-responsibilities and dependency permissions; its [generated source map](../runtime/zig/src/README.md)
-is the navigation surface. Applications exercise these owners rather than
+Current C ownership is routed by the [component index](component-index.md),
+[C guide](../runtime/c/AGENTS.md), and the compiler, native and resource owner
+maps linked above. The retained Zig [source-layout manifest](../runtime/zig/source-layout.json)
+and [generated source map](../runtime/zig/src/README.md) govern that reference and
+explicit legacy implementation. Applications exercise these owners rather than
 defining separate product subsystems. An
 image-processing integration supplies shaders, declared work, and acceptance
 tests; image-editor policy does not belong in resource management.
@@ -576,5 +582,6 @@ trace or an output oracle.
 - [`bench/README.md`](../bench/README.md) for compare and claim workflows
 - [`docs/workload-system.md`](./workload-system.md) for the shared workload,
   executor, oracle, and ledger contract
-- [`runtime/zig/README.md`](../runtime/zig/README.md) for runtime details
+- [`runtime/c/README.md`](../runtime/c/README.md) for the default-selected C runtime
+- [`runtime/zig/README.md`](../runtime/zig/README.md) for retained reference and explicit legacy routes
 - [`browser/chromium/README.md`](../browser/chromium/README.md) for the Chromium lane

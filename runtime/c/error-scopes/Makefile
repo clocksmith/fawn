@@ -1,7 +1,8 @@
 CC = gcc
 CXX = g++
 AR = ar
-BUILD ?= build
+include $(dir $(lastword $(MAKEFILE_LIST)))../build-root.mk
+BUILD ?= $(DOE_C_TMP)/error-scopes
 CPPFLAGS += -Iinclude -Iintegration -I../../vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -fPIC -fno-short-enums -fstack-usage -Wall -Wextra -Wpedantic -Werror -pthread

@@ -11,7 +11,7 @@
  * - map and work-done callbacks keep request order and see completed work;
  * - device loss with work in flight retires it as failed without crashing. */
 #include "../src/internal.h"
-#include "../src/surface.h" /* native_pending */
+#include "../src/pending.h"
 #include "../../backends/vulkan/src/internal.h" /* Marks the context lost. */
 #include "consumer.h"
 #include <errno.h>

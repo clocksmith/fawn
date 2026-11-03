@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Real frontend/pending/backend owners, native CPU call ledger only. */
-#include "../src/surface.h"
+#include "../src/pending.h"
 #include "../../backends/metal/src/internal.h"
 #include "../../backends/metal/tests/mock_native.h"
 #include "consumer.h"

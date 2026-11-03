@@ -2,7 +2,7 @@
  * Obscure a real software submission at the native boundary, release every
  * public handle, then require the existing pending owner to finish retirement. */
 #include "../src/internal.h"
-#include "../src/surface.h"
+#include "../src/pending.h"
 #include "consumer.h"
 #include <errno.h>
 #include <time.h>

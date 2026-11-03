@@ -45,6 +45,16 @@ void *wgpuGetProcAddress(View name) {
 
 
 class CProcSurfaceTests(unittest.TestCase):
+    def behavior_sources(self) -> dict[str, str]:
+        payload = json.loads((ROOT / "config/doe-chromium-proc-surface.c.json")
+                             .read_text(encoding="utf-8"))
+        directory = Path(payload["behaviorSources"]["sharedTexture"]).parent
+        paths = {**payload["behaviorSources"],
+                 **{key: str(directory / relative)
+                    for key, relative in checker.ACCESS_SOURCE_FILES.items()}}
+        return {key: (ROOT / name).read_text(encoding="utf-8")
+                for key, name in paths.items()}
+
     def fixture(self, scratch: str, wrong: bool = False) -> tuple[Path, dict, Path]:
         root = Path(scratch)
         payload = json.loads((ROOT / "config/doe-chromium-proc-surface.c.json").read_text())
@@ -56,7 +66,11 @@ class CProcSurfaceTests(unittest.TestCase):
         header.parent.mkdir(parents=True)
         header.write_text("\n".join(f"    WGPUProc{name[4:]} field{i} = nullptr;"
                                     for i, name in enumerate((*NAMES, "wgpuBufferCreateTexelView"))))
-        for name in [payload["resolverSourcePath"], *payload["behaviorSources"].values()]:
+        shared_directory = Path(payload["behaviorSources"]["sharedTexture"]).parent
+        access_paths = [str(shared_directory / relative)
+                        for relative in checker.ACCESS_SOURCE_FILES.values()]
+        for name in [payload["resolverSourcePath"],
+                     *payload["behaviorSources"].values(), *access_paths]:
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / name, target)
@@ -73,6 +87,12 @@ class CProcSurfaceTests(unittest.TestCase):
             root, payload, library = self.fixture(scratch)
             report = checker.check(payload, root=root, config_path_text="fixture", library_override=str(library))
             self.assertEqual(report["missingRequired"], [], report["checks"])
+            for relative in ("runtime/c/native/src/queue.c",
+                             "runtime/c/native/src/metal_progress.c",
+                             "runtime/c/native/src/async_completion.c",
+                             "runtime/c/backends/metal/src/shared_memory.c"):
+                self.assertEqual(report["inputSha256"][str((root / relative).resolve())],
+                                 hashlib.sha256((root / relative).read_bytes()).hexdigest())
             self.assertEqual(sum(row["required"] for row in report["procedureInventory"]), 3)
             optional = next(row for row in report["procedureInventory"] if row["symbol"] == "wgpuBufferCreateTexelView")
             self.assertFalse(optional["available"])
@@ -118,13 +138,83 @@ class CProcSurfaceTests(unittest.TestCase):
                 checker.local_symbols(changed)
 
     def test_unsupported_buffer_success_or_error_object_marker_in_comment_cannot_pass(self) -> None:
-        payload = json.loads((ROOT / "config/doe-chromium-proc-surface.c.json").read_text())
-        sources = {key: (ROOT / name).read_text() for key, name in payload["behaviorSources"].items()}
+        sources = self.behavior_sources()
         self.assertEqual(checker.shared_memory_source_failures(sources), [])
         bad = {**sources, "sharedBuffer": sources["sharedBuffer"].replace('return WGPUStatus_Error;', 'return WGPUStatus_Success;')}
         self.assertTrue(checker.shared_memory_source_failures(bad))
         bad = {**sources, "errorObjects": sources["errorObjects"].replace('doe_resource_buffer_error(', '/*doe_resource_buffer_error*/foreign_buffer(')}
         self.assertTrue(checker.shared_memory_source_failures(bad))
+
+    def test_dependency_wiring_survives_comments_and_formatting(self) -> None:
+        sources = self.behavior_sources()
+        decorated = {key: "/* source-only control */\n" +
+                     "\n\t".join(text.splitlines())
+                     for key, text in sources.items()}
+        self.assertEqual(checker.shared_memory_source_failures(decorated), [])
+
+    def test_dependency_loss_and_failure_paths_reject(self) -> None:
+        sources = self.behavior_sources()
+        mutations = [
+            ("producer wait dropped", "sharedTexture",
+             "doe_mtl_commands_wait_shared_events(command.value.metal,",
+             "/*doe_mtl_commands_wait_shared_events*/foreign_no_wait(command.value.metal,"),
+            ("wait contract only in diagnostic string", "sharedTexture",
+             "doe_mtl_status status = doe_mtl_commands_wait_shared_events(command.value.metal,\n"
+             "                dependencies, count, &detail);\n"
+             "            failure = native_failure_metal(status, &detail);",
+             'const char *message = "status=doe_mtl_commands_wait_shared_events('
+             'command.value.metal,dependencies,count,&detail);'
+             'failure=native_failure_metal(status,&detail);";\n'
+             '            failure = native_failure_status(NATIVE_OK);'),
+            ("failed Begin published", "sharedTexture",
+             "device->access_batch = command;", "device->access_batch = (native_command_handle){0};"),
+            ("no-output End skips wait", "sharedTexture",
+             "if (admitted && device->access_batch.kind == WGPUBackendType_Metal &&",
+             "if (admitted && state && device->access_batch.kind == WGPUBackendType_Metal &&"),
+            ("failed End closes access", "sharedTexture",
+             "bool success = admitted && failure.status == NATIVE_OK;\n    if (success) {",
+             "bool success = admitted;\n    if (success) {"),
+            ("replay loses producer events", "metalShared",
+             "source->shared_wait_count, error);", "0, error);"),
+            ("lease dropped after native encode", "metalShared",
+             "retained[i].event, retained[i].value, &detail);",
+             "retained[i].event, retained[i].value, &detail);\n    free(retained);"),
+            ("producer event never retained", "metalShared",
+             "status = doe_mtl_shared_event_import(commands->context, waits[acquired].event,",
+             "status = foreign_borrow_event(commands->context, waits[acquired].event,"),
+            ("retry abandons original", "metalProgress",
+             "failure = native_metal_wait_owner(device,conflict,&deadline);",
+             "native_release_access_batch(device);\n"
+             "        failure = native_metal_wait_owner(device,conflict,&deadline);"),
+            ("flush skips replay", "sharedQueue",
+             "doe_mtl_commands_replay_shared_waits(commands.value.metal,",
+             "foreign_no_wait(commands.value.metal,"),
+            ("failed replay drops original", "sharedQueue",
+             "if (native_command_release(&commands) != NATIVE_OK) abort();\n        return failure;",
+             "if (native_command_release(&commands) != NATIVE_OK) abort();\n"
+             "        native_release_access_batch(device);\n        return failure;"),
+            ("unknown submission loses original", "sharedQueue",
+             "device->queue_failed = true;", "native_release_access_batch(device);\n"
+             "        device->queue_failed = true;"),
+            ("unknown becomes accepted", "sharedQueue",
+             "accepted == DOE_MTL_BUSY ? native_failure_status(NATIVE_UNKNOWN)",
+             "accepted == DOE_MTL_BUSY ? native_failure_status(NATIVE_OK)"),
+            ("WorkDone omits dependency", "asyncCompletion",
+             "native_flush_access_batch(device) : native_failure_status(NATIVE_OK);",
+             "native_failure_status(NATIVE_OK) : native_failure_status(NATIVE_OK);"),
+        ]
+        for description, owner, old, new in mutations:
+            with self.subTest(description=description):
+                self.assertNotEqual(sources[owner].replace(old, new), sources[owner],
+                                    "mutation fixture must exercise its boundary")
+                changed = {**sources, owner: sources[owner].replace(old, new)}
+                failures = checker.shared_memory_source_failures(changed)
+                self.assertTrue(failures, description)
+
+    def test_missing_dependency_owner_cannot_satisfy_source_audit(self) -> None:
+        sources = self.behavior_sources()
+        del sources["sharedQueue"]
+        self.assertTrue(checker.shared_memory_source_failures(sources))
 
 
 if __name__ == "__main__":

@@ -14,7 +14,10 @@ make -C runtime/c/futures all
 make -C runtime/c/callbacks check
 ```
 
-Existing GCC builds `build/libdoe_callbacks.a`; link it before one accepted
+Existing GCC builds `$(DOE_C_TMP)/callbacks/libdoe_callbacks.a`, using the
+per-checkout [scratch root](../build-root.mk). Its default futures dependency is
+`$(DOE_C_TMP)/futures/libdoe_futures.a`; `BUILD` and `FUTURES_ARCHIVE` can each
+select an explicit output or dependency. Link the callback archive before one accepted
 `libdoe_futures.a` and pthreads. The archive contains only the callback owner, not
 another queue or ID domain. Public headers are C11/C++17 compatible. See
 [developer checks](tests/README.md). The C path never invokes or links Zig.

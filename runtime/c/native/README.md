@@ -1,16 +1,24 @@
-# Experimental C public WebGPU native frontend
+# C public WebGPU native frontend
 
 Status: source-built and developer-exercised through pinned `webgpu.h`.
-Production/default selection is unchanged. Scoped CPU and selected-device evidence
+Current C default routes consume this frontend. Scoped CPU and selected-device evidence
 does not establish independent acceptance, full WebGPU replacement, performance
 or a qualified hardware matrix. `src/procedures.c` and the exact export inventory
 own implemented symbols; unknown names return NULL from `wgpuGetProcAddress`.
+
+Start with the [execution and ownership map](#actual-ownership-and-execution-path),
+[build and developer checks](#reproduce-from-a-coherent-checkout), or
+[resource/command owner](../resources/README.md#owner-and-use).
+[Contributor invariants](AGENTS.md) and the [component charter](CATSCAN.md)
+govern changes; source-bound receipts below retain their recorded scope.
+The shared command/surface/async retirement record lives in [pending.h](src/pending.h);
+[surface.h](src/surface.h) owns presentation state and its retirement operations.
 
 ## Backend selection and checked scope
 
 Vulkan, Metal and Windows D3D12 use tagged contexts and payloads within one device,
 resource and pending-submission architecture. Undefined selects Vulkan on Linux,
-Metal on Apple and D3D12 on Windows for this experimental provider. Unsupported
+Metal on Apple and D3D12 on Windows for this provider. Unsupported
 selections fail without fallback.
 
 The authored Windows compute/buffer path consumes compiler-owned HLSL ABI11,

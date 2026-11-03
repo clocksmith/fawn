@@ -32,11 +32,12 @@ def main() -> int:
         # headers; keep that existing input in the isolated build closure.
         shutil.copytree(source / "runtime/c/platform/include",
                         root / "runtime/c/platform/include")
+        shutil.copyfile(source / "runtime/c/build-root.mk", root / "runtime/c/build-root.mk")
         shutil.copyfile(args.makefile or original / "Makefile", owner / "Makefile")
         header = root / "runtime/vendor/webgpu-headers/webgpu.h"
         header.parent.mkdir(parents=True)
         shutil.copyfile(source / header.relative_to(root), header)
-        command = ["make", "--no-print-directory", "all"]
+        command = ["make", "--no-print-directory", "BUILD=" + str(owner / "build"), "all"]
         subprocess.run(command, cwd=owner, check=True, capture_output=True)
         products = [owner / "build" / name for name in
                     ("error_scopes.o", "doe_error_scopes_zig_bridge.o", "libdoe_error_scopes.a")]

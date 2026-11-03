@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: MIT
- * Public WebGPU surfaces over the Vulkan surface owner (doe_vk_surface.h).
+ * Public WebGPU surfaces over their Vulkan, Metal and D3D12 backend owners.
  * The native frontend owns only public state and leases; acquisition,
  * presentation fences and swapchain lifetime stay with the backend owner. */
 #ifndef DOE_NATIVE_SURFACE_H
 #define DOE_NATIVE_SURFACE_H
-#include "internal.h"
+#include "pending.h"
 #include "doe_vk_surface.h"
 #include "doe_metal_surface.h"
 #include "../../backends/d3d12/include/doe_d3d12_surface.h"
@@ -66,27 +66,8 @@ typedef struct native_presentation {
  * adopts commands; unknown completion stays retained on the pending list. */
 native_presentation native_submit_present(native_device *device, doe_vk_commands *commands,
     doe_vk_surface *surface);
-/* A closed variant of the existing pending owner, not another queue. Surface
- * retirement reserves storage before any acquisition can become uncertain. */
-typedef enum native_pending_kind {
-    NATIVE_PENDING_COMMANDS,
-    NATIVE_PENDING_SURFACE,
-    NATIVE_PENDING_ASYNC
-} native_pending_kind;
-struct native_pending {
-    native_pending *next;
-    native_device *device;
-    native_command_handle native;
-    doe_resource_commands **resources;
-    size_t count;
-    native_pending_kind kind;
-    uint64_t serial;
-    struct native_async *async; /* Only NATIVE_PENDING_ASYNC; owns this embedded record. */
-    bool replay; /* Command variant: settle the resource owner's open replay. */
-    doe_vk_surface *frame; /* Present commands borrow their backend surface lease. */
-    native_surface *surface;
-    bool armed, ready;
-};
+/* Surface retirement reserves its pending variant before any acquisition can
+ * become uncertain; pending.h owns the shared record definition. */
 /* All list operations require the device mutex. Arm also requires surface mutex;
  * a ready record is transferred, never copied, to the caller for final cleanup. */
 void native_surface_retirement_arm(native_surface *surface);
