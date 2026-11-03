@@ -226,6 +226,35 @@ class CompleteMetricTest(unittest.TestCase):
                 cohort.run(args)
             run.assert_not_called()
 
+    def test_independent_buffers_reject_old_harness_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = root / "harness"
+            binary.write_bytes(b"old harness")
+            out = root / "raw.jsonl"
+            args = argparse.Namespace(provider=["doe=" + str(binary)], out=str(out),
+                                      workload=["fixture"], inputs=str(root), iterations=4,
+                                      inflight_depth=2, buffer_reuse="independent", pairs=1, timeout=1)
+            with mock.patch.object(cohort, "harness_args", return_value=[]), \
+                    mock.patch.object(cohort, "run_process", return_value=(0, '{"status":"ok","inflightDepth":2}', "", 1, 1)), \
+                    mock.patch("builtins.print"), self.assertRaises(SystemExit):
+                cohort.run(args)
+            retained = json.loads(out.read_text())
+            self.assertEqual(retained["workload"], "fixture@inflight2@independent")
+            self.assertEqual(retained["admissionError"], "buffer_reuse_mismatch")
+
+    def test_summarizer_rejects_shared_and_independent_buffers_in_same_workload(self) -> None:
+        phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}
+        row = {"workload": "fixture", "pair": 0, "provider": "doe", "returnCode": 0,
+               "processWallNs": 1, "childCpuMs": 1,
+               "result": {"status": "ok", "maxRssKiB": 1024, "phases": phases}}
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory) / "raw.jsonl"
+            other = {**row, "provider": "dawn", "result": {**row["result"], "bufferReuse": "independent"}}
+            raw.write_text(json.dumps(row) + "\n" + json.dumps(other) + "\n")
+            with self.assertRaisesRegex(ValueError, "buffer reuse modes"):
+                cohort.summarize(argparse.Namespace(raw=[str(raw)], control="dawn", out=None))
+
     def test_provider_load_is_reported_as_nested_setup_cost(self) -> None:
         result = {"setupNs": 9_000_000, "providerLoadNs": 3_000_000,
                   "frameworkImagesBeforeSetup": 0, "setupImagesLoaded": 300,

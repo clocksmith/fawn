@@ -116,6 +116,9 @@ def main() -> int:
     rows = {}
     identity = {}
     presentation_modes = set()
+    completion_modes = {}
+    particle_oracle_modes = {}
+    trace_modes = {}
     for f in sorted((run / "launches").glob("*.json")):
         if f.name.endswith(".spec.json"):
             continue
@@ -125,6 +128,18 @@ def main() -> int:
         if not isinstance(headless, bool):
             parser.error(f"Invalid headless mode in {f}")
         presentation_modes.add("headless" if headless else "headed")
+        auto_completion = sp.get("autoCompletion", True)
+        if not isinstance(auto_completion, bool):
+            parser.error(f"Invalid autoCompletion mode in {f}")
+        completion_modes.setdefault(sp["page"], set()).add(auto_completion)
+        particle_oracle = sp.get("particleOracle", False)
+        if not isinstance(particle_oracle, bool):
+            parser.error(f"Invalid particleOracle mode in {f}")
+        particle_oracle_modes.setdefault(sp["page"], set()).add(particle_oracle)
+        traced = sp.get("trace", False)
+        if not isinstance(traced, bool):
+            parser.error(f"Invalid trace mode in {f}")
+        trace_modes.setdefault(sp["page"], set()).add(traced)
         key = (sp["page"], sp["arm"])
         rec = rows.setdefault(key, {"launches": 0, "ok": 0, "failures": [], "metrics": [], "provider": {},
                                     "adapters": set(), "visual": [], "oracle": [], "positions": [], "versions": set()})
@@ -151,6 +166,12 @@ def main() -> int:
                                          "browserVersion": r.get("browserVersion")})
     if not rows:
         parser.error(f"No launch receipts found under {run / 'launches'}")
+    if any(len(modes) > 1 for modes in completion_modes.values()):
+        parser.error("Cannot combine injected and non-injected callback modes for the same page")
+    if any(len(modes) > 1 for modes in particle_oracle_modes.values()):
+        parser.error("Cannot combine particle oracle instrumentation modes for the same page")
+    if any(len(modes) > 1 for modes in trace_modes.values()):
+        parser.error("Cannot combine traced and untraced receipts for a page")
     if len(presentation_modes) != 1:
         parser.error("Cannot combine headed and headless launch receipts")
     pages = sorted({p for p, _ in rows})

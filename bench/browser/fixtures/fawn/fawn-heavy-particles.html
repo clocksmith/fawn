@@ -469,11 +469,11 @@ function hslToRgb(h, s, l) {
     particleBuffers = [
       device.createBuffer({
         size: byteLength,
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       }),
       device.createBuffer({
         size: byteLength,
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       }),
     ];
   }
@@ -739,6 +739,24 @@ function hslToRgb(h, s, l) {
 
   let firstFrameCompletionFailure = null;
   let diagnosticDrain = null;
+  let oracleCapture = null;
+  globalThis.__fawnParticleOracleArm = () => {
+    if (oracleCapture) throw new Error('particle sample already requested');
+    oracleCapture = { state: 'armed' };
+  };
+  globalThis.__fawnParticleOracleRead = async () => {
+    const sample = oracleCapture;
+    if (!sample || sample.state !== 'submitted') throw new Error('particle sample was not submitted');
+    await Promise.all([sample.before.mapAsync(GPUMapMode.READ), sample.after.mapAsync(GPUMapMode.READ)]);
+    try {
+      const before = new Float32Array(sample.before.getMappedRange().slice(0));
+      const after = new Float32Array(sample.after.getMappedRange().slice(0));
+      return globalThis.__particleCpuOracle(before, after, sample.uniforms, sample.steps, sample.total);
+    } finally {
+      sample.before.unmap(); sample.after.unmap();
+      sample.before.destroy(); sample.after.destroy();
+    }
+  };
   globalThis.__fawnDiagnosticStopAndDrain = () => {
     if (diagnosticDrain) return diagnosticDrain;
     running = false;
@@ -825,6 +843,21 @@ function hslToRgb(h, s, l) {
 
     const encoder = device.createCommandEncoder();
 
+    // Sample the first and last 128 particles of one actual measured frame.
+    // Copies share the frame command buffer, so the reference sees its true input.
+    const sample = !paused && oracleCapture?.state === 'armed' ? oracleCapture : null;
+    if (sample) {
+      const partBytes = 128 * PARTICLE_STRIDE_FLOATS * 4;
+      const bytes = 2 * partBytes;
+      sample.before = device.createBuffer({ size: bytes, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+      sample.after = device.createBuffer({ size: bytes, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+      sample.uniforms = Array.from(uniformData);
+      sample.steps = stepsPerFrame;
+      sample.total = particleCount;
+      encoder.copyBufferToBuffer(particleBuffers[currentParticleIndex], 0, sample.before, 0, partBytes);
+      encoder.copyBufferToBuffer(particleBuffers[currentParticleIndex], (particleCount - 128) * PARTICLE_STRIDE_FLOATS * 4, sample.before, partBytes, partBytes);
+    }
+
     if (!paused) {
       const pass = encoder.beginComputePass();
       pass.setPipeline(computePipeline);
@@ -834,6 +867,12 @@ function hslToRgb(h, s, l) {
         currentParticleIndex = 1 - currentParticleIndex;
       }
       pass.end();
+    }
+
+    if (sample) {
+      const partBytes = 128 * PARTICLE_STRIDE_FLOATS * 4;
+      encoder.copyBufferToBuffer(particleBuffers[currentParticleIndex], 0, sample.after, 0, partBytes);
+      encoder.copyBufferToBuffer(particleBuffers[currentParticleIndex], (particleCount - 128) * PARTICLE_STRIDE_FLOATS * 4, sample.after, partBytes, partBytes);
     }
 
     const dstTrailIndex = 1 - currentTrailIndex;
@@ -873,6 +912,7 @@ function hslToRgb(h, s, l) {
     }
 
     device.queue.submit([encoder.finish()]);
+    if (sample) sample.state = 'submitted';
 
   }
 

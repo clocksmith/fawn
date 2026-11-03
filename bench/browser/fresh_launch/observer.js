@@ -17,7 +17,8 @@
     adapterReqStart: null, adapterReqEnd: null, deviceEnd: null, adapterInfo: null,
     submits: 0, firstSubmitT: null, lastSubmitT: null,
     gctSincePrev: false, gctCount: 0, autoDonePending: false,
-    completions: [], // [submitT, callT, resolveT, presented]
+    completions: [], // [submitT, callT, resolveT, acquiredCanvas, injected]
+    pageCompletionCalls: 0, injectedCompletionCalls: 0,
     firstPresentedDoneT: null,
     errors: [], devices: [], waiters: [], raf: [],
   };
@@ -53,6 +54,7 @@
     });
   };
   const Q = GPUQueue.prototype;
+  let injectingCompletion = false;
   const submit = Q.submit;
   Q.submit = function (...args) {
     const t = now();
@@ -60,13 +62,14 @@
     B.firstSubmitT ??= t;
     B.lastSubmitT = t;
     const r = submit.apply(this, args);
-    if (B.gctSincePrev && !B.autoDonePending && !globalThis.__fawnManualOpTiming) {
+    if (B.gctSincePrev && !B.autoDonePending && !globalThis.__fawnManualOpTiming && globalThis.__benchAutoCompletion !== false) {
       B.autoDonePending = true;
       const q = this;
       queueMicrotask(() => {
         B.autoDonePending = false;
         if (B.gctSincePrev) {
-          Q.onSubmittedWorkDone.call(q);
+          injectingCompletion = true;
+          try { Q.onSubmittedWorkDone.call(q); } finally { injectingCompletion = false; }
         }
       });
     }
@@ -74,6 +77,8 @@
   };
   const done = Q.onSubmittedWorkDone;
   Q.onSubmittedWorkDone = function (...args) {
+    const injected = injectingCompletion;
+    if (injected) B.injectedCompletionCalls += 1; else B.pageCompletionCalls += 1;
     const call = now();
     const sub = B.lastSubmitT;
     const presented = B.gctSincePrev;
@@ -81,7 +86,7 @@
     const p = done.apply(this, args);
     p.then(() => {
       const r = now();
-      if (B.completions.length < 60000) B.completions.push([sub, call, r, presented ? 1 : 0]);
+      if (B.completions.length < 60000) B.completions.push([sub, call, r, presented ? 1 : 0, injected ? 1 : 0]);
       if (presented && B.firstPresentedDoneT === null) B.firstPresentedDoneT = r;
       const w = B.waiters;
       B.waiters = [];

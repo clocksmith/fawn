@@ -77,7 +77,39 @@ through `launch.assetsRoot`; custom workload pages also need their corresponding
 `workloads/` HTML. Selecting an unavailable page fails instead of substituting
 another workload. Source changes need new receipts.
 
-Native phase attribution is a separate entry point:
+The observer records page-owned and injected completion-call counts separately.
+For pages that already issue completion callbacks, set `launch.autoCompletion` to
+`false` to run a separate, explicitly labeled diagnostic without observer-injected
+callbacks. Compare matched configurations and retain both receipts. A canvas
+texture acquisition is not visible presentation: the receipt labels its callback
+interval and rAF cadence as host observations and marks GPU execution and actual
+presentation as unmeasured. Disabling injection can leave pages without their own
+callbacks unable to satisfy the harness completion requirement.
+
+For `heavy_particles`, `launch.particleOracle: true` samples the first and last
+128 particles before and after one frame submitted during the measurement
+window, and checks the simulation against an independent scalar CPU reference.
+It adds four buffer copies to that frame, and its hash and outcome are recorded.
+It does not check rendering or other frames. Instrumented and uninstrumented
+receipts cannot be combined. Use this as a sampled diagnostic, not full output
+qualification of the timing window.
+
+Set `launch.trace: true` for a separate instrumented trace. A Chrome trace is
+saved beside the receipt and its hash is recorded, along with counts of the
+IOSurface scheduling events emitted by the browser. The outer scheduling event
+can run without waiting; only its Dawn/ANGLE inner events mark those specific
+wait sites. Named flush events are counted separately and may overlap one
+another. These counts do not cover every wait, flush, GPU execution, or
+presentation boundary. Traced and untraced receipts cannot be combined.
+
+Native phase attribution is a separate entry point. `run --inflight-depth 2`
+defaults to shared input/output buffers; add `--buffer-reuse independent` to
+allocate separate input/output buffers and bind groups per slot. Both retain
+per-slot readbacks, queue order and output checks. Each mode has a distinct
+workload identity and mixed receipts are rejected. An in-flight depth alone is
+not evidence of GPU overlap.
+
+Native phase attribution commands:
 
 ```sh
 python3 bench/cli.py phase-cohort --help

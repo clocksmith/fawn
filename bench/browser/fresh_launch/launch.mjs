@@ -318,6 +318,10 @@ try {
   if (!page_) throw new Error(`unknown page: ${spec.page}`);
   const headless = spec.headless ?? false;
   if (typeof headless !== 'boolean') throw new Error('headless must be a boolean');
+  if (spec.autoCompletion !== undefined && typeof spec.autoCompletion !== 'boolean') throw new Error('autoCompletion must be a boolean');
+  if (spec.particleOracle !== undefined && typeof spec.particleOracle !== 'boolean') throw new Error('particleOracle must be a boolean');
+  if (spec.trace !== undefined && typeof spec.trace !== 'boolean') throw new Error('trace must be a boolean');
+  if (spec.particleOracle && spec.page !== 'heavy_particles') throw new Error('particleOracle requires heavy_particles');
   srv = await serve();
   const artifactStat = statSync(spec.browserPath, { bigint: true });
   beforeBrowserStat = Object.fromEntries(["dev", "ino", "size", "mtimeNs", "ctimeNs"].map(key => [key, String(artifactStat[key])]));
@@ -329,6 +333,12 @@ try {
   const cdp = await browser.newBrowserCDPSession();
   const procInfo = async () => (await cdp.send("SystemInfo.getProcessInfo")).processInfo.map((p) => ({ ...p, type: String(p.type).toLowerCase() }));
   const context = await browser.newContext({ viewport: null });
+  if (spec.autoCompletion === false) await context.addInitScript(() => { globalThis.__benchAutoCompletion = false; });
+  if (spec.particleOracle) {
+    const oraclePath = join(ROOT, 'bench/oracles/particle_step.js');
+    result.particleOracleSourceSha256 = sha256(readFileSync(oraclePath));
+    await context.addInitScript({ path: oraclePath });
+  }
   await context.addInitScript({ path: join(HERE, "observer.js") });
   const page = await context.newPage();
   const consoleErrors = [];
@@ -368,7 +378,13 @@ try {
 
   await sleep(spec.warmupMs);
   let procs0 = await procInfo();
-  const c0 = await page.evaluate(() => ({ n: __bench.completions.length, r: __bench.raf.length, t: performance.now() }));
+  let traceComplete;
+  if (spec.trace) {
+    traceComplete = new Promise(resolve => cdp.once('Tracing.tracingComplete', resolve));
+    await cdp.send('Tracing.start', { categories: 'gpu,cc,viz,benchmark,disabled-by-default-gpu.service', transferMode: 'ReturnAsStream' });
+  }
+  const c0 = await page.evaluate(() => ({ n: __bench.completions.length, r: __bench.raf.length, pageCalls: __bench.pageCompletionCalls, injectedCalls: __bench.injectedCompletionCalls, t: performance.now() }));
+  if (spec.particleOracle) await page.evaluate(() => globalThis.__fawnParticleOracleArm());
   let window_ = {};
 
   if (spec.soakSeconds && spec.soakSeconds > 0) {
@@ -457,11 +473,45 @@ try {
   const w = await page.evaluate((c0) => {
     const B = __bench; const t1 = performance.now();
     return { dtMs: t1 - c0.t, completions: B.completions.slice(c0.n), raf: B.raf.slice(c0.r), errors: B.errors,
+      pageCompletionCalls: B.pageCompletionCalls - c0.pageCalls, injectedCompletionCalls: B.injectedCompletionCalls - c0.injectedCalls,
       submits: B.submits, gctCount: B.gctCount, status: document.querySelector("#status")?.textContent ?? "",
       failureVisible: !!document.querySelector("#failure") && !document.querySelector("#failure").hidden,
       frameText: document.querySelector("#frame")?.textContent ?? "",
       benchResult: globalThis.__fawnBenchResult ?? null };
   }, c0);
+  if (spec.trace) {
+    await cdp.send('Tracing.end');
+    const completed = await traceComplete;
+    if (!completed.stream || completed.dataLossOccurred) throw new Error('trace stream missing or trace data lost');
+    const chunks = [];
+    for (;;) {
+      const part = await cdp.send('IO.read', { handle: completed.stream });
+      chunks.push(part.base64Encoded ? Buffer.from(part.data, 'base64') : Buffer.from(part.data));
+      if (part.eof) break;
+    }
+    await cdp.send('IO.close', { handle: completed.stream });
+    const bytes = Buffer.concat(chunks);
+    const trace = JSON.parse(bytes.toString('utf8'));
+    const path = outPath.replace(/\.json$/, '.trace');
+    if (path === outPath) throw new Error('trace requires a .json receipt path');
+    writeFileSync(path, bytes);
+    const counts = {};
+    const flushCounts = {};
+    const flushSites = new Set(['CommandBuffer::Flush', 'CommandBufferStub::OnAsyncFlush',
+      'GpuChannelMessageFilter::FlushDeferredRequests', 'CommandBufferHelper::Flush',
+      'CommandBufferProxyImpl::Flush', 'GpuChannel::Flush', 'SkiaOutputSurfaceImpl::FlushGpuTasks']);
+    for (const event of trace.traceEvents ?? []) {
+      if (event.ph !== 'B' && event.ph !== 'X') continue;
+      if (/WaitForCommandsToBeScheduled/.test(event.name ?? '')) counts[event.name] = (counts[event.name] ?? 0) + 1;
+      if (flushSites.has(event.name)) flushCounts[event.name] = (flushCounts[event.name] ?? 0) + 1;
+    }
+    result.trace = { path, sha256: sha256(bytes), dataLossOccurred: false, iosurfaceSchedulingEvents: counts, flushEvents: flushCounts,
+      scope: 'trace spans the measurement window; counts cover named instrumented sites only, may overlap, and are not totals for all waits or flushes' };
+  }
+  if (spec.particleOracle) {
+    result.particleSampleOracle = await page.evaluate(() => globalThis.__fawnParticleOracleRead());
+    if (!result.particleSampleOracle?.matched) fail('particle sample oracle', JSON.stringify(result.particleSampleOracle));
+  }
   const byPid0 = Object.fromEntries(procs0.map((p) => [p.id, p]));
   const cpu = {};
   for (const p of procs1) {
@@ -469,13 +519,14 @@ try {
     cpu[p.type] = (cpu[p.type] ?? 0) + d;
   }
   const comps = w.completions;
+  // Texture acquisition is a proxy for submitted canvas work, not visible presentation.
   const presented = comps.filter((c) => c[3] === 1);
   const frames = page_.kind === "imagelab"
     ? window_.opLatencyMs.length
     : (page_.kind === "compute" || page_.kind === "doppler")
       ? window_.ops.length
       : presented.length;
-  result.window = { durationMs: w.dtMs, frames, completions: comps.length, presentedCompletions: presented.length,
+  result.window = { durationMs: w.dtMs, frames, pageCompletionCalls: w.pageCompletionCalls, injectedCompletionCalls: w.injectedCompletionCalls, completions: comps.length, presentedCompletions: presented.length,
     cpuSecondsByType: cpu, gpuCpuMsPerFrame: frames ? (cpu.gpu ?? 0) * 1000 / frames : null,
     rendererCpuMsPerFrame: frames ? (cpu.renderer ?? 0) * 1000 / frames : null,
     browserCpuMsPerFrame: frames ? (cpu.browser ?? 0) * 1000 / frames : null,
@@ -502,6 +553,7 @@ try {
   } else {
     result.oracle = null;
   }
+  result.timingSemantics = { completion: "host submit to queue callback delivery", frameInterval: "callback delivery interval", raf: "requestAnimationFrame cadence", presentation: "not measured", gpuExecution: "not measured", canvasMarker: "texture acquired, not visible presentation" };
   result.pageState = { status: w.status, frameText: w.frameText, failureVisible: w.failureVisible, submits: w.submits, gctCount: w.gctCount };
   result.memory = memorySnapshot(procs1);
   result.processes = procs1.map((p) => ({ type: p.type, id: p.id }));

@@ -263,7 +263,7 @@ def run_process(argv: list[str], timeout: float) -> tuple[int, str, str, int, fl
         return process.returncode, stdout, stderr, wall, sum(ticks) / 1e4
 
 
-def harness_args(inputs: Path, name: str, iterations: int, inflight_depth: int = 1) -> list[str]:
+def harness_args(inputs: Path, name: str, iterations: int, inflight_depth: int = 1, buffer_reuse: str = "shared") -> list[str]:
     row = json.loads((inputs / "manifest.json").read_text())["workloads"][name]
     shader = str(REPO / row["shader"]) if row.get("shader") else "-"
     sets = row["sets"]
@@ -272,12 +272,17 @@ def harness_args(inputs: Path, name: str, iterations: int, inflight_depth: int =
         if sha256(inputs / entry["path"]) != entry["sha256"]:
             raise AssertionError(f"frozen input changed: {entry['path']}")
     argv = [shader, *(str(inputs / entry["path"]) for entry in files), str(iterations)]
+    if buffer_reuse != "shared":
+        return argv + [str(inflight_depth), buffer_reuse]
     return argv + [str(inflight_depth)] if inflight_depth != 1 else argv
 
 
 def run(args: argparse.Namespace) -> None:
     if args.pairs < 1 or args.iterations < args.inflight_depth:
         raise ValueError("pairs must be positive and iterations at least inflight-depth")
+    buffer_reuse = getattr(args, "buffer_reuse", "shared")
+    if buffer_reuse not in ("shared", "independent"):
+        raise ValueError("unsupported buffer reuse mode")
     providers = dict(item.split("=", 1) for item in args.provider)
     if len(providers) != len(args.provider):
         raise ValueError("provider names must be unique")
@@ -289,7 +294,7 @@ def run(args: argparse.Namespace) -> None:
     failures = 0
     with out.open("x") as stream:
         for workload in workloads:
-            argv_tail = harness_args(Path(args.inputs), workload, args.iterations, args.inflight_depth)
+            argv_tail = harness_args(Path(args.inputs), workload, args.iterations, args.inflight_depth, buffer_reuse)
             for pair in range(args.pairs):
                 order = orders[pair % len(orders)]
                 for position, provider in enumerate(order):
@@ -303,9 +308,13 @@ def run(args: argparse.Namespace) -> None:
                         payload = {"status": "failed", "error": "unparseable_stdout"}
                     admission_error = ("inflight_depth_mismatch" if payload.get("status") == "ok"
                                        and payload.get("inflightDepth", 1) != args.inflight_depth else None)
+                    if payload.get("status") == "ok" and payload.get("bufferReuse", "shared") != buffer_reuse:
+                        admission_error = "buffer_reuse_mismatch"
                     if code != 0 or payload.get("status") != "ok" or admission_error:
                         failures += 1
                     measured_workload = workload if args.inflight_depth == 1 else workload + "@inflight2"
+                    if buffer_reuse == "independent":
+                        measured_workload += "@independent"
                     row = {"workload": measured_workload, "pair": pair, "position": position, "order": list(order),
                            "provider": provider, "binary": providers[provider], "returnCode": code,
                            "processWallNs": wall, "childCpuMs": cpu, "stderr": stderr[-2000:], "result": payload,
@@ -380,6 +389,12 @@ def summarize(args: argparse.Namespace) -> None:
         if len(depths) > 1:
             raise ValueError("cannot combine single-flight and pipelined receipts: " + workload)
         depth = next(iter(depths), 1)
+        reuse_modes = {r["result"].get("bufferReuse", "shared") for r in ok if r["workload"] == workload}
+        if reuse_modes - {"shared", "independent"}:
+            raise ValueError("unsupported buffer reuse mode: " + workload)
+        if len(reuse_modes) > 1:
+            raise ValueError("cannot combine buffer reuse modes: " + workload)
+        reuse = next(iter(reuse_modes), "shared")
         by_pair: dict[int, dict[str, dict]] = {}
         for r in ok:
             if r["workload"] == workload:
@@ -392,7 +407,7 @@ def summarize(args: argparse.Namespace) -> None:
         section = {"providers": {}, "paired": {}}
         if depth != 1:
             section.update(inflightDepth=depth, timingScope=(
-                "Two outstanding operations, shared input/output, separate readback slots; "
+                f"Two outstanding operations, {reuse} input/output, separate readback slots; "
                 "inputs alternate per slot. Latency intervals overlap and include intervening host work. "
                 "Pipeline wall metrics include all independent CPU oracle checks."))
         for provider in providers:
@@ -453,6 +468,8 @@ def main() -> None:
     r.add_argument("--iterations", type=int, default=32)
     r.add_argument("--inflight-depth", type=int, choices=(1, 2), default=1,
                    help="outstanding operations; 2 uses separate readbacks and distinct workload/timing scopes")
+    r.add_argument("--buffer-reuse", choices=("shared", "independent"), default="shared",
+                   help="share input/output or allocate one set per in-flight slot")
     r.add_argument("--timeout", type=float, default=120)
     r.add_argument("--out", required=True)
     s = sub.add_parser("summarize")

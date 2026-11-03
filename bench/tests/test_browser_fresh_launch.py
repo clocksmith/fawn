@@ -157,6 +157,58 @@ exports.chromium = {launch: async options => {
             self.assertIn("Cannot combine headed and headless", result.stderr)
             self.assertFalse((directory / "summary.json").exists())
 
+    def test_analysis_rejects_mixed_callback_injection_for_same_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            launches = directory / "launches"
+            launches.mkdir()
+            for rep, injection in enumerate((True, False)):
+                receipt = {"spec": {"page": "heavy_particles", "arm": "fawn_doe", "rep": rep,
+                                    "browserPath": "/fixture/browser", "args": [],
+                                    "autoCompletion": injection}, "ok": True}
+                (launches / f"r{rep}.json").write_text(json.dumps(receipt), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "bench/cli.py"), "browser-analyze", str(directory)],
+                cwd=ROOT, capture_output=True, text=True, timeout=15,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Cannot combine injected and non-injected", result.stderr)
+            self.assertFalse((directory / "summary.json").exists())
+
+    def test_analysis_rejects_mixed_particle_sampling(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            launches = directory / "launches"
+            launches.mkdir()
+            for rep, enabled in enumerate((True, False)):
+                receipt = {"spec": {"page": "heavy_particles", "arm": "fawn_doe", "rep": rep,
+                                    "browserPath": "/fixture/browser", "args": [],
+                                    "particleOracle": enabled}, "ok": True}
+                (launches / f"r{rep}.json").write_text(json.dumps(receipt), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "bench/cli.py"), "browser-analyze", str(directory)],
+                cwd=ROOT, capture_output=True, text=True, timeout=15,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Cannot combine particle oracle instrumentation", result.stderr)
+
+    def test_analysis_rejects_mixed_tracing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            launches = directory / "launches"
+            launches.mkdir()
+            for rep, enabled in enumerate((True, False)):
+                receipt = {"spec": {"page": "heavy_particles", "arm": "fawn_doe", "rep": rep,
+                                    "browserPath": "/fixture/browser", "args": [],
+                                    "trace": enabled}, "ok": True}
+                (launches / f"r{rep}.json").write_text(json.dumps(receipt), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "bench/cli.py"), "browser-analyze", str(directory)],
+                cwd=ROOT, capture_output=True, text=True, timeout=15,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Cannot combine traced and untraced", result.stderr)
+
     def test_headless_cannot_resume_a_headed_schedule(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

@@ -12,7 +12,8 @@
  * selected Metal/D3D12 backend; the adapter must report it. Each iteration's output is
  * checked against an independent CPU oracle after its host-operation interval
  * closes; a mismatch fails the process. Optional depth two permits overlap,
- * with separate readback slots and per-slot alternating inputs. Its wall time
+ * with separate readback slots and per-slot alternating inputs. The optional
+ * independent mode also rotates input/output buffers and their bind groups. Its wall time
  * includes oracle work; overlapping latency intervals must never be summed.
  * Inputs alternate between two frozen
  * sets so a skipped dispatch, clear or copy cannot pass on stale bytes.
@@ -305,8 +306,8 @@ static long max_rss_kib(void)
 int main(int argc, char **argv)
 {
     uint64_t process_start = now_ns();
-    if (argc != 9 && argc != 10) {
-        fprintf(stderr, "usage: %s <shader.wgsl|-> <input0> <input1> <expectA0> <expectB0> <expectA1> <expectB1> <iterations> [inflight-depth:1|2]\n"
+    if (argc < 9 || argc > 11) {
+        fprintf(stderr, "usage: %s <shader.wgsl|-> <input0> <input1> <expectA0> <expectB0> <expectA1> <expectB1> <iterations> [inflight-depth:1|2] [shared|independent]\n"
             "shader '-' selects the copy-only workload (expected = input)\n", argv[0]);
         return 2;
     }
@@ -324,8 +325,10 @@ int main(int argc, char **argv)
     if (bytes % 256) die("input_alignment");
     const long iterations = strtol(argv[8], NULL, 10);
     if (iterations < 1 || iterations > MAX_ITERATIONS) die("iterations");
-    if (argc == 10 && strcmp(argv[9], "1") && strcmp(argv[9], "2")) die("inflight_depth");
-    const int depth = argc == 10 && !strcmp(argv[9], "2") ? 2 : 1;
+    if (argc >= 10 && strcmp(argv[9], "1") && strcmp(argv[9], "2")) die("inflight_depth");
+    const int depth = argc >= 10 && !strcmp(argv[9], "2") ? 2 : 1;
+    if (argc == 11 && strcmp(argv[10], "shared") && strcmp(argv[10], "independent")) die("buffer_reuse");
+    const bool independent = argc == 11 && !strcmp(argv[10], "independent");
     if ((depth != 1 && depth != 2) || iterations < depth) die("inflight_depth");
     size_t shader_size = 0;
     uint8_t *shader = copy_only ? NULL : read_file(argv[1], &shader_size);
@@ -413,8 +416,14 @@ int main(int argc, char **argv)
     WGPUBufferDescriptor buffer_desc = WGPU_BUFFER_DESCRIPTOR_INIT;
     buffer_desc.size = bytes;
     buffer_desc.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
-    WGPUBuffer in_buffer = wgpuDeviceCreateBuffer(s.device, &buffer_desc);
-    WGPUBuffer out_buffer = copy_only ? NULL : wgpuDeviceCreateBuffer(s.device, &buffer_desc);
+    WGPUBuffer in_buffers[2] = {0}, out_buffers[2] = {0};
+    WGPUBindGroup groups[2] = {0};
+    const int resource_slots = independent ? depth : 1;
+    for (int i = 0; i < resource_slots; ++i) {
+        in_buffers[i] = wgpuDeviceCreateBuffer(s.device, &buffer_desc);
+        out_buffers[i] = copy_only ? NULL : wgpuDeviceCreateBuffer(s.device, &buffer_desc);
+        if (!in_buffers[i] || (!copy_only && !out_buffers[i])) die("buffers");
+    }
     buffer_desc.usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst;
     struct flight {
         WGPUBuffer readback;
@@ -427,8 +436,6 @@ int main(int argc, char **argv)
         flights[i].callback.instance = s.instance;
         if (!flights[i].readback) die("readback_buffer");
     }
-    if (!in_buffer || (!copy_only && !out_buffer)) die("buffers");
-    WGPUBindGroup group = NULL;
     WGPUBuffer params = NULL;
     const uint32_t elements = (uint32_t)(bytes / 4);
     if (!copy_only) {
@@ -439,18 +446,20 @@ int main(int argc, char **argv)
         const uint32_t words[4] = {elements, 0, 0, 0};
         wgpuQueueWriteBuffer(queue, params, 0, words, sizeof(words));
         WGPUBindGroupLayout layout = wgpuComputePipelineGetBindGroupLayout(pipeline, 0);
-        WGPUBindGroupEntry entries[3] = {
-            {.binding = 0, .buffer = params, .offset = 0, .size = 16},
-            {.binding = 1, .buffer = in_buffer, .offset = 0, .size = bytes},
-            {.binding = 2, .buffer = out_buffer, .offset = 0, .size = bytes},
-        };
-        WGPUBindGroupDescriptor group_desc = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
-        group_desc.layout = layout;
-        group_desc.entryCount = 3;
-        group_desc.entries = entries;
-        group = wgpuDeviceCreateBindGroup(s.device, &group_desc);
+        for (int i = 0; i < resource_slots; ++i) {
+            WGPUBindGroupEntry entries[3] = {
+                {.binding = 0, .buffer = params, .offset = 0, .size = 16},
+                {.binding = 1, .buffer = in_buffers[i], .offset = 0, .size = bytes},
+                {.binding = 2, .buffer = out_buffers[i], .offset = 0, .size = bytes},
+            };
+            WGPUBindGroupDescriptor group_desc = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+            group_desc.layout = layout;
+            group_desc.entryCount = 3;
+            group_desc.entries = entries;
+            groups[i] = wgpuDeviceCreateBindGroup(s.device, &group_desc);
+            if (!groups[i]) die("bind_group");
+        }
         wgpuBindGroupLayoutRelease(layout);
-        if (!group) die("bind_group");
     }
     uint64_t t_resources = now_ns();
 
@@ -458,6 +467,9 @@ int main(int argc, char **argv)
         if (step < iterations) {
             const long it = step;
             struct flight *flight = &flights[it % depth];
+            const int slot = independent ? (int)(it % depth) : 0;
+            WGPUBuffer in_buffer = in_buffers[slot], out_buffer = out_buffers[slot];
+            WGPUBindGroup group = groups[slot];
             /* Alternate each slot's input, so stale readback from that slot fails.
              * At depth two the sequence is A,A,B,B, rather than permanently A/B. */
             const int set = (int)((it / depth) & 1);
@@ -548,10 +560,12 @@ int main(int argc, char **argv)
     uint64_t t_loop = now_ns();
 
     /* Teardown with explicit device destruction. */
-    if (group) wgpuBindGroupRelease(group);
+    for (int i = 0; i < resource_slots; ++i) {
+        if (groups[i]) wgpuBindGroupRelease(groups[i]);
+        if (out_buffers[i]) wgpuBufferRelease(out_buffers[i]);
+        wgpuBufferRelease(in_buffers[i]);
+    }
     if (params) wgpuBufferRelease(params);
-    if (out_buffer) wgpuBufferRelease(out_buffer);
-    wgpuBufferRelease(in_buffer);
     for (int i = 0; i < depth; ++i) wgpuBufferRelease(flights[i].readback);
     if (pipeline) wgpuComputePipelineRelease(pipeline);
     if (module) wgpuShaderModuleRelease(module);
@@ -564,7 +578,7 @@ int main(int argc, char **argv)
     const long rss_kib = max_rss_kib();
 
     printf("{\"status\":\"ok\",");
-    printf("\"inflightDepth\":%d,", depth);
+    printf("\"inflightDepth\":%d,\"bufferReuse\":\"%s\",", depth, independent ? "independent" : "shared");
     print_json_string("adapterVendor", info.vendor);
     print_json_string("adapterArchitecture", info.architecture);
     print_json_string("adapterDevice", info.device);
