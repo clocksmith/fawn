@@ -69,6 +69,14 @@ def invoke(command: list[str], directory: Path) -> None:
     subprocess.run(command, cwd=directory, check=True, timeout=240)
 
 
+def invoke_link(command: list[str], directory: Path, response_name: str = 'native-link.rsp') -> None:
+    """Keep the object list out of CreateProcess's bounded command line."""
+    response = directory / response_name
+    response.write_text(subprocess.list2cmdline(command[1:]) + '\n', encoding='utf-8')
+    print('Expanded link: ' + subprocess.list2cmdline(command), flush=True)
+    invoke([command[0], '@' + str(response)], directory)
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -104,9 +112,10 @@ def build_signal_control(compiler: str, strict: list[str], sources: list[Path], 
     fixture = out / 'd3d12_async_signal.exe'
     invoke(strict + ['/DDOE_TEST_SIGNAL_FAULT=1', '/c', str(source),
                      '/Fo' + str(fixture_object)], out)
-    invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', str(fixture_object),
+    invoke_link([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', str(fixture_object),
             *map(str, retained), str(fault_object), '/Fe' + str(fixture), '/link',
-            str(compiler_imports), 'kernel32.lib', 'user32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'], out)
+            str(compiler_imports), 'kernel32.lib', 'user32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib'],
+            out, 'signal-fault-link.rsp')
     return fixture
 
 
@@ -192,7 +201,7 @@ def main() -> int:
     objects.append(shader_object)
     library = out / 'webgpu_doe_c.dll'
     imports = out / 'webgpu_doe_c.lib'
-    invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/LD',
+    invoke_link([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/LD',
             *map(str, objects), '/Fe' + str(library), '/link', str(compiler_imports),
             'kernel32.lib', 'user32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib',
             '/def:' + str(export_file), '/implib:' + str(imports)], out)
