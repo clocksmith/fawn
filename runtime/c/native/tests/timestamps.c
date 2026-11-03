@@ -167,6 +167,9 @@ static void actual_queries(state *s)
     wgpuQuerySetRelease(set);
     wgpuBufferRelease(output);
     submit(s,encoder);
+    /* QueueSubmit is asynchronous. Mapping the produced bytes observes that
+     * submission before the independent private query owner is borrowed. */
+    const uint64_t *values = map(s,readback,56);
     uint64_t raw[4];
     if (metal) {
         read_raw_metal(device, raw_query.metal_timestamps, raw);
@@ -178,7 +181,6 @@ static void actual_queries(state *s)
     float period = metal ? device->backend.value.metal.caps.timestamp_period_ns :
         device->backend.value.vulkan.caps.timestamp_period_ns;
     uint32_t valid_bits = metal ? 64 : device->backend.value.vulkan.caps.timestamp_valid_bits;
-    const uint64_t *values = map(s,readback,56);
     for (size_t i = 0; i < 4; ++i)
         assert(values[i] == expected_ns(raw[i],period,valid_bits));
     assert(raw[0] && raw[1] && raw[2] && !raw[3]);

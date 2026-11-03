@@ -1,0 +1,156 @@
+{
+  "reportedAt": "2026-11-02T23:33:59.462649Z",
+  "contractFrozenAt": "2026-11-02T23:10:40.873792Z",
+  "contractSha256": "44e85d37b79bc59f24eabab9019b8aee2a0214013cc42361a2db1c8020adc79d",
+  "runtimeCommit": "c4fba1230decc1e13b153c8297d323a7077e116e",
+  "scope": "No complete matched-performance claim:192 timedprocesses pass6144fulloracles; vectorwindowvalid,imagewindowinvalidCPU6.058%>5%,copyunrun. Runtimefix/SDK/4WARP/physicalcontrolsPASS. Rawobservervalidated; no timedretries.",
+  "workloads": {
+    "vector_scale_add_262k": [
+      {
+        "path": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/raw-observer-20261102T230148Z/retained/main-vector_scale_add_262k",
+        "processes": 96,
+        "rawSha256": "5906be4c9f379a85055464b94d42506483296f7c2bc604d1caff37a0eaf763b3",
+        "hostWindow": {
+          "wallS": 27.67199999996228,
+          "logicalCpus": 16,
+          "systemBusyMs": 37015.625,
+          "windowTreeCpuMs": 17656.25,
+          "harnessChildCpuMs": 17000.0,
+          "foreignCpuPct": 4.372509892677252,
+          "gpuSamples": 27,
+          "foreignGpuCoverage": 1.0,
+          "foreignGpuPct": 0.0,
+          "harnessGpuPct": null,
+          "systemGpuPct": 5.484844190943506,
+          "preWindow": {
+            "wallS": 15,
+            "gpuSamples": 14,
+            "allGpuCoverage": 1.0,
+            "allGpuPct": 0.0,
+            "foreignCpuPct": 0.10416666666666667
+          },
+          "failedProcesses": 0,
+          "cohortReturnCode": 0,
+          "processes": 96,
+          "samplingErrors": [],
+          "identityTrackerErrors": [],
+          "missingInstances": 636,
+          "foreignMissingInstances": 0,
+          "gateValid": true
+        },
+        "preWindow": {
+          "wallS": 15,
+          "gpuSamples": 14,
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 0.10416666666666667
+        }
+      }
+    ],
+    "image_rgba_invert_1024": [
+      {
+        "path": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/raw-observer-20261102T230148Z/retained/main-image_rgba_invert_1024-admission2",
+        "processes": 96,
+        "rawSha256": "3bf90a13104b880c047fbc021449a9a635bd6e65949e80c895c34198824e9bff",
+        "hostWindow": {
+          "wallS": 36.71899999998277,
+          "logicalCpus": 16,
+          "systemBusyMs": 56843.75,
+          "windowTreeCpuMs": 21250.0,
+          "harnessChildCpuMs": 20359.375,
+          "foreignCpuPct": 6.058469389147428,
+          "gpuSamples": 36,
+          "foreignGpuCoverage": 1.0,
+          "foreignGpuPct": 0.0,
+          "harnessGpuPct": null,
+          "systemGpuPct": 8.079592605144475,
+          "preWindow": {
+            "wallS": 15,
+            "gpuSamples": 14,
+            "allGpuCoverage": 1.0,
+            "allGpuPct": 0.0,
+            "foreignCpuPct": 4.694010416666667
+          },
+          "failedProcesses": 0,
+          "cohortReturnCode": 0,
+          "processes": 96,
+          "samplingErrors": [],
+          "identityTrackerErrors": [],
+          "missingInstances": 1016,
+          "foreignMissingInstances": 0,
+          "gateValid": false
+        },
+        "preWindow": {
+          "wallS": 15,
+          "gpuSamples": 14,
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 4.694010416666667
+        }
+      },
+      {
+        "path": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/raw-observer-20261102T230148Z/retained/main-image_rgba_invert_1024",
+        "processes": 0,
+        "rawSha256": null,
+        "hostWindow": null,
+        "preWindow": {
+          "wallS": 15,
+          "gpuSamples": 14,
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 7.8125
+        }
+      }
+    ],
+    "buffer_upload_readback_exact_1mb": []
+  },
+  "cpuProbe": {
+    "elapsedSeconds": 5.0360501,
+    "logicalCpus": 16,
+    "processes": [
+      {
+        "pid": 15092,
+        "name": "ChatGPT",
+        "cpuSeconds": 3.4375,
+        "hostPercent": 4.266116216754873
+      },
+      {
+        "pid": 4764,
+        "name": "powershell",
+        "cpuSeconds": 0.0625,
+        "hostPercent": 0.07756574939554314
+      },
+      {
+        "pid": 4,
+        "name": "System",
+        "cpuSeconds": 0.03125,
+        "hostPercent": 0.03878287469777157
+      },
+      {
+        "pid": 8960,
+        "name": "vmmemWSL",
+        "cpuSeconds": 0.015625,
+        "hostPercent": 0.019391437348885786
+      },
+      {
+        "pid": 14576,
+        "name": "ChatGPT",
+        "cpuSeconds": 0.015625,
+        "hostPercent": 0.019391437348885786
+      },
+      {
+        "pid": 4216,
+        "name": "MsMpEng",
+        "cpuSeconds": 0.015625,
+        "hostPercent": 0.019391437348885786
+      }
+    ]
+  },
+  "causalReceipt": "/tmp/fawn-pending-serial-local-20261102/receipt.json",
+  "original50Complete": "/tmp/fawn-win-cohort-50cf8feb84-20261102T202125Z/phase50-handoff.json",
+  "earlierC4Partial": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/partial-handoff.json",
+  "SDK": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/sdk-receipt.json",
+  "longLink": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/link-control-20261102T233051Z/receipt.json",
+  "noUserAppsStopped": true,
+  "noGlobalTimerChange": true
+}

@@ -10,6 +10,30 @@ from bench.inventory import model as reports
 from bench.inventory.sources import Source, metric, phase_unit, assign_machine
 
 
+def apply_window_receipt(row: dict[str, Any], source: Source) -> None:
+    """Keep successful GPU execution separate from a rejected timing window."""
+    role = "window:" + row["workloadId"]
+    reference = source.reference(role)
+    if reference is None:
+        return
+    window = source.data(role)
+    valid = window.get("gateValid", window.get("valid")) if isinstance(window, dict) else None
+    evidence = reference["path"]
+    row["acceptance"] = {
+        "status": "passed" if valid is True else "failed" if valid is False else "unknown",
+        "evidence": evidence,
+    }
+    if valid is not True:
+        row["verdict"] = "incomparable"
+        for observed in row["metrics"]:
+            observed["outcome"] = "incomparable"
+    if valid is False:
+        row["limitations"].append("Host timing-window gate rejected this measurement: " + str(evidence))
+    elif valid is None:
+        row["limitations"].append("Host timing-window verdict unavailable: " + str(evidence))
+    row["limitations"].append("Host-window acceptance alone does not qualify performance.")
+
+
 def bind_phase(
     row: dict[str, Any], source: Source, provider: str, control: str
 ) -> None:
@@ -211,4 +235,5 @@ def phase_cohort(source: Source) -> list[dict[str, Any]]:
                 row["correctness"] = {"status": "passed", "evidence": ", ".join(
                     sorted({record["rawEvidence"] for record in selected}))
                     + "#all selected workload/provider oracleChecked equals iterations"}
+        apply_window_receipt(row, source)
     return rows

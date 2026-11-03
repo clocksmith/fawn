@@ -79,6 +79,14 @@ their existing input-hash checks. Changed artifacts lose their binding. Unknown 
 with reasons. Provenance grants no correctness, fallback or qualification status.
 Historical formats without this discriminator remain untouched.
 
+Phase registrations can bind a retained host-admission receipt with provenance
+role `window:<workloadId>`. The adapter reads its explicit `gateValid` (or `valid`)
+verdict without duplicating gate thresholds. A failed or unavailable verdict
+prevents comparison while preserving execution status, correctness, raw metrics
+and dates. A passing host window alone grants no qualification. Separate observer
+epochs remain separate registrations; rejected admissions and unrun workloads
+must stay explicit in their campaign evidence.
+
 Focused dashboard UI control (installed Chrome, synthetic data only):
 
 ```sh

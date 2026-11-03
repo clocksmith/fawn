@@ -1,0 +1,108 @@
+{
+  "scope": "C4 committed runtime fix; canonical Windows build and bounded correctness controls pass. Matched measurement incomplete; invalid image observer window is not accepted.",
+  "source_commit": "c4fba1230decc1e13b153c8297d323a7077e116e",
+  "native_DLL_sha256": "921b6d61505c2d92c0c768ce9250d30ad25756f8b1f6fa758268e82fcbc02555",
+  "SDK_receipt": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/sdk-receipt.json",
+  "canonical_SDK_scope": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/retained-sdk/native-scope.json",
+  "WARP_controls": {
+    "d3d12_shared_memory_windows": {
+      "returncode": 0,
+      "exe_sha256": "7da1435ef85d499822198cff3d3f11b5f6425c5363861804707a2b9044b58871",
+      "CPU_WARP_actual_type3": true
+    },
+    "d3d12_upload_mapping_windows": {
+      "returncode": 0,
+      "exe_sha256": "4e42fe32e22fc8e308996ac8793e8c4e8ca50b4d911d6c86b16d4a54fed4a1ab",
+      "CPU_WARP_actual_type3": true
+    },
+    "async_completion": {
+      "returncode": 0,
+      "exe_sha256": "5589690cd125f321e56c31ba10c4cd558bca0aac9fdd959933bb4e8d43154eb7",
+      "CPU_WARP_actual_type3": true
+    },
+    "d3d12_async_signal": {
+      "returncode": 0,
+      "exe_sha256": "bc71822b560a1477aa598977325b412adb081b629ee156def7ab2121747ca7dd",
+      "CPU_WARP_actual_type3": true
+    }
+  },
+  "physical_control": "/tmp/fawn-win-c4fba1230d-20261102T223258Z/host-window-20261102T224238Z/retained/physical-write-order/cohort.log",
+  "contract_sha256": "812416bf142e42d776578c0fb9b8d797dc7c0bb333e91e8bdd11689e220d62e3",
+  "main_workloads": {
+    "vector_scale_add_262k": {
+      "timed_processes": 96,
+      "raw_sha256": "faa27dc5b930dc167eaf56760b76f864d5587a0e5af1c2614101ccbb129b54a1",
+      "host_window": {
+        "wallS": 28.98499999998603,
+        "logicalCpus": 16,
+        "systemBusyMs": 28671.875,
+        "windowTreeCpuMs": 17718.75,
+        "harnessChildCpuMs": 17171.875,
+        "foreignCpuPct": 2.3618089097820594,
+        "gpuSamples": 28,
+        "foreignGpuCoverage": 1.0,
+        "foreignGpuPct": 0.0,
+        "harnessGpuPct": null,
+        "systemGpuPct": 5.22533337752801,
+        "preWindow": {
+          "wallS": 15,
+          "gpuSamples": 14,
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 0.13020833333333334
+        },
+        "failedProcesses": 0,
+        "cohortReturnCode": 0,
+        "processes": 96,
+        "samplingErrors": [],
+        "identityTrackerErrors": [],
+        "missingInstances": 294,
+        "foreignMissingInstances": 0,
+        "gateValid": true
+      }
+    },
+    "image_rgba_invert_1024": {
+      "timed_processes": 96,
+      "raw_sha256": "da4700925718c8b2e9b38c39c90f27b637e16197048cd13796a25ccb7569ac84",
+      "host_window": {
+        "wallS": 34.93800000002375,
+        "logicalCpus": 16,
+        "systemBusyMs": 32734.375,
+        "windowTreeCpuMs": 19406.25,
+        "harnessChildCpuMs": 19187.5,
+        "foreignCpuPct": 2.3842458426339053,
+        "gpuSamples": 11,
+        "foreignGpuCoverage": 1.0,
+        "foreignGpuPct": 0.0,
+        "harnessGpuPct": null,
+        "systemGpuPct": 7.418919813003478,
+        "preWindow": {
+          "wallS": 15,
+          "gpuSamples": 14,
+          "allGpuCoverage": 1.0,
+          "allGpuPct": 0.0,
+          "foreignCpuPct": 0.22135416666666666
+        },
+        "failedProcesses": 0,
+        "cohortReturnCode": 0,
+        "processes": 96,
+        "samplingErrors": [
+          "RuntimeError('PdhGetFormattedCounterArrayW: 0xc0000bba')"
+        ],
+        "identityTrackerErrors": [],
+        "missingInstances": 143,
+        "foreignMissingInstances": 0,
+        "gateValid": false
+      }
+    },
+    "buffer_upload_readback_exact_1mb": {
+      "timed_processes": 0,
+      "raw_sha256": null,
+      "host_window": null
+    }
+  },
+  "source50_baseline_complete_handoff": "/tmp/fawn-win-cohort-50cf8feb84-20261102T202125Z/phase50-handoff.json",
+  "runtime_fix_causal_receipt": "/tmp/fawn-pending-serial-local-20261102/receipt.json",
+  "no_user_apps_stopped": true,
+  "no_global_timer_changes": true
+}

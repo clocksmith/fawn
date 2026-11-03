@@ -4,7 +4,7 @@
 
 [All families](../CURRENT.md) · [Complete execution records](../index.json)
 
-297 observations; 288 individual executions.
+693 observations; 672 individual executions.
 
 All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
 
@@ -482,6 +482,483 @@ Limitations:
 - machine.driver is unknown.
 - reportedAt is unknown; no receipt value was retained.
 
+<a id="row-2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9"></a>
+
+## image_rgba_invert_1024
+
+Observation: `2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9`; execution: `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/dawn-aa/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T22:49:02.153960Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9`; latest qualified: `None`; verdict: incomparable.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.72215 / 0.71635 | ms | 1.0106 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997239094422969, 1.0165707063614662], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| complete | 55.534 / 55.27 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9958784816858338, 1.0086038743671493], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| cpuMs | 195.31 / 203.12 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.875, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.completion | 0.64485 / 0.6523 | ms | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.958148091369002, 1.0238780694326841], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.encode | 0.0481 / 0.04845 | ms | 0.99373 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9834710743801653, 1.0103305785123966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.map | 0.5197 / 0.52315 | ms | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9565876777251187, 1.0206883217324054], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.operation | 2.3861 / 2.3873 | ms | 0.99643 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9902205522507019, 1.003783392409919], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.submit | 0.28955 / 0.29125 | ms | 0.99504 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9438822447102116, 1.0339381478035288], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.upload | 0.8635 / 0.8717 | ms | 0.98682 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9817780995911507, 1.0074695472305217], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| maxRssMiB | 109.04 / 109.06 | MiB | 0.99989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997851079832384, 1.0001790766806347], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| pipelineNs | 2.7839 / 2.781 | ms | 1.0042 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9911827956989248, 1.0124170413187754], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processInMainNs | 230.13 / 228.87 | ms | 0.99907 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9901554380559008, 1.005711325977889], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processWall | 266 / 266 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9962406015037594, 1.001779359430605], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| resourcesNs | 3.6845 / 3.6754 | ms | 1.0074 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938959587977219, 1.0342839805825241], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupAdapterNs | 151.63 / 150.83 | ms | 0.99868 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9878454069707421, 1.013125644332033], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupDeviceNs | 7.0283 / 7.0171 | ms | 1.0034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9953932490158304, 1.0245279146141215], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupInstanceNs | 0.0563 / 0.0576 | ms | 0.96534 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9118589743589743, 0.9897610921501707], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupNs | 158.8 / 158.01 | ms | 0.99847 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9905501185436653, 1.0122456876075863], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownDeviceNs | 3.1514 / 3.1505 | ms | 0.99553 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9807704928791756, 1.029185119348944], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownNs | 3.213 / 3.2158 | ms | 0.99554 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9813366798597034, 1.0285270115638012], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownReleaseNs | 0.05985 / 0.0596 | ms | 1.0092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9682804674457429, 1.038938053097345], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.completion | 0.69655 / 0.6953 | ms | 1.0022 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9879398410896709, 1.023728813559322], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.encode | 0.00785 / 0.0079 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.975, 1.0129870129870129], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.map | 0.22465 / 0.22305 | ms | 1.002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9946260635915808, 1.0125673249551166], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.operation | 1.314 / 1.3125 | ms | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9983244478293983, 1.0081170345102919], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.submit | 0.04875 / 0.04925 | ms | 0.98881 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9792099792099793, 0.9959919839679359], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.upload | 0.341 / 0.34225 | ms | 0.99738 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9830310122878877, 1.0029205607476634], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.completion | 0.7155 / 0.7131 | ms | 0.99958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9819694868238558, 1.0189025250387926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.encode | 0.00985 / 0.01025 | ms | 0.94719 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8918918918918919, 1.0329670329670328], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.map | 0.2374 / 0.24075 | ms | 0.99502 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9647773279352228, 1.0136533225249944], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.operation | 1.7833 / 1.7807 | ms | 0.99911 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9894524236983843, 1.0180760323109077], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.submit | 0.0604 / 0.0617 | ms | 0.94512 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9156626506024096, 1.0137614678899083], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.upload | 0.8674 / 0.86365 | ms | 1.0002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9950266018968308, 1.0151933701657458], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
+- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+
+<a id="row-ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639"></a>
+
+## image_rgba_invert_1024
+
+Observation: `ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639`; execution: `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/previous/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T22:49:02.153960Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639`; latest qualified: `None`; verdict: incomparable.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.1201 / 0.71635 | ms | 0.16955 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16285554935861685, 0.17384658143413007], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| complete | 155.54 / 55.27 | ms | 2.8228 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.384061593297328, 9.618759065854364], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| cpuMs | 195.31 / 203.12 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.875, 1.0833333333333333], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.completion | 0.97645 / 0.6523 | ms | 1.4979 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.484862527031202, 1.5362181011253764], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.encode | 0.00685 / 0.04845 | ms | 0.14034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13827655310621242, 0.16700201207243462], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.map | 0.50005 / 0.52315 | ms | 0.96339 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9561836115326252, 0.9797665369649806], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.operation | 3.3372 / 2.3873 | ms | 1.3981 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3871955417191064, 1.4142201834862385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.submit | 0.82735 / 0.29125 | ms | 2.7637 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.529898804047838, 2.8470948012232413], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.upload | 1.0288 / 0.8717 | ms | 1.1773 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1447457627118642, 1.2095677233429394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| maxRssMiB | 94.518 / 109.06 | MiB | 0.86674 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8666236882633144, 0.8668339007346354], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| pipelineNs | 2.5588 / 2.781 | ms | 0.91818 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071862522288501, 0.9381190832998283], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processInMainNs | 322.7 / 228.87 | ms | 1.4048 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2814396732410671, 3.0723362915055743], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processWall | 344 / 266 | ms | 1.3026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2241992882562278, 2.7593984962406015], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| resourcesNs | 4.7198 / 3.6754 | ms | 1.2737 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.232999216491503, 1.3340501386452381], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupAdapterNs | 144.94 / 150.83 | ms | 0.95724 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.943054085897063, 0.9681415349617098], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupDeviceNs | 5.0836 / 7.0171 | ms | 0.725 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6982773471145565, 0.7444197408068338], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupInstanceNs | 0.00915 / 0.0576 | ms | 0.15921 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.15664556962025317, 0.17157712305026], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupNs | 149.84 / 158.01 | ms | 0.94543 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9328187760401037, 0.9555842795820233], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownDeviceNs | 2.38 / 3.1505 | ms | 0.74783 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7255580511089555, 0.7685008337122934], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownNs | 2.8554 / 3.2158 | ms | 0.89177 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8663953777335984, 1.0256462565208522], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownReleaseNs | 0.4857 / 0.0596 | ms | 8.112 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.6926994906621395, 16.78298611111111], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.completion | 0.9784 / 0.6953 | ms | 1.4378 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.385977541030809, 18.54822043628014], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.encode | 0.0048 / 0.0079 | ms | 0.62921 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5569620253164557, 0.9625], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.map | 0.22665 / 0.22305 | ms | 1.0245 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0044822949350067, 1.8189924208649129], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.operation | 2.3568 / 1.3125 | ms | 1.7965 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7654988575780655, 11.886470856795007], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.submit | 0.4767 / 0.04925 | ms | 9.8871 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.679752066115704, 12.173745173745175], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.upload | 0.66795 / 0.34225 | ms | 1.9912 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9048983099398453, 3.4120927502201353], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.completion | 18.138 / 0.7131 | ms | 24.989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [16.212058498896248, 37.53474191718661], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.encode | 0.00915 / 0.01025 | ms | 0.85926 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6161616161616161, 1.1777777777777778], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.map | 0.42075 / 0.24075 | ms | 1.7694 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1223958333333333, 1.9011466982997232], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.operation | 19.782 / 1.7807 | ms | 11.21 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.502683161046151, 16.910441880101324], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.submit | 0.6673 / 0.0617 | ms | 10.464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.947546531302878, 13.736577181208053], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.upload | 1.3253 / 0.86365 | ms | 1.5447 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1378623438704887, 1.9626230233329647], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
+- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+
+<a id="row-fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52"></a>
+
+## image_rgba_invert_1024
+
+Observation: `fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52`; execution: `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/doe/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T22:49:02.153960Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52`; latest qualified: `None`; verdict: incomparable.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.11455 / 0.71635 | ms | 0.15995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.15732065445392254, 0.1646037843220942], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| complete | 85.18 / 55.27 | ms | 1.535 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5179333137380009, 1.5486081440230577], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| cpuMs | 203.12 / 203.12 | ms | 0.93095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.completion | 0.9774 / 0.6523 | ms | 1.5064 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4959461526694204, 1.5444270015698587], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.encode | 0.0069 / 0.04845 | ms | 0.14192 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13097713097713098, 0.1637154861944778], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.map | 0.50645 / 0.52315 | ms | 0.96865 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9532137149406626, 0.9938128383604022], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.operation | 3.3321 / 2.3873 | ms | 1.3988 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3788116684571525, 1.40888297429926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.submit | 0.7972 / 0.29125 | ms | 2.714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.498926709598283, 2.848792439621981], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.upload | 1.0248 / 0.8717 | ms | 1.1679 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1374621964583747, 1.1994202898550723], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| maxRssMiB | 94.514 / 109.06 | MiB | 0.86671 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.866575901974132, 0.8668434442971298], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| pipelineNs | 2.5469 / 2.781 | ms | 0.919 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9058326965760652, 0.9323300073773007], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processInMainNs | 251.59 / 228.87 | ms | 1.094 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0868399930370636, 1.0996293234603514], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processWall | 281 / 266 | ms | 1.0567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0299748481524096, 1.060377358490566], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| resourcesNs | 4.6582 / 3.6754 | ms | 1.2581 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2368255407004558, 1.3021637034552165], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupAdapterNs | 144.97 / 150.83 | ms | 0.96003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9512596418414787, 0.9649575135085684], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupDeviceNs | 5.1596 / 7.0171 | ms | 0.739 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7273571959517412, 0.743444686448109], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupInstanceNs | 0.0097 / 0.0576 | ms | 0.1812 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1689922480620155, 0.18410852713178294], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupNs | 150.06 / 158.01 | ms | 0.95139 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9409243211617263, 0.9544213005866166], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownDeviceNs | 2.3652 / 3.1505 | ms | 0.74002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7321652974179523, 0.7577835906596913], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownNs | 2.8173 / 3.2158 | ms | 0.8744 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.863649603240044, 0.8849655585504642], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownReleaseNs | 0.46555 / 0.0596 | ms | 7.8166 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.609514006323065, 8.345486111111112], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.completion | 0.9344 / 0.6953 | ms | 1.3463 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.324756505306004, 1.361580303464071], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.encode | 0.00405 / 0.0079 | ms | 0.51266 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5, 0.5249999999999999], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.map | 0.22475 / 0.22305 | ms | 1.0034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9991071428571427, 1.0117011701170118], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.operation | 2.288 / 1.3125 | ms | 1.7378 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7288509860656365, 1.7559446440859394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.submit | 0.4668 / 0.04925 | ms | 9.4597 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.367139959432048, 9.594594594594597], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.upload | 0.6459 / 0.34225 | ms | 1.8887 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8651094890510949, 1.8999710060887214], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.completion | 0.9874 / 0.7131 | ms | 1.3741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3541666666666667, 1.3949852091843922], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.encode | 0.00505 / 0.01025 | ms | 0.48478 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.41904761904761906, 0.5436893203883495], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.map | 0.2433 / 0.24075 | ms | 1.0103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9870354364736387, 1.057316543638732], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.operation | 2.4011 / 1.7807 | ms | 1.3433 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3193212067435671, 1.3572441168131555], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.submit | 0.50465 / 0.0617 | ms | 8.0413 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.6943231441048034, 8.763016157989227], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.upload | 0.6947 / 0.86365 | ms | 0.80271 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7936600092893638, 0.8081651588958478], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
+- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+
+<a id="row-0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4"></a>
+
+## image_rgba_invert_1024
+
+Observation: `0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4`; execution: `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/previous/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4`; latest qualified: `None`; verdict: incomparable.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12765 / 0.74275 | ms | 0.16905 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16444383335624915, 0.17744610281923712], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| complete | 384.8 / 56.492 | ms | 6.786 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.9760108732585797, 8.854017467719181], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| cpuMs | 187.5 / 218.75 | ms | 0.85714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7777777777777778, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.completion | 0.981 / 0.63085 | ms | 1.5395 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5062794348508635, 1.7202064435408198], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.encode | 0.0095 / 0.0503 | ms | 0.19614 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14853556485355648, 0.21941747572815534], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.map | 0.52345 / 0.53045 | ms | 0.97276 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9397896264055132, 0.99680316397449], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.operation | 3.3763 / 2.4312 | ms | 1.3652 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3521016004219981, 1.3975259814027854], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.submit | 0.7942 / 0.31725 | ms | 2.3856 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.004548900682335, 2.6119896708760635], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.upload | 1.0207 / 0.88535 | ms | 1.144 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.113585496866607, 1.1798695246971107], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| maxRssMiB | 94.51 / 109.06 | MiB | 0.86667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8665138928673732, 0.8668147299039977], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| pipelineNs | 2.6237 / 2.8475 | ms | 0.92403 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9001867538184486, 0.9431090027259532], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processInMainNs | 560.55 / 234.94 | ms | 2.3457 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4377729589228505, 2.896737232099568], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processWall | 601.5 / 281 | ms | 2.1658 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3533834586466165, 2.5757575757575757], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| resourcesNs | 4.9305 / 4.0167 | ms | 1.2404 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1718400077058297, 1.2614984311624702], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupAdapterNs | 148.93 / 155.15 | ms | 0.95899 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9467695485559625, 0.9679368887149672], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupDeviceNs | 5.6178 / 7.4157 | ms | 0.76643 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.739590619533198, 0.7893988255340723], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupInstanceNs | 0.00935 / 0.0574 | ms | 0.16346 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14834205933682376, 0.1675213675213675], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupNs | 154.29 / 162.36 | ms | 0.9505 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.94123832498299, 0.9571446892585711], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownDeviceNs | 2.4156 / 3.2746 | ms | 0.75061 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6883706325645125, 0.7685266643157361], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownNs | 3.0556 / 3.3315 | ms | 0.91624 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8327477938532186, 0.9660527266161069], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownReleaseNs | 0.6856 / 0.06 | ms | 10.676 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.173451327433629, 15.038269550748753], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.completion | 6.7718 / 0.69645 | ms | 9.7396 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3571120998995263, 18.795735294117645], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.encode | 0.0065 / 0.0081 | ms | 0.7619 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6348528015194681, 0.9950454840805718], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.map | 0.26905 / 0.22735 | ms | 1.069 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0187363834422658, 1.3044240035041612], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.operation | 8.8858 / 1.3289 | ms | 6.3548 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7638160395286966, 11.496246303177372], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.submit | 0.54265 / 0.0499 | ms | 10.379 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.59634888438134, 12.028571428571428], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.upload | 0.9199 / 0.34745 | ms | 2.5492 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9450142450142451, 3.2433110367892977], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.completion | 24.281 / 0.7307 | ms | 32.885 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [25.382648535968, 35.16173150975966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.encode | 0.0105 / 0.0109 | ms | 0.85753 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7211538461538461, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.map | 0.35035 / 0.2479 | ms | 1.4103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1761244220260614, 1.760285474391268], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.operation | 26.219 / 1.8319 | ms | 13.567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [11.13534975723779, 15.154186998709967], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.submit | 0.76735 / 0.06165 | ms | 11.735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.338103756708408, 13.443768996960488], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.upload | 1.3437 / 0.90235 | ms | 1.4232 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2633207287727741, 1.6998895027624308], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
+- machine.driver is unknown.
+
+<a id="row-9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471"></a>
+
+## image_rgba_invert_1024
+
+Observation: `9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471`; execution: `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/doe/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471`; latest qualified: `None`; verdict: incomparable.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12835 / 0.74275 | ms | 0.17257 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16493032066026247, 0.1761789924973205], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| complete | 85.608 / 56.492 | ms | 1.5135 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4971661645917198, 1.5244421075974948], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| cpuMs | 218.75 / 218.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8571428571428571, 1.0714285714285714], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.completion | 0.96485 / 0.63085 | ms | 1.5227 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.502152766703875, 1.6304914047577705], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.encode | 0.0077 / 0.0503 | ms | 0.14971 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13347921225382933, 6.2007648183556405], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.map | 0.51795 / 0.53045 | ms | 0.97819 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9425793432397725, 1.005129179331307], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.operation | 3.3514 / 2.4312 | ms | 1.382 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3520376817530206, 1.4078054760931753], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.submit | 0.81355 / 0.31725 | ms | 2.302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.571934341808819, 2.661639344262295], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.upload | 1.0211 / 0.88535 | ms | 1.1265 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0905520905520907, 1.1717702279839068], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| maxRssMiB | 94.504 / 109.06 | MiB | 0.86662 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8664899903305519, 0.8668266991508724], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| pipelineNs | 2.6412 / 2.8475 | ms | 0.92052 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.90470538955599, 0.9347024749868352], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processInMainNs | 255.8 / 234.94 | ms | 1.0901 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.082148923546182, 1.0993197916999564], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processWall | 289 / 281 | ms | 1.0567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1043771043771045], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| resourcesNs | 4.984 / 4.0167 | ms | 1.2389 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2002949068142812, 1.2521925550574935], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupAdapterNs | 149.61 / 155.15 | ms | 0.95438 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.944516117601236, 0.9795528655608446], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupDeviceNs | 5.5657 / 7.4157 | ms | 0.747 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7325579767952863, 0.7926987291303265], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupInstanceNs | 0.01075 / 0.0574 | ms | 0.19104 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.17413793103448275, 0.1950354609929078], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupNs | 154.8 / 162.36 | ms | 0.94527 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9384747616182967, 0.9641940415188335], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownDeviceNs | 2.3653 / 3.2746 | ms | 0.72642 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6887633249839809, 0.7628490239683717], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownNs | 2.848 / 3.3315 | ms | 0.85479 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8162076587609773, 0.8916170936020396], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownReleaseNs | 0.4725 / 0.06 | ms | 8.0557 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.635923237863972, 8.284053156146179], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.completion | 0.92355 / 0.69645 | ms | 1.3178 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3024593700560907, 1.3339058251037643], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.encode | 0.00435 / 0.0081 | ms | 0.53167 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5185185185185185, 0.5512820512820513], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.map | 0.22635 / 0.22735 | ms | 1.0033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9899255365746824, 1.0093624609897458], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.operation | 2.2925 / 1.3289 | ms | 1.7143 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6887120115774241, 1.729951397326853], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.submit | 0.4691 / 0.0499 | ms | 9.3309 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.934086629001882, 9.458585858585858], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.upload | 0.65935 / 0.34745 | ms | 1.8705 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.837590750201667, 1.8905701193243312], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.completion | 0.9857 / 0.7307 | ms | 1.3355 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.319442601194426, 1.3515074668920823], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.encode | 0.0055 / 0.0109 | ms | 0.49271 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.471129202472486, 0.5229357798165137], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.map | 0.252 / 0.2479 | ms | 1.0181 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0029033596018249, 1.0453972257250945], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.operation | 2.4406 / 1.8319 | ms | 1.3362 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3222387900734902, 1.3485468128033153], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.submit | 0.51555 / 0.06165 | ms | 8.3118 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.788519637462236, 8.613376835236542], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.upload | 0.7193 / 0.90235 | ms | 0.80854 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7954520366486367, 0.8227340437722012], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
+- machine.driver is unknown.
+
+<a id="row-ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6"></a>
+
+## image_rgba_invert_1024
+
+Observation: `ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6`; execution: `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/dawn-aa/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6`; latest qualified: `None`; verdict: incomparable.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.74205 / 0.74275 | ms | 0.99504 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9725036179450072, 1.0177857438301392], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| complete | 57.929 / 56.492 | ms | 0.9993 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9872532331757383, 1.0201330067693983], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| cpuMs | 218.75 / 218.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8823529411764706, 1.0714285714285714], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.completion | 0.61475 / 0.63085 | ms | 0.99288 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9581359329601791, 1.0113851992409868], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.encode | 0.05025 / 0.0503 | ms | 1.006 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9656565656565657, 1.0187110187110189], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.map | 0.52245 / 0.53045 | ms | 0.98526 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9608500501235998, 1.0023233301064862], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.operation | 2.4202 / 2.4312 | ms | 0.99302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9796978851963747, 1.0090017030248966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.submit | 0.3319 / 0.31725 | ms | 1.0136 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9802873371199465, 1.08752471761035], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| first.upload | 0.87735 / 0.88535 | ms | 1.0015 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9849128296826105, 1.012936012936013], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| maxRssMiB | 109.05 / 109.06 | MiB | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997851233749955, 1.0002507073528886], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| pipelineNs | 2.838 / 2.8475 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.985887595939589, 1.005203877958369], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processInMainNs | 236.38 / 234.94 | ms | 1.0026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.000012089945742, 1.0106995026927237], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| processWall | 281 / 281 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.001779359430605], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| resourcesNs | 3.9487 / 4.0167 | ms | 0.97453 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9238786743178359, 1.0382803779030194], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupAdapterNs | 155.27 / 155.15 | ms | 1.0031 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9925531308831107, 1.014197097366413], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupDeviceNs | 7.5542 / 7.4157 | ms | 1.0477 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9794410661146332, 1.073782439693609], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupInstanceNs | 0.05725 / 0.0574 | ms | 0.9922 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9123711340206185, 1.0173010380622838], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| setupNs | 162.75 / 162.36 | ms | 1.0041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9949242798270982, 1.0142875648655445], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownDeviceNs | 3.4229 / 3.2746 | ms | 1.0301 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9919907823741008, 1.068784190554819], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownNs | 3.4843 / 3.3315 | ms | 1.0299 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9946609864726549, 1.0665988587377924], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| teardownReleaseNs | 0.05845 / 0.06 | ms | 0.99721 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9646710183359398, 1.0517529215358932], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.completion | 0.69645 / 0.69645 | ms | 0.99971 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938138397352898, 1.0088431429399827], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.encode | 0.00815 / 0.0081 | ms | 1.0063 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9753086419753088, 1.0394736842105263], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.map | 0.2274 / 0.22735 | ms | 1.0029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9892294946147473, 1.0143240823634736], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.operation | 1.3453 / 1.3289 | ms | 1.0043 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938937052393517, 1.0064550425273389], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.submit | 0.0512 / 0.0499 | ms | 1.0081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9835063040020986, 1.0383795309168444], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warm.upload | 0.35085 / 0.34745 | ms | 1.0086 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0148385219668314], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.completion | 0.735 / 0.7307 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9941512324188831, 1.0222560132706664], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.encode | 0.0111 / 0.0109 | ms | 1.0428 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9400000000000001, 1.171641791044776], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.map | 0.2539 / 0.2479 | ms | 1.0053 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9625, 1.0293870696893368], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.operation | 1.8079 / 1.8319 | ms | 1.0005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9824590163934426, 1.0168905443811465], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.submit | 0.06665 / 0.06165 | ms | 1.0827 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.967799642218247, 1.1485809682804675], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| warmP95.upload | 0.8864 / 0.90235 | ms | 1.0026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9676676896098203, 1.0249475659565073], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
+- machine.driver is unknown.
+
 <a id="row-97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b"></a>
 
 ## vector_scale_add_262k
@@ -718,3 +1195,474 @@ Limitations:
 - contractFrozenAt is unknown; no receipt value was retained.
 - machine.driver is unknown.
 - reportedAt is unknown; no receipt value was retained.
+
+<a id="row-0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f"></a>
+
+## vector_scale_add_262k
+
+Observation: `0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f`; execution: `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/doe/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12465 / 0.7463 | ms | 0.16744 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1607918263090677, 0.17368770764119604], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| complete | 20.91 / 19.924 | ms | 1.0462 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0346722185548165, 1.0651405347174616], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| cpuMs | 179.69 / 187.5 | ms | 0.96154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.0769230769230769], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.completion | 0.22865 / 0.1751 | ms | 1.2914 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1516825715720744, 1.5288810177168424], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.encode | 0.00685 / 0.0467 | ms | 0.14397 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12967032967032968, 0.884065631239892], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.map | 0.17075 / 0.18265 | ms | 0.91956 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8725274725274725, 0.9568385650224215], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.operation | 1.3453 / 0.79725 | ms | 1.6771 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5650548033526757, 1.7669639395114385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.submit | 0.7225 / 0.3228 | ms | 2.2121 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9504976427448928, 2.5124517713083128], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.upload | 0.14345 / 0.06615 | ms | 2.1634 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8464695137314187, 2.7628294036061027], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| maxRssMiB | 65.516 / 72.184 | MiB | 0.90756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9068094542701065, 0.9078505684894423], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.68 / 2.9806 | ms | 0.89442 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8866556836902799, 0.9040901138202464], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processInMainNs | 175.02 / 182.98 | ms | 0.95551 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9424153512723308, 0.9681700024926247], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processWall | 203 / 219 | ms | 0.93119 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9014703196347031, 0.9655963302752293], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| resourcesNs | 2.6481 / 2.9813 | ms | 0.89578 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8607454711325426, 0.9533705017739483], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 145.52 / 152.03 | ms | 0.95421 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9416029446392941, 0.965744052699625], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 5.1358 / 7.1242 | ms | 0.71918 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7014578350281279, 0.7328619434332119], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.0103 / 0.05495 | ms | 0.18807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18231046931407943, 0.19038817005545286], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupNs | 150.55 / 159.12 | ms | 0.9444 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9298575340069994, 0.9550245257574167], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 2.6235 / 2.1732 | ms | 1.1816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1523011755746988, 1.2124188378400593], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownNs | 2.6589 / 2.2243 | ms | 1.1726 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1439362148552246, 1.2057271702367534], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.0322 / 0.04465 | ms | 0.72606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6670613982491906, 0.7970660146699265], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.completion | 0.205 / 0.18205 | ms | 1.1262 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.101723179544191, 1.1662995594713654], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0026 / 0.0069 | ms | 0.36954 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.36231884057971014, 0.376890756302521], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.map | 0.0358 / 0.0375 | ms | 0.955 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9373368146214099, 0.970108695652174], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.operation | 0.3712 / 0.3227 | ms | 1.1422 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.126590133416072, 1.1788437102922489], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.submit | 0.0619 / 0.03875 | ms | 1.6036 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5761421319796955, 1.6436170212765957], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.upload | 0.0636 / 0.05805 | ms | 1.1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0790378006872852, 1.1162947355926167], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.22125 / 0.2028 | ms | 1.0958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0643494598403005, 1.1310173697270471], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.0032 / 0.00785 | ms | 0.39481 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.358974358974359, 0.4390243902439024], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.04195 / 0.0447 | ms | 0.97176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8839506172839505, 1.0334821428571428], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.39815 / 0.3589 | ms | 1.1141 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0628766046633482, 1.1726943942133816], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.07095 / 0.0483 | ms | 1.5215 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4145836729518737, 1.591093117408907], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.069 / 0.06375 | ms | 1.0805 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0632716049382718, 1.1275369797041623], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+
+<a id="row-2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1"></a>
+
+## vector_scale_add_262k
+
+Observation: `2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1`; execution: `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/previous/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.1296 / 0.7463 | ms | 0.17444 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1657172449508027, 0.18019962233612086], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| complete | 387.83 / 19.924 | ms | 19.641 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.961838544650088, 21.149220622904835], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| cpuMs | 171.88 / 187.5 | ms | 0.91987 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.completion | 0.2316 / 0.1751 | ms | 1.3699 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1813159216474134, 1.6373514055064256], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.encode | 0.00695 / 0.0467 | ms | 0.14666 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13877497871073888, 0.8853737388091517], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.map | 0.1644 / 0.18265 | ms | 0.89375 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8721973094170403, 0.9250780437044746], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.operation | 1.3528 / 0.79725 | ms | 1.684 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6503835740072204, 1.76507068922326], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.submit | 0.7067 / 0.3228 | ms | 2.3027 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0161054172767203, 2.4398634879506798], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.upload | 0.17895 / 0.06615 | ms | 2.7086 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.213142503966643, 2.9876543209876543], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| maxRssMiB | 65.523 / 72.184 | MiB | 0.90766 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.906966681090437, 0.9079096962806562], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.7006 / 2.9806 | ms | 0.90764 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8883925638835972, 0.9212804509764445], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processInMainNs | 542.04 / 182.98 | ms | 2.9601 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2667500685978172, 3.1545061090871833], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processWall | 570 / 219 | ms | 2.4509 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1527093596059113, 2.712328767123288], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| resourcesNs | 2.6792 / 2.9813 | ms | 0.91311 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8519483088283774, 1.016083797938841], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 145.45 / 152.03 | ms | 0.95756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9501203375689732, 0.9649236638185853], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 5.1086 / 7.1242 | ms | 0.71407 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6915666745091889, 0.7278115672692459], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.0092 / 0.05495 | ms | 0.17016 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16373239436619716, 0.17793594306049823], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupNs | 150.57 / 159.12 | ms | 0.94408 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9384476412597262, 0.9540992681209881], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 4.6823 / 2.1732 | ms | 2.0718 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4277257508855354, 2.2069943289224954], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownNs | 4.763 / 2.2243 | ms | 2.0623 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4203640500568828, 2.198214860083628], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.081 / 0.04465 | ms | 1.7037 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.108829568788501, 1.96448087431694], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.completion | 14.025 / 0.18205 | ms | 76.838 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3501683501683501, 81.38998401704848], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0099 / 0.0069 | ms | 1.4353 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.39999999999999997, 1.5217391304347827], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.map | 0.1712 / 0.0375 | ms | 4.2873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9948717948717949, 4.755376344086022], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.operation | 14.55 / 0.3227 | ms | 44.996 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3186981885170403, 47.451479478205535], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.submit | 0.2141 / 0.03875 | ms | 5.5901 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7244094488188975, 5.794805194805194], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.upload | 0.1692 / 0.05805 | ms | 2.7812 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1767764298093588, 2.9278350515463916], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.completion | 23.518 / 0.2028 | ms | 116.87 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [47.54175588865097, 124.88311688311687], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.0113 / 0.00785 | ms | 1.3725 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7837837837837837, 1.5], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.2162 / 0.0447 | ms | 4.2485 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.126, 5.053984575835476], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.operation | 23.943 / 0.3589 | ms | 65.491 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [26.501166588894073, 72.89307146753956], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.2383 / 0.0483 | ms | 4.7934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.145956607495069, 4.975206611570248], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.18525 / 0.06375 | ms | 2.9114 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.122257053291536, 3.0560164835164834], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+
+<a id="row-f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a"></a>
+
+## vector_scale_add_262k
+
+Observation: `f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a`; execution: `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/dawn-aa/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.74925 / 0.7463 | ms | 0.99306 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.984514435695538, 1.0138511678435633], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| complete | 19.849 / 19.924 | ms | 1.0028 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9792653013263353, 1.0087289899964453], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| cpuMs | 179.69 / 187.5 | ms | 0.96154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8846153846153846, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.completion | 0.1906 / 0.1751 | ms | 1.0176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9402087965609978, 1.1650183835406085], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.encode | 0.0465 / 0.0467 | ms | 1.0108 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9674620390455532, 1.0307692307692307], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.map | 0.1819 / 0.18265 | ms | 1.0005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.932967032967033, 1.0707624794295119], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.operation | 0.79815 / 0.79725 | ms | 1.0076 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9708982035928144, 1.014986886474335], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.submit | 0.29945 / 0.3228 | ms | 0.95741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8819135925722559, 1.0549102428722281], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.upload | 0.0659 / 0.06615 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9848714069591528, 1.0362204724409447], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| maxRssMiB | 72.186 / 72.184 | MiB | 0.99989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9995129606580443, 1.0002165908598657], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.9898 / 2.9806 | ms | 1.002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9926346942893657, 1.0097041259500543], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processInMainNs | 182.16 / 182.98 | ms | 0.99713 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9907345409600954, 1.0058333387779281], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processWall | 219 / 219 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9358974358974359, 1.0045871559633028], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| resourcesNs | 2.9304 / 2.9813 | ms | 0.97756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9330261701149667, 1.0162873862158648], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 151.66 / 152.03 | ms | 0.99849 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9921786321213212, 1.0013455757954042], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 7.2805 / 7.1242 | ms | 0.99102 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9641072425484402, 1.073667600187652], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.05485 / 0.05495 | ms | 0.98212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9656419529837251, 1.0108303249097474], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupNs | 159.05 / 159.12 | ms | 0.99741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9910938182524147, 1.0057480677142456], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 2.1439 / 2.1732 | ms | 0.96581 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9375838635675022, 1.0068033638854765], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownNs | 2.1882 / 2.2243 | ms | 0.96656 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9374920648355834, 1.0094609151796168], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.04505 / 0.04465 | ms | 0.97649 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9250516795865633, 1.1092636579572446], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.completion | 0.1829 / 0.18205 | ms | 1.0023 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9923497267759563, 1.035575319622012], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0069 / 0.0069 | ms | 0.98571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9855072463768115, 1.0144927536231885], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.map | 0.0373 / 0.0375 | ms | 0.99596 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9754299754299754, 1.0163487738419617], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.operation | 0.32415 / 0.3227 | ms | 1.0057 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9841958475364115, 1.017685386286069], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.submit | 0.03835 / 0.03875 | ms | 0.99613 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9769820971867006, 1.0130548302872062], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.upload | 0.0576 / 0.05805 | ms | 0.99571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9742268041237113, 1.0103270223752152], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.2059 / 0.2028 | ms | 1.0097 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9859088774072334, 1.0587301587301587], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.00795 / 0.00785 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9740259740259739, 1.025974025974026], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.0459 / 0.0447 | ms | 1.0234 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.961456102783726, 1.125615763546798], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.35985 / 0.3589 | ms | 0.99876 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9768608865347086, 1.0506003430531732], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.04775 / 0.0483 | ms | 0.97774 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9396984924623114, 1.0339702760084926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.06475 / 0.06375 | ms | 1.0171 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9884892086330934, 1.067001675041876], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+
+<a id="row-01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420"></a>
+
+## vector_scale_add_262k
+
+Observation: `01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420`; execution: `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/dawn-aa/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.74825 / 0.74565 | ms | 1.0091 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9798968390424547, 1.0306740027510317], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| complete | 20.126 / 20.038 | ms | 1.0016 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9875556070924079, 1.0112152107113799], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| cpuMs | 171.88 / 171.88 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9666666666666667, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.completion | 0.2019 / 0.19185 | ms | 1.0528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9046037019458946, 1.1845397753732088], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.encode | 0.04645 / 0.04655 | ms | 0.99251 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9674620390455532, 1.0064377682403431], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.map | 0.1806 / 0.18715 | ms | 0.96212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9238356164383562, 1.0542312276519665], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.operation | 0.7874 / 0.79325 | ms | 0.9888 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9790582561238735, 1.002841918294849], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.submit | 0.29625 / 0.3197 | ms | 0.97119 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8847558950514781, 1.0346517325866291], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.upload | 0.06555 / 0.0664 | ms | 0.97735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9696048632218844, 0.9969742813918304], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| maxRssMiB | 72.199 / 72.195 | MiB | 1.0001 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9996212940921878, 1.0008120398440883], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.9844 / 2.9713 | ms | 1.0044 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9891790167019525, 1.0202970629746624], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processInMainNs | 183.79 / 183.87 | ms | 1.0013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9869659253039246, 1.0117347677300517], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processWall | 219 / 219 | ms | 1.0021 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0684931506849316], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| resourcesNs | 2.9474 / 2.9446 | ms | 0.98324 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9562702058873576, 1.0328164346367326], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 152.67 / 152.55 | ms | 0.9996 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9867364234011483, 1.009309781456104], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 7.4924 / 7.3415 | ms | 1.034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9682010478245033, 1.0563494875529833], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.05495 / 0.0549 | ms | 0.99821 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9735915492957746, 1.0291438979963572], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupNs | 159.85 / 159.96 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9843320675496279, 1.010455169434548], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 2.17 / 2.184 | ms | 1.0231 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9771826909711707, 1.0718376616964551], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownNs | 2.2203 / 2.2292 | ms | 1.023 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9776521508700644, 1.0728951000690132], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.04895 / 0.04505 | ms | 1.0004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9399293286219081, 1.1642156862745097], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.completion | 0.18545 / 0.1862 | ms | 1.0028 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9738247863247862, 1.025995575221239], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0069 / 0.0068 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9855072463768115, 1.0222783143107987], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.map | 0.039 / 0.0376 | ms | 1.0095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.969309462915601, 1.070460704607046], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.operation | 0.32955 / 0.3278 | ms | 1.0027 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9800950683303625, 1.0176544766708702], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.submit | 0.0386 / 0.0385 | ms | 0.98707 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9714285714285715, 1.002680965147453], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.upload | 0.05865 / 0.05805 | ms | 1.0017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9796954314720813, 1.0234730546179531], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.20365 / 0.2052 | ms | 0.98058 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9516129032258065, 1.0087633885102238], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.008 / 0.0081 | ms | 0.96927 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.896551724137931, 1.0810810810810811], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.0472 / 0.0479 | ms | 0.94424 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8373626373626374, 1.0172955671673447], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.3603 / 0.3613 | ms | 1.0014 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.968901569186876, 1.0195121951219512], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.04765 / 0.04695 | ms | 0.98101 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.93713163064833, 1.062921348314607], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.06465 / 0.0647 | ms | 1.004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9745627980922099, 1.046367851622875], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
+- machine.driver is unknown.
+
+<a id="row-d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660"></a>
+
+## vector_scale_add_262k
+
+Observation: `d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660`; execution: `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/previous/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12795 / 0.74565 | ms | 0.16948 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16299381886589628, 0.17732222934016656], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| complete | 94.164 / 20.038 | ms | 4.6466 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.545952318250646, 18.380207690979503], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| cpuMs | 171.88 / 171.88 | ms | 0.95833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.completion | 0.22965 / 0.19185 | ms | 1.2412 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1490621915103654, 1.4121663563004345], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.encode | 0.0086 / 0.04655 | ms | 0.17285 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.146484375, 0.20518358531317493], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.map | 0.171 / 0.18715 | ms | 0.92634 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8821656050955413, 0.9869281045751633], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.operation | 1.3409 / 0.79325 | ms | 1.6904 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6405524168236032, 1.7339876033057853], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.submit | 0.75955 / 0.3197 | ms | 2.3954 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.207486285898677, 2.6608391608391613], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.upload | 0.14575 / 0.0664 | ms | 2.0934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8314255040294471, 3.639625585023401], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| maxRssMiB | 65.529 / 72.195 | MiB | 0.90776 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071830376460407, 0.9080721130420659], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.7239 / 2.9713 | ms | 0.90837 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8969372078580068, 0.9211139111295416], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processInMainNs | 249.64 / 183.87 | ms | 1.3426 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2472349372303198, 2.9083598045339962], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processWall | 289 / 219 | ms | 1.3103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2831050228310503, 2.6945812807881775], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| resourcesNs | 2.6787 / 2.9446 | ms | 0.92574 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8576426547248365, 0.9643003833515881], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 145.25 / 152.55 | ms | 0.94735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9402478460533458, 0.9647386704873309], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 5.2893 / 7.3415 | ms | 0.71957 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6948101611581534, 0.7684066094470718], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.009 / 0.0549 | ms | 0.16338 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.15889464594127806, 0.17095588235294118], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupNs | 150.81 / 159.96 | ms | 0.93772 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9290417804809795, 0.9539118355216248], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 2.8226 / 2.184 | ms | 1.3095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2234482132316213, 1.965220808567078], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownNs | 2.8752 / 2.2292 | ms | 1.3029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2142546907574705, 1.9725499638815316], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.047 / 0.04505 | ms | 1.1218 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8990825688073394, 1.2858753109452736], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.completion | 0.24635 / 0.1862 | ms | 1.359 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1776390465380249, 70.02800215401184], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.encode | 0.0033 / 0.0068 | ms | 0.48237 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.43283582089552236, 1.0389610389610389], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.map | 0.04485 / 0.0376 | ms | 1.1807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0791556728232188, 1.8250460405156537], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.operation | 0.45355 / 0.3278 | ms | 1.4069 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2349360925136945, 41.53799206591395], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.submit | 0.0735 / 0.0385 | ms | 1.8869 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7184986595174263, 3.2044334975369457], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.upload | 0.07155 / 0.05805 | ms | 1.242 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1625, 1.5275362318840577], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.completion | 14.423 / 0.2052 | ms | 71.966 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [31.480715287517533, 104.12778366914105], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.00735 / 0.0081 | ms | 0.8566 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6582278481012658, 1.2674418604651163], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.115 / 0.0479 | ms | 2.1159 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7871559633027523, 3.229411764705883], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.operation | 14.808 / 0.3613 | ms | 42.309 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [19.341713318313897, 56.65706134094152], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.1569 / 0.04695 | ms | 3.4455 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.951167728237792, 4.596348884381339], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.14395 / 0.0647 | ms | 2.2542 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.656675749318801, 2.7031746031746033], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
+- machine.driver is unknown.
+
+<a id="row-da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6"></a>
+
+## vector_scale_add_262k
+
+Observation: `da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6`; execution: `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/doe/dawn`.
+
+Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
+
+Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6`; latest qualified: `None`; verdict: diagnostic.
+
+| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
+| --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12875 / 0.74565 | ms | 0.17187 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16751736990158494, 0.17450352338244715], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| complete | 21.128 / 20.038 | ms | 1.0478 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0413906044825676, 1.0659429329531505], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| cpuMs | 179.69 / 171.88 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.completion | 0.2277 / 0.19185 | ms | 1.2536 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1337958374628345, 1.366232153941651], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.encode | 0.0063 / 0.04655 | ms | 0.13268 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12391304347826088, 0.1447084233261339], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.map | 0.1734 / 0.18715 | ms | 0.9417 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9056000000000001, 0.9878331402085748], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.operation | 1.3027 / 0.79325 | ms | 1.6236 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5826881583957355, 1.7201426024955437], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.submit | 0.743 / 0.3197 | ms | 2.3428 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0842459983150796, 2.6370396600566575], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| first.upload | 0.1481 / 0.0664 | ms | 2.2542 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.892355694227769, 2.5516717325227964], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| maxRssMiB | 65.52 / 72.195 | MiB | 0.90761 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071529055297046, 0.9078612779310717], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| pipelineNs | 2.7038 / 2.9713 | ms | 0.90889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9036277391769107, 0.9186078006500542], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processInMainNs | 176.83 / 183.87 | ms | 0.96238 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9537320223094312, 0.9707068280863055], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| processWall | 218.5 / 219 | ms | 0.99772 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9319148936170213, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| resourcesNs | 2.6395 / 2.9446 | ms | 0.92454 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8800719568259044, 0.9545909388909977], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupAdapterNs | 146.65 / 152.55 | ms | 0.95871 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9491692416747285, 0.9705037791697946], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupDeviceNs | 5.3358 / 7.3415 | ms | 0.72601 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7101611581535099, 0.7482700211405385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupInstanceNs | 0.0102 / 0.0549 | ms | 0.18509 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18150021315350928, 0.1930783242258652], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| setupNs | 152.26 / 159.96 | ms | 0.94995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9399676278465772, 0.9621780950208165], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownDeviceNs | 2.6576 / 2.184 | ms | 1.2285 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1702248790207799, 1.300189867093035], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownNs | 2.6924 / 2.2292 | ms | 1.2163 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.165782122905028, 1.2860162180814354], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| teardownReleaseNs | 0.03655 / 0.04505 | ms | 0.82572 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7630973044721259, 0.8759894459102902], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.completion | 0.2026 / 0.1862 | ms | 1.1046 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.075503355704698, 1.1308304891922638], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.encode | 0.00255 / 0.0068 | ms | 0.37681 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.36764705882352944, 0.3835616438356164], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.map | 0.03635 / 0.0376 | ms | 0.96922 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.952127659574468, 0.981029810298103], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.operation | 0.3706 / 0.3278 | ms | 1.1254 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1211651688875117, 1.1488338073211164], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.submit | 0.06125 / 0.0385 | ms | 1.5958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.587012987012987, 1.6147757255936674], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warm.upload | 0.0636 / 0.05805 | ms | 1.0967 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0833333333333335, 1.1082024432809774], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.completion | 0.22425 / 0.2052 | ms | 1.0914 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0664711632453567, 1.1484230055658626], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.encode | 0.0033 / 0.0081 | ms | 0.3958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3614457831325301, 0.4444444444444445], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.map | 0.04675 / 0.0479 | ms | 0.95528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.897489539748954, 1.0387755102040817], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.operation | 0.41755 / 0.3613 | ms | 1.1448 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.091164095371669, 1.1993127147766323], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.submit | 0.0753 / 0.04695 | ms | 1.5803 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4295454545454547, 1.625263157894737], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| warmP95.upload | 0.07175 / 0.0647 | ms | 1.1154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0957910014513788, 1.1404480541084612], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+
+Evidence:
+
+- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
+- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
+- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
+- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
+- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
+
+Limitations:
+
+- Aggregate row; raw process observations, when retained, are separate rows.
+- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
+- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
+- Host-window acceptance alone does not qualify performance.
+- No qualification follows from a phase summary or a valid host window.
+- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
+- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
+- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
+- machine.driver is unknown.

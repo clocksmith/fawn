@@ -21,6 +21,8 @@ from bench.tools import build_benchmark_cube as builder
 from bench.lib import benchmark_cube_reports as reports
 from bench.lib import benchmark_inventory_sources as sources
 from bench.lib.benchmark_cube_dashboard_html import build_dashboard_html
+from bench.inventory.adapters.phases import apply_window_receipt
+from bench.inventory.sources import Source
 from bench.tools.native_catalog_report import is_loss, load_policy
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -257,6 +259,39 @@ class TestBenchmarkInventory(unittest.TestCase):
                 'sha256': sources.file_hash(root / 'build.json'), 'required': True})
             bound = sources.normalize_source(root, entry, POLICY)
             self.assertEqual({row['backend'] for row in bound}, {'d3d12'})
+
+    def test_host_window_rejection_preserves_successful_execution_and_correctness(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'gate.json').write_text('{"gateValid": false, "samplingErrors": ["counter unavailable"]}')
+            source = Source(root, {}, [{'role': 'window:workload', 'path': 'gate.json',
+                            'availability': 'retained', 'required': True}], {}, {})
+            row = observation('measured', '2026-11-01T00:00:00Z', qualified=True)
+            original = deepcopy(row)
+            apply_window_receipt(row, source)
+            self.assertEqual(row['executionStatus'], original['executionStatus'])
+            self.assertEqual(row['correctness'], original['correctness'])
+            self.assertEqual(row['executedAt'], original['executedAt'])
+            self.assertEqual(row['acceptance']['status'], 'failed')
+            self.assertEqual(row['verdict'], 'incomparable')
+            self.assertEqual(row['metrics'][0]['outcome'], 'incomparable')
+            self.assertFalse(reports.inventory_qualified(row))
+            other = deepcopy(original)
+            other['workloadId'] = 'different-workload'
+            apply_window_receipt(other, source)
+            self.assertEqual(other['acceptance'], original['acceptance'])
+
+    def test_unavailable_host_window_cannot_inherit_a_qualified_win(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Source(Path(directory), {}, [{'role': 'window:workload',
+                            'path': 'missing.json', 'availability': 'missing',
+                            'required': True}], {}, {})
+            row = observation('measured', '2026-11-01T00:00:00Z', qualified=True)
+            apply_window_receipt(row, source)
+            self.assertEqual(row['acceptance']['status'], 'unknown')
+            self.assertEqual(row['verdict'], 'incomparable')
+            self.assertEqual(row['metrics'][0]['outcome'], 'incomparable')
+            self.assertFalse(reports.inventory_qualified(row))
 
     def test_untracked_receipt_is_not_a_durable_public_reference(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

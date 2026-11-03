@@ -3628,6 +3628,180 @@
       "section": "native-runtime",
       "sha256": "220885a71dfccdb2b38612efa60a4a82e886912ecf3c44a63f3bad121fea7d11",
       "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "windows-c4-formatted-observer-20261102",
+      "comparisonType": "native-provider",
+      "familyId": "phase-d3d12",
+      "id": "phase-d3d12-20261102-c4-formatted",
+      "limitations": [
+        "Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.",
+        "Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.",
+        "Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.",
+        "Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.",
+        "Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled."
+      ],
+      "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json",
+      "sha256": "21bb9cb43c7099992327345a46cef887b01d4620eeaa318ecb15fb1ff5ba645b",
+      "provenance": [
+        {
+          "role": "contract",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/contract.json.gz",
+          "sha256": "7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda",
+          "required": true
+        },
+        {
+          "role": "workload-contract",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/contract.json.gz",
+          "sha256": "7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda",
+          "required": true
+        },
+        {
+          "role": "harness-build",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz",
+          "sha256": "82b3c26bb146de4df2f7813af2ba29337dec3186892dd78cd38f8b614883b457",
+          "required": true
+        },
+        {
+          "role": "handoff",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/handoff.json",
+          "sha256": "dbc6398b3dcd02bca8959f8fbe1410b40dc201fbe9e454a2ad6a5ab90c2af541",
+          "required": true
+        },
+        {
+          "role": "raw:raw-vector_scale_add_262k.jsonl.gz",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz",
+          "sha256": "a5d0d413ced0b57e37263ebefbbb96f289d82a8f82e4e27c0b42e1fec22e7b15",
+          "required": true
+        },
+        {
+          "role": "window:vector_scale_add_262k",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json",
+          "sha256": "2e2620ce39a9e8ea5aa5931d128c0f2506339205cd080684bfd44ed30e7024ab",
+          "required": true
+        },
+        {
+          "role": "raw:raw-image_rgba_invert_1024.jsonl.gz",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz",
+          "sha256": "1d038117f31951958e76cbec1c81f605af2b50a742a9ecb556cff95201416172",
+          "required": true
+        },
+        {
+          "role": "window:image_rgba_invert_1024",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json",
+          "sha256": "31374d53ec7fa3defa0f2483241bd11fbe3976da6a87e4e9513799dc7151f054",
+          "required": true
+        },
+        {
+          "role": "host-windows",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz",
+          "sha256": "33d56693ec59e6ac3cba9871086181d40604da3bbcc7099b43dbdb8939a29727",
+          "required": true
+        },
+        {
+          "role": "retention",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/retention.json",
+          "sha256": "de4ce8369013df5c2970328493da8e88f374e85ad2ea774b2ed8770c7aa26e0c",
+          "required": true
+        },
+        {
+          "role": "observer-validation",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/observer-validation.tar.gz",
+          "sha256": "3102b12853daaeacbc094378d8d5536029d7ea1726b8baf842ff0a0c812e99f0",
+          "required": true
+        }
+      ],
+      "section": "native-runtime",
+      "supersedes": []
+    },
+    {
+      "adapter": "phase-cohort",
+      "adapterVersion": 1,
+      "campaignId": "windows-c4-raw-observer-20261102",
+      "comparisonType": "native-provider",
+      "familyId": "phase-d3d12",
+      "id": "phase-d3d12-20261102-c4-raw",
+      "limitations": [
+        "Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.",
+        "Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.",
+        "Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.",
+        "Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.",
+        "Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched."
+      ],
+      "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json",
+      "sha256": "3c2f7e50d1ae86e988eb19c7599cef113dd1b5bdca5e5eb9580db31686677565",
+      "provenance": [
+        {
+          "role": "contract",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/contract.json.gz",
+          "sha256": "59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2",
+          "required": true
+        },
+        {
+          "role": "workload-contract",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/contract.json.gz",
+          "sha256": "59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2",
+          "required": true
+        },
+        {
+          "role": "harness-build",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz",
+          "sha256": "82b3c26bb146de4df2f7813af2ba29337dec3186892dd78cd38f8b614883b457",
+          "required": true
+        },
+        {
+          "role": "handoff",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/handoff.json",
+          "sha256": "2a921387c7a1e9c5923454d980cc39e7a0975d28c38e3210ae04da2755d83c30",
+          "required": true
+        },
+        {
+          "role": "raw:raw-vector_scale_add_262k.jsonl.gz",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz",
+          "sha256": "e73c0117ee8e71e512d09e9e928e9dd022103f5117632bb086c1ca95a226e303",
+          "required": true
+        },
+        {
+          "role": "window:vector_scale_add_262k",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json",
+          "sha256": "cd9a7d12a40aea7a072ccfb2fbb9071958d1a411016b86567e767b0b043786de",
+          "required": true
+        },
+        {
+          "role": "raw:raw-image_rgba_invert_1024.jsonl.gz",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz",
+          "sha256": "a74c17dbdc4e8589d7b823f19e824193480bb2452366afe13452a032bb2cbe1f",
+          "required": true
+        },
+        {
+          "role": "window:image_rgba_invert_1024",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json",
+          "sha256": "49673e5cef4e4169692d0371f39528b2d441e094deaf5de850a7c11832c2c8f5",
+          "required": true
+        },
+        {
+          "role": "host-windows",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz",
+          "sha256": "2c36d47845dbcc6e199eda1518d36f47ea5381f3a8b01b18ae6ad240066cff13",
+          "required": true
+        },
+        {
+          "role": "retention",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/retention.json",
+          "sha256": "de4ce8369013df5c2970328493da8e88f374e85ad2ea774b2ed8770c7aa26e0c",
+          "required": true
+        },
+        {
+          "role": "observer-validation",
+          "path": "reports/benchmarks/windows-d3d12/20261102-c4-partial/observer-validation.tar.gz",
+          "sha256": "3102b12853daaeacbc094378d8d5536029d7ea1726b8baf842ff0a0c812e99f0",
+          "required": true
+        }
+      ],
+      "section": "native-runtime",
+      "supersedes": []
     }
   ]
 }
