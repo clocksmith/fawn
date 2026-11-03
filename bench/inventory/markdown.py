@@ -60,12 +60,17 @@ def machine_scope(row: dict[str, Any]) -> tuple[str, str, str, str]:
     identity = machine["id"]
     # The unbound presentation bucket is history, never an inferred shared host.
     # Logical machine and series identities remain separate in model.py.
-    return ("unbound" if identity.startswith("unknown:") else identity,
-            machine["os"] or "unknown", row["backend"] or "unknown",
-            model.stable_hash([machine["osVersion"], machine["gpu"], machine["driver"]]))
+    return (
+        "unbound" if identity.startswith("unknown:") else identity,
+        machine["os"] or "unknown",
+        row["backend"] or "unknown",
+        model.stable_hash([machine["osVersion"], machine["gpu"], machine["driver"]]),
+    )
 
 
-def overview_scopes(rows: list[dict[str, Any]], latest_ids: set[str]) -> list[list[dict[str, Any]]]:
+def overview_scopes(
+    rows: list[dict[str, Any]], latest_ids: set[str]
+) -> list[list[dict[str, Any]]]:
     """Show newest campaigns per observed machine, never rank undated evidence."""
     groups: dict[tuple[str, str, str, str], list[dict[str, Any]]] = {}
     aggregates = [row for row in rows if row["observationLevel"] != "execution"] or rows
@@ -76,29 +81,50 @@ def overview_scopes(rows: list[dict[str, Any]], latest_ids: set[str]) -> list[li
         if machine_scope(group[0])[0] == "unbound":
             scopes.append(group)
             continue
-        dated = [row for row in group if row["rowId"] in latest_ids and row["executedAt"]]
+        dated = [
+            row for row in group if row["rowId"] in latest_ids and row["executedAt"]
+        ]
         if not dated:
             scopes.append(group)
             continue
         newest = max(model.parse_utc_iso(row["executedAt"]) for row in dated)
-        campaigns = {row["campaignId"] for row in dated if model.parse_utc_iso(row["executedAt"]) == newest}
+        campaigns = {
+            row["campaignId"]
+            for row in dated
+            if model.parse_utc_iso(row["executedAt"]) == newest
+        }
         scopes.append([row for row in dated if row["campaignId"] in campaigns])
-    return sorted(scopes, key=lambda scope: (
-        any(row["executedAt"] for row in scope),
-        max((model.parse_utc_iso(row["executedAt"]) for row in scope if row["executedAt"]), default=None),
-        machine_scope(scope[0])), reverse=True)
+    return sorted(
+        scopes,
+        key=lambda scope: (
+            any(row["executedAt"] for row in scope),
+            max(
+                (
+                    model.parse_utc_iso(row["executedAt"])
+                    for row in scope
+                    if row["executedAt"]
+                ),
+                default=None,
+            ),
+            machine_scope(scope[0]),
+        ),
+        reverse=True,
+    )
 
 
 def adapter_label(value: Any) -> str:
     if not isinstance(value, dict):
         return text(value)
-    return str(value.get("name") or value.get("device") or value.get("description")
-               or "/".join(str(value[k]) for k in ("vendor", "architecture") if value.get(k)) or "unknown")
+    return str(
+        value.get("name")
+        or value.get("device")
+        or value.get("description")
+        or "/".join(str(value[k]) for k in ("vendor", "architecture") if value.get(k))
+        or "unknown"
+    )
 
 
-def render_current(
-    inventory: dict[str, Any], *, index_href: str = "index.json"
-) -> str:
+def render_current(inventory: dict[str, Any], *, index_href: str = "index.json") -> str:
     data = expand(inventory)
     lines = [
         "# Current benchmark evidence",
@@ -116,14 +142,14 @@ def render_current(
         "Failures remain visible and older qualified results are reported separately.",
         "",
     ]
-    by_family: dict[str, list[dict[str, Any]]] = {
-        f["id"]: [] for f in data["families"]
-    }
+    by_family: dict[str, list[dict[str, Any]]] = {f["id"]: [] for f in data["families"]}
     for row in data["rows"]:
         by_family[row["familyId"]].append(row)
     selected = {s["seriesKey"]: s for s in data["current"]}
     latest_ids = {s["latestMeasured"] for s in data["current"] if s["latestMeasured"]}
-    qualified_ids = {s["latestQualified"] for s in data["current"] if s["latestQualified"]}
+    qualified_ids = {
+        s["latestQualified"] for s in data["current"] if s["latestQualified"]
+    }
     for section in SECTIONS:
         lines += [
             f"## {section.replace('-', ' ').title()}",
@@ -131,13 +157,19 @@ def render_current(
             "| Family / shown scope | Machine / platform | Measured builds: source/binary | Execution / contract freeze | Metric wins/losses/inconclusive/unknown; failures | Latest measured / latest qualified | Current source / measurement gaps |",
             "| --- | --- | --- | --- | --- | --- | --- |",
         ]
-        scoped_families = [(family, scope) for family in data["families"] if family["section"] == section
-                           for scope in (overview_scopes(by_family[family["id"]], latest_ids) or [[]])]
+        scoped_families = [
+            (family, scope)
+            for family in data["families"]
+            if family["section"] == section
+            for scope in (overview_scopes(by_family[family["id"]], latest_ids) or [[]])
+        ]
         for family, rows in scoped_families:
             all_rows = by_family[family["id"]]
             if not rows:
                 label = f"[{family['label']}](families/{family['id']}.md)"
-                lines.append(f"| {label} | unknown | unknown | unknown | unknown | none | current source unmeasured; no registered observations |")
+                lines.append(
+                    f"| {label} | unknown | unknown | unknown | unknown | none | current source unmeasured; no registered observations |"
+                )
                 continue
             known = sorted(
                 {
@@ -151,8 +183,18 @@ def render_current(
                 machines += f" +{len(known) - 3} hosts"
             oses = sorted({r["machine"]["os"] for r in rows if r["machine"]["os"]})
             backends = sorted({r["backend"] for r in rows if r["backend"]})
-            machines += " / " + (", ".join(oses) or "OS unknown") + " / " + (", ".join(backends) or "backend unknown")
-            machines += "; GPU " + adapter_label(rows[0]["machine"]["gpu"]) + "; driver " + adapter_label(rows[0]["machine"]["driver"])
+            machines += (
+                " / "
+                + (", ".join(oses) or "OS unknown")
+                + " / "
+                + (", ".join(backends) or "backend unknown")
+            )
+            machines += (
+                "; GPU "
+                + adapter_label(rows[0]["machine"]["gpu"])
+                + "; driver "
+                + adapter_label(rows[0]["machine"]["driver"])
+            )
             builds = sorted(
                 {
                     build(r, "implementation") + " vs " + build(r, "comparator")
@@ -167,41 +209,55 @@ def render_current(
                 build_text = "unbound history: " + build_text
             elif not dates:
                 build_text = "undated history: " + build_text
-            frozen = [
-                r["contractFrozenAt"] for r in rows if r["contractFrozenAt"]
-            ]
+            frozen = [r["contractFrozenAt"] for r in rows if r["contractFrozenAt"]]
             outcomes = outcome_counts(rows)
             campaigns = {r["campaignId"] for r in rows}
-            scope_records = [r for r in all_rows if r["campaignId"] in campaigns
-                             and machine_scope(r) == machine_scope(rows[0])]
-            failures = sum(r["executionStatus"] in ("failed", "partially-failed") for r in scope_records)
+            scope_records = [
+                r
+                for r in all_rows
+                if r["campaignId"] in campaigns
+                and machine_scope(r) == machine_scope(rows[0])
+            ]
+            failures = sum(
+                r["executionStatus"] in ("failed", "partially-failed")
+                for r in scope_records
+            )
             qualified = sum(model.inventory_qualified(r) for r in rows)
-            old_qualified = [r for r in all_rows if r["rowId"] in qualified_ids
-                             and machine_scope(r) == machine_scope(rows[0])]
+            old_qualified = [
+                r
+                for r in all_rows
+                if r["rowId"] in qualified_ids
+                and machine_scope(r) == machine_scope(rows[0])
+            ]
             qualification = f"shown: {qualified} qualified; latest qualified: none"
             if old_qualified and known:
-                prior = max(old_qualified, key=lambda r: model.parse_utc_iso(r["executedAt"]))
+                prior = max(
+                    old_qualified, key=lambda r: model.parse_utc_iso(r["executedAt"])
+                )
                 qualification = f"shown: {qualified} qualified; latest qualified: {prior['workloadId']} at {prior['executedAt']} ({short(prior['implementation']['sourceCommit'])})"
             if not known:
                 qualification = f"history: {qualified} qualified; host-specific current result unknown"
             gaps = []
             if any(r["acceptance"]["status"] == "failed" for r in rows):
                 gaps.append("acceptance rejected; inspect evidence")
-            if not any(
-                selected[r["seriesKey"]]["currentSourceMeasured"] for r in rows
-            ):
+            if not any(selected[r["seriesKey"]]["currentSourceMeasured"] for r in rows):
                 gaps.append("current source unmeasured")
             else:
                 gaps.append("measured subset; inspect exact builds")
             undated = sum(r["executedAt"] is None for r in all_rows)
             if undated:
                 gaps.append(f"history: {undated} undated")
-            unbound_history = sum(r["machine"]["id"].startswith("unknown:") for r in all_rows)
+            unbound_history = sum(
+                r["machine"]["id"].startswith("unknown:") for r in all_rows
+            )
             if unbound_history:
                 gaps.append(f"history: {unbound_history} unbound records")
             shown_ids = {r["rowId"] for r in scope_records}
-            other_failures = sum(r["rowId"] not in shown_ids and r["executionStatus"] in ("failed", "partially-failed")
-                                 for r in all_rows)
+            other_failures = sum(
+                r["rowId"] not in shown_ids
+                and r["executionStatus"] in ("failed", "partially-failed")
+                for r in all_rows
+            )
             if other_failures:
                 gaps.append(f"history: {other_failures} other failed records")
             if any(
@@ -212,7 +268,9 @@ def render_current(
             ):
                 gaps.append("required evidence unavailable")
             workloads = sorted({r["workloadId"] for r in rows})
-            scope_label = ", ".join(workloads[:2]) + (f"; +{len(workloads) - 2} workloads" if len(workloads) > 2 else "")
+            scope_label = ", ".join(workloads[:2]) + (
+                f"; +{len(workloads) - 2} workloads" if len(workloads) > 2 else ""
+            )
             label = f"[{family['label']}](families/{family['id']}.md) — {scope_label} ({len(rows)} shown / {len(all_rows)} total)"
             cells = [
                 label,
@@ -230,13 +288,44 @@ def render_current(
     lines += [
         "## Inspect and reproduce",
         "",
-        f"- Machine-readable [index.json]({index_href}): compact v3; `bench.inventory.storage.load_inventory` expands v2/v3.",
+        f"- Machine-readable [index.json]({index_href}): compact v4; `bench.inventory.storage.load_inventory` expands v2/v3/v4.",
         "- Optional searchable dashboard: `python3 bench/cli.py inventory --dashboard-html-out bench/out/cube-inventory.html`.",
         "- Generate: `python3 bench/cli.py inventory`; verify all generated pages: `python3 bench/cli.py inventory --check`.",
+        "- Full line-by-line losses: `python3 bench/cli.py inventory --losses-out bench/out/all-losses.md`.",
         "- Public claim authority remains [claim-index.json](../claim-index.json).",
         "",
     ]
     return "\n".join(lines)
+
+
+def uncertainty(value: Any) -> str:
+    if not isinstance(value, dict):
+        return "unknown"
+    bounds = value.get("bounds", [])
+    interval = ", ".join(number(item) for item in bounds)
+    return (
+        f"{number(value.get('level', 0) * 100)}% [{interval}] {value.get('unit', '')}"
+    )
+
+
+def samples(value: Any) -> str:
+    if not isinstance(value, dict):
+        return "unknown"
+    return f"{number(value.get('implementation'))}/{number(value.get('comparator'))} {value.get('unit') or 'unknown'}"
+
+
+def missing_evidence(row: dict[str, Any]) -> str:
+    missing = []
+    if row["executedAt"] is None:
+        missing.append("execution date")
+    if row["machine"]["id"].startswith("unknown:"):
+        missing.append("machine identity")
+    if row["workloadContractHash"] is None:
+        missing.append("contract hash")
+    for side in ("implementation", "comparator"):
+        if not row[side]["sourceCommit"] or not row[side]["binaryHash"]:
+            missing.append(side + " build")
+    return ", ".join(missing) or "none of these fields"
 
 
 def render_families(
@@ -245,8 +334,9 @@ def render_families(
     repo_root: Path,
     index_path: Path | None = None,
 ) -> dict[Path, str]:
-    """Link every aggregate, its exact identity, evidence and limitations."""
+    """Keep all aggregates navigable, with shared provenance printed once."""
     from os.path import relpath
+    from bench.inventory.storage import canonical
 
     data = expand(inventory)
     selected = {s["seriesKey"]: s for s in data["current"]}
@@ -254,6 +344,11 @@ def render_families(
     for family in data["families"]:
         path = current_path.parent / "families" / (family["id"] + ".md")
         own = [r for r in data["rows"] if r["familyId"] == family["id"]]
+        summaries = sorted(
+            (r for r in own if r["observationLevel"] != "execution"),
+            key=lambda r: (r["workloadId"], r["executedAt"] or "", r["rowId"]),
+        )
+        notes: dict[str, tuple[int, dict[str, Any]]] = {}
         lines = [
             f"# {family['label']}",
             "",
@@ -263,46 +358,61 @@ def render_families(
             "",
             f"{len(own)} observations; {sum(r['observationLevel'] == 'execution' for r in own)} individual executions.",
             "",
-            "All aggregate and unavailable observations follow, including historical failures. "
-            "Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. "
-            "Execution, report and contract clocks remain separate.",
+            "Every aggregate and unavailable observation is listed below. Expand a record for every metric. "
+            "Shared evidence notes are printed once; unknown machines remain distinct. "
+            "Numbers are rounded for reading; index.json preserves exact values and all executions.",
             "",
+            "| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ]
-        for row in sorted(
-            (r for r in own if r["observationLevel"] != "execution"),
-            key=lambda r: (r["workloadId"], r["executedAt"] or "", r["rowId"]),
-        ):
+        for row in summaries:
+            counts = outcome_counts([row])
+            cells = [
+                f"[{text(row['workloadId'])}](#row-{row['rowId']})",
+                text(row["executedAt"]),
+                text(row["machine"]["id"]),
+                text(build(row, "implementation") + " vs " + build(row, "comparator")),
+                "/".join(
+                    str(counts[k]) for k in ("win", "loss", "inconclusive", "unknown")
+                ),
+                text(row["executionStatus"] + " / " + row["acceptance"]["status"]),
+                missing_evidence(row),
+            ]
+            lines.append("| " + " | ".join(cells) + " |")
+        lines += ["", "## Complete records", ""]
+        for row in summaries:
             selection = selected[row["seriesKey"]]
+            shared = {k: row[k] for k in ("evidence", "limitations")}
+            key = canonical(shared)
+            if key not in notes:
+                notes[key] = (len(notes) + 1, shared)
+            note_id = notes[key][0]
             machine = row["machine"]
             lines += [
                 f'<a id="row-{row["rowId"]}"></a>',
                 "",
-                f"## {text(row['workloadId'])}",
+                "<details>",
+                f"<summary>{text(row['workloadId'])} — {text(row['executedAt'])}; {text(row['verdict'])}; {len(row['metrics'])} metrics</summary>",
                 "",
-                f"Observation: `{row['rowId']}`; execution: `{row['executionId']}`.",
+                f"Record `{row['rowId']}` · execution `{text(row['executionId'])}` · campaign `{text(row['campaignId'])}`.",
                 "",
-                f"Machine: {text(machine['id'])}; OS: {text(machine['os'])}; backend: {text(row['backend'])}; GPU: {text(machine['gpu'])}; driver: {text(machine['driver'])}.",
+                f"Machine: {text(machine['id'])}; {text(machine['os'])}/{text(row['backend'])}; GPU {text(machine['gpu'])}; driver {text(machine['driver'])}.",
                 "",
-                f"Build: {build(row, 'implementation')}; comparator: {build(row, 'comparator')}.",
+                f"Build: {build(row, 'implementation')}; comparator: {build(row, 'comparator')}. Contract `{text(row['workloadContractHash'])}`.",
                 "",
                 f"Executed: {text(row['executedAt'])}; reported: {text(row['reportedAt'])}; contract frozen: {text(row['contractFrozenAt'])}.",
                 "",
                 "Correctness / fallback / acceptance / qualification: "
                 + " / ".join(
                     row[k]["status"]
-                    for k in (
-                        "correctness",
-                        "fallback",
-                        "acceptance",
-                        "qualification",
-                    )
+                    for k in ("correctness", "fallback", "acceptance", "qualification")
                 )
                 + ".",
                 "",
-                f"Latest measured: `{selection['latestMeasured']}`; latest qualified: `{selection['latestQualified']}`; verdict: {text(row['verdict'])}.",
+                f"Latest measured: `{selection['latestMeasured']}`; latest qualified: `{selection['latestQualified']}`. [Evidence and limitations](#evidence-{note_id}).",
                 "",
-                "| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |",
-                "| --- | --- | --- | --- | --- | --- | --- |",
+                "| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- |",
             ]
             for metric in row["metrics"]:
                 cells = [
@@ -312,13 +422,24 @@ def render_families(
                     + number(metric.get("comparatorValue")),
                     metric["unit"],
                     number(metric.get("ratio")),
-                    metric.get("uncertainty"),
-                    metric.get("samples"),
+                    uncertainty(metric.get("uncertainty")),
+                    samples(metric.get("samples")),
                     metric["outcome"],
+                    metric["scope"],
                 ]
                 lines.append("| " + " | ".join(text(c) for c in cells) + " |")
-            lines += ["", "Evidence:", ""]
-            for evidence in row["evidence"]:
+            if row["supersedes"]:
+                lines += ["", "Explicit supersedes: " + ", ".join(row["supersedes"])]
+            lines += ["", "</details>", ""]
+        lines += ["## Evidence and limitations", ""]
+        for note_id, note in notes.values():
+            lines += [
+                f'<a id="evidence-{note_id}"></a>',
+                "",
+                f"### Evidence {note_id}",
+                "",
+            ]
+            for evidence in note["evidence"]:
                 target = (
                     relpath(repo_root / evidence["path"], path.parent)
                     if evidence["path"]
@@ -330,18 +451,80 @@ def render_families(
                     else text(evidence["role"])
                 )
                 lines.append(f"- {link}: {evidence['availability']}.")
-            if row["limitations"]:
-                lines += [
-                    "",
-                    "Limitations:",
-                    "",
-                    *("- " + text(reason) for reason in row["limitations"]),
-                ]
-            if row["supersedes"]:
-                lines += [
-                    "",
-                    "Explicit supersedes: " + ", ".join(row["supersedes"]),
-                ]
-            lines.append("")
+            lines += [*("- " + text(reason) for reason in note["limitations"]), ""]
         outputs[path] = "\n".join(lines)
     return outputs
+
+
+def render_losses(
+    inventory: dict[str, Any],
+    *,
+    report_path: Path | None = None,
+    current_path: Path | None = None,
+) -> str:
+    """Project every recorded loss; never infer losses from unclassified ratios."""
+    data = expand(inventory)
+    from os.path import relpath
+
+    root = Path(__file__).resolve().parents[2]
+    report_path = report_path or root / "bench/out/all-losses.md"
+    current_path = current_path or root / "reports/benchmarks/CURRENT.md"
+    losses = [
+        (row, metric)
+        for row in data["rows"]
+        for metric in row["metrics"]
+        if metric["outcome"] == "loss"
+    ]
+    losses.sort(
+        key=lambda pair: (
+            pair[0]["section"],
+            pair[0]["familyId"],
+            pair[0]["workloadId"],
+            pair[0]["executedAt"] or "",
+            pair[0]["rowId"],
+            pair[1]["name"],
+        )
+    )
+    lines = [
+        "# All recorded benchmark losses",
+        "",
+        f"{len(losses)} metric losses across {len({r['rowId'] for r, _ in losses})} observations. "
+        "These include historical and diagnostic builds, not just current source. "
+        "Subphase losses do not imply whole-operation losses. Repeated executions stay separate.",
+        "",
+        "Only existing loss classifications are included. Unknown, invalid, incomparable, "
+        "unrun and inconclusive measurements are not silently classified. "
+        "Fawn/Dawn control comparisons retain their provider labels.",
+        "",
+    ]
+    for row, metric in losses:
+        family = current_path.parent / "families" / (row["familyId"] + ".md")
+        target = relpath(family, report_path.parent) + "#row-" + row["rowId"]
+        lines.append(
+            "- "
+            + " | ".join(
+                text(item)
+                for item in [
+                    row["familyId"],
+                    row["workloadId"],
+                    row["machine"]["id"]
+                    + "/"
+                    + (row["machine"]["os"] or "unknown")
+                    + "/"
+                    + (row["backend"] or "unknown"),
+                    build(row, "implementation") + " vs " + build(row, "comparator"),
+                    metric["name"] + " (" + metric["scope"] + ")",
+                    number(metric.get("implementationValue"))
+                    + " vs "
+                    + number(metric.get("comparatorValue"))
+                    + " "
+                    + str(metric["unit"]),
+                    "ratio " + number(metric.get("ratio")),
+                    uncertainty(metric.get("uncertainty")),
+                    "executed " + text(row["executedAt"]),
+                    "acceptance " + row["acceptance"]["status"],
+                    "[evidence](" + target + ")",
+                ]
+            )
+        )
+    return "\n".join(lines) + "\n"

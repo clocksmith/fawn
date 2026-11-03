@@ -89,6 +89,40 @@ class TestInventoryStorage(unittest.TestCase):
         self.assertEqual(value["rows"][0]["machine"]["id"], "host-a")
         self.assertEqual(expanded["current"], value["current"])
 
+    def test_v3_and_v4_preserve_uncertainty_and_all_selection_identities(self) -> None:
+        value = fixture()
+        value["rows"][0]["metrics"][0]["uncertainty"] = {
+            "kind": "bootstrap",
+            "level": 0.95,
+            "bounds": [0.1234567890123456, 0.9],
+            "unit": "ratio",
+        }
+        for version in (3, 4):
+            encoded = storage.compact(value, version=version)
+            self.assertEqual(
+                storage.canonical(storage.expand(encoded)), storage.canonical(value)
+            )
+            self.assertEqual(encoded["schemaVersion"], version)
+        # Different intervals share one v4 definition, never one observation.
+        second = deepcopy(value["rows"][0]["metrics"][0])
+        second["uncertainty"]["bounds"][0] = 0.2
+        value["rows"][0]["metrics"].append(second)
+        encoded = storage.compact(value)
+        metrics = encoded["rows"][0]["metrics"]
+        self.assertEqual(metrics[0][0], metrics[1][0])
+        self.assertNotEqual(metrics[0][1], metrics[1][1])
+        self.assertEqual(storage.expand(encoded), value)
+
+    def test_context_cannot_replace_identity_or_smuggle_fields(self) -> None:
+        encoded = storage.compact(fixture())
+        encoded["tables"]["contexts"][0]["rowId"] = "substituted"
+        with self.assertRaisesRegex(ValueError, "context fields"):
+            storage.expand(encoded)
+        encoded = storage.compact(fixture())
+        encoded["rows"][0]["contextRef"] = True
+        with self.assertRaisesRegex(ValueError, "reference"):
+            storage.expand(encoded)
+
     def test_unknown_and_wrong_schema_versions_fail_explicitly(self) -> None:
         with self.assertRaises(ValueError):
             storage.expand({"schemaVersion": 9})
@@ -129,7 +163,9 @@ class TestInventoryViews(unittest.TestCase):
         second["machine"]["id"] = "host-b"
         model.finalize_inventory_row(second)
         value["rows"].append(second)
-        value["current"] = model.select_inventory_current(value["rows"], value["currentSource"])
+        value["current"] = model.select_inventory_current(
+            value["rows"], value["currentSource"]
+        )
         front = markdown.render_current(value)
         self.assertEqual(front.count("[Fixture family]"), 2)
         self.assertIn("host-a / linux", front)
@@ -139,7 +175,9 @@ class TestInventoryViews(unittest.TestCase):
         value = fixture()
         value["rows"][0]["executedAt"] = None
         value["rows"][0]["contractFrozenAt"] = "2099-01-01T00:00:00Z"
-        value["current"] = model.select_inventory_current(value["rows"], value["currentSource"])
+        value["current"] = model.select_inventory_current(
+            value["rows"], value["currentSource"]
+        )
         front = markdown.render_current(value)
         self.assertIn("2026-11-01T00:00:00Z", front)
         self.assertNotIn("2099", front)
@@ -177,6 +215,33 @@ class TestInventoryViews(unittest.TestCase):
         self.assertEqual(counts["inconclusive"], 0)
         self.assertEqual(counts["unknown"], 2)
 
+    def test_loss_projection_keeps_historical_losses_and_excludes_unknown_ratios(
+        self,
+    ) -> None:
+        value = fixture()
+        value["rows"][0]["metrics"][0]["outcome"] = "loss"
+        value["rows"][2]["metrics"][0].update(ratio=9, outcome="unknown")
+        report = markdown.render_losses(storage.compact(value))
+        self.assertEqual(sum(line.startswith("- ") for line in report.splitlines()), 2)
+        for row in value["rows"][:2]:
+            self.assertIn(row["rowId"], report)
+        self.assertNotIn(value["rows"][2]["rowId"], report)
+        self.assertIn("not just current source", report)
+
+    def test_family_reuses_notes_without_losing_records_or_metadata(self) -> None:
+        value = fixture()
+        for row in value["rows"][:2]:
+            row["limitations"] = ["distinct shared limitation"]
+            row["evidence"] = []
+        pages = markdown.render_families(value, ROOT / "bench/out/CURRENT.md", ROOT)
+        page = next(iter(pages.values()))
+        self.assertEqual(page.count("- distinct shared limitation"), 1)
+        self.assertEqual(page.count("<details>"), 2)
+        self.assertIn("unknown machines remain distinct", page)
+        for row in value["rows"][:2]:
+            self.assertIn('id="row-' + row["rowId"], page)
+            self.assertIn(row["executionId"], page)
+
     def test_dashboard_is_self_contained_and_escapes_receipt_script_content(
         self,
     ) -> None:
@@ -186,9 +251,7 @@ class TestInventoryViews(unittest.TestCase):
             storage.compact(value), ROOT / "bench/out/view.html"
         )
         self.assertNotIn("</script><script>bad()", html)
-        self.assertIn(
-            "IBM Plex", html
-        )  # Existing theme is exercised, not copied.
+        self.assertIn("IBM Plex", html)  # Existing theme is exercised, not copied.
         self.assertIn("Summary records", html)
         self.assertIn("Individual executions", html)
 

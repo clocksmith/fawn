@@ -6,33 +6,43 @@
 
 1 observations; 0 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [browser-linux](#row-6e44169d848f21340b1338b2c49e9e67a9e3df1a9618ed9e7cad2ec1db03d0b2) | unknown | unknown:060a91a25028033c2ae241df | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | not-run / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+
+## Complete records
 
 <a id="row-6e44169d848f21340b1338b2c49e9e67a9e3df1a9618ed9e7cad2ec1db03d0b2"></a>
 
-## browser-linux
+<details>
+<summary>browser-linux — unknown; unknown; 0 metrics</summary>
 
-Observation: `6e44169d848f21340b1338b2c49e9e67a9e3df1a9618ed9e7cad2ec1db03d0b2`; execution: `browser-linux-9c5936f81ed650/browser-linux/unavailable`.
+Record `6e44169d848f21340b1338b2c49e9e67a9e3df1a9618ed9e7cad2ec1db03d0b2` · execution `browser-linux-9c5936f81ed650/browser-linux/unavailable` · campaign `browser-linux-unmeasured`.
 
-Machine: unknown:060a91a25028033c2ae241df; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:060a91a25028033c2ae241df; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: unknown.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
 
 - report: missing.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - No registered retained integrated Linux Fawn-versus-Chromium timing receipt.
 - Registered measurement evidence unavailable; no result is invented.

@@ -7,7 +7,7 @@ benchmark projection across native runtime, browser integration, compiler,
 application and workspace evidence. Its [index.json](benchmarks/index.json)
 preserves individual executions and failures as well as aggregates. CURRENT is
 the family front page; generated `benchmarks/families/` pages provide complete
-aggregate histories. The compact v3 index expands through
+aggregate histories. The compact v4 index expands through
 `bench.inventory.storage.load_inventory`; expanded v2 export remains available. Unknown
 dates, machines, builds and qualification remain explicit; retained historical
 wins do not qualify another binary or current source.

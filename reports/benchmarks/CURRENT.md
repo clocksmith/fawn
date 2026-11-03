@@ -2,7 +2,7 @@
 
 Generated from [sources.json](sources.json) by `python3 bench/cli.py inventory`.
 
-Current product-source frontier: `f25951af26cfefeea643f097f81a86abb235d37a`.
+Current product-source frontier: `3cfe061087bf516fdb8d93e46f076e597e350fac`.
 
 Newest dated campaigns are shown separately for each observed machine/adapter. Unbound evidence is grouped as history, never treated as one host or ranked across unknown machines. Undated evidence is never ranked by report or contract dates. Family links retain the complete history.
 
@@ -65,7 +65,8 @@ Outcome counts refer to metrics in the shown scope, not whole-workload wins. Inc
 
 ## Inspect and reproduce
 
-- Machine-readable [index.json](index.json): compact v3; `bench.inventory.storage.load_inventory` expands v2/v3.
+- Machine-readable [index.json](index.json): compact v4; `bench.inventory.storage.load_inventory` expands v2/v3/v4.
 - Optional searchable dashboard: `python3 bench/cli.py inventory --dashboard-html-out bench/out/cube-inventory.html`.
 - Generate: `python3 bench/cli.py inventory`; verify all generated pages: `python3 bench/cli.py inventory --check`.
+- Full line-by-line losses: `python3 bench/cli.py inventory --losses-out bench/out/all-losses.md`.
 - Public claim authority remains [claim-index.json](../claim-index.json).

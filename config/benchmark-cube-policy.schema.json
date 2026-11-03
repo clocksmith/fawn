@@ -356,7 +356,10 @@
           ]
         },
         "storageVersion": {
-          "const": 3
+          "enum": [
+            3,
+            4
+          ]
         }
       },
       "required": [
@@ -472,7 +475,8 @@
       "enum": [
         2,
         3,
-        4
+        4,
+        5
       ]
     },
     "surfaces": {

@@ -6,697 +6,1220 @@
 
 693 observations; 672 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [buffer_upload_readback_exact_1mb](#row-140e7070785cfb8e43fe712ca6e86d9cd689fcee03def250efe5e7bb47f362d4) | 2026-11-02T21:51:39.634767Z | miles | previous aa402f004092/ee1b7e685f58 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [buffer_upload_readback_exact_1mb](#row-74216c55896a9e570f0f396898d48dd913fead0d403c7a8ac24acaeefb403d75) | 2026-11-02T21:51:39.634767Z | miles | doe 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [buffer_upload_readback_exact_1mb](#row-83366e7323f5c21c9cf14da6cea8707311131b8b3950e75ca36caa1a7fb1f1ac) | 2026-11-02T21:51:39.634767Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [image_rgba_invert_1024](#row-95793b7d06c689000e09353c918a863d1c53af9c4a304210aaad5282416dc1f0) | 2026-11-02T21:50:22.471633Z | miles | previous aa402f004092/ee1b7e685f58 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [image_rgba_invert_1024](#row-975d5e919eac50eeaafd406990c960ea6fae2ad211a7c205dc976eaa590a663f) | 2026-11-02T21:50:22.471633Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [image_rgba_invert_1024](#row-dad2efa11ecf19a2358e858bf2d97597f5e78cc5f13aa9c776e45f9d12204ae9) | 2026-11-02T21:50:22.471633Z | miles | doe 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [image_rgba_invert_1024](#row-2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9) | 2026-11-02T22:49:02.153960Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / failed | none of these fields |
+| [image_rgba_invert_1024](#row-ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639) | 2026-11-02T22:49:02.153960Z | miles | previous 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / failed | none of these fields |
+| [image_rgba_invert_1024](#row-fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52) | 2026-11-02T22:49:02.153960Z | miles | doe c4fba1230dec/921b6d61505c vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / failed | none of these fields |
+| [image_rgba_invert_1024](#row-0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4) | 2026-11-02T23:19:48.781306Z | miles | previous 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / failed | none of these fields |
+| [image_rgba_invert_1024](#row-9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471) | 2026-11-02T23:19:48.781306Z | miles | doe c4fba1230dec/921b6d61505c vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / failed | none of these fields |
+| [image_rgba_invert_1024](#row-ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6) | 2026-11-02T23:19:48.781306Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / failed | none of these fields |
+| [vector_scale_add_262k](#row-97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b) | 2026-11-02T21:46:48.717840Z | miles | previous aa402f004092/ee1b7e685f58 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [vector_scale_add_262k](#row-b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81) | 2026-11-02T21:46:48.717840Z | miles | doe 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [vector_scale_add_262k](#row-bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd) | 2026-11-02T21:46:48.717840Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / unknown | none of these fields |
+| [vector_scale_add_262k](#row-0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f) | 2026-11-02T22:47:37.771855Z | miles | doe c4fba1230dec/921b6d61505c vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / passed | none of these fields |
+| [vector_scale_add_262k](#row-2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1) | 2026-11-02T22:47:37.771855Z | miles | previous 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / passed | none of these fields |
+| [vector_scale_add_262k](#row-f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a) | 2026-11-02T22:47:37.771855Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / passed | none of these fields |
+| [vector_scale_add_262k](#row-01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420) | 2026-11-02T23:15:48.497771Z | miles | dawn-aa f99976772eb1/0f255b4895ba vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / passed | none of these fields |
+| [vector_scale_add_262k](#row-d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660) | 2026-11-02T23:15:48.497771Z | miles | previous 50cf8feb842a/75b051dde715 vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / passed | none of these fields |
+| [vector_scale_add_262k](#row-da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6) | 2026-11-02T23:15:48.497771Z | miles | doe c4fba1230dec/921b6d61505c vs dawn f99976772eb1/0f255b4895ba | 0/0/0/33 | succeeded / passed | none of these fields |
+
+## Complete records
 
 <a id="row-140e7070785cfb8e43fe712ca6e86d9cd689fcee03def250efe5e7bb47f362d4"></a>
 
-## buffer_upload_readback_exact_1mb
+<details>
+<summary>buffer_upload_readback_exact_1mb — 2026-11-02T21:51:39.634767Z; diagnostic; 33 metrics</summary>
 
-Observation: `140e7070785cfb8e43fe712ca6e86d9cd689fcee03def250efe5e7bb47f362d4`; execution: `phase-d3d12-20261102-50cf8feb8/buffer_upload_readback_exact_1mb/previous/dawn`.
+Record `140e7070785cfb8e43fe712ca6e86d9cd689fcee03def250efe5e7bb47f362d4` · execution `phase-d3d12-20261102-50cf8feb8/buffer_upload_readback_exact_1mb/previous/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: previous aa402f004092/ee1b7e685f58; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: previous aa402f004092/ee1b7e685f58; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
 
 Executed: 2026-11-02T21:51:39.634767Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
-Latest measured: `140e7070785cfb8e43fe712ca6e86d9cd689fcee03def250efe5e7bb47f362d4`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `140e7070785cfb8e43fe712ca6e86d9cd689fcee03def250efe5e7bb47f362d4`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 0.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
-| complete | 405.56 / 12.439 | ms | 32.672 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [19.49564672280391, 34.217686742673926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 156.25 / 187.5 | ms | 0.90909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.27075 / 0.0499 | ms | 5.1707 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.065878378378378, 8.767164179104478], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0036 / 0.028 | ms | 0.12819 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11864406779661017, 0.1413427561837456], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.17385 / 0.1937 | ms | 0.93894 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8746130030959753, 0.9751526123384233], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.0103 / 1.3447 | ms | 0.75036 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7376975169300226, 0.7723738374752249], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.13025 / 0.37015 | ms | 0.36059 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.34303422258151445, 0.38169777242624925], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.4254 / 0.7085 | ms | 0.60959 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.568829680561524, 0.6248348745046235], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 58.441 / 67.426 | MiB | 0.86676 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8664619662823707, 0.8670761386023873], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
-| processInMainNs | 561.09 / 176.33 | ms | 3.1693 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.321284501824592, 3.3227222472640987], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 594 / 218 | ms | 2.7808 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.1407102025763285, 2.886699507389163], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 1.1973 / 1.3874 | ms | 0.96598 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8124278290993071, 1.151969221423509], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 145.83 / 152.77 | ms | 0.95603 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9395511954693018, 0.9739182756236371], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.3359 / 7.541 | ms | 0.72394 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6704754928889703, 0.7607923165841337], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.01035 / 0.0565 | ms | 0.18214 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16910569105691056, 0.19285714285714287], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 151.19 / 160.35 | ms | 0.94756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9257730505149583, 0.958071411173288], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 3.8728 / 2.1454 | ms | 1.7376 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.460953727847262, 2.028627621294104], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 3.8908 / 2.149 | ms | 1.7446 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4635577516985794, 2.03509304570839], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.01855 / 0.0032 | ms | 5.6574 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.3939393939393945, 5.999999999999999], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 14.935 / 0.1202 | ms | 120.93 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [59.44051580812211, 126.2062966031483], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0041 / 0.0024 | ms | 1.7083 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1177536231884058, 1.8333333333333337], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.2022 / 0.03695 | ms | 5.4324 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.6861891571032848, 5.65840220385675], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 15.324 / 0.24215 | ms | 62.078 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [31.391932523191805, 64.58051365674685], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.0985 / 0.0242 | ms | 3.974 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.490438529696802, 4.148760330578512], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.17075 / 0.0579 | ms | 2.9297 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0913511727171086, 2.970890410958904], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 26.136 / 0.13895 | ms | 173.08 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [119.51962110960758, 192.3299418604651], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.0048 / 0.00305 | ms | 1.5982 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4838709677419355, 1.7126436781609196], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.24715 / 0.04585 | ms | 5.2942 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.77, 5.632882882882883], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 26.526 / 0.27535 | ms | 92.033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [63.084271844660186, 96.60635696821517], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.108 / 0.03395 | ms | 3.103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.9361111111111113, 3.3211742001367357], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.18515 / 0.0636 | ms | 2.8623 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.6912773326922794, 2.9787928221859707], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0 / 0 | ms | 0 | 95% [0, 0] ratio | 7/7 observations | unknown | reported aggregate |
+| complete | 405.56 / 12.439 | ms | 32.672 | 95% [19.496, 34.218] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 156.25 / 187.5 | ms | 0.90909 | 95% [0.83333, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.27075 / 0.0499 | ms | 5.1707 | 95% [4.0659, 8.7672] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0036 / 0.028 | ms | 0.12819 | 95% [0.11864, 0.14134] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.17385 / 0.1937 | ms | 0.93894 | 95% [0.87461, 0.97515] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.0103 / 1.3447 | ms | 0.75036 | 95% [0.7377, 0.77237] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.13025 / 0.37015 | ms | 0.36059 | 95% [0.34303, 0.3817] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.4254 / 0.7085 | ms | 0.60959 | 95% [0.56883, 0.62483] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 58.441 / 67.426 | MiB | 0.86676 | 95% [0.86646, 0.86708] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 0 / 0 | ms | 0 | 95% [0, 1] ratio | 7/7 observations | unknown | reported aggregate |
+| processInMainNs | 561.09 / 176.33 | ms | 3.1693 | 95% [2.3213, 3.3227] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 594 / 218 | ms | 2.7808 | 95% [2.1407, 2.8867] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 1.1973 / 1.3874 | ms | 0.96598 | 95% [0.81243, 1.152] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 145.83 / 152.77 | ms | 0.95603 | 95% [0.93955, 0.97392] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.3359 / 7.541 | ms | 0.72394 | 95% [0.67048, 0.76079] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.01035 / 0.0565 | ms | 0.18214 | 95% [0.16911, 0.19286] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 151.19 / 160.35 | ms | 0.94756 | 95% [0.92577, 0.95807] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 3.8728 / 2.1454 | ms | 1.7376 | 95% [1.461, 2.0286] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 3.8908 / 2.149 | ms | 1.7446 | 95% [1.4636, 2.0351] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.01855 / 0.0032 | ms | 5.6574 | 95% [4.3939, 6] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 14.935 / 0.1202 | ms | 120.93 | 95% [59.441, 126.21] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0041 / 0.0024 | ms | 1.7083 | 95% [1.1178, 1.8333] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.2022 / 0.03695 | ms | 5.4324 | 95% [3.6862, 5.6584] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 15.324 / 0.24215 | ms | 62.078 | 95% [31.392, 64.581] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.0985 / 0.0242 | ms | 3.974 | 95% [2.4904, 4.1488] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.17075 / 0.0579 | ms | 2.9297 | 95% [2.0914, 2.9709] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 26.136 / 0.13895 | ms | 173.08 | 95% [119.52, 192.33] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.0048 / 0.00305 | ms | 1.5982 | 95% [1.4839, 1.7126] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.24715 / 0.04585 | ms | 5.2942 | 95% [4.77, 5.6329] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 26.526 / 0.27535 | ms | 92.033 | 95% [63.084, 96.606] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.108 / 0.03395 | ms | 3.103 | 95% [2.9361, 3.3212] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.18515 / 0.0636 | ms | 2.8623 | 95% [2.6913, 2.9788] ratio | 24/24 observations | unknown | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-74216c55896a9e570f0f396898d48dd913fead0d403c7a8ac24acaeefb403d75"></a>
 
-## buffer_upload_readback_exact_1mb
+<details>
+<summary>buffer_upload_readback_exact_1mb — 2026-11-02T21:51:39.634767Z; diagnostic; 33 metrics</summary>
 
-Observation: `74216c55896a9e570f0f396898d48dd913fead0d403c7a8ac24acaeefb403d75`; execution: `phase-d3d12-20261102-50cf8feb8/buffer_upload_readback_exact_1mb/doe/dawn`.
+Record `74216c55896a9e570f0f396898d48dd913fead0d403c7a8ac24acaeefb403d75` · execution `phase-d3d12-20261102-50cf8feb8/buffer_upload_readback_exact_1mb/doe/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: doe 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: doe 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
 
 Executed: 2026-11-02T21:51:39.634767Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
-Latest measured: `74216c55896a9e570f0f396898d48dd913fead0d403c7a8ac24acaeefb403d75`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `74216c55896a9e570f0f396898d48dd913fead0d403c7a8ac24acaeefb403d75`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
-| complete | 386.57 / 12.439 | ms | 30.962 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [12.373720405270618, 33.54059514998636], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 156.25 / 187.5 | ms | 0.87762 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8257575757575758, 0.9166666666666666], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.29665 / 0.0499 | ms | 6.6257 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.625984251968504, 9.114864864864863], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0033 / 0.028 | ms | 0.11861 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1158408158740716, 0.12455516014234876], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1629 / 0.1937 | ms | 0.83684 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7888594164456233, 0.9038674033149171], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.025 / 1.3447 | ms | 0.7632 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7367112670907363, 0.7983344331722637], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.1303 / 0.37015 | ms | 0.36663 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.34465103745621134, 0.3802946593001842], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.4302 / 0.7085 | ms | 0.60606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5899648917495611, 0.6230735358872743], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 58.436 / 67.426 | MiB | 0.86679 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.866479445782814, 0.8670181944605401], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 0.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
-| processInMainNs | 543.89 / 176.33 | ms | 3.1065 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8252800579649573, 3.2255707199270067], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 570.5 / 218 | ms | 2.6175 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5779816513761469, 2.86697247706422], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 1.2115 / 1.3874 | ms | 0.92385 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8032128514056224, 1.2307846477602966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 145.89 / 152.77 | ms | 0.95505 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9381488428085949, 0.9663177720446141], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.2284 / 7.541 | ms | 0.7052 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6753405083701479, 0.7382218357543014], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.00905 / 0.0565 | ms | 0.16402 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14974182444061962, 0.17353951890034364], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 151.11 / 160.35 | ms | 0.93768 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9233080303733482, 0.9534897743831968], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 3.9834 / 2.1454 | ms | 1.8054 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.51169286120053, 1.995713086136032], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 4.0086 / 2.149 | ms | 1.8131 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5177271438025903, 2.0024706609017913], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.0178 / 0.0032 | ms | 5.3226 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.68, 5.85], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 14.142 / 0.1202 | ms | 119.39 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.783112582781457, 121.4425837320574], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0041 / 0.0024 | ms | 1.7609 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7916666666666667, 1.9583333333333335], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.18045 / 0.03695 | ms | 4.8671 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.3502673796791442, 4.934959349593496], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 14.513 / 0.24215 | ms | 59.458 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.116968698517298, 62.4975450081833], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.0915 / 0.0242 | ms | 3.7909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4831932773109242, 4.028225806451613], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.1712 / 0.0579 | ms | 2.9058 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2110726643598615, 2.9844559585492227], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 26.91 / 0.13895 | ms | 181.13 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [119.08050847457628, 197.12433257055685], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.005 / 0.00305 | ms | 1.5879 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.457912457912458, 1.846153846153846], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.2187 / 0.04585 | ms | 4.5919 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.175373165618449, 4.991471215351813], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 27.275 / 0.27535 | ms | 95.503 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [60.4844587352626, 102.31491499227204], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.1068 / 0.03395 | ms | 3.0195 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.89766081871345, 3.2743902439024386], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.18505 / 0.0636 | ms | 2.8129 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.699376947040499, 2.97427652733119], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0 / 0 | ms | 0 | 95% [0, 1] ratio | 7/7 observations | unknown | reported aggregate |
+| complete | 386.57 / 12.439 | ms | 30.962 | 95% [12.374, 33.541] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 156.25 / 187.5 | ms | 0.87762 | 95% [0.82576, 0.91667] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.29665 / 0.0499 | ms | 6.6257 | 95% [4.626, 9.1149] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0033 / 0.028 | ms | 0.11861 | 95% [0.11584, 0.12456] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1629 / 0.1937 | ms | 0.83684 | 95% [0.78886, 0.90387] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.025 / 1.3447 | ms | 0.7632 | 95% [0.73671, 0.79833] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.1303 / 0.37015 | ms | 0.36663 | 95% [0.34465, 0.38029] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.4302 / 0.7085 | ms | 0.60606 | 95% [0.58996, 0.62307] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 58.436 / 67.426 | MiB | 0.86679 | 95% [0.86648, 0.86702] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 0 / 0 | ms | 0 | 95% [0, 0] ratio | 7/7 observations | unknown | reported aggregate |
+| processInMainNs | 543.89 / 176.33 | ms | 3.1065 | 95% [1.8253, 3.2256] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 570.5 / 218 | ms | 2.6175 | 95% [1.578, 2.867] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 1.2115 / 1.3874 | ms | 0.92385 | 95% [0.80321, 1.2308] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 145.89 / 152.77 | ms | 0.95505 | 95% [0.93815, 0.96632] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.2284 / 7.541 | ms | 0.7052 | 95% [0.67534, 0.73822] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.00905 / 0.0565 | ms | 0.16402 | 95% [0.14974, 0.17354] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 151.11 / 160.35 | ms | 0.93768 | 95% [0.92331, 0.95349] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 3.9834 / 2.1454 | ms | 1.8054 | 95% [1.5117, 1.9957] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 4.0086 / 2.149 | ms | 1.8131 | 95% [1.5177, 2.0025] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.0178 / 0.0032 | ms | 5.3226 | 95% [4.68, 5.85] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 14.142 / 0.1202 | ms | 119.39 | 95% [6.7831, 121.44] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0041 / 0.0024 | ms | 1.7609 | 95% [0.79167, 1.9583] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.18045 / 0.03695 | ms | 4.8671 | 95% [2.3503, 4.935] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 14.513 / 0.24215 | ms | 59.458 | 95% [5.117, 62.498] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.0915 / 0.0242 | ms | 3.7909 | 95% [1.4832, 4.0282] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.1712 / 0.0579 | ms | 2.9058 | 95% [2.2111, 2.9845] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 26.91 / 0.13895 | ms | 181.13 | 95% [119.08, 197.12] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.005 / 0.00305 | ms | 1.5879 | 95% [1.4579, 1.8462] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.2187 / 0.04585 | ms | 4.5919 | 95% [4.1754, 4.9915] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 27.275 / 0.27535 | ms | 95.503 | 95% [60.484, 102.31] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.1068 / 0.03395 | ms | 3.0195 | 95% [2.8977, 3.2744] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.18505 / 0.0636 | ms | 2.8129 | 95% [2.6994, 2.9743] ratio | 24/24 observations | unknown | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-83366e7323f5c21c9cf14da6cea8707311131b8b3950e75ca36caa1a7fb1f1ac"></a>
 
-## buffer_upload_readback_exact_1mb
+<details>
+<summary>buffer_upload_readback_exact_1mb — 2026-11-02T21:51:39.634767Z; diagnostic; 33 metrics</summary>
 
-Observation: `83366e7323f5c21c9cf14da6cea8707311131b8b3950e75ca36caa1a7fb1f1ac`; execution: `phase-d3d12-20261102-50cf8feb8/buffer_upload_readback_exact_1mb/dawn-aa/dawn`.
+Record `83366e7323f5c21c9cf14da6cea8707311131b8b3950e75ca36caa1a7fb1f1ac` · execution `phase-d3d12-20261102-50cf8feb8/buffer_upload_readback_exact_1mb/dawn-aa/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
 
 Executed: 2026-11-02T21:51:39.634767Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
-Latest measured: `83366e7323f5c21c9cf14da6cea8707311131b8b3950e75ca36caa1a7fb1f1ac`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `83366e7323f5c21c9cf14da6cea8707311131b8b3950e75ca36caa1a7fb1f1ac`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0 / 0 | ms | 0 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 0.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
-| complete | 12.329 / 12.439 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.954990534123708, 1.0281261109854238], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 171.88 / 187.5 | ms | 0.96154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9090909090909091, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.05935 / 0.0499 | ms | 1.2721 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7846607669616519, 1.7340425531914891], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0284 / 0.028 | ms | 0.99659 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9713261648745519, 1.037037037037037], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1825 / 0.1937 | ms | 0.94711 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9171473518615626, 1.0076117982873454], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.3617 / 1.3447 | ms | 1.0126 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9789202305125871, 1.0805763073639274], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.35535 / 0.37015 | ms | 0.99382 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9448592762780011, 1.0716675962074735], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.7199 / 0.7085 | ms | 1.0121 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9809406279994517, 1.0914131361956212], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 67.422 / 67.426 | MiB | 0.99991 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997393872547795, 1.0002318034306907], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | unknown |
-| processInMainNs | 176.35 / 176.33 | ms | 0.99216 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9859110240661502, 1.001088868985647], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 210.5 / 218 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9311926605504587, 1.0045871559633028], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 1.2769 / 1.3874 | ms | 1.0288 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8850997209175685, 1.1918598764807127], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 153.15 / 152.77 | ms | 1.0003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9835322504090711, 1.0083066710124589], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 7.466 / 7.541 | ms | 1.0204 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9496486805406564, 1.0390924002186988], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.0579 / 0.0565 | ms | 1.0091 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9707903780068728, 1.071556350626118], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 160.61 / 160.35 | ms | 0.99647 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9859184880524449, 1.0068470568582666], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.0807 / 2.1454 | ms | 0.98417 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9334712492359772, 1.0044410117783356], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.0838 / 2.149 | ms | 0.98407 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9335587171902145, 1.0045318677080322], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.0031 / 0.0032 | ms | 0.96774 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8181818181818182, 1.1071428571428572], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.11905 / 0.1202 | ms | 1.0033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9697986577181208, 1.0250865051903115], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0024 / 0.0024 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0416666666666667], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.03665 / 0.03695 | ms | 0.99188 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.981029810298103, 1.0081743869209807], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.2399 / 0.24215 | ms | 0.98432 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9579692051602163, 1.0058798824023518], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.024 / 0.0242 | ms | 1.0001 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.967741935483871, 1.0213675213675213], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.0574 / 0.0579 | ms | 0.9896 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.982876712328767, 0.9930795847750865], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.13875 / 0.13895 | ms | 0.94935 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9228858730105769, 1.0338345864661656], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.0029 / 0.00305 | ms | 0.93218 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8787878787878788, 1.0303030303030303], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.04515 / 0.04585 | ms | 0.97956 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.95, 1.0359712230215827], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 0.2644 / 0.27535 | ms | 0.97731 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9292004226840437, 1.0180560891279296], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.0331 / 0.03395 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9142011834319528, 1.0302114803625377], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.06345 / 0.0636 | ms | 0.98979 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9756888168557536, 1.0091047040971168], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0 / 0 | ms | 0 | 95% [0, 0] ratio | 7/7 observations | unknown | reported aggregate |
+| complete | 12.329 / 12.439 | ms | 1.003 | 95% [0.95499, 1.0281] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 171.88 / 187.5 | ms | 0.96154 | 95% [0.90909, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.05935 / 0.0499 | ms | 1.2721 | 95% [0.78466, 1.734] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0284 / 0.028 | ms | 0.99659 | 95% [0.97133, 1.037] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1825 / 0.1937 | ms | 0.94711 | 95% [0.91715, 1.0076] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.3617 / 1.3447 | ms | 1.0126 | 95% [0.97892, 1.0806] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.35535 / 0.37015 | ms | 0.99382 | 95% [0.94486, 1.0717] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.7199 / 0.7085 | ms | 1.0121 | 95% [0.98094, 1.0914] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 67.422 / 67.426 | MiB | 0.99991 | 95% [0.99974, 1.0002] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 0 / 0 | ms | 1 | 95% [0, 1] ratio | 7/7 observations | unknown | reported aggregate |
+| processInMainNs | 176.35 / 176.33 | ms | 0.99216 | 95% [0.98591, 1.0011] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 210.5 / 218 | ms | 1 | 95% [0.93119, 1.0046] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 1.2769 / 1.3874 | ms | 1.0288 | 95% [0.8851, 1.1919] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 153.15 / 152.77 | ms | 1.0003 | 95% [0.98353, 1.0083] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 7.466 / 7.541 | ms | 1.0204 | 95% [0.94965, 1.0391] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.0579 / 0.0565 | ms | 1.0091 | 95% [0.97079, 1.0716] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 160.61 / 160.35 | ms | 0.99647 | 95% [0.98592, 1.0068] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.0807 / 2.1454 | ms | 0.98417 | 95% [0.93347, 1.0044] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.0838 / 2.149 | ms | 0.98407 | 95% [0.93356, 1.0045] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.0031 / 0.0032 | ms | 0.96774 | 95% [0.81818, 1.1071] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.11905 / 0.1202 | ms | 1.0033 | 95% [0.9698, 1.0251] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0024 / 0.0024 | ms | 1 | 95% [1, 1.0417] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.03665 / 0.03695 | ms | 0.99188 | 95% [0.98103, 1.0082] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.2399 / 0.24215 | ms | 0.98432 | 95% [0.95797, 1.0059] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.024 / 0.0242 | ms | 1.0001 | 95% [0.96774, 1.0214] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.0574 / 0.0579 | ms | 0.9896 | 95% [0.98288, 0.99308] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.13875 / 0.13895 | ms | 0.94935 | 95% [0.92289, 1.0338] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.0029 / 0.00305 | ms | 0.93218 | 95% [0.87879, 1.0303] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.04515 / 0.04585 | ms | 0.97956 | 95% [0.95, 1.036] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 0.2644 / 0.27535 | ms | 0.97731 | 95% [0.9292, 1.0181] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.0331 / 0.03395 | ms | 1 | 95% [0.9142, 1.0302] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.06345 / 0.0636 | ms | 0.98979 | 95% [0.97569, 1.0091] ratio | 24/24 observations | unknown | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-95793b7d06c689000e09353c918a863d1c53af9c4a304210aaad5282416dc1f0"></a>
 
-## image_rgba_invert_1024
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T21:50:22.471633Z; diagnostic; 33 metrics</summary>
 
-Observation: `95793b7d06c689000e09353c918a863d1c53af9c4a304210aaad5282416dc1f0`; execution: `phase-d3d12-20261102-50cf8feb8/image_rgba_invert_1024/previous/dawn`.
+Record `95793b7d06c689000e09353c918a863d1c53af9c4a304210aaad5282416dc1f0` · execution `phase-d3d12-20261102-50cf8feb8/image_rgba_invert_1024/previous/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: previous aa402f004092/ee1b7e685f58; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: previous aa402f004092/ee1b7e685f58; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
 
 Executed: 2026-11-02T21:50:22.471633Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
-Latest measured: `95793b7d06c689000e09353c918a863d1c53af9c4a304210aaad5282416dc1f0`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `95793b7d06c689000e09353c918a863d1c53af9c4a304210aaad5282416dc1f0`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12285 / 0.72795 | ms | 0.16885 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16445252412250036, 0.1713898305084746], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 504.43 / 55.872 | ms | 9.036 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7484761293146436, 9.580663318100619], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 187.5 / 218.75 | ms | 0.89167 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7857142857142857, 0.9642857142857143], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.9794 / 0.6345 | ms | 1.5455 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.495255586164677, 1.556859635210151], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0082 / 0.0493 | ms | 0.1634 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14285714285714288, 6.347248576850095], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.5134 / 0.52695 | ms | 0.96794 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9447421918314544, 0.9842412451361868], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 3.3483 / 2.4217 | ms | 1.3907 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3802213263439724, 1.3984249978943821], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.8074 / 0.307 | ms | 2.6152 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7435087719298248, 2.8118845500848897], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 1.0252 / 0.88195 | ms | 1.1666 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1426598909104582, 1.1804052498273083], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 94.518 / 109.05 | MiB | 0.86673 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8665114613180516, 0.8669700118232955], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.586 / 2.818 | ms | 0.92114 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9099073615727318, 0.9289082466433894], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 678.15 / 233.55 | ms | 2.9183 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3725308291528175, 3.0549736508861542], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 703 / 273.5 | ms | 2.5827 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.252, 2.7593984962406015], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 4.7412 / 3.9969 | ms | 1.2149 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1778211454959195, 1.2725436226357918], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 146.85 / 153.93 | ms | 0.95278 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9446346000221578, 0.9610047318916966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.3298 / 7.2579 | ms | 0.73273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7005979735341343, 0.7737016749183608], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.01105 / 0.05775 | ms | 0.19165 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18117229129662524, 0.1968365553602812], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 152.43 / 161.24 | ms | 0.94577 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9355259994479255, 0.9547017695688812], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.4254 / 3.2584 | ms | 0.75003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7278095233501642, 0.7797894736842106], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 3.1576 / 3.3151 | ms | 0.94294 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8930515124667764, 1.0242601726263871], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.8003 / 0.0592 | ms | 13.89 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.694200351493848, 15.946308724832216], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 12.683 / 0.69585 | ms | 18.149 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3844648502182748, 19.38153098420413], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0072 / 0.008 | ms | 0.89437 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6296296296296298, 0.961038961038961], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.4199 / 0.225 | ms | 1.8349 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0532676812891675, 1.900852400179453], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 15.309 / 1.3216 | ms | 11.551 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.781678926215212, 11.930088428690198], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.5667 / 0.0498 | ms | 11.237 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.512096774193548, 11.717299578059073], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 1.1349 / 0.34385 | ms | 3.2961 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9967995344777423, 3.3793604651162794], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 26.31 / 0.71735 | ms | 36.345 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [20.96219835402427, 36.849173275977954], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.01005 / 0.01 | ms | 0.98013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7623504273504274, 1.02], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.50425 / 0.2426 | ms | 1.9985 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3641025641025641, 2.094009983361065], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 28.429 / 1.8027 | ms | 15.425 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.243526785714286, 16.231551743099086], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.8391 / 0.0616 | ms | 13.357 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [12.302170283806344, 14.169390787518575], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 1.6272 / 0.8708 | ms | 1.8212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4078080891960676, 1.9317282694698767], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12285 / 0.72795 | ms | 0.16885 | 95% [0.16445, 0.17139] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 504.43 / 55.872 | ms | 9.036 | 95% [2.7485, 9.5807] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 187.5 / 218.75 | ms | 0.89167 | 95% [0.78571, 0.96429] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.9794 / 0.6345 | ms | 1.5455 | 95% [1.4953, 1.5569] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0082 / 0.0493 | ms | 0.1634 | 95% [0.14286, 6.3472] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.5134 / 0.52695 | ms | 0.96794 | 95% [0.94474, 0.98424] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 3.3483 / 2.4217 | ms | 1.3907 | 95% [1.3802, 1.3984] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.8074 / 0.307 | ms | 2.6152 | 95% [1.7435, 2.8119] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 1.0252 / 0.88195 | ms | 1.1666 | 95% [1.1427, 1.1804] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 94.518 / 109.05 | MiB | 0.86673 | 95% [0.86651, 0.86697] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.586 / 2.818 | ms | 0.92114 | 95% [0.90991, 0.92891] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 678.15 / 233.55 | ms | 2.9183 | 95% [1.3725, 3.055] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 703 / 273.5 | ms | 2.5827 | 95% [1.252, 2.7594] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 4.7412 / 3.9969 | ms | 1.2149 | 95% [1.1778, 1.2725] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 146.85 / 153.93 | ms | 0.95278 | 95% [0.94463, 0.961] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.3298 / 7.2579 | ms | 0.73273 | 95% [0.7006, 0.7737] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.01105 / 0.05775 | ms | 0.19165 | 95% [0.18117, 0.19684] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 152.43 / 161.24 | ms | 0.94577 | 95% [0.93553, 0.9547] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.4254 / 3.2584 | ms | 0.75003 | 95% [0.72781, 0.77979] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 3.1576 / 3.3151 | ms | 0.94294 | 95% [0.89305, 1.0243] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.8003 / 0.0592 | ms | 13.89 | 95% [8.6942, 15.946] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 12.683 / 0.69585 | ms | 18.149 | 95% [1.3845, 19.382] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0072 / 0.008 | ms | 0.89437 | 95% [0.62963, 0.96104] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.4199 / 0.225 | ms | 1.8349 | 95% [1.0533, 1.9009] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 15.309 / 1.3216 | ms | 11.551 | 95% [1.7817, 11.93] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.5667 / 0.0498 | ms | 11.237 | 95% [9.5121, 11.717] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 1.1349 / 0.34385 | ms | 3.2961 | 95% [1.9968, 3.3794] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 26.31 / 0.71735 | ms | 36.345 | 95% [20.962, 36.849] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.01005 / 0.01 | ms | 0.98013 | 95% [0.76235, 1.02] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.50425 / 0.2426 | ms | 1.9985 | 95% [1.3641, 2.094] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 28.429 / 1.8027 | ms | 15.425 | 95% [9.2435, 16.232] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.8391 / 0.0616 | ms | 13.357 | 95% [12.302, 14.169] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 1.6272 / 0.8708 | ms | 1.8212 | 95% [1.4078, 1.9317] ratio | 24/24 observations | unknown | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-975d5e919eac50eeaafd406990c960ea6fae2ad211a7c205dc976eaa590a663f"></a>
 
-## image_rgba_invert_1024
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T21:50:22.471633Z; diagnostic; 33 metrics</summary>
 
-Observation: `975d5e919eac50eeaafd406990c960ea6fae2ad211a7c205dc976eaa590a663f`; execution: `phase-d3d12-20261102-50cf8feb8/image_rgba_invert_1024/dawn-aa/dawn`.
+Record `975d5e919eac50eeaafd406990c960ea6fae2ad211a7c205dc976eaa590a663f` · execution `phase-d3d12-20261102-50cf8feb8/image_rgba_invert_1024/dawn-aa/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
 
 Executed: 2026-11-02T21:50:22.471633Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
-Latest measured: `975d5e919eac50eeaafd406990c960ea6fae2ad211a7c205dc976eaa590a663f`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `975d5e919eac50eeaafd406990c960ea6fae2ad211a7c205dc976eaa590a663f`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.72965 / 0.72795 | ms | 1.0028 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9958789101918007, 1.019457956914524], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 56.138 / 55.872 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9949890496204576, 1.0107475113478865], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 218.75 / 218.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9333333333333333, 1.0714285714285714], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.62915 / 0.6345 | ms | 0.98743 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9533515142816134, 1.005551149881047], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.04845 / 0.0493 | ms | 0.9842 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9616161616161616, 1.021097046413502], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.5217 / 0.52695 | ms | 0.99283 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.966711051930759, 1.0189090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 2.3933 / 2.4217 | ms | 0.98974 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9816769154063486, 1.0086393989983307], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.3182 / 0.307 | ms | 1.0115 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9776536312849162, 1.0872884168602721], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.8651 / 0.88195 | ms | 0.98516 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.974475843208751, 1.0132675824820947], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 109.05 / 109.05 | MiB | 1.0001 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9998567078631561, 1.000143312672423], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.8239 / 2.818 | ms | 1.0031 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9826372762673716, 1.0186593942873547], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 233.81 / 233.55 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9987338411060235, 1.007241033493741], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 266 / 273.5 | ms | 0.99812 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9432624113475178, 1.056390977443609], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 3.8624 / 3.9969 | ms | 0.97232 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9566557456619342, 0.9950748818976781], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 153.28 / 153.93 | ms | 0.99733 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9852157639230376, 1.0070165574394208], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 7.3355 / 7.2579 | ms | 1.011 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9703445447087777, 1.0547073058308365], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.0573 / 0.05775 | ms | 0.98041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9621993127147767, 1.0267379679144386], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 160.55 / 161.24 | ms | 0.99979 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9875078238453489, 1.004328739637471], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 3.3169 / 3.2584 | ms | 1.0383 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9987697662555884, 1.0590892553965559], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 3.3751 / 3.3151 | ms | 1.0364 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9998231653404067, 1.0580702799285289], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.05805 / 0.0592 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.948051948051948, 1.02014652014652], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.6964 / 0.69585 | ms | 1.0017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.998850409541601, 1.04413851830826], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0079 / 0.008 | ms | 0.9939 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9689043209876544, 1.025974025974026], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.226 / 0.225 | ms | 1.0002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.995076096687556, 1.003985828166519], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 1.3203 / 1.3216 | ms | 0.99852 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938937052393517, 1.0089597570235385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.04955 / 0.0498 | ms | 0.99391 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9839343476698215, 1.0186335403726707], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.34475 / 0.34385 | ms | 1.0009 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.995639534883721, 1.0059347247839887], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.7275 / 0.71735 | ms | 1.0159 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.004691689008043, 1.0308529945553537], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.01045 / 0.01 | ms | 1.0767 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.98, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.24605 / 0.2426 | ms | 1.0041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9867947178871549, 1.019826517967782], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 1.8065 / 1.8027 | ms | 1.0026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9897723523589574, 1.0238961329677094], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.0621 / 0.0616 | ms | 1.0079 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9632721202003339, 1.111111111111111], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.882 / 0.8708 | ms | 0.99124 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9803685018644439, 1.0369475138121547], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.72965 / 0.72795 | ms | 1.0028 | 95% [0.99588, 1.0195] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 56.138 / 55.872 | ms | 1.003 | 95% [0.99499, 1.0107] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 218.75 / 218.75 | ms | 1 | 95% [0.93333, 1.0714] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.62915 / 0.6345 | ms | 0.98743 | 95% [0.95335, 1.0056] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.04845 / 0.0493 | ms | 0.9842 | 95% [0.96162, 1.0211] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.5217 / 0.52695 | ms | 0.99283 | 95% [0.96671, 1.0189] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 2.3933 / 2.4217 | ms | 0.98974 | 95% [0.98168, 1.0086] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.3182 / 0.307 | ms | 1.0115 | 95% [0.97765, 1.0873] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.8651 / 0.88195 | ms | 0.98516 | 95% [0.97448, 1.0133] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 109.05 / 109.05 | MiB | 1.0001 | 95% [0.99986, 1.0001] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.8239 / 2.818 | ms | 1.0031 | 95% [0.98264, 1.0187] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 233.81 / 233.55 | ms | 1.0008 | 95% [0.99873, 1.0072] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 266 / 273.5 | ms | 0.99812 | 95% [0.94326, 1.0564] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 3.8624 / 3.9969 | ms | 0.97232 | 95% [0.95666, 0.99507] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 153.28 / 153.93 | ms | 0.99733 | 95% [0.98522, 1.007] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 7.3355 / 7.2579 | ms | 1.011 | 95% [0.97034, 1.0547] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.0573 / 0.05775 | ms | 0.98041 | 95% [0.9622, 1.0267] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 160.55 / 161.24 | ms | 0.99979 | 95% [0.98751, 1.0043] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 3.3169 / 3.2584 | ms | 1.0383 | 95% [0.99877, 1.0591] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 3.3751 / 3.3151 | ms | 1.0364 | 95% [0.99982, 1.0581] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.05805 / 0.0592 | ms | 1.0008 | 95% [0.94805, 1.0201] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.6964 / 0.69585 | ms | 1.0017 | 95% [0.99885, 1.0441] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0079 / 0.008 | ms | 0.9939 | 95% [0.9689, 1.026] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.226 / 0.225 | ms | 1.0002 | 95% [0.99508, 1.004] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 1.3203 / 1.3216 | ms | 0.99852 | 95% [0.99389, 1.009] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.04955 / 0.0498 | ms | 0.99391 | 95% [0.98393, 1.0186] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.34475 / 0.34385 | ms | 1.0009 | 95% [0.99564, 1.0059] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.7275 / 0.71735 | ms | 1.0159 | 95% [1.0047, 1.0309] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.01045 / 0.01 | ms | 1.0767 | 95% [0.98, 1.1667] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.24605 / 0.2426 | ms | 1.0041 | 95% [0.98679, 1.0198] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 1.8065 / 1.8027 | ms | 1.0026 | 95% [0.98977, 1.0239] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.0621 / 0.0616 | ms | 1.0079 | 95% [0.96327, 1.1111] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.882 / 0.8708 | ms | 0.99124 | 95% [0.98037, 1.0369] ratio | 24/24 observations | unknown | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-dad2efa11ecf19a2358e858bf2d97597f5e78cc5f13aa9c776e45f9d12204ae9"></a>
 
-## image_rgba_invert_1024
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T21:50:22.471633Z; diagnostic; 33 metrics</summary>
 
-Observation: `dad2efa11ecf19a2358e858bf2d97597f5e78cc5f13aa9c776e45f9d12204ae9`; execution: `phase-d3d12-20261102-50cf8feb8/image_rgba_invert_1024/doe/dawn`.
+Record `dad2efa11ecf19a2358e858bf2d97597f5e78cc5f13aa9c776e45f9d12204ae9` · execution `phase-d3d12-20261102-50cf8feb8/image_rgba_invert_1024/doe/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: doe 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: doe 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
 
 Executed: 2026-11-02T21:50:22.471633Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
 
-Latest measured: `dad2efa11ecf19a2358e858bf2d97597f5e78cc5f13aa9c776e45f9d12204ae9`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `dad2efa11ecf19a2358e858bf2d97597f5e78cc5f13aa9c776e45f9d12204ae9`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12115 / 0.72795 | ms | 0.16691 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16313124401259066, 0.17242343728149911], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 178.51 / 55.872 | ms | 3.2013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.8446804488549566, 9.231870347559697], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 203.12 / 218.75 | ms | 0.89583 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8461538461538461, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.977 / 0.6345 | ms | 1.523 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4836241199877565, 1.5687848018342612], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.00685 / 0.0493 | ms | 0.14406 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12923728813559324, 6.451882845188284], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.5017 / 0.52695 | ms | 0.94909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9216411014599888, 0.9674441847509939], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 3.3386 / 2.4217 | ms | 1.3769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3444260941370767, 1.3936457770200026], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.784 / 0.307 | ms | 2.5017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6849122807017547, 2.6907145322747668], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 1.0199 / 0.88195 | ms | 1.157 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1225013958682302, 1.171134054168851], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 94.512 / 109.05 | MiB | 0.86677 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8666666666666667, 0.8668505516549649], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.5628 / 2.818 | ms | 0.91287 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9040524004894551, 0.9210451877519271], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 347.05 / 233.55 | ms | 1.4969 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3912907695352879, 2.9792855726500718], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 360 / 273.5 | ms | 1.408 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2981132075471697, 2.6690391459074734], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 4.7547 / 3.9969 | ms | 1.22 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1720028610008928, 1.2411151515151515], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 146.95 / 153.93 | ms | 0.95316 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9488846001021741, 0.9641358080097869], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.3316 / 7.2579 | ms | 0.73742 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.704890781700783, 0.7643738120078318], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.00975 / 0.05775 | ms | 0.16973 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16493055555555555, 0.17677642980935876], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 152.44 / 161.24 | ms | 0.94546 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9391679910738752, 0.955585975453728], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.4148 / 3.2584 | ms | 0.74913 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.712693236768788, 0.7850718834110155], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.9293 / 3.3151 | ms | 0.91755 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8612672701286327, 0.9924784217016028], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.48645 / 0.0592 | ms | 8.4044 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.048422586563248, 15.816558441558442], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.9639 / 0.69585 | ms | 1.4038 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.379211056723294, 17.90497412305923], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.00525 / 0.008 | ms | 0.64832 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5696202531645569, 0.9876543209876544], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.22675 / 0.225 | ms | 1.0136 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9901960784313726, 1.2337719298245613], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 2.3606 / 1.3216 | ms | 1.7871 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7634052793863277, 11.652915750360203], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.47475 / 0.0498 | ms | 9.5376 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.39235412474849, 12.366598778004073], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.68145 / 0.34385 | ms | 1.9712 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9235447437011295, 3.304221251819505], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 20.434 / 0.71735 | ms | 27.604 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [20.333152321477055, 36.2467109916537], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.00845 / 0.01 | ms | 0.81655 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.72, 1.11], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.445 / 0.2426 | ms | 1.8051 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2403806371534962, 1.9929781082197437], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 21.925 / 1.8027 | ms | 12.02 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.157014794038389, 15.366671843453954], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.6778 / 0.0616 | ms | 11.088 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.73884297520661, 13.406099518459069], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 1.3216 / 0.8708 | ms | 1.4648 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3337854639990956, 1.9009214092140923], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12115 / 0.72795 | ms | 0.16691 | 95% [0.16313, 0.17242] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 178.51 / 55.872 | ms | 3.2013 | 95% [2.8447, 9.2319] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 203.12 / 218.75 | ms | 0.89583 | 95% [0.84615, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.977 / 0.6345 | ms | 1.523 | 95% [1.4836, 1.5688] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.00685 / 0.0493 | ms | 0.14406 | 95% [0.12924, 6.4519] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.5017 / 0.52695 | ms | 0.94909 | 95% [0.92164, 0.96744] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 3.3386 / 2.4217 | ms | 1.3769 | 95% [1.3444, 1.3936] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.784 / 0.307 | ms | 2.5017 | 95% [1.6849, 2.6907] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 1.0199 / 0.88195 | ms | 1.157 | 95% [1.1225, 1.1711] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 94.512 / 109.05 | MiB | 0.86677 | 95% [0.86667, 0.86685] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.5628 / 2.818 | ms | 0.91287 | 95% [0.90405, 0.92105] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 347.05 / 233.55 | ms | 1.4969 | 95% [1.3913, 2.9793] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 360 / 273.5 | ms | 1.408 | 95% [1.2981, 2.669] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 4.7547 / 3.9969 | ms | 1.22 | 95% [1.172, 1.2411] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 146.95 / 153.93 | ms | 0.95316 | 95% [0.94888, 0.96414] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.3316 / 7.2579 | ms | 0.73742 | 95% [0.70489, 0.76437] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.00975 / 0.05775 | ms | 0.16973 | 95% [0.16493, 0.17678] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 152.44 / 161.24 | ms | 0.94546 | 95% [0.93917, 0.95559] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.4148 / 3.2584 | ms | 0.74913 | 95% [0.71269, 0.78507] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.9293 / 3.3151 | ms | 0.91755 | 95% [0.86127, 0.99248] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.48645 / 0.0592 | ms | 8.4044 | 95% [8.0484, 15.817] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.9639 / 0.69585 | ms | 1.4038 | 95% [1.3792, 17.905] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.00525 / 0.008 | ms | 0.64832 | 95% [0.56962, 0.98765] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.22675 / 0.225 | ms | 1.0136 | 95% [0.9902, 1.2338] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 2.3606 / 1.3216 | ms | 1.7871 | 95% [1.7634, 11.653] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.47475 / 0.0498 | ms | 9.5376 | 95% [9.3924, 12.367] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.68145 / 0.34385 | ms | 1.9712 | 95% [1.9235, 3.3042] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 20.434 / 0.71735 | ms | 27.604 | 95% [20.333, 36.247] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.00845 / 0.01 | ms | 0.81655 | 95% [0.72, 1.11] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.445 / 0.2426 | ms | 1.8051 | 95% [1.2404, 1.993] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 21.925 / 1.8027 | ms | 12.02 | 95% [9.157, 15.367] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.6778 / 0.0616 | ms | 11.088 | 95% [9.7388, 13.406] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 1.3216 / 0.8708 | ms | 1.4648 | 95% [1.3338, 1.9009] ratio | 24/24 observations | unknown | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9"></a>
 
-## image_rgba_invert_1024
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T22:49:02.153960Z; incomparable; 33 metrics</summary>
 
-Observation: `2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9`; execution: `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/dawn-aa/dawn`.
+Record `2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9` · execution `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/dawn-aa/dawn` · campaign `windows-c4-formatted-observer-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda`.
 
 Executed: 2026-11-02T22:49:02.153960Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
 
-Latest measured: `2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9`; latest qualified: `None`; verdict: incomparable.
+Latest measured: `2abdd389ab3de75bf3b90057b5bac8291062a92872ff3de2ff101b8aebaa93d9`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.72215 / 0.71635 | ms | 1.0106 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997239094422969, 1.0165707063614662], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| complete | 55.534 / 55.27 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9958784816858338, 1.0086038743671493], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| cpuMs | 195.31 / 203.12 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.875, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.completion | 0.64485 / 0.6523 | ms | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.958148091369002, 1.0238780694326841], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.encode | 0.0481 / 0.04845 | ms | 0.99373 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9834710743801653, 1.0103305785123966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.map | 0.5197 / 0.52315 | ms | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9565876777251187, 1.0206883217324054], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.operation | 2.3861 / 2.3873 | ms | 0.99643 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9902205522507019, 1.003783392409919], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.submit | 0.28955 / 0.29125 | ms | 0.99504 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9438822447102116, 1.0339381478035288], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.upload | 0.8635 / 0.8717 | ms | 0.98682 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9817780995911507, 1.0074695472305217], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| maxRssMiB | 109.04 / 109.06 | MiB | 0.99989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997851079832384, 1.0001790766806347], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| pipelineNs | 2.7839 / 2.781 | ms | 1.0042 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9911827956989248, 1.0124170413187754], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processInMainNs | 230.13 / 228.87 | ms | 0.99907 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9901554380559008, 1.005711325977889], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processWall | 266 / 266 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9962406015037594, 1.001779359430605], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| resourcesNs | 3.6845 / 3.6754 | ms | 1.0074 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938959587977219, 1.0342839805825241], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupAdapterNs | 151.63 / 150.83 | ms | 0.99868 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9878454069707421, 1.013125644332033], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupDeviceNs | 7.0283 / 7.0171 | ms | 1.0034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9953932490158304, 1.0245279146141215], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupInstanceNs | 0.0563 / 0.0576 | ms | 0.96534 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9118589743589743, 0.9897610921501707], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupNs | 158.8 / 158.01 | ms | 0.99847 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9905501185436653, 1.0122456876075863], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownDeviceNs | 3.1514 / 3.1505 | ms | 0.99553 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9807704928791756, 1.029185119348944], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownNs | 3.213 / 3.2158 | ms | 0.99554 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9813366798597034, 1.0285270115638012], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownReleaseNs | 0.05985 / 0.0596 | ms | 1.0092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9682804674457429, 1.038938053097345], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.completion | 0.69655 / 0.6953 | ms | 1.0022 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9879398410896709, 1.023728813559322], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.encode | 0.00785 / 0.0079 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.975, 1.0129870129870129], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.map | 0.22465 / 0.22305 | ms | 1.002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9946260635915808, 1.0125673249551166], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.operation | 1.314 / 1.3125 | ms | 1.0007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9983244478293983, 1.0081170345102919], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.submit | 0.04875 / 0.04925 | ms | 0.98881 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9792099792099793, 0.9959919839679359], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.upload | 0.341 / 0.34225 | ms | 0.99738 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9830310122878877, 1.0029205607476634], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.completion | 0.7155 / 0.7131 | ms | 0.99958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9819694868238558, 1.0189025250387926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.encode | 0.00985 / 0.01025 | ms | 0.94719 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8918918918918919, 1.0329670329670328], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.map | 0.2374 / 0.24075 | ms | 0.99502 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9647773279352228, 1.0136533225249944], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.operation | 1.7833 / 1.7807 | ms | 0.99911 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9894524236983843, 1.0180760323109077], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.submit | 0.0604 / 0.0617 | ms | 0.94512 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9156626506024096, 1.0137614678899083], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.upload | 0.8674 / 0.86365 | ms | 1.0002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9950266018968308, 1.0151933701657458], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.72215 / 0.71635 | ms | 1.0106 | 95% [0.99972, 1.0166] ratio | 24/24 observations | incomparable | reported aggregate |
+| complete | 55.534 / 55.27 | ms | 1.003 | 95% [0.99588, 1.0086] ratio | 24/24 observations | incomparable | reported aggregate |
+| cpuMs | 195.31 / 203.12 | ms | 1 | 95% [0.875, 1.0909] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.completion | 0.64485 / 0.6523 | ms | 1.0007 | 95% [0.95815, 1.0239] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.encode | 0.0481 / 0.04845 | ms | 0.99373 | 95% [0.98347, 1.0103] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.map | 0.5197 / 0.52315 | ms | 1.0007 | 95% [0.95659, 1.0207] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.operation | 2.3861 / 2.3873 | ms | 0.99643 | 95% [0.99022, 1.0038] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.submit | 0.28955 / 0.29125 | ms | 0.99504 | 95% [0.94388, 1.0339] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.upload | 0.8635 / 0.8717 | ms | 0.98682 | 95% [0.98178, 1.0075] ratio | 24/24 observations | incomparable | reported aggregate |
+| maxRssMiB | 109.04 / 109.06 | MiB | 0.99989 | 95% [0.99979, 1.0002] ratio | 24/24 observations | incomparable | reported aggregate |
+| pipelineNs | 2.7839 / 2.781 | ms | 1.0042 | 95% [0.99118, 1.0124] ratio | 24/24 observations | incomparable | reported aggregate |
+| processInMainNs | 230.13 / 228.87 | ms | 0.99907 | 95% [0.99016, 1.0057] ratio | 24/24 observations | incomparable | reported aggregate |
+| processWall | 266 / 266 | ms | 1 | 95% [0.99624, 1.0018] ratio | 24/24 observations | incomparable | reported aggregate |
+| resourcesNs | 3.6845 / 3.6754 | ms | 1.0074 | 95% [0.9939, 1.0343] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupAdapterNs | 151.63 / 150.83 | ms | 0.99868 | 95% [0.98785, 1.0131] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupDeviceNs | 7.0283 / 7.0171 | ms | 1.0034 | 95% [0.99539, 1.0245] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupInstanceNs | 0.0563 / 0.0576 | ms | 0.96534 | 95% [0.91186, 0.98976] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupNs | 158.8 / 158.01 | ms | 0.99847 | 95% [0.99055, 1.0122] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownDeviceNs | 3.1514 / 3.1505 | ms | 0.99553 | 95% [0.98077, 1.0292] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownNs | 3.213 / 3.2158 | ms | 0.99554 | 95% [0.98134, 1.0285] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownReleaseNs | 0.05985 / 0.0596 | ms | 1.0092 | 95% [0.96828, 1.0389] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.completion | 0.69655 / 0.6953 | ms | 1.0022 | 95% [0.98794, 1.0237] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.encode | 0.00785 / 0.0079 | ms | 1 | 95% [0.975, 1.013] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.map | 0.22465 / 0.22305 | ms | 1.002 | 95% [0.99463, 1.0126] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.operation | 1.314 / 1.3125 | ms | 1.0007 | 95% [0.99832, 1.0081] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.submit | 0.04875 / 0.04925 | ms | 0.98881 | 95% [0.97921, 0.99599] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.upload | 0.341 / 0.34225 | ms | 0.99738 | 95% [0.98303, 1.0029] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.completion | 0.7155 / 0.7131 | ms | 0.99958 | 95% [0.98197, 1.0189] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.encode | 0.00985 / 0.01025 | ms | 0.94719 | 95% [0.89189, 1.033] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.map | 0.2374 / 0.24075 | ms | 0.99502 | 95% [0.96478, 1.0137] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.operation | 1.7833 / 1.7807 | ms | 0.99911 | 95% [0.98945, 1.0181] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.submit | 0.0604 / 0.0617 | ms | 0.94512 | 95% [0.91566, 1.0138] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.upload | 0.8674 / 0.86365 | ms | 1.0002 | 95% [0.99503, 1.0152] ratio | 24/24 observations | incomparable | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
-- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
+</details>
 
 <a id="row-ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639"></a>
 
-## image_rgba_invert_1024
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T22:49:02.153960Z; incomparable; 33 metrics</summary>
 
-Observation: `ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639`; execution: `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/previous/dawn`.
+Record `ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639` · execution `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/previous/dawn` · campaign `windows-c4-formatted-observer-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda`.
 
 Executed: 2026-11-02T22:49:02.153960Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
 
-Latest measured: `ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639`; latest qualified: `None`; verdict: incomparable.
+Latest measured: `ab2efca214fbda1056be85393ba1b954b52de6d85b1aa3ebfc9d5dbd98543639`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.1201 / 0.71635 | ms | 0.16955 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16285554935861685, 0.17384658143413007], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| complete | 155.54 / 55.27 | ms | 2.8228 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.384061593297328, 9.618759065854364], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| cpuMs | 195.31 / 203.12 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.875, 1.0833333333333333], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.completion | 0.97645 / 0.6523 | ms | 1.4979 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.484862527031202, 1.5362181011253764], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.encode | 0.00685 / 0.04845 | ms | 0.14034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13827655310621242, 0.16700201207243462], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.map | 0.50005 / 0.52315 | ms | 0.96339 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9561836115326252, 0.9797665369649806], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.operation | 3.3372 / 2.3873 | ms | 1.3981 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3871955417191064, 1.4142201834862385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.submit | 0.82735 / 0.29125 | ms | 2.7637 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.529898804047838, 2.8470948012232413], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.upload | 1.0288 / 0.8717 | ms | 1.1773 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1447457627118642, 1.2095677233429394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| maxRssMiB | 94.518 / 109.06 | MiB | 0.86674 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8666236882633144, 0.8668339007346354], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| pipelineNs | 2.5588 / 2.781 | ms | 0.91818 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071862522288501, 0.9381190832998283], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processInMainNs | 322.7 / 228.87 | ms | 1.4048 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2814396732410671, 3.0723362915055743], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processWall | 344 / 266 | ms | 1.3026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2241992882562278, 2.7593984962406015], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| resourcesNs | 4.7198 / 3.6754 | ms | 1.2737 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.232999216491503, 1.3340501386452381], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupAdapterNs | 144.94 / 150.83 | ms | 0.95724 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.943054085897063, 0.9681415349617098], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupDeviceNs | 5.0836 / 7.0171 | ms | 0.725 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6982773471145565, 0.7444197408068338], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupInstanceNs | 0.00915 / 0.0576 | ms | 0.15921 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.15664556962025317, 0.17157712305026], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupNs | 149.84 / 158.01 | ms | 0.94543 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9328187760401037, 0.9555842795820233], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownDeviceNs | 2.38 / 3.1505 | ms | 0.74783 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7255580511089555, 0.7685008337122934], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownNs | 2.8554 / 3.2158 | ms | 0.89177 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8663953777335984, 1.0256462565208522], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownReleaseNs | 0.4857 / 0.0596 | ms | 8.112 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.6926994906621395, 16.78298611111111], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.completion | 0.9784 / 0.6953 | ms | 1.4378 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.385977541030809, 18.54822043628014], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.encode | 0.0048 / 0.0079 | ms | 0.62921 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5569620253164557, 0.9625], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.map | 0.22665 / 0.22305 | ms | 1.0245 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0044822949350067, 1.8189924208649129], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.operation | 2.3568 / 1.3125 | ms | 1.7965 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7654988575780655, 11.886470856795007], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.submit | 0.4767 / 0.04925 | ms | 9.8871 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.679752066115704, 12.173745173745175], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.upload | 0.66795 / 0.34225 | ms | 1.9912 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9048983099398453, 3.4120927502201353], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.completion | 18.138 / 0.7131 | ms | 24.989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [16.212058498896248, 37.53474191718661], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.encode | 0.00915 / 0.01025 | ms | 0.85926 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6161616161616161, 1.1777777777777778], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.map | 0.42075 / 0.24075 | ms | 1.7694 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1223958333333333, 1.9011466982997232], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.operation | 19.782 / 1.7807 | ms | 11.21 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.502683161046151, 16.910441880101324], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.submit | 0.6673 / 0.0617 | ms | 10.464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.947546531302878, 13.736577181208053], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.upload | 1.3253 / 0.86365 | ms | 1.5447 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1378623438704887, 1.9626230233329647], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.1201 / 0.71635 | ms | 0.16955 | 95% [0.16286, 0.17385] ratio | 24/24 observations | incomparable | reported aggregate |
+| complete | 155.54 / 55.27 | ms | 2.8228 | 95% [2.3841, 9.6188] ratio | 24/24 observations | incomparable | reported aggregate |
+| cpuMs | 195.31 / 203.12 | ms | 1 | 95% [0.875, 1.0833] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.completion | 0.97645 / 0.6523 | ms | 1.4979 | 95% [1.4849, 1.5362] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.encode | 0.00685 / 0.04845 | ms | 0.14034 | 95% [0.13828, 0.167] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.map | 0.50005 / 0.52315 | ms | 0.96339 | 95% [0.95618, 0.97977] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.operation | 3.3372 / 2.3873 | ms | 1.3981 | 95% [1.3872, 1.4142] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.submit | 0.82735 / 0.29125 | ms | 2.7637 | 95% [2.5299, 2.8471] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.upload | 1.0288 / 0.8717 | ms | 1.1773 | 95% [1.1447, 1.2096] ratio | 24/24 observations | incomparable | reported aggregate |
+| maxRssMiB | 94.518 / 109.06 | MiB | 0.86674 | 95% [0.86662, 0.86683] ratio | 24/24 observations | incomparable | reported aggregate |
+| pipelineNs | 2.5588 / 2.781 | ms | 0.91818 | 95% [0.90719, 0.93812] ratio | 24/24 observations | incomparable | reported aggregate |
+| processInMainNs | 322.7 / 228.87 | ms | 1.4048 | 95% [1.2814, 3.0723] ratio | 24/24 observations | incomparable | reported aggregate |
+| processWall | 344 / 266 | ms | 1.3026 | 95% [1.2242, 2.7594] ratio | 24/24 observations | incomparable | reported aggregate |
+| resourcesNs | 4.7198 / 3.6754 | ms | 1.2737 | 95% [1.233, 1.3341] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupAdapterNs | 144.94 / 150.83 | ms | 0.95724 | 95% [0.94305, 0.96814] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupDeviceNs | 5.0836 / 7.0171 | ms | 0.725 | 95% [0.69828, 0.74442] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupInstanceNs | 0.00915 / 0.0576 | ms | 0.15921 | 95% [0.15665, 0.17158] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupNs | 149.84 / 158.01 | ms | 0.94543 | 95% [0.93282, 0.95558] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownDeviceNs | 2.38 / 3.1505 | ms | 0.74783 | 95% [0.72556, 0.7685] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownNs | 2.8554 / 3.2158 | ms | 0.89177 | 95% [0.8664, 1.0256] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownReleaseNs | 0.4857 / 0.0596 | ms | 8.112 | 95% [7.6927, 16.783] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.completion | 0.9784 / 0.6953 | ms | 1.4378 | 95% [1.386, 18.548] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.encode | 0.0048 / 0.0079 | ms | 0.62921 | 95% [0.55696, 0.9625] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.map | 0.22665 / 0.22305 | ms | 1.0245 | 95% [1.0045, 1.819] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.operation | 2.3568 / 1.3125 | ms | 1.7965 | 95% [1.7655, 11.886] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.submit | 0.4767 / 0.04925 | ms | 9.8871 | 95% [9.6798, 12.174] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.upload | 0.66795 / 0.34225 | ms | 1.9912 | 95% [1.9049, 3.4121] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.completion | 18.138 / 0.7131 | ms | 24.989 | 95% [16.212, 37.535] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.encode | 0.00915 / 0.01025 | ms | 0.85926 | 95% [0.61616, 1.1778] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.map | 0.42075 / 0.24075 | ms | 1.7694 | 95% [1.1224, 1.9011] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.operation | 19.782 / 1.7807 | ms | 11.21 | 95% [7.5027, 16.91] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.submit | 0.6673 / 0.0617 | ms | 10.464 | 95% [8.9475, 13.737] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.upload | 1.3253 / 0.86365 | ms | 1.5447 | 95% [1.1379, 1.9626] ratio | 24/24 observations | incomparable | reported aggregate |
 
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
-- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
+</details>
 
 <a id="row-fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52"></a>
 
-## image_rgba_invert_1024
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T22:49:02.153960Z; incomparable; 33 metrics</summary>
 
-Observation: `fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52`; execution: `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/doe/dawn`.
+Record `fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52` · execution `phase-d3d12-20261102-c4-formatted/image_rgba_invert_1024/doe/dawn` · campaign `windows-c4-formatted-observer-20261102`.
 
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
 
-Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba. Contract `7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda`.
 
 Executed: 2026-11-02T22:49:02.153960Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
 
-Latest measured: `fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52`; latest qualified: `None`; verdict: incomparable.
+Latest measured: `fb446d5998aa776aa8e199b3f94044e216aac1057b2e648e4e61d333f080fe52`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.11455 / 0.71635 | ms | 0.15995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.15732065445392254, 0.1646037843220942], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| complete | 85.18 / 55.27 | ms | 1.535 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5179333137380009, 1.5486081440230577], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| cpuMs | 203.12 / 203.12 | ms | 0.93095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.completion | 0.9774 / 0.6523 | ms | 1.5064 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4959461526694204, 1.5444270015698587], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.encode | 0.0069 / 0.04845 | ms | 0.14192 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13097713097713098, 0.1637154861944778], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.map | 0.50645 / 0.52315 | ms | 0.96865 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9532137149406626, 0.9938128383604022], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.operation | 3.3321 / 2.3873 | ms | 1.3988 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3788116684571525, 1.40888297429926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.submit | 0.7972 / 0.29125 | ms | 2.714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.498926709598283, 2.848792439621981], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.upload | 1.0248 / 0.8717 | ms | 1.1679 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1374621964583747, 1.1994202898550723], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| maxRssMiB | 94.514 / 109.06 | MiB | 0.86671 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.866575901974132, 0.8668434442971298], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| pipelineNs | 2.5469 / 2.781 | ms | 0.919 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9058326965760652, 0.9323300073773007], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processInMainNs | 251.59 / 228.87 | ms | 1.094 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0868399930370636, 1.0996293234603514], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processWall | 281 / 266 | ms | 1.0567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0299748481524096, 1.060377358490566], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| resourcesNs | 4.6582 / 3.6754 | ms | 1.2581 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2368255407004558, 1.3021637034552165], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupAdapterNs | 144.97 / 150.83 | ms | 0.96003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9512596418414787, 0.9649575135085684], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupDeviceNs | 5.1596 / 7.0171 | ms | 0.739 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7273571959517412, 0.743444686448109], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupInstanceNs | 0.0097 / 0.0576 | ms | 0.1812 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1689922480620155, 0.18410852713178294], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupNs | 150.06 / 158.01 | ms | 0.95139 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9409243211617263, 0.9544213005866166], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownDeviceNs | 2.3652 / 3.1505 | ms | 0.74002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7321652974179523, 0.7577835906596913], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownNs | 2.8173 / 3.2158 | ms | 0.8744 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.863649603240044, 0.8849655585504642], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownReleaseNs | 0.46555 / 0.0596 | ms | 7.8166 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.609514006323065, 8.345486111111112], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.completion | 0.9344 / 0.6953 | ms | 1.3463 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.324756505306004, 1.361580303464071], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.encode | 0.00405 / 0.0079 | ms | 0.51266 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5, 0.5249999999999999], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.map | 0.22475 / 0.22305 | ms | 1.0034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9991071428571427, 1.0117011701170118], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.operation | 2.288 / 1.3125 | ms | 1.7378 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7288509860656365, 1.7559446440859394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.submit | 0.4668 / 0.04925 | ms | 9.4597 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.367139959432048, 9.594594594594597], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.upload | 0.6459 / 0.34225 | ms | 1.8887 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8651094890510949, 1.8999710060887214], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.completion | 0.9874 / 0.7131 | ms | 1.3741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3541666666666667, 1.3949852091843922], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.encode | 0.00505 / 0.01025 | ms | 0.48478 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.41904761904761906, 0.5436893203883495], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.map | 0.2433 / 0.24075 | ms | 1.0103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9870354364736387, 1.057316543638732], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.operation | 2.4011 / 1.7807 | ms | 1.3433 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3193212067435671, 1.3572441168131555], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.submit | 0.50465 / 0.0617 | ms | 8.0413 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.6943231441048034, 8.763016157989227], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.upload | 0.6947 / 0.86365 | ms | 0.80271 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7936600092893638, 0.8081651588958478], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.11455 / 0.71635 | ms | 0.15995 | 95% [0.15732, 0.1646] ratio | 24/24 observations | incomparable | reported aggregate |
+| complete | 85.18 / 55.27 | ms | 1.535 | 95% [1.5179, 1.5486] ratio | 24/24 observations | incomparable | reported aggregate |
+| cpuMs | 203.12 / 203.12 | ms | 0.93095 | 95% [0.91667, 1.0909] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.completion | 0.9774 / 0.6523 | ms | 1.5064 | 95% [1.4959, 1.5444] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.encode | 0.0069 / 0.04845 | ms | 0.14192 | 95% [0.13098, 0.16372] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.map | 0.50645 / 0.52315 | ms | 0.96865 | 95% [0.95321, 0.99381] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.operation | 3.3321 / 2.3873 | ms | 1.3988 | 95% [1.3788, 1.4089] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.submit | 0.7972 / 0.29125 | ms | 2.714 | 95% [2.4989, 2.8488] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.upload | 1.0248 / 0.8717 | ms | 1.1679 | 95% [1.1375, 1.1994] ratio | 24/24 observations | incomparable | reported aggregate |
+| maxRssMiB | 94.514 / 109.06 | MiB | 0.86671 | 95% [0.86658, 0.86684] ratio | 24/24 observations | incomparable | reported aggregate |
+| pipelineNs | 2.5469 / 2.781 | ms | 0.919 | 95% [0.90583, 0.93233] ratio | 24/24 observations | incomparable | reported aggregate |
+| processInMainNs | 251.59 / 228.87 | ms | 1.094 | 95% [1.0868, 1.0996] ratio | 24/24 observations | incomparable | reported aggregate |
+| processWall | 281 / 266 | ms | 1.0567 | 95% [1.03, 1.0604] ratio | 24/24 observations | incomparable | reported aggregate |
+| resourcesNs | 4.6582 / 3.6754 | ms | 1.2581 | 95% [1.2368, 1.3022] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupAdapterNs | 144.97 / 150.83 | ms | 0.96003 | 95% [0.95126, 0.96496] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupDeviceNs | 5.1596 / 7.0171 | ms | 0.739 | 95% [0.72736, 0.74344] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupInstanceNs | 0.0097 / 0.0576 | ms | 0.1812 | 95% [0.16899, 0.18411] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupNs | 150.06 / 158.01 | ms | 0.95139 | 95% [0.94092, 0.95442] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownDeviceNs | 2.3652 / 3.1505 | ms | 0.74002 | 95% [0.73217, 0.75778] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownNs | 2.8173 / 3.2158 | ms | 0.8744 | 95% [0.86365, 0.88497] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownReleaseNs | 0.46555 / 0.0596 | ms | 7.8166 | 95% [7.6095, 8.3455] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.completion | 0.9344 / 0.6953 | ms | 1.3463 | 95% [1.3248, 1.3616] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.encode | 0.00405 / 0.0079 | ms | 0.51266 | 95% [0.5, 0.525] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.map | 0.22475 / 0.22305 | ms | 1.0034 | 95% [0.99911, 1.0117] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.operation | 2.288 / 1.3125 | ms | 1.7378 | 95% [1.7289, 1.7559] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.submit | 0.4668 / 0.04925 | ms | 9.4597 | 95% [9.3671, 9.5946] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.upload | 0.6459 / 0.34225 | ms | 1.8887 | 95% [1.8651, 1.9] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.completion | 0.9874 / 0.7131 | ms | 1.3741 | 95% [1.3542, 1.395] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.encode | 0.00505 / 0.01025 | ms | 0.48478 | 95% [0.41905, 0.54369] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.map | 0.2433 / 0.24075 | ms | 1.0103 | 95% [0.98704, 1.0573] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.operation | 2.4011 / 1.7807 | ms | 1.3433 | 95% [1.3193, 1.3572] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.submit | 0.50465 / 0.0617 | ms | 8.0413 | 95% [7.6943, 8.763] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.upload | 0.6947 / 0.86365 | ms | 0.80271 | 95% [0.79366, 0.80817] ratio | 24/24 observations | incomparable | reported aggregate |
 
-Evidence:
+</details>
+
+<a id="row-0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4"></a>
+
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T23:19:48.781306Z; incomparable; 33 metrics</summary>
+
+Record `0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4` · execution `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/previous/dawn` · campaign `windows-c4-raw-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2`.
+
+Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12765 / 0.74275 | ms | 0.16905 | 95% [0.16444, 0.17745] ratio | 24/24 observations | incomparable | reported aggregate |
+| complete | 384.8 / 56.492 | ms | 6.786 | 95% [2.976, 8.854] ratio | 24/24 observations | incomparable | reported aggregate |
+| cpuMs | 187.5 / 218.75 | ms | 0.85714 | 95% [0.77778, 1] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.completion | 0.981 / 0.63085 | ms | 1.5395 | 95% [1.5063, 1.7202] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.encode | 0.0095 / 0.0503 | ms | 0.19614 | 95% [0.14854, 0.21942] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.map | 0.52345 / 0.53045 | ms | 0.97276 | 95% [0.93979, 0.9968] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.operation | 3.3763 / 2.4312 | ms | 1.3652 | 95% [1.3521, 1.3975] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.submit | 0.7942 / 0.31725 | ms | 2.3856 | 95% [2.0045, 2.612] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.upload | 1.0207 / 0.88535 | ms | 1.144 | 95% [1.1136, 1.1799] ratio | 24/24 observations | incomparable | reported aggregate |
+| maxRssMiB | 94.51 / 109.06 | MiB | 0.86667 | 95% [0.86651, 0.86681] ratio | 24/24 observations | incomparable | reported aggregate |
+| pipelineNs | 2.6237 / 2.8475 | ms | 0.92403 | 95% [0.90019, 0.94311] ratio | 24/24 observations | incomparable | reported aggregate |
+| processInMainNs | 560.55 / 234.94 | ms | 2.3457 | 95% [1.4378, 2.8967] ratio | 24/24 observations | incomparable | reported aggregate |
+| processWall | 601.5 / 281 | ms | 2.1658 | 95% [1.3534, 2.5758] ratio | 24/24 observations | incomparable | reported aggregate |
+| resourcesNs | 4.9305 / 4.0167 | ms | 1.2404 | 95% [1.1718, 1.2615] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupAdapterNs | 148.93 / 155.15 | ms | 0.95899 | 95% [0.94677, 0.96794] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupDeviceNs | 5.6178 / 7.4157 | ms | 0.76643 | 95% [0.73959, 0.7894] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupInstanceNs | 0.00935 / 0.0574 | ms | 0.16346 | 95% [0.14834, 0.16752] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupNs | 154.29 / 162.36 | ms | 0.9505 | 95% [0.94124, 0.95714] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownDeviceNs | 2.4156 / 3.2746 | ms | 0.75061 | 95% [0.68837, 0.76853] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownNs | 3.0556 / 3.3315 | ms | 0.91624 | 95% [0.83275, 0.96605] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownReleaseNs | 0.6856 / 0.06 | ms | 10.676 | 95% [8.1735, 15.038] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.completion | 6.7718 / 0.69645 | ms | 9.7396 | 95% [1.3571, 18.796] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.encode | 0.0065 / 0.0081 | ms | 0.7619 | 95% [0.63485, 0.99505] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.map | 0.26905 / 0.22735 | ms | 1.069 | 95% [1.0187, 1.3044] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.operation | 8.8858 / 1.3289 | ms | 6.3548 | 95% [1.7638, 11.496] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.submit | 0.54265 / 0.0499 | ms | 10.379 | 95% [9.5963, 12.029] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.upload | 0.9199 / 0.34745 | ms | 2.5492 | 95% [1.945, 3.2433] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.completion | 24.281 / 0.7307 | ms | 32.885 | 95% [25.383, 35.162] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.encode | 0.0105 / 0.0109 | ms | 0.85753 | 95% [0.72115, 1] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.map | 0.35035 / 0.2479 | ms | 1.4103 | 95% [1.1761, 1.7603] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.operation | 26.219 / 1.8319 | ms | 13.567 | 95% [11.135, 15.154] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.submit | 0.76735 / 0.06165 | ms | 11.735 | 95% [10.338, 13.444] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.upload | 1.3437 / 0.90235 | ms | 1.4232 | 95% [1.2633, 1.6999] ratio | 24/24 observations | incomparable | reported aggregate |
+
+</details>
+
+<a id="row-9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471"></a>
+
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T23:19:48.781306Z; incomparable; 33 metrics</summary>
+
+Record `9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471` · execution `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/doe/dawn` · campaign `windows-c4-raw-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba. Contract `59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2`.
+
+Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12835 / 0.74275 | ms | 0.17257 | 95% [0.16493, 0.17618] ratio | 24/24 observations | incomparable | reported aggregate |
+| complete | 85.608 / 56.492 | ms | 1.5135 | 95% [1.4972, 1.5244] ratio | 24/24 observations | incomparable | reported aggregate |
+| cpuMs | 218.75 / 218.75 | ms | 1 | 95% [0.85714, 1.0714] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.completion | 0.96485 / 0.63085 | ms | 1.5227 | 95% [1.5022, 1.6305] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.encode | 0.0077 / 0.0503 | ms | 0.14971 | 95% [0.13348, 6.2008] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.map | 0.51795 / 0.53045 | ms | 0.97819 | 95% [0.94258, 1.0051] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.operation | 3.3514 / 2.4312 | ms | 1.382 | 95% [1.352, 1.4078] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.submit | 0.81355 / 0.31725 | ms | 2.302 | 95% [1.5719, 2.6616] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.upload | 1.0211 / 0.88535 | ms | 1.1265 | 95% [1.0906, 1.1718] ratio | 24/24 observations | incomparable | reported aggregate |
+| maxRssMiB | 94.504 / 109.06 | MiB | 0.86662 | 95% [0.86649, 0.86683] ratio | 24/24 observations | incomparable | reported aggregate |
+| pipelineNs | 2.6412 / 2.8475 | ms | 0.92052 | 95% [0.90471, 0.9347] ratio | 24/24 observations | incomparable | reported aggregate |
+| processInMainNs | 255.8 / 234.94 | ms | 1.0901 | 95% [1.0821, 1.0993] ratio | 24/24 observations | incomparable | reported aggregate |
+| processWall | 289 / 281 | ms | 1.0567 | 95% [1, 1.1044] ratio | 24/24 observations | incomparable | reported aggregate |
+| resourcesNs | 4.984 / 4.0167 | ms | 1.2389 | 95% [1.2003, 1.2522] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupAdapterNs | 149.61 / 155.15 | ms | 0.95438 | 95% [0.94452, 0.97955] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupDeviceNs | 5.5657 / 7.4157 | ms | 0.747 | 95% [0.73256, 0.7927] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupInstanceNs | 0.01075 / 0.0574 | ms | 0.19104 | 95% [0.17414, 0.19504] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupNs | 154.8 / 162.36 | ms | 0.94527 | 95% [0.93847, 0.96419] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownDeviceNs | 2.3653 / 3.2746 | ms | 0.72642 | 95% [0.68876, 0.76285] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownNs | 2.848 / 3.3315 | ms | 0.85479 | 95% [0.81621, 0.89162] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownReleaseNs | 0.4725 / 0.06 | ms | 8.0557 | 95% [7.6359, 8.2841] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.completion | 0.92355 / 0.69645 | ms | 1.3178 | 95% [1.3025, 1.3339] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.encode | 0.00435 / 0.0081 | ms | 0.53167 | 95% [0.51852, 0.55128] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.map | 0.22635 / 0.22735 | ms | 1.0033 | 95% [0.98993, 1.0094] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.operation | 2.2925 / 1.3289 | ms | 1.7143 | 95% [1.6887, 1.73] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.submit | 0.4691 / 0.0499 | ms | 9.3309 | 95% [8.9341, 9.4586] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.upload | 0.65935 / 0.34745 | ms | 1.8705 | 95% [1.8376, 1.8906] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.completion | 0.9857 / 0.7307 | ms | 1.3355 | 95% [1.3194, 1.3515] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.encode | 0.0055 / 0.0109 | ms | 0.49271 | 95% [0.47113, 0.52294] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.map | 0.252 / 0.2479 | ms | 1.0181 | 95% [1.0029, 1.0454] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.operation | 2.4406 / 1.8319 | ms | 1.3362 | 95% [1.3222, 1.3485] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.submit | 0.51555 / 0.06165 | ms | 8.3118 | 95% [7.7885, 8.6134] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.upload | 0.7193 / 0.90235 | ms | 0.80854 | 95% [0.79545, 0.82273] ratio | 24/24 observations | incomparable | reported aggregate |
+
+</details>
+
+<a id="row-ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6"></a>
+
+<details>
+<summary>image_rgba_invert_1024 — 2026-11-02T23:19:48.781306Z; incomparable; 33 metrics</summary>
+
+Record `ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6` · execution `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/dawn-aa/dawn` · campaign `windows-c4-raw-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2`.
+
+Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
+
+Latest measured: `ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.74205 / 0.74275 | ms | 0.99504 | 95% [0.9725, 1.0178] ratio | 24/24 observations | incomparable | reported aggregate |
+| complete | 57.929 / 56.492 | ms | 0.9993 | 95% [0.98725, 1.0201] ratio | 24/24 observations | incomparable | reported aggregate |
+| cpuMs | 218.75 / 218.75 | ms | 1 | 95% [0.88235, 1.0714] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.completion | 0.61475 / 0.63085 | ms | 0.99288 | 95% [0.95814, 1.0114] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.encode | 0.05025 / 0.0503 | ms | 1.006 | 95% [0.96566, 1.0187] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.map | 0.52245 / 0.53045 | ms | 0.98526 | 95% [0.96085, 1.0023] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.operation | 2.4202 / 2.4312 | ms | 0.99302 | 95% [0.9797, 1.009] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.submit | 0.3319 / 0.31725 | ms | 1.0136 | 95% [0.98029, 1.0875] ratio | 24/24 observations | incomparable | reported aggregate |
+| first.upload | 0.87735 / 0.88535 | ms | 1.0015 | 95% [0.98491, 1.0129] ratio | 24/24 observations | incomparable | reported aggregate |
+| maxRssMiB | 109.05 / 109.06 | MiB | 1 | 95% [0.99979, 1.0003] ratio | 24/24 observations | incomparable | reported aggregate |
+| pipelineNs | 2.838 / 2.8475 | ms | 1.0008 | 95% [0.98589, 1.0052] ratio | 24/24 observations | incomparable | reported aggregate |
+| processInMainNs | 236.38 / 234.94 | ms | 1.0026 | 95% [1, 1.0107] ratio | 24/24 observations | incomparable | reported aggregate |
+| processWall | 281 / 281 | ms | 1 | 95% [1, 1.0018] ratio | 24/24 observations | incomparable | reported aggregate |
+| resourcesNs | 3.9487 / 4.0167 | ms | 0.97453 | 95% [0.92388, 1.0383] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupAdapterNs | 155.27 / 155.15 | ms | 1.0031 | 95% [0.99255, 1.0142] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupDeviceNs | 7.5542 / 7.4157 | ms | 1.0477 | 95% [0.97944, 1.0738] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupInstanceNs | 0.05725 / 0.0574 | ms | 0.9922 | 95% [0.91237, 1.0173] ratio | 24/24 observations | incomparable | reported aggregate |
+| setupNs | 162.75 / 162.36 | ms | 1.0041 | 95% [0.99492, 1.0143] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownDeviceNs | 3.4229 / 3.2746 | ms | 1.0301 | 95% [0.99199, 1.0688] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownNs | 3.4843 / 3.3315 | ms | 1.0299 | 95% [0.99466, 1.0666] ratio | 24/24 observations | incomparable | reported aggregate |
+| teardownReleaseNs | 0.05845 / 0.06 | ms | 0.99721 | 95% [0.96467, 1.0518] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.completion | 0.69645 / 0.69645 | ms | 0.99971 | 95% [0.99381, 1.0088] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.encode | 0.00815 / 0.0081 | ms | 1.0063 | 95% [0.97531, 1.0395] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.map | 0.2274 / 0.22735 | ms | 1.0029 | 95% [0.98923, 1.0143] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.operation | 1.3453 / 1.3289 | ms | 1.0043 | 95% [0.99389, 1.0065] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.submit | 0.0512 / 0.0499 | ms | 1.0081 | 95% [0.98351, 1.0384] ratio | 24/24 observations | incomparable | reported aggregate |
+| warm.upload | 0.35085 / 0.34745 | ms | 1.0086 | 95% [1, 1.0148] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.completion | 0.735 / 0.7307 | ms | 1.003 | 95% [0.99415, 1.0223] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.encode | 0.0111 / 0.0109 | ms | 1.0428 | 95% [0.94, 1.1716] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.map | 0.2539 / 0.2479 | ms | 1.0053 | 95% [0.9625, 1.0294] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.operation | 1.8079 / 1.8319 | ms | 1.0005 | 95% [0.98246, 1.0169] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.submit | 0.06665 / 0.06165 | ms | 1.0827 | 95% [0.9678, 1.1486] ratio | 24/24 observations | incomparable | reported aggregate |
+| warmP95.upload | 0.8864 / 0.90235 | ms | 1.0026 | 95% [0.96767, 1.0249] ratio | 24/24 observations | incomparable | reported aggregate |
+
+</details>
+
+<a id="row-97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T21:46:48.717840Z; diagnostic; 33 metrics</summary>
+
+Record `97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b` · execution `phase-d3d12-20261102-50cf8feb8/vector_scale_add_262k/previous/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: previous aa402f004092/ee1b7e685f58; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
+
+Executed: 2026-11-02T21:46:48.717840Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12705 / 0.767 | ms | 0.1688 | 95% [0.16275, 0.17621] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 389.92 / 20.209 | ms | 18.491 | 95% [10.34, 20.217] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 171.88 / 171.88 | ms | 0.91987 | 95% [0.81818, 1.0455] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.23245 / 0.2054 | ms | 1.1223 | 95% [1.0997, 1.3309] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0076 / 0.0451 | ms | 0.15723 | 95% [0.13901, 1.6125] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1841 / 0.1856 | ms | 1.0638 | 95% [0.95618, 1.1043] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.3352 / 0.80245 | ms | 1.6788 | 95% [1.6252, 1.7704] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.74465 / 0.2955 | ms | 2.4117 | 95% [2.2284, 2.6895] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.1267 / 0.0653 | ms | 1.9241 | 95% [1.7217, 2.2458] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 65.535 / 72.188 | MiB | 0.90775 | 95% [0.90742, 0.9081] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.7312 / 2.9951 | ms | 0.9069 | 95% [0.89691, 0.91634] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 545.5 / 184.91 | ms | 2.9195 | 95% [2.0147, 3.0942] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 570.5 / 219 | ms | 2.4816 | 95% [1.8333, 2.6393] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.6576 / 2.994 | ms | 0.89562 | 95% [0.8474, 0.90903] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 146.65 / 153.14 | ms | 0.96074 | 95% [0.94894, 0.96937] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.1779 / 7.1046 | ms | 0.72546 | 95% [0.68336, 0.76492] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.0103 / 0.05515 | ms | 0.18592 | 95% [0.18039, 0.19114] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 151.89 / 160.63 | ms | 0.94972 | 95% [0.93744, 0.95703] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 4.4435 / 2.213 | ms | 1.8859 | 95% [1.3836, 2.0451] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 4.5252 / 2.2549 | ms | 1.8787 | 95% [1.3824, 2.0515] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.0702 / 0.0443 | ms | 1.5141 | 95% [1.1404, 1.8385] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 13.287 / 0.1825 | ms | 72.684 | 95% [34.412, 77.322] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.00945 / 0.0069 | ms | 1.3551 | 95% [0.8921, 1.4706] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.19515 / 0.03775 | ms | 4.9833 | 95% [3.1201, 5.2328] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 13.767 / 0.3268 | ms | 42.62 | 95% [20.985, 44.445] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.22295 / 0.03835 | ms | 5.6302 | 95% [3.749, 5.8688] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.16985 / 0.05855 | ms | 2.8208 | 95% [1.9779, 2.9206] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 25.818 / 0.2003 | ms | 117.22 | 95% [71.591, 132.27] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.0111 / 0.00795 | ms | 1.3124 | 95% [0.91803, 1.4268] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.23605 / 0.04905 | ms | 4.3176 | 95% [3.4979, 5.2433] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 26.388 / 0.36485 | ms | 68.428 | 95% [42.963, 74.326] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.2394 / 0.0468 | ms | 5.0415 | 95% [3.7776, 5.103] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.1808 / 0.0659 | ms | 2.6699 | 95% [2.3737, 2.8066] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T21:46:48.717840Z; diagnostic; 33 metrics</summary>
+
+Record `b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81` · execution `phase-d3d12-20261102-50cf8feb8/vector_scale_add_262k/doe/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: doe 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
+
+Executed: 2026-11-02T21:46:48.717840Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12695 / 0.767 | ms | 0.16665 | 95% [0.16288, 0.17267] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 105.97 / 20.209 | ms | 5.0783 | 95% [3.6308, 18.084] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 179.69 / 171.88 | ms | 1 | 95% [0.91667, 1.0909] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.2277 / 0.2054 | ms | 1.1609 | 95% [1.0856, 1.211] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0065 / 0.0451 | ms | 0.13966 | 95% [0.13363, 0.19599] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.179 / 0.1856 | ms | 0.93495 | 95% [0.87763, 1.0551] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.2671 / 0.80245 | ms | 1.5962 | 95% [1.5316, 1.6764] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.70405 / 0.2955 | ms | 2.2892 | 95% [2.136, 2.5727] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.13205 / 0.0653 | ms | 1.8757 | 95% [1.7769, 2.2469] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 65.514 / 72.188 | MiB | 0.90756 | 95% [0.90732, 0.90788] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.7245 / 2.9951 | ms | 0.9084 | 95% [0.89552, 0.92209] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 259.7 / 184.91 | ms | 1.4102 | 95% [1.2418, 2.8981] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 289.5 / 219 | ms | 1.299 | 95% [1.2099, 2.5] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.6631 / 2.994 | ms | 0.88626 | 95% [0.85576, 0.9185] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 146.6 / 153.14 | ms | 0.95511 | 95% [0.94627, 0.96516] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.205 / 7.1046 | ms | 0.71753 | 95% [0.68777, 0.74201] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.00955 / 0.05515 | ms | 0.17024 | 95% [0.16296, 0.18214] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 152.06 / 160.63 | ms | 0.94727 | 95% [0.9358, 0.95594] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 3.7254 / 2.213 | ms | 1.4492 | 95% [1.2617, 2.2078] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 3.7961 / 2.2549 | ms | 1.4408 | 95% [1.254, 2.2141] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.05955 / 0.0443 | ms | 1.2816 | 95% [1.0284, 1.7435] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.24765 / 0.1825 | ms | 1.3814 | 95% [1.2009, 73.101] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0031 / 0.0069 | ms | 0.45245 | 95% [0.42029, 1.4444] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.04255 / 0.03775 | ms | 1.0873 | 95% [1.0476, 4.4794] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.4361 / 0.3268 | ms | 1.3363 | 95% [1.2465, 42.028] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.06705 / 0.03835 | ms | 1.7823 | 95% [1.6771, 5.4688] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.06865 / 0.05855 | ms | 1.1893 | 95% [1.1323, 2.8131] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 14.076 / 0.2003 | ms | 68.112 | 95% [10.196, 105.96] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.00905 / 0.00795 | ms | 1.0316 | 95% [0.72603, 1.3077] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.1625 / 0.04905 | ms | 3.135 | 95% [2.4107, 3.615] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 14.531 / 0.36485 | ms | 38.523 | 95% [6.7274, 59.713] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.21065 / 0.0468 | ms | 4.1914 | 95% [3.4417, 4.9666] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.17155 / 0.0659 | ms | 2.4769 | 95% [2.2375, 2.7612] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T21:46:48.717840Z; diagnostic; 33 metrics</summary>
+
+Record `bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd` · execution `phase-d3d12-20261102-50cf8feb8/vector_scale_add_262k/dawn-aa/dawn` · campaign `windows-d3d12-50cf8feb8-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `588f03c29990e261cf1240ca1093eb926c588592829292838509608ea4365f0c`.
+
+Executed: 2026-11-02T21:46:48.717840Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
+
+Latest measured: `bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.7541 / 0.767 | ms | 0.97868 | 95% [0.96988, 1.0112] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 19.953 / 20.209 | ms | 0.9835 | 95% [0.9666, 0.99731] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 187.5 / 171.88 | ms | 1 | 95% [0.92308, 1.1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.1984 / 0.2054 | ms | 0.97686 | 95% [0.89215, 1.0895] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.04535 / 0.0451 | ms | 0.99683 | 95% [0.97773, 1.0135] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1805 / 0.1856 | ms | 0.98946 | 95% [0.94012, 1.0883] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 0.7979 / 0.80245 | ms | 1.0101 | 95% [0.97474, 1.0349] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.2927 / 0.2955 | ms | 1.0213 | 95% [0.98982, 1.0495] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.06585 / 0.0653 | ms | 1.0085 | 95% [0.97619, 1.0276] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 72.18 / 72.188 | MiB | 0.99986 | 95% [0.99968, 1.0004] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.984 / 2.9951 | ms | 0.99385 | 95% [0.98789, 1.0124] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 184 / 184.91 | ms | 0.99839 | 95% [0.98816, 1.011] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 219 / 219 | ms | 1 | 95% [0.94, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.9299 / 2.994 | ms | 0.96724 | 95% [0.90309, 1.0159] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 153.34 / 153.14 | ms | 0.99992 | 95% [0.98998, 1.0101] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 7.2369 / 7.1046 | ms | 1.0033 | 95% [0.95689, 1.0363] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.05635 / 0.05515 | ms | 1.0214 | 95% [0.98208, 1.0352] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 160.49 / 160.63 | ms | 0.99895 | 95% [0.99281, 1.0096] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.1864 / 2.213 | ms | 1.0308 | 95% [0.96154, 1.0745] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.224 / 2.2549 | ms | 1.0294 | 95% [0.96252, 1.0661] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.04345 / 0.0443 | ms | 1.0033 | 95% [0.92952, 1.0808] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.1832 / 0.1825 | ms | 0.99337 | 95% [0.97414, 1.0269] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0068 / 0.0069 | ms | 0.97143 | 95% [0.97059, 0.98551] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.0371 / 0.03775 | ms | 0.99203 | 95% [0.97082, 1.0054] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.3224 / 0.3268 | ms | 0.98479 | 95% [0.97217, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.0382 / 0.03835 | ms | 0.9922 | 95% [0.97911, 1.0079] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.0581 / 0.05855 | ms | 0.98971 | 95% [0.94968, 1.0017] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.2026 / 0.2003 | ms | 0.99474 | 95% [0.92933, 1.0439] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.00785 / 0.00795 | ms | 0.98667 | 95% [0.89286, 1.0506] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.04415 / 0.04905 | ms | 0.91654 | 95% [0.7646, 1.0522] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 0.3549 / 0.36485 | ms | 0.97667 | 95% [0.9374, 1.0378] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.04685 / 0.0468 | ms | 0.9927 | 95% [0.94981, 1.0219] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.06345 / 0.0659 | ms | 0.96365 | 95% [0.91806, 1.0092] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T22:47:37.771855Z; diagnostic; 33 metrics</summary>
+
+Record `0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f` · execution `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/doe/dawn` · campaign `windows-c4-formatted-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba. Contract `7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda`.
+
+Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12465 / 0.7463 | ms | 0.16744 | 95% [0.16079, 0.17369] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 20.91 / 19.924 | ms | 1.0462 | 95% [1.0347, 1.0651] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 179.69 / 187.5 | ms | 0.96154 | 95% [0.91667, 1.0769] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.22865 / 0.1751 | ms | 1.2914 | 95% [1.1517, 1.5289] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.00685 / 0.0467 | ms | 0.14397 | 95% [0.12967, 0.88407] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.17075 / 0.18265 | ms | 0.91956 | 95% [0.87253, 0.95684] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.3453 / 0.79725 | ms | 1.6771 | 95% [1.5651, 1.767] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.7225 / 0.3228 | ms | 2.2121 | 95% [1.9505, 2.5125] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.14345 / 0.06615 | ms | 2.1634 | 95% [1.8465, 2.7628] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 65.516 / 72.184 | MiB | 0.90756 | 95% [0.90681, 0.90785] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.68 / 2.9806 | ms | 0.89442 | 95% [0.88666, 0.90409] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 175.02 / 182.98 | ms | 0.95551 | 95% [0.94242, 0.96817] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 203 / 219 | ms | 0.93119 | 95% [0.90147, 0.9656] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.6481 / 2.9813 | ms | 0.89578 | 95% [0.86075, 0.95337] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 145.52 / 152.03 | ms | 0.95421 | 95% [0.9416, 0.96574] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.1358 / 7.1242 | ms | 0.71918 | 95% [0.70146, 0.73286] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.0103 / 0.05495 | ms | 0.18807 | 95% [0.18231, 0.19039] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 150.55 / 159.12 | ms | 0.9444 | 95% [0.92986, 0.95502] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.6235 / 2.1732 | ms | 1.1816 | 95% [1.1523, 1.2124] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.6589 / 2.2243 | ms | 1.1726 | 95% [1.1439, 1.2057] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.0322 / 0.04465 | ms | 0.72606 | 95% [0.66706, 0.79707] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.205 / 0.18205 | ms | 1.1262 | 95% [1.1017, 1.1663] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0026 / 0.0069 | ms | 0.36954 | 95% [0.36232, 0.37689] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.0358 / 0.0375 | ms | 0.955 | 95% [0.93734, 0.97011] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.3712 / 0.3227 | ms | 1.1422 | 95% [1.1266, 1.1788] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.0619 / 0.03875 | ms | 1.6036 | 95% [1.5761, 1.6436] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.0636 / 0.05805 | ms | 1.1 | 95% [1.079, 1.1163] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.22125 / 0.2028 | ms | 1.0958 | 95% [1.0643, 1.131] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.0032 / 0.00785 | ms | 0.39481 | 95% [0.35897, 0.43902] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.04195 / 0.0447 | ms | 0.97176 | 95% [0.88395, 1.0335] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 0.39815 / 0.3589 | ms | 1.1141 | 95% [1.0629, 1.1727] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.07095 / 0.0483 | ms | 1.5215 | 95% [1.4146, 1.5911] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.069 / 0.06375 | ms | 1.0805 | 95% [1.0633, 1.1275] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T22:47:37.771855Z; diagnostic; 33 metrics</summary>
+
+Record `2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1` · execution `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/previous/dawn` · campaign `windows-c4-formatted-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda`.
+
+Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.1296 / 0.7463 | ms | 0.17444 | 95% [0.16572, 0.1802] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 387.83 / 19.924 | ms | 19.641 | 95% [3.9618, 21.149] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 171.88 / 187.5 | ms | 0.91987 | 95% [0.9, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.2316 / 0.1751 | ms | 1.3699 | 95% [1.1813, 1.6374] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.00695 / 0.0467 | ms | 0.14666 | 95% [0.13877, 0.88537] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1644 / 0.18265 | ms | 0.89375 | 95% [0.8722, 0.92508] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.3528 / 0.79725 | ms | 1.684 | 95% [1.6504, 1.7651] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.7067 / 0.3228 | ms | 2.3027 | 95% [2.0161, 2.4399] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.17895 / 0.06615 | ms | 2.7086 | 95% [2.2131, 2.9877] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 65.523 / 72.184 | MiB | 0.90766 | 95% [0.90697, 0.90791] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.7006 / 2.9806 | ms | 0.90764 | 95% [0.88839, 0.92128] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 542.04 / 182.98 | ms | 2.9601 | 95% [1.2668, 3.1545] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 570 / 219 | ms | 2.4509 | 95% [1.1527, 2.7123] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.6792 / 2.9813 | ms | 0.91311 | 95% [0.85195, 1.0161] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 145.45 / 152.03 | ms | 0.95756 | 95% [0.95012, 0.96492] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.1086 / 7.1242 | ms | 0.71407 | 95% [0.69157, 0.72781] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.0092 / 0.05495 | ms | 0.17016 | 95% [0.16373, 0.17794] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 150.57 / 159.12 | ms | 0.94408 | 95% [0.93845, 0.9541] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 4.6823 / 2.1732 | ms | 2.0718 | 95% [1.4277, 2.207] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 4.763 / 2.2243 | ms | 2.0623 | 95% [1.4204, 2.1982] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.081 / 0.04465 | ms | 1.7037 | 95% [1.1088, 1.9645] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 14.025 / 0.18205 | ms | 76.838 | 95% [1.3502, 81.39] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0099 / 0.0069 | ms | 1.4353 | 95% [0.4, 1.5217] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.1712 / 0.0375 | ms | 4.2873 | 95% [0.99487, 4.7554] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 14.55 / 0.3227 | ms | 44.996 | 95% [1.3187, 47.451] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.2141 / 0.03875 | ms | 5.5901 | 95% [1.7244, 5.7948] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.1692 / 0.05805 | ms | 2.7812 | 95% [1.1768, 2.9278] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 23.518 / 0.2028 | ms | 116.87 | 95% [47.542, 124.88] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.0113 / 0.00785 | ms | 1.3725 | 95% [0.78378, 1.5] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.2162 / 0.0447 | ms | 4.2485 | 95% [2.126, 5.054] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 23.943 / 0.3589 | ms | 65.491 | 95% [26.501, 72.893] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.2383 / 0.0483 | ms | 4.7934 | 95% [3.146, 4.9752] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.18525 / 0.06375 | ms | 2.9114 | 95% [2.1223, 3.056] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T22:47:37.771855Z; diagnostic; 33 metrics</summary>
+
+Record `f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a` · execution `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/dawn-aa/dawn` · campaign `windows-c4-formatted-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `7bf14b5ebedd322f6dfd534d9c8474d35f762407404f2373087d4c1fca4a0dda`.
+
+Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.74925 / 0.7463 | ms | 0.99306 | 95% [0.98451, 1.0139] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 19.849 / 19.924 | ms | 1.0028 | 95% [0.97927, 1.0087] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 179.69 / 187.5 | ms | 0.96154 | 95% [0.88462, 1.1667] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.1906 / 0.1751 | ms | 1.0176 | 95% [0.94021, 1.165] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0465 / 0.0467 | ms | 1.0108 | 95% [0.96746, 1.0308] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1819 / 0.18265 | ms | 1.0005 | 95% [0.93297, 1.0708] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 0.79815 / 0.79725 | ms | 1.0076 | 95% [0.9709, 1.015] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.29945 / 0.3228 | ms | 0.95741 | 95% [0.88191, 1.0549] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.0659 / 0.06615 | ms | 1.003 | 95% [0.98487, 1.0362] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 72.186 / 72.184 | MiB | 0.99989 | 95% [0.99951, 1.0002] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.9898 / 2.9806 | ms | 1.002 | 95% [0.99263, 1.0097] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 182.16 / 182.98 | ms | 0.99713 | 95% [0.99073, 1.0058] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 219 / 219 | ms | 1 | 95% [0.9359, 1.0046] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.9304 / 2.9813 | ms | 0.97756 | 95% [0.93303, 1.0163] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 151.66 / 152.03 | ms | 0.99849 | 95% [0.99218, 1.0013] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 7.2805 / 7.1242 | ms | 0.99102 | 95% [0.96411, 1.0737] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.05485 / 0.05495 | ms | 0.98212 | 95% [0.96564, 1.0108] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 159.05 / 159.12 | ms | 0.99741 | 95% [0.99109, 1.0057] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.1439 / 2.1732 | ms | 0.96581 | 95% [0.93758, 1.0068] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.1882 / 2.2243 | ms | 0.96656 | 95% [0.93749, 1.0095] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.04505 / 0.04465 | ms | 0.97649 | 95% [0.92505, 1.1093] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.1829 / 0.18205 | ms | 1.0023 | 95% [0.99235, 1.0356] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0069 / 0.0069 | ms | 0.98571 | 95% [0.98551, 1.0145] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.0373 / 0.0375 | ms | 0.99596 | 95% [0.97543, 1.0163] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.32415 / 0.3227 | ms | 1.0057 | 95% [0.9842, 1.0177] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.03835 / 0.03875 | ms | 0.99613 | 95% [0.97698, 1.0131] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.0576 / 0.05805 | ms | 0.99571 | 95% [0.97423, 1.0103] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.2059 / 0.2028 | ms | 1.0097 | 95% [0.98591, 1.0587] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.00795 / 0.00785 | ms | 1 | 95% [0.97403, 1.026] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.0459 / 0.0447 | ms | 1.0234 | 95% [0.96146, 1.1256] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 0.35985 / 0.3589 | ms | 0.99876 | 95% [0.97686, 1.0506] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.04775 / 0.0483 | ms | 0.97774 | 95% [0.9397, 1.034] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.06475 / 0.06375 | ms | 1.0171 | 95% [0.98849, 1.067] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T23:15:48.497771Z; diagnostic; 33 metrics</summary>
+
+Record `01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420` · execution `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/dawn-aa/dawn` · campaign `windows-c4-raw-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba. Contract `59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2`.
+
+Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.74825 / 0.74565 | ms | 1.0091 | 95% [0.9799, 1.0307] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 20.126 / 20.038 | ms | 1.0016 | 95% [0.98756, 1.0112] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 171.88 / 171.88 | ms | 1 | 95% [0.96667, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.2019 / 0.19185 | ms | 1.0528 | 95% [0.9046, 1.1845] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.04645 / 0.04655 | ms | 0.99251 | 95% [0.96746, 1.0064] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1806 / 0.18715 | ms | 0.96212 | 95% [0.92384, 1.0542] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 0.7874 / 0.79325 | ms | 0.9888 | 95% [0.97906, 1.0028] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.29625 / 0.3197 | ms | 0.97119 | 95% [0.88476, 1.0347] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.06555 / 0.0664 | ms | 0.97735 | 95% [0.9696, 0.99697] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 72.199 / 72.195 | MiB | 1.0001 | 95% [0.99962, 1.0008] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.9844 / 2.9713 | ms | 1.0044 | 95% [0.98918, 1.0203] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 183.79 / 183.87 | ms | 1.0013 | 95% [0.98697, 1.0117] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 219 / 219 | ms | 1.0021 | 95% [1, 1.0685] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.9474 / 2.9446 | ms | 0.98324 | 95% [0.95627, 1.0328] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 152.67 / 152.55 | ms | 0.9996 | 95% [0.98674, 1.0093] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 7.4924 / 7.3415 | ms | 1.034 | 95% [0.9682, 1.0563] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.05495 / 0.0549 | ms | 0.99821 | 95% [0.97359, 1.0291] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 159.85 / 159.96 | ms | 1.0008 | 95% [0.98433, 1.0105] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.17 / 2.184 | ms | 1.0231 | 95% [0.97718, 1.0718] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.2203 / 2.2292 | ms | 1.023 | 95% [0.97765, 1.0729] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.04895 / 0.04505 | ms | 1.0004 | 95% [0.93993, 1.1642] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.18545 / 0.1862 | ms | 1.0028 | 95% [0.97382, 1.026] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0069 / 0.0068 | ms | 1 | 95% [0.98551, 1.0223] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.039 / 0.0376 | ms | 1.0095 | 95% [0.96931, 1.0705] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.32955 / 0.3278 | ms | 1.0027 | 95% [0.9801, 1.0177] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.0386 / 0.0385 | ms | 0.98707 | 95% [0.97143, 1.0027] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.05865 / 0.05805 | ms | 1.0017 | 95% [0.9797, 1.0235] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.20365 / 0.2052 | ms | 0.98058 | 95% [0.95161, 1.0088] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.008 / 0.0081 | ms | 0.96927 | 95% [0.89655, 1.0811] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.0472 / 0.0479 | ms | 0.94424 | 95% [0.83736, 1.0173] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 0.3603 / 0.3613 | ms | 1.0014 | 95% [0.9689, 1.0195] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.04765 / 0.04695 | ms | 0.98101 | 95% [0.93713, 1.0629] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.06465 / 0.0647 | ms | 1.004 | 95% [0.97456, 1.0464] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T23:15:48.497771Z; diagnostic; 33 metrics</summary>
+
+Record `d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660` · execution `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/previous/dawn` · campaign `windows-c4-raw-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba. Contract `59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2`.
+
+Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12795 / 0.74565 | ms | 0.16948 | 95% [0.16299, 0.17732] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 94.164 / 20.038 | ms | 4.6466 | 95% [3.546, 18.38] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 171.88 / 171.88 | ms | 0.95833 | 95% [0.83333, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.22965 / 0.19185 | ms | 1.2412 | 95% [1.1491, 1.4122] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0086 / 0.04655 | ms | 0.17285 | 95% [0.14648, 0.20518] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.171 / 0.18715 | ms | 0.92634 | 95% [0.88217, 0.98693] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.3409 / 0.79325 | ms | 1.6904 | 95% [1.6406, 1.734] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.75955 / 0.3197 | ms | 2.3954 | 95% [2.2075, 2.6608] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.14575 / 0.0664 | ms | 2.0934 | 95% [1.8314, 3.6396] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 65.529 / 72.195 | MiB | 0.90776 | 95% [0.90718, 0.90807] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.7239 / 2.9713 | ms | 0.90837 | 95% [0.89694, 0.92111] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 249.64 / 183.87 | ms | 1.3426 | 95% [1.2472, 2.9084] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 289 / 219 | ms | 1.3103 | 95% [1.2831, 2.6946] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.6787 / 2.9446 | ms | 0.92574 | 95% [0.85764, 0.9643] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 145.25 / 152.55 | ms | 0.94735 | 95% [0.94025, 0.96474] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.2893 / 7.3415 | ms | 0.71957 | 95% [0.69481, 0.76841] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.009 / 0.0549 | ms | 0.16338 | 95% [0.15889, 0.17096] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 150.81 / 159.96 | ms | 0.93772 | 95% [0.92904, 0.95391] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.8226 / 2.184 | ms | 1.3095 | 95% [1.2234, 1.9652] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.8752 / 2.2292 | ms | 1.3029 | 95% [1.2143, 1.9725] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.047 / 0.04505 | ms | 1.1218 | 95% [0.89908, 1.2859] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.24635 / 0.1862 | ms | 1.359 | 95% [1.1776, 70.028] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.0033 / 0.0068 | ms | 0.48237 | 95% [0.43284, 1.039] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.04485 / 0.0376 | ms | 1.1807 | 95% [1.0792, 1.825] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.45355 / 0.3278 | ms | 1.4069 | 95% [1.2349, 41.538] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.0735 / 0.0385 | ms | 1.8869 | 95% [1.7185, 3.2044] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.07155 / 0.05805 | ms | 1.242 | 95% [1.1625, 1.5275] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 14.423 / 0.2052 | ms | 71.966 | 95% [31.481, 104.13] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.00735 / 0.0081 | ms | 0.8566 | 95% [0.65823, 1.2674] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.115 / 0.0479 | ms | 2.1159 | 95% [1.7872, 3.2294] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 14.808 / 0.3613 | ms | 42.309 | 95% [19.342, 56.657] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.1569 / 0.04695 | ms | 3.4455 | 95% [2.9512, 4.5963] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.14395 / 0.0647 | ms | 2.2542 | 95% [1.6567, 2.7032] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+<a id="row-da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6"></a>
+
+<details>
+<summary>vector_scale_add_262k — 2026-11-02T23:15:48.497771Z; diagnostic; 33 metrics</summary>
+
+Record `da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6` · execution `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/doe/dawn` · campaign `windows-c4-raw-observer-20261102`.
+
+Machine: miles; win32/d3d12; GPU AMD Radeon(TM) Graphics; driver unknown.
+
+Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba. Contract `59a0317a59777544ac56444ead10d2a955dde15d6468e275bce8ef5a25a021a2`.
+
+Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
+
+Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
+
+Latest measured: `da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| compileNs | 0.12875 / 0.74565 | ms | 0.17187 | 95% [0.16752, 0.1745] ratio | 24/24 observations | unknown | reported aggregate |
+| complete | 21.128 / 20.038 | ms | 1.0478 | 95% [1.0414, 1.0659] ratio | 24/24 observations | unknown | reported aggregate |
+| cpuMs | 179.69 / 171.88 | ms | 1 | 95% [0.92308, 1.0909] ratio | 24/24 observations | unknown | reported aggregate |
+| first.completion | 0.2277 / 0.19185 | ms | 1.2536 | 95% [1.1338, 1.3662] ratio | 24/24 observations | unknown | reported aggregate |
+| first.encode | 0.0063 / 0.04655 | ms | 0.13268 | 95% [0.12391, 0.14471] ratio | 24/24 observations | unknown | reported aggregate |
+| first.map | 0.1734 / 0.18715 | ms | 0.9417 | 95% [0.9056, 0.98783] ratio | 24/24 observations | unknown | reported aggregate |
+| first.operation | 1.3027 / 0.79325 | ms | 1.6236 | 95% [1.5827, 1.7201] ratio | 24/24 observations | unknown | reported aggregate |
+| first.submit | 0.743 / 0.3197 | ms | 2.3428 | 95% [2.0842, 2.637] ratio | 24/24 observations | unknown | reported aggregate |
+| first.upload | 0.1481 / 0.0664 | ms | 2.2542 | 95% [1.8924, 2.5517] ratio | 24/24 observations | unknown | reported aggregate |
+| maxRssMiB | 65.52 / 72.195 | MiB | 0.90761 | 95% [0.90715, 0.90786] ratio | 24/24 observations | unknown | reported aggregate |
+| pipelineNs | 2.7038 / 2.9713 | ms | 0.90889 | 95% [0.90363, 0.91861] ratio | 24/24 observations | unknown | reported aggregate |
+| processInMainNs | 176.83 / 183.87 | ms | 0.96238 | 95% [0.95373, 0.97071] ratio | 24/24 observations | unknown | reported aggregate |
+| processWall | 218.5 / 219 | ms | 0.99772 | 95% [0.93191, 1] ratio | 24/24 observations | unknown | reported aggregate |
+| resourcesNs | 2.6395 / 2.9446 | ms | 0.92454 | 95% [0.88007, 0.95459] ratio | 24/24 observations | unknown | reported aggregate |
+| setupAdapterNs | 146.65 / 152.55 | ms | 0.95871 | 95% [0.94917, 0.9705] ratio | 24/24 observations | unknown | reported aggregate |
+| setupDeviceNs | 5.3358 / 7.3415 | ms | 0.72601 | 95% [0.71016, 0.74827] ratio | 24/24 observations | unknown | reported aggregate |
+| setupInstanceNs | 0.0102 / 0.0549 | ms | 0.18509 | 95% [0.1815, 0.19308] ratio | 24/24 observations | unknown | reported aggregate |
+| setupNs | 152.26 / 159.96 | ms | 0.94995 | 95% [0.93997, 0.96218] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownDeviceNs | 2.6576 / 2.184 | ms | 1.2285 | 95% [1.1702, 1.3002] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownNs | 2.6924 / 2.2292 | ms | 1.2163 | 95% [1.1658, 1.286] ratio | 24/24 observations | unknown | reported aggregate |
+| teardownReleaseNs | 0.03655 / 0.04505 | ms | 0.82572 | 95% [0.7631, 0.87599] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.completion | 0.2026 / 0.1862 | ms | 1.1046 | 95% [1.0755, 1.1308] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.encode | 0.00255 / 0.0068 | ms | 0.37681 | 95% [0.36765, 0.38356] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.map | 0.03635 / 0.0376 | ms | 0.96922 | 95% [0.95213, 0.98103] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.operation | 0.3706 / 0.3278 | ms | 1.1254 | 95% [1.1212, 1.1488] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.submit | 0.06125 / 0.0385 | ms | 1.5958 | 95% [1.587, 1.6148] ratio | 24/24 observations | unknown | reported aggregate |
+| warm.upload | 0.0636 / 0.05805 | ms | 1.0967 | 95% [1.0833, 1.1082] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.completion | 0.22425 / 0.2052 | ms | 1.0914 | 95% [1.0665, 1.1484] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.encode | 0.0033 / 0.0081 | ms | 0.3958 | 95% [0.36145, 0.44444] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.map | 0.04675 / 0.0479 | ms | 0.95528 | 95% [0.89749, 1.0388] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.operation | 0.41755 / 0.3613 | ms | 1.1448 | 95% [1.0912, 1.1993] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.submit | 0.0753 / 0.04695 | ms | 1.5803 | 95% [1.4295, 1.6253] ratio | 24/24 observations | unknown | reported aggregate |
+| warmP95.upload | 0.07175 / 0.0647 | ms | 1.1154 | 95% [1.0958, 1.1404] ratio | 24/24 observations | unknown | reported aggregate |
+
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
+
+- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
+- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
+- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
+- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
+- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
+- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
+- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
+- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
+- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
+- Aggregate row; raw process observations, when retained, are separate rows.
+- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
+- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
+- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
+- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
+- No qualification follows from a phase summary or a valid host window.
+- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
+- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
+- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
+- contractFrozenAt is unknown; no receipt value was retained.
+- machine.driver is unknown.
+- reportedAt is unknown; no receipt value was retained.
+
+<a id="evidence-2"></a>
+
+### Evidence 2
 
 - [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
 - [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
@@ -710,9 +1233,6 @@ Evidence:
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
 - [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
 - Aggregate row; raw process observations, when retained, are separate rows.
 - Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
 - Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
@@ -725,59 +1245,9 @@ Limitations:
 - contractFrozenAt is unknown; no receipt value was retained.
 - machine.driver is unknown.
 
-<a id="row-0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4"></a>
+<a id="evidence-3"></a>
 
-## image_rgba_invert_1024
-
-Observation: `0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4`; execution: `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/previous/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
-
-Latest measured: `0b41eb7921344f92ceed0fa13523908f562bb352e3c49405ca78d30c48b994b4`; latest qualified: `None`; verdict: incomparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12765 / 0.74275 | ms | 0.16905 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16444383335624915, 0.17744610281923712], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| complete | 384.8 / 56.492 | ms | 6.786 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.9760108732585797, 8.854017467719181], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| cpuMs | 187.5 / 218.75 | ms | 0.85714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7777777777777778, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.completion | 0.981 / 0.63085 | ms | 1.5395 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5062794348508635, 1.7202064435408198], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.encode | 0.0095 / 0.0503 | ms | 0.19614 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14853556485355648, 0.21941747572815534], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.map | 0.52345 / 0.53045 | ms | 0.97276 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9397896264055132, 0.99680316397449], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.operation | 3.3763 / 2.4312 | ms | 1.3652 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3521016004219981, 1.3975259814027854], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.submit | 0.7942 / 0.31725 | ms | 2.3856 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.004548900682335, 2.6119896708760635], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.upload | 1.0207 / 0.88535 | ms | 1.144 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.113585496866607, 1.1798695246971107], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| maxRssMiB | 94.51 / 109.06 | MiB | 0.86667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8665138928673732, 0.8668147299039977], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| pipelineNs | 2.6237 / 2.8475 | ms | 0.92403 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9001867538184486, 0.9431090027259532], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processInMainNs | 560.55 / 234.94 | ms | 2.3457 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4377729589228505, 2.896737232099568], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processWall | 601.5 / 281 | ms | 2.1658 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3533834586466165, 2.5757575757575757], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| resourcesNs | 4.9305 / 4.0167 | ms | 1.2404 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1718400077058297, 1.2614984311624702], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupAdapterNs | 148.93 / 155.15 | ms | 0.95899 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9467695485559625, 0.9679368887149672], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupDeviceNs | 5.6178 / 7.4157 | ms | 0.76643 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.739590619533198, 0.7893988255340723], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupInstanceNs | 0.00935 / 0.0574 | ms | 0.16346 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14834205933682376, 0.1675213675213675], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupNs | 154.29 / 162.36 | ms | 0.9505 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.94123832498299, 0.9571446892585711], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownDeviceNs | 2.4156 / 3.2746 | ms | 0.75061 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6883706325645125, 0.7685266643157361], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownNs | 3.0556 / 3.3315 | ms | 0.91624 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8327477938532186, 0.9660527266161069], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownReleaseNs | 0.6856 / 0.06 | ms | 10.676 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.173451327433629, 15.038269550748753], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.completion | 6.7718 / 0.69645 | ms | 9.7396 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3571120998995263, 18.795735294117645], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.encode | 0.0065 / 0.0081 | ms | 0.7619 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6348528015194681, 0.9950454840805718], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.map | 0.26905 / 0.22735 | ms | 1.069 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0187363834422658, 1.3044240035041612], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.operation | 8.8858 / 1.3289 | ms | 6.3548 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7638160395286966, 11.496246303177372], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.submit | 0.54265 / 0.0499 | ms | 10.379 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.59634888438134, 12.028571428571428], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.upload | 0.9199 / 0.34745 | ms | 2.5492 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9450142450142451, 3.2433110367892977], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.completion | 24.281 / 0.7307 | ms | 32.885 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [25.382648535968, 35.16173150975966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.encode | 0.0105 / 0.0109 | ms | 0.85753 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7211538461538461, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.map | 0.35035 / 0.2479 | ms | 1.4103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1761244220260614, 1.760285474391268], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.operation | 26.219 / 1.8319 | ms | 13.567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [11.13534975723779, 15.154186998709967], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.submit | 0.76735 / 0.06165 | ms | 11.735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.338103756708408, 13.443768996960488], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.upload | 1.3437 / 0.90235 | ms | 1.4232 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2633207287727741, 1.6998895027624308], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-
-Evidence:
+### Evidence 3
 
 - [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
 - [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
@@ -791,9 +1261,6 @@ Evidence:
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
 - [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
 - Aggregate row; raw process observations, when retained, are separate rows.
 - Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
 - Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
@@ -805,456 +1272,9 @@ Limitations:
 - Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
 - machine.driver is unknown.
 
-<a id="row-9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471"></a>
+<a id="evidence-4"></a>
 
-## image_rgba_invert_1024
-
-Observation: `9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471`; execution: `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/doe/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
-
-Latest measured: `9ff09b964ff5545d6142eeba38e0a7d5460889a1b89d0eadfd26da474b69c471`; latest qualified: `None`; verdict: incomparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12835 / 0.74275 | ms | 0.17257 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16493032066026247, 0.1761789924973205], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| complete | 85.608 / 56.492 | ms | 1.5135 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4971661645917198, 1.5244421075974948], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| cpuMs | 218.75 / 218.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8571428571428571, 1.0714285714285714], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.completion | 0.96485 / 0.63085 | ms | 1.5227 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.502152766703875, 1.6304914047577705], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.encode | 0.0077 / 0.0503 | ms | 0.14971 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13347921225382933, 6.2007648183556405], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.map | 0.51795 / 0.53045 | ms | 0.97819 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9425793432397725, 1.005129179331307], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.operation | 3.3514 / 2.4312 | ms | 1.382 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3520376817530206, 1.4078054760931753], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.submit | 0.81355 / 0.31725 | ms | 2.302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.571934341808819, 2.661639344262295], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.upload | 1.0211 / 0.88535 | ms | 1.1265 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0905520905520907, 1.1717702279839068], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| maxRssMiB | 94.504 / 109.06 | MiB | 0.86662 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8664899903305519, 0.8668266991508724], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| pipelineNs | 2.6412 / 2.8475 | ms | 0.92052 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.90470538955599, 0.9347024749868352], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processInMainNs | 255.8 / 234.94 | ms | 1.0901 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.082148923546182, 1.0993197916999564], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processWall | 289 / 281 | ms | 1.0567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1043771043771045], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| resourcesNs | 4.984 / 4.0167 | ms | 1.2389 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2002949068142812, 1.2521925550574935], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupAdapterNs | 149.61 / 155.15 | ms | 0.95438 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.944516117601236, 0.9795528655608446], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupDeviceNs | 5.5657 / 7.4157 | ms | 0.747 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7325579767952863, 0.7926987291303265], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupInstanceNs | 0.01075 / 0.0574 | ms | 0.19104 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.17413793103448275, 0.1950354609929078], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupNs | 154.8 / 162.36 | ms | 0.94527 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9384747616182967, 0.9641940415188335], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownDeviceNs | 2.3653 / 3.2746 | ms | 0.72642 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6887633249839809, 0.7628490239683717], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownNs | 2.848 / 3.3315 | ms | 0.85479 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8162076587609773, 0.8916170936020396], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownReleaseNs | 0.4725 / 0.06 | ms | 8.0557 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.635923237863972, 8.284053156146179], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.completion | 0.92355 / 0.69645 | ms | 1.3178 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3024593700560907, 1.3339058251037643], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.encode | 0.00435 / 0.0081 | ms | 0.53167 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5185185185185185, 0.5512820512820513], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.map | 0.22635 / 0.22735 | ms | 1.0033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9899255365746824, 1.0093624609897458], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.operation | 2.2925 / 1.3289 | ms | 1.7143 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6887120115774241, 1.729951397326853], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.submit | 0.4691 / 0.0499 | ms | 9.3309 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.934086629001882, 9.458585858585858], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.upload | 0.65935 / 0.34745 | ms | 1.8705 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.837590750201667, 1.8905701193243312], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.completion | 0.9857 / 0.7307 | ms | 1.3355 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.319442601194426, 1.3515074668920823], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.encode | 0.0055 / 0.0109 | ms | 0.49271 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.471129202472486, 0.5229357798165137], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.map | 0.252 / 0.2479 | ms | 1.0181 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0029033596018249, 1.0453972257250945], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.operation | 2.4406 / 1.8319 | ms | 1.3362 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3222387900734902, 1.3485468128033153], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.submit | 0.51555 / 0.06165 | ms | 8.3118 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.788519637462236, 8.613376835236542], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.upload | 0.7193 / 0.90235 | ms | 0.80854 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7954520366486367, 0.8227340437722012], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
-- machine.driver is unknown.
-
-<a id="row-ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6"></a>
-
-## image_rgba_invert_1024
-
-Observation: `ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6`; execution: `phase-d3d12-20261102-c4-raw/image_rgba_invert_1024/dawn-aa/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T23:19:48.781306Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / failed / unqualified.
-
-Latest measured: `ba99cc6227f7ca45b1e60c00c5fb5753c94ff6b657d15ec8a467406beea683e6`; latest qualified: `None`; verdict: incomparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.74205 / 0.74275 | ms | 0.99504 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9725036179450072, 1.0177857438301392], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| complete | 57.929 / 56.492 | ms | 0.9993 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9872532331757383, 1.0201330067693983], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| cpuMs | 218.75 / 218.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8823529411764706, 1.0714285714285714], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.completion | 0.61475 / 0.63085 | ms | 0.99288 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9581359329601791, 1.0113851992409868], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.encode | 0.05025 / 0.0503 | ms | 1.006 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9656565656565657, 1.0187110187110189], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.map | 0.52245 / 0.53045 | ms | 0.98526 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9608500501235998, 1.0023233301064862], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.operation | 2.4202 / 2.4312 | ms | 0.99302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9796978851963747, 1.0090017030248966], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.submit | 0.3319 / 0.31725 | ms | 1.0136 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9802873371199465, 1.08752471761035], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| first.upload | 0.87735 / 0.88535 | ms | 1.0015 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9849128296826105, 1.012936012936013], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| maxRssMiB | 109.05 / 109.06 | MiB | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9997851233749955, 1.0002507073528886], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| pipelineNs | 2.838 / 2.8475 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.985887595939589, 1.005203877958369], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processInMainNs | 236.38 / 234.94 | ms | 1.0026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.000012089945742, 1.0106995026927237], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| processWall | 281 / 281 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.001779359430605], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| resourcesNs | 3.9487 / 4.0167 | ms | 0.97453 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9238786743178359, 1.0382803779030194], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupAdapterNs | 155.27 / 155.15 | ms | 1.0031 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9925531308831107, 1.014197097366413], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupDeviceNs | 7.5542 / 7.4157 | ms | 1.0477 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9794410661146332, 1.073782439693609], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupInstanceNs | 0.05725 / 0.0574 | ms | 0.9922 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9123711340206185, 1.0173010380622838], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| setupNs | 162.75 / 162.36 | ms | 1.0041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9949242798270982, 1.0142875648655445], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownDeviceNs | 3.4229 / 3.2746 | ms | 1.0301 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9919907823741008, 1.068784190554819], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownNs | 3.4843 / 3.3315 | ms | 1.0299 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9946609864726549, 1.0665988587377924], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| teardownReleaseNs | 0.05845 / 0.06 | ms | 0.99721 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9646710183359398, 1.0517529215358932], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.completion | 0.69645 / 0.69645 | ms | 0.99971 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938138397352898, 1.0088431429399827], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.encode | 0.00815 / 0.0081 | ms | 1.0063 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9753086419753088, 1.0394736842105263], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.map | 0.2274 / 0.22735 | ms | 1.0029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9892294946147473, 1.0143240823634736], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.operation | 1.3453 / 1.3289 | ms | 1.0043 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9938937052393517, 1.0064550425273389], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.submit | 0.0512 / 0.0499 | ms | 1.0081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9835063040020986, 1.0383795309168444], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warm.upload | 0.35085 / 0.34745 | ms | 1.0086 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0148385219668314], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.completion | 0.735 / 0.7307 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9941512324188831, 1.0222560132706664], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.encode | 0.0111 / 0.0109 | ms | 1.0428 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9400000000000001, 1.171641791044776], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.map | 0.2539 / 0.2479 | ms | 1.0053 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9625, 1.0293870696893368], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.operation | 1.8079 / 1.8319 | ms | 1.0005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9824590163934426, 1.0168905443811465], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.submit | 0.06665 / 0.06165 | ms | 1.0827 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.967799642218247, 1.1485809682804675], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-| warmP95.upload | 0.8864 / 0.90235 | ms | 1.0026 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9676676896098203, 1.0249475659565073], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | incomparable |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Host timing-window gate rejected this measurement: reports/benchmarks/windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
-- machine.driver is unknown.
-
-<a id="row-97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b"></a>
-
-## vector_scale_add_262k
-
-Observation: `97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b`; execution: `phase-d3d12-20261102-50cf8feb8/vector_scale_add_262k/previous/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: previous aa402f004092/ee1b7e685f58; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T21:46:48.717840Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
-
-Latest measured: `97f04f78a7214550187e134669fb38de9e1a3aff62f80279811ee1377184545b`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12705 / 0.767 | ms | 0.1688 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16274910577414411, 0.17621266100301453], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 389.92 / 20.209 | ms | 18.491 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.339910153667537, 20.217421223297606], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 171.88 / 171.88 | ms | 0.91987 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8181818181818182, 1.0454545454545454], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.23245 / 0.2054 | ms | 1.1223 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.099662975445354, 1.3308528906697197], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0076 / 0.0451 | ms | 0.15723 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1390134529147982, 1.6124721603563474], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1841 / 0.1856 | ms | 1.0638 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9561841375485303, 1.1042713567839195], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.3352 / 0.80245 | ms | 1.6788 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.625169147496617, 1.7704414587332054], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.74465 / 0.2955 | ms | 2.4117 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2283615458320027, 2.689509007417873], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.1267 / 0.0653 | ms | 1.9241 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7217261904761905, 2.2458270106221545], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 65.535 / 72.188 | MiB | 0.90775 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9074184297386505, 0.9080969906906257], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.7312 / 2.9951 | ms | 0.9069 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8969110035064285, 0.9163378885431688], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 545.5 / 184.91 | ms | 2.9195 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.014674865100372, 3.094214952407356], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 570.5 / 219 | ms | 2.4816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8332546055739254, 2.6392694063926943], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.6576 / 2.994 | ms | 0.89562 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8474017321785476, 0.9090287745198551], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 146.65 / 153.14 | ms | 0.96074 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9489389937696652, 0.9693663742618752], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.1779 / 7.1046 | ms | 0.72546 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6833642372857365, 0.7649165023773629], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.0103 / 0.05515 | ms | 0.18592 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18038528896672507, 0.19113891726251275], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 151.89 / 160.63 | ms | 0.94972 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9374358079596892, 0.9570268564798261], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 4.4435 / 2.213 | ms | 1.8859 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.38359033781977, 2.045134818288394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 4.5252 / 2.2549 | ms | 1.8787 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3824121923447492, 2.0514579000929163], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.0702 / 0.0443 | ms | 1.5141 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1404358353510895, 1.8384615384615386], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 13.287 / 0.1825 | ms | 72.684 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [34.41227857366318, 77.32175398633257], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.00945 / 0.0069 | ms | 1.3551 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8921019900497511, 1.4705882352941178], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.19515 / 0.03775 | ms | 4.9833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.12010582010582, 5.232804232804233], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 13.767 / 0.3268 | ms | 42.62 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [20.98502232364065, 44.44517750549795], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.22295 / 0.03835 | ms | 5.6302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.7489943092621663, 5.868766404199475], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.16985 / 0.05855 | ms | 2.8208 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.977876009126009, 2.920608108108108], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 25.818 / 0.2003 | ms | 117.22 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [71.59144144144145, 132.27072094163805], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.0111 / 0.00795 | ms | 1.3124 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9180327868852458, 1.4268292682926829], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.23605 / 0.04905 | ms | 4.3176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.4978719665016196, 5.243303571428571], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 26.388 / 0.36485 | ms | 68.428 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [42.96344029458181, 74.32608966033234], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.2394 / 0.0468 | ms | 5.0415 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.777602523659306, 5.103004291845494], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.1808 / 0.0659 | ms | 2.6699 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.373700944841884, 2.8066465256797586], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81"></a>
-
-## vector_scale_add_262k
-
-Observation: `b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81`; execution: `phase-d3d12-20261102-50cf8feb8/vector_scale_add_262k/doe/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: doe 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T21:46:48.717840Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
-
-Latest measured: `b16db0ac043eac0f01e6907f7071cd4bd141358a6ac3508e17fa1293feb26f81`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12695 / 0.767 | ms | 0.16665 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16288226801417507, 0.17267017049096267], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 105.97 / 20.209 | ms | 5.0783 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.6307769905127896, 18.08444112594675], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 179.69 / 171.88 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.2277 / 0.2054 | ms | 1.1609 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.085566525622943, 1.2110389610389611], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0065 / 0.0451 | ms | 0.13966 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13363028953229397, 0.19599109131403117], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.179 / 0.1856 | ms | 0.93495 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8776280323450135, 1.055122828040743], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.2671 / 0.80245 | ms | 1.5962 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5315880039331367, 1.6763641065425394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.70405 / 0.2955 | ms | 2.2892 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.135958996493121, 2.572680788897005], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.13205 / 0.0653 | ms | 1.8757 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7769347496206374, 2.2469325153374236], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 65.514 / 72.188 | MiB | 0.90756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9073202402207434, 0.9078804936133362], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.7245 / 2.9951 | ms | 0.9084 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8955218911270186, 0.9220913895765037], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 259.7 / 184.91 | ms | 1.4102 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2418046652274484, 2.8980968709025756], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 289.5 / 219 | ms | 1.299 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2099285797915935, 2.5], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.6631 / 2.994 | ms | 0.88626 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8557626622426076, 0.9184966496384263], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 146.6 / 153.14 | ms | 0.95511 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9462729080947181, 0.9651575996304287], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.205 / 7.1046 | ms | 0.71753 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6877659823343805, 0.7420074453104305], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.00955 / 0.05515 | ms | 0.17024 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16296296296296298, 0.18214285714285716], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 152.06 / 160.63 | ms | 0.94727 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9358030099415683, 0.9559425924767394], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 3.7254 / 2.213 | ms | 1.4492 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2617404314880063, 2.207797537619699], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 3.7961 / 2.2549 | ms | 1.4408 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2539554713405967, 2.214128826930835], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.05955 / 0.0443 | ms | 1.2816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0284237726098193, 1.7434554973821992], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.24765 / 0.1825 | ms | 1.3814 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.200880572372042, 73.10143388210304], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0031 / 0.0069 | ms | 0.45245 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.42028985507246375, 1.4444444444444444], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.04255 / 0.03775 | ms | 1.0873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0476190476190477, 4.479381443298969], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.4361 / 0.3268 | ms | 1.3363 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2464874770922418, 42.02752571082879], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.06705 / 0.03835 | ms | 1.7823 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6770833333333335, 5.46875], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.06865 / 0.05855 | ms | 1.1893 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1323024054982818, 2.8131147540983608], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 14.076 / 0.2003 | ms | 68.112 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.195811518324607, 105.96202531645568], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.00905 / 0.00795 | ms | 1.0316 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.726027397260274, 1.307692307692308], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.1625 / 0.04905 | ms | 3.135 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.4107142857142856, 3.6149825783972123], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 14.531 / 0.36485 | ms | 38.523 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.727420667209112, 59.71320011258092], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.21065 / 0.0468 | ms | 4.1914 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.441666666666667, 4.966597077244259], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.17155 / 0.0659 | ms | 2.4769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2375, 2.761171032357473], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd"></a>
-
-## vector_scale_add_262k
-
-Observation: `bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd`; execution: `phase-d3d12-20261102-50cf8feb8/vector_scale_add_262k/dawn-aa/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T21:46:48.717840Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / unknown / unqualified.
-
-Latest measured: `bf3544c6fa9e050cfa94b78be5f4f18c5ef62d7f64001c1cc79cc6eba0a11cfd`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.7541 / 0.767 | ms | 0.97868 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9698756569670556, 1.011224358147336], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 19.953 / 20.209 | ms | 0.9835 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9665966703857267, 0.9973121239726508], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 187.5 / 171.88 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.1], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.1984 / 0.2054 | ms | 0.97686 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8921521425132403, 1.0895196506550218], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.04535 / 0.0451 | ms | 0.99683 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.977728285077951, 1.013452914798206], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1805 / 0.1856 | ms | 0.98946 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9401165871754107, 1.0883137268972198], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 0.7979 / 0.80245 | ms | 1.0101 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9747412518482012, 1.034910783553142], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.2927 / 0.2955 | ms | 1.0213 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.989817792068596, 1.0495412844036696], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.06585 / 0.0653 | ms | 1.0085 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9761904761904764, 1.0276073619631902], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 72.18 / 72.188 | MiB | 0.99986 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9996753071053628, 1.0003517535808357], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.984 / 2.9951 | ms | 0.99385 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9878927356413848, 1.0124255928178771], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 184 / 184.91 | ms | 0.99839 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9881590984134545, 1.0109868150658112], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 219 / 219 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.94, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.9299 / 2.994 | ms | 0.96724 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9030904359141184, 1.0158751788512639], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 153.34 / 153.14 | ms | 0.99992 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.989978802549868, 1.0101022545275347], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 7.2369 / 7.1046 | ms | 1.0033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9568912217004091, 1.036330513988289], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.05635 / 0.05515 | ms | 1.0214 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9820788530465949, 1.0351851851851852], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 160.49 / 160.63 | ms | 0.99895 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.99281046881696, 1.0095860045460434], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.1864 / 2.213 | ms | 1.0308 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9615384615384615, 1.0744887296611436], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.224 / 2.2549 | ms | 1.0294 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9625237821335338, 1.0660675357031633], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.04345 / 0.0443 | ms | 1.0033 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9295238095238096, 1.0807799442896935], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.1832 / 0.1825 | ms | 0.99337 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9741424802110817, 1.026893523600439], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0068 / 0.0069 | ms | 0.97143 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9705882352941176, 0.9855072463768115], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.0371 / 0.03775 | ms | 0.99203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9708222811671088, 1.005420054200542], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.3224 / 0.3268 | ms | 0.98479 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9721718088324259, 1.0000190503474862], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.0382 / 0.03835 | ms | 0.9922 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9791122715404699, 1.0079155672823217], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.0581 / 0.05855 | ms | 0.98971 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9496753246753247, 1.0017182130584192], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.2026 / 0.2003 | ms | 0.99474 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9293340111845448, 1.0438596491228072], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.00785 / 0.00795 | ms | 0.98667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8928571428571429, 1.050632911392405], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.04415 / 0.04905 | ms | 0.91654 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7646048109965635, 1.0521739130434782], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 0.3549 / 0.36485 | ms | 0.97667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9373961218836565, 1.0377562028047465], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.04685 / 0.0468 | ms | 0.9927 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9498060984646999, 1.0218592349973645], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.06345 / 0.0659 | ms | 0.96365 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9180576631259484, 1.0092449922958397], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-phase-diagnostic/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-phase-diagnostic/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-phase-diagnostic/harness-build.json): retained.
-- [retention](../windows-d3d12/20261102-phase-diagnostic/retention.json): retained.
-- [host-windows](../windows-d3d12/20261102-phase-diagnostic/host-window-evidence.tar.gz): retained.
-- [raw:raw-buffer_upload_readback_exact_1mb.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-buffer_upload_readback_exact_1mb.jsonl.gz): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-phase-diagnostic/raw-vector_scale_add_262k.jsonl.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- All 288 main processes passed 32 independent full-output checks; single-flight contract, 31 warm iterations per process.
-- An image admission was rejected for foreign CPU above the frozen limit before execution; its later accepted admission and every main sample are preserved.
-- Driver is null in execution receipts and remains null. Own GPU-engine instances missing during process exit are recorded, never zero-filled; foreign coverage remained complete.
-- Measured source50 and previousAA predate later source changes; current source cannot inherit their outcomes.
-- No qualification follows from a phase summary or a valid host window.
-- Phase classifications remain unknown without a separately bound classification verdict; every ratio/interval and adverse phase remains available.
-- Physical AMD Windows D3D12 diagnostic only; retained host gates and Dawn A/A passing do not confer release qualification.
-- The original contract has no recorded freeze timestamp. Prospective host-observer supplements change admission from process presence to measured utilization; original contract bytes/values are not rewritten.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f"></a>
-
-## vector_scale_add_262k
-
-Observation: `0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f`; execution: `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/doe/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
-
-Latest measured: `0929e34b8ee842a1e719a8c37eb897931c94fdb0ee008d18e5a4a8f36f550b4f`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12465 / 0.7463 | ms | 0.16744 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1607918263090677, 0.17368770764119604], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 20.91 / 19.924 | ms | 1.0462 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0346722185548165, 1.0651405347174616], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 179.69 / 187.5 | ms | 0.96154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.0769230769230769], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.22865 / 0.1751 | ms | 1.2914 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1516825715720744, 1.5288810177168424], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.00685 / 0.0467 | ms | 0.14397 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12967032967032968, 0.884065631239892], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.17075 / 0.18265 | ms | 0.91956 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8725274725274725, 0.9568385650224215], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.3453 / 0.79725 | ms | 1.6771 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5650548033526757, 1.7669639395114385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.7225 / 0.3228 | ms | 2.2121 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9504976427448928, 2.5124517713083128], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.14345 / 0.06615 | ms | 2.1634 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8464695137314187, 2.7628294036061027], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 65.516 / 72.184 | MiB | 0.90756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9068094542701065, 0.9078505684894423], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.68 / 2.9806 | ms | 0.89442 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8866556836902799, 0.9040901138202464], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 175.02 / 182.98 | ms | 0.95551 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9424153512723308, 0.9681700024926247], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 203 / 219 | ms | 0.93119 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9014703196347031, 0.9655963302752293], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.6481 / 2.9813 | ms | 0.89578 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8607454711325426, 0.9533705017739483], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 145.52 / 152.03 | ms | 0.95421 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9416029446392941, 0.965744052699625], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.1358 / 7.1242 | ms | 0.71918 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7014578350281279, 0.7328619434332119], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.0103 / 0.05495 | ms | 0.18807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18231046931407943, 0.19038817005545286], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 150.55 / 159.12 | ms | 0.9444 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9298575340069994, 0.9550245257574167], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.6235 / 2.1732 | ms | 1.1816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1523011755746988, 1.2124188378400593], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.6589 / 2.2243 | ms | 1.1726 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1439362148552246, 1.2057271702367534], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.0322 / 0.04465 | ms | 0.72606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6670613982491906, 0.7970660146699265], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.205 / 0.18205 | ms | 1.1262 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.101723179544191, 1.1662995594713654], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0026 / 0.0069 | ms | 0.36954 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.36231884057971014, 0.376890756302521], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.0358 / 0.0375 | ms | 0.955 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9373368146214099, 0.970108695652174], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.3712 / 0.3227 | ms | 1.1422 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.126590133416072, 1.1788437102922489], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.0619 / 0.03875 | ms | 1.6036 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5761421319796955, 1.6436170212765957], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.0636 / 0.05805 | ms | 1.1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0790378006872852, 1.1162947355926167], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.22125 / 0.2028 | ms | 1.0958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0643494598403005, 1.1310173697270471], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.0032 / 0.00785 | ms | 0.39481 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.358974358974359, 0.4390243902439024], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.04195 / 0.0447 | ms | 0.97176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8839506172839505, 1.0334821428571428], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 0.39815 / 0.3589 | ms | 1.1141 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0628766046633482, 1.1726943942133816], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.07095 / 0.0483 | ms | 1.5215 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4145836729518737, 1.591093117408907], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.069 / 0.06375 | ms | 1.0805 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0632716049382718, 1.1275369797041623], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
+### Evidence 4
 
 - [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
 - [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
@@ -1268,9 +1288,6 @@ Evidence:
 - [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
 - [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
 - Aggregate row; raw process observations, when retained, are separate rows.
 - Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
 - Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
@@ -1282,219 +1299,9 @@ Limitations:
 - contractFrozenAt is unknown; no receipt value was retained.
 - machine.driver is unknown.
 
-<a id="row-2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1"></a>
+<a id="evidence-5"></a>
 
-## vector_scale_add_262k
-
-Observation: `2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1`; execution: `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/previous/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
-
-Latest measured: `2bb78c248e4959dd160ff25ca84fda59518216fadb146851ee681cfdeecb05d1`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.1296 / 0.7463 | ms | 0.17444 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1657172449508027, 0.18019962233612086], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 387.83 / 19.924 | ms | 19.641 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.961838544650088, 21.149220622904835], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 171.88 / 187.5 | ms | 0.91987 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.2316 / 0.1751 | ms | 1.3699 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1813159216474134, 1.6373514055064256], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.00695 / 0.0467 | ms | 0.14666 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13877497871073888, 0.8853737388091517], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1644 / 0.18265 | ms | 0.89375 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8721973094170403, 0.9250780437044746], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.3528 / 0.79725 | ms | 1.684 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6503835740072204, 1.76507068922326], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.7067 / 0.3228 | ms | 2.3027 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0161054172767203, 2.4398634879506798], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.17895 / 0.06615 | ms | 2.7086 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.213142503966643, 2.9876543209876543], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 65.523 / 72.184 | MiB | 0.90766 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.906966681090437, 0.9079096962806562], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.7006 / 2.9806 | ms | 0.90764 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8883925638835972, 0.9212804509764445], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 542.04 / 182.98 | ms | 2.9601 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2667500685978172, 3.1545061090871833], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 570 / 219 | ms | 2.4509 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1527093596059113, 2.712328767123288], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.6792 / 2.9813 | ms | 0.91311 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8519483088283774, 1.016083797938841], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 145.45 / 152.03 | ms | 0.95756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9501203375689732, 0.9649236638185853], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.1086 / 7.1242 | ms | 0.71407 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6915666745091889, 0.7278115672692459], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.0092 / 0.05495 | ms | 0.17016 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16373239436619716, 0.17793594306049823], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 150.57 / 159.12 | ms | 0.94408 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9384476412597262, 0.9540992681209881], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 4.6823 / 2.1732 | ms | 2.0718 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4277257508855354, 2.2069943289224954], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 4.763 / 2.2243 | ms | 2.0623 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4203640500568828, 2.198214860083628], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.081 / 0.04465 | ms | 1.7037 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.108829568788501, 1.96448087431694], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 14.025 / 0.18205 | ms | 76.838 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3501683501683501, 81.38998401704848], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0099 / 0.0069 | ms | 1.4353 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.39999999999999997, 1.5217391304347827], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.1712 / 0.0375 | ms | 4.2873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9948717948717949, 4.755376344086022], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 14.55 / 0.3227 | ms | 44.996 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3186981885170403, 47.451479478205535], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.2141 / 0.03875 | ms | 5.5901 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7244094488188975, 5.794805194805194], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.1692 / 0.05805 | ms | 2.7812 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1767764298093588, 2.9278350515463916], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 23.518 / 0.2028 | ms | 116.87 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [47.54175588865097, 124.88311688311687], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.0113 / 0.00785 | ms | 1.3725 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7837837837837837, 1.5], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.2162 / 0.0447 | ms | 4.2485 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.126, 5.053984575835476], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 23.943 / 0.3589 | ms | 65.491 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [26.501166588894073, 72.89307146753956], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.2383 / 0.0483 | ms | 4.7934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.145956607495069, 4.975206611570248], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.18525 / 0.06375 | ms | 2.9114 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.122257053291536, 3.0560164835164834], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-
-<a id="row-f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a"></a>
-
-## vector_scale_add_262k
-
-Observation: `f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a`; execution: `phase-d3d12-20261102-c4-formatted/vector_scale_add_262k/dawn-aa/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T22:47:37.771855Z; reported: 2026-11-03T00:47:11.513511Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
-
-Latest measured: `f683e509e88b7eb1e894d5388bebcf66362490b59d5fd8eb7e5e980abbd2aa0a`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.74925 / 0.7463 | ms | 0.99306 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.984514435695538, 1.0138511678435633], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 19.849 / 19.924 | ms | 1.0028 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9792653013263353, 1.0087289899964453], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 179.69 / 187.5 | ms | 0.96154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8846153846153846, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.1906 / 0.1751 | ms | 1.0176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9402087965609978, 1.1650183835406085], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0465 / 0.0467 | ms | 1.0108 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9674620390455532, 1.0307692307692307], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1819 / 0.18265 | ms | 1.0005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.932967032967033, 1.0707624794295119], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 0.79815 / 0.79725 | ms | 1.0076 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9708982035928144, 1.014986886474335], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.29945 / 0.3228 | ms | 0.95741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8819135925722559, 1.0549102428722281], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.0659 / 0.06615 | ms | 1.003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9848714069591528, 1.0362204724409447], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 72.186 / 72.184 | MiB | 0.99989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9995129606580443, 1.0002165908598657], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.9898 / 2.9806 | ms | 1.002 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9926346942893657, 1.0097041259500543], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 182.16 / 182.98 | ms | 0.99713 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9907345409600954, 1.0058333387779281], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 219 / 219 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9358974358974359, 1.0045871559633028], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.9304 / 2.9813 | ms | 0.97756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9330261701149667, 1.0162873862158648], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 151.66 / 152.03 | ms | 0.99849 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9921786321213212, 1.0013455757954042], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 7.2805 / 7.1242 | ms | 0.99102 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9641072425484402, 1.073667600187652], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.05485 / 0.05495 | ms | 0.98212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9656419529837251, 1.0108303249097474], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 159.05 / 159.12 | ms | 0.99741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9910938182524147, 1.0057480677142456], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.1439 / 2.1732 | ms | 0.96581 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9375838635675022, 1.0068033638854765], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.1882 / 2.2243 | ms | 0.96656 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9374920648355834, 1.0094609151796168], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.04505 / 0.04465 | ms | 0.97649 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9250516795865633, 1.1092636579572446], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.1829 / 0.18205 | ms | 1.0023 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9923497267759563, 1.035575319622012], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0069 / 0.0069 | ms | 0.98571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9855072463768115, 1.0144927536231885], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.0373 / 0.0375 | ms | 0.99596 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9754299754299754, 1.0163487738419617], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.32415 / 0.3227 | ms | 1.0057 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9841958475364115, 1.017685386286069], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.03835 / 0.03875 | ms | 0.99613 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9769820971867006, 1.0130548302872062], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.0576 / 0.05805 | ms | 0.99571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9742268041237113, 1.0103270223752152], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.2059 / 0.2028 | ms | 1.0097 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9859088774072334, 1.0587301587301587], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.00795 / 0.00785 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9740259740259739, 1.025974025974026], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.0459 / 0.0447 | ms | 1.0234 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.961456102783726, 1.125615763546798], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 0.35985 / 0.3589 | ms | 0.99876 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9768608865347086, 1.0506003430531732], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.04775 / 0.0483 | ms | 0.97774 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9396984924623114, 1.0339702760084926], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.06475 / 0.06375 | ms | 1.0171 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9884892086330934, 1.067001675041876], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/formatted/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/formatted/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/formatted/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/formatted/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/formatted/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/formatted/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/formatted/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/formatted/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Formatted PDH image sampling ended with an API error and incomplete coverage; missing values were not zero-filled.
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- contractFrozenAt is unknown; no receipt value was retained.
-- machine.driver is unknown.
-
-<a id="row-01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420"></a>
-
-## vector_scale_add_262k
-
-Observation: `01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420`; execution: `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/dawn-aa/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: dawn-aa f99976772eb1/0f255b4895ba; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
-
-Latest measured: `01b4deb30357e000144efe1df5b40d0d93fa5d63ab733ad12f0dde8c3f2de420`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.74825 / 0.74565 | ms | 1.0091 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9798968390424547, 1.0306740027510317], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 20.126 / 20.038 | ms | 1.0016 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9875556070924079, 1.0112152107113799], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 171.88 / 171.88 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9666666666666667, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.2019 / 0.19185 | ms | 1.0528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9046037019458946, 1.1845397753732088], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.04645 / 0.04655 | ms | 0.99251 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9674620390455532, 1.0064377682403431], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1806 / 0.18715 | ms | 0.96212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9238356164383562, 1.0542312276519665], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 0.7874 / 0.79325 | ms | 0.9888 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9790582561238735, 1.002841918294849], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.29625 / 0.3197 | ms | 0.97119 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8847558950514781, 1.0346517325866291], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.06555 / 0.0664 | ms | 0.97735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9696048632218844, 0.9969742813918304], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 72.199 / 72.195 | MiB | 1.0001 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9996212940921878, 1.0008120398440883], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.9844 / 2.9713 | ms | 1.0044 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9891790167019525, 1.0202970629746624], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 183.79 / 183.87 | ms | 1.0013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9869659253039246, 1.0117347677300517], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 219 / 219 | ms | 1.0021 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0684931506849316], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.9474 / 2.9446 | ms | 0.98324 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9562702058873576, 1.0328164346367326], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 152.67 / 152.55 | ms | 0.9996 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9867364234011483, 1.009309781456104], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 7.4924 / 7.3415 | ms | 1.034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9682010478245033, 1.0563494875529833], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.05495 / 0.0549 | ms | 0.99821 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9735915492957746, 1.0291438979963572], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 159.85 / 159.96 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9843320675496279, 1.010455169434548], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.17 / 2.184 | ms | 1.0231 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9771826909711707, 1.0718376616964551], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.2203 / 2.2292 | ms | 1.023 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9776521508700644, 1.0728951000690132], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.04895 / 0.04505 | ms | 1.0004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9399293286219081, 1.1642156862745097], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.18545 / 0.1862 | ms | 1.0028 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9738247863247862, 1.025995575221239], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0069 / 0.0068 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9855072463768115, 1.0222783143107987], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.039 / 0.0376 | ms | 1.0095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.969309462915601, 1.070460704607046], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.32955 / 0.3278 | ms | 1.0027 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9800950683303625, 1.0176544766708702], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.0386 / 0.0385 | ms | 0.98707 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9714285714285715, 1.002680965147453], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.05865 / 0.05805 | ms | 1.0017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9796954314720813, 1.0234730546179531], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.20365 / 0.2052 | ms | 0.98058 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9516129032258065, 1.0087633885102238], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.008 / 0.0081 | ms | 0.96927 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.896551724137931, 1.0810810810810811], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.0472 / 0.0479 | ms | 0.94424 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8373626373626374, 1.0172955671673447], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 0.3603 / 0.3613 | ms | 1.0014 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.968901569186876, 1.0195121951219512], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.04765 / 0.04695 | ms | 0.98101 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.93713163064833, 1.062921348314607], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.06465 / 0.0647 | ms | 1.004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9745627980922099, 1.046367851622875], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
+### Evidence 5
 
 - [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
 - [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
@@ -1508,167 +1315,6 @@ Evidence:
 - [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
 - [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
 - [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
-- machine.driver is unknown.
-
-<a id="row-d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660"></a>
-
-## vector_scale_add_262k
-
-Observation: `d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660`; execution: `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/previous/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: previous 50cf8feb842a/75b051dde715; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
-
-Latest measured: `d4fc426a606f6f83bedb5d6c9ab4aea10091b89993529d2be16d540b8c531660`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12795 / 0.74565 | ms | 0.16948 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16299381886589628, 0.17732222934016656], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 94.164 / 20.038 | ms | 4.6466 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.545952318250646, 18.380207690979503], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 171.88 / 171.88 | ms | 0.95833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.22965 / 0.19185 | ms | 1.2412 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1490621915103654, 1.4121663563004345], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0086 / 0.04655 | ms | 0.17285 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.146484375, 0.20518358531317493], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.171 / 0.18715 | ms | 0.92634 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8821656050955413, 0.9869281045751633], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.3409 / 0.79325 | ms | 1.6904 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6405524168236032, 1.7339876033057853], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.75955 / 0.3197 | ms | 2.3954 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.207486285898677, 2.6608391608391613], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.14575 / 0.0664 | ms | 2.0934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8314255040294471, 3.639625585023401], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 65.529 / 72.195 | MiB | 0.90776 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071830376460407, 0.9080721130420659], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.7239 / 2.9713 | ms | 0.90837 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8969372078580068, 0.9211139111295416], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 249.64 / 183.87 | ms | 1.3426 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2472349372303198, 2.9083598045339962], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 289 / 219 | ms | 1.3103 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2831050228310503, 2.6945812807881775], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.6787 / 2.9446 | ms | 0.92574 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8576426547248365, 0.9643003833515881], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 145.25 / 152.55 | ms | 0.94735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9402478460533458, 0.9647386704873309], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.2893 / 7.3415 | ms | 0.71957 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6948101611581534, 0.7684066094470718], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.009 / 0.0549 | ms | 0.16338 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.15889464594127806, 0.17095588235294118], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 150.81 / 159.96 | ms | 0.93772 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9290417804809795, 0.9539118355216248], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.8226 / 2.184 | ms | 1.3095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2234482132316213, 1.965220808567078], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.8752 / 2.2292 | ms | 1.3029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2142546907574705, 1.9725499638815316], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.047 / 0.04505 | ms | 1.1218 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8990825688073394, 1.2858753109452736], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.24635 / 0.1862 | ms | 1.359 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1776390465380249, 70.02800215401184], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.0033 / 0.0068 | ms | 0.48237 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.43283582089552236, 1.0389610389610389], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.04485 / 0.0376 | ms | 1.1807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0791556728232188, 1.8250460405156537], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.45355 / 0.3278 | ms | 1.4069 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2349360925136945, 41.53799206591395], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.0735 / 0.0385 | ms | 1.8869 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7184986595174263, 3.2044334975369457], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.07155 / 0.05805 | ms | 1.242 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1625, 1.5275362318840577], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 14.423 / 0.2052 | ms | 71.966 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [31.480715287517533, 104.12778366914105], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.00735 / 0.0081 | ms | 0.8566 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6582278481012658, 1.2674418604651163], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.115 / 0.0479 | ms | 2.1159 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7871559633027523, 3.229411764705883], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 14.808 / 0.3613 | ms | 42.309 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [19.341713318313897, 56.65706134094152], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.1569 / 0.04695 | ms | 3.4455 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.951167728237792, 4.596348884381339], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.14395 / 0.0647 | ms | 2.2542 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.656675749318801, 2.7031746031746033], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
-- Aggregate row; raw process observations, when retained, are separate rows.
-- Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
-- Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.
-- Host-window acceptance alone does not qualify performance.
-- No qualification follows from a phase summary or a valid host window.
-- Observer epochs are separate executions; invalid image timing remains visible but is incomparable. No timed-main retries or threshold relaxation.
-- Partial physical Windows D3D12 diagnostic: vector window passed; image window failed; copy workload was not run. No complete-campaign or release qualification.
-- Raw PDH observer validated against SDK/formatted values; image foreign CPU 6.058% exceeded frozen 5% limit. Rejected preadmission retained; user applications untouched.
-- machine.driver is unknown.
-
-<a id="row-da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6"></a>
-
-## vector_scale_add_262k
-
-Observation: `da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6`; execution: `phase-d3d12-20261102-c4-raw/vector_scale_add_262k/doe/dawn`.
-
-Machine: miles; OS: win32; backend: d3d12; GPU: AMD Radeon(TM) Graphics; driver: unknown.
-
-Build: doe c4fba1230dec/921b6d61505c; comparator: dawn f99976772eb1/0f255b4895ba.
-
-Executed: 2026-11-02T23:15:48.497771Z; reported: 2026-11-03T00:47:19.113833Z; contract frozen: 2026-11-02T23:10:40.873792Z.
-
-Correctness / fallback / acceptance / qualification: passed / unknown / passed / unqualified.
-
-Latest measured: `da3f38f3834e20049615b55596fa671094bf271223631f0935a89f47c0c396e6`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| compileNs | 0.12875 / 0.74565 | ms | 0.17187 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16751736990158494, 0.17450352338244715], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| complete | 21.128 / 20.038 | ms | 1.0478 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0413906044825676, 1.0659429329531505], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| cpuMs | 179.69 / 171.88 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.completion | 0.2277 / 0.19185 | ms | 1.2536 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1337958374628345, 1.366232153941651], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.encode | 0.0063 / 0.04655 | ms | 0.13268 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12391304347826088, 0.1447084233261339], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.map | 0.1734 / 0.18715 | ms | 0.9417 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9056000000000001, 0.9878331402085748], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.operation | 1.3027 / 0.79325 | ms | 1.6236 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5826881583957355, 1.7201426024955437], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.submit | 0.743 / 0.3197 | ms | 2.3428 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0842459983150796, 2.6370396600566575], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| first.upload | 0.1481 / 0.0664 | ms | 2.2542 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.892355694227769, 2.5516717325227964], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| maxRssMiB | 65.52 / 72.195 | MiB | 0.90761 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9071529055297046, 0.9078612779310717], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| pipelineNs | 2.7038 / 2.9713 | ms | 0.90889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9036277391769107, 0.9186078006500542], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processInMainNs | 176.83 / 183.87 | ms | 0.96238 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9537320223094312, 0.9707068280863055], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| processWall | 218.5 / 219 | ms | 0.99772 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9319148936170213, 1.0], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| resourcesNs | 2.6395 / 2.9446 | ms | 0.92454 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8800719568259044, 0.9545909388909977], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupAdapterNs | 146.65 / 152.55 | ms | 0.95871 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9491692416747285, 0.9705037791697946], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupDeviceNs | 5.3358 / 7.3415 | ms | 0.72601 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7101611581535099, 0.7482700211405385], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupInstanceNs | 0.0102 / 0.0549 | ms | 0.18509 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18150021315350928, 0.1930783242258652], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| setupNs | 152.26 / 159.96 | ms | 0.94995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9399676278465772, 0.9621780950208165], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownDeviceNs | 2.6576 / 2.184 | ms | 1.2285 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1702248790207799, 1.300189867093035], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownNs | 2.6924 / 2.2292 | ms | 1.2163 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.165782122905028, 1.2860162180814354], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| teardownReleaseNs | 0.03655 / 0.04505 | ms | 0.82572 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7630973044721259, 0.8759894459102902], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.completion | 0.2026 / 0.1862 | ms | 1.1046 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.075503355704698, 1.1308304891922638], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.encode | 0.00255 / 0.0068 | ms | 0.37681 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.36764705882352944, 0.3835616438356164], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.map | 0.03635 / 0.0376 | ms | 0.96922 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.952127659574468, 0.981029810298103], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.operation | 0.3706 / 0.3278 | ms | 1.1254 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1211651688875117, 1.1488338073211164], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.submit | 0.06125 / 0.0385 | ms | 1.5958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.587012987012987, 1.6147757255936674], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warm.upload | 0.0636 / 0.05805 | ms | 1.0967 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0833333333333335, 1.1082024432809774], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.completion | 0.22425 / 0.2052 | ms | 1.0914 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0664711632453567, 1.1484230055658626], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.encode | 0.0033 / 0.0081 | ms | 0.3958 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3614457831325301, 0.4444444444444445], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.map | 0.04675 / 0.0479 | ms | 0.95528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.897489539748954, 1.0387755102040817], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.operation | 0.41755 / 0.3613 | ms | 1.1448 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.091164095371669, 1.1993127147766323], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.submit | 0.0753 / 0.04695 | ms | 1.5803 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4295454545454547, 1.625263157894737], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-| warmP95.upload | 0.07175 / 0.0647 | ms | 1.1154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0957910014513788, 1.1404480541084612], 'unit': 'ratio'} | {'implementation': 24, 'comparator': 24, 'unit': 'observations'} | unknown |
-
-Evidence:
-
-- [report](../windows-d3d12/20261102-c4-partial/raw/summary-vs-dawn.json): retained.
-- [contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [workload-contract](../windows-d3d12/20261102-c4-partial/raw/contract.json.gz): retained.
-- [harness-build](../windows-d3d12/20261102-c4-partial/raw/harness-build.json.gz): retained.
-- [handoff](../windows-d3d12/20261102-c4-partial/raw/handoff.json): retained.
-- [raw:raw-vector_scale_add_262k.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-vector_scale_add_262k.jsonl.gz): retained.
-- [window:vector_scale_add_262k](../windows-d3d12/20261102-c4-partial/raw/window-vector_scale_add_262k.json): retained.
-- [raw:raw-image_rgba_invert_1024.jsonl.gz](../windows-d3d12/20261102-c4-partial/raw/raw-image_rgba_invert_1024.jsonl.gz): retained.
-- [window:image_rgba_invert_1024](../windows-d3d12/20261102-c4-partial/raw/window-image_rgba_invert_1024.json): retained.
-- [host-windows](../windows-d3d12/20261102-c4-partial/raw/admission-evidence.tar.gz): retained.
-- [retention](../windows-d3d12/20261102-c4-partial/retention.json): retained.
-- [observer-validation](../windows-d3d12/20261102-c4-partial/observer-validation.tar.gz): retained.
-
-Limitations:
-
 - Aggregate row; raw process observations, when retained, are separate rows.
 - Both executed workloads passed all full-output checks; execution correctness remains separate from host timing acceptance.
 - Driver is unknown in execution receipts; current source cannot inherit c4 binary outcomes.

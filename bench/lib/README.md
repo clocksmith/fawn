@@ -15,8 +15,14 @@ Notable modules:
   in [`CLAUDE.md`](../../CLAUDE.md).
 - `output_paths.py` — canonical-vs-scratch path routing
   (`bench/out/<lane>/` vs `bench/out/scratch/<timestamp>/`).
-- `benchmark_cube_*.py` — cube/dashboard rendering for the static
-  bench viewer.
+- `benchmark_cube_reports.py`, `benchmark_cube_dashboard_html.py` — live
+  legacy cube readers/renderers, with exercised compatibility exports into the
+  [registered inventory owner](../inventory/README.md).
+- `benchmark_inventory_sources.py` — compatibility imports for that same owner;
+  no independent ingestion.
+- `inventory_dashboard_html.py` — tested-profile report rendering used by
+  `build_test_inventory_dashboard.py` and the release trend workflow. This is a
+  distinct legacy contract, not the registered benchmark inventory dashboard.
 - `adhoc_claim_gating.py` — claim-policy evaluation shared between the
   CLI `claim` subcommand and the gate runner.
 

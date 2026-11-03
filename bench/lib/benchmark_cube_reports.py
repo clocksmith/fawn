@@ -8,9 +8,8 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
-import jsonschema
-from referencing import Registry, Resource
 
+from bench.lib.config_validation import validate_schema
 from bench.lib import output_paths
 from bench.lib import report_conformance
 from bench.lib import compare_axes as compare_axes_mod
@@ -53,23 +52,6 @@ def median_non_null(values: list[float | None]) -> float | None:
         return None
     return float(median(filtered))
 
-def validate_schema(schema_path: Path, payload: Any) -> None:
-    schema_payload = load_json(schema_path)
-    registry = Registry()
-    if schema_path.name == "benchmark-cube.schema.json":
-        row_schema = load_json(schema_path.with_name("benchmark-cube-row.schema.json"))
-        registry = registry.with_resource(row_schema["$id"], Resource.from_contents(row_schema))
-    validator = jsonschema.Draft202012Validator(schema_payload, registry=registry,
-                                               format_checker=jsonschema.FormatChecker())
-    errors = sorted(
-        validator.iter_errors(payload),
-        key=lambda item: tuple(str(part) for part in item.absolute_path),
-    )
-    if not errors:
-        return
-    first = jsonschema.exceptions.best_match(errors) or errors[0]
-    location = ".".join(str(part) for part in first.absolute_path) if first.absolute_path else "<root>"
-    raise ValueError(f"{schema_path}: {location}: {first.message}")
 
 
 def validate_backend_report_shape(payload: dict[str, Any], *, report_label: str) -> tuple[bool, str]:

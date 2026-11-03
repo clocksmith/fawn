@@ -25,7 +25,7 @@ from bench.lib import compare_claim_artifacts as artifacts_mod
 from bench.lib import benchmark_cube_reports as cube_reports_mod
 from bench.lib import compare_axes as compare_axes_mod
 from bench.lib import benchmark_cube_dashboard_html
-from bench.inventory import sources as benchmark_inventory_sources
+from bench.inventory.builder import build_inventory
 from bench.lib import output_paths
 from bench.lib import report_conformance
 from native_compare_modules import timing_sanity
@@ -187,6 +187,7 @@ def parse_args() -> argparse.Namespace:
             "subset reruns cannot silently downgrade the latest mirror."
         ),
     )
+    parser.add_argument("--losses-out", default="", help="Optional complete line-by-line loss projection in inventory mode")
     parser.add_argument("--inventory", action="store_true",
                         help="Build the registered evidence inventory in this cube")
     parser.add_argument("--sources", default="reports/benchmarks/sources.json",
@@ -628,101 +629,6 @@ def build_cells(
 
 
 
-def build_inventory(args: argparse.Namespace, root: Path) -> dict[str, Any]:
-    """Generate one deterministic view over registered, hash-bound cube sources."""
-    import subprocess
-    from bench.inventory import storage, markdown, dashboard
-    from os.path import relpath
-    policy_path = root / args.policy
-    policy = load_policy(root, policy_path)["raw"]["inventory"]
-    registration_path = root / args.sources
-    registered = load_json_object(registration_path)
-    schema = load_json_object(root / "config/benchmark-cube.schema.json")
-    import jsonschema
-    jsonschema.Draft202012Validator(schema["$defs"]["sourceRegistration"]).validate(registered)
-    seen_ids: set[str] = set()
-    seen_evidence: set[tuple[str, str]] = set()
-    import re
-    family_ids = {f["id"] for f in registered["families"]}
-    if any(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", value) is None for value in family_ids):
-        raise ValueError("Inventory family IDs must be safe file-name identifiers")
-    if len(family_ids) != len(registered["families"]):
-        raise ValueError("Duplicate inventory family")
-    rows = []
-    for entry in registered["sources"]:
-        if entry["id"] in seen_ids:
-            raise ValueError("Duplicate registration ID: " + entry["id"])
-        key = (str((root / entry["path"]).resolve()) if entry["path"] else None, entry["adapter"])
-        if entry["path"] is not None and key in seen_evidence:
-            raise ValueError("Duplicate evidence registration: " + entry["path"])
-        if entry["familyId"] not in family_ids:
-            raise ValueError("Unknown registration family: " + entry["familyId"])
-        if entry["comparisonType"] not in policy["comparisonTypes"]:
-            raise ValueError("Unknown comparison type: " + entry["comparisonType"])
-        seen_ids.add(entry["id"])
-        seen_evidence.add(key)
-        rows.extend(benchmark_inventory_sources.normalize_source(root, entry, policy))
-    rows.sort(key=lambda row: row["rowId"])
-    if len({row["rowId"] for row in rows}) != len(rows):
-        raise ValueError("Duplicate normalized observation identity")
-    # Schemas remain versioned: legacy cube rows and inventory rows validate
-    # against the same row contract, without changing old consumers' shapes.
-    row_schema = root / "config/benchmark-cube-row.schema.json"
-    validator = jsonschema.Draft202012Validator(load_json_object(row_schema),
-                                               format_checker=jsonschema.FormatChecker())
-    for row in rows:
-        validator.validate(row)
-    current_source = subprocess.check_output(
-        ["git", "-C", str(root), "log", "-1", "--format=%H", args.source_ref,
-         "--", *policy["currentSourcePaths"]], text=True).strip()
-    if not current_source:
-        current_source = subprocess.check_output(
-            ["git", "-C", str(root), "rev-parse", args.source_ref], text=True).strip()
-    selected = cube_reports_mod.select_inventory_current(rows, current_source)
-    families = []
-    for family in registered["families"]:
-        ids = [r["rowId"] for r in rows if r["familyId"] == family["id"]]
-        families.append({**family, "observations": ids})
-    payload = {
-        "schemaVersion": 2, "kind": "benchmark-cube-inventory",
-        "currentSource": current_source,
-        "policy": {"path": args.policy, "sha256": report_conformance.file_sha256(policy_path)},
-        "sources": {"path": args.sources, "sha256": report_conformance.file_sha256(registration_path)},
-        "families": families, "rows": rows, "current": selected,
-    }
-    validate_schema(root / "config/benchmark-cube.schema.json", payload)
-    version = policy.get("storageVersion", 2)  # Inventory policy v1 wrote expanded rows.
-    if version not in (2, 3):
-        raise ValueError("Unsupported inventory storage policy")
-    stored = storage.compact(payload) if version == 3 else payload
-    validate_schema(root / "config/benchmark-cube.schema.json", stored)
-    outputs = {root / args.index_out: storage.canonical(stored) + "\n",
-               root / args.current_out: markdown.render_current(payload,
-                   index_href=relpath(root / args.index_out, (root / args.current_out).parent))}
-    outputs.update(markdown.render_families(payload, root / args.current_out, root, root / args.index_out))
-    if getattr(args, "expanded_index_out", ""):
-        outputs[root / args.expanded_index_out] = storage.canonical(payload) + "\n"
-    if args.dashboard_html_out:
-        path = root / args.dashboard_html_out
-        outputs[path] = dashboard.render_dashboard(payload, path, current_path=root / args.current_out)
-    family_dir = (root / args.current_out).parent / "families"
-    orphaned = [path for path in family_dir.glob("*.md") if path not in outputs]
-    for path in orphaned:
-        if "<!-- Generated by benchmark cube; do not edit. -->" not in path.read_text(encoding="utf-8"):
-            raise ValueError("Unowned file in generated family directory: " + str(path))
-    stale = [str(path) for path, body in outputs.items()
-             if not path.is_file() or path.read_text(encoding="utf-8") != body]
-    stale += [str(path) for path in orphaned]
-    if args.check and stale:
-        raise ValueError("Stale benchmark inventory: " + ", ".join(stale))
-    if not args.check:
-        for path in orphaned:
-            path.unlink()  # Generated projection only; retained source evidence is untouched.
-        for path, body in outputs.items():
-            write_text(path, body)
-    print(f"Benchmark cube inventory: {len(rows)} observations; {len(families)} families; "
-          f"{len(selected)} current selections" + ("; check passed" if args.check else ""))
-    return payload
 
 
 def main() -> None:
@@ -731,8 +637,8 @@ def main() -> None:
     if args.inventory:
         build_inventory(args, repo_root)
         return
-    if args.check:
-        raise ValueError("--check requires --inventory")
+    if args.check or args.losses_out:
+        raise ValueError("--check and --losses-out require --inventory")
     timestamp = output_paths.resolve_timestamp(args.timestamp)
 
     policy_path = (repo_root / args.policy).resolve()

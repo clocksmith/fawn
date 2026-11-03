@@ -6,631 +6,465 @@
 
 228 observations; 216 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [compute_atomic_canvas](#row-3164b8fe121407a8d6f0c17e74495c23f0590d988cc344de05e98c27d1719974) | 2026-11-01T17:28:07.754000Z | unknown:be87f4122cdadc1608185745 | fawn_doe unknown/unknown vs chrome unknown/unknown | 0/8/6/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [compute_atomic_canvas](#row-75fae3a54e31909dcc4bc687d0edb33c74b30d970899647407f0d5d4b51ddbd3) | 2026-11-01T17:28:07.754000Z | unknown:4c2a0c5580d2bbaa7fe5bcfa | fawn_dawn unknown/unknown vs chrome unknown/unknown | 0/2/12/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [cycle](#row-4dbf2057916c85aeba2d4a19ede593f9564388e41419701784a4b4e20c3d0c69) | 2026-11-01T17:31:02.614000Z | unknown:cabc9b1df192cacd75984ed5 | fawn_dawn unknown/unknown vs chrome unknown/unknown | 1/3/10/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [cycle](#row-2a45408510c61e5d4ac99b7f693edb611cc4b41e53fbf9aa55a3dc14a27592aa) | 2026-11-01T17:31:17.257000Z | unknown:733c0ba91dfbb041da605254 | fawn_doe unknown/unknown vs chrome unknown/unknown | 0/14/0/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [heavy_particles](#row-b1755e64405c45f1ffc50ba92d56a563514c855d89ae08ec8a59be9dc489b791) | 2026-11-01T17:28:34.866000Z | unknown:865dcb0e63604fa496f75b64 | fawn_doe unknown/unknown vs chrome unknown/unknown | 0/12/2/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [heavy_particles](#row-7622cdc6da0aecc5ce3e937562a0722f1cd14a0fda17b9999aaa879df7cfa344) | 2026-11-01T17:28:48.021000Z | unknown:f6569c3aa44b80dc2d7bf7bb | fawn_dawn unknown/unknown vs chrome unknown/unknown | 0/5/9/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [image_lab](#row-cda39d2f37a2ad2befb0c21ea89e3764f2c1de872a7ec3d8789b367f444877d2) | 2026-11-01T17:29:03.549000Z | unknown:f380ffb2b59ba678803a880f | fawn_dawn unknown/unknown vs chrome unknown/unknown | 1/2/11/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [image_lab](#row-69e283a09e3c93febac95b3926399572b6817620b2778867a46d30f9f19482f3) | 2026-11-01T17:29:11.224000Z | unknown:c2a31912f84a8bf5f5eedc90 | fawn_doe unknown/unknown vs chrome unknown/unknown | 1/8/5/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [magnetic_fluids](#row-bff75fcc35304ade960481250f1ba2300fe3e08d1c07bd711f547f679f3845bb) | 2026-11-01T17:29:40.095000Z | unknown:4274746363c2ce50668317ff | fawn_doe unknown/unknown vs chrome unknown/unknown | 1/10/3/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [magnetic_fluids](#row-2c40a04717914991e48a081fc62ffc4e0fbc95fb090528b31c10ad46b81a5951) | 2026-11-01T17:29:53.315000Z | unknown:7d6ccb4d28c5ea724f6cfc03 | fawn_dawn unknown/unknown vs chrome unknown/unknown | 2/3/9/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [prismatic_fluids](#row-0f63703db7df16e50e1c97024795be94ed51b541e596678a9d3dd081336b6561) | 2026-11-01T17:30:34.417000Z | unknown:8be0401d410b0e0c3965e46f | fawn_doe unknown/unknown vs chrome unknown/unknown | 1/11/2/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+| [prismatic_fluids](#row-c5b550f946d22366f88329e8867e80981ef651a996fcefee52da0c3d7c9acd08) | 2026-11-01T17:30:34.417000Z | unknown:2c94ce5c61201b10f187b0bc | fawn_dawn unknown/unknown vs chrome unknown/unknown | 1/2/11/0 | succeeded / unknown | machine identity, contract hash, implementation build, comparator build |
+
+## Complete records
 
 <a id="row-3164b8fe121407a8d6f0c17e74495c23f0590d988cc344de05e98c27d1719974"></a>
 
-## compute_atomic_canvas
+<details>
+<summary>compute_atomic_canvas — 2026-11-01T17:28:07.754000Z; diagnostic; 14 metrics</summary>
 
-Observation: `3164b8fe121407a8d6f0c17e74495c23f0590d988cc344de05e98c27d1719974`; execution: `browser-windows-677deadff37ef4/compute_atomic_canvas/fawn_doe/chrome`.
+Record `3164b8fe121407a8d6f0c17e74495c23f0590d988cc344de05e98c27d1719974` · execution `browser-windows-677deadff37ef4/compute_atomic_canvas/fawn_doe/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:be87f4122cdadc1608185745; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:be87f4122cdadc1608185745; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:28:07.754000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `3164b8fe121407a8d6f0c17e74495c23f0590d988cc344de05e98c27d1719974`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `3164b8fe121407a8d6f0c17e74495c23f0590d988cc344de05e98c27d1719974`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 1010.8 / 927.8 | ms | 1.0895 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0602027883389125, 1.1242672918712096], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| cold_first_job_ms:p95 | 1082 / 967.4 | ms | 1.1185 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.068219461734744, 1.1312075274438056], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p50_ms:p50 | 508.2 / 517.4 | ms | 0.98222 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9816496040173484, 0.9833623523256887], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p95_ms:p50 | 509.8 / 519.9 | ms | 0.98057 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9790585974336931, 0.9828813232637996], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 510.5 / 520.4 | ms | 0.98098 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9794586293173952, 0.9825033648051087], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_cpu_ms_per_frame:p50 | 20.456 / 10.115 | ms | 2.0224 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9127004528107885, 2.087907785259818], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 274.1 / 85.836 | MB | 3.1934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.1821207798383258, 3.196621170182304], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_mem_mb:p50 | 409.41 / 151.81 | MB | 2.6968 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.691277879538843, 2.710185736719554], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 514.9 / 520.1 | ms | 0.99 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9877230001235058, 0.9905769230081485], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 516.6 / 528.3 | ms | 0.97785 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9765373698471849, 0.9791627203241293], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 517.3 / 529.3 | ms | 0.97733 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9758308156885486, 0.9789931868230597], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 1392.7 / 1257.5 | ms | 1.1075 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0816086068882511, 1.1274189794072953], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_cpu_ms_per_frame:p50 | 30.71 / 21.688 | ms | 1.416 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3647082265272577, 1.5492992678680735], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 571.94 / 315.23 | MB | 1.8144 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.802823097126444, 1.832350595526037], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 1010.8 / 927.8 | ms | 1.0895 | 95% [1.0602, 1.1243] ratio | 12/12 observations | loss | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 1082 / 967.4 | ms | 1.1185 | 95% [1.0682, 1.1312] ratio | 12/12 observations | loss | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 508.2 / 517.4 | ms | 0.98222 | 95% [0.98165, 0.98336] ratio | 12/12 observations | inconclusive | frame/op completion p50 |
+| completion_p95_ms:p50 | 509.8 / 519.9 | ms | 0.98057 | 95% [0.97906, 0.98288] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 510.5 / 520.4 | ms | 0.98098 | 95% [0.97946, 0.9825] ratio | 12/12 observations | inconclusive | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 20.456 / 10.115 | ms | 2.0224 | 95% [1.9127, 2.0879] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 274.1 / 85.836 | MB | 3.1934 | 95% [3.1821, 3.1966] ratio | 12/12 observations | loss | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 409.41 / 151.81 | MB | 2.6968 | 95% [2.6913, 2.7102] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 514.9 / 520.1 | ms | 0.99 | 95% [0.98772, 0.99058] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 516.6 / 528.3 | ms | 0.97785 | 95% [0.97654, 0.97916] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 517.3 / 529.3 | ms | 0.97733 | 95% [0.97583, 0.97899] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1392.7 / 1257.5 | ms | 1.1075 | 95% [1.0816, 1.1274] ratio | 12/12 observations | loss | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 30.71 / 21.688 | ms | 1.416 | 95% [1.3647, 1.5493] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 571.94 / 315.23 | MB | 1.8144 | 95% [1.8028, 1.8324] ratio | 12/12 observations | loss | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-75fae3a54e31909dcc4bc687d0edb33c74b30d970899647407f0d5d4b51ddbd3"></a>
 
-## compute_atomic_canvas
+<details>
+<summary>compute_atomic_canvas — 2026-11-01T17:28:07.754000Z; diagnostic; 14 metrics</summary>
 
-Observation: `75fae3a54e31909dcc4bc687d0edb33c74b30d970899647407f0d5d4b51ddbd3`; execution: `browser-windows-677deadff37ef4/compute_atomic_canvas/fawn_dawn/chrome`.
+Record `75fae3a54e31909dcc4bc687d0edb33c74b30d970899647407f0d5d4b51ddbd3` · execution `browser-windows-677deadff37ef4/compute_atomic_canvas/fawn_dawn/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:4c2a0c5580d2bbaa7fe5bcfa; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:4c2a0c5580d2bbaa7fe5bcfa; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:28:07.754000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `75fae3a54e31909dcc4bc687d0edb33c74b30d970899647407f0d5d4b51ddbd3`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `75fae3a54e31909dcc4bc687d0edb33c74b30d970899647407f0d5d4b51ddbd3`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 914.4 / 927.8 | ms | 0.98556 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9613516367853884, 1.0137411347257157], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 993.2 / 967.4 | ms | 1.0267 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9565217391304348, 1.0383690538296697], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p50_ms:p50 | 517.9 / 517.4 | ms | 1.001 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0001931994278155, 1.001934610060604], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p95_ms:p50 | 520.3 / 519.9 | ms | 1.0008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9990399385559797, 1.0030781070100139], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 521.9 / 520.4 | ms | 1.0029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0001920123345613, 1.00384689351848], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_cpu_ms_per_frame:p50 | 15.461 / 10.115 | ms | 1.5285 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4397068895540563, 1.6179446483483784], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 85.828 / 85.836 | MB | 0.9999 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9963861150737042, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_mem_mb:p50 | 152.65 / 151.81 | MB | 1.0055 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9985174003288676, 1.009727363614256], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p50_ms:p50 | 521.5 / 520.1 | ms | 1.0027 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9996159754453254, 1.0032692307463058], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 529 / 528.3 | ms | 1.0013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9998107851961365, 1.002462587633983], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 530.2 / 529.3 | ms | 1.0017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9996223565179521, 1.0034065101290583], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 1271.5 / 1257.5 | ms | 1.0111 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9956074606549261, 1.0240522051792185], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 36.706 / 21.688 | ms | 1.6924 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6374356354505775, 1.77882932633731], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 316.15 / 315.23 | MB | 1.0029 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9962608841909149, 1.0201770882306849], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 914.4 / 927.8 | ms | 0.98556 | 95% [0.96135, 1.0137] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 993.2 / 967.4 | ms | 1.0267 | 95% [0.95652, 1.0384] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 517.9 / 517.4 | ms | 1.001 | 95% [1.0002, 1.0019] ratio | 12/12 observations | inconclusive | frame/op completion p50 |
+| completion_p95_ms:p50 | 520.3 / 519.9 | ms | 1.0008 | 95% [0.99904, 1.0031] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 521.9 / 520.4 | ms | 1.0029 | 95% [1.0002, 1.0038] ratio | 12/12 observations | inconclusive | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 15.461 / 10.115 | ms | 1.5285 | 95% [1.4397, 1.6179] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 85.828 / 85.836 | MB | 0.9999 | 95% [0.99639, 1] ratio | 12/12 observations | inconclusive | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 152.65 / 151.81 | MB | 1.0055 | 95% [0.99852, 1.0097] ratio | 12/12 observations | inconclusive | GPU-process memory |
+| interval_p50_ms:p50 | 521.5 / 520.1 | ms | 1.0027 | 95% [0.99962, 1.0033] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 529 / 528.3 | ms | 1.0013 | 95% [0.99981, 1.0025] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 530.2 / 529.3 | ms | 1.0017 | 95% [0.99962, 1.0034] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1271.5 / 1257.5 | ms | 1.0111 | 95% [0.99561, 1.0241] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 36.706 / 21.688 | ms | 1.6924 | 95% [1.6374, 1.7788] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 316.15 / 315.23 | MB | 1.0029 | 95% [0.99626, 1.0202] ratio | 12/12 observations | inconclusive | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-4dbf2057916c85aeba2d4a19ede593f9564388e41419701784a4b4e20c3d0c69"></a>
 
-## cycle
+<details>
+<summary>cycle — 2026-11-01T17:31:02.614000Z; diagnostic; 14 metrics</summary>
 
-Observation: `4dbf2057916c85aeba2d4a19ede593f9564388e41419701784a4b4e20c3d0c69`; execution: `browser-windows-677deadff37ef4/cycle/fawn_dawn/chrome`.
+Record `4dbf2057916c85aeba2d4a19ede593f9564388e41419701784a4b4e20c3d0c69` · execution `browser-windows-677deadff37ef4/cycle/fawn_dawn/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:cabc9b1df192cacd75984ed5; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:cabc9b1df192cacd75984ed5; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:31:02.614000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `4dbf2057916c85aeba2d4a19ede593f9564388e41419701784a4b4e20c3d0c69`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `4dbf2057916c85aeba2d4a19ede593f9564388e41419701784a4b4e20c3d0c69`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 1069.4 / 1078.6 | ms | 0.99147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9202090592646017, 1.0528383421847878], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 1108.4 / 1512.9 | ms | 0.73263 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7209994050958466, 0.9655052265119884], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| completion_p50_ms:p50 | 15 / 14 | ms | 1.0714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0204081640928035, 1.1538461538461537], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 18.1 / 18 | ms | 1.0056 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999967069257, 1.0222222208976746], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 19.1 / 19 | ms | 1.0053 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9947643997683533, 1.0264550264883987], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_cpu_ms_per_frame:p50 | 3.6384 / 2.8101 | ms | 1.2948 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2397077945158927, 1.313907320712284], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 190.84 / 190.84 | MB | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9986263441437188, 1.012561667354878], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_mem_mb:p50 | 290.69 / 289.25 | MB | 1.005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0001408926961226, 1.0218126844719604], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p50_ms:p50 | 19.3 / 19.1 | ms | 1.0105 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0000000031044085, 1.0157068037665866], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 22.3 / 22 | ms | 1.0136 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.004504502895987, 1.0322580639844985], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 26 / 24.6 | ms | 1.0569 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9137254906635658, 1.1645569636170658], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 1446.7 / 1398.6 | ms | 1.0344 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8258134431948924, 1.0568538277266502], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 7.3433 / 5.4349 | ms | 1.3511 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2175264346322376, 1.4572359377530624], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 487.52 / 487.39 | MB | 1.0003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.994088233326644, 1.008974956565956], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 1069.4 / 1078.6 | ms | 0.99147 | 95% [0.92021, 1.0528] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 1108.4 / 1512.9 | ms | 0.73263 | 95% [0.721, 0.96551] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 15 / 14 | ms | 1.0714 | 95% [1.0204, 1.1538] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 18.1 / 18 | ms | 1.0056 | 95% [1, 1.0222] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 19.1 / 19 | ms | 1.0053 | 95% [0.99476, 1.0265] ratio | 12/12 observations | inconclusive | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 3.6384 / 2.8101 | ms | 1.2948 | 95% [1.2397, 1.3139] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 190.84 / 190.84 | MB | 1 | 95% [0.99863, 1.0126] ratio | 12/12 observations | inconclusive | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 290.69 / 289.25 | MB | 1.005 | 95% [1.0001, 1.0218] ratio | 12/12 observations | inconclusive | GPU-process memory |
+| interval_p50_ms:p50 | 19.3 / 19.1 | ms | 1.0105 | 95% [1, 1.0157] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 22.3 / 22 | ms | 1.0136 | 95% [1.0045, 1.0323] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 26 / 24.6 | ms | 1.0569 | 95% [0.91373, 1.1646] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1446.7 / 1398.6 | ms | 1.0344 | 95% [0.82581, 1.0569] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 7.3433 / 5.4349 | ms | 1.3511 | 95% [1.2175, 1.4572] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 487.52 / 487.39 | MB | 1.0003 | 95% [0.99409, 1.009] ratio | 12/12 observations | inconclusive | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-2a45408510c61e5d4ac99b7f693edb611cc4b41e53fbf9aa55a3dc14a27592aa"></a>
 
-## cycle
+<details>
+<summary>cycle — 2026-11-01T17:31:17.257000Z; diagnostic; 14 metrics</summary>
 
-Observation: `2a45408510c61e5d4ac99b7f693edb611cc4b41e53fbf9aa55a3dc14a27592aa`; execution: `browser-windows-677deadff37ef4/cycle/fawn_doe/chrome`.
+Record `2a45408510c61e5d4ac99b7f693edb611cc4b41e53fbf9aa55a3dc14a27592aa` · execution `browser-windows-677deadff37ef4/cycle/fawn_doe/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:733c0ba91dfbb041da605254; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:733c0ba91dfbb041da605254; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:31:17.257000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `2a45408510c61e5d4ac99b7f693edb611cc4b41e53fbf9aa55a3dc14a27592aa`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `2a45408510c61e5d4ac99b7f693edb611cc4b41e53fbf9aa55a3dc14a27592aa`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 1564.4 / 1078.6 | ms | 1.4504 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3539198606375618, 1.5389954690228638], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| cold_first_job_ms:p95 | 1658.5 / 1512.9 | ms | 1.0962 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.091546037452434, 1.439547038296374], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p50_ms:p50 | 17 / 14 | ms | 1.2143 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1496598673107348, 1.3076923076923077], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 19.3 / 18 | ms | 1.0722 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0607734786070862, 1.0837988791842723], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p99_ms:p50 | 20.1 / 19 | ms | 1.0579 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0366492139898056, 1.0999999987451654], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_cpu_ms_per_frame:p50 | 6.5545 / 2.8101 | ms | 2.3325 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2309216718803806, 2.5016795201580346], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 3150.7 / 190.84 | MB | 16.51 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [16.377454873258785, 16.717232086584225], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_mem_mb:p50 | 3073.4 / 289.25 | MB | 10.626 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.524297324754487, 10.80342667914477], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 23.3 / 19.1 | ms | 1.2199 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2083333334626838, 1.2251308903954654], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p95_ms:p50 | 25.9 / 22 | ms | 1.1773 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1666666689040783, 1.2018348611812881], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p99_ms:p50 | 27.3 / 24.6 | ms | 1.1098 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.03041825139005, 1.1853448281952763], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| launch_to_first_job_ms:p50 | 1944.1 / 1398.6 | ms | 1.39 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1099672864906964, 1.4698989534768763], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_cpu_ms_per_frame:p50 | 12.267 / 5.4349 | ms | 2.2571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0539670392362925, 2.502759029165258], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 3267.8 / 487.39 | MB | 6.7046 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.637639884741674, 6.761294970125853], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 1564.4 / 1078.6 | ms | 1.4504 | 95% [1.3539, 1.539] ratio | 12/12 observations | loss | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 1658.5 / 1512.9 | ms | 1.0962 | 95% [1.0915, 1.4395] ratio | 12/12 observations | loss | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 17 / 14 | ms | 1.2143 | 95% [1.1497, 1.3077] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 19.3 / 18 | ms | 1.0722 | 95% [1.0608, 1.0838] ratio | 12/12 observations | loss | frame/op completion p95 |
+| completion_p99_ms:p50 | 20.1 / 19 | ms | 1.0579 | 95% [1.0366, 1.1] ratio | 12/12 observations | loss | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 6.5545 / 2.8101 | ms | 2.3325 | 95% [2.2309, 2.5017] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 3150.7 / 190.84 | MB | 16.51 | 95% [16.377, 16.717] ratio | 12/12 observations | loss | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 3073.4 / 289.25 | MB | 10.626 | 95% [10.524, 10.803] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 23.3 / 19.1 | ms | 1.2199 | 95% [1.2083, 1.2251] ratio | 12/12 observations | loss | completed-frame interval p50 |
+| interval_p95_ms:p50 | 25.9 / 22 | ms | 1.1773 | 95% [1.1667, 1.2018] ratio | 12/12 observations | loss | completed-frame interval p95 |
+| interval_p99_ms:p50 | 27.3 / 24.6 | ms | 1.1098 | 95% [1.0304, 1.1853] ratio | 12/12 observations | loss | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1944.1 / 1398.6 | ms | 1.39 | 95% [1.11, 1.4699] ratio | 12/12 observations | loss | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 12.267 / 5.4349 | ms | 2.2571 | 95% [2.054, 2.5028] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 3267.8 / 487.39 | MB | 6.7046 | 95% [6.6376, 6.7613] ratio | 12/12 observations | loss | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-b1755e64405c45f1ffc50ba92d56a563514c855d89ae08ec8a59be9dc489b791"></a>
 
-## heavy_particles
+<details>
+<summary>heavy_particles — 2026-11-01T17:28:34.866000Z; diagnostic; 14 metrics</summary>
 
-Observation: `b1755e64405c45f1ffc50ba92d56a563514c855d89ae08ec8a59be9dc489b791`; execution: `browser-windows-677deadff37ef4/heavy_particles/fawn_doe/chrome`.
+Record `b1755e64405c45f1ffc50ba92d56a563514c855d89ae08ec8a59be9dc489b791` · execution `browser-windows-677deadff37ef4/heavy_particles/fawn_doe/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:865dcb0e63604fa496f75b64; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:865dcb0e63604fa496f75b64; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:28:34.866000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `b1755e64405c45f1ffc50ba92d56a563514c855d89ae08ec8a59be9dc489b791`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `b1755e64405c45f1ffc50ba92d56a563514c855d89ae08ec8a59be9dc489b791`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 669.1 / 581.5 | ms | 1.1506 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0832510694683275, 1.4092314031719737], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| cold_first_job_ms:p95 | 761.1 / 959.8 | ms | 0.79298 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7769326942892449, 1.2371561153952537], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p50_ms:p50 | 13.7 / 3.5 | ms | 3.9143 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.5945946093977934, 4.088235261634147], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 16.1 / 4.1 | ms | 3.9268 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.9024390584297795, 4.121951249651367], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p99_ms:p50 | 31.8 / 4.4 | ms | 7.2273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.543478219180116, 7.7674418472482945], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_cpu_ms_per_frame:p50 | 4.9021 / 1.7269 | ms | 2.8387 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7869907729709174, 2.926049063361739], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 5999.5 / 120.84 | MB | 49.646 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [48.119479374978816, 50.23017998169677], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_mem_mb:p50 | 5581 / 206.14 | MB | 27.075 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [25.49330787626321, 27.38770813320525], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 10.7 / 9.6 | ms | 1.1146 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.082474228134443, 1.1368421002438194], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p95_ms:p50 | 11.9 / 11 | ms | 1.0818 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0636363625526428, 1.1272727251052856], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p99_ms:p50 | 27.4 / 11.2 | ms | 2.4464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2857142781116524, 2.5357142781116524], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| launch_to_first_job_ms:p50 | 1052.1 / 934.7 | ms | 1.1256 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.852557743908233, 1.265572533762025], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 6.5689 / 2.5518 | ms | 2.5743 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.061003117553307, 2.8957311665869727], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 5753.3 / 380.4 | MB | 15.124 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [14.522471312086182, 15.342136099296935], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 669.1 / 581.5 | ms | 1.1506 | 95% [1.0833, 1.4092] ratio | 12/12 observations | loss | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 761.1 / 959.8 | ms | 0.79298 | 95% [0.77693, 1.2372] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 13.7 / 3.5 | ms | 3.9143 | 95% [3.5946, 4.0882] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 16.1 / 4.1 | ms | 3.9268 | 95% [3.9024, 4.122] ratio | 12/12 observations | loss | frame/op completion p95 |
+| completion_p99_ms:p50 | 31.8 / 4.4 | ms | 7.2273 | 95% [6.5435, 7.7674] ratio | 12/12 observations | loss | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 4.9021 / 1.7269 | ms | 2.8387 | 95% [2.787, 2.926] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 5999.5 / 120.84 | MB | 49.646 | 95% [48.119, 50.23] ratio | 12/12 observations | loss | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 5581 / 206.14 | MB | 27.075 | 95% [25.493, 27.388] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 10.7 / 9.6 | ms | 1.1146 | 95% [1.0825, 1.1368] ratio | 12/12 observations | loss | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11.9 / 11 | ms | 1.0818 | 95% [1.0636, 1.1273] ratio | 12/12 observations | loss | completed-frame interval p95 |
+| interval_p99_ms:p50 | 27.4 / 11.2 | ms | 2.4464 | 95% [2.2857, 2.5357] ratio | 12/12 observations | loss | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1052.1 / 934.7 | ms | 1.1256 | 95% [0.85256, 1.2656] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 6.5689 / 2.5518 | ms | 2.5743 | 95% [2.061, 2.8957] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 5753.3 / 380.4 | MB | 15.124 | 95% [14.522, 15.342] ratio | 12/12 observations | loss | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-7622cdc6da0aecc5ce3e937562a0722f1cd14a0fda17b9999aaa879df7cfa344"></a>
 
-## heavy_particles
+<details>
+<summary>heavy_particles — 2026-11-01T17:28:48.021000Z; diagnostic; 14 metrics</summary>
 
-Observation: `7622cdc6da0aecc5ce3e937562a0722f1cd14a0fda17b9999aaa879df7cfa344`; execution: `browser-windows-677deadff37ef4/heavy_particles/fawn_dawn/chrome`.
+Record `7622cdc6da0aecc5ce3e937562a0722f1cd14a0fda17b9999aaa879df7cfa344` · execution `browser-windows-677deadff37ef4/heavy_particles/fawn_dawn/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:f6569c3aa44b80dc2d7bf7bb; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:f6569c3aa44b80dc2d7bf7bb; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:28:48.021000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `7622cdc6da0aecc5ce3e937562a0722f1cd14a0fda17b9999aaa879df7cfa344`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `7622cdc6da0aecc5ce3e937562a0722f1cd14a0fda17b9999aaa879df7cfa344`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 519.1 / 581.5 | ms | 0.89269 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8483592973092221, 1.0812330763142233], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 654.1 / 959.8 | ms | 0.6815 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5811627422431683, 1.0222112536033738], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p50_ms:p50 | 3.8 / 3.5 | ms | 1.0857 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.02702703355785, 1.1176470505737517], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 4.1 / 4.1 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9756097646074449, 1.0000000145377184], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 4.8 / 4.4 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.021739135505121, 1.1395348750171692], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_cpu_ms_per_frame:p50 | 2.1804 / 1.7269 | ms | 1.2626 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2458771834743883, 1.3177605433150295], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 120.84 / 120.84 | MB | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9978307290783988, 1.0024405952340598], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_mem_mb:p50 | 213.83 / 206.14 | MB | 1.0373 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0029424208623408, 1.0510041757804731], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 9.4 / 9.6 | ms | 0.97917 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9587628890051828, 0.9894736879750302], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 11 / 11 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9909090941602533, 1.0091743086155152], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 11.5 / 11.2 | ms | 1.0268 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0000000051383315, 1.035714288945405], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 935.9 / 934.7 | ms | 1.0013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7601485760949315, 1.121106851976062], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 3.6508 / 2.5518 | ms | 1.4307 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1442649633419686, 1.6672045076035973], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 383.44 / 380.4 | MB | 1.008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.995348193566243, 1.0280683100425312], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 519.1 / 581.5 | ms | 0.89269 | 95% [0.84836, 1.0812] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 654.1 / 959.8 | ms | 0.6815 | 95% [0.58116, 1.0222] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 3.8 / 3.5 | ms | 1.0857 | 95% [1.027, 1.1176] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 4.1 / 4.1 | ms | 1 | 95% [0.97561, 1] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 4.8 / 4.4 | ms | 1.0909 | 95% [1.0217, 1.1395] ratio | 12/12 observations | loss | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 2.1804 / 1.7269 | ms | 1.2626 | 95% [1.2459, 1.3178] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 120.84 / 120.84 | MB | 1 | 95% [0.99783, 1.0024] ratio | 12/12 observations | inconclusive | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 213.83 / 206.14 | MB | 1.0373 | 95% [1.0029, 1.051] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 9.4 / 9.6 | ms | 0.97917 | 95% [0.95876, 0.98947] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11 / 11 | ms | 1 | 95% [0.99091, 1.0092] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 11.5 / 11.2 | ms | 1.0268 | 95% [1, 1.0357] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 935.9 / 934.7 | ms | 1.0013 | 95% [0.76015, 1.1211] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 3.6508 / 2.5518 | ms | 1.4307 | 95% [1.1443, 1.6672] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 383.44 / 380.4 | MB | 1.008 | 95% [0.99535, 1.0281] ratio | 12/12 observations | inconclusive | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-cda39d2f37a2ad2befb0c21ea89e3764f2c1de872a7ec3d8789b367f444877d2"></a>
 
-## image_lab
+<details>
+<summary>image_lab — 2026-11-01T17:29:03.549000Z; diagnostic; 14 metrics</summary>
 
-Observation: `cda39d2f37a2ad2befb0c21ea89e3764f2c1de872a7ec3d8789b367f444877d2`; execution: `browser-windows-677deadff37ef4/image_lab/fawn_dawn/chrome`.
+Record `cda39d2f37a2ad2befb0c21ea89e3764f2c1de872a7ec3d8789b367f444877d2` · execution `browser-windows-677deadff37ef4/image_lab/fawn_dawn/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:f380ffb2b59ba678803a880f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:f380ffb2b59ba678803a880f; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:29:03.549000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `cda39d2f37a2ad2befb0c21ea89e3764f2c1de872a7ec3d8789b367f444877d2`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `cda39d2f37a2ad2befb0c21ea89e3764f2c1de872a7ec3d8789b367f444877d2`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 573.1 / 576.5 | ms | 0.9941 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9596435178394545, 1.0179925912656695], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 596.4 / 957.2 | ms | 0.62307 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6093815294809709, 0.9955623827200153], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| completion_p50_ms:p50 | 9.1 / 9.1 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9890109864197957, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p95_ms:p50 | 10.6 / 10.9 | ms | 0.97248 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.909909914989439, 1.0091743086155152], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 12.6 / 12.5 | ms | 1.008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9457364349323399, 1.1260504147804573], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_cpu_ms_per_frame:p50 | 2.6569 / 2.3568 | ms | 1.1273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0927478559176675, 1.2359927290501933], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 121.03 / 121.04 | MB | 0.99993 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9897123519458545, 1.0153951890034365], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_mem_mb:p50 | 223.74 / 223.89 | MB | 0.99934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9903451780334652, 1.0131030155390692], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p50_ms:p50 | 9.2 / 9.2 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999935212343, 1.0000000064787657], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 11 / 11 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9272727261890065, 1.01834861723103], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 12.4 / 11.8 | ms | 1.0508 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9915254217168785, 1.1140350831787782], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 951.5 / 924.6 | ms | 1.0291 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7097726903178475, 1.0930439520753887], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 5.424 / 3.8891 | ms | 1.3947 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2885353175334195, 1.4799835232982372], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 387.62 / 386.3 | MB | 1.0034 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9908952480966132, 1.0075330368352733], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 573.1 / 576.5 | ms | 0.9941 | 95% [0.95964, 1.018] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 596.4 / 957.2 | ms | 0.62307 | 95% [0.60938, 0.99556] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 9.1 / 9.1 | ms | 1 | 95% [0.98901, 1] ratio | 12/12 observations | inconclusive | frame/op completion p50 |
+| completion_p95_ms:p50 | 10.6 / 10.9 | ms | 0.97248 | 95% [0.90991, 1.0092] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 12.6 / 12.5 | ms | 1.008 | 95% [0.94574, 1.1261] ratio | 12/12 observations | inconclusive | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 2.6569 / 2.3568 | ms | 1.1273 | 95% [1.0927, 1.236] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 121.03 / 121.04 | MB | 0.99993 | 95% [0.98971, 1.0154] ratio | 12/12 observations | inconclusive | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 223.74 / 223.89 | MB | 0.99934 | 95% [0.99035, 1.0131] ratio | 12/12 observations | inconclusive | GPU-process memory |
+| interval_p50_ms:p50 | 9.2 / 9.2 | ms | 1 | 95% [1, 1] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11 / 11 | ms | 1 | 95% [0.92727, 1.0183] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 12.4 / 11.8 | ms | 1.0508 | 95% [0.99153, 1.114] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 951.5 / 924.6 | ms | 1.0291 | 95% [0.70977, 1.093] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 5.424 / 3.8891 | ms | 1.3947 | 95% [1.2885, 1.48] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 387.62 / 386.3 | MB | 1.0034 | 95% [0.9909, 1.0075] ratio | 12/12 observations | inconclusive | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-69e283a09e3c93febac95b3926399572b6817620b2778867a46d30f9f19482f3"></a>
 
-## image_lab
+<details>
+<summary>image_lab — 2026-11-01T17:29:11.224000Z; diagnostic; 14 metrics</summary>
 
-Observation: `69e283a09e3c93febac95b3926399572b6817620b2778867a46d30f9f19482f3`; execution: `browser-windows-677deadff37ef4/image_lab/fawn_doe/chrome`.
+Record `69e283a09e3c93febac95b3926399572b6817620b2778867a46d30f9f19482f3` · execution `browser-windows-677deadff37ef4/image_lab/fawn_doe/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:c2a31912f84a8bf5f5eedc90; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:c2a31912f84a8bf5f5eedc90; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:29:11.224000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `69e283a09e3c93febac95b3926399572b6817620b2778867a46d30f9f19482f3`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `69e283a09e3c93febac95b3926399572b6817620b2778867a46d30f9f19482f3`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 709.2 / 576.5 | ms | 1.2302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1789137380828916, 1.2547568711990087], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| cold_first_job_ms:p95 | 747.2 / 957.2 | ms | 0.78061 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7548056832521918, 1.2434681310427844], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p50_ms:p50 | 9.6 / 9.1 | ms | 1.0549 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.043478258334396, 1.0549450548010997], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 11.1 / 10.9 | ms | 1.0183 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9909909888624264, 1.0183486226993461], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 11.3 / 12.5 | ms | 0.904 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8759689947911362, 0.9741379350654152], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| gpu_cpu_ms_per_frame:p50 | 4.7622 / 2.3568 | ms | 2.0206 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.949900514579759, 2.182552775486511], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 496.1 / 121.04 | MB | 4.0987 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.083519458544839, 4.16213058419244], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_mem_mb:p50 | 856.27 / 223.89 | MB | 3.8245 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.584850478906193, 3.868416196065404], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 9.8 / 9.2 | ms | 1.0652 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.054347826157378, 1.0652173939803598], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p95_ms:p50 | 11.3 / 11 | ms | 1.0273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0000000053218432, 1.0366972399303762], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 11.5 / 11.8 | ms | 0.97458 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.942148761144794, 1.0267857099142002], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 1075.4 / 924.6 | ms | 1.1631 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8113637103727369, 1.2964940160889593], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 7.4493 / 3.8891 | ms | 1.9154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7892801935075657, 2.028060185227098], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 1019.9 / 386.3 | MB | 2.6402 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.4824808614452762, 2.655038595300704], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 709.2 / 576.5 | ms | 1.2302 | 95% [1.1789, 1.2548] ratio | 12/12 observations | loss | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 747.2 / 957.2 | ms | 0.78061 | 95% [0.75481, 1.2435] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 9.6 / 9.1 | ms | 1.0549 | 95% [1.0435, 1.0549] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 11.1 / 10.9 | ms | 1.0183 | 95% [0.99099, 1.0183] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 11.3 / 12.5 | ms | 0.904 | 95% [0.87597, 0.97414] ratio | 12/12 observations | win | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 4.7622 / 2.3568 | ms | 2.0206 | 95% [1.9499, 2.1826] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 496.1 / 121.04 | MB | 4.0987 | 95% [4.0835, 4.1621] ratio | 12/12 observations | loss | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 856.27 / 223.89 | MB | 3.8245 | 95% [3.5849, 3.8684] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 9.8 / 9.2 | ms | 1.0652 | 95% [1.0543, 1.0652] ratio | 12/12 observations | loss | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11.3 / 11 | ms | 1.0273 | 95% [1, 1.0367] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 11.5 / 11.8 | ms | 0.97458 | 95% [0.94215, 1.0268] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1075.4 / 924.6 | ms | 1.1631 | 95% [0.81136, 1.2965] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 7.4493 / 3.8891 | ms | 1.9154 | 95% [1.7893, 2.0281] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 1019.9 / 386.3 | MB | 2.6402 | 95% [2.4825, 2.655] ratio | 12/12 observations | loss | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-bff75fcc35304ade960481250f1ba2300fe3e08d1c07bd711f547f679f3845bb"></a>
 
-## magnetic_fluids
+<details>
+<summary>magnetic_fluids — 2026-11-01T17:29:40.095000Z; diagnostic; 14 metrics</summary>
 
-Observation: `bff75fcc35304ade960481250f1ba2300fe3e08d1c07bd711f547f679f3845bb`; execution: `browser-windows-677deadff37ef4/magnetic_fluids/fawn_doe/chrome`.
+Record `bff75fcc35304ade960481250f1ba2300fe3e08d1c07bd711f547f679f3845bb` · execution `browser-windows-677deadff37ef4/magnetic_fluids/fawn_doe/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:4274746363c2ce50668317ff; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:4274746363c2ce50668317ff; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:29:40.095000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `bff75fcc35304ade960481250f1ba2300fe3e08d1c07bd711f547f679f3845bb`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `bff75fcc35304ade960481250f1ba2300fe3e08d1c07bd711f547f679f3845bb`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 715.6 / 606.4 | ms | 1.1801 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7424825720432738, 1.250605326943532], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 786.5 / 1004.9 | ms | 0.78266 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7364911931947469, 0.8167185877466251], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| completion_p50_ms:p50 | 6.8 / 3.7 | ms | 1.8378 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.40540540671157, 2.6944444232884748], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 14.6 / 4 | ms | 3.65 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.574999988079071, 3.6500000059604645], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p99_ms:p50 | 33.2 / 4.3 | ms | 7.7209 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.727272755597249, 8.238095150242588], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_cpu_ms_per_frame:p50 | 4.7616 / 1.5741 | ms | 3.025 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.896209511501169, 3.0764639043105437], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 6184.4 / 100.35 | MB | 61.627 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [60.72648424138773, 62.44275595091013], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_mem_mb:p50 | 5748.5 / 185.19 | MB | 31.041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [29.943954355935922, 31.792739655901535], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 10.3 / 9.6 | ms | 1.0729 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.030000001192093, 1.0833333281593192], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p95_ms:p50 | 11.3 / 11 | ms | 1.0273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0180180223719, 1.0363636396147988], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 28.8 / 11.2 | ms | 2.5714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.3124999880258525, 2.794642861181756], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| launch_to_first_job_ms:p50 | 1090.4 / 936.9 | ms | 1.1638 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4558686655955418, 1.227569421454928], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 6.4246 / 2.3721 | ms | 2.7084 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.6004725626148777, 2.748315078427031], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 5918.7 / 356.61 | MB | 16.597 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [15.998816675769161, 17.081114710992157], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 715.6 / 606.4 | ms | 1.1801 | 95% [0.74248, 1.2506] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 786.5 / 1004.9 | ms | 0.78266 | 95% [0.73649, 0.81672] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 6.8 / 3.7 | ms | 1.8378 | 95% [1.4054, 2.6944] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 14.6 / 4 | ms | 3.65 | 95% [3.575, 3.65] ratio | 12/12 observations | loss | frame/op completion p95 |
+| completion_p99_ms:p50 | 33.2 / 4.3 | ms | 7.7209 | 95% [5.7273, 8.2381] ratio | 12/12 observations | loss | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 4.7616 / 1.5741 | ms | 3.025 | 95% [2.8962, 3.0765] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 6184.4 / 100.35 | MB | 61.627 | 95% [60.726, 62.443] ratio | 12/12 observations | loss | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 5748.5 / 185.19 | MB | 31.041 | 95% [29.944, 31.793] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 10.3 / 9.6 | ms | 1.0729 | 95% [1.03, 1.0833] ratio | 12/12 observations | loss | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11.3 / 11 | ms | 1.0273 | 95% [1.018, 1.0364] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 28.8 / 11.2 | ms | 2.5714 | 95% [2.3125, 2.7946] ratio | 12/12 observations | loss | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1090.4 / 936.9 | ms | 1.1638 | 95% [0.45587, 1.2276] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 6.4246 / 2.3721 | ms | 2.7084 | 95% [2.6005, 2.7483] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 5918.7 / 356.61 | MB | 16.597 | 95% [15.999, 17.081] ratio | 12/12 observations | loss | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-2c40a04717914991e48a081fc62ffc4e0fbc95fb090528b31c10ad46b81a5951"></a>
 
-## magnetic_fluids
+<details>
+<summary>magnetic_fluids — 2026-11-01T17:29:53.315000Z; diagnostic; 14 metrics</summary>
 
-Observation: `2c40a04717914991e48a081fc62ffc4e0fbc95fb090528b31c10ad46b81a5951`; execution: `browser-windows-677deadff37ef4/magnetic_fluids/fawn_dawn/chrome`.
+Record `2c40a04717914991e48a081fc62ffc4e0fbc95fb090528b31c10ad46b81a5951` · execution `browser-windows-677deadff37ef4/magnetic_fluids/fawn_dawn/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:7d6ccb4d28c5ea724f6cfc03; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:7d6ccb4d28c5ea724f6cfc03; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:29:53.315000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `2c40a04717914991e48a081fc62ffc4e0fbc95fb090528b31c10ad46b81a5951`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `2c40a04717914991e48a081fc62ffc4e0fbc95fb090528b31c10ad46b81a5951`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 562.2 / 606.4 | ms | 0.92711 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5805847466660736, 0.9825319958075923], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| cold_first_job_ms:p95 | 622.6 / 1004.9 | ms | 0.61956 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5724947756250077, 0.6465212876675409], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| completion_p50_ms:p50 | 3.7 / 3.7 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9736842043346976, 1.0555555518762565], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p95_ms:p50 | 4 / 4 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 4.7 / 4.3 | ms | 1.093 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0444444417953491, 1.1428571489392494], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_cpu_ms_per_frame:p50 | 2.1338 / 1.5741 | ms | 1.3556 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2976349487561147, 1.3726054741805302], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 101.14 / 100.35 | MB | 1.0078 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9947064093167195, 1.0237021241696054], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_mem_mb:p50 | 189.45 / 185.19 | MB | 1.023 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0122229536976082, 1.038772285161032], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p50_ms:p50 | 9.4 / 9.6 | ms | 0.97917 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9399999976158142, 1.0208333258310127], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 11 / 11 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9909909941838378, 1.0090909058397466], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 11.4 / 11.2 | ms | 1.0179 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.008928562875609, 1.0267857153785929], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 1021.1 / 936.9 | ms | 1.0899 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4045915460598915, 1.1470716994078438], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 3.5419 / 2.3721 | ms | 1.4931 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4411245325972124, 1.5277026441597872], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 364.74 / 356.61 | MB | 1.0228 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0018091206990716, 1.045687185988637], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 562.2 / 606.4 | ms | 0.92711 | 95% [0.58058, 0.98253] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 622.6 / 1004.9 | ms | 0.61956 | 95% [0.57249, 0.64652] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 3.7 / 3.7 | ms | 1 | 95% [0.97368, 1.0556] ratio | 12/12 observations | inconclusive | frame/op completion p50 |
+| completion_p95_ms:p50 | 4 / 4 | ms | 1 | 95% [1, 1] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 4.7 / 4.3 | ms | 1.093 | 95% [1.0444, 1.1429] ratio | 12/12 observations | loss | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 2.1338 / 1.5741 | ms | 1.3556 | 95% [1.2976, 1.3726] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 101.14 / 100.35 | MB | 1.0078 | 95% [0.99471, 1.0237] ratio | 12/12 observations | inconclusive | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 189.45 / 185.19 | MB | 1.023 | 95% [1.0122, 1.0388] ratio | 12/12 observations | inconclusive | GPU-process memory |
+| interval_p50_ms:p50 | 9.4 / 9.6 | ms | 0.97917 | 95% [0.94, 1.0208] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11 / 11 | ms | 1 | 95% [0.99099, 1.0091] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 11.4 / 11.2 | ms | 1.0179 | 95% [1.0089, 1.0268] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1021.1 / 936.9 | ms | 1.0899 | 95% [0.40459, 1.1471] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 3.5419 / 2.3721 | ms | 1.4931 | 95% [1.4411, 1.5277] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 364.74 / 356.61 | MB | 1.0228 | 95% [1.0018, 1.0457] ratio | 12/12 observations | inconclusive | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-0f63703db7df16e50e1c97024795be94ed51b541e596678a9d3dd081336b6561"></a>
 
-## prismatic_fluids
+<details>
+<summary>prismatic_fluids — 2026-11-01T17:30:34.417000Z; diagnostic; 14 metrics</summary>
 
-Observation: `0f63703db7df16e50e1c97024795be94ed51b541e596678a9d3dd081336b6561`; execution: `browser-windows-677deadff37ef4/prismatic_fluids/fawn_doe/chrome`.
+Record `0f63703db7df16e50e1c97024795be94ed51b541e596678a9d3dd081336b6561` · execution `browser-windows-677deadff37ef4/prismatic_fluids/fawn_doe/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:8be0401d410b0e0c3965e46f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:8be0401d410b0e0c3965e46f; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_doe unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:30:34.417000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `0f63703db7df16e50e1c97024795be94ed51b541e596678a9d3dd081336b6561`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `0f63703db7df16e50e1c97024795be94ed51b541e596678a9d3dd081336b6561`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 819.6 / 645.5 | ms | 1.2697 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7790308707010944, 1.3099489796547477], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 843.4 / 1395.7 | ms | 0.60428 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5917460772252005, 0.7968077988899746], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| completion_p50_ms:p50 | 6.4 / 3.9 | ms | 1.641 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5128205159555368, 1.7179487253944001], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p95_ms:p50 | 10.3 / 5.9 | ms | 1.7458 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6779661145370537, 2.060000002384186], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| completion_p99_ms:p50 | 20 / 6 | ms | 3.3333 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.9333333373069763, 3.75], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_cpu_ms_per_frame:p50 | 5.0588 / 1.7024 | ms | 2.9715 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.937738528728766, 3.044060820639984], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 6011.6 / 106.07 | MB | 56.676 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [55.305945905107286, 57.21428019771394], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_mem_mb:p50 | 5471.5 / 194.37 | MB | 28.15 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [27.66878862024634, 28.87820867566302], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p50_ms:p50 | 10.3 / 9.4 | ms | 1.0957 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.084210521296451, 1.1075268815826], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p95_ms:p50 | 14.3 / 11.1 | ms | 1.2883 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2702702643199648, 1.2972972923628976], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| interval_p99_ms:p50 | 27.9 / 12.1 | ms | 2.3058 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.033057859218981, 2.4958677749866327], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| launch_to_first_job_ms:p50 | 1185.7 / 1964.3 | ms | 0.60362 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4732309320787709, 1.2510140228621702], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 6.8189 / 2.4984 | ms | 2.7293 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7026006988286664, 2.844693455373761], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 5647.1 / 370.22 | MB | 15.253 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [15.079115204953451, 15.575387276699082], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 819.6 / 645.5 | ms | 1.2697 | 95% [0.77903, 1.3099] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 843.4 / 1395.7 | ms | 0.60428 | 95% [0.59175, 0.79681] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 6.4 / 3.9 | ms | 1.641 | 95% [1.5128, 1.7179] ratio | 12/12 observations | loss | frame/op completion p50 |
+| completion_p95_ms:p50 | 10.3 / 5.9 | ms | 1.7458 | 95% [1.678, 2.06] ratio | 12/12 observations | loss | frame/op completion p95 |
+| completion_p99_ms:p50 | 20 / 6 | ms | 3.3333 | 95% [2.9333, 3.75] ratio | 12/12 observations | loss | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 5.0588 / 1.7024 | ms | 2.9715 | 95% [2.9377, 3.0441] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 6011.6 / 106.07 | MB | 56.676 | 95% [55.306, 57.214] ratio | 12/12 observations | loss | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 5471.5 / 194.37 | MB | 28.15 | 95% [27.669, 28.878] ratio | 12/12 observations | loss | GPU-process memory |
+| interval_p50_ms:p50 | 10.3 / 9.4 | ms | 1.0957 | 95% [1.0842, 1.1075] ratio | 12/12 observations | loss | completed-frame interval p50 |
+| interval_p95_ms:p50 | 14.3 / 11.1 | ms | 1.2883 | 95% [1.2703, 1.2973] ratio | 12/12 observations | loss | completed-frame interval p95 |
+| interval_p99_ms:p50 | 27.9 / 12.1 | ms | 2.3058 | 95% [2.0331, 2.4959] ratio | 12/12 observations | loss | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1185.7 / 1964.3 | ms | 0.60362 | 95% [0.47323, 1.251] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 6.8189 / 2.4984 | ms | 2.7293 | 95% [2.7026, 2.8447] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 5647.1 / 370.22 | MB | 15.253 | 95% [15.079, 15.575] ratio | 12/12 observations | loss | total browser memory |
 
-Evidence:
-
-- [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
-- [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Browser integration evidence cannot qualify native runtime or workspace behavior.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-c5b550f946d22366f88329e8867e80981ef651a996fcefee52da0c3d7c9acd08"></a>
 
-## prismatic_fluids
+<details>
+<summary>prismatic_fluids — 2026-11-01T17:30:34.417000Z; diagnostic; 14 metrics</summary>
 
-Observation: `c5b550f946d22366f88329e8867e80981ef651a996fcefee52da0c3d7c9acd08`; execution: `browser-windows-677deadff37ef4/prismatic_fluids/fawn_dawn/chrome`.
+Record `c5b550f946d22366f88329e8867e80981ef651a996fcefee52da0c3d7c9acd08` · execution `browser-windows-677deadff37ef4/prismatic_fluids/fawn_dawn/chrome` · campaign `reports/benchmarks/fawn-vs-chromium/20261031`.
 
-Machine: unknown:2c94ce5c61201b10f187b0bc; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:2c94ce5c61201b10f187b0bc; win32/d3d12; GPU unknown; driver unknown.
 
-Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown.
+Build: fawn_dawn unknown/unknown; comparator: chrome unknown/unknown. Contract `unknown`.
 
 Executed: 2026-11-01T17:30:34.417000Z; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `c5b550f946d22366f88329e8867e80981ef651a996fcefee52da0c3d7c9acd08`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `c5b550f946d22366f88329e8867e80981ef651a996fcefee52da0c3d7c9acd08`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold_first_job_ms:p50 | 646.7 / 645.5 | ms | 1.0019 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6095686424999521, 1.0368303571815702], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| cold_first_job_ms:p95 | 667.6 / 1395.7 | ms | 0.47833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4692269112142665, 0.627066806858804], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | win |
-| completion_p50_ms:p50 | 3.9 / 3.9 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p95_ms:p50 | 5 / 5.9 | ms | 0.84746 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8305084738913572, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| completion_p99_ms:p50 | 6 / 6 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9833333293596903, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_cpu_ms_per_frame:p50 | 2.3012 / 1.7024 | ms | 1.3518 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3302212992176519, 1.389566345143694], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| gpu_gfx_mem_mb:p50 | 108.14 / 106.07 | MB | 1.0195 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9975759412165746, 1.0227062094531976], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| gpu_mem_mb:p50 | 198.49 / 194.37 | MB | 1.0212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0056047993689412, 1.0374372664175122], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p50_ms:p50 | 9.2 / 9.4 | ms | 0.97872 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9684210513767443, 0.9892473156872009], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p95_ms:p50 | 11.1 / 11.1 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9999999946302122, 1.0], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| interval_p99_ms:p50 | 11.9 / 12.1 | ms | 0.98347 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9752066154377715, 1.0082644648047454], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| launch_to_first_job_ms:p50 | 1001.6 / 1964.3 | ms | 0.5099 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.40335626339694436, 1.1206697106968335], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
-| total_cpu_ms_per_frame:p50 | 3.7067 / 2.4984 | ms | 1.4836 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4689264865902683, 1.5184032833820742], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | loss |
-| total_mem_mb:p50 | 373.33 / 370.22 | MB | 1.0084 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9930379264133881, 1.01630138661863], 'unit': 'ratio'} | {'implementation': 12, 'comparator': 12, 'unit': 'observations'} | inconclusive |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold_first_job_ms:p50 | 646.7 / 645.5 | ms | 1.0019 | 95% [0.60957, 1.0368] ratio | 12/12 observations | inconclusive | cold first job (nav -&gt; first completed job) |
+| cold_first_job_ms:p95 | 667.6 / 1395.7 | ms | 0.47833 | 95% [0.46923, 0.62707] ratio | 12/12 observations | win | cold first job (nav -&gt; first completed job) |
+| completion_p50_ms:p50 | 3.9 / 3.9 | ms | 1 | 95% [1, 1] ratio | 12/12 observations | inconclusive | frame/op completion p50 |
+| completion_p95_ms:p50 | 5 / 5.9 | ms | 0.84746 | 95% [0.83051, 1] ratio | 12/12 observations | inconclusive | frame/op completion p95 |
+| completion_p99_ms:p50 | 6 / 6 | ms | 1 | 95% [0.98333, 1] ratio | 12/12 observations | inconclusive | frame/op completion p99 |
+| gpu_cpu_ms_per_frame:p50 | 2.3012 / 1.7024 | ms | 1.3518 | 95% [1.3302, 1.3896] ratio | 12/12 observations | loss | GPU-process CPU per frame/op |
+| gpu_gfx_mem_mb:p50 | 108.14 / 106.07 | MB | 1.0195 | 95% [0.99758, 1.0227] ratio | 12/12 observations | inconclusive | GPU-process graphics memory |
+| gpu_mem_mb:p50 | 198.49 / 194.37 | MB | 1.0212 | 95% [1.0056, 1.0374] ratio | 12/12 observations | inconclusive | GPU-process memory |
+| interval_p50_ms:p50 | 9.2 / 9.4 | ms | 0.97872 | 95% [0.96842, 0.98925] ratio | 12/12 observations | inconclusive | completed-frame interval p50 |
+| interval_p95_ms:p50 | 11.1 / 11.1 | ms | 1 | 95% [1, 1] ratio | 12/12 observations | inconclusive | completed-frame interval p95 |
+| interval_p99_ms:p50 | 11.9 / 12.1 | ms | 0.98347 | 95% [0.97521, 1.0083] ratio | 12/12 observations | inconclusive | completed-frame interval p99 |
+| launch_to_first_job_ms:p50 | 1001.6 / 1964.3 | ms | 0.5099 | 95% [0.40336, 1.1207] ratio | 12/12 observations | inconclusive | launch -&gt; first completed job |
+| total_cpu_ms_per_frame:p50 | 3.7067 / 2.4984 | ms | 1.4836 | 95% [1.4689, 1.5184] ratio | 12/12 observations | loss | all-process CPU per frame/op |
+| total_mem_mb:p50 | 373.33 / 370.22 | MB | 1.0084 | 95% [0.99304, 1.0163] ratio | 12/12 observations | inconclusive | total browser memory |
 
-Evidence:
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
 
 - [report](../fawn-vs-chromium/20261031/windows-summary.json): retained.
 - [launches](../fawn-vs-chromium/20261031/raw-evidence-windows.tar.gz): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Browser integration evidence cannot qualify native runtime or workspace behavior.
 - comparator.binaryHash is unknown.

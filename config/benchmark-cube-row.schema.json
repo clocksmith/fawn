@@ -1030,6 +1030,126 @@
       ],
       "title": "Fawn Benchmark Cube Row",
       "type": "object"
+    },
+    "compactInventoryV4": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptanceRef": {
+          "$ref": "#/$defs/compactInventory/properties/acceptanceRef"
+        },
+        "artifactKey": {
+          "$ref": "#/$defs/compactInventory/properties/artifactKey"
+        },
+        "comparatorRef": {
+          "$ref": "#/$defs/compactInventory/properties/comparatorRef"
+        },
+        "correctnessRef": {
+          "$ref": "#/$defs/compactInventory/properties/correctnessRef"
+        },
+        "evidenceRef": {
+          "$ref": "#/$defs/compactInventory/properties/evidenceRef"
+        },
+        "executedAt": {
+          "$ref": "#/$defs/compactInventory/properties/executedAt"
+        },
+        "executionId": {
+          "$ref": "#/$defs/compactInventory/properties/executionId"
+        },
+        "executionStatus": {
+          "$ref": "#/$defs/compactInventory/properties/executionStatus"
+        },
+        "executionTimeSource": {
+          "$ref": "#/$defs/compactInventory/properties/executionTimeSource"
+        },
+        "fallbackRef": {
+          "$ref": "#/$defs/compactInventory/properties/fallbackRef"
+        },
+        "implementationRef": {
+          "$ref": "#/$defs/compactInventory/properties/implementationRef"
+        },
+        "limitationsRef": {
+          "$ref": "#/$defs/compactInventory/properties/limitationsRef"
+        },
+        "machineRef": {
+          "$ref": "#/$defs/compactInventory/properties/machineRef"
+        },
+        "metrics": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": [
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    {
+                      "$ref": "#/$defs/inventory/properties/metrics/items/properties/uncertainty"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "qualificationRef": {
+          "$ref": "#/$defs/compactInventory/properties/qualificationRef"
+        },
+        "rowId": {
+          "$ref": "#/$defs/compactInventory/properties/rowId"
+        },
+        "schemaVersion": {
+          "const": 4
+        },
+        "seriesKey": {
+          "$ref": "#/$defs/compactInventory/properties/seriesKey"
+        },
+        "supersedes": {
+          "$ref": "#/$defs/compactInventory/properties/supersedes"
+        },
+        "workloadId": {
+          "$ref": "#/$defs/compactInventory/properties/workloadId"
+        },
+        "contextRef": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "rowId",
+        "workloadId",
+        "executionId",
+        "executedAt",
+        "executionTimeSource",
+        "executionStatus",
+        "metrics",
+        "supersedes",
+        "seriesKey",
+        "artifactKey",
+        "machineRef",
+        "implementationRef",
+        "comparatorRef",
+        "evidenceRef",
+        "limitationsRef",
+        "correctnessRef",
+        "fallbackRef",
+        "acceptanceRef",
+        "qualificationRef",
+        "contextRef"
+      ],
+      "type": "object"
     }
   },
   "$id": "urn:doe:benchmark-cube-row",
@@ -1044,6 +1164,9 @@
     },
     {
       "$ref": "#/$defs/compactInventory"
+    },
+    {
+      "$ref": "#/$defs/compactInventoryV4"
     }
   ],
   "properties": {
@@ -1105,11 +1228,12 @@
     "workloadContractHash": {},
     "workloadDomain": {},
     "workloadId": {},
-    "workloadSet": {}
+    "workloadSet": {},
+    "contextRef": {}
   },
   "required": [
     "schemaVersion"
   ],
-  "title": "Fawn Benchmark Cube Row (legacy v1 / logical v2 / compact v3)",
+  "title": "Fawn Benchmark Cube Row (legacy v1 / logical v2 / compact v3/v4)",
   "type": "object"
 }

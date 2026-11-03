@@ -30,8 +30,8 @@ for their fields and values.
 
 ## Continuous integration
 
-Ordinary pushes to `main` and pull requests run one Linux build/smoke in
-[CI](../.github/workflows/ci.yml): build the C compiler shared library with the
+Ordinary pushes to `main` and pull requests run two focused CPU jobs in
+[CI](../.github/workflows/ci.yml). The compiler job builds the C compiler shared library with the
 owner's strict GCC flags, link the existing native consumer against it, and
 compile the unchanged residual WGSL kernel. The consumer asserts successful
 compilation, SPIR-V header/size, entry point, workgroup size, and all three
@@ -45,6 +45,12 @@ runtime/c/compiler/build/native_consumer bench/inference-pipeline/kernels/residu
 This is a host-side shared-library/ABI smoke, not GPU execution, full WGSL
 semantics, production promotion or release qualification. There is no matrix,
 external SDK download, model call, or service credential in this build job.
+The benchmark job installs `bench/requirements.txt`, runs the inventory/view and
+C proc-surface regression controls, validates import and component ownership,
+and checks generated inventory freshness. It
+runs no GPU workloads or qualification campaign. The [benchmark front door](../bench/README.md)
+owns its local commands.
+
 The separate [publication hygiene](../.github/workflows/publication-hygiene.yml)
 guard rejects newly added ignored files and newly added private-home-path
 lines against the PR base or the actual push-before commit. It fetches complete

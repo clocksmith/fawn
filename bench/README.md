@@ -30,7 +30,8 @@ python3 bench/cli.py inventory --check
 python3 bench/cli.py inventory --dashboard-html-out bench/out/cube-inventory.html
 ```
 
-`inventory` delegates to `tools/build_benchmark_cube.py --inventory`; existing
+`inventory` delegates to `tools/build_benchmark_cube.py --inventory`,
+which dispatches to the registered-evidence owner in `inventory/builder.py`; existing
 cube mode and v1 consumers remain supported during migration. The versioned
 [row](../config/benchmark-cube-row.schema.json),
 [cube](../config/benchmark-cube.schema.json) (including the registration

@@ -6,499 +6,420 @@
 
 12 observations; 0 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [dawn](#row-4520e7a069c40daedbc5c2fa9ce5898715d201a70daa34f775c7acea40f27261) | unknown | unknown:a8558e0a14c41be435ef1a70 | dawn unknown/unknown vs unknown unknown/unknown | 0/0/0/10 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [dawn](#row-dc8f45dec93126311bb17dfb9028c4da7d1b1d5ee197947a60388b967d67fd48) | unknown | unknown:e09894c7ad5d4c6aee0738d8 | dawn unknown/unknown vs unknown unknown/unknown | 0/0/0/10 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [dawn/baseline](#row-f2f39ac73482e9e3345690acd5f0b5f7c95a16c5d97601b57760e1a85c174df2) | unknown | unknown:92c3cd8e72f5bf727536b3a5 | dawn unknown/unknown vs unknown unknown/unknown | 0/0/0/6 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [dawn/candidate](#row-f2c660ec40b1aef2472f980157b4f11e1bd01d7e3cd1bbd0919142f46105ef18) | unknown | unknown:f1587c3adab9209337631121 | dawn unknown/unknown vs unknown unknown/unknown | 0/0/0/6 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doe](#row-6c7b0bd41991a17a8d6226f90d28efcbaf2be12084c2cb7740a39ffaded353bd) | unknown | unknown:2cf4125f69dd23f4de62fe57 | doe unknown/unknown vs unknown unknown/unknown | 0/0/0/10 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doe](#row-a85e810dfe141299a2a415d09443c886df22b0324209c766815c09c1c8ed02f4) | unknown | unknown:d37748a4aebbc05b8d1a9811 | doe unknown/unknown vs unknown unknown/unknown | 0/0/0/10 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doe/baseline](#row-c233cd9cc7a2e7ca017143c5e6d223d5ae65af6c1dde2961e2d034d5128ca5f5) | unknown | unknown:de87898c98a1c8d199e5fa38 | doe unknown/unknown vs unknown unknown/unknown | 0/0/0/6 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doe/candidate](#row-e6506201dad77e7e02dcfee3f76d9d92be89889bc2da2eb28488b4ffdfabe946) | unknown | unknown:838a36ef88b202bbadbd2310 | doe unknown/unknown vs unknown unknown/unknown | 0/0/0/6 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doppler](#row-37f91793f6a3a8f782244319428a06ef5251d54b0c63890baa22d4b8096156dd) | unknown | unknown:62a74591338de9a74e640e35 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doppler](#row-bd4fb92a11ee58cfd371e849f1119954271d1f44adbd032172e0ef54e93579b0) | unknown | unknown:34e73c1137a77cfff98df686 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doppler](#row-cb5b11711844e7015e3a038f21a75c2eaccdd630bde5829e000e0f671e03ef5d) | unknown | unknown:b92a303b381bc7f5b23755e0 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [doppler](#row-e308aa1498ad4af6848de007a46531783352f9791426e32ef121cde2cab895ab) | unknown | unknown:64a744ce8b00683fe72e6bbd | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | not-run / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+
+## Complete records
 
 <a id="row-4520e7a069c40daedbc5c2fa9ce5898715d201a70daa34f775c7acea40f27261"></a>
 
-## dawn
+<details>
+<summary>dawn — unknown; diagnostic; 10 metrics</summary>
 
-Observation: `4520e7a069c40daedbc5c2fa9ce5898715d201a70daa34f775c7acea40f27261`; execution: `doppler-5f8fe0e941c9ae/dawn/dawn`.
+Record `4520e7a069c40daedbc5c2fa9ce5898715d201a70daa34f775c7acea40f27261` · execution `doppler-5f8fe0e941c9ae/dawn/dawn` · campaign `reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement`.
 
-Machine: unknown:a8558e0a14c41be435ef1a70; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:a8558e0a14c41be435ef1a70; unknown/unknown; GPU unknown; driver unknown.
 
-Build: dawn unknown/unknown; comparator: unknown unknown/unknown.
+Build: dawn unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| initial.firstTokenMs.p50 | 295.43 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.firstTokenMs.p95 | 316.59 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p50 | 757.12 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p95 | 795.83 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p50 | 67.833 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p95 | 71.236 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p50 | 421.6 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p95 | 435.89 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| control.firstTokenMs | unknown / unknown | ratio | 1.0049 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9888654987478942, 1.0234992744218483], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
-| control.completeMs | unknown / unknown | ratio | 0.99657 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9764510038699061, 1.018940306890916], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| initial.firstTokenMs.p50 | 295.43 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.firstTokenMs.p95 | 316.59 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p50 | 757.12 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p95 | 795.83 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p50 | 67.833 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p95 | 71.236 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p50 | 421.6 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p95 | 435.89 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| control.firstTokenMs | unknown / unknown | ratio | 1.0049 | 95% [0.98887, 1.0235] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
+| control.completeMs | unknown / unknown | ratio | 0.99657 | 95% [0.97645, 1.0189] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
 
-Evidence:
-
-- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/baseline-summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-dc8f45dec93126311bb17dfb9028c4da7d1b1d5ee197947a60388b967d67fd48"></a>
 
-## dawn
+<details>
+<summary>dawn — unknown; diagnostic; 10 metrics</summary>
 
-Observation: `dc8f45dec93126311bb17dfb9028c4da7d1b1d5ee197947a60388b967d67fd48`; execution: `doppler-0240a997bb333c/dawn/dawn`.
+Record `dc8f45dec93126311bb17dfb9028c4da7d1b1d5ee197947a60388b967d67fd48` · execution `doppler-0240a997bb333c/dawn/dawn` · campaign `reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement`.
 
-Machine: unknown:e09894c7ad5d4c6aee0738d8; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:e09894c7ad5d4c6aee0738d8; unknown/unknown; GPU unknown; driver unknown.
 
-Build: dawn unknown/unknown; comparator: unknown unknown/unknown.
+Build: dawn unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| initial.firstTokenMs.p50 | 297.43 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.firstTokenMs.p95 | 309.32 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p50 | 755.95 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p95 | 809.17 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p50 | 68.528 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p95 | 71.088 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p50 | 423.79 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p95 | 457.21 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| control.firstTokenMs | unknown / unknown | ratio | 0.9891 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9735297569370984, 1.0039266888670604], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
-| control.completeMs | unknown / unknown | ratio | 1.0082 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.988827705979882, 1.0324115804704033], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| initial.firstTokenMs.p50 | 297.43 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.firstTokenMs.p95 | 309.32 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p50 | 755.95 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p95 | 809.17 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p50 | 68.528 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p95 | 71.088 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p50 | 423.79 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p95 | 457.21 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| control.firstTokenMs | unknown / unknown | ratio | 0.9891 | 95% [0.97353, 1.0039] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
+| control.completeMs | unknown / unknown | ratio | 1.0082 | 95% [0.98883, 1.0324] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
 
-Evidence:
-
-- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/candidate-summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-f2f39ac73482e9e3345690acd5f0b5f7c95a16c5d97601b57760e1a85c174df2"></a>
 
-## dawn/baseline
+<details>
+<summary>dawn/baseline — unknown; diagnostic-memory-comparison; 6 metrics</summary>
 
-Observation: `f2f39ac73482e9e3345690acd5f0b5f7c95a16c5d97601b57760e1a85c174df2`; execution: `doppler-756b1cd704f1d3/dawn/baseline/dawn/baseline`.
+Record `f2f39ac73482e9e3345690acd5f0b5f7c95a16c5d97601b57760e1a85c174df2` · execution `doppler-756b1cd704f1d3/dawn/baseline/dawn/baseline` · campaign `reports/maintenance/20261011-doppler-generation-memory`.
 
-Machine: unknown:92c3cd8e72f5bf727536b3a5; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:92c3cd8e72f5bf727536b3a5; unknown/unknown; GPU unknown; driver unknown.
 
-Build: dawn unknown/unknown; comparator: unknown unknown/unknown.
+Build: dawn unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic-memory-comparison.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| peakProcessRssBytes | 7.8544e+08 / unknown | bytes | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| loadMs | 989.16 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.firstTokenMs | 247.39 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.completeMs | 717.95 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.firstTokenMs | 67.731 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.completeMs | 426.82 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| peakProcessRssBytes | 7.8544e+08 / unknown | bytes | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| loadMs | 989.16 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| initial.firstTokenMs | 247.39 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| initial.completeMs | 717.95 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| resident.firstTokenMs | 67.731 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained baseline aggregate |
+| resident.completeMs | 426.82 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained baseline aggregate |
 
-Evidence:
-
-- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-f2c660ec40b1aef2472f980157b4f11e1bd01d7e3cd1bbd0919142f46105ef18"></a>
 
-## dawn/candidate
+<details>
+<summary>dawn/candidate — unknown; diagnostic-memory-comparison; 6 metrics</summary>
 
-Observation: `f2c660ec40b1aef2472f980157b4f11e1bd01d7e3cd1bbd0919142f46105ef18`; execution: `doppler-756b1cd704f1d3/dawn/candidate/dawn/candidate`.
+Record `f2c660ec40b1aef2472f980157b4f11e1bd01d7e3cd1bbd0919142f46105ef18` · execution `doppler-756b1cd704f1d3/dawn/candidate/dawn/candidate` · campaign `reports/maintenance/20261011-doppler-generation-memory`.
 
-Machine: unknown:f1587c3adab9209337631121; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:f1587c3adab9209337631121; unknown/unknown; GPU unknown; driver unknown.
 
-Build: dawn unknown/unknown; comparator: unknown unknown/unknown.
+Build: dawn unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic-memory-comparison.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| peakProcessRssBytes | 7.8307e+08 / unknown | bytes | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| loadMs | 963.45 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.firstTokenMs | 244.19 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.completeMs | 708.65 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.firstTokenMs | 68.072 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.completeMs | 428.05 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| peakProcessRssBytes | 7.8307e+08 / unknown | bytes | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| loadMs | 963.45 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| initial.firstTokenMs | 244.19 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| initial.completeMs | 708.65 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| resident.firstTokenMs | 68.072 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained candidate aggregate |
+| resident.completeMs | 428.05 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained candidate aggregate |
 
-Evidence:
-
-- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-6c7b0bd41991a17a8d6226f90d28efcbaf2be12084c2cb7740a39ffaded353bd"></a>
 
-## doe
+<details>
+<summary>doe — unknown; diagnostic; 10 metrics</summary>
 
-Observation: `6c7b0bd41991a17a8d6226f90d28efcbaf2be12084c2cb7740a39ffaded353bd`; execution: `doppler-5f8fe0e941c9ae/doe/doe`.
+Record `6c7b0bd41991a17a8d6226f90d28efcbaf2be12084c2cb7740a39ffaded353bd` · execution `doppler-5f8fe0e941c9ae/doe/doe` · campaign `reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement`.
 
-Machine: unknown:2cf4125f69dd23f4de62fe57; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:2cf4125f69dd23f4de62fe57; unknown/unknown; GPU unknown; driver unknown.
 
-Build: doe unknown/unknown; comparator: unknown unknown/unknown.
+Build: doe unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| initial.firstTokenMs.p50 | 249.2 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.firstTokenMs.p95 | 256.96 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p50 | 928.41 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p95 | 968.29 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p50 | 70.453 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p95 | 74.724 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p50 | 643.21 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p95 | 662.69 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| control.firstTokenMs | unknown / unknown | ratio | 1.0149 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9876083480167024, 1.0525540803209446], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
-| control.completeMs | unknown / unknown | ratio | 1.0003 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9800107152066667, 1.0220978830401148], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| initial.firstTokenMs.p50 | 249.2 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.firstTokenMs.p95 | 256.96 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p50 | 928.41 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p95 | 968.29 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p50 | 70.453 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p95 | 74.724 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p50 | 643.21 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p95 | 662.69 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| control.firstTokenMs | unknown / unknown | ratio | 1.0149 | 95% [0.98761, 1.0526] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
+| control.completeMs | unknown / unknown | ratio | 1.0003 | 95% [0.98001, 1.0221] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
 
-Evidence:
-
-- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/baseline-summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-a85e810dfe141299a2a415d09443c886df22b0324209c766815c09c1c8ed02f4"></a>
 
-## doe
+<details>
+<summary>doe — unknown; diagnostic; 10 metrics</summary>
 
-Observation: `a85e810dfe141299a2a415d09443c886df22b0324209c766815c09c1c8ed02f4`; execution: `doppler-0240a997bb333c/doe/doe`.
+Record `a85e810dfe141299a2a415d09443c886df22b0324209c766815c09c1c8ed02f4` · execution `doppler-0240a997bb333c/doe/doe` · campaign `reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement`.
 
-Machine: unknown:d37748a4aebbc05b8d1a9811; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:d37748a4aebbc05b8d1a9811; unknown/unknown; GPU unknown; driver unknown.
 
-Build: doe unknown/unknown; comparator: unknown unknown/unknown.
+Build: doe unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| initial.firstTokenMs.p50 | 245.86 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.firstTokenMs.p95 | 255.19 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p50 | 960.91 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| initial.completeMs.p95 | 988.38 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p50 | 72.528 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.firstTokenMs.p95 | 76.251 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p50 | 676.68 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| resident.completeMs.p95 | 685.51 / unknown | ms | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| control.firstTokenMs | unknown / unknown | ratio | 1.0041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.972261872325834, 1.0322609480204812], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
-| control.completeMs | unknown / unknown | ratio | 1.014 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9965717658514194, 1.032072266859916], 'unit': 'ratio'} | {'implementation': 8, 'comparator': 8, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| initial.firstTokenMs.p50 | 245.86 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.firstTokenMs.p95 | 255.19 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p50 | 960.91 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| initial.completeMs.p95 | 988.38 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p50 | 72.528 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.firstTokenMs.p95 | 76.251 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p50 | 676.68 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| resident.completeMs.p95 | 685.51 / unknown | ms | unknown | unknown | unknown/unknown unknown | unknown | reported aggregate |
+| control.firstTokenMs | unknown / unknown | ratio | 1.0041 | 95% [0.97226, 1.0323] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
+| control.completeMs | unknown / unknown | ratio | 1.014 | 95% [0.99657, 1.0321] ratio | 8/8 observations | unknown | same-provider control, not Doe versus Dawn |
 
-Evidence:
-
-- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/candidate-summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-c233cd9cc7a2e7ca017143c5e6d223d5ae65af6c1dde2961e2d034d5128ca5f5"></a>
 
-## doe/baseline
+<details>
+<summary>doe/baseline — unknown; diagnostic-memory-comparison; 6 metrics</summary>
 
-Observation: `c233cd9cc7a2e7ca017143c5e6d223d5ae65af6c1dde2961e2d034d5128ca5f5`; execution: `doppler-756b1cd704f1d3/doe/baseline/doe/baseline`.
+Record `c233cd9cc7a2e7ca017143c5e6d223d5ae65af6c1dde2961e2d034d5128ca5f5` · execution `doppler-756b1cd704f1d3/doe/baseline/doe/baseline` · campaign `reports/maintenance/20261011-doppler-generation-memory`.
 
-Machine: unknown:de87898c98a1c8d199e5fa38; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:de87898c98a1c8d199e5fa38; unknown/unknown; GPU unknown; driver unknown.
 
-Build: doe unknown/unknown; comparator: unknown unknown/unknown.
+Build: doe unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic-memory-comparison.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| peakProcessRssBytes | 5.535e+08 / unknown | bytes | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| loadMs | 1114.8 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.firstTokenMs | 216.16 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.completeMs | 948.98 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.firstTokenMs | 70.933 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.completeMs | 684.66 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| peakProcessRssBytes | 5.535e+08 / unknown | bytes | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| loadMs | 1114.8 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| initial.firstTokenMs | 216.16 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| initial.completeMs | 948.98 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained baseline aggregate |
+| resident.firstTokenMs | 70.933 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained baseline aggregate |
+| resident.completeMs | 684.66 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained baseline aggregate |
 
-Evidence:
-
-- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-e6506201dad77e7e02dcfee3f76d9d92be89889bc2da2eb28488b4ffdfabe946"></a>
 
-## doe/candidate
+<details>
+<summary>doe/candidate — unknown; diagnostic-memory-comparison; 6 metrics</summary>
 
-Observation: `e6506201dad77e7e02dcfee3f76d9d92be89889bc2da2eb28488b4ffdfabe946`; execution: `doppler-756b1cd704f1d3/doe/candidate/doe/candidate`.
+Record `e6506201dad77e7e02dcfee3f76d9d92be89889bc2da2eb28488b4ffdfabe946` · execution `doppler-756b1cd704f1d3/doe/candidate/doe/candidate` · campaign `reports/maintenance/20261011-doppler-generation-memory`.
 
-Machine: unknown:838a36ef88b202bbadbd2310; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:838a36ef88b202bbadbd2310; unknown/unknown; GPU unknown; driver unknown.
 
-Build: doe unknown/unknown; comparator: unknown unknown/unknown.
+Build: doe unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic-memory-comparison.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| peakProcessRssBytes | 5.5639e+08 / unknown | bytes | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| loadMs | 1122.8 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.firstTokenMs | 212.05 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| initial.completeMs | 940.06 / unknown | ms | unknown | unknown | {'implementation': 8, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.firstTokenMs | 70.985 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
-| resident.completeMs | 684.62 / unknown | ms | unknown | unknown | {'implementation': 16, 'comparator': None, 'unit': 'observations'} | unknown |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| peakProcessRssBytes | 5.5639e+08 / unknown | bytes | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| loadMs | 1122.8 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| initial.firstTokenMs | 212.05 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| initial.completeMs | 940.06 / unknown | ms | unknown | unknown | 8/unknown observations | unknown | retained candidate aggregate |
+| resident.firstTokenMs | 70.985 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained candidate aggregate |
+| resident.completeMs | 684.62 / unknown | ms | unknown | unknown | 16/unknown observations | unknown | retained candidate aggregate |
 
-Evidence:
-
-- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-37f91793f6a3a8f782244319428a06ef5251d54b0c63890baa22d4b8096156dd"></a>
 
-## doppler
+<details>
+<summary>doppler — unknown; diagnostic; 0 metrics</summary>
 
-Observation: `37f91793f6a3a8f782244319428a06ef5251d54b0c63890baa22d4b8096156dd`; execution: `doppler-0240a997bb333c/doppler/summary`.
+Record `37f91793f6a3a8f782244319428a06ef5251d54b0c63890baa22d4b8096156dd` · execution `doppler-0240a997bb333c/doppler/summary` · campaign `reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement`.
 
-Machine: unknown:62a74591338de9a74e640e35; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:62a74591338de9a74e640e35; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/candidate-summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- No execution identities, dates or samples are inferred from an application verdict or report directory name.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-bd4fb92a11ee58cfd371e849f1119954271d1f44adbd032172e0ef54e93579b0"></a>
 
-## doppler
+<details>
+<summary>doppler — unknown; diagnostic-memory-comparison; 0 metrics</summary>
 
-Observation: `bd4fb92a11ee58cfd371e849f1119954271d1f44adbd032172e0ef54e93579b0`; execution: `doppler-756b1cd704f1d3/doppler/summary`.
+Record `bd4fb92a11ee58cfd371e849f1119954271d1f44adbd032172e0ef54e93579b0` · execution `doppler-756b1cd704f1d3/doppler/summary` · campaign `reports/maintenance/20261011-doppler-generation-memory`.
 
-Machine: unknown:34e73c1137a77cfff98df686; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:34e73c1137a77cfff98df686; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic-memory-comparison.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- No execution identities, dates or samples are inferred from an application verdict or report directory name.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-cb5b11711844e7015e3a038f21a75c2eaccdd630bde5829e000e0f671e03ef5d"></a>
 
-## doppler
+<details>
+<summary>doppler — unknown; diagnostic; 0 metrics</summary>
 
-Observation: `cb5b11711844e7015e3a038f21a75c2eaccdd630bde5829e000e0f671e03ef5d`; execution: `doppler-5f8fe0e941c9ae/doppler/summary`.
+Record `cb5b11711844e7015e3a038f21a75c2eaccdd630bde5829e000e0f671e03ef5d` · execution `doppler-5f8fe0e941c9ae/doppler/summary` · campaign `reports/benchmarks/amd-vulkan/20261010-doppler-descriptor-retirement`.
 
-Machine: unknown:b92a303b381bc7f5b23755e0; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:b92a303b381bc7f5b23755e0; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-6).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
+</details>
+
+<a id="row-e308aa1498ad4af6848de007a46531783352f9791426e32ef121cde2cab895ab"></a>
+
+<details>
+<summary>doppler — unknown; unknown; 0 metrics</summary>
+
+Record `e308aa1498ad4af6848de007a46531783352f9791426e32ef121cde2cab895ab` · execution `doppler-2a9084c742ed26/doppler/unavailable` · campaign `doppler-unmeasured`.
+
+Machine: unknown:64a744ce8b00683fe72e6bbd; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-7).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
 
 - [report](../amd-vulkan/20261010-doppler-descriptor-retirement/baseline-summary.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
 
-Limitations:
+<a id="evidence-2"></a>
 
+### Evidence 2
+
+- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/candidate-summary.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="evidence-3"></a>
+
+### Evidence 3
+
+- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="evidence-4"></a>
+
+### Evidence 4
+
+- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/candidate-summary.json): retained.
 - Actual machine identity is not bound by the retained receipt.
 - No execution identities, dates or samples are inferred from an application verdict or report directory name.
 - comparator.binaryHash is unknown.
@@ -515,31 +436,53 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-e308aa1498ad4af6848de007a46531783352f9791426e32ef121cde2cab895ab"></a>
+<a id="evidence-5"></a>
 
-## doppler
+### Evidence 5
 
-Observation: `e308aa1498ad4af6848de007a46531783352f9791426e32ef121cde2cab895ab`; execution: `doppler-2a9084c742ed26/doppler/unavailable`.
+- [report](../../maintenance/20261011-doppler-generation-memory/summary.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- No execution identities, dates or samples are inferred from an application verdict or report directory name.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
 
-Machine: unknown:64a744ce8b00683fe72e6bbd; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+<a id="evidence-6"></a>
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+### Evidence 6
 
-Executed: unknown; reported: unknown; contract frozen: unknown.
+- [report](../amd-vulkan/20261010-doppler-descriptor-retirement/baseline-summary.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- No execution identities, dates or samples are inferred from an application verdict or report directory name.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
 
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+<a id="evidence-7"></a>
 
-Latest measured: `None`; latest qualified: `None`; verdict: unknown.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 7
 
 - report: missing.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Registered measurement evidence unavailable; no result is invented.
 - Windows and complete-generation-v2 provider comparison evidence is not registered; no execution date or winner known.

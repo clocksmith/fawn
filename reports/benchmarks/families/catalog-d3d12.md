@@ -6,1177 +6,4018 @@
 
 127 observations; 0 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [capability_introspection](#row-95480320ce2cde59dfb3e706939cebe71578442dc0f66a659e8f5b6c39553f87) | unknown | unknown:b205b249c3b54a6d309fb294 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [capability_introspection_500](#row-6c693e7f58ef6f539dbee3e6cbdf51a2752faff13a96af2148a5a9915a5be105) | unknown | unknown:2df819ae999f2926a0212847 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/8/0/4 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compilation_complex_attention_decode_msl](#row-07591730b95b2f5a28cc758bd2ea54b091daaa8c76fc4e54462155b215fd2a1b) | unknown | unknown:460b4512635eaeccd433cb88 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_complex_fused_gemv_dequant_msl](#row-895c22bc079510bf5f830b748dd79b1bfdf76dc52004dcb332c49227ddd98951) | unknown | unknown:2247b0b5389bca601b082d72 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_complex_matmul_tiled_msl](#row-f12430a77151cb51d48084e74f488d698b2d11f82266e5c6fe77a17f340fe628) | unknown | unknown:0426fe26a3e1bf9060593547 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_complex_multi_entry_msl](#row-1fbfe988b94e6a284258de3b9edf66bebc0a8e9762f8e60ec88c58dc0ba06487) | unknown | unknown:0aa6d4f0c6d8b03f8f8e00a6 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_attention_decode_msl](#row-d2d85dceac3eb3d22e0cbf8e805e564298a5e88cadab039cf4704f549bc55cf7) | unknown | unknown:06d5a55d8fd0903da53bd5cc | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_attention_prefill_msl](#row-bdee2578792d163fbc5eb63be62cbfc35419ca818af6f64ac36a6151ff64fa8a) | unknown | unknown:57071e3ea9f908a021ee47ae | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_gather_msl](#row-427c25797eddb04ea0cb614ce897bf904824447736ecb48459a39e48dd9981be) | unknown | unknown:78cea2c1e28709fa2923801c | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_gelu_msl](#row-72c96f90c52ba202ffa5de76d16ef16f81507ff427e2615e8db702f0f3c46e73) | unknown | unknown:aee21c94c8d0a11ef75251e9 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_matmul_gemv_msl](#row-c198bef90d796b8c301e9ae86dcf82196672ca7b61354424c5671f6903279da1) | unknown | unknown:c7b4c82eed5f1b717cd0a863 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_matmul_tiled_msl](#row-95b598c4b9dd6262cfe76147ec91b8d6a962f6784ad87585948a1168526943ae) | unknown | unknown:a45f6667ea5e6f639a8acb74 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_residual_msl](#row-0b11169de095fd6519567691c2b0c692dbb51abfa437bbe697005f02faa86b3a) | unknown | unknown:5d0bfff3b832a79f1e687f39 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_rmsnorm_msl](#row-3845c07742709d00e2680a36cccad0d7f93369a2b470562602fb6bc9ee9aeaf5) | unknown | unknown:640932000318f0afa67c8f6e | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_rope_msl](#row-d4d53a8c48603ffb4954140d9bb51e78525850f37359029f04a37c90f0a359f2) | unknown | unknown:b60c57fe92177fbcef2464cb | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_inference_sample_msl](#row-d6d542fe2e236fb316d1bfe9378ee5487f2121bd7d1ddeca14b5b39088527bd0) | unknown | unknown:39fa932add0b5988b84bbe74 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_moderate_gelu_msl](#row-2dafcc36cea7cf67093fbbc5183108cb4d7257dd8fbed76390b2d3f41e4dc266) | unknown | unknown:0de9d647f38320f069d3a5e5 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_moderate_layernorm_msl](#row-1a112cbcb88bca1f6c9282b20ef0bfcecb09117e5fc82c3ee9a6bc011de5e5e2) | unknown | unknown:661208ee3e51260e6206e6ec | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_moderate_matmul_naive_msl](#row-47a53fe61593d6e6c7cbfc2ce1b0ff7e1d87e50e07c3dc3a093d46828f1fe302) | unknown | unknown:6983f5eed92c81668f49b4f6 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_moderate_rmsnorm_msl](#row-11be6b4ded323845b4fc330409344e0c88bcb57d8e3b92086dcef9689ae92b32) | unknown | unknown:19f5e0ab771fbfafa3b36a9f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_moderate_rope_msl](#row-daa741e05fbd2c5e207ac75d4d949f00c1fb989a23f1b4389e2cc7ab1c0be227) | unknown | unknown:d5d2b723d9ecc5d51da9c326 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_moderate_softmax_msl](#row-93d1c3829d8ca8a25872b5fe9b391c599b73f7886ce74576be88fe5c17e39aed) | unknown | unknown:b40e60c9402216f0a5846554 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_simple_relu_msl](#row-149d6ddd8134050a7978727719fc270b237435e2e7e5bacf3fc1e5785de4a625) | unknown | unknown:a2ab39758d0b549166549431 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_simple_residual_add_msl](#row-8572b5015d4f125f42d2cf8e416f09dfe3aa9b71db706d42bc74af0fe48d3955) | unknown | unknown:31e8db5cf8fced15577a0753 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_simple_scale_f32_msl](#row-7b5abd8a1cefc5da8266065fa33dd864cea37d394430b13b2fa8bb195c3185bf) | unknown | unknown:00d50c0878a765eb1fff6fa3 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_simple_silu_msl](#row-abd4462d3a9f0f1927f4299538192a2b49ef0742cbf15cfa308d24fbe7480c4c) | unknown | unknown:349a587afe4f58b6f91837c6 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_stress_many_bindings_msl](#row-09731494cc6f151adc70101eb383a904713ae6c955a010537d90cacb47530e76) | unknown | unknown:b40023676b523e9c57c84154 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_trivial_noop_compute_msl](#row-5cbe605e2ba91e47a9ea4e8c4f8f7c9f985e82cff3fd0be1624aa5ca115ba95f) | unknown | unknown:f4a08f4509262004f0609a22 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compilation_trivial_passthrough_vertex_msl](#row-015ed12a4586099103063f90a7e87a3ade070bef69d93e325ba82e3ce16c87f5) | unknown | unknown:98787e87f4b538f3945e108f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [compute_concurrent_execution_single](#row-40a5a9be299e360b492c658680c80ad7b92649403454a3dc878018b76b609ef2) | unknown | unknown:b396f0f998a9c327fefe62d8 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_fallback](#row-1beeaaaf249632afcb0b9f55bb9fa86554d40d74bb8560e08e7a0d38f3fed233) | unknown | unknown:56a2b03ef5ea213f29e1be59 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_grid](#row-32f29f002473e316e05e2c2c8fa0c73c7d303a5b83179cf3726cae0d8634e988) | unknown | unknown:747222fb8b7780dcec96a32a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_indirect_large_args](#row-1fd44297218dea46c0be568a3ec71dd9857ea856aaf5c6d6a1bbc9b20a3e8673) | unknown | unknown:4f8795f8534515f2bc31090f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_indirect_live_args](#row-5f5dc5ad725e46f034fce4241c645bdc15474062cab620af1a4a5fb0d4c11ad3) | unknown | unknown:1556ebb5e85587be0a4d4cba | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_indirect_single](#row-0caeff2165a2fccff7a3c8b2b51298db57c576ac3b748f811f7ec307b21495bb) | unknown | unknown:84744b1c618006e72355c310 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_workgroups_2d_sweep](#row-fbb34b530ad8fe60e6e2d1d64486b3d5b52dbc2b438ac0b6f6023a5520a1599e) | unknown | unknown:3f72b2e936b219a5a9f65dab | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_workgroups_3d_sweep](#row-81888cd319d6af4ccaadb709f68629567429f34566b92dc47e162d9babc86a4f) | unknown | unknown:b05cd7842d97660505382ec4 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_dispatch_workgroups_indirect_pipeline_switch](#row-c7110c819ddec081b9a0d72d34887d37badbccb4bbb87520579498e76e5b5046) | unknown | unknown:55acdbf78f665a88c1150aaa | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_indirect_timestamp](#row-8a5ef793487054ba713aa6ae8bc76c0ed6b6d9215bad38317de5199ee640ae7e) | unknown | unknown:8582276756781c0be8bc8b06 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_kernel_dispatch_100](#row-79f971dc2d171225d6f15ce79ccd6ff56bc78209dc872313099c3fb572cea707) | unknown | unknown:13409009c021e106654dea92 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_kernel_dispatch_1000](#row-aa2fa85b59c3ced9063a6b6187aa9fd619c68051d9a5dd9f5e1759fa3864afa8) | unknown | unknown:c04ca3c35bd7e6fa89890e40 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_matvec_32768x2048_f32](#row-1acb1c94542e37a9fbc9dcbf1d9305f4ea67dd933c05f96f5e62371be5323253) | unknown | unknown:cab25ff1b7847d3aea53e5d2 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/8/0/4 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_matvec_32768x2048_f32_swizzle1](#row-a2fe65b0410394e8fbf78320a0f1e4af2ba440f2404a88d638e88cd9599b322a) | unknown | unknown:4e9b900494dbc89080fd0f77 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_matvec_32768x2048_f32_workgroupshared_swizzle1](#row-d43469be7aececf977c0d17bbe8b29bd82ab7e609d643d1b7e826cb4241901d4) | unknown | unknown:253bcf6169186c9214807788 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces](#row-0ef4588b07855aab0de0a79deec50f08776c316b76b42b41041a9c0e025db419) | unknown | unknown:85516ffc09fdeaedb587e399 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_stable_fluids_multistage_256grid_18pressure_4steps](#row-91170fbb55d993bd30c6c331e3def1bacf9eeb25e3e66cb527c49c3b16ecd5d8) | unknown | unknown:ba95be6894d483fc3dd65b0f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_workgroup_atomic_1024](#row-7ffc140a47d4d3c276ebdc25196f9c5c86060e7542384df892b724b3d23acbd8) | unknown | unknown:158e308da014d876356800f7 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_workgroup_non_atomic_1024](#row-3a33503e506edb9ba5ab71aa7ffc89764cc115264d93a290354d4158612ce1c2) | unknown | unknown:e67424679ef82683b05663bf | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [compute_zero_initialize_workgroup_memory_256](#row-2d5ec7f0ee4b101dc475fabad37632ba7d6786617033aa1e17622299089182bc) | unknown | unknown:97ef225b3dba8921d9f32cd7 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [copy_buffer_to_buffer_4kb](#row-2d6783244e9220ee916debc67175377d883b211dc88c4f18fced5def1fcd6556) | unknown | unknown:23a5c8b22d1b9efcdc86dd0e | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [copy_buffer_to_buffer_overlap](#row-44cdc399b09136bd05f9c0c48a16c896d88027e9d5e8502ee8174179f5416869) | unknown | unknown:ee728f4f923ebbf0b07c9423 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [copy_buffer_to_texture](#row-4a64bc36be5795fa1d90da252bae7c96a9a9b52828362356207255952d689471) | unknown | unknown:12054cc8d73e45491e0ecd35 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [copy_buffer_to_texture_tight_pitch](#row-3ea107f9367e51edd859e7df07054aa29f020f82ba1f730b8b14422444dd7544) | unknown | unknown:5e2963dda80049cb12357000 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [copy_protocol](#row-5a0890d7d7b67065ce383eb1d615e7e5b98bafae52111c0f33b2246cf5c88697) | unknown | unknown:9cf8e20aeccb03d71d0e90bc | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [copy_texture_to_buffer](#row-85030a7d7fc526843f1cc56326f27bcc9d0000933f09b8e01337c5e2d4d3af96) | unknown | unknown:b2f35cd3aa815ced3c7ba5f9 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [copy_texture_to_buffer_padded](#row-ef53db023f7d6930919b4b7ba1db837469181413e8657935e068c97271761a20) | unknown | unknown:c807afca01195fe1304a3666 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [copy_texture_to_texture](#row-4a5d9a710a3c0fd5cf16a1d6e80599e24b859e9edb44dbec88d646278a0b75d8) | unknown | unknown:a8891d8615a2278ce2136662 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [copy_texture_to_texture_stress](#row-e2bf4cf3776806cf0e24212910e199644261964261c16c2c6ddc1fd09bcca662) | unknown | unknown:244b29cf1ae960c2a5a91b92 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [copy_texture_to_texture_subresource](#row-99b4162c4f8b7a8f5f2085c6e568cc7694403fcb0ee9f021342f402bcdd05fce) | unknown | unknown:59c72dab7326aa4b2dea45be | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_1b_decode_1tok](#row-7decef3dcebe306faef9ef65dd71ff7654feda34964d6981c24d2255ff50c1ed) | unknown | unknown:799bc1400ebc4d64a1f62a3b | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_1b_prefill_32tok](#row-e937fb29394764a3042640af378cdf919149231f54193ae7d94289ade8721255) | unknown | unknown:1de2e6e05be80c284e6d1439 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_1b_prefill_64tok_decode_64tok](#row-2828af015564dd76d5cbdfeff0e4ea5323567829d7562a2062994f6d92377572) | unknown | unknown:afe9496efb74b4342a628c36 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_270m_decode_1tok](#row-19cc2f0b90d8c1555a380b94c74ad4d37e5f7457e6a650ea3fbba9b009c8cc4c) | unknown | unknown:30eda2d6f0d92770558ae35e | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_270m_literal_prefill_32tok_decode_1tok](#row-6a30b52e4fbdcefc36523933daa4258e131e53b9c6e175a58263987ea7490b4b) | unknown | unknown:9d2849fc159378a2022906bd | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_270m_prefill_32tok](#row-e7ec2e0934cfedf9fe9695625d6eb60d5b22330986bb3ba7808d59e138178cd4) | unknown | unknown:7f3e3672b134d6f35ae124cc | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [inference_gemma3_270m_prefill_64tok_decode_64tok](#row-f8d441445e7bf21564df8cbc51d29284e99a2b23e41b223c27b7f4d3c1eb9269) | unknown | unknown:75088f01d50bda4e8ee4b107 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [lifecycle_refcount](#row-c1721e0627a934b8bbdfc86d97035aaa58ff74a5d01b9ee073668998437f8284) | unknown | unknown:3125041853005ef46f9fb00b | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/8/0/4 | succeeded / unknown | execution date, machine identity, comparator build |
+| [lifecycle_refcount_200](#row-f57dbec016139b9d15adf4f5f0b25a12d6c2c452bbbcfc012756d514053d3b62) | unknown | unknown:1f0ba7128d57ab617e0428a5 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [pipeline_async_diagnostics](#row-15b835a0fb2dac42ac658d0f696e9927aea27d4d6378b6b21fec69dbc6f0be83) | unknown | unknown:c3e15298bdc010a107deb866 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [pipeline_compile_stress](#row-0ec1580bb642a5612b4e9bd2aaaad6cca0dcc54f16fdb634f9893654f4e1f29d) | unknown | unknown:b2c69c465c6d1cb4aaa845e5 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_bundle_dynamic_bindings](#row-dda8b79df39c0937e99b0830d542cf6e21e55489709403ec1ccf91583ada6c05) | unknown | unknown:34e8f8cfd9cf837b41b0c689 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_bundle_dynamic_pipeline_bindings](#row-d39c1ada6b213a25672cb691afad4de7fcba2193618185a682cb7bb35bfb9cd5) | unknown | unknown:3e90dee0eb05f88f50b5eab8 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_bundle_dynamic_pipeline_bindings_200k](#row-adceb0dff417296b5f55ad73947da56f835ed8578f0886c1507340f9fd882c3d) | unknown | unknown:b5b3efc720ad87b1e473fab9 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/12/0/0 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_indexed_200k](#row-9c1217dd65deb36cd325470df2e689f78bdd21a958ed30118f023da25060f370) | unknown | unknown:c5928cb13f1a21f7f8864494 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [render_draw_indexed_baseline](#row-094917d500b38f38b56fc96cd0d07a9c292a8fd0c130358ab56b05cad20efe16) | unknown | unknown:9534749688083f82eaad4ef9 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/12/0/0 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_indexed_indirect_u16](#row-48c331bd1d55ca24ae50d5452cd3cf498448a326e6ea69050308756495096b2c) | unknown | unknown:3c042b99f342f0474f38656f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_indexed_indirect_u32](#row-bebb9b83eb0f98881961b2b0fc162b7d8d05fcaf4c58b5f927f9b5fa587f1f39) | unknown | unknown:88dd70330d0de5ab74648965 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_indirect_legacy_equivalent](#row-c470efabb479e85cee80c00f9fede0b14d2842ec1aaf94074a8f71e944056a72) | unknown | unknown:c0fb7ca9adf435012bc79c9f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/8/0/4 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_redundant_pipeline_bindings](#row-2e04b2c22f00aec92be998bfe272c46e3272eaf9820cf84a19b61d753cd3e917) | unknown | unknown:64e51f99a41825f018fa94d8 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_redundant_pipeline_bindings_200k](#row-e1d9ae46be4f557b7f4f2c5acf658b52f16c1320f54d276fee9fdcdc5885d34e) | unknown | unknown:02612f96c3c5fab0cb659d29 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/12/0/0 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_state_bindings](#row-5ddc57999327fcd59c7d898b5e71b8986767ad8b3eaee099a558cc07ba0171b8) | unknown | unknown:e4595ca67fb893838ff513e5 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_throughput_200k](#row-5adfc680775699b45c32aa499e8774e1cb5ab55cab6a6a0b6b22ba277bc1be54) | unknown | unknown:8eb07001b1395c550eb9ed6d | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/12/0/0 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_draw_throughput_baseline](#row-d7113c7db3d7fc7d798ad84a7bcacccceb74031ea7bdeeb732b9c396e90647b2) | unknown | unknown:2c6ecd81a6e8f25490d2c056 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_multidraw](#row-38e298bee7663feb23dba0899e68d2c5fe6fc9cdac443ced26678f9bd02ca1ae) | unknown | unknown:924041d30ab25469a380435c | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/11/0/1 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_multidraw_indexed](#row-d769ba1ee716c8bf61a1ba1845416e7ef4bb1414280719bf8b28b66c3d3046c4) | unknown | unknown:3437c6dff1c773be9dd2c295 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/11/0/1 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pass_depth_stencil](#row-0eb458ee8a280e25f60f41596d0d7903370c2456212bf907874184646802282d) | unknown | unknown:f44fa7fc9937d9e9483be92c | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pass_dynamic_viewport_scissor](#row-d068563c79c0da3ed5c9b3e319f83fdc93542fb0c18c81dba10fac227c926458) | unknown | unknown:f68ba73787d61cc409c361d7 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pass_loadops_clear_load](#row-c6a19db9e96e807afdfacebf37151c09fb0b89016a9818cd1c37a1fa014c40e2) | unknown | unknown:8c499888e167d7be3ac62b15 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pass_multisample_resolve](#row-9c9ffc6fe3975ffe217f744b52d9977513169d268a7986e03b9bebea30a0e213) | unknown | unknown:396efc1186c317641d4f11e4 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pass_stencil_ref_sweep](#row-f4b7c7a94cdb21c48fbef04be39d859984fe0b9da41b38510929414b5e705414) | unknown | unknown:77e84af437c7f841b96716ba | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pass_storeops_discard](#row-6d9c069608ac6483eade675c9fc6ca9db52841b6ab128095fa71a8b4a6cde888) | unknown | unknown:5b7fcffacf064f5b9e35f77a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pixel_local_storage_barrier](#row-eb9eed92446acaa360b08bcd7f2bc4e733d41ca67679c2186b6b737d305e1be4) | unknown | unknown:eb53039f7cea532bce3555ce | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_pixel_local_storage_barrier_500](#row-0658ed59a2e87f1ae2a5518a2dd6be9ddbda38726e4fdc1ac14e9ed9f3e9a368) | unknown | unknown:cd8f00c6eded2eb24979806a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [render_uniform_buffer_update_writebuffer_partial_single](#row-1132c6d4b1c53e8a18cc45f7582ebe91de1c8450442a9a4e0660b8c22ab77915) | unknown | unknown:d021623d1a83c9bfea8fa514 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_double_request_guard](#row-e5bf2e5c6752b6e8c6b2906d194fbaff5a1520211f9d572d991b9afb2331b852) | unknown | unknown:e974a782e1b84e1668f78729 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_partial_read_4kb](#row-a60bc176a471df6ba6ea99b1e5abdbf89d5d8479229f6d737f47f3ff444ce546) | unknown | unknown:95c1e8626de364856ceb405d | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_partial_write_64kb](#row-a1efe8cd5df72bdc16d1fc9f8fcd96c967a5805df966a32a66e87eca7a22a5dd) | unknown | unknown:ca4b509dba922dd071f93dd1 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_readback_1kb](#row-dfb58fe8008b23ecf5fb3cfc93f314d12330c46e76f9720e6a2d66291abb132f) | unknown | unknown:d18b7d121ce89891ab32fb3c | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_readback_64kb](#row-edf3d1218a1398959f9b6186d0537a7e742ad52ebb6d3263b6dfb64026678fe1) | unknown | unknown:8b8197614b2a2b2c03a94c3d | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_unmap_storm](#row-0a55d62c52fea066d3c98c1b701f11d8db4bc27907a4da06edb077b7ce03189d) | unknown | unknown:f9b4c0f6c127d1a2ad47efc8 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_write_1kb](#row-2cf8b8e8ceb70d0fde416397856b89112576e6cce7a86cb4139812761325035d) | unknown | unknown:db3b3f67d048c68b824355c1 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_buffer_map_write_64kb](#row-7c336fd12883462682969aabc4f68c3967793b81553525a1104d67dd7bf3ce27) | unknown | unknown:16e91f8b442d83c75839046d | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_lifecycle](#row-c48169406568b9045e00bf6c0dd949d453cc1b33b71e175caf1b499c859771e9) | unknown | unknown:c3bd157607af3cb5b9b37800 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_table_immediates](#row-0fe2556ef4281c36b294bf39aa245357cba0bd7ea279f911036ec84c974d85d6) | unknown | unknown:19b5869651c437b16a7c0ef8 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/5/0/7 | succeeded / unknown | execution date, machine identity, comparator build |
+| [resource_table_immediates_500](#row-17942d35971ccdc144e976e6bbb7271bb24b66c3272c28713372a50932b581f9) | unknown | unknown:7565f9246689281d21504e6a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/5/0/7 | succeeded / unknown | execution date, machine identity, comparator build |
+| [surface_full_presentation](#row-aaa0b0f89839a3c7c02e7c714b434f2afe16acf08d15a07546ce2357b1ebb805) | unknown | unknown:ec1aaf4f0d79bbc2b976168a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [surface_presentation](#row-f2fe8c8d81cc40b5dea03359a73cbd094f3fbbdfb8523106427fb44f26ea1728) | unknown | unknown:6023651750b7a4f76a445356 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [texture_sampler_write_query_destroy](#row-95e65851dcae719da8b28cc0931731287ad6431cb687a61bd98f4ca3152e600e) | unknown | unknown:e9eb697890f9daf95e6994d2 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [texture_sampler_write_query_destroy_500](#row-149f60781e6f7b3335c57006cf4991d5b0b8870aac0c5ba334bd6e5830184d6d) | unknown | unknown:6c3905dae43a259e5b1f747c | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/5/0/7 | succeeded / unknown | execution date, machine identity, comparator build |
+| [texture_sampler_write_query_destroy_mip8](#row-5fcb891232c7d9dcffaebd5d257f9ddc53107bf274c891eda71eb90494ecab8c) | unknown | unknown:4f014b5b817a578d08f2fd3a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/4/0/8 | succeeded / unknown | execution date, machine identity, comparator build |
+| [texture_sampling_raster_baseline](#row-6c32e364945bd6b8a298aff1fbd927281bdbe332ffaf3b996bc6c59b36b960e2) | unknown | unknown:9b8afae7bb74e566192a2a94 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_16mb](#row-d3824fb018816bc0f6bce3c2cffa3d5585ebf334fcbb725429f5dfb6f55b906b) | unknown | unknown:7befad6ae746a605cfab4780 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_16mb_staged](#row-4c55f6bb2d678327f6977433dbc34fb09d0b20ea5d7760f0af31780c02156797) | unknown | unknown:bc1de435fa76d80725605799 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/2/0/10 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_1gb](#row-3327c2ccc05aa497b1ab4c0e87ae43925baa54f9b43bf8e68ee11ca492d49b32) | unknown | unknown:b955f3cc84268be1816e503c | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_1gb_staged](#row-09f2c552229ffc515b5f9a1cc1b4d7dd943acd80597063f4017fa152f1abafab) | unknown | unknown:c7af4d48119d4059a89dc526 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_1kb](#row-e1be60cd7b83c6e4cadd7f77ff6c331d4d898bdb83d0ef4364cb55c17f4e1f39) | unknown | unknown:a6967344412555ed917a268d | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/3/0/9 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_1kb_staged](#row-e6fb18530f6530f01515fa2fe4e347ddb7a7bfe207997420d96ac59dc84b3d96) | unknown | unknown:ed1e37c71c8229fb14d36074 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_1mb](#row-ec653335a7ed51c0d2e1e7cc68bc2bd33b97acc95cf45f647758e4a940f128d9) | unknown | unknown:2c4de4cef788296c30fdf5d2 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_1mb_staged](#row-3a12cacd3e9c6d2bc7b835ea138190f39e978f41b83d99432028b1e1dd6b8afe) | unknown | unknown:8893d58c7c9a7eba5ae0025d | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_256mb](#row-7383d8e86bc269941b1c2771baf0e7cb458346fa28d14b6a09b578912dfa2dd2) | unknown | unknown:b8888a6c0f0388ad2bb9af2b | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/1/0/11 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_256mb_staged](#row-5d553c8aa9342edde269b73849f81fefaa566731aed2f2f4c202125e0d87d1a4) | unknown | unknown:f0ba8c26bb3cc2fb0e4fce8f | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/12 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_4gb](#row-f3e7708433ed731b695533d968e081ddf5ad58e593eeb1e3d155faa3d220b96c) | unknown | unknown:12e57dbe2c9b9734a072ae36 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_4gb_staged](#row-de8403f854200574029b4f7d64bc57c71853d9cd5a7119cfe0aee6f97c41e4fd) | unknown | unknown:c91e41786288456f1e0406a3 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/0/0/0 | failed / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_4mb](#row-4de697ba297540156d1560f5393c535144280b081697de040ace4f0fbe005b5e) | unknown | unknown:3d07d9c37e44370f8d95e481 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/8/0/4 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_4mb_staged](#row-44e901de26e2c2b342f78987d6265fe8bd3a71c8a9ab0c226c8132d56cb3f295) | unknown | unknown:979bc1e222a1286034db1643 | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/9/0/3 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_64kb](#row-976139ea17f98e6d93812552177cbbec7b9dd206cad7b7c13ea76c06bef4b4fa) | unknown | unknown:baa378c2af095dae71c5c21a | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/5/0/7 | succeeded / unknown | execution date, machine identity, comparator build |
+| [upload_write_buffer_64kb_staged](#row-3114679a222e2039cfaa03fe9ba7631cf4b9f548d987fd33f0ecb195b2242270) | unknown | unknown:047028a7510a252a1cb097be | doe 6258de498566/308f7fc32aae vs dawn unknown/dcc7af755828 | 0/7/0/5 | succeeded / unknown | execution date, machine identity, comparator build |
+
+## Complete records
 
 <a id="row-95480320ce2cde59dfb3e706939cebe71578442dc0f66a659e8f5b6c39553f87"></a>
 
-## capability_introspection
+<details>
+<summary>capability_introspection — unknown; diagnostic; 12 metrics</summary>
 
-Observation: `95480320ce2cde59dfb3e706939cebe71578442dc0f66a659e8f5b6c39553f87`; execution: `catalog-d3d12-be4d0f6d1d7730/capability_introspection/summary`.
+Record `95480320ce2cde59dfb3e706939cebe71578442dc0f66a659e8f5b6c39553f87` · execution `catalog-d3d12-be4d0f6d1d7730/capability_introspection/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:b205b249c3b54a6d309fb294; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:b205b249c3b54a6d309fb294; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 0.3193 / 0.0272 | ms | 11.518 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [11.374558303886925, 11.908088235294118], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 0.3249 / 0.0358 | ms | 8.8827 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [8.749318801089917, 9.256410256410257], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 179.24 / 169.01 | ms | 1.0675 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0528909046159196, 1.0795833952118732], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.2939 / 0.005 | ms | 59.34 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [55.79245283018868, 62.53191489361702], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.2949 / 0.0059 | ms | 50.475 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [46.34374999999999, 52.607142857142854], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 179.21 / 168.98 | ms | 1.0676 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0528641996197674, 1.0795943294173902], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 85.938 / 93.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.1538461538461537], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 56.832 / 51.117 | MiB | 1.1123 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1111790326277986, 1.1157926875811006], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 0.3193 / 0.0272 | ms | 11.518 | 95% [11.375, 11.908] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 0.3249 / 0.0358 | ms | 8.8827 | 95% [8.7493, 9.2564] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 179.24 / 169.01 | ms | 1.0675 | 95% [1.0529, 1.0796] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.2939 / 0.005 | ms | 59.34 | 95% [55.792, 62.532] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.2949 / 0.0059 | ms | 50.475 | 95% [46.344, 52.607] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 179.21 / 168.98 | ms | 1.0676 | 95% [1.0529, 1.0796] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 85.938 / 93.75 | ms | 1 | 95% [0.83333, 1.1538] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 56.832 / 51.117 | MiB | 1.1123 | 95% [1.1112, 1.1158] ratio | 11/11 observations | loss | reported aggregate |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-6c693e7f58ef6f539dbee3e6cbdf51a2752faff13a96af2148a5a9915a5be105"></a>
 
-## capability_introspection_500
+<details>
+<summary>capability_introspection_500 — unknown; diagnostic; 12 metrics</summary>
 
-Observation: `6c693e7f58ef6f539dbee3e6cbdf51a2752faff13a96af2148a5a9915a5be105`; execution: `catalog-d3d12-be4d0f6d1d7730/capability_introspection_500/summary`.
+Record `6c693e7f58ef6f539dbee3e6cbdf51a2752faff13a96af2148a5a9915a5be105` · execution `catalog-d3d12-be4d0f6d1d7730/capability_introspection_500/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:2df819ae999f2926a0212847; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:2df819ae999f2926a0212847; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 144.19 / 0.7109 | ms | 202.41 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [199.67961436356015, 205.1120897854809], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 144.19 / 0.72 | ms | 199.77 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [197.20712018766386, 202.7315360853693], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 321.25 / 167.32 | ms | 1.92 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8843843939748495, 1.9247071809725638], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 144.2 / 0.693 | ms | 208.47 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [205.83915480810697, 209.3775554588952], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 144.2 / 0.6939 | ms | 208.14 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [205.4880183670541, 209.07861589691615], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 321.54 / 167.29 | ms | 1.9219 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.884766017447499, 1.9236510534413929], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 234.38 / 93.75 | ms | 2.4167 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.142857142857143, 3.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 56.824 / 51.102 | MiB | 1.1118 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1110686731342143, 1.1164195077205321], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 144.19 / 0.7109 | ms | 202.41 | 95% [199.68, 205.11] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 144.19 / 0.72 | ms | 199.77 | 95% [197.21, 202.73] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 321.25 / 167.32 | ms | 1.92 | 95% [1.8844, 1.9247] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 144.2 / 0.693 | ms | 208.47 | 95% [205.84, 209.38] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 144.2 / 0.6939 | ms | 208.14 | 95% [205.49, 209.08] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 321.54 / 167.29 | ms | 1.9219 | 95% [1.8848, 1.9237] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 234.38 / 93.75 | ms | 2.4167 | 95% [2.1429, 3] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 56.824 / 51.102 | MiB | 1.1118 | 95% [1.1111, 1.1164] ratio | 7/7 observations | loss | reported aggregate |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-07591730b95b2f5a28cc758bd2ea54b091daaa8c76fc4e54462155b215fd2a1b"></a>
 
-## compilation_complex_attention_decode_msl
+<details>
+<summary>compilation_complex_attention_decode_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `07591730b95b2f5a28cc758bd2ea54b091daaa8c76fc4e54462155b215fd2a1b`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_complex_attention_decode_msl/summary`.
+Record `07591730b95b2f5a28cc758bd2ea54b091daaa8c76fc4e54462155b215fd2a1b` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_complex_attention_decode_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:460b4512635eaeccd433cb88; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:460b4512635eaeccd433cb88; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-895c22bc079510bf5f830b748dd79b1bfdf76dc52004dcb332c49227ddd98951"></a>
 
-## compilation_complex_fused_gemv_dequant_msl
+<details>
+<summary>compilation_complex_fused_gemv_dequant_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `895c22bc079510bf5f830b748dd79b1bfdf76dc52004dcb332c49227ddd98951`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_complex_fused_gemv_dequant_msl/summary`.
+Record `895c22bc079510bf5f830b748dd79b1bfdf76dc52004dcb332c49227ddd98951` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_complex_fused_gemv_dequant_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:2247b0b5389bca601b082d72; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:2247b0b5389bca601b082d72; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-f12430a77151cb51d48084e74f488d698b2d11f82266e5c6fe77a17f340fe628"></a>
 
-## compilation_complex_matmul_tiled_msl
+<details>
+<summary>compilation_complex_matmul_tiled_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `f12430a77151cb51d48084e74f488d698b2d11f82266e5c6fe77a17f340fe628`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_complex_matmul_tiled_msl/summary`.
+Record `f12430a77151cb51d48084e74f488d698b2d11f82266e5c6fe77a17f340fe628` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_complex_matmul_tiled_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:0426fe26a3e1bf9060593547; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:0426fe26a3e1bf9060593547; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-1fbfe988b94e6a284258de3b9edf66bebc0a8e9762f8e60ec88c58dc0ba06487"></a>
 
-## compilation_complex_multi_entry_msl
+<details>
+<summary>compilation_complex_multi_entry_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `1fbfe988b94e6a284258de3b9edf66bebc0a8e9762f8e60ec88c58dc0ba06487`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_complex_multi_entry_msl/summary`.
+Record `1fbfe988b94e6a284258de3b9edf66bebc0a8e9762f8e60ec88c58dc0ba06487` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_complex_multi_entry_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:0aa6d4f0c6d8b03f8f8e00a6; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:0aa6d4f0c6d8b03f8f8e00a6; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-d2d85dceac3eb3d22e0cbf8e805e564298a5e88cadab039cf4704f549bc55cf7"></a>
 
-## compilation_inference_attention_decode_msl
+<details>
+<summary>compilation_inference_attention_decode_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `d2d85dceac3eb3d22e0cbf8e805e564298a5e88cadab039cf4704f549bc55cf7`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_attention_decode_msl/summary`.
+Record `d2d85dceac3eb3d22e0cbf8e805e564298a5e88cadab039cf4704f549bc55cf7` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_attention_decode_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:06d5a55d8fd0903da53bd5cc; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:06d5a55d8fd0903da53bd5cc; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-bdee2578792d163fbc5eb63be62cbfc35419ca818af6f64ac36a6151ff64fa8a"></a>
 
-## compilation_inference_attention_prefill_msl
+<details>
+<summary>compilation_inference_attention_prefill_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `bdee2578792d163fbc5eb63be62cbfc35419ca818af6f64ac36a6151ff64fa8a`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_attention_prefill_msl/summary`.
+Record `bdee2578792d163fbc5eb63be62cbfc35419ca818af6f64ac36a6151ff64fa8a` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_attention_prefill_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:57071e3ea9f908a021ee47ae; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:57071e3ea9f908a021ee47ae; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-427c25797eddb04ea0cb614ce897bf904824447736ecb48459a39e48dd9981be"></a>
 
-## compilation_inference_gather_msl
+<details>
+<summary>compilation_inference_gather_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `427c25797eddb04ea0cb614ce897bf904824447736ecb48459a39e48dd9981be`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_gather_msl/summary`.
+Record `427c25797eddb04ea0cb614ce897bf904824447736ecb48459a39e48dd9981be` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_gather_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:78cea2c1e28709fa2923801c; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:78cea2c1e28709fa2923801c; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-72c96f90c52ba202ffa5de76d16ef16f81507ff427e2615e8db702f0f3c46e73"></a>
 
-## compilation_inference_gelu_msl
+<details>
+<summary>compilation_inference_gelu_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `72c96f90c52ba202ffa5de76d16ef16f81507ff427e2615e8db702f0f3c46e73`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_gelu_msl/summary`.
+Record `72c96f90c52ba202ffa5de76d16ef16f81507ff427e2615e8db702f0f3c46e73` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_gelu_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:aee21c94c8d0a11ef75251e9; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:aee21c94c8d0a11ef75251e9; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-c198bef90d796b8c301e9ae86dcf82196672ca7b61354424c5671f6903279da1"></a>
 
-## compilation_inference_matmul_gemv_msl
+<details>
+<summary>compilation_inference_matmul_gemv_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `c198bef90d796b8c301e9ae86dcf82196672ca7b61354424c5671f6903279da1`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_matmul_gemv_msl/summary`.
+Record `c198bef90d796b8c301e9ae86dcf82196672ca7b61354424c5671f6903279da1` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_matmul_gemv_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:c7b4c82eed5f1b717cd0a863; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:c7b4c82eed5f1b717cd0a863; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-95b598c4b9dd6262cfe76147ec91b8d6a962f6784ad87585948a1168526943ae"></a>
 
-## compilation_inference_matmul_tiled_msl
+<details>
+<summary>compilation_inference_matmul_tiled_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `95b598c4b9dd6262cfe76147ec91b8d6a962f6784ad87585948a1168526943ae`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_matmul_tiled_msl/summary`.
+Record `95b598c4b9dd6262cfe76147ec91b8d6a962f6784ad87585948a1168526943ae` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_matmul_tiled_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:a45f6667ea5e6f639a8acb74; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:a45f6667ea5e6f639a8acb74; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-0b11169de095fd6519567691c2b0c692dbb51abfa437bbe697005f02faa86b3a"></a>
 
-## compilation_inference_residual_msl
+<details>
+<summary>compilation_inference_residual_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `0b11169de095fd6519567691c2b0c692dbb51abfa437bbe697005f02faa86b3a`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_residual_msl/summary`.
+Record `0b11169de095fd6519567691c2b0c692dbb51abfa437bbe697005f02faa86b3a` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_residual_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:5d0bfff3b832a79f1e687f39; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:5d0bfff3b832a79f1e687f39; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-3845c07742709d00e2680a36cccad0d7f93369a2b470562602fb6bc9ee9aeaf5"></a>
 
-## compilation_inference_rmsnorm_msl
+<details>
+<summary>compilation_inference_rmsnorm_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `3845c07742709d00e2680a36cccad0d7f93369a2b470562602fb6bc9ee9aeaf5`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_rmsnorm_msl/summary`.
+Record `3845c07742709d00e2680a36cccad0d7f93369a2b470562602fb6bc9ee9aeaf5` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_rmsnorm_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:640932000318f0afa67c8f6e; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:640932000318f0afa67c8f6e; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-d4d53a8c48603ffb4954140d9bb51e78525850f37359029f04a37c90f0a359f2"></a>
 
-## compilation_inference_rope_msl
+<details>
+<summary>compilation_inference_rope_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `d4d53a8c48603ffb4954140d9bb51e78525850f37359029f04a37c90f0a359f2`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_rope_msl/summary`.
+Record `d4d53a8c48603ffb4954140d9bb51e78525850f37359029f04a37c90f0a359f2` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_rope_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:b60c57fe92177fbcef2464cb; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:b60c57fe92177fbcef2464cb; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-d6d542fe2e236fb316d1bfe9378ee5487f2121bd7d1ddeca14b5b39088527bd0"></a>
 
-## compilation_inference_sample_msl
+<details>
+<summary>compilation_inference_sample_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `d6d542fe2e236fb316d1bfe9378ee5487f2121bd7d1ddeca14b5b39088527bd0`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_inference_sample_msl/summary`.
+Record `d6d542fe2e236fb316d1bfe9378ee5487f2121bd7d1ddeca14b5b39088527bd0` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_inference_sample_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:39fa932add0b5988b84bbe74; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:39fa932add0b5988b84bbe74; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-2dafcc36cea7cf67093fbbc5183108cb4d7257dd8fbed76390b2d3f41e4dc266"></a>
 
-## compilation_moderate_gelu_msl
+<details>
+<summary>compilation_moderate_gelu_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `2dafcc36cea7cf67093fbbc5183108cb4d7257dd8fbed76390b2d3f41e4dc266`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_gelu_msl/summary`.
+Record `2dafcc36cea7cf67093fbbc5183108cb4d7257dd8fbed76390b2d3f41e4dc266` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_gelu_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:0de9d647f38320f069d3a5e5; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:0de9d647f38320f069d3a5e5; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-1a112cbcb88bca1f6c9282b20ef0bfcecb09117e5fc82c3ee9a6bc011de5e5e2"></a>
 
-## compilation_moderate_layernorm_msl
+<details>
+<summary>compilation_moderate_layernorm_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `1a112cbcb88bca1f6c9282b20ef0bfcecb09117e5fc82c3ee9a6bc011de5e5e2`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_layernorm_msl/summary`.
+Record `1a112cbcb88bca1f6c9282b20ef0bfcecb09117e5fc82c3ee9a6bc011de5e5e2` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_layernorm_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:661208ee3e51260e6206e6ec; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:661208ee3e51260e6206e6ec; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-47a53fe61593d6e6c7cbfc2ce1b0ff7e1d87e50e07c3dc3a093d46828f1fe302"></a>
 
-## compilation_moderate_matmul_naive_msl
+<details>
+<summary>compilation_moderate_matmul_naive_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `47a53fe61593d6e6c7cbfc2ce1b0ff7e1d87e50e07c3dc3a093d46828f1fe302`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_matmul_naive_msl/summary`.
+Record `47a53fe61593d6e6c7cbfc2ce1b0ff7e1d87e50e07c3dc3a093d46828f1fe302` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_matmul_naive_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:6983f5eed92c81668f49b4f6; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:6983f5eed92c81668f49b4f6; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-11be6b4ded323845b4fc330409344e0c88bcb57d8e3b92086dcef9689ae92b32"></a>
 
-## compilation_moderate_rmsnorm_msl
+<details>
+<summary>compilation_moderate_rmsnorm_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `11be6b4ded323845b4fc330409344e0c88bcb57d8e3b92086dcef9689ae92b32`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_rmsnorm_msl/summary`.
+Record `11be6b4ded323845b4fc330409344e0c88bcb57d8e3b92086dcef9689ae92b32` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_rmsnorm_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:19f5e0ab771fbfafa3b36a9f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:19f5e0ab771fbfafa3b36a9f; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-daa741e05fbd2c5e207ac75d4d949f00c1fb989a23f1b4389e2cc7ab1c0be227"></a>
 
-## compilation_moderate_rope_msl
+<details>
+<summary>compilation_moderate_rope_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `daa741e05fbd2c5e207ac75d4d949f00c1fb989a23f1b4389e2cc7ab1c0be227`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_rope_msl/summary`.
+Record `daa741e05fbd2c5e207ac75d4d949f00c1fb989a23f1b4389e2cc7ab1c0be227` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_rope_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:d5d2b723d9ecc5d51da9c326; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:d5d2b723d9ecc5d51da9c326; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-93d1c3829d8ca8a25872b5fe9b391c599b73f7886ce74576be88fe5c17e39aed"></a>
 
-## compilation_moderate_softmax_msl
+<details>
+<summary>compilation_moderate_softmax_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `93d1c3829d8ca8a25872b5fe9b391c599b73f7886ce74576be88fe5c17e39aed`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_softmax_msl/summary`.
+Record `93d1c3829d8ca8a25872b5fe9b391c599b73f7886ce74576be88fe5c17e39aed` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_moderate_softmax_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:b40e60c9402216f0a5846554; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:b40e60c9402216f0a5846554; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-149d6ddd8134050a7978727719fc270b237435e2e7e5bacf3fc1e5785de4a625"></a>
 
-## compilation_simple_relu_msl
+<details>
+<summary>compilation_simple_relu_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `149d6ddd8134050a7978727719fc270b237435e2e7e5bacf3fc1e5785de4a625`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_simple_relu_msl/summary`.
+Record `149d6ddd8134050a7978727719fc270b237435e2e7e5bacf3fc1e5785de4a625` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_simple_relu_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:a2ab39758d0b549166549431; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:a2ab39758d0b549166549431; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-8572b5015d4f125f42d2cf8e416f09dfe3aa9b71db706d42bc74af0fe48d3955"></a>
 
-## compilation_simple_residual_add_msl
+<details>
+<summary>compilation_simple_residual_add_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `8572b5015d4f125f42d2cf8e416f09dfe3aa9b71db706d42bc74af0fe48d3955`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_simple_residual_add_msl/summary`.
+Record `8572b5015d4f125f42d2cf8e416f09dfe3aa9b71db706d42bc74af0fe48d3955` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_simple_residual_add_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:31e8db5cf8fced15577a0753; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:31e8db5cf8fced15577a0753; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-7b5abd8a1cefc5da8266065fa33dd864cea37d394430b13b2fa8bb195c3185bf"></a>
 
-## compilation_simple_scale_f32_msl
+<details>
+<summary>compilation_simple_scale_f32_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `7b5abd8a1cefc5da8266065fa33dd864cea37d394430b13b2fa8bb195c3185bf`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_simple_scale_f32_msl/summary`.
+Record `7b5abd8a1cefc5da8266065fa33dd864cea37d394430b13b2fa8bb195c3185bf` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_simple_scale_f32_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:00d50c0878a765eb1fff6fa3; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:00d50c0878a765eb1fff6fa3; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-abd4462d3a9f0f1927f4299538192a2b49ef0742cbf15cfa308d24fbe7480c4c"></a>
 
-## compilation_simple_silu_msl
+<details>
+<summary>compilation_simple_silu_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `abd4462d3a9f0f1927f4299538192a2b49ef0742cbf15cfa308d24fbe7480c4c`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_simple_silu_msl/summary`.
+Record `abd4462d3a9f0f1927f4299538192a2b49ef0742cbf15cfa308d24fbe7480c4c` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_simple_silu_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:349a587afe4f58b6f91837c6; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:349a587afe4f58b6f91837c6; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-09731494cc6f151adc70101eb383a904713ae6c955a010537d90cacb47530e76"></a>
 
-## compilation_stress_many_bindings_msl
+<details>
+<summary>compilation_stress_many_bindings_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `09731494cc6f151adc70101eb383a904713ae6c955a010537d90cacb47530e76`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_stress_many_bindings_msl/summary`.
+Record `09731494cc6f151adc70101eb383a904713ae6c955a010537d90cacb47530e76` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_stress_many_bindings_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:b40023676b523e9c57c84154; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:b40023676b523e9c57c84154; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-5cbe605e2ba91e47a9ea4e8c4f8f7c9f985e82cff3fd0be1624aa5ca115ba95f"></a>
 
-## compilation_trivial_noop_compute_msl
+<details>
+<summary>compilation_trivial_noop_compute_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `5cbe605e2ba91e47a9ea4e8c4f8f7c9f985e82cff3fd0be1624aa5ca115ba95f`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_trivial_noop_compute_msl/summary`.
+Record `5cbe605e2ba91e47a9ea4e8c4f8f7c9f985e82cff3fd0be1624aa5ca115ba95f` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_trivial_noop_compute_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:f4a08f4509262004f0609a22; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:f4a08f4509262004f0609a22; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
+</details>
 
 <a id="row-015ed12a4586099103063f90a7e87a3ade070bef69d93e325ba82e3ce16c87f5"></a>
 
-## compilation_trivial_passthrough_vertex_msl
+<details>
+<summary>compilation_trivial_passthrough_vertex_msl — unknown; failed-or-uncompared; 0 metrics</summary>
 
-Observation: `015ed12a4586099103063f90a7e87a3ade070bef69d93e325ba82e3ce16c87f5`; execution: `catalog-d3d12-be4d0f6d1d7730/compilation_trivial_passthrough_vertex_msl/summary`.
+Record `015ed12a4586099103063f90a7e87a3ade070bef69d93e325ba82e3ce16c87f5` · execution `catalog-d3d12-be4d0f6d1d7730/compilation_trivial_passthrough_vertex_msl/summary` · campaign `reports/benchmarks/catalog-20261101`.
 
-Machine: unknown:98787e87f4b538f3945e108f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
+Machine: unknown:98787e87f4b538f3945e108f; win32/d3d12; GPU unknown; driver unknown.
 
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
 
 Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
+</details>
+
+<a id="row-40a5a9be299e360b492c658680c80ad7b92649403454a3dc878018b76b609ef2"></a>
+
+<details>
+<summary>compute_concurrent_execution_single — unknown; diagnostic; 12 metrics</summary>
+
+Record `40a5a9be299e360b492c658680c80ad7b92649403454a3dc878018b76b609ef2` · execution `catalog-d3d12-be4d0f6d1d7730/compute_concurrent_execution_single/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b396f0f998a9c327fefe62d8; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 220.41 / 19.442 | ms | 11.299 | 95% [11.202, 11.389] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0062 / 11.491 | ms | 0.00054096 | 95% [0.0004136, 0.00098444] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 63.377 / 84.868 | ms | 0.74537 | 95% [0.63968, 0.78981] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 282.69 / 115.81 | ms | 2.4582 | 95% [2.1134, 2.5557] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 462.1 / 282.66 | ms | 1.6433 | 95% [1.5259, 1.6732] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 0.286 / 0.3121 | ms | 0.87332 | 95% [0.71715, 0.95813] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0051 / 0.0372 | ms | 0.11765 | 95% [0.10609, 0.14286] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 60.707 / 78.953 | ms | 0.76889 | 95% [0.65098, 0.80725] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 60.935 / 79.334 | ms | 0.76869 | 95% [0.65086, 0.80649] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 239.61 / 252.11 | ms | 0.9464 | 95% [0.92864, 0.97166] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 210.94 / 109.38 | ms | 1.9231 | 95% [1.75, 2.0769] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 62.652 / 65.637 | MiB | 0.9547 | 95% [0.95281, 0.95774] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-1beeaaaf249632afcb0b9f55bb9fa86554d40d74bb8560e08e7a0d38f3fed233"></a>
+
+<details>
+<summary>compute_dispatch_fallback — unknown; diagnostic; 12 metrics</summary>
+
+Record `1beeaaaf249632afcb0b9f55bb9fa86554d40d74bb8560e08e7a0d38f3fed233` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_fallback/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:56a2b03ef5ea213f29e1be59; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.6309 / 3.911 | ms | 1.1941 | 95% [1.1229, 1.2006] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0045 / 11.695 | ms | 0.0003834 | 95% [0.0003463, 0.00056219] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.076 / 27.051 | ms | 0.076744 | 95% [0.052509, 0.10297] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 6.6541 / 42.525 | ms | 0.15796 | 95% [0.14661, 0.19743] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 184.67 / 210.88 | ms | 0.87019 | 95% [0.85776, 0.90612] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.1663 / 0.2628 | ms | 0.64147 | 95% [0.62801, 0.66857] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0026 / 0.0373 | ms | 0.07013 | 95% [0.060465, 0.074586] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.2402 / 31.814 | ms | 0.0072692 | 95% [0.006887, 0.0081277] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.4211 / 32.108 | ms | 0.012601 | 95% [0.012114, 0.013265] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 178.24 / 200.9 | ms | 0.88974 | 95% [0.8756, 0.90737] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 101.56 | ms | 1.0769 | 95% [0.92308, 1.1538] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.113 / 65.441 | MiB | 0.97935 | 95% [0.97881, 0.98016] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-32f29f002473e316e05e2c2c8fa0c73c7d303a5b83179cf3726cae0d8634e988"></a>
+
+<details>
+<summary>compute_dispatch_grid — unknown; diagnostic; 12 metrics</summary>
+
+Record `32f29f002473e316e05e2c2c8fa0c73c7d303a5b83179cf3726cae0d8634e988` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_grid/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:747222fb8b7780dcec96a32a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.7369 / 4.1547 | ms | 1.1459 | 95% [1.0432, 1.1654] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0073 / 11.82 | ms | 0.00061867 | 95% [0.00054171, 0.00064527] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.3775 / 67.386 | ms | 0.038014 | 95% [0.034497, 0.044446] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 7.1296 / 83.184 | ms | 0.087182 | 95% [0.084485, 0.097875] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 183.61 / 249.3 | ms | 0.74208 | 95% [0.71464, 0.7782] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.2693 / 0.4806 | ms | 0.54661 | 95% [0.49597, 0.59096] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0048 / 0.0747 | ms | 0.066934 | 95% [0.058394, 0.070444] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4556 / 74.759 | ms | 0.0070535 | 95% [0.0060942, 0.0077695] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.7341 / 75.527 | ms | 0.011465 | 95% [0.0097197, 0.011956] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 176.98 / 242.5 | ms | 0.74067 | 95% [0.71699, 0.76979] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 101.56 | ms | 1 | 95% [1, 1.1538] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.094 / 65.414 | MiB | 0.97981 | 95% [0.9794, 0.98071] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-1fd44297218dea46c0be568a3ec71dd9857ea856aaf5c6d6a1bbc9b20a3e8673"></a>
+
+<details>
+<summary>compute_dispatch_indirect_large_args — unknown; diagnostic; 12 metrics</summary>
+
+Record `1fd44297218dea46c0be568a3ec71dd9857ea856aaf5c6d6a1bbc9b20a3e8673` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_indirect_large_args/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:4f8795f8534515f2bc31090f; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.1953 / 4.2607 | ms | 0.96021 | 95% [0.94277, 1.034] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 5.1552 / 15.865 | ms | 0.32727 | 95% [0.31902, 0.34354] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.5254 / 30.399 | ms | 0.086668 | 95% [0.068232, 0.099778] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 12.004 / 51.644 | ms | 0.2464 | 95% [0.20167, 0.28443] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 191.71 / 220.71 | ms | 0.85974 | 95% [0.83166, 0.88375] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.2059 / 0.2733 | ms | 0.76606 | 95% [0.73579, 0.77958] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0034 / 0.0455 | ms | 0.081633 | 95% [0.071274, 0.099502] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.3085 / 32.942 | ms | 0.0085276 | 95% [0.0069933, 0.0097656] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.5213 / 33.281 | ms | 0.014997 | 95% [0.011734, 0.016169] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.61 / 205.16 | ms | 0.87711 | 95% [0.81971, 0.89629] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 109.38 / 101.56 | ms | 1.0769 | 95% [0.78571, 1.1667] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 63.656 / 65.613 | MiB | 0.96999 | 95% [0.96934, 0.97056] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-5f5dc5ad725e46f034fce4241c645bdc15474062cab620af1a4a5fb0d4c11ad3"></a>
+
+<details>
+<summary>compute_dispatch_indirect_live_args — unknown; diagnostic; 12 metrics</summary>
+
+Record `5f5dc5ad725e46f034fce4241c645bdc15474062cab620af1a4a5fb0d4c11ad3` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_indirect_live_args/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:1556ebb5e85587be0a4d4cba; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.8571 / 4.5342 | ms | 1.0762 | 95% [1.0041, 1.0814] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 5.0942 / 15.895 | ms | 0.32114 | 95% [0.31693, 0.32544] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.8021 / 63.849 | ms | 0.044934 | 95% [0.038939, 0.050381] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 12.8 / 84.575 | ms | 0.15291 | 95% [0.13905, 0.16763] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 190.18 / 251.96 | ms | 0.75761 | 95% [0.72869, 0.79785] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.2908 / 0.5126 | ms | 0.5933 | 95% [0.56902, 0.62837] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0057 / 0.0803 | ms | 0.06752 | 95% [0.057613, 0.086895] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4966 / 63.511 | ms | 0.0076203 | 95% [0.0060888, 0.0082944] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.7939 / 64.088 | ms | 0.012388 | 95% [0.010185, 0.012957] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 178.24 / 232.36 | ms | 0.75332 | 95% [0.72417, 0.78003] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1 | 95% [0.8125, 1.0909] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 63.68 / 65.609 | MiB | 0.97037 | 95% [0.97018, 0.97111] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-0caeff2165a2fccff7a3c8b2b51298db57c576ac3b748f811f7ec307b21495bb"></a>
+
+<details>
+<summary>compute_dispatch_indirect_single — unknown; diagnostic; 12 metrics</summary>
+
+Record `0caeff2165a2fccff7a3c8b2b51298db57c576ac3b748f811f7ec307b21495bb` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_indirect_single/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:84744b1c618006e72355c310; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.4052 / 4.4917 | ms | 0.96154 | 95% [0.87462, 1.0567] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 5.1438 / 16.05 | ms | 0.31879 | 95% [0.3169, 0.32697] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.4387 / 26.864 | ms | 0.090778 | 95% [0.081922, 0.10174] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 11.999 / 47.106 | ms | 0.25084 | 95% [0.23748, 0.26957] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 190.65 / 216.19 | ms | 0.87613 | 95% [0.87243, 0.89571] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.2027 / 0.2699 | ms | 0.74707 | 95% [0.73498, 0.76987] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0036 / 0.0443 | ms | 0.077419 | 95% [0.071161, 0.085779] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.2971 / 32.729 | ms | 0.0082465 | 95% [0.0068887, 0.0092732] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.5073 / 33.045 | ms | 0.014556 | 95% [0.011307, 0.015429] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.28 / 201.98 | ms | 0.88382 | 95% [0.84113, 0.89428] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 101.56 | ms | 1 | 95% [0.92308, 1.0769] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 63.648 / 65.613 | MiB | 0.97005 | 95% [0.96916, 0.97088] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-fbb34b530ad8fe60e6e2d1d64486b3d5b52dbc2b438ac0b6f6023a5520a1599e"></a>
+
+<details>
+<summary>compute_dispatch_workgroups_2d_sweep — unknown; diagnostic; 12 metrics</summary>
+
+Record `fbb34b530ad8fe60e6e2d1d64486b3d5b52dbc2b438ac0b6f6023a5520a1599e` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_workgroups_2d_sweep/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:3f72b2e936b219a5a9f65dab; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.1639 / 4.3804 | ms | 0.95539 | 95% [0.88549, 1.0479] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0098 / 11.728 | ms | 0.00082407 | 95% [0.00078078, 0.00090099] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.62 / 91.796 | ms | 0.02797 | 95% [0.024936, 0.031538] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 6.6905 / 108.07 | ms | 0.061573 | 95% [0.059998, 0.06761] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 184.63 / 277.45 | ms | 0.66435 | 95% [0.64679, 0.69116] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.3942 / 0.7454 | ms | 0.52889 | 95% [0.5123, 0.56946] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0075 / 0.1029 | ms | 0.072674 | 95% [0.066845, 0.079079] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.6624 / 107.53 | ms | 0.0062337 | 95% [0.0060037, 0.0070529] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 1.0815 / 108.34 | ms | 0.009897 | 95% [0.0097617, 0.010784] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.12 / 276.82 | ms | 0.64432 | 95% [0.63108, 0.65541] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 101.56 | ms | 1 | 95% [0.83333, 1.0769] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.117 / 65.43 | MiB | 0.97988 | 95% [0.97952, 0.98107] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-81888cd319d6af4ccaadb709f68629567429f34566b92dc47e162d9babc86a4f"></a>
+
+<details>
+<summary>compute_dispatch_workgroups_3d_sweep — unknown; diagnostic; 12 metrics</summary>
+
+Record `81888cd319d6af4ccaadb709f68629567429f34566b92dc47e162d9babc86a4f` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_workgroups_3d_sweep/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b05cd7842d97660505382ec4; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.5464 / 4.2358 | ms | 0.99756 | 95% [0.94853, 1.1237] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0096 / 11.831 | ms | 0.00081099 | 95% [0.00076602, 0.001041] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.5714 / 98.234 | ms | 0.026873 | 95% [0.023847, 0.02869] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 7.0816 / 114.43 | ms | 0.061549 | 95% [0.05855, 0.065231] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 184.55 / 284.91 | ms | 0.65344 | 95% [0.64983, 0.65909] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.4005 / 0.7142 | ms | 0.56077 | 95% [0.53106, 0.62397] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0077 / 0.1272 | ms | 0.062893 | 95% [0.053509, 0.075049] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.6636 / 106.24 | ms | 0.0071815 | 95% [0.0061869, 0.0073538] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 1.0734 / 107.12 | ms | 0.011075 | 95% [0.0099128, 0.011471] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 178.99 / 273.22 | ms | 0.65876 | 95% [0.64035, 0.67035] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 109.38 | ms | 1.0714 | 95% [0.78571, 1.0833] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.094 / 65.426 | MiB | 0.97939 | 95% [0.97832, 0.98013] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-c7110c819ddec081b9a0d72d34887d37badbccb4bbb87520579498e76e5b5046"></a>
+
+<details>
+<summary>compute_dispatch_workgroups_indirect_pipeline_switch — unknown; diagnostic; 12 metrics</summary>
+
+Record `c7110c819ddec081b9a0d72d34887d37badbccb4bbb87520579498e76e5b5046` · execution `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_workgroups_indirect_pipeline_switch/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:55acdbf78f665a88c1150aaa; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.6143 / 4.6707 | ms | 0.98688 | 95% [0.89714, 1.0353] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 5.0787 / 15.949 | ms | 0.3186 | 95% [0.31694, 0.32288] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.7406 / 57.292 | ms | 0.046099 | 95% [0.041752, 0.050353] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 12.443 / 80.428 | ms | 0.15158 | 95% [0.1344, 0.16368] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 188.65 / 250.8 | ms | 0.74621 | 95% [0.71694, 0.77961] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.2871 / 0.496 | ms | 0.59133 | 95% [0.49588, 0.60353] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0055 / 0.0836 | ms | 0.067669 | 95% [0.060639, 0.069886] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4616 / 75.096 | ms | 0.0067933 | 95% [0.0063912, 0.0069685] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.7684 / 75.725 | ms | 0.010596 | 95% [0.0099999, 0.011329] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.1 / 244.95 | ms | 0.73422 | 95% [0.72237, 0.76427] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 101.56 | ms | 1.0833 | 95% [1, 1.1538] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 63.578 / 65.629 | MiB | 0.96869 | 95% [0.96851, 0.97012] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-8a5ef793487054ba713aa6ae8bc76c0ed6b6d9215bad38317de5199ee640ae7e"></a>
+
+<details>
+<summary>compute_indirect_timestamp — unknown; diagnostic; 12 metrics</summary>
+
+Record `8a5ef793487054ba713aa6ae8bc76c0ed6b6d9215bad38317de5199ee640ae7e` · execution `catalog-d3d12-be4d0f6d1d7730/compute_indirect_timestamp/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:8582276756781c0be8bc8b06; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.6076 / 4.128 | ms | 1.1052 | 95% [0.98093, 1.1733] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.067 / 11.709 | ms | 0.005725 | 95% [0.0053518, 0.0061773] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.0647 / 20.158 | ms | 0.10572 | 95% [0.084557, 0.11264] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 6.7694 / 36.149 | ms | 0.18217 | 95% [0.16517, 0.18929] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 184.28 / 206.01 | ms | 0.897 | 95% [0.87607, 0.90746] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.1801 / 0.2879 | ms | 0.62596 | 95% [0.60705, 0.64154] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0403 / 0.1142 | ms | 0.39697 | 95% [0.34934, 0.43082] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.3445 / 32.185 | ms | 0.010377 | 95% [0.0077428, 0.010999] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.5716 / 32.593 | ms | 0.017056 | 95% [0.012431, 0.01809] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.67 / 201.64 | ms | 0.89016 | 95% [0.82947, 0.8927] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1 | 95% [1, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.25 / 65.508 | MiB | 0.98127 | 95% [0.97998, 0.98248] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-79f971dc2d171225d6f15ce79ccd6ff56bc78209dc872313099c3fb572cea707"></a>
+
+<details>
+<summary>compute_kernel_dispatch_100 — unknown; diagnostic; 12 metrics</summary>
+
+Record `79f971dc2d171225d6f15ce79ccd6ff56bc78209dc872313099c3fb572cea707` · execution `catalog-d3d12-be4d0f6d1d7730/compute_kernel_dispatch_100/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:13409009c021e106654dea92; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.5605 / 4.5473 | ms | 0.93723 | 95% [0.91297, 1.0347] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0102 / 11.956 | ms | 0.00083203 | 95% [0.00071062, 0.00090158] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.5447 / 75.969 | ms | 0.033701 | 95% [0.032802, 0.036788] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 7.011 / 92.928 | ms | 0.078536 | 95% [0.074144, 0.083857] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 189.34 / 265.43 | ms | 0.71825 | 95% [0.7083, 0.73955] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.326 / 0.6641 | ms | 0.50394 | 95% [0.47297, 0.56818] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0089 / 0.1048 | ms | 0.086318 | 95% [0.081911, 0.1011] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.5699 / 78.736 | ms | 0.006286 | 95% [0.0059938, 0.007313] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.9101 / 79.619 | ms | 0.010483 | 95% [0.009587, 0.011775] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 183.58 / 266.68 | ms | 0.71974 | 95% [0.70332, 0.74335] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 109.38 / 101.56 | ms | 1 | 95% [1, 1.1579] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.031 / 65.398 | MiB | 0.97891 | 95% [0.97719, 0.97945] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-aa2fa85b59c3ced9063a6b6187aa9fd619c68051d9a5dd9f5e1759fa3864afa8"></a>
+
+<details>
+<summary>compute_kernel_dispatch_1000 — unknown; diagnostic; 12 metrics</summary>
+
+Record `aa2fa85b59c3ced9063a6b6187aa9fd619c68051d9a5dd9f5e1759fa3864afa8` · execution `catalog-d3d12-be4d0f6d1d7730/compute_kernel_dispatch_1000/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c04ca3c35bd7e6fa89890e40; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.6269 / 4.0713 | ms | 1.1381 | 95% [1.0173, 1.1715] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.1682 / 11.887 | ms | 0.014202 | 95% [0.012239, 0.015369] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.053 / 31.172 | ms | 0.065261 | 95% [0.054191, 0.069761] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 6.9046 / 47.607 | ms | 0.14503 | 95% [0.13064, 0.14944] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 183.29 / 215.77 | ms | 0.86522 | 95% [0.83905, 0.87455] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.1811 / 0.2947 | ms | 0.60731 | 95% [0.59918, 0.62776] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0872 / 0.2717 | ms | 0.34235 | 95% [0.29739, 0.36581] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4935 / 31.821 | ms | 0.015691 | 95% [0.015225, 0.015924] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.7694 / 32.329 | ms | 0.023728 | 95% [0.023301, 0.024429] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.34 / 201.3 | ms | 0.89066 | 95% [0.87204, 0.9045] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0909 | 95% [0.91667, 1.4167] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 64.441 / 65.84 | MiB | 0.97906 | 95% [0.97628, 0.97953] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-1acb1c94542e37a9fbc9dcbf1d9305f4ea67dd933c05f96f5e62371be5323253"></a>
+
+<details>
+<summary>compute_matvec_32768x2048_f32 — unknown; diagnostic; 12 metrics</summary>
+
+Record `1acb1c94542e37a9fbc9dcbf1d9305f4ea67dd933c05f96f5e62371be5323253` · execution `catalog-d3d12-be4d0f6d1d7730/compute_matvec_32768x2048_f32/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:cab25ff1b7847d3aea53e5d2; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 45.534 / 41.679 | ms | 1.1041 | 95% [0.97897, 1.1133] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0345 / 11.665 | ms | 0.0029575 | 95% [0.0027241, 0.0060115] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1585.8 / 1330.7 | ms | 1.2052 | 95% [1.1779, 1.222] ratio | 3/3 observations | loss | reported aggregate |
+| cold.operation_ms | 1626.6 / 1399.6 | ms | 1.1902 | 95% [1.1622, 1.2072] ratio | 3/3 observations | loss | reported aggregate |
+| cold.complete_ms | 1810.2 / 1570.8 | ms | 1.1726 | 95% [1.1524, 1.1895] ratio | 3/3 observations | loss | reported aggregate |
+| warm.setup_ms | 14.711 / 19.775 | ms | 1.0057 | 95% [0.74393, 1.0084] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.052 / 11.665 | ms | 0.0060115 | 95% [0.0029575, 0.44674] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 1557.5 / 1310.8 | ms | 1.1779 | 95% [1.1704, 1.222] ratio | 3/3 observations | loss | reported aggregate |
+| warm.operation_ms | 1577.5 / 1311.3 | ms | 1.1703 | 95% [1.1617, 1.2074] ratio | 3/3 observations | loss | reported aggregate |
+| warm.complete_ms | 1756.5 / 1486.3 | ms | 1.1537 | 95% [1.1518, 1.1895] ratio | 3/3 observations | loss | reported aggregate |
+| cpu_ms | 281.25 / 218.75 | ms | 1.2 | 95% [1.125, 1.2857] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 314.53 / 65.777 | MiB | 4.7799 | 95% [4.0292, 4.7834] ratio | 3/3 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-a2fe65b0410394e8fbf78320a0f1e4af2ba440f2404a88d638e88cd9599b322a"></a>
+
+<details>
+<summary>compute_matvec_32768x2048_f32_swizzle1 — unknown; diagnostic; 12 metrics</summary>
+
+Record `a2fe65b0410394e8fbf78320a0f1e4af2ba440f2404a88d638e88cd9599b322a` · execution `catalog-d3d12-be4d0f6d1d7730/compute_matvec_32768x2048_f32_swizzle1/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:4e9b900494dbc89080fd0f77; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 110.37 / 77.737 | ms | 1.4532 | 95% [1.4118, 1.5104] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0513 / 11.466 | ms | 0.0045429 | 95% [0.0032851, 0.0045613] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2015 / 2205.6 | ms | 0.9068 | 95% [0.90366, 0.92526] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 2150.6 / 2294.7 | ms | 0.93458 | 95% [0.92042, 0.93722] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 2327.7 / 2472 | ms | 0.94162 | 95% [0.92963, 0.94244] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 19.059 / 19.255 | ms | 0.95838 | 95% [0.86405, 1.0245] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0513 / 11.292 | ms | 0.0045613 | 95% [0.0045429, 0.36058] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 1995.2 / 2205.6 | ms | 0.9068 | 95% [0.86955, 0.92526] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2015 / 2231 | ms | 0.90318 | 95% [0.86952, 0.92091] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 2193.6 / 2400.5 | ms | 0.91382 | 95% [0.88264, 0.92662] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 328.12 / 234.38 | ms | 1.4 | 95% [1.1667, 1.5] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 314.52 / 65.953 | MiB | 4.7689 | 95% [4.0222, 4.7745] ratio | 3/3 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-d43469be7aececf977c0d17bbe8b29bd82ab7e609d643d1b7e826cb4241901d4"></a>
+
+<details>
+<summary>compute_matvec_32768x2048_f32_workgroupshared_swizzle1 — unknown; diagnostic; 12 metrics</summary>
+
+Record `d43469be7aececf977c0d17bbe8b29bd82ab7e609d643d1b7e826cb4241901d4` · execution `catalog-d3d12-be4d0f6d1d7730/compute_matvec_32768x2048_f32_workgroupshared_swizzle1/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:253bcf6169186c9214807788; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 46.535 / 53.061 | ms | 0.87742 | 95% [0.8356, 0.91863] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0527 / 11.626 | ms | 0.0045328 | 95% [0.0029421, 0.0053501] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 904.68 / 512.17 | ms | 1.7664 | 95% [1.7504, 1.7882] ratio | 5/5 observations | loss | reported aggregate |
+| cold.operation_ms | 951.57 / 576.89 | ms | 1.649 | 95% [1.5775, 1.6676] ratio | 5/5 observations | loss | reported aggregate |
+| cold.complete_ms | 1134.5 / 743.91 | ms | 1.5176 | 95% [1.4701, 1.5262] ratio | 5/5 observations | loss | reported aggregate |
+| warm.setup_ms | 19.228 / 18.95 | ms | 0.98718 | 95% [0.6944, 1.118] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0527 / 11.626 | ms | 0.0052788 | 95% [0.0029421, 0.18876] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 904.68 / 512.17 | ms | 1.7664 | 95% [1.7014, 1.7882] ratio | 5/5 observations | loss | reported aggregate |
+| warm.operation_ms | 924.41 / 537.52 | ms | 1.7004 | 95% [1.698, 1.7203] ratio | 5/5 observations | loss | reported aggregate |
+| warm.complete_ms | 1107.4 / 710.41 | ms | 1.5541 | 95% [1.5438, 1.5595] ratio | 5/5 observations | loss | reported aggregate |
+| cpu_ms | 203.12 / 218.75 | ms | 1 | 95% [0.8125, 1.1333] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 314.73 / 65.887 | MiB | 4.7768 | 95% [4.0204, 4.7809] ratio | 5/5 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-0ef4588b07855aab0de0a79deec50f08776c316b76b42b41041a9c0e025db419"></a>
+
+<details>
+<summary>compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces — unknown; diagnostic; 12 metrics</summary>
+
+Record `0ef4588b07855aab0de0a79deec50f08776c316b76b42b41041a9c0e025db419` · execution `catalog-d3d12-be4d0f6d1d7730/compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:85516ffc09fdeaedb587e399; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 50.028 / 71.901 | ms | 0.69579 | 95% [0.68157, 0.71221] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0196 / 10.534 | ms | 0.0018302 | 95% [0.0015896, 0.0026005] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 67.577 / 249.91 | ms | 0.27443 | 95% [0.25665, 0.27762] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 118.13 / 334.21 | ms | 0.3565 | 95% [0.33934, 0.36105] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 297.03 / 507.08 | ms | 0.58276 | 95% [0.57492, 0.62145] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 2.0845 / 1.2673 | ms | 1.5045 | 95% [1.423, 1.7848] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0.0196 / 10.534 | ms | 0.0018302 | 95% [0.0015896, 0.0026005] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 67.577 / 249.91 | ms | 0.27443 | 95% [0.25665, 0.27762] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 69.805 / 261.61 | ms | 0.26996 | 95% [0.25367, 0.27244] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 247.27 / 431.59 | ms | 0.56869 | 95% [0.55806, 0.5859] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 250 / 281.25 | ms | 0.9375 | 95% [0.88889, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 66.926 / 67.547 | MiB | 0.99005 | 95% [0.98924, 0.99121] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-91170fbb55d993bd30c6c331e3def1bacf9eeb25e3e66cb527c49c3b16ecd5d8"></a>
+
+<details>
+<summary>compute_stable_fluids_multistage_256grid_18pressure_4steps — unknown; diagnostic; 12 metrics</summary>
+
+Record `91170fbb55d993bd30c6c331e3def1bacf9eeb25e3e66cb527c49c3b16ecd5d8` · execution `catalog-d3d12-be4d0f6d1d7730/compute_stable_fluids_multistage_256grid_18pressure_4steps/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:ba95be6894d483fc3dd65b0f; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 101.13 / 78.251 | ms | 1.3384 | 95% [1.2644, 1.9279] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 0.2932 / 13.342 | ms | 0.021856 | 95% [0.021527, 0.022202] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 32.986 / 3231.1 | ms | 0.010209 | 95% [0.0098577, 0.010835] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 134.64 / 3350.2 | ms | 0.040544 | 95% [0.039035, 0.084287] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 316.73 / 3519.7 | ms | 0.09044 | 95% [0.089287, 0.13217] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 13.511 / 25.67 | ms | 0.50986 | 95% [0.50714, 0.58707] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.2932 / 13.342 | ms | 0.021856 | 95% [0.021527, 0.022202] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 32.986 / 3231.1 | ms | 0.010209 | 95% [0.0098577, 0.010835] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 47.046 / 3268.4 | ms | 0.014394 | 95% [0.013836, 0.015022] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 230.88 / 3435.1 | ms | 0.066321 | 95% [0.066063, 0.067766] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 359.38 / 203.12 | ms | 1.9167 | 95% [1.6154, 1.9286] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 66.844 / 68.602 | MiB | 0.97521 | 95% [0.97369, 0.98304] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-7ffc140a47d4d3c276ebdc25196f9c5c86060e7542384df892b724b3d23acbd8"></a>
+
+<details>
+<summary>compute_workgroup_atomic_1024 — unknown; diagnostic; 12 metrics</summary>
+
+Record `7ffc140a47d4d3c276ebdc25196f9c5c86060e7542384df892b724b3d23acbd8` · execution `catalog-d3d12-be4d0f6d1d7730/compute_workgroup_atomic_1024/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:158e308da014d876356800f7; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.962 / 27.541 | ms | 1.3824 | 95% [1.2685, 1.9974] ratio | 5/5 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0477 / 10.738 | ms | 0.0044358 | 95% [0.0026468, 0.0046566] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 508.9 / 550.76 | ms | 0.92221 | 95% [0.89903, 0.94905] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 548.26 / 596.09 | ms | 0.92431 | 95% [0.90473, 0.97436] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 726.2 / 765.33 | ms | 0.95123 | 95% [0.93538, 1] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 9.341 / 17.738 | ms | 0.52307 | 95% [0.34406, 1.0515] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0477 / 10.738 | ms | 0.0045446 | 95% [0.0038378, 0.18806] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 508.03 / 550.76 | ms | 0.92221 | 95% [0.89903, 0.93096] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 517.42 / 583.55 | ms | 0.88738 | 95% [0.87138, 0.91426] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 697.56 / 753.35 | ms | 0.92618 | 95% [0.90989, 0.95508] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 203.12 / 203.12 | ms | 1.25 | 95% [0.92857, 1.3636] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 62.43 / 61.703 | MiB | 1.0118 | 95% [1.0013, 1.0123] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-3a33503e506edb9ba5ab71aa7ffc89764cc115264d93a290354d4158612ce1c2"></a>
+
+<details>
+<summary>compute_workgroup_non_atomic_1024 — unknown; diagnostic; 12 metrics</summary>
+
+Record `3a33503e506edb9ba5ab71aa7ffc89764cc115264d93a290354d4158612ce1c2` · execution `catalog-d3d12-be4d0f6d1d7730/compute_workgroup_non_atomic_1024/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:e67424679ef82683b05663bf; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 32.998 / 16.163 | ms | 1.9983 | 95% [1.2582, 2.2443] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0282 / 10.615 | ms | 0.0026565 | 95% [0.0020468, 0.0032849] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 26.667 / 52.719 | ms | 0.49366 | 95% [0.42255, 0.50762] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 59.693 / 91.813 | ms | 0.66934 | 95% [0.63508, 0.79135] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 241.65 / 264.9 | ms | 0.94588 | 95% [0.90562, 0.95782] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.6091 / 15.676 | ms | 0.038219 | 95% [0.036356, 0.03972] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.021 / 0.129 | ms | 0.16453 | 95% [0.14355, 0.18353] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 22.371 / 47.887 | ms | 0.44999 | 95% [0.37243, 0.47356] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 23.026 / 76.243 | ms | 0.31722 | 95% [0.30056, 0.3593] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 202.16 / 249.54 | ms | 0.83309 | 95% [0.80834, 0.86555] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 109.38 / 93.75 | ms | 1.1667 | 95% [1, 1.3636] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 62.422 / 61.746 | MiB | 1.0112 | 95% [1.009, 1.012] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-2d5ec7f0ee4b101dc475fabad37632ba7d6786617033aa1e17622299089182bc"></a>
+
+<details>
+<summary>compute_zero_initialize_workgroup_memory_256 — unknown; diagnostic; 12 metrics</summary>
+
+Record `2d5ec7f0ee4b101dc475fabad37632ba7d6786617033aa1e17622299089182bc` · execution `catalog-d3d12-be4d0f6d1d7730/compute_zero_initialize_workgroup_memory_256/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:97ef225b3dba8921d9f32cd7; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 466.56 / 23.851 | ms | 19.495 | 95% [19.159, 19.819] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0202 / 11.564 | ms | 0.0017528 | 95% [0.0015703, 0.0018679] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.5781 / 31.814 | ms | 0.078422 | 95% [0.074369, 0.12168] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 469.14 / 68.322 | ms | 6.9698 | 95% [6.8648, 7.9573] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 646.89 / 234.81 | ms | 2.7945 | 95% [2.7157, 2.8354] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.1648 / 0.2717 | ms | 0.63452 | 95% [0.5883, 0.7745] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0135 / 0.0607 | ms | 0.21069 | 95% [0.19529, 0.26734] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.7845 / 32.471 | ms | 0.024301 | 95% [0.017552, 0.027042] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.9707 / 32.815 | ms | 0.029639 | 95% [0.021466, 0.034222] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.6 / 211.25 | ms | 0.85347 | 95% [0.83354, 0.89358] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 328.12 / 109.38 | ms | 2.9286 | 95% [2.8, 3] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 62.828 / 65.75 | MiB | 0.95539 | 95% [0.95231, 0.95781] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-2d6783244e9220ee916debc67175377d883b211dc88c4f18fced5def1fcd6556"></a>
+
+<details>
+<summary>copy_buffer_to_buffer_4kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `2d6783244e9220ee916debc67175377d883b211dc88c4f18fced5def1fcd6556` · execution `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_buffer_4kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:23a5c8b22d1b9efcdc86dd0e; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.7122 / 0.5432 | ms | 3.1358 | 95% [2.5984, 3.2566] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0028 / 0.0279 | ms | 0.096085 | 95% [0.086142, 0.18375] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.6073 / 0.3804 | ms | 3.93 | 95% [0.24158, 4.2973] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 3.3576 / 1.0054 | ms | 3.3974 | 95% [0.47402, 3.5124] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 181.51 / 173.21 | ms | 1.0453 | 95% [1.0312, 1.0734] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0005 / 0.0005 | ms | 0.8 | 95% [0.71429, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0044 / 0.0031 | ms | 1.4483 | 95% [1.2353, 1.5172] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.14 / 16.113 | ms | 0.0095943 | 95% [0.0066732, 0.018445] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.1481 / 16.124 | ms | 0.010031 | 95% [0.0070126, 0.019623] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 178.67 / 185.32 | ms | 0.95736 | 95% [0.92122, 1.0202] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 93.75 | ms | 0.92308 | 95% [0.81818, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 58.418 / 52.621 | MiB | 1.11 | 95% [1.1076, 1.1113] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-44cdc399b09136bd05f9c0c48a16c896d88027e9d5e8502ee8174179f5416869"></a>
+
+<details>
+<summary>copy_buffer_to_buffer_overlap — unknown; diagnostic; 12 metrics</summary>
+
+Record `44cdc399b09136bd05f9c0c48a16c896d88027e9d5e8502ee8174179f5416869` · execution `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_buffer_overlap/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:ee728f4f923ebbf0b07c9423; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.8496 / 0.5908 | ms | 3.0284 | 95% [2.2368, 3.2932] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.003 / 0.0283 | ms | 0.10508 | 95% [0.087977, 0.18729] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.6211 / 4.5001 | ms | 0.33901 | 95% [0.13723, 3.8762] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 3.3694 / 5.4503 | ms | 0.65584 | 95% [0.27662, 3.2397] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 185.89 / 175.24 | ms | 1.0578 | 95% [0.99553, 1.095] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0005 / 0.0006 | ms | 0.83333 | 95% [0.66667, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0041 / 0.0044 | ms | 1 | 95% [0.68966, 1.5172] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1431 / 16.214 | ms | 0.0093687 | 95% [0.0081338, 0.023186] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.1503 / 16.238 | ms | 0.0098347 | 95% [0.0085505, 0.024261] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 182.48 / 184.12 | ms | 0.99448 | 95% [0.96861, 1.0257] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 93.75 | ms | 1 | 95% [1, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 58.461 / 52.605 | MiB | 1.1114 | 95% [1.1102, 1.1118] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-4a64bc36be5795fa1d90da252bae7c96a9a9b52828362356207255952d689471"></a>
+
+<details>
+<summary>copy_buffer_to_texture — unknown; diagnostic; 12 metrics</summary>
+
+Record `4a64bc36be5795fa1d90da252bae7c96a9a9b52828362356207255952d689471` · execution `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_texture/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:12054cc8d73e45491e0ecd35; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 2.6719 / 0.6324 | ms | 3.7197 | 95% [3.374, 4.5065] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0037 / 0.0313 | ms | 0.11635 | 95% [0.09772, 0.18954] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.159 / 0.3825 | ms | 0.40444 | 95% [0.38814, 0.4199] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 2.862 / 1.1599 | ms | 2.4973 | 95% [2.0927, 2.8356] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 163.68 / 170.11 | ms | 0.95706 | 95% [0.93396, 0.98198] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0005 / 0.0005 | ms | 1 | 95% [1, 1.2] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0023 / 0.0039 | ms | 0.56757 | 95% [0.46154, 1.15] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.3838 / 2.9948 | ms | 0.12818 | 95% [0.050804, 1.0342] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.4038 / 3.0042 | ms | 0.14244 | 95% [0.052166, 1.0264] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 161.21 / 174.47 | ms | 0.91805 | 95% [0.90658, 0.95533] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 93.75 | ms | 1.1 | 95% [0.91667, 1.2] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 49.148 / 54.152 | MiB | 0.90775 | 95% [0.90724, 0.9284] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-3ea107f9367e51edd859e7df07054aa29f020f82ba1f730b8b14422444dd7544"></a>
+
+<details>
+<summary>copy_buffer_to_texture_tight_pitch — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `3ea107f9367e51edd859e7df07054aa29f020f82ba1f730b8b14422444dd7544` · execution `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_texture_tight_pitch/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:5e2963dda80049cb12357000; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-5a0890d7d7b67065ce383eb1d615e7e5b98bafae52111c0f33b2246cf5c88697"></a>
+
+<details>
+<summary>copy_protocol — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `5a0890d7d7b67065ce383eb1d615e7e5b98bafae52111c0f33b2246cf5c88697` · execution `catalog-d3d12-be4d0f6d1d7730/copy_protocol/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:9cf8e20aeccb03d71d0e90bc; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-85030a7d7fc526843f1cc56326f27bcc9d0000933f09b8e01337c5e2d4d3af96"></a>
+
+<details>
+<summary>copy_texture_to_buffer — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `85030a7d7fc526843f1cc56326f27bcc9d0000933f09b8e01337c5e2d4d3af96` · execution `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_buffer/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b2f35cd3aa815ced3c7ba5f9; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-ef53db023f7d6930919b4b7ba1db837469181413e8657935e068c97271761a20"></a>
+
+<details>
+<summary>copy_texture_to_buffer_padded — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `ef53db023f7d6930919b4b7ba1db837469181413e8657935e068c97271761a20` · execution `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_buffer_padded/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c807afca01195fe1304a3666; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-4a5d9a710a3c0fd5cf16a1d6e80599e24b859e9edb44dbec88d646278a0b75d8"></a>
+
+<details>
+<summary>copy_texture_to_texture — unknown; diagnostic; 12 metrics</summary>
+
+Record `4a5d9a710a3c0fd5cf16a1d6e80599e24b859e9edb44dbec88d646278a0b75d8` · execution `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_texture/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:a8891d8615a2278ce2136662; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.8832 / 0.7761 | ms | 2.5468 | 95% [2.225, 3.5551] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0059 / 0.036 | ms | 0.16389 | 95% [0.094708, 0.22599] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0849 / 1.1691 | ms | 0.075358 | 95% [0.071233, 0.078391] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1.9806 / 2.0072 | ms | 0.99727 | 95% [0.9211, 1.3199] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 162.9 / 169.84 | ms | 0.96039 | 95% [0.95293, 0.97072] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0004 / 0.0005 | ms | 1 | 95% [0.8, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0037 / 0.0039 | ms | 0.94595 | 95% [0.51282, 1.425] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4348 / 0.2962 | ms | 0.3191 | 95% [0.0043468, 1.8534] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.4539 / 0.3048 | ms | 0.34873 | 95% [0.0048091, 1.82] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 161.35 / 172.26 | ms | 0.95482 | 95% [0.85748, 0.9699] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 85.938 / 85.938 | ms | 1.0909 | 95% [0.83333, 1.2222] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 49.117 / 58.27 | MiB | 0.84225 | 95% [0.82308, 0.84489] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-e2bf4cf3776806cf0e24212910e199644261964261c16c2c6ddc1fd09bcca662"></a>
+
+<details>
+<summary>copy_texture_to_texture_stress — unknown; diagnostic; 12 metrics</summary>
+
+Record `e2bf4cf3776806cf0e24212910e199644261964261c16c2c6ddc1fd09bcca662` · execution `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_texture_stress/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:244b29cf1ae960c2a5a91b92; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.2964 / 0.7859 | ms | 5.6109 | 95% [4.5211, 6.3454] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0095 / 0.0425 | ms | 0.22687 | 95% [0.18537, 0.24557] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.2896 / 22.12 | ms | 0.013422 | 95% [0.0094401, 0.026524] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 4.6429 / 23.271 | ms | 0.2032 | 95% [0.14273, 0.38623] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 182.39 / 191.67 | ms | 0.94808 | 95% [0.90261, 1.0106] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0006 / 0.0017 | ms | 0.38095 | 95% [0.28, 0.4] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0069 / 0.018 | ms | 0.42929 | 95% [0.32864, 0.52672] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1873 / 31.948 | ms | 0.0056317 | 95% [0.0049783, 0.0060702] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.2007 / 31.976 | ms | 0.0060232 | 95% [0.0052979, 0.0064464] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.88 / 202.94 | ms | 0.87653 | 95% [0.84402, 0.88507] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 93.75 | ms | 1.0909 | 95% [0.92308, 1.25] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.477 / 56.984 | MiB | 1.0085 | 95% [1.008, 1.0093] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-99b4162c4f8b7a8f5f2085c6e568cc7694403fcb0ee9f021342f402bcdd05fce"></a>
+
+<details>
+<summary>copy_texture_to_texture_subresource — unknown; diagnostic; 12 metrics</summary>
+
+Record `99b4162c4f8b7a8f5f2085c6e568cc7694403fcb0ee9f021342f402bcdd05fce` · execution `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_texture_subresource/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:59c72dab7326aa4b2dea45be; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 3.6845 / 0.6864 | ms | 5.1842 | 95% [4.3445, 5.6887] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0038 / 0.0366 | ms | 0.10106 | 95% [0.077348, 0.16046] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.1929 / 1.2106 | ms | 0.15015 | 95% [0.01604, 0.16736] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 3.875 / 1.9874 | ms | 1.7529 | 95% [0.30274, 2.2158] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 179.53 / 170.62 | ms | 1.0517 | 95% [1.0068, 1.0757] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0004 / 0.0005 | ms | 0.8 | 95% [0.42857, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0038 / 0.0041 | ms | 0.87179 | 95% [0.5, 0.92683] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1316 / 10.114 | ms | 0.0098774 | 95% [0.0057223, 0.036412] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.1384 / 10.125 | ms | 0.010528 | 95% [0.0061079, 0.038187] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 175.9 / 178.94 | ms | 0.98032 | 95% [0.94038, 1.0323] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1 | 95% [0.92308, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.434 / 56.992 | MiB | 1.0078 | 95% [1.0075, 1.0084] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-7decef3dcebe306faef9ef65dd71ff7654feda34964d6981c24d2255ff50c1ed"></a>
+
+<details>
+<summary>inference_gemma3_1b_decode_1tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `7decef3dcebe306faef9ef65dd71ff7654feda34964d6981c24d2255ff50c1ed` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_1b_decode_1tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:799bc1400ebc4d64a1f62a3b; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 649.29 / 312.45 | ms | 2.0781 | 95% [2.0578, 2.199] ratio | 5/5 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0917 / 10.463 | ms | 0.0088541 | 95% [0.0075934, 0.0094914] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 87.481 / 783.33 | ms | 0.11256 | 95% [0.1108, 0.12167] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 736.63 / 1104 | ms | 0.68616 | 95% [0.65651, 0.69499] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 910.53 / 1268 | ms | 0.73641 | 95% [0.70478, 0.7455] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 25.465 / 40.212 | ms | 0.63216 | 95% [0.60955, 0.71086] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0917 / 10.463 | ms | 0.0088541 | 95% [0.0075934, 0.0094914] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 87.481 / 783.33 | ms | 0.11256 | 95% [0.1108, 0.12167] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 113.2 / 834.21 | ms | 0.13791 | 95% [0.13434, 0.14933] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 285.75 / 998.27 | ms | 0.28943 | 95% [0.28167, 0.29768] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 1015.6 / 609.38 | ms | 1.6667 | 95% [1.6486, 1.7949] ratio | 5/5 observations | loss | reported aggregate |
+| max_rss_mib | 584.19 / 549.91 | MiB | 1.0623 | 95% [1.0621, 1.2588] ratio | 5/5 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-e937fb29394764a3042640af378cdf919149231f54193ae7d94289ade8721255"></a>
+
+<details>
+<summary>inference_gemma3_1b_prefill_32tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `e937fb29394764a3042640af378cdf919149231f54193ae7d94289ade8721255` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_1b_prefill_32tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:1de2e6e05be80c284e6d1439; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 233.46 / 262.15 | ms | 0.88496 | 95% [0.85706, 1.0013] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.1165 / 10.975 | ms | 0.010482 | 95% [0.0090383, 0.012174] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 108.84 / 793.21 | ms | 0.13287 | 95% [0.11921, 0.15079] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 341.11 / 1069.9 | ms | 0.31883 | 95% [0.28172, 0.36408] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 528.07 / 1255.5 | ms | 0.42586 | 95% [0.38033, 0.47402] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 30.755 / 49.315 | ms | 0.64899 | 95% [0.59839, 0.67181] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.1165 / 10.975 | ms | 0.010482 | 95% [0.0090383, 0.012174] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 108.84 / 793.21 | ms | 0.13287 | 95% [0.11921, 0.15079] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 139.71 / 850.66 | ms | 0.16037 | 95% [0.14328, 0.18104] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 326.67 / 1033.2 | ms | 0.31566 | 95% [0.28007, 0.35033] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 640.62 / 593.75 | ms | 1.1081 | 95% [1.0256, 1.1579] ratio | 5/5 observations | loss | reported aggregate |
+| max_rss_mib | 548.12 / 551.13 | MiB | 0.9946 | 95% [0.75377, 0.99464] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-2828af015564dd76d5cbdfeff0e4ea5323567829d7562a2062994f6d92377572"></a>
+
+<details>
+<summary>inference_gemma3_1b_prefill_64tok_decode_64tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `2828af015564dd76d5cbdfeff0e4ea5323567829d7562a2062994f6d92377572` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_1b_prefill_64tok_decode_64tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:afe9496efb74b4342a628c36; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 984.21 / 882.02 | ms | 1.1632 | 95% [1.1116, 1.1727] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 3.7077 / 63.205 | ms | 0.065607 | 95% [0.054207, 0.068244] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 869.89 / 41154 | ms | 0.020993 | 95% [0.020897, 0.022429] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1859.1 / 42113 | ms | 0.044073 | 95% [0.04371, 0.046477] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 2045.4 / 42287 | ms | 0.048416 | 95% [0.047742, 0.050513] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 209.23 / 424.62 | ms | 0.54081 | 95% [0.46897, 0.54148] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 3.7077 / 63.205 | ms | 0.065607 | 95% [0.054207, 0.068244] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 869.89 / 41154 | ms | 0.020993 | 95% [0.020897, 0.022429] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 1086.5 / 41655 | ms | 0.025819 | 95% [0.025785, 0.027877] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 1265.9 / 41829 | ms | 0.03025 | 95% [0.029964, 0.032035] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 1812.5 / 953.12 | ms | 1.9016 | 95% [1.8966, 2.1311] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 847.46 / 818.25 | MiB | 1.0357 | 95% [1.0351, 1.0359] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-19cc2f0b90d8c1555a380b94c74ad4d37e5f7457e6a650ea3fbba9b009c8cc4c"></a>
+
+<details>
+<summary>inference_gemma3_270m_decode_1tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `19cc2f0b90d8c1555a380b94c74ad4d37e5f7457e6a650ea3fbba9b009c8cc4c` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_decode_1tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:30eda2d6f0d92770558ae35e; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 644.76 / 305.41 | ms | 2.1135 | 95% [1.72, 2.1313] ratio | 5/5 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0795 / 11.201 | ms | 0.0070852 | 95% [0.0068621, 0.0079134] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 34.597 / 686.76 | ms | 0.050231 | 95% [0.047603, 0.056007] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 679.46 / 1017.8 | ms | 0.67909 | 95% [0.64541, 0.80389] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 857.62 / 1185.9 | ms | 0.73445 | 95% [0.70499, 0.85187] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 15.188 / 25.342 | ms | 0.59932 | 95% [0.56933, 0.63597] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0795 / 11.201 | ms | 0.0070852 | 95% [0.0068621, 0.0079134] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 34.597 / 686.76 | ms | 0.050231 | 95% [0.047603, 0.056007] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 49.941 / 722.71 | ms | 0.068697 | 95% [0.065488, 0.076827] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 228.9 / 889.86 | ms | 0.256 | 95% [0.24657, 0.29297] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 906.25 / 468.75 | ms | 1.931 | 95% [1.449, 2.0714] ratio | 5/5 observations | loss | reported aggregate |
+| max_rss_mib | 205.89 / 207.3 | MiB | 1.0372 | 95% [0.99183, 1.0436] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-6a30b52e4fbdcefc36523933daa4258e131e53b9c6e175a58263987ea7490b4b"></a>
+
+<details>
+<summary>inference_gemma3_270m_literal_prefill_32tok_decode_1tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `6a30b52e4fbdcefc36523933daa4258e131e53b9c6e175a58263987ea7490b4b` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_literal_prefill_32tok_decode_1tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:9d2849fc159378a2022906bd; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 645.6 / 367.23 | ms | 1.8645 | 95% [1.758, 1.9498] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 0.1616 / 11.032 | ms | 0.014454 | 95% [0.013695, 0.016434] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 70.463 / 1347.3 | ms | 0.052298 | 95% [0.051189, 0.062164] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 714.92 / 1725.5 | ms | 0.41868 | 95% [0.41434, 0.59178] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 888.68 / 1891.2 | ms | 0.47246 | 95% [0.4699, 0.6332] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 41.007 / 67.979 | ms | 0.60513 | 95% [0.59865, 0.87185] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.1616 / 11.032 | ms | 0.014454 | 95% [0.013695, 0.016434] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 70.463 / 1347.3 | ms | 0.052298 | 95% [0.051189, 0.062164] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 110.85 / 1426.7 | ms | 0.077794 | 95% [0.077327, 0.10018] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 284.08 / 1593.9 | ms | 0.17839 | 95% [0.17711, 0.20538] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 921.88 / 562.5 | ms | 1.6383 | 95% [1.5278, 1.7879] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 269.2 / 288.46 | MiB | 0.93322 | 95% [0.93159, 1.0193] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-e7ec2e0934cfedf9fe9695625d6eb60d5b22330986bb3ba7808d59e138178cd4"></a>
+
+<details>
+<summary>inference_gemma3_270m_prefill_32tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `e7ec2e0934cfedf9fe9695625d6eb60d5b22330986bb3ba7808d59e138178cd4` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_prefill_32tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:7f3e3672b134d6f35ae124cc; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 212.63 / 242.11 | ms | 0.88142 | 95% [0.86572, 0.93184] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0.0937 / 10.769 | ms | 0.0084784 | 95% [0.0070922, 0.0092133] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 38.979 / 706.78 | ms | 0.053793 | 95% [0.051096, 0.061144] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 251.64 / 963.2 | ms | 0.26125 | 95% [0.24861, 0.41521] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 430.65 / 1131.9 | ms | 0.38142 | 95% [0.36182, 0.49498] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 16.558 / 29.438 | ms | 0.56439 | 95% [0.508, 0.61499] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0937 / 10.769 | ms | 0.0084784 | 95% [0.0070922, 0.0092133] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 38.979 / 706.78 | ms | 0.053793 | 95% [0.051096, 0.061144] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 55.547 / 748.93 | ms | 0.073351 | 95% [0.070686, 0.083115] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 234.58 / 918.65 | ms | 0.25536 | 95% [0.23961, 0.26637] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 453.12 / 421.88 | ms | 1.1481 | 95% [0.96429, 1.1667] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 195.87 / 191.1 | MiB | 1.0249 | 95% [0.91272, 1.0253] ratio | 5/5 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-f8d441445e7bf21564df8cbc51d29284e99a2b23e41b223c27b7f4d3c1eb9269"></a>
+
+<details>
+<summary>inference_gemma3_270m_prefill_64tok_decode_64tok — unknown; diagnostic; 12 metrics</summary>
+
+Record `f8d441445e7bf21564df8cbc51d29284e99a2b23e41b223c27b7f4d3c1eb9269` · execution `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:75088f01d50bda4e8ee4b107; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 946.56 / 797.95 | ms | 1.1862 | 95% [1.1821, 1.2063] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 3.5698 / 57.652 | ms | 0.06192 | 95% [0.056735, 0.069652] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 456.75 / 40899 | ms | 0.011203 | 95% [0.011126, 0.011451] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1409.9 / 41773 | ms | 0.03397 | 95% [0.033632, 0.034138] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 1609.5 / 41941 | ms | 0.038237 | 95% [0.038128, 0.038395] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 174.55 / 344.89 | ms | 0.50611 | 95% [0.50219, 0.5296] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 3.5698 / 57.652 | ms | 0.06192 | 95% [0.056735, 0.069652] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 456.75 / 40899 | ms | 0.011203 | 95% [0.011126, 0.011451] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 637.91 / 41319 | ms | 0.015475 | 95% [0.015383, 0.01576] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 835.47 / 41487 | ms | 0.020113 | 95% [0.019755, 0.020138] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 1640.6 / 734.38 | ms | 2.0588 | 95% [1.9574, 2.3778] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 284.48 / 303.65 | MiB | 0.93651 | 95% [0.92816, 1.0283] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-c1721e0627a934b8bbdfc86d97035aaa58ff74a5d01b9ee073668998437f8284"></a>
+
+<details>
+<summary>lifecycle_refcount — unknown; diagnostic; 12 metrics</summary>
+
+Record `c1721e0627a934b8bbdfc86d97035aaa58ff74a5d01b9ee073668998437f8284` · execution `catalog-d3d12-be4d0f6d1d7730/lifecycle_refcount/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:3125041853005ef46f9fb00b; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 39.491 / 16.708 | ms | 2.9664 | 95% [1.7238, 3.3823] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 39.497 / 16.717 | ms | 2.9646 | 95% [1.7233, 3.3803] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 217.96 / 183.15 | ms | 1.1849 | 95% [1.1386, 1.2516] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 32.971 / 15.939 | ms | 2.0615 | 95% [1.9687, 2.1726] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 32.974 / 15.942 | ms | 2.0612 | 95% [1.9685, 2.1724] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 212.04 / 182.97 | ms | 1.1589 | 95% [1.1353, 1.1831] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 125 / 85.938 | ms | 1.5385 | 95% [1.4545, 1.7] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 62.543 / 58.434 | MiB | 1.0709 | 95% [1.0694, 1.0724] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-f57dbec016139b9d15adf4f5f0b25a12d6c2c452bbbcfc012756d514053d3b62"></a>
+
+<details>
+<summary>lifecycle_refcount_200 — unknown; diagnostic; 12 metrics</summary>
+
+Record `f57dbec016139b9d15adf4f5f0b25a12d6c2c452bbbcfc012756d514053d3b62` · execution `catalog-d3d12-be4d0f6d1d7730/lifecycle_refcount_200/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:1f0ba7128d57ab617e0428a5; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 8154.4 / 3563.3 | ms | 2.2894 | 95% [2.0047, 2.3076] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 8154.4 / 3563.3 | ms | 2.2894 | 95% [2.0047, 2.3076] ratio | 3/3 observations | loss | reported aggregate |
+| cold.complete_ms | 8336 / 3750.6 | ms | 2.221 | 95% [1.9617, 2.2492] ratio | 3/3 observations | loss | reported aggregate |
+| warm.setup_ms | 8260.5 / 3563.3 | ms | 2.3076 | 95% [2.0047, 2.8963] ratio | 3/3 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 8260.5 / 3563.3 | ms | 2.3076 | 95% [2.0047, 2.8963] ratio | 3/3 observations | loss | reported aggregate |
+| warm.complete_ms | 8435.9 / 3733.4 | ms | 2.2492 | 95% [1.9617, 2.7956] ratio | 3/3 observations | loss | reported aggregate |
+| cpu_ms | 8437.5 / 171.88 | ms | 49.091 | 95% [29.312, 98.667] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 64.27 / 64.625 | MiB | 0.99486 | 95% [0.89966, 0.99564] ratio | 3/3 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-15b835a0fb2dac42ac658d0f696e9927aea27d4d6378b6b21fec69dbc6f0be83"></a>
+
+<details>
+<summary>pipeline_async_diagnostics — unknown; diagnostic; 12 metrics</summary>
+
+Record `15b835a0fb2dac42ac658d0f696e9927aea27d4d6378b6b21fec69dbc6f0be83` · execution `catalog-d3d12-be4d0f6d1d7730/pipeline_async_diagnostics/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c3e15298bdc010a107deb866; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 33.566 / 13.631 | ms | 2.4915 | 95% [1.8444, 4.3288] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 33.572 / 13.639 | ms | 2.4905 | 95% [1.8438, 4.3235] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 211.5 / 187.08 | ms | 1.1636 | 95% [1.1156, 1.1737] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 32.254 / 16.148 | ms | 1.9927 | 95% [1.1646, 2.0122] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 32.257 / 16.151 | ms | 1.9926 | 95% [1.1645, 2.012] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 210.34 / 189.06 | ms | 1.12 | 95% [1.0594, 1.132] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 132.81 / 85.938 | ms | 1.5 | 95% [1.4167, 1.6154] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 58.051 / 57.555 | MiB | 1.0087 | 95% [1.0072, 1.01] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-0ec1580bb642a5612b4e9bd2aaaad6cca0dcc54f16fdb634f9893654f4e1f29d"></a>
+
+<details>
+<summary>pipeline_compile_stress — unknown; diagnostic; 12 metrics</summary>
+
+Record `0ec1580bb642a5612b4e9bd2aaaad6cca0dcc54f16fdb634f9893654f4e1f29d` · execution `catalog-d3d12-be4d0f6d1d7730/pipeline_compile_stress/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b2c69c465c6d1cb4aaa845e5; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 450.46 / 106.68 | ms | 4.2223 | 95% [4.0956, 4.7553] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.031 / 10.62 | ms | 0.002919 | 95% [0.0028682, 0.0032314] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 91.788 / 53.725 | ms | 1.7497 | 95% [1.3821, 1.7692] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 543.82 / 171.72 | ms | 3.3507 | 95% [3.1258, 3.4834] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 722.12 / 346.38 | ms | 2.1196 | 95% [2.0651, 2.2019] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 2.8351 / 16.025 | ms | 0.14466 | 95% [0.1156, 0.20347] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0.0169 / 0.0727 | ms | 0.20963 | 95% [0.19205, 0.29465] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 89.332 / 64.01 | ms | 1.4306 | 95% [1.1566, 1.4519] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 92.461 / 90.799 | ms | 1.0363 | 95% [0.99177, 1.1951] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 273.24 / 260.6 | ms | 1.0625 | 95% [1.0321, 1.0656] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 328.12 / 140.62 | ms | 2.3529 | 95% [2.1579, 2.5882] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 63.816 / 62.82 | MiB | 1.0159 | 95% [1.0143, 1.0177] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-dda8b79df39c0937e99b0830d542cf6e21e55489709403ec1ccf91583ada6c05"></a>
+
+<details>
+<summary>render_bundle_dynamic_bindings — unknown; diagnostic; 12 metrics</summary>
+
+Record `dda8b79df39c0937e99b0830d542cf6e21e55489709403ec1ccf91583ada6c05` · execution `catalog-d3d12-be4d0f6d1d7730/render_bundle_dynamic_bindings/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:34e8f8cfd9cf837b41b0c689; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.058 / 7.6643 | ms | 4.9653 | 95% [4.7596, 5.0993] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 1.4059 / 11.507 | ms | 0.11839 | 95% [0.11395, 0.12972] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 17.161 / 25.188 | ms | 0.69431 | 95% [0.51328, 0.80058] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 57.038 / 46.288 | ms | 1.2725 | 95% [1.1017, 1.4552] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 237.73 / 219.85 | ms | 1.101 | 95% [1.0662, 1.1451] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.6625 / 0.0788 | ms | 8.4443 | 95% [6.974, 9.4523] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 1.3761 / 0.1662 | ms | 8.2508 | 95% [7.9011, 8.3394] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 14.942 / 32.144 | ms | 0.43211 | 95% [0.30182, 0.47676] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 17.324 / 32.446 | ms | 0.50169 | 95% [0.35441, 0.55664] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 196.29 / 205.7 | ms | 0.96276 | 95% [0.92338, 0.98228] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 132.81 / 109.38 | ms | 1.2857 | 95% [1.0625, 1.4545] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 104.8 / 66.215 | MiB | 1.5804 | 95% [1.58, 1.5832] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-d39c1ada6b213a25672cb691afad4de7fcba2193618185a682cb7bb35bfb9cd5"></a>
+
+<details>
+<summary>render_bundle_dynamic_pipeline_bindings — unknown; diagnostic; 12 metrics</summary>
+
+Record `d39c1ada6b213a25672cb691afad4de7fcba2193618185a682cb7bb35bfb9cd5` · execution `catalog-d3d12-be4d0f6d1d7730/render_bundle_dynamic_pipeline_bindings/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:3e90dee0eb05f88f50b5eab8; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.337 / 7.6245 | ms | 5.0202 | 95% [4.8293, 5.1096] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 1.4193 / 11.444 | ms | 0.12298 | 95% [0.11878, 0.13189] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 16.988 / 26.929 | ms | 0.63881 | 95% [0.48796, 0.89699] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 56.882 / 46.25 | ms | 1.2495 | 95% [1.0987, 1.4945] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 237.33 / 217.83 | ms | 1.0973 | 95% [1.0573, 1.1386] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.6582 / 0.083 | ms | 7.7552 | 95% [7.1145, 9.0915] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 1.335 / 0.1652 | ms | 8.1236 | 95% [7.683, 8.514] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 14.887 / 32.299 | ms | 0.42392 | 95% [0.30114, 0.4768] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 17.197 / 32.553 | ms | 0.49004 | 95% [0.35261, 0.54841] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 198.08 / 210.24 | ms | 0.94214 | 95% [0.91178, 0.97387] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 125 / 101.56 | ms | 1.3636 | 95% [1.0667, 1.4167] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 104.78 / 66.227 | MiB | 1.5818 | 95% [1.5802, 1.5839] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-adceb0dff417296b5f55ad73947da56f835ed8578f0886c1507340f9fd882c3d"></a>
+
+<details>
+<summary>render_bundle_dynamic_pipeline_bindings_200k — unknown; diagnostic; 12 metrics</summary>
+
+Record `adceb0dff417296b5f55ad73947da56f835ed8578f0886c1507340f9fd882c3d` · execution `catalog-d3d12-be4d0f6d1d7730/render_bundle_dynamic_pipeline_bindings_200k/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b5b3efc720ad87b1e473fab9; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.913 / 7.5569 | ms | 4.98 | 95% [4.9739, 5.2855] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 137.88 / 20.558 | ms | 6.704 | 95% [6.6353, 6.7523] ratio | 3/3 observations | loss | reported aggregate |
+| cold.submit_wait_ms | 1406.4 / 58.009 | ms | 24.713 | 95% [21.257, 26.517] ratio | 3/3 observations | loss | reported aggregate |
+| cold.operation_ms | 1583.2 / 86.139 | ms | 18.681 | 95% [16.72, 19.898] ratio | 3/3 observations | loss | reported aggregate |
+| cold.complete_ms | 1762.8 / 255.53 | ms | 6.8861 | 95% [6.6933, 7.4395] ratio | 3/3 observations | loss | reported aggregate |
+| warm.setup_ms | 37.912 / 7.3426 | ms | 5.2855 | 95% [4.974, 10.824] ratio | 3/3 observations | loss | reported aggregate |
+| warm.encode_ms | 138.59 / 20.421 | ms | 6.7523 | 95% [6.6353, 19.065] ratio | 3/3 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1406.4 / 66.16 | ms | 22.418 | 95% [21.257, 24.713] ratio | 3/3 observations | loss | reported aggregate |
+| warm.operation_ms | 1583.2 / 84.443 | ms | 18.681 | 95% [16.72, 22.087] ratio | 3/3 observations | loss | reported aggregate |
+| warm.complete_ms | 1762.8 / 255.53 | ms | 6.8861 | 95% [6.6934, 7.6849] ratio | 3/3 observations | loss | reported aggregate |
+| cpu_ms | 1796.9 / 203.12 | ms | 8.8462 | 95% [7.6, 16.5] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 4200.4 / 72.828 | MiB | 57.682 | 95% [57.672, 57.684] ratio | 3/3 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-9c1217dd65deb36cd325470df2e689f78bdd21a958ed30118f023da25060f370"></a>
+
+<details>
+<summary>render_draw_indexed_200k — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `9c1217dd65deb36cd325470df2e689f78bdd21a958ed30118f023da25060f370` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_200k/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c5928cb13f1a21f7f8864494; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-094917d500b38f38b56fc96cd0d07a9c292a8fd0c130358ab56b05cad20efe16"></a>
+
+<details>
+<summary>render_draw_indexed_baseline — unknown; diagnostic; 12 metrics</summary>
+
+Record `094917d500b38f38b56fc96cd0d07a9c292a8fd0c130358ab56b05cad20efe16` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_baseline/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:9534749688083f82eaad4ef9; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 42.637 / 7.9707 | ms | 5.3908 | 95% [4.77, 5.7465] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 1.7149 / 0.1648 | ms | 10.505 | 95% [7.1307, 10.701] ratio | 7/7 observations | loss | reported aggregate |
+| cold.submit_wait_ms | 118.37 / 7.2175 | ms | 18.796 | 95% [6.08, 38.648] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 163.79 / 17.24 | ms | 10.187 | 95% [5.3231, 12.39] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 327.52 / 188.66 | ms | 1.6995 | 95% [1.6431, 1.8668] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 42.455 / 7.8753 | ms | 5.5177 | 95% [4.9556, 5.8064] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 1.6693 / 0.1637 | ms | 10.57 | 95% [9.1992, 11.179] ratio | 7/7 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 120.34 / 7.2175 | ms | 18.796 | 95% [6.08, 61.688] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 163.79 / 15.367 | ms | 11.953 | 95% [5.7677, 18.916] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 324.19 / 188.66 | ms | 1.6995 | 95% [1.6576, 1.8667] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 312.5 / 203.12 | ms | 1.7 | 95% [1.4286, 1.8333] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 233.12 / 61.57 | MiB | 3.787 | 95% [3.7845, 3.7892] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-48c331bd1d55ca24ae50d5452cd3cf498448a326e6ea69050308756495096b2c"></a>
+
+<details>
+<summary>render_draw_indexed_indirect_u16 — unknown; diagnostic; 12 metrics</summary>
+
+Record `48c331bd1d55ca24ae50d5452cd3cf498448a326e6ea69050308756495096b2c` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_indirect_u16/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:3c042b99f342f0474f38656f; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.267 / 8.3969 | ms | 4.5339 | 95% [4.4569, 4.8701] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.5125 / 95.489 | ms | 0.0053007 | 95% [0.0051824, 0.0053887] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 30.997 / 28.14 | ms | 1.1015 | 95% [0.92818, 1.2949] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 69.735 / 131.85 | ms | 0.52931 | 95% [0.49792, 0.57015] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 249.58 / 300.2 | ms | 0.82183 | 95% [0.80456, 0.84637] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.5106 / 0.0955 | ms | 5.1791 | 95% [4.9863, 5.8256] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.4845 / 0.1432 | ms | 3.4089 | 95% [3.112, 3.5747] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 28.349 / 31.788 | ms | 0.89451 | 95% [0.6452, 0.90611] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 29.636 / 32.027 | ms | 0.92538 | 95% [0.67407, 0.94298] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 209.11 / 202.36 | ms | 1.0252 | 95% [0.97815, 1.0549] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 132.81 / 148.44 | ms | 0.89474 | 95% [0.75, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 123.71 / 66.715 | MiB | 1.854 | 95% [1.8533, 1.8557] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-bebb9b83eb0f98881961b2b0fc162b7d8d05fcaf4c58b5f927f9b5fa587f1f39"></a>
+
+<details>
+<summary>render_draw_indexed_indirect_u32 — unknown; diagnostic; 12 metrics</summary>
+
+Record `bebb9b83eb0f98881961b2b0fc162b7d8d05fcaf4c58b5f927f9b5fa587f1f39` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_indirect_u32/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:88dd70330d0de5ab74648965; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.132 / 8.5018 | ms | 4.4744 | 95% [4.4055, 4.5725] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.4997 / 95.502 | ms | 0.0052446 | 95% [0.0049359, 0.0054612] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 29.099 / 24.953 | ms | 1.198 | 95% [0.87375, 1.3727] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 68.182 / 129.01 | ms | 0.53125 | 95% [0.49461, 0.54998] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 247.52 / 296.4 | ms | 0.82539 | 95% [0.8108, 0.83801] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.501 / 0.0994 | ms | 5.0503 | 95% [4.6863, 5.481] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.505 / 0.1453 | ms | 3.4092 | 95% [3.0205, 3.6097] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 27.846 / 33.114 | ms | 0.82597 | 95% [0.62136, 0.86775] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 29.148 / 33.382 | ms | 0.85587 | 95% [0.6479, 0.90034] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 208.21 / 208.66 | ms | 1.0085 | 95% [0.97686, 1.0297] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 125 / 148.44 | ms | 0.88889 | 95% [0.83333, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 123.7 / 66.727 | MiB | 1.853 | 95% [1.8525, 1.8546] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-c470efabb479e85cee80c00f9fede0b14d2842ec1aaf94074a8f71e944056a72"></a>
+
+<details>
+<summary>render_draw_indirect_legacy_equivalent — unknown; diagnostic; 12 metrics</summary>
+
+Record `c470efabb479e85cee80c00f9fede0b14d2842ec1aaf94074a8f71e944056a72` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_indirect_legacy_equivalent/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c0fb7ca9adf435012bc79c9f; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.968 / 8.5322 | ms | 4.4468 | 95% [4.2819, 4.5994] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.7878 / 95.646 | ms | 0.008236 | 95% [0.0079812, 0.0083093] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 47.963 / 28.358 | ms | 1.7371 | 95% [1.3123, 2.2369] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 86.905 / 132.46 | ms | 0.66443 | 95% [0.61977, 0.68275] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 264.6 / 300.74 | ms | 0.8741 | 95% [0.84984, 0.88712] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.5012 / 0.0902 | ms | 5.5371 | 95% [5.337, 5.9093] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0.6792 / 0.1593 | ms | 4.2982 | 95% [4.0123, 4.5017] ratio | 7/7 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 46.055 / 31.608 | ms | 1.4571 | 95% [1.4257, 1.4728] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 47.609 / 31.864 | ms | 1.4942 | 95% [1.4606, 1.5071] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 225.32 / 201.83 | ms | 1.1283 | 95% [1.0925, 1.1343] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 148.44 / 148.44 | ms | 1.0526 | 95% [0.94737, 1.1111] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 151.44 / 66.707 | MiB | 2.2702 | 95% [2.2106, 2.2716] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-2e04b2c22f00aec92be998bfe272c46e3272eaf9820cf84a19b61d753cd3e917"></a>
+
+<details>
+<summary>render_draw_redundant_pipeline_bindings — unknown; diagnostic; 12 metrics</summary>
+
+Record `2e04b2c22f00aec92be998bfe272c46e3272eaf9820cf84a19b61d753cd3e917` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_redundant_pipeline_bindings/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:64e51f99a41825f018fa94d8; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.004 / 7.5681 | ms | 5.0493 | 95% [4.8997, 5.158] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 1.4289 / 11.4 | ms | 0.12486 | 95% [0.12098, 0.13456] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 16.954 / 25.445 | ms | 0.68268 | 95% [0.52876, 0.7089] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 56.572 / 45.255 | ms | 1.2604 | 95% [1.1201, 1.3496] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 235.7 / 215.86 | ms | 1.0882 | 95% [1.0651, 1.1039] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.707 / 0.081 | ms | 8.7075 | 95% [6.9689, 9.6667] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 1.3806 / 0.1666 | ms | 8.426 | 95% [7.9358, 8.5312] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 14.868 / 31.569 | ms | 0.44081 | 95% [0.40973, 0.48855] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 17.267 / 31.843 | ms | 0.50755 | 95% [0.47937, 0.56258] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 195.96 / 201.59 | ms | 0.96499 | 95% [0.93511, 0.98438] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 132.81 / 101.56 | ms | 1.3077 | 95% [1.2143, 1.5] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 104.82 / 66.227 | MiB | 1.5821 | 95% [1.5811, 1.5834] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-e1d9ae46be4f557b7f4f2c5acf658b52f16c1320f54d276fee9fdcdc5885d34e"></a>
+
+<details>
+<summary>render_draw_redundant_pipeline_bindings_200k — unknown; diagnostic; 12 metrics</summary>
+
+Record `e1d9ae46be4f557b7f4f2c5acf658b52f16c1320f54d276fee9fdcdc5885d34e` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_redundant_pipeline_bindings_200k/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:02612f96c3c5fab0cb659d29; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.842 / 7.4802 | ms | 5.1328 | 95% [5.0852, 5.2487] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 138.77 / 20.075 | ms | 6.9125 | 95% [6.6442, 7.021] ratio | 3/3 observations | loss | reported aggregate |
+| cold.submit_wait_ms | 1394.7 / 48.828 | ms | 28.5 | 95% [18.667, 28.563] ratio | 3/3 observations | loss | reported aggregate |
+| cold.operation_ms | 1572 / 77.04 | ms | 20.405 | 95% [15.412, 20.495] ratio | 3/3 observations | loss | reported aggregate |
+| cold.complete_ms | 1747.8 / 246.01 | ms | 7.1047 | 95% [6.5086, 7.1402] ratio | 3/3 observations | loss | reported aggregate |
+| warm.setup_ms | 38.84 / 7.4028 | ms | 5.2489 | 95% [5.1329, 10.567] ratio | 3/3 observations | loss | reported aggregate |
+| warm.encode_ms | 139.54 / 19.875 | ms | 7.021 | 95% [6.6442, 19.915] ratio | 3/3 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1394.7 / 48.828 | ms | 28.5 | 95% [26.6, 28.563] ratio | 3/3 observations | loss | reported aggregate |
+| warm.operation_ms | 1572 / 75.462 | ms | 20.495 | 95% [20.406, 25.823] ratio | 3/3 observations | loss | reported aggregate |
+| warm.complete_ms | 1747.8 / 241.74 | ms | 7.1402 | 95% [7.1047, 7.7329] ratio | 3/3 observations | loss | reported aggregate |
+| cpu_ms | 1703.1 / 187.5 | ms | 9.0833 | 95% [7.5333, 16.692] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 4200.4 / 72.883 | MiB | 57.673 | 95% [57.632, 57.695] ratio | 3/3 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-5ddc57999327fcd59c7d898b5e71b8986767ad8b3eaee099a558cc07ba0171b8"></a>
+
+<details>
+<summary>render_draw_state_bindings — unknown; diagnostic; 12 metrics</summary>
+
+Record `5ddc57999327fcd59c7d898b5e71b8986767ad8b3eaee099a558cc07ba0171b8` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_state_bindings/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:e4595ca67fb893838ff513e5; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.846 / 7.473 | ms | 5.0502 | 95% [5.0167, 5.1185] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 1.4247 / 11.495 | ms | 0.12447 | 95% [0.12107, 0.12629] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 15.349 / 28.955 | ms | 0.53008 | 95% [0.48678, 0.62262] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 54.623 / 48.094 | ms | 1.133 | 95% [1.0719, 1.2497] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 231.89 / 217 | ms | 1.0646 | 95% [1.0527, 1.1028] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.6851 / 0.0769 | ms | 8.9089 | 95% [7.645, 9.5775] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 1.3574 / 0.168 | ms | 7.8464 | 95% [7.6556, 8.9881] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 13.424 / 31.557 | ms | 0.43839 | 95% [0.42083, 0.47987] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 15.739 / 31.761 | ms | 0.51361 | 95% [0.48915, 0.55156] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 192.71 / 199.05 | ms | 0.96485 | 95% [0.9477, 0.98494] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 132.81 / 109.38 | ms | 1.3077 | 95% [1.1429, 1.4286] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 104.8 / 66.23 | MiB | 1.5812 | 95% [1.5803, 1.583] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-5adfc680775699b45c32aa499e8774e1cb5ab55cab6a6a0b6b22ba277bc1be54"></a>
+
+<details>
+<summary>render_draw_throughput_200k — unknown; diagnostic; 12 metrics</summary>
+
+Record `5adfc680775699b45c32aa499e8774e1cb5ab55cab6a6a0b6b22ba277bc1be54` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_throughput_200k/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:8eb07001b1395c550eb9ed6d; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.775 / 7.5906 | ms | 5.108 | 95% [5.0825, 5.1591] ratio | 3/3 observations | loss | reported aggregate |
+| cold.encode_ms | 139.96 / 21.058 | ms | 6.6332 | 95% [6.5891, 6.8501] ratio | 3/3 observations | loss | reported aggregate |
+| cold.submit_wait_ms | 1609.8 / 236.9 | ms | 6.7952 | 95% [6.5455, 6.8104] ratio | 3/3 observations | loss | reported aggregate |
+| cold.operation_ms | 1788.5 / 265.57 | ms | 6.7348 | 95% [6.5303, 6.7462] ratio | 3/3 observations | loss | reported aggregate |
+| cold.complete_ms | 1966.1 / 434.87 | ms | 4.521 | 95% [4.4692, 4.5326] ratio | 3/3 observations | loss | reported aggregate |
+| warm.setup_ms | 38.578 / 7.5154 | ms | 5.1592 | 95% [5.0827, 8.6742] ratio | 3/3 observations | loss | reported aggregate |
+| warm.encode_ms | 139.68 / 21.058 | ms | 6.6332 | 95% [6.5891, 19.296] ratio | 3/3 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1609.8 / 232.39 | ms | 6.8104 | 95% [6.7952, 7.5543] ratio | 3/3 observations | loss | reported aggregate |
+| warm.operation_ms | 1788.5 / 261.16 | ms | 6.7462 | 95% [6.7348, 7.9176] ratio | 3/3 observations | loss | reported aggregate |
+| warm.complete_ms | 1966.1 / 428.38 | ms | 4.5326 | 95% [4.521, 5.0421] ratio | 3/3 observations | loss | reported aggregate |
+| cpu_ms | 1734.4 / 203.12 | ms | 8.5385 | 95% [7.5333, 12.222] ratio | 3/3 observations | loss | reported aggregate |
+| max_rss_mib | 4200.7 / 72.891 | MiB | 57.63 | 95% [57.629, 57.63] ratio | 3/3 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-d7113c7db3d7fc7d798ad84a7bcacccceb74031ea7bdeeb732b9c396e90647b2"></a>
+
+<details>
+<summary>render_draw_throughput_baseline — unknown; diagnostic; 12 metrics</summary>
+
+Record `d7113c7db3d7fc7d798ad84a7bcacccceb74031ea7bdeeb732b9c396e90647b2` · execution `catalog-d3d12-be4d0f6d1d7730/render_draw_throughput_baseline/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:2c6ecd81a6e8f25490d2c056; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.237 / 7.6251 | ms | 5.0225 | 95% [4.9543, 5.1318] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 1.3844 / 11.683 | ms | 0.11872 | 95% [0.11544, 0.12052] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 15.144 / 29.015 | ms | 0.50076 | 95% [0.45303, 0.61619] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 55.121 / 48.528 | ms | 1.1273 | 95% [1.0091, 1.1964] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 234.97 / 219.53 | ms | 1.0648 | 95% [1.051, 1.0727] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.6378 / 0.0826 | ms | 8.155 | 95% [7.2474, 8.8212] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 1.3514 / 0.1674 | ms | 8.1947 | 95% [7.6291, 8.5098] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 13.366 / 31.87 | ms | 0.41225 | 95% [0.29707, 0.43012] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 15.929 / 32.106 | ms | 0.48384 | 95% [0.349, 0.50651] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 195.5 / 203.85 | ms | 0.94529 | 95% [0.89941, 0.9737] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 140.62 / 109.38 | ms | 1.1875 | 95% [1.0667, 1.5] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 104.82 / 66.211 | MiB | 1.5831 | 95% [1.5809, 1.5837] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-38e298bee7663feb23dba0899e68d2c5fe6fc9cdac443ced26678f9bd02ca1ae"></a>
+
+<details>
+<summary>render_multidraw — unknown; diagnostic; 12 metrics</summary>
+
+Record `38e298bee7663feb23dba0899e68d2c5fe6fc9cdac443ced26678f9bd02ca1ae` · execution `catalog-d3d12-be4d0f6d1d7730/render_multidraw/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:924041d30ab25469a380435c; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.042 / 8.5471 | ms | 4.4509 | 95% [4.3463, 4.6002] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 1.7204 / 96.88 | ms | 0.017638 | 95% [0.017332, 0.018102] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 118.35 / 27.013 | ms | 4.326 | 95% [2.955, 5.3987] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 158.64 / 132.47 | ms | 1.1845 | 95% [1.0889, 1.2705] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 339.15 / 303.1 | ms | 1.1196 | 95% [1.0525, 1.1418] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 0.5419 / 0.0925 | ms | 5.7989 | 95% [5.2955, 6.1283] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 1.5925 / 0.3146 | ms | 4.9809 | 95% [4.6036, 5.4988] ratio | 7/7 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 121.91 / 43.769 | ms | 2.7807 | 95% [2.7057, 3.8898] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 124.36 / 44.193 | ms | 2.8089 | 95% [2.7446, 3.9211] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 305.85 / 213.74 | ms | 1.431 | 95% [1.4212, 1.4695] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 187.5 / 148.44 | ms | 1.3889 | 95% [1.2105, 1.4211] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 266.8 / 67 | MiB | 3.982 | 95% [3.8638, 4.3165] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-d769ba1ee716c8bf61a1ba1845416e7ef4bb1414280719bf8b28b66c3d3046c4"></a>
+
+<details>
+<summary>render_multidraw_indexed — unknown; diagnostic; 12 metrics</summary>
+
+Record `d769ba1ee716c8bf61a1ba1845416e7ef4bb1414280719bf8b28b66c3d3046c4` · execution `catalog-d3d12-be4d0f6d1d7730/render_multidraw_indexed/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:3437c6dff1c773be9dd2c295; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.327 / 8.4264 | ms | 4.5567 | 95% [4.517, 4.6397] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 1.7289 / 96.003 | ms | 0.018017 | 95% [0.017425, 0.0189] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 121.17 / 31.665 | ms | 3.8242 | 95% [3.5071, 4.4655] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 161.42 / 135.64 | ms | 1.19 | 95% [1.1717, 1.2264] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 339.31 / 309.44 | ms | 1.121 | 95% [1.0783, 1.1379] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 0.5503 / 0.1053 | ms | 5.2483 | 95% [4.8237, 5.9045] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 1.6344 / 0.3312 | ms | 4.971 | 95% [4.5399, 5.1091] ratio | 7/7 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 123.28 / 30.862 | ms | 3.9907 | 95% [3.9521, 4.1722] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 125.79 / 31.31 | ms | 4.0147 | 95% [3.98, 4.1934] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 304.13 / 200.77 | ms | 1.5236 | 95% [1.472, 1.5399] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 179.69 / 148.44 | ms | 1.2105 | 95% [1.1, 1.25] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 266.84 / 67.062 | MiB | 3.9779 | 95% [3.9758, 4.0397] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-0eb458ee8a280e25f60f41596d0d7903370c2456212bf907874184646802282d"></a>
+
+<details>
+<summary>render_pass_depth_stencil — unknown; diagnostic; 12 metrics</summary>
+
+Record `0eb458ee8a280e25f60f41596d0d7903370c2456212bf907874184646802282d` · execution `catalog-d3d12-be4d0f6d1d7730/render_pass_depth_stencil/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:f44fa7fc9937d9e9483be92c; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.978 / 7.4724 | ms | 5.0719 | 95% [4.9945, 5.1238] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.2261 / 11.304 | ms | 0.020051 | 95% [0.017958, 0.021067] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.4797 / 32.529 | ms | 0.073894 | 95% [0.05916, 0.12607] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 40.826 / 51.176 | ms | 0.78655 | 95% [0.66982, 1.0757] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 217.28 / 220.54 | ms | 0.98525 | 95% [0.93027, 1.0605] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.6027 / 0.0751 | ms | 8.0133 | 95% [7.3503, 8.4887] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0.1855 / 0.0633 | ms | 2.8778 | 95% [2.4226, 3.1438] ratio | 7/7 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1.5556 / 31.805 | ms | 0.046687 | 95% [0.046233, 0.050543] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2.4951 / 31.945 | ms | 0.076581 | 95% [0.073965, 0.079266] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.83 / 199.72 | ms | 0.8887 | 95% [0.87057, 0.90281] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 117.19 / 101.56 | ms | 1.0833 | 95% [1, 1.2143] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 67.18 / 66.23 | MiB | 1.0141 | 95% [1.0136, 1.0146] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-d068563c79c0da3ed5c9b3e319f83fdc93542fb0c18c81dba10fac227c926458"></a>
+
+<details>
+<summary>render_pass_dynamic_viewport_scissor — unknown; diagnostic; 12 metrics</summary>
+
+Record `d068563c79c0da3ed5c9b3e319f83fdc93542fb0c18c81dba10fac227c926458` · execution `catalog-d3d12-be4d0f6d1d7730/render_pass_dynamic_viewport_scissor/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:f68ba73787d61cc409c361d7; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.66 / 7.5681 | ms | 4.9556 | 95% [4.8729, 4.9797] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.2689 / 11.441 | ms | 0.023106 | 95% [0.020914, 0.02413] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.6239 / 32.809 | ms | 0.081475 | 95% [0.078558, 0.095146] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 40.729 / 51.71 | ms | 0.80368 | 95% [0.76814, 0.87218] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 217.06 / 219.06 | ms | 0.98727 | 95% [0.97761, 1.0043] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.5965 / 0.0808 | ms | 7.5229 | 95% [6.922, 7.964] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.2032 / 0.0688 | ms | 2.9985 | 95% [2.4852, 3.2655] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1.8113 / 32.136 | ms | 0.053722 | 95% [0.040881, 0.056083] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2.7889 / 32.295 | ms | 0.083196 | 95% [0.063294, 0.08647] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.7 / 204.77 | ms | 0.8801 | 95% [0.84498, 0.89219] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 125 / 101.56 | ms | 1.2727 | 95% [1, 1.5455] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 68.238 / 66.195 | MiB | 1.0307 | 95% [1.0304, 1.0313] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-c6a19db9e96e807afdfacebf37151c09fb0b89016a9818cd1c37a1fa014c40e2"></a>
+
+<details>
+<summary>render_pass_loadops_clear_load — unknown; diagnostic; 12 metrics</summary>
+
+Record `c6a19db9e96e807afdfacebf37151c09fb0b89016a9818cd1c37a1fa014c40e2` · execution `catalog-d3d12-be4d0f6d1d7730/render_pass_loadops_clear_load/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:8c499888e167d7be3ac62b15; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.853 / 7.4585 | ms | 5.0734 | 95% [5.0411, 5.0885] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.2404 / 11.283 | ms | 0.021147 | 95% [0.020884, 0.023091] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.6563 / 29.903 | ms | 0.094446 | 95% [0.075604, 0.13519] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 40.963 / 48.939 | ms | 0.83737 | 95% [0.78372, 1.0731] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 218.75 / 218.08 | ms | 1.0096 | 95% [0.98361, 1.046] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.6111 / 0.0817 | ms | 7.3766 | 95% [7.0378, 8.0233] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.1901 / 0.0664 | ms | 2.914 | 95% [2.6176, 3.2954] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1.7894 / 32.625 | ms | 0.049873 | 95% [0.040465, 0.056512] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2.7882 / 32.783 | ms | 0.079951 | 95% [0.063086, 0.086087] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 180.51 / 204.89 | ms | 0.8754 | 95% [0.85347, 0.89326] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 117.19 / 109.38 | ms | 1.0769 | 95% [0.9375, 1.3077] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 67.996 / 66.277 | MiB | 1.0256 | 95% [1.0254, 1.0266] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-9c9ffc6fe3975ffe217f744b52d9977513169d268a7986e03b9bebea30a0e213"></a>
+
+<details>
+<summary>render_pass_multisample_resolve — unknown; diagnostic; 12 metrics</summary>
+
+Record `9c9ffc6fe3975ffe217f744b52d9977513169d268a7986e03b9bebea30a0e213` · execution `catalog-d3d12-be4d0f6d1d7730/render_pass_multisample_resolve/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:396efc1186c317641d4f11e4; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.124 / 7.5809 | ms | 5.0521 | 95% [4.8526, 5.175] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.1995 / 11.418 | ms | 0.017421 | 95% [0.017104, 0.017769] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.2995 / 29.395 | ms | 0.081909 | 95% [0.071186, 0.088209] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 40.793 / 48.68 | ms | 0.83698 | 95% [0.77115, 0.9152] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 218.1 / 218.47 | ms | 0.99457 | 95% [0.94175, 1.0224] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.5995 / 0.0832 | ms | 7.4842 | 95% [6.8894, 8.1292] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.18 / 0.0704 | ms | 2.4778 | 95% [2.2621, 2.7105] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1.3994 / 31.981 | ms | 0.043262 | 95% [0.03306, 0.04426] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2.3556 / 32.168 | ms | 0.072341 | 95% [0.059187, 0.074563] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.68 / 202.89 | ms | 0.88559 | 95% [0.8501, 0.88852] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 117.19 / 101.56 | ms | 1.1538 | 95% [1.0714, 1.3333] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 66.789 / 66.289 | MiB | 1.0078 | 95% [1.0072, 1.0082] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-f4b7c7a94cdb21c48fbef04be39d859984fe0b9da41b38510929414b5e705414"></a>
+
+<details>
+<summary>render_pass_stencil_ref_sweep — unknown; diagnostic; 12 metrics</summary>
+
+Record `f4b7c7a94cdb21c48fbef04be39d859984fe0b9da41b38510929414b5e705414` · execution `catalog-d3d12-be4d0f6d1d7730/render_pass_stencil_ref_sweep/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:77e84af437c7f841b96716ba; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 37.998 / 7.5876 | ms | 4.984 | 95% [4.9275, 5.1054] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.1913 / 11.514 | ms | 0.016665 | 95% [0.015058, 0.017284] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.1629 / 33.241 | ms | 0.061626 | 95% [0.052014, 0.080602] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 40.605 / 52.496 | ms | 0.75991 | 95% [0.64004, 0.87419] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 218.47 / 222.11 | ms | 0.97827 | 95% [0.95126, 1.0207] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.5965 / 0.0767 | ms | 7.8384 | 95% [6.0021, 8.1989] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.154 / 0.063 | ms | 2.4093 | 95% [2.1979, 2.5854] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1.2769 / 32.044 | ms | 0.039047 | 95% [0.037387, 0.04016] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2.168 / 32.206 | ms | 0.068048 | 95% [0.06455, 0.068503] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.9 / 200.49 | ms | 0.8973 | 95% [0.88411, 0.90971] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 109.38 / 101.56 | ms | 1.1667 | 95% [1.0769, 1.4444] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 66.32 / 66.27 | MiB | 1.0009 | 95% [1.0002, 1.0018] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-6d9c069608ac6483eade675c9fc6ca9db52841b6ab128095fa71a8b4a6cde888"></a>
+
+<details>
+<summary>render_pass_storeops_discard — unknown; diagnostic; 12 metrics</summary>
+
+Record `6d9c069608ac6483eade675c9fc6ca9db52841b6ab128095fa71a8b4a6cde888` · execution `catalog-d3d12-be4d0f6d1d7730/render_pass_storeops_discard/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:5b7fcffacf064f5b9e35f77a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.123 / 7.6276 | ms | 5.0212 | 95% [4.9537, 5.1368] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0.2664 / 11.43 | ms | 0.023464 | 95% [0.021788, 0.023756] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.6712 / 31.497 | ms | 0.084497 | 95% [0.077036, 0.1117] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 41.256 / 50.356 | ms | 0.81819 | 95% [0.76867, 0.97024] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 219.69 / 217.46 | ms | 1.0161 | 95% [0.99538, 1.0369] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.6022 / 0.0781 | ms | 7.6627 | 95% [7.3644, 7.9263] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0.202 / 0.0689 | ms | 2.6436 | 95% [2.4396, 3.0031] ratio | 7/7 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 1.7805 / 31.863 | ms | 0.055358 | 95% [0.054721, 0.058586] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 2.7738 / 32.049 | ms | 0.085495 | 95% [0.085024, 0.089412] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 181.21 / 199.08 | ms | 0.90721 | 95% [0.89435, 0.92647] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 117.19 / 101.56 | ms | 1.0769 | 95% [1, 1.3077] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 67.992 / 66.258 | MiB | 1.0261 | 95% [1.0257, 1.0268] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-eb9eed92446acaa360b08bcd7f2bc4e733d41ca67679c2186b6b737d305e1be4"></a>
+
+<details>
+<summary>render_pixel_local_storage_barrier — unknown; diagnostic; 12 metrics</summary>
+
+Record `eb9eed92446acaa360b08bcd7f2bc4e733d41ca67679c2186b6b737d305e1be4` · execution `catalog-d3d12-be4d0f6d1d7730/render_pixel_local_storage_barrier/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:eb53039f7cea532bce3555ce; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 36.351 / 12.488 | ms | 2.911 | 95% [2.5907, 3.7271] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 36.358 / 12.497 | ms | 2.9094 | 95% [2.5897, 3.7251] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 213.28 / 181.34 | ms | 1.1752 | 95% [1.1609, 1.1824] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 32.264 / 14.69 | ms | 2.2035 | 95% [1.1898, 2.3162] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 32.267 / 14.693 | ms | 2.2032 | 95% [1.1898, 2.3159] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 209.5 / 187.46 | ms | 1.1359 | 95% [1.0688, 1.1556] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 125 / 85.938 | ms | 1.3846 | 95% [1.25, 1.5455] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 59.949 / 57.871 | MiB | 1.0357 | 95% [1.0347, 1.0363] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-0658ed59a2e87f1ae2a5518a2dd6be9ddbda38726e4fdc1ac14e9ed9f3e9a368"></a>
+
+<details>
+<summary>render_pixel_local_storage_barrier_500 — unknown; diagnostic; 12 metrics</summary>
+
+Record `0658ed59a2e87f1ae2a5518a2dd6be9ddbda38726e4fdc1ac14e9ed9f3e9a368` · execution `catalog-d3d12-be4d0f6d1d7730/render_pixel_local_storage_barrier_500/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:cd8f00c6eded2eb24979806a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 36.33 / 12.742 | ms | 2.8325 | 95% [2.2209, 3.1726] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 36.337 / 12.751 | ms | 2.831 | 95% [2.2201, 3.1712] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 213.96 / 181.16 | ms | 1.181 | 95% [1.1277, 1.1996] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 32.025 / 14.144 | ms | 2.2642 | 95% [2.1327, 2.327] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 32.028 / 14.146 | ms | 2.264 | 95% [2.1324, 2.3269] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 209.4 / 181.44 | ms | 1.1489 | 95% [1.1006, 1.1584] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 125 / 85.938 | ms | 1.4545 | 95% [1.3333, 1.5455] ratio | 7/7 observations | loss | reported aggregate |
+| max_rss_mib | 59.91 / 57.875 | MiB | 1.0352 | 95% [1.0346, 1.0356] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-1132c6d4b1c53e8a18cc45f7582ebe91de1c8450442a9a4e0660b8c22ab77915"></a>
+
+<details>
+<summary>render_uniform_buffer_update_writebuffer_partial_single — unknown; diagnostic; 12 metrics</summary>
+
+Record `1132c6d4b1c53e8a18cc45f7582ebe91de1c8450442a9a4e0660b8c22ab77915` · execution `catalog-d3d12-be4d0f6d1d7730/render_uniform_buffer_update_writebuffer_partial_single/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:d021623d1a83c9bfea8fa514; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 38.708 / 7.1887 | ms | 5.4092 | 95% [5.2961, 5.4347] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0166 / 10.566 | ms | 0.0015897 | 95% [0.0015267, 0.0018025] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.7562 / 28.816 | ms | 0.095995 | 95% [0.084622, 0.13291] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 41.662 / 46.628 | ms | 0.89189 | 95% [0.83966, 1.0327] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 220.6 / 217.72 | ms | 1.0145 | 95% [0.99209, 1.0633] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.4302 / 0.0906 | ms | 4.6656 | 95% [4.3065, 5.5246] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.0086 / 0.0506 | ms | 0.14381 | 95% [0.11813, 0.22658] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.3723 / 31.845 | ms | 0.011457 | 95% [0.0093966, 0.011845] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.9727 / 31.994 | ms | 0.030184 | 95% [0.02403, 0.031054] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.74 / 203.08 | ms | 0.87809 | 95% [0.86677, 0.90492] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 125 / 93.75 | ms | 1.25 | 95% [1.1429, 1.3636] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 63.496 / 66.188 | MiB | 0.95899 | 95% [0.95796, 0.96038] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-e5bf2e5c6752b6e8c6b2906d194fbaff5a1520211f9d572d991b9afb2331b852"></a>
+
+<details>
+<summary>resource_buffer_map_double_request_guard — unknown; diagnostic; 12 metrics</summary>
+
+Record `e5bf2e5c6752b6e8c6b2906d194fbaff5a1520211f9d572d991b9afb2331b852` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_double_request_guard/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:e974a782e1b84e1668f78729; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.6679 / 0.7869 | ms | 1.9581 | 95% [1.8319, 2.9418] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0019 / 3.882 | ms | 0.00048944 | 95% [0.00027182, 0.0050569] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1.6861 / 4.5624 | ms | 0.45161 | 95% [0.23908, 1.346] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 179.39 / 173.75 | ms | 1.0335 | 95% [1.0222, 1.0502] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0012 / 0.0018 | ms | 0.6875 | 95% [0.61111, 0.84615] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.0006 / 0.0017 | ms | 0.35294 | 95% [0.3, 0.5] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.0087 / 0.0074 | ms | 1.15 | 95% [0.93258, 1.45] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.71 / 170.62 | ms | 1.0517 | 95% [1.0258, 1.0674] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [0.90909, 1.2727] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 59.496 / 56.504 | MiB | 1.0527 | 95% [1.0524, 1.0538] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-a60bc176a471df6ba6ea99b1e5abdbf89d5d8479229f6d737f47f3ff444ce546"></a>
+
+<details>
+<summary>resource_buffer_map_partial_read_4kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `a60bc176a471df6ba6ea99b1e5abdbf89d5d8479229f6d737f47f3ff444ce546` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_partial_read_4kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:95c1e8626de364856ceb405d; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.7064 / 0.6736 | ms | 2.4419 | 95% [2.1745, 2.7329] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0014 / 7.5526 | ms | 0.00013118 | 95% [0.00011592, 0.00029698] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1.7147 / 8.263 | ms | 0.19844 | 95% [0.12633, 0.26666] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 181.15 / 174.45 | ms | 1.0257 | 95% [0.98893, 1.052] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0011 / 0.0031 | ms | 0.35714 | 95% [0.2, 0.48387] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.0004 / 0.0015 | ms | 0.26667 | 95% [0.10526, 0.3125] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.0059 / 0.0077 | ms | 0.77632 | 95% [0.38065, 1.325] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.62 / 168.17 | ms | 1.0647 | 95% [1.0496, 1.0829] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 85.938 | ms | 1.1667 | 95% [1.0833, 1.3] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 59.492 / 56.477 | MiB | 1.053 | 95% [1.052, 1.0574] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-a1efe8cd5df72bdc16d1fc9f8fcd96c967a5805df966a32a66e87eca7a22a5dd"></a>
+
+<details>
+<summary>resource_buffer_map_partial_write_64kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `a1efe8cd5df72bdc16d1fc9f8fcd96c967a5805df966a32a66e87eca7a22a5dd` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_partial_write_64kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:ca4b509dba922dd071f93dd1; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 3.9455 / 0.6184 | ms | 6.422 | 95% [4.6593, 6.9818] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0013 / 0.0056 | ms | 0.22807 | 95% [0.22034, 0.25455] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 3.9882 / 0.6332 | ms | 6.3353 | 95% [4.6256, 6.8633] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 181.44 / 169.37 | ms | 1.0701 | 95% [1.0559, 1.0808] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.185 / 0.0011 | ms | 160.91 | 95% [154.45, 173.42] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.001 / 0.0009 | ms | 1.1111 | 95% [1, 1.2222] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.2005 / 0.0054 | ms | 35.418 | 95% [34.278, 41.833] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 177.32 / 168.64 | ms | 1.0511 | 95% [1.0386, 1.0624] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1.0909 | 95% [1, 1.1667] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 62.445 / 55.145 | MiB | 1.1323 | 95% [1.1321, 1.1333] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-dfb58fe8008b23ecf5fb3cfc93f314d12330c46e76f9720e6a2d66291abb132f"></a>
+
+<details>
+<summary>resource_buffer_map_readback_1kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `dfb58fe8008b23ecf5fb3cfc93f314d12330c46e76f9720e6a2d66291abb132f` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_readback_1kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:d18b7d121ce89891ab32fb3c; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.8766 / 0.6287 | ms | 3.2467 | 95% [1.9436, 3.5784] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0013 / 6.7573 | ms | 0.00038164 | 95% [0.00013479, 0.00049994] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1.8876 / 7.3424 | ms | 0.288 | 95% [0.19759, 0.5031] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 180.9 / 175.03 | ms | 1.0379 | 95% [0.99767, 1.0482] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0011 / 0.003 | ms | 0.36667 | 95% [0.3125, 0.75] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.0004 / 0.0014 | ms | 0.28571 | 95% [0.25, 0.33333] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.006 / 0.0075 | ms | 0.83333 | 95% [0.64045, 1.013] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 179.16 / 168.83 | ms | 1.075 | 95% [1.0429, 1.0839] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 93.75 | ms | 1.0833 | 95% [1, 1.25] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 59.574 / 56.477 | MiB | 1.0544 | 95% [1.0507, 1.0561] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-edf3d1218a1398959f9b6186d0537a7e742ad52ebb6d3263b6dfb64026678fe1"></a>
+
+<details>
+<summary>resource_buffer_map_readback_64kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `edf3d1218a1398959f9b6186d0537a7e742ad52ebb6d3263b6dfb64026678fe1` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_readback_64kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:8b8197614b2a2b2c03a94c3d; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.7442 / 0.837 | ms | 2.5624 | 95% [1.8871, 2.9126] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0013 / 6.3089 | ms | 0.00020606 | 95% [0.00013032, 0.003741] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 1.7533 / 7.2224 | ms | 0.27917 | 95% [0.11346, 1.7057] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 180.81 / 176.3 | ms | 1.0348 | 95% [0.95951, 1.0624] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.001 / 0.003 | ms | 0.46667 | 95% [0.19231, 0.55556] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.0004 / 0.0014 | ms | 0.25 | 95% [0.18182, 0.35714] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.0059 / 0.0086 | ms | 0.74359 | 95% [0.61404, 1.1569] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 178.8 / 170.2 | ms | 1.0564 | 95% [1.0298, 1.0673] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [0.91667, 1.2727] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 59.535 / 56.48 | MiB | 1.0541 | 95% [1.0511, 1.0548] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-0a55d62c52fea066d3c98c1b701f11d8db4bc27907a4da06edb077b7ce03189d"></a>
+
+<details>
+<summary>resource_buffer_map_unmap_storm — unknown; diagnostic; 12 metrics</summary>
+
+Record `0a55d62c52fea066d3c98c1b701f11d8db4bc27907a4da06edb077b7ce03189d` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_unmap_storm/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:f9b4c0f6c127d1a2ad47efc8; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 4.0924 / 1.9183 | ms | 1.9245 | 95% [1.4789, 2.425] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0024 / 10.433 | ms | 0.00025298 | 95% [0.0001568, 0.00048346] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 4.1332 / 12.373 | ms | 0.30171 | 95% [0.23446, 0.66626] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 182.31 / 179.15 | ms | 1.0169 | 95% [1.0073, 1.0557] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.1364 / 0.0394 | ms | 3.6265 | 95% [2.8033, 9.7743] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.0016 / 14.495 | ms | 0.00012418 | 95% [0.00010379, 0.00020018] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.1574 / 14.558 | ms | 0.011559 | 95% [0.0099858, 0.033454] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 178.68 / 181.33 | ms | 0.97485 | 95% [0.96591, 1.0078] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1 | 95% [0.85714, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 62.43 / 60.539 | MiB | 1.0312 | 95% [1.0308, 1.0513] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-2cf8b8e8ceb70d0fde416397856b89112576e6cce7a86cb4139812761325035d"></a>
+
+<details>
+<summary>resource_buffer_map_write_1kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `2cf8b8e8ceb70d0fde416397856b89112576e6cce7a86cb4139812761325035d` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_write_1kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:db3b3f67d048c68b824355c1; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 3.8412 / 0.5948 | ms | 6.3915 | 95% [5.4175, 6.9633] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0014 / 0.0056 | ms | 0.24561 | 95% [0.2, 0.27778] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 3.8791 / 0.6088 | ms | 6.2807 | 95% [5.3639, 6.8674] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 181.39 / 168.92 | ms | 1.0808 | 95% [1.0594, 1.0853] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.1667 / 0.0012 | ms | 161.91 | 95% [137.17, 164.3] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.001 / 0.001 | ms | 1.1111 | 95% [0.9, 2.3] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.1809 / 0.0043 | ms | 43.951 | 95% [41.372, 49.452] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 177.83 / 168.3 | ms | 1.0624 | 95% [1.041, 1.066] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [0.91667, 1.2308] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 62.344 / 55.129 | MiB | 1.1312 | 95% [1.1287, 1.1331] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-7c336fd12883462682969aabc4f68c3967793b81553525a1104d67dd7bf3ce27"></a>
+
+<details>
+<summary>resource_buffer_map_write_64kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `7c336fd12883462682969aabc4f68c3967793b81553525a1104d67dd7bf3ce27` · execution `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_write_64kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:16e91f8b442d83c75839046d; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 3.9613 / 0.58 | ms | 6.5065 | 95% [5.4993, 7.0953] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.0014 / 0.0058 | ms | 0.22951 | 95% [0.21429, 0.31579] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 4 / 0.5961 | ms | 6.3985 | 95% [5.4308, 6.9614] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 182.9 / 167.78 | ms | 1.0838 | 95% [1.0744, 1.0975] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.1849 / 0.0012 | ms | 159.62 | 95% [148.42, 163.75] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.001 / 0.001 | ms | 1 | 95% [0.90909, 1.25] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.2002 / 0.0054 | ms | 36.172 | 95% [34.926, 39.316] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 179.22 / 166.92 | ms | 1.0666 | 95% [1.0553, 1.0784] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1.0833 | 95% [1, 1.2727] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 62.457 / 55.137 | MiB | 1.1319 | 95% [1.1299, 1.1341] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-c48169406568b9045e00bf6c0dd949d453cc1b33b71e175caf1b499c859771e9"></a>
+
+<details>
+<summary>resource_lifecycle — unknown; diagnostic; 12 metrics</summary>
+
+Record `c48169406568b9045e00bf6c0dd949d453cc1b33b71e175caf1b499c859771e9` · execution `catalog-d3d12-be4d0f6d1d7730/resource_lifecycle/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c3bd157607af3cb5b9b37800; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.6162 / 0.565 | ms | 3.0314 | 95% [2.3788, 3.2607] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.613 / 0.7708 | ms | 2.1854 | 95% [1.8706, 2.2747] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 3.3133 / 1.374 | ms | 2.5289 | 95% [2.0683, 2.7373] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 182.58 / 170.69 | ms | 1.0697 | 95% [1.0601, 1.0783] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0364 / 0.0257 | ms | 1.375 | 95% [0.85202, 1.4553] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4201 / 0.0104 | ms | 42.6 | 95% [31.606, 44.221] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.4753 / 0.0467 | ms | 8.9336 | 95% [6.9841, 11.251] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 179.78 / 169.23 | ms | 1.0596 | 95% [1.0514, 1.0713] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1.0769 | 95% [0.91667, 1.3] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.145 / 55.199 | MiB | 1.0355 | 95% [1.0347, 1.0359] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-0fe2556ef4281c36b294bf39aa245357cba0bd7ea279f911036ec84c974d85d6"></a>
+
+<details>
+<summary>resource_table_immediates — unknown; diagnostic; 12 metrics</summary>
+
+Record `0fe2556ef4281c36b294bf39aa245357cba0bd7ea279f911036ec84c974d85d6` · execution `catalog-d3d12-be4d0f6d1d7730/resource_table_immediates/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:19b5869651c437b16a7c0ef8; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 2.8872 / 0.7847 | ms | 3.6269 | 95% [2.6808, 4.2617] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 2.8933 / 0.7937 | ms | 3.5886 | 95% [2.6666, 4.2198] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 179.81 / 168.81 | ms | 1.0615 | 95% [1.0597, 1.084] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0108 / 0.0136 | ms | 0.81752 | 95% [0.73529, 0.84559] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.0118 / 0.0146 | ms | 0.81944 | 95% [0.7619, 0.86861] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 176.8 / 167.79 | ms | 1.0519 | 95% [1.0449, 1.0741] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1.0909 | 95% [0.84615, 1.2222] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.367 / 51.488 | MiB | 1.1124 | 95% [1.1103, 1.1143] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-17942d35971ccdc144e976e6bbb7271bb24b66c3272c28713372a50932b581f9"></a>
+
+<details>
+<summary>resource_table_immediates_500 — unknown; diagnostic; 12 metrics</summary>
+
+Record `17942d35971ccdc144e976e6bbb7271bb24b66c3272c28713372a50932b581f9` · execution `catalog-d3d12-be4d0f6d1d7730/resource_table_immediates_500/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:7565f9246689281d21504e6a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 2.7472 / 0.7548 | ms | 3.6527 | 95% [2.7324, 4.2327] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 2.7534 / 0.7638 | ms | 3.6196 | 95% [2.7121, 4.1888] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 180.31 / 170.87 | ms | 1.0636 | 95% [1.0469, 1.0746] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.011 / 0.0134 | ms | 0.8209 | 95% [0.74436, 0.912] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 0.0121 / 0.0145 | ms | 0.83448 | 95% [0.7551, 0.93333] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 177.4 / 170.09 | ms | 1.0525 | 95% [1.0346, 1.0629] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 93.75 | ms | 1 | 95% [0.91667, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.203 / 51.488 | MiB | 1.1108 | 95% [1.11, 1.1145] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-aaa0b0f89839a3c7c02e7c714b434f2afe16acf08d15a07546ce2357b1ebb805"></a>
+
+<details>
+<summary>surface_full_presentation — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `aaa0b0f89839a3c7c02e7c714b434f2afe16acf08d15a07546ce2357b1ebb805` · execution `catalog-d3d12-be4d0f6d1d7730/surface_full_presentation/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:ec1aaf4f0d79bbc2b976168a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-f2fe8c8d81cc40b5dea03359a73cbd094f3fbbdfb8523106427fb44f26ea1728"></a>
+
+<details>
+<summary>surface_presentation — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `f2fe8c8d81cc40b5dea03359a73cbd094f3fbbdfb8523106427fb44f26ea1728` · execution `catalog-d3d12-be4d0f6d1d7730/surface_presentation/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:6023651750b7a4f76a445356; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-95e65851dcae719da8b28cc0931731287ad6431cb687a61bd98f4ca3152e600e"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy — unknown; diagnostic; 12 metrics</summary>
+
+Record `95e65851dcae719da8b28cc0931731287ad6431cb687a61bd98f4ca3152e600e` · execution `catalog-d3d12-be4d0f6d1d7730/texture_sampler_write_query_destroy/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:e9eb697890f9daf95e6994d2; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 41.52 / 6.5861 | ms | 6.2934 | 95% [6.2113, 6.4978] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0706 / 0.071 | ms | 0.96448 | 95% [0.7933, 1.0794] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.2221 / 1.22 | ms | 0.91846 | 95% [0.69251, 1.2775] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 43.567 / 7.8545 | ms | 5.5024 | 95% [5.1356, 5.6303] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 203.69 / 176.77 | ms | 1.1546 | 95% [1.1409, 1.1642] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 1.1815 / 0.0744 | ms | 15.994 | 95% [15.1, 16.695] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.0367 / 0.016 | ms | 2.3881 | 95% [1.9702, 2.5938] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.3881 / 16.061 | ms | 0.02669 | 95% [0.024121, 0.03774] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 1.9629 / 16.193 | ms | 0.12692 | 95% [0.11332, 0.20427] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 162.61 / 181.59 | ms | 0.88151 | 95% [0.85813, 0.91539] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 109.38 / 101.56 | ms | 1 | 95% [0.92857, 1.1818] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 59.727 / 62.887 | MiB | 0.95081 | 95% [0.94776, 0.95172] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-149f60781e6f7b3335c57006cf4991d5b0b8870aac0c5ba334bd6e5830184d6d"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy_500 — unknown; diagnostic; 12 metrics</summary>
+
+Record `149f60781e6f7b3335c57006cf4991d5b0b8870aac0c5ba334bd6e5830184d6d` · execution `catalog-d3d12-be4d0f6d1d7730/texture_sampler_write_query_destroy_500/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:6c3905dae43a259e5b1f747c; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 40.075 / 7.1728 | ms | 5.6391 | 95% [5.3577, 5.7097] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.3895 / 10.473 | ms | 0.037197 | 95% [0.034467, 0.038856] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 7.5615 / 29.33 | ms | 0.25676 | 95% [0.23623, 0.32108] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 48.631 / 46.895 | ms | 1.0394 | 95% [0.97605, 1.1862] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 226.96 / 216.37 | ms | 1.049 | 95% [1.0343, 1.0774] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.9541 / 0.1525 | ms | 6.2894 | 95% [6.0349, 6.4125] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.3882 / 0.0845 | ms | 4.4607 | 95% [4.3018, 4.7226] ratio | 11/11 observations | loss | reported aggregate |
+| warm.submit_wait_ms | 5.7657 / 44.609 | ms | 0.13859 | 95% [0.12523, 0.18171] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 7.4589 / 44.858 | ms | 0.17854 | 95% [0.16356, 0.23324] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 186.22 / 211.63 | ms | 0.8816 | 95% [0.86332, 0.925] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 125 / 101.56 | ms | 1.25 | 95% [1.1538, 1.3333] ratio | 11/11 observations | loss | reported aggregate |
+| max_rss_mib | 73.719 / 66.297 | MiB | 1.1123 | 95% [1.1119, 1.1129] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-5fcb891232c7d9dcffaebd5d257f9ddc53107bf274c891eda71eb90494ecab8c"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy_mip8 — unknown; diagnostic; 12 metrics</summary>
+
+Record `5fcb891232c7d9dcffaebd5d257f9ddc53107bf274c891eda71eb90494ecab8c` · execution `catalog-d3d12-be4d0f6d1d7730/texture_sampler_write_query_destroy_mip8/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:4f014b5b817a578d08f2fd3a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 41.073 / 6.4238 | ms | 6.3667 | 95% [6.2253, 6.4481] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0.0655 / 0.0693 | ms | 0.88889 | 95% [0.68398, 1.0922] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.0699 / 1.2324 | ms | 0.87108 | 95% [0.83581, 0.926] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 42.66 / 7.7731 | ms | 5.4882 | 95% [5.3724, 5.566] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 201.85 / 176.89 | ms | 1.1297 | 95% [1.1277, 1.159] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 1.1163 / 0.075 | ms | 15.297 | 95% [14.434, 15.624] ratio | 11/11 observations | loss | reported aggregate |
+| warm.encode_ms | 0.0349 / 0.0162 | ms | 2.2089 | 95% [1.7105, 2.6709] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4011 / 8.5614 | ms | 0.045549 | 95% [0.034317, 0.094362] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 1.924 / 8.6615 | ms | 0.21265 | 95% [0.14603, 0.40941] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 160.99 / 176.61 | ms | 0.90278 | 95% [0.88648, 0.93949] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 109.38 / 93.75 | ms | 1.1538 | 95% [0.91667, 1.3] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 59.691 / 62.898 | MiB | 0.94876 | 95% [0.9486, 0.95037] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-6c32e364945bd6b8a298aff1fbd927281bdbe332ffaf3b996bc6c59b36b960e2"></a>
+
+<details>
+<summary>texture_sampling_raster_baseline — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `6c32e364945bd6b8a298aff1fbd927281bdbe332ffaf3b996bc6c59b36b960e2` · execution `catalog-d3d12-be4d0f6d1d7730/texture_sampling_raster_baseline/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:9b8afae7bb74e566192a2a94; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-d3824fb018816bc0f6bce3c2cffa3d5585ebf334fcbb725429f5dfb6f55b906b"></a>
+
+<details>
+<summary>upload_write_buffer_16mb — unknown; diagnostic; 12 metrics</summary>
+
+Record `d3824fb018816bc0f6bce3c2cffa3d5585ebf334fcbb725429f5dfb6f55b906b` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_16mb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:7befad6ae746a605cfab4780; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 3.5336 / 1.2025 | ms | 2.535 | 95% [2.1333, 2.9351] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 6.7472 / 20.825 | ms | 0.33184 | 95% [0.28753, 0.45473] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 10.558 / 22.655 | ms | 0.47173 | 95% [0.40756, 0.63293] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 188.84 / 192.07 | ms | 0.98199 | 95% [0.96932, 1.0105] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.9657 / 2.326 | ms | 0.43309 | 95% [0.39215, 0.56202] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 4.8327 / 14.255 | ms | 0.34418 | 95% [0.32203, 0.36333] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 6.0697 / 16.517 | ms | 0.37429 | 95% [0.35466, 0.39838] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 185.8 / 188.12 | ms | 0.98551 | 95% [0.97088, 1.0029] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [1, 1.2727] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 89.148 / 84.48 | MiB | 1.0553 | 95% [1.0543, 1.0567] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-4c55f6bb2d678327f6977433dbc34fb09d0b20ea5d7760f0af31780c02156797"></a>
+
+<details>
+<summary>upload_write_buffer_16mb_staged — unknown; diagnostic; 12 metrics</summary>
+
+Record `4c55f6bb2d678327f6977433dbc34fb09d0b20ea5d7760f0af31780c02156797` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_16mb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:bc1de435fa76d80725605799; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 3.2498 / 1.3603 | ms | 2.389 | 95% [1.6622, 2.8184] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 6.41 / 16.495 | ms | 0.39649 | 95% [0.26279, 0.7218] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 9.7644 / 17.596 | ms | 0.57337 | 95% [0.35846, 0.94913] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 189.31 / 189.66 | ms | 0.98732 | 95% [0.9697, 1.0523] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 1.0293 / 2.1938 | ms | 0.47784 | 95% [0.44528, 0.63297] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 4.5368 / 14.324 | ms | 0.30886 | 95% [0.17336, 0.3375] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 5.813 / 16.517 | ms | 0.34192 | 95% [0.20507, 0.37345] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 185.33 / 187.07 | ms | 0.9931 | 95% [0.94591, 1.0094] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [0.92308, 1.1667] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 89.156 / 84.469 | MiB | 1.0551 | 95% [1.0529, 1.0564] ratio | 11/11 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-3327c2ccc05aa497b1ab4c0e87ae43925baa54f9b43bf8e68ee11ca492d49b32"></a>
+
+<details>
+<summary>upload_write_buffer_1gb — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `3327c2ccc05aa497b1ab4c0e87ae43925baa54f9b43bf8e68ee11ca492d49b32` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1gb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b955f3cc84268be1816e503c; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-09f2c552229ffc515b5f9a1cc1b4d7dd943acd80597063f4017fa152f1abafab"></a>
+
+<details>
+<summary>upload_write_buffer_1gb_staged — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `09f2c552229ffc515b5f9a1cc1b4d7dd943acd80597063f4017fa152f1abafab` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1gb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c7af4d48119d4059a89dc526; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-e1be60cd7b83c6e4cadd7f77ff6c331d4d898bdb83d0ef4364cb55c17f4e1f39"></a>
+
+<details>
+<summary>upload_write_buffer_1kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `e1be60cd7b83c6e4cadd7f77ff6c331d4d898bdb83d0ef4364cb55c17f4e1f39` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:a6967344412555ed917a268d; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.6081 / 0.898 | ms | 1.7806 | 95% [0.80081, 2.0124] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.1228 / 0.8341 | ms | 1.3271 | 95% [1.0921, 1.4256] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 2.7632 / 1.711 | ms | 1.55 | 95% [0.95513, 1.7938] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 185.36 / 177.2 | ms | 1.0467 | 95% [1.0195, 1.0629] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.0119 / 0.0072 | ms | 1.6129 | 95% [1.1868, 2.0725] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1457 / 0.0033 | ms | 43.788 | 95% [35.154, 46.129] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.1688 / 0.014 | ms | 12.12 | 95% [10.295, 12.728] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 182.81 / 175.38 | ms | 1.0414 | 95% [1.0137, 1.0591] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [0.86667, 1.1818] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.145 / 55.121 | MiB | 1.0371 | 95% [1.0351, 1.0376] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-e6fb18530f6530f01515fa2fe4e347ddb7a7bfe207997420d96ac59dc84b3d96"></a>
+
+<details>
+<summary>upload_write_buffer_1kb_staged — unknown; diagnostic; 12 metrics</summary>
+
+Record `e6fb18530f6530f01515fa2fe4e347ddb7a7bfe207997420d96ac59dc84b3d96` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1kb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:ed1e37c71c8229fb14d36074; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.707 / 0.5707 | ms | 3.0286 | 95% [2.7069, 3.4259] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.1647 / 0.6576 | ms | 1.7396 | 95% [1.6653, 1.8441] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 2.9444 / 1.2237 | ms | 2.3891 | 95% [2.1819, 2.4838] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 181.08 / 169.41 | ms | 1.0671 | 95% [1.0477, 1.085] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0114 / 0.0065 | ms | 1.7015 | 95% [1.5846, 2.5938] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1413 / 0.0031 | ms | 46.933 | 95% [44.531, 50.8] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.1578 / 0.0127 | ms | 12.246 | 95% [11.602, 13.952] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 178.5 / 168.23 | ms | 1.0604 | 95% [1.0395, 1.0758] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | 95% [1, 1.1818] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.078 / 55.137 | MiB | 1.0348 | 95% [1.0341, 1.0364] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-ec653335a7ed51c0d2e1e7cc68bc2bd33b97acc95cf45f647758e4a940f128d9"></a>
+
+<details>
+<summary>upload_write_buffer_1mb — unknown; diagnostic; 12 metrics</summary>
+
+Record `ec653335a7ed51c0d2e1e7cc68bc2bd33b97acc95cf45f647758e4a940f128d9` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1mb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:2c4de4cef788296c30fdf5d2; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.6185 / 0.5491 | ms | 2.9077 | 95% [2.5698, 3.248] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.5289 / 0.8733 | ms | 1.7596 | 95% [1.7198, 1.8162] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 3.1693 / 1.4591 | ms | 2.1865 | 95% [2.067, 2.3528] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 182.94 / 170.89 | ms | 1.076 | 95% [1.0563, 1.083] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0187 / 0.0147 | ms | 1.255 | 95% [1.1786, 1.8607] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.3863 / 0.1933 | ms | 2.0489 | 95% [1.9143, 2.2223] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.4162 / 0.2124 | ms | 1.9663 | 95% [1.8522, 2.1349] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 179.53 / 169.54 | ms | 1.0672 | 95% [1.0473, 1.0768] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1.0909 | 95% [0.91667, 1.1818] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 58.141 / 56.055 | MiB | 1.0374 | 95% [1.0355, 1.039] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-3a12cacd3e9c6d2bc7b835ea138190f39e978f41b83d99432028b1e1dd6b8afe"></a>
+
+<details>
+<summary>upload_write_buffer_1mb_staged — unknown; diagnostic; 12 metrics</summary>
+
+Record `3a12cacd3e9c6d2bc7b835ea138190f39e978f41b83d99432028b1e1dd6b8afe` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1mb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:8893d58c7c9a7eba5ae0025d; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.5657 / 0.5454 | ms | 2.982 | 95% [2.0363, 3.1179] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.5898 / 0.8568 | ms | 1.8781 | 95% [1.7209, 2.0645] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 3.1646 / 1.3974 | ms | 2.2187 | 95% [1.9734, 2.3729] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 181.12 / 170.76 | ms | 1.0691 | 95% [1.0499, 1.0776] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0189 / 0.0144 | ms | 1.3125 | 95% [1.2083, 1.5347] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.4017 / 0.1889 | ms | 2.1896 | 95% [1.9685, 2.2546] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.4353 / 0.2073 | ms | 2.1161 | 95% [1.9154, 2.1829] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 177.91 / 169.37 | ms | 1.058 | 95% [1.0424, 1.0685] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 93.75 / 85.938 | ms | 1 | 95% [1, 1.0909] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 58.176 / 56.066 | MiB | 1.0375 | 95% [1.0363, 1.0405] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-7383d8e86bc269941b1c2771baf0e7cb458346fa28d14b6a09b578912dfa2dd2"></a>
+
+<details>
+<summary>upload_write_buffer_256mb — unknown; diagnostic; 12 metrics</summary>
+
+Record `7383d8e86bc269941b1c2771baf0e7cb458346fa28d14b6a09b578912dfa2dd2` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_256mb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:b8888a6c0f0388ad2bb9af2b; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 13.706 / 12.232 | ms | 1.094 | 95% [1.0744, 1.1633] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 83.403 / 97.781 | ms | 0.85296 | 95% [0.80707, 0.87756] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 98.397 / 109.79 | ms | 0.90182 | 95% [0.85273, 0.91483] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 276.91 / 283.09 | ms | 0.98032 | 95% [0.96923, 0.99641] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 12.542 / 13.801 | ms | 0.91044 | 95% [0.84533, 0.95794] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 80.969 / 96.853 | ms | 0.83222 | 95% [0.82753, 0.85964] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 95.158 / 110.31 | ms | 0.85856 | 95% [0.84991, 0.88425] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 273.43 / 280.18 | ms | 0.97253 | 95% [0.96635, 0.98001] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 156.25 / 148.44 | ms | 1.05 | 95% [0.94737, 1.1111] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 569.23 / 564.46 | MiB | 1.0084 | 95% [1.0084, 1.0086] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-5d553c8aa9342edde269b73849f81fefaa566731aed2f2f4c202125e0d87d1a4"></a>
+
+<details>
+<summary>upload_write_buffer_256mb_staged — unknown; diagnostic; 12 metrics</summary>
+
+Record `5d553c8aa9342edde269b73849f81fefaa566731aed2f2f4c202125e0d87d1a4` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_256mb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:f0ba8c26bb3cc2fb0e4fce8f; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 13.182 / 12.188 | ms | 1.0973 | 95% [0.99743, 1.2425] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 83.494 / 98.356 | ms | 0.85187 | 95% [0.81363, 0.86129] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.operation_ms | 98.039 / 111.07 | ms | 0.88237 | 95% [0.86037, 0.89968] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.complete_ms | 276.93 / 281.42 | ms | 0.98663 | 95% [0.98311, 1.003] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 12.164 / 13.356 | ms | 0.87229 | 95% [0.82464, 0.92168] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 81.966 / 97.886 | ms | 0.83735 | 95% [0.83108, 0.84315] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.operation_ms | 95.764 / 111.5 | ms | 0.85561 | 95% [0.85285, 0.86225] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.complete_ms | 274.39 / 279.41 | ms | 0.98088 | 95% [0.972, 0.98244] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 148.44 / 156.25 | ms | 0.95238 | 95% [0.95, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 569.02 / 564.44 | MiB | 1.0081 | 95% [1.0081, 1.0084] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-f3e7708433ed731b695533d968e081ddf5ad58e593eeb1e3d155faa3d220b96c"></a>
+
+<details>
+<summary>upload_write_buffer_4gb — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `f3e7708433ed731b695533d968e081ddf5ad58e593eeb1e3d155faa3d220b96c` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4gb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:12e57dbe2c9b9734a072ae36; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-de8403f854200574029b4f7d64bc57c71853d9cd5a7119cfe0aee6f97c41e4fd"></a>
+
+<details>
+<summary>upload_write_buffer_4gb_staged — unknown; failed-or-uncompared; 0 metrics</summary>
+
+Record `de8403f854200574029b4f7d64bc57c71853d9cd5a7119cfe0aee6f97c41e4fd` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4gb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:c91e41786288456f1e0406a3; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-4de697ba297540156d1560f5393c535144280b081697de040ace4f0fbe005b5e"></a>
+
+<details>
+<summary>upload_write_buffer_4mb — unknown; diagnostic; 12 metrics</summary>
+
+Record `4de697ba297540156d1560f5393c535144280b081697de040ace4f0fbe005b5e` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4mb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:3d07d9c37e44370f8d95e481; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.779 / 0.5407 | ms | 3.0933 | 95% [2.1023, 3.6873] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.9335 / 1.3656 | ms | 2.092 | 95% [2.017, 2.2747] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 4.8603 / 1.8973 | ms | 2.3858 | 95% [2.1873, 2.6384] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 185.07 / 172.52 | ms | 1.0728 | 95% [1.0557, 1.0757] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 0.5327 / 0.5003 | ms | 1.0648 | 95% [0.99766, 1.203] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 1.7076 / 1.3441 | ms | 1.2741 | 95% [1.2443, 1.3326] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 2.4774 / 1.8733 | ms | 1.3226 | 95% [1.2557, 1.3533] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 182.68 / 172.27 | ms | 1.0605 | 95% [1.0404, 1.0651] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 85.938 / 93.75 | ms | 0.92308 | 95% [0.90909, 1.0909] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 69.129 / 63.098 | MiB | 1.0959 | 95% [1.095, 1.0966] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-44e901de26e2c2b342f78987d6265fe8bd3a71c8a9ab0c226c8132d56cb3f295"></a>
+
+<details>
+<summary>upload_write_buffer_4mb_staged — unknown; diagnostic; 12 metrics</summary>
+
+Record `44e901de26e2c2b342f78987d6265fe8bd3a71c8a9ab0c226c8132d56cb3f295` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4mb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:979bc1e222a1286034db1643; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.5888 / 0.5892 | ms | 2.8359 | 95% [1.7623, 3.1263] ratio | 7/7 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 2.8303 / 1.3727 | ms | 2.1251 | 95% [1.9901, 2.1883] ratio | 7/7 observations | loss | reported aggregate |
+| cold.operation_ms | 4.5283 / 1.9943 | ms | 2.45 | 95% [2.0558, 2.5053] ratio | 7/7 observations | loss | reported aggregate |
+| cold.complete_ms | 181.95 / 168.03 | ms | 1.0778 | 95% [1.0656, 1.0945] ratio | 7/7 observations | loss | reported aggregate |
+| warm.setup_ms | 0.5235 / 0.4953 | ms | 1.0806 | 95% [1.0098, 1.113] ratio | 7/7 observations | loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 1.743 / 1.2789 | ms | 1.3853 | 95% [1.3316, 1.4142] ratio | 7/7 observations | loss | reported aggregate |
+| warm.operation_ms | 2.4066 / 1.7945 | ms | 1.371 | 95% [1.357, 1.4016] ratio | 7/7 observations | loss | reported aggregate |
+| warm.complete_ms | 179.74 / 167.78 | ms | 1.0659 | 95% [1.0524, 1.0855] ratio | 7/7 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 93.75 | ms | 1.1667 | 95% [0.92857, 1.3333] ratio | 7/7 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 69.141 / 63.09 | MiB | 1.0957 | 95% [1.0954, 1.0977] ratio | 7/7 observations | loss | reported aggregate |
+
+</details>
+
+<a id="row-976139ea17f98e6d93812552177cbbec7b9dd206cad7b7c13ea76c06bef4b4fa"></a>
+
+<details>
+<summary>upload_write_buffer_64kb — unknown; diagnostic; 12 metrics</summary>
+
+Record `976139ea17f98e6d93812552177cbbec7b9dd206cad7b7c13ea76c06bef4b4fa` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_64kb/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:baa378c2af095dae71c5c21a; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 0.7444 / 0.5824 | ms | 1.2505 | 95% [1.0442, 1.7669] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 0.7515 / 0.6532 | ms | 1.1299 | 95% [1.0591, 1.3617] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 1.4938 / 1.2376 | ms | 1.187 | 95% [1.0842, 1.6255] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 163.24 / 173.56 | ms | 0.94255 | 95% [0.93322, 0.97936] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.setup_ms | 0.035 / 0.0334 | ms | 1.0528 | 95% [1.0306, 1.1745] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1231 / 0.0052 | ms | 24.578 | 95% [21, 29] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.1677 / 0.0416 | ms | 3.8059 | 95% [3.7012, 4.5024] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 161.92 / 172.4 | ms | 0.9433 | 95% [0.93018, 0.9773] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cpu_ms | 85.938 / 93.75 | ms | 0.91667 | 95% [0.84615, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 47.633 / 55.242 | MiB | 0.86236 | 95% [0.86175, 0.86263] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+<a id="row-3114679a222e2039cfaa03fe9ba7631cf4b9f548d987fd33f0ecb195b2242270"></a>
+
+<details>
+<summary>upload_write_buffer_64kb_staged — unknown; diagnostic; 12 metrics</summary>
+
+Record `3114679a222e2039cfaa03fe9ba7631cf4b9f548d987fd33f0ecb195b2242270` · execution `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_64kb_staged/summary` · campaign `reports/benchmarks/catalog-20261101`.
+
+Machine: unknown:047028a7510a252a1cb097be; win32/d3d12; GPU unknown; driver unknown.
+
+Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828. Contract `3312353a1b0704264918bed30c8acf933ee7c617412632a68d121bba2cf15f0f`.
+
+Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cold.setup_ms | 1.6654 / 0.5807 | ms | 3.099 | 95% [2.3191, 3.3108] ratio | 11/11 observations | loss | reported aggregate |
+| cold.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| cold.submit_wait_ms | 1.3124 / 0.6614 | ms | 1.7731 | 95% [1.6603, 2.1941] ratio | 11/11 observations | loss | reported aggregate |
+| cold.operation_ms | 2.9648 / 1.2089 | ms | 2.2985 | 95% [1.9792, 2.7296] ratio | 11/11 observations | loss | reported aggregate |
+| cold.complete_ms | 182.9 / 169.49 | ms | 1.0764 | 95% [1.0648, 1.0929] ratio | 11/11 observations | loss | reported aggregate |
+| warm.setup_ms | 0.0166 / 0.0297 | ms | 0.56849 | 95% [0.47782, 1.0522] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.encode_ms | 0 / 0 | ms | 1 | 95% [1, 1] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| warm.submit_wait_ms | 0.1508 / 0.0053 | ms | 29.128 | 95% [26.491, 33] ratio | 11/11 observations | loss | reported aggregate |
+| warm.operation_ms | 0.1737 / 0.0382 | ms | 4.5273 | 95% [4.1023, 6.312] ratio | 11/11 observations | loss | reported aggregate |
+| warm.complete_ms | 180.18 / 168.06 | ms | 1.065 | 95% [1.0537, 1.0837] ratio | 11/11 observations | loss | reported aggregate |
+| cpu_ms | 101.56 / 85.938 | ms | 1.0909 | 95% [1, 1.2727] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+| max_rss_mib | 57.18 / 55.227 | MiB | 1.0356 | 95% [1.0352, 1.0362] ratio | 11/11 observations | not-classified-as-loss | reported aggregate |
+
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
 
 - [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
 - [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
 - [policy](../catalog-20261101/classification-policy.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
+- Only retained aggregate statistics; individual execution samples are unavailable.
+- The catalog policy classifies losses only; all other rows are not automatically wins.
+- comparator.sourceCommit is unknown.
+- executedAt is unknown; no receipt value was retained.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
 
-Limitations:
+<a id="evidence-2"></a>
 
+### Evidence 2
+
+- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
+- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
+- [policy](../catalog-20261101/classification-policy.json): retained.
 - Actual machine identity is not bound by the retained receipt.
 - Doe: posix_compiler_cli_not_built_on_windows; Dawn: skipped_after_doe_fail
 - Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
@@ -1190,4861 +4031,15 @@ Limitations:
 - machine.osVersion is unknown.
 - reportedAt is unknown; no receipt value was retained.
 
-<a id="row-40a5a9be299e360b492c658680c80ad7b92649403454a3dc878018b76b609ef2"></a>
+<a id="evidence-3"></a>
 
-## compute_concurrent_execution_single
-
-Observation: `40a5a9be299e360b492c658680c80ad7b92649403454a3dc878018b76b609ef2`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_concurrent_execution_single/summary`.
-
-Machine: unknown:b396f0f998a9c327fefe62d8; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 220.41 / 19.442 | ms | 11.299 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [11.20222566067897, 11.3890451966649], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0062 / 11.491 | ms | 0.00054096 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0004135983959575252, 0.0009844440108554909], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 63.377 / 84.868 | ms | 0.74537 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6396836045817542, 0.7898123217999645], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 282.69 / 115.81 | ms | 2.4582 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.113433045915907, 2.5556684361898494], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 462.1 / 282.66 | ms | 1.6433 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5259402281187486, 1.6732343517306738], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.286 / 0.3121 | ms | 0.87332 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7171456247981919, 0.9581288845273143], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0051 / 0.0372 | ms | 0.11765 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.10609037328094303, 0.14285714285714285], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 60.707 / 78.953 | ms | 0.76889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6509833862888896, 0.8072496134684762], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 60.935 / 79.334 | ms | 0.76869 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6508612310380703, 0.8064895305161811], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 239.61 / 252.11 | ms | 0.9464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9286443175652347, 0.9716637639921177], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 210.94 / 109.38 | ms | 1.9231 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.75, 2.076923076923077], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 62.652 / 65.637 | MiB | 0.9547 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9528060465393084, 0.9577406106779358], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
+### Evidence 3
 
 - [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
 - [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
 - [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-1beeaaaf249632afcb0b9f55bb9fa86554d40d74bb8560e08e7a0d38f3fed233"></a>
-
-## compute_dispatch_fallback
-
-Observation: `1beeaaaf249632afcb0b9f55bb9fa86554d40d74bb8560e08e7a0d38f3fed233`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_fallback/summary`.
-
-Machine: unknown:56a2b03ef5ea213f29e1be59; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.6309 / 3.911 | ms | 1.1941 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1229374854752499, 1.2006392227051903], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0045 / 11.695 | ms | 0.0003834 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0003463003578437031, 0.0005621901565614405], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.076 / 27.051 | ms | 0.076744 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05250921493030547, 0.10297283344535033], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 6.6541 / 42.525 | ms | 0.15796 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14660681592689595, 0.19742584774049599], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 184.67 / 210.88 | ms | 0.87019 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8577629926066738, 0.906118163128119], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.1663 / 0.2628 | ms | 0.64147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6280120481927711, 0.6685692541856926], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0026 / 0.0373 | ms | 0.07013 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06046511627906977, 0.07458563535911603], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.2402 / 31.814 | ms | 0.0072692 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006887013374825152, 0.00812774634538614], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.4211 / 32.108 | ms | 0.012601 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.012113700626549246, 0.013264830401693463], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 178.24 / 200.9 | ms | 0.88974 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8756031519776326, 0.9073689726071471], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 101.56 | ms | 1.0769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.1538461538461537], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.113 / 65.441 | MiB | 0.97935 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9788097654151495, 0.9801631895246006], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-32f29f002473e316e05e2c2c8fa0c73c7d303a5b83179cf3726cae0d8634e988"></a>
-
-## compute_dispatch_grid
-
-Observation: `32f29f002473e316e05e2c2c8fa0c73c7d303a5b83179cf3726cae0d8634e988`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_grid/summary`.
-
-Machine: unknown:747222fb8b7780dcec96a32a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.7369 / 4.1547 | ms | 1.1459 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0431532693318046, 1.1653753270275709], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0073 / 11.82 | ms | 0.00061867 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0005417118093174432, 0.0006452723049126731], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.3775 / 67.386 | ms | 0.038014 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03449667736124014, 0.04444579397040237], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 7.1296 / 83.184 | ms | 0.087182 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08448534517695519, 0.09787458849623204], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 183.61 / 249.3 | ms | 0.74208 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.714643051677019, 0.7782019421320495], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.2693 / 0.4806 | ms | 0.54661 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.49597364568082, 0.5909589642308536], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0048 / 0.0747 | ms | 0.066934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.058394160583941604, 0.07044410413476264], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4556 / 74.759 | ms | 0.0070535 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006094241369946936, 0.007769489413323305], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.7341 / 75.527 | ms | 0.011465 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009719741495391695, 0.011955502946767912], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 176.98 / 242.5 | ms | 0.74067 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7169853505807613, 0.7697924133181543], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 101.56 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1538461538461537], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.094 / 65.414 | MiB | 0.97981 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9793980652096023, 0.9807083557307531], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-1fd44297218dea46c0be568a3ec71dd9857ea856aaf5c6d6a1bbc9b20a3e8673"></a>
-
-## compute_dispatch_indirect_large_args
-
-Observation: `1fd44297218dea46c0be568a3ec71dd9857ea856aaf5c6d6a1bbc9b20a3e8673`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_indirect_large_args/summary`.
-
-Machine: unknown:4f8795f8534515f2bc31090f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.1953 / 4.2607 | ms | 0.96021 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9427710843373496, 1.0339850259347056], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 5.1552 / 15.865 | ms | 0.32727 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3190237797246558, 0.3435447474250848], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.5254 / 30.399 | ms | 0.086668 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06823162180061552, 0.0997779551327133], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 12.004 / 51.644 | ms | 0.2464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.20167239729299233, 0.2844342946112269], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 191.71 / 220.71 | ms | 0.85974 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8316575371326241, 0.883746412972076], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.2059 / 0.2733 | ms | 0.76606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7357871720116619, 0.7795841209829867], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0034 / 0.0455 | ms | 0.081633 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07127429805615551, 0.09950248756218906], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.3085 / 32.942 | ms | 0.0085276 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006993324039126344, 0.009765559781800298], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.5213 / 33.281 | ms | 0.014997 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.011733855538298782, 0.016168798017656798], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.61 / 205.16 | ms | 0.87711 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8197138558769297, 0.8962921955593953], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 109.38 / 101.56 | ms | 1.0769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7857142857142857, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 63.656 / 65.613 | MiB | 0.96999 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9693434132984107, 0.9705637488106565], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-5f5dc5ad725e46f034fce4241c645bdc15474062cab620af1a4a5fb0d4c11ad3"></a>
-
-## compute_dispatch_indirect_live_args
-
-Observation: `5f5dc5ad725e46f034fce4241c645bdc15474062cab620af1a4a5fb0d4c11ad3`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_indirect_live_args/summary`.
-
-Machine: unknown:1556ebb5e85587be0a4d4cba; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.8571 / 4.5342 | ms | 1.0762 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0040849493773747, 1.0813815005954743], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 5.0942 / 15.895 | ms | 0.32114 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.31692526087714495, 0.3254386130454749], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.8021 / 63.849 | ms | 0.044934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03893925581705595, 0.050381433329751805], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 12.8 / 84.575 | ms | 0.15291 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13904862093904838, 0.1676317438226996], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 190.18 / 251.96 | ms | 0.75761 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7286906751891504, 0.79785275576653], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.2908 / 0.5126 | ms | 0.5933 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5690202300674335, 0.6283709712782285], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0057 / 0.0803 | ms | 0.06752 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05761316872427984, 0.0868945868945869], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4966 / 63.511 | ms | 0.0076203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0060888145790700225, 0.008294440702471772], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.7939 / 64.088 | ms | 0.012388 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.010185031365941255, 0.012956825814056471], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 178.24 / 232.36 | ms | 0.75332 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7241677261877015, 0.7800313173140634], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8125, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 63.68 / 65.609 | MiB | 0.97037 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9701767962378713, 0.9711085959373325], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0caeff2165a2fccff7a3c8b2b51298db57c576ac3b748f811f7ec307b21495bb"></a>
-
-## compute_dispatch_indirect_single
-
-Observation: `0caeff2165a2fccff7a3c8b2b51298db57c576ac3b748f811f7ec307b21495bb`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_indirect_single/summary`.
-
-Machine: unknown:84744b1c618006e72355c310; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.4052 / 4.4917 | ms | 0.96154 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8746151926116981, 1.0566955785910723], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 5.1438 / 16.05 | ms | 0.31879 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.31689646249953796, 0.3269727304966745], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.4387 / 26.864 | ms | 0.090778 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08192201097989373, 0.10174003318574255], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 11.999 / 47.106 | ms | 0.25084 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.23748057988224236, 0.26957270239251346], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 190.65 / 216.19 | ms | 0.87613 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8724285983895318, 0.8957127460636611], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.2027 / 0.2699 | ms | 0.74707 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7349836184929013, 0.7698681732580037], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0036 / 0.0443 | ms | 0.077419 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07116104868913857, 0.08577878103837472], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.2971 / 32.729 | ms | 0.0082465 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006888658547119288, 0.009273206696263523], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.5073 / 33.045 | ms | 0.014556 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.011307346236817388, 0.0154292220113852], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.28 / 201.98 | ms | 0.88382 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8411306726185792, 0.8942836535923164], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 101.56 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.0769230769230769], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 63.648 / 65.613 | MiB | 0.97005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9691629955947136, 0.9708789899952358], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-fbb34b530ad8fe60e6e2d1d64486b3d5b52dbc2b438ac0b6f6023a5520a1599e"></a>
-
-## compute_dispatch_workgroups_2d_sweep
-
-Observation: `fbb34b530ad8fe60e6e2d1d64486b3d5b52dbc2b438ac0b6f6023a5520a1599e`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_workgroups_2d_sweep/summary`.
-
-Machine: unknown:3f72b2e936b219a5a9f65dab; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.1639 / 4.3804 | ms | 0.95539 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.885489909597297, 1.0479458342896488], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0098 / 11.728 | ms | 0.00082407 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0007807807807807809, 0.0009009936673016527], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.62 / 91.796 | ms | 0.02797 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.024935724810731162, 0.03153823947536126], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 6.6905 / 108.07 | ms | 0.061573 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.059998353274256226, 0.06760969585994825], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 184.63 / 277.45 | ms | 0.66435 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.646787168572383, 0.6911623665550367], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.3942 / 0.7454 | ms | 0.52889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5122995961326643, 0.5694584111478235], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0075 / 0.1029 | ms | 0.072674 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06684491978609626, 0.07907907907907909], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.6624 / 107.53 | ms | 0.0062337 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006003697684091713, 0.007052945893960892], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 1.0815 / 108.34 | ms | 0.009897 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009761709516255324, 0.010784201697572481], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.12 / 276.82 | ms | 0.64432 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6310845480193309, 0.6554075749224764], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 101.56 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.0769230769230769], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.117 / 65.43 | MiB | 0.97988 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9795223880597015, 0.9810734969251895], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-81888cd319d6af4ccaadb709f68629567429f34566b92dc47e162d9babc86a4f"></a>
-
-## compute_dispatch_workgroups_3d_sweep
-
-Observation: `81888cd319d6af4ccaadb709f68629567429f34566b92dc47e162d9babc86a4f`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_workgroups_3d_sweep/summary`.
-
-Machine: unknown:b05cd7842d97660505382ec4; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.5464 / 4.2358 | ms | 0.99756 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9485339251145, 1.1236751664303395], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0096 / 11.831 | ms | 0.00081099 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0007660219315409531, 0.001041035574404178], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.5714 / 98.234 | ms | 0.026873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.023847002686144297, 0.02868991766142342], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 7.0816 / 114.43 | ms | 0.061549 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05855000367583993, 0.06523093702289576], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 184.55 / 284.91 | ms | 0.65344 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6498301290233892, 0.6590853738367202], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.4005 / 0.7142 | ms | 0.56077 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5310567356816348, 0.6239694656488549], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0077 / 0.1272 | ms | 0.062893 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05350938151494093, 0.0750487329434698], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.6636 / 106.24 | ms | 0.0071815 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006186941948174232, 0.007353795587722647], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 1.0734 / 107.12 | ms | 0.011075 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009912776066750088, 0.01147096331492714], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 178.99 / 273.22 | ms | 0.65876 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6403466813871977, 0.6703468756563032], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 109.38 | ms | 1.0714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7857142857142857, 1.0833333333333333], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.094 / 65.426 | MiB | 0.97939 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9783244760255568, 0.9801288936627283], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-c7110c819ddec081b9a0d72d34887d37badbccb4bbb87520579498e76e5b5046"></a>
-
-## compute_dispatch_workgroups_indirect_pipeline_switch
-
-Observation: `c7110c819ddec081b9a0d72d34887d37badbccb4bbb87520579498e76e5b5046`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_dispatch_workgroups_indirect_pipeline_switch/summary`.
-
-Machine: unknown:55acdbf78f665a88c1150aaa; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.6143 / 4.6707 | ms | 0.98688 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8971360427766343, 1.0353392568659125], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 5.0787 / 15.949 | ms | 0.3186 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3169393791889767, 0.3228778102631314], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.7406 / 57.292 | ms | 0.046099 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.04175185328502961, 0.050352853782344935], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 12.443 / 80.428 | ms | 0.15158 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13439559723524014, 0.1636775698457297], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 188.65 / 250.8 | ms | 0.74621 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7169384120343403, 0.7796080715834103], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.2871 / 0.496 | ms | 0.59133 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4958822498685824, 0.6035316375867144], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0055 / 0.0836 | ms | 0.067669 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.060639470782800436, 0.06988564167725539], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4616 / 75.096 | ms | 0.0067933 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0063912272928666365, 0.006968460160728672], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.7684 / 75.725 | ms | 0.010596 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009999868336164106, 0.011329068763065985], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.1 / 244.95 | ms | 0.73422 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7223694026730688, 0.7642681666748397], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 101.56 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1538461538461537], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 63.578 / 65.629 | MiB | 0.96869 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9685062808834911, 0.9701190476190477], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-8a5ef793487054ba713aa6ae8bc76c0ed6b6d9215bad38317de5199ee640ae7e"></a>
-
-## compute_indirect_timestamp
-
-Observation: `8a5ef793487054ba713aa6ae8bc76c0ed6b6d9215bad38317de5199ee640ae7e`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_indirect_timestamp/summary`.
-
-Machine: unknown:8582276756781c0be8bc8b06; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.6076 / 4.128 | ms | 1.1052 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9809275690023841, 1.173276766135952], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.067 / 11.709 | ms | 0.005725 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.005351841786177196, 0.006177263574622028], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.0647 / 20.158 | ms | 0.10572 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08455700164314964, 0.11264456481031196], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 6.7694 / 36.149 | ms | 0.18217 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16516681556040955, 0.18929388679924214], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 184.28 / 206.01 | ms | 0.897 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.876070452330584, 0.9074643006244526], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.1801 / 0.2879 | ms | 0.62596 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6070469798657718, 0.6415352981494175], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0403 / 0.1142 | ms | 0.39697 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.34934497816593885, 0.43082311733800355], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.3445 / 32.185 | ms | 0.010377 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.007742837714740259, 0.010998920429288118], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.5716 / 32.593 | ms | 0.017056 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.012430830835926183, 0.018090137492561623], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.67 / 201.64 | ms | 0.89016 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.82947212728521, 0.892701419168495], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.25 / 65.508 | MiB | 0.98127 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9799773553423514, 0.9824801859245575], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-79f971dc2d171225d6f15ce79ccd6ff56bc78209dc872313099c3fb572cea707"></a>
-
-## compute_kernel_dispatch_100
-
-Observation: `79f971dc2d171225d6f15ce79ccd6ff56bc78209dc872313099c3fb572cea707`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_kernel_dispatch_100/summary`.
-
-Machine: unknown:13409009c021e106654dea92; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.5605 / 4.5473 | ms | 0.93723 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9129742637304324, 1.0347138508060396], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0102 / 11.956 | ms | 0.00083203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0007106225224531032, 0.0009015828733276064], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.5447 / 75.969 | ms | 0.033701 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03280246403485708, 0.03678790034146666], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 7.011 / 92.928 | ms | 0.078536 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07414418766014931, 0.08385712425601244], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 189.34 / 265.43 | ms | 0.71825 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7082992688794936, 0.7395538657674581], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.326 / 0.6641 | ms | 0.50394 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4729749740855916, 0.5681777459236695], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0089 / 0.1048 | ms | 0.086318 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08191126279863481, 0.10109622411693056], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.5699 / 78.736 | ms | 0.006286 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.005993780099051448, 0.0073129680414129915], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.9101 / 79.619 | ms | 0.010483 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00958701365735986, 0.011774958478841574], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 183.58 / 266.68 | ms | 0.71974 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7033215300301072, 0.7433542541341788], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 109.38 / 101.56 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1578947368421053], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.031 / 65.398 | MiB | 0.97891 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9771899444676658, 0.9794491905131728], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-aa2fa85b59c3ced9063a6b6187aa9fd619c68051d9a5dd9f5e1759fa3864afa8"></a>
-
-## compute_kernel_dispatch_1000
-
-Observation: `aa2fa85b59c3ced9063a6b6187aa9fd619c68051d9a5dd9f5e1759fa3864afa8`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_kernel_dispatch_1000/summary`.
-
-Machine: unknown:c04ca3c35bd7e6fa89890e40; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.6269 / 4.0713 | ms | 1.1381 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0172682167526024, 1.1714931348709257], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.1682 / 11.887 | ms | 0.014202 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.012238570767886812, 0.015369473046638401], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.053 / 31.172 | ms | 0.065261 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.054191171036099293, 0.06976134911710055], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 6.9046 / 47.607 | ms | 0.14503 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13063700895677705, 0.14943708730965713], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 183.29 / 215.77 | ms | 0.86522 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.839047582767156, 0.8745477924595295], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.1811 / 0.2947 | ms | 0.60731 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5991792065663475, 0.6277645457638653], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0872 / 0.2717 | ms | 0.34235 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.29738682370261316, 0.36580965268380694], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4935 / 31.821 | ms | 0.015691 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.015225103667178183, 0.01592366096487341], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.7694 / 32.329 | ms | 0.023728 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.023301082386509613, 0.024429225169656066], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.34 / 201.3 | ms | 0.89066 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8720380312725845, 0.9044967140085124], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.4166666666666667], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 64.441 / 65.84 | MiB | 0.97906 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9762794283342229, 0.9795349389014117], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-1acb1c94542e37a9fbc9dcbf1d9305f4ea67dd933c05f96f5e62371be5323253"></a>
-
-## compute_matvec_32768x2048_f32
-
-Observation: `1acb1c94542e37a9fbc9dcbf1d9305f4ea67dd933c05f96f5e62371be5323253`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_matvec_32768x2048_f32/summary`.
-
-Machine: unknown:cab25ff1b7847d3aea53e5d2; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 45.534 / 41.679 | ms | 1.1041 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9789727754544822, 1.113292379630234], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0345 / 11.665 | ms | 0.0029575 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0027240864767324843, 0.006011498117818802], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1585.8 / 1330.7 | ms | 1.2052 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.177903109404215, 1.2219867732568404], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.operation_ms | 1626.6 / 1399.6 | ms | 1.1902 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1621809334828104, 1.207156923607051], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.complete_ms | 1810.2 / 1570.8 | ms | 1.1726 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.152386501098324, 1.1895269826932644], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.setup_ms | 14.711 / 19.775 | ms | 1.0057 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7439293263347391, 1.0084177125649267], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.052 / 11.665 | ms | 0.0060115 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0029574893058901186, 0.4467353951890034], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 1557.5 / 1310.8 | ms | 1.1779 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1704442389622645, 1.2219867732568404], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.operation_ms | 1577.5 / 1311.3 | ms | 1.1703 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1617199540867882, 1.2073977408930805], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.complete_ms | 1756.5 / 1486.3 | ms | 1.1537 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1518379716657265, 1.1894839973254046], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cpu_ms | 281.25 / 218.75 | ms | 1.2 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.125, 1.2857142857142858], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 314.53 / 65.777 | MiB | 4.7799 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.02915591243667, 4.783401651517852], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-a2fe65b0410394e8fbf78320a0f1e4af2ba440f2404a88d638e88cd9599b322a"></a>
-
-## compute_matvec_32768x2048_f32_swizzle1
-
-Observation: `a2fe65b0410394e8fbf78320a0f1e4af2ba440f2404a88d638e88cd9599b322a`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_matvec_32768x2048_f32_swizzle1/summary`.
-
-Machine: unknown:4e9b900494dbc89080fd0f77; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 110.37 / 77.737 | ms | 1.4532 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4118420409433907, 1.5104457392341792], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0513 / 11.466 | ms | 0.0045429 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.003285103504915578, 0.004561271923321792], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2015 / 2205.6 | ms | 0.9068 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9036569930722569, 0.9252645577610183], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 2150.6 / 2294.7 | ms | 0.93458 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9204195391463663, 0.9372160448679452], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 2327.7 / 2472 | ms | 0.94162 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9296273060081599, 0.9424405821144383], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 19.059 / 19.255 | ms | 0.95838 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.864049223556988, 1.024549467670735], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0513 / 11.292 | ms | 0.0045613 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004542918625966366, 0.3605812897366031], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 1995.2 / 2205.6 | ms | 0.9068 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8695477764591673, 0.9252645577610183], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2015 / 2231 | ms | 0.90318 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8695204124791424, 0.9209093814605042], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 2193.6 / 2400.5 | ms | 0.91382 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8826384296650328, 0.9266206034063971], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 328.12 / 234.38 | ms | 1.4 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1666666666666667, 1.5], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 314.52 / 65.953 | MiB | 4.7689 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.022220102994469, 4.774535966316789], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-d43469be7aececf977c0d17bbe8b29bd82ab7e609d643d1b7e826cb4241901d4"></a>
-
-## compute_matvec_32768x2048_f32_workgroupshared_swizzle1
-
-Observation: `d43469be7aececf977c0d17bbe8b29bd82ab7e609d643d1b7e826cb4241901d4`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_matvec_32768x2048_f32_workgroupshared_swizzle1/summary`.
-
-Machine: unknown:253bcf6169186c9214807788; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 46.535 / 53.061 | ms | 0.87742 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8355999330413396, 0.918629571430543], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0527 / 11.626 | ms | 0.0045328 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.002942107198754736, 0.005350085428783459], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 904.68 / 512.17 | ms | 1.7664 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7504408962806743, 1.7882475964552236], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| cold.operation_ms | 951.57 / 576.89 | ms | 1.649 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.577469266705392, 1.6676058149735884], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| cold.complete_ms | 1134.5 / 743.91 | ms | 1.5176 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.470081981040196, 1.5262081843885515], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| warm.setup_ms | 19.228 / 18.95 | ms | 0.98718 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6944041751232242, 1.1179525601512084], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0527 / 11.626 | ms | 0.0052788 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.002942107198754736, 0.18875838926174496], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 904.68 / 512.17 | ms | 1.7664 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7014052962511164, 1.7882475964552236], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| warm.operation_ms | 924.41 / 537.52 | ms | 1.7004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6979983277567465, 1.7202625903777633], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| warm.complete_ms | 1107.4 / 710.41 | ms | 1.5541 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5437972695840991, 1.559461879847929], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| cpu_ms | 203.12 / 218.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8125, 1.1333333333333333], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 314.73 / 65.887 | MiB | 4.7768 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.020440251572327, 4.780942209564495], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0ef4588b07855aab0de0a79deec50f08776c316b76b42b41041a9c0e025db419"></a>
-
-## compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces
-
-Observation: `0ef4588b07855aab0de0a79deec50f08776c316b76b42b41041a9c0e025db419`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces/summary`.
-
-Machine: unknown:85516ffc09fdeaedb587e399; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 50.028 / 71.901 | ms | 0.69579 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6815670071561505, 0.7122140882549426], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0196 / 10.534 | ms | 0.0018302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.001589575524461801, 0.0026005377715844634], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 67.577 / 249.91 | ms | 0.27443 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2566533138405917, 0.27761601883373566], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 118.13 / 334.21 | ms | 0.3565 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.339338084261457, 0.36105036476161495], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 297.03 / 507.08 | ms | 0.58276 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5749220777173605, 0.6214452232700568], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 2.0845 / 1.2673 | ms | 1.5045 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4229679247713511, 1.7848372093023257], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.0196 / 10.534 | ms | 0.0018302 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.001589575524461801, 0.0026005377715844634], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 67.577 / 249.91 | ms | 0.27443 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2566533138405917, 0.27761601883373566], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 69.805 / 261.61 | ms | 0.26996 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.25366588975004467, 0.2724407213293521], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 247.27 / 431.59 | ms | 0.56869 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5580639144491419, 0.585902300510914], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 250 / 281.25 | ms | 0.9375 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8888888888888888, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 66.926 / 67.547 | MiB | 0.99005 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9892435808466343, 0.9912067569131089], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-91170fbb55d993bd30c6c331e3def1bacf9eeb25e3e66cb527c49c3b16ecd5d8"></a>
-
-## compute_stable_fluids_multistage_256grid_18pressure_4steps
-
-Observation: `91170fbb55d993bd30c6c331e3def1bacf9eeb25e3e66cb527c49c3b16ecd5d8`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_stable_fluids_multistage_256grid_18pressure_4steps/summary`.
-
-Machine: unknown:ba95be6894d483fc3dd65b0f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 101.13 / 78.251 | ms | 1.3384 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2644371034421067, 1.9278629227001314], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.2932 / 13.342 | ms | 0.021856 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.021526849825993746, 0.022202172850644714], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 32.986 / 3231.1 | ms | 0.010209 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009857692566020529, 0.010835466135045303], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 134.64 / 3350.2 | ms | 0.040544 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.039034861752567325, 0.08428737175754142], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 316.73 / 3519.7 | ms | 0.09044 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08928689171268483, 0.13217327178926763], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 13.511 / 25.67 | ms | 0.50986 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5071449216066783, 0.5870690365768478], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.2932 / 13.342 | ms | 0.021856 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.021526849825993746, 0.022202172850644714], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 32.986 / 3231.1 | ms | 0.010209 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009857692566020529, 0.010835466135045303], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 47.046 / 3268.4 | ms | 0.014394 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.013836012656378035, 0.01502204963063052], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 230.88 / 3435.1 | ms | 0.066321 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0660634775803061, 0.06776564438607725], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 359.38 / 203.12 | ms | 1.9167 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6153846153846154, 1.9285714285714286], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 66.844 / 68.602 | MiB | 0.97521 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9736932012299283, 0.9830415754923414], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-7ffc140a47d4d3c276ebdc25196f9c5c86060e7542384df892b724b3d23acbd8"></a>
-
-## compute_workgroup_atomic_1024
-
-Observation: `7ffc140a47d4d3c276ebdc25196f9c5c86060e7542384df892b724b3d23acbd8`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_workgroup_atomic_1024/summary`.
-
-Machine: unknown:158e308da014d876356800f7; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.962 / 27.541 | ms | 1.3824 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2685335911007276, 1.9974008071177902], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0477 / 10.738 | ms | 0.0044358 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0026467872002132664, 0.004656632173095014], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 508.9 / 550.76 | ms | 0.92221 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8990276045272576, 0.9490549576956747], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 548.26 / 596.09 | ms | 0.92431 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9047304553202422, 0.9743557478984305], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 726.2 / 765.33 | ms | 0.95123 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9353822299876446, 1.0000138502200617], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 9.341 / 17.738 | ms | 0.52307 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3440631873878785, 1.0514857216362234], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0477 / 10.738 | ms | 0.0045446 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0038378153973891785, 0.1880597014925373], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 508.03 / 550.76 | ms | 0.92221 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8990276045272576, 0.9309580023143329], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 517.42 / 583.55 | ms | 0.88738 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8713835399497664, 0.9142575417229309], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 697.56 / 753.35 | ms | 0.92618 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9098936836566371, 0.9550840420164817], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 203.12 / 203.12 | ms | 1.25 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9285714285714286, 1.3636363636363635], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 62.43 / 61.703 | MiB | 1.0118 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.001312667238855, 1.0122847011144884], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-3a33503e506edb9ba5ab71aa7ffc89764cc115264d93a290354d4158612ce1c2"></a>
-
-## compute_workgroup_non_atomic_1024
-
-Observation: `3a33503e506edb9ba5ab71aa7ffc89764cc115264d93a290354d4158612ce1c2`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_workgroup_non_atomic_1024/summary`.
-
-Machine: unknown:e67424679ef82683b05663bf; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 32.998 / 16.163 | ms | 1.9983 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2581822893641672, 2.244265151200896], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0282 / 10.615 | ms | 0.0026565 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0020468392993145466, 0.003284887607188556], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 26.667 / 52.719 | ms | 0.49366 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.42255433968818684, 0.5076178946286419], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 59.693 / 91.813 | ms | 0.66934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6350833628569027, 0.7913457497807063], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 241.65 / 264.9 | ms | 0.94588 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9056210490214858, 0.9578150783191177], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.6091 / 15.676 | ms | 0.038219 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03635563324125876, 0.03972011372825208], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.021 / 0.129 | ms | 0.16453 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14354644149577805, 0.1835273052820054], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 22.371 / 47.887 | ms | 0.44999 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.37243227582210636, 0.4735607712077901], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 23.026 / 76.243 | ms | 0.31722 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3005620224940158, 0.3593041236711237], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 202.16 / 249.54 | ms | 0.83309 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8083408737355968, 0.8655525989765689], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 109.38 / 93.75 | ms | 1.1667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.3636363636363635], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 62.422 / 61.746 | MiB | 1.0112 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0089782498735458, 1.012032932235592], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-2d5ec7f0ee4b101dc475fabad37632ba7d6786617033aa1e17622299089182bc"></a>
-
-## compute_zero_initialize_workgroup_memory_256
-
-Observation: `2d5ec7f0ee4b101dc475fabad37632ba7d6786617033aa1e17622299089182bc`; execution: `catalog-d3d12-be4d0f6d1d7730/compute_zero_initialize_workgroup_memory_256/summary`.
-
-Machine: unknown:97ef225b3dba8921d9f32cd7; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 466.56 / 23.851 | ms | 19.495 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [19.15873126955376, 19.818713051483904], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0202 / 11.564 | ms | 0.0017528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.001570274029886411, 0.0018679304022968628], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.5781 / 31.814 | ms | 0.078422 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0743690547123656, 0.12167573113485931], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 469.14 / 68.322 | ms | 6.9698 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.864804661978769, 7.957261523575398], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 646.89 / 234.81 | ms | 2.7945 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.715691646720276, 2.8354245314468467], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.1648 / 0.2717 | ms | 0.63452 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5882986360373295, 0.774503084304318], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0135 / 0.0607 | ms | 0.21069 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.19528619528619526, 0.2673434856175973], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.7845 / 32.471 | ms | 0.024301 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.01755190621084661, 0.027041731379352882], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.9707 / 32.815 | ms | 0.029639 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.021465935898750888, 0.0342216392703641], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.6 / 211.25 | ms | 0.85347 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8335366488741356, 0.8935799134240527], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 328.12 / 109.38 | ms | 2.9286 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.8, 3.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 62.828 / 65.75 | MiB | 0.95539 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9523073263558516, 0.9578059071729957], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-2d6783244e9220ee916debc67175377d883b211dc88c4f18fced5def1fcd6556"></a>
-
-## copy_buffer_to_buffer_4kb
-
-Observation: `2d6783244e9220ee916debc67175377d883b211dc88c4f18fced5def1fcd6556`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_buffer_4kb/summary`.
-
-Machine: unknown:23a5c8b22d1b9efcdc86dd0e; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.7122 / 0.5432 | ms | 3.1358 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.598436839881707, 3.2565722437334426], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0028 / 0.0279 | ms | 0.096085 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08614232209737827, 0.18374558303886926], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.6073 / 0.3804 | ms | 3.93 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2415848818479218, 4.297318611987381], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 3.3576 / 1.0054 | ms | 3.3974 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4740241209954792, 3.5124165275459096], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 181.51 / 173.21 | ms | 1.0453 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.031187251848957, 1.073406136931982], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0005 / 0.0005 | ms | 0.8 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7142857142857143, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0044 / 0.0031 | ms | 1.4483 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2352941176470587, 1.517241379310345], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.14 / 16.113 | ms | 0.0095943 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006673164517872308, 0.01844470622407978], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.1481 / 16.124 | ms | 0.010031 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0070126362496382745, 0.01962332243148754], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 178.67 / 185.32 | ms | 0.95736 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9212238439455402, 1.0202390555107428], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 93.75 | ms | 0.92308 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8181818181818182, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 58.418 / 52.621 | MiB | 1.11 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1076090180955207, 1.111292719167905], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-44cdc399b09136bd05f9c0c48a16c896d88027e9d5e8502ee8174179f5416869"></a>
-
-## copy_buffer_to_buffer_overlap
-
-Observation: `44cdc399b09136bd05f9c0c48a16c896d88027e9d5e8502ee8174179f5416869`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_buffer_overlap/summary`.
-
-Machine: unknown:ee728f4f923ebbf0b07c9423; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.8496 / 0.5908 | ms | 3.0284 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.236766966835054, 3.293237971391418], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.003 / 0.0283 | ms | 0.10508 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08797653958944282, 0.18729096989966557], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.6211 / 4.5001 | ms | 0.33901 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13722552355799347, 3.876172607879925], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 3.3694 / 5.4503 | ms | 0.65584 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2766193585660096, 3.239692080565222], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 185.89 / 175.24 | ms | 1.0578 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9955339817451163, 1.095007041510426], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0005 / 0.0006 | ms | 0.83333 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6666666666666667, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0041 / 0.0044 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6896551724137931, 1.517241379310345], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1431 / 16.214 | ms | 0.0093687 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.008133815972413624, 0.023185944745607732], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.1503 / 16.238 | ms | 0.0098347 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00855051352046125, 0.024260605862979748], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 182.48 / 184.12 | ms | 0.99448 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.968611360294703, 1.025702588324331], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 93.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 58.461 / 52.605 | MiB | 1.1114 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1101550330094208, 1.1117633945158654], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-4a64bc36be5795fa1d90da252bae7c96a9a9b52828362356207255952d689471"></a>
-
-## copy_buffer_to_texture
-
-Observation: `4a64bc36be5795fa1d90da252bae7c96a9a9b52828362356207255952d689471`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_texture/summary`.
-
-Machine: unknown:12054cc8d73e45491e0ecd35; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 2.6719 / 0.6324 | ms | 3.7197 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.3740006395906623, 4.506493506493506], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0037 / 0.0313 | ms | 0.11635 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.09771986970684039, 0.1895424836601307], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.159 / 0.3825 | ms | 0.40444 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.38813953488372094, 0.41990420436402337], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 2.862 / 1.1599 | ms | 2.4973 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0926686752487904, 2.8356286535222432], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 163.68 / 170.11 | ms | 0.95706 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9339632492614875, 0.9819839485594632], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0005 / 0.0005 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.2], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0023 / 0.0039 | ms | 0.56757 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.46153846153846156, 1.15], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.3838 / 2.9948 | ms | 0.12818 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05080405969042544, 1.034188034188034], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.4038 / 3.0042 | ms | 0.14244 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05216636779082548, 1.0263511696692658], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 161.21 / 174.47 | ms | 0.91805 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9065784982311389, 0.9553309142204415], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 93.75 | ms | 1.1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.2], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 49.148 / 54.152 | MiB | 0.90775 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.907235086200678, 0.9284027162680839], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-3ea107f9367e51edd859e7df07054aa29f020f82ba1f730b8b14422444dd7544"></a>
-
-## copy_buffer_to_texture_tight_pitch
-
-Observation: `3ea107f9367e51edd859e7df07054aa29f020f82ba1f730b8b14422444dd7544`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_buffer_to_texture_tight_pitch/summary`.
-
-Machine: unknown:5e2963dda80049cb12357000; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-5a0890d7d7b67065ce383eb1d615e7e5b98bafae52111c0f33b2246cf5c88697"></a>
-
-## copy_protocol
-
-Observation: `5a0890d7d7b67065ce383eb1d615e7e5b98bafae52111c0f33b2246cf5c88697`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_protocol/summary`.
-
-Machine: unknown:9cf8e20aeccb03d71d0e90bc; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-85030a7d7fc526843f1cc56326f27bcc9d0000933f09b8e01337c5e2d4d3af96"></a>
-
-## copy_texture_to_buffer
-
-Observation: `85030a7d7fc526843f1cc56326f27bcc9d0000933f09b8e01337c5e2d4d3af96`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_buffer/summary`.
-
-Machine: unknown:b2f35cd3aa815ced3c7ba5f9; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-ef53db023f7d6930919b4b7ba1db837469181413e8657935e068c97271761a20"></a>
-
-## copy_texture_to_buffer_padded
-
-Observation: `ef53db023f7d6930919b4b7ba1db837469181413e8657935e068c97271761a20`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_buffer_padded/summary`.
-
-Machine: unknown:c807afca01195fe1304a3666; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-4a5d9a710a3c0fd5cf16a1d6e80599e24b859e9edb44dbec88d646278a0b75d8"></a>
-
-## copy_texture_to_texture
-
-Observation: `4a5d9a710a3c0fd5cf16a1d6e80599e24b859e9edb44dbec88d646278a0b75d8`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_texture/summary`.
-
-Machine: unknown:a8891d8615a2278ce2136662; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.8832 / 0.7761 | ms | 2.5468 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.224971008890607, 3.555052790346908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0059 / 0.036 | ms | 0.16389 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.09470752089136489, 0.22598870056497175], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0849 / 1.1691 | ms | 0.075358 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07123311099709252, 0.07839059674502712], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1.9806 / 2.0072 | ms | 0.99727 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9210998206814107, 1.3199009564499684], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 162.9 / 169.84 | ms | 0.96039 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9529260678377613, 0.9707167410083268], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0004 / 0.0005 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0037 / 0.0039 | ms | 0.94595 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5128205128205129, 1.425], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4348 / 0.2962 | ms | 0.3191 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004346794428429348, 1.853405155829165], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.4539 / 0.3048 | ms | 0.34873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0048090751739694295, 1.8200447093889716], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 161.35 / 172.26 | ms | 0.95482 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8574849431160338, 0.9698955929508978], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 85.938 / 85.938 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.2222222222222223], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 49.117 / 58.27 | MiB | 0.84225 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8230800160836349, 0.8448900214592274], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e2bf4cf3776806cf0e24212910e199644261964261c16c2c6ddc1fd09bcca662"></a>
-
-## copy_texture_to_texture_stress
-
-Observation: `e2bf4cf3776806cf0e24212910e199644261964261c16c2c6ddc1fd09bcca662`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_texture_stress/summary`.
-
-Machine: unknown:244b29cf1ae960c2a5a91b92; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.2964 / 0.7859 | ms | 5.6109 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.521103391060872, 6.345427367848893], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0095 / 0.0425 | ms | 0.22687 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18536585365853658, 0.24556962025316456], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.2896 / 22.12 | ms | 0.013422 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009440051902263845, 0.02652378989787975], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 4.6429 / 23.271 | ms | 0.2032 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14273039879720736, 0.3862326009825327], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 182.39 / 191.67 | ms | 0.94808 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9026130399421607, 1.0105504947535957], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0006 / 0.0017 | ms | 0.38095 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.27999999999999997, 0.39999999999999997], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0069 / 0.018 | ms | 0.42929 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3286384976525822, 0.5267175572519084], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1873 / 31.948 | ms | 0.0056317 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004978289821757612, 0.006070214033351508], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.2007 / 31.976 | ms | 0.0060232 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0052978532870616175, 0.006446414182111201], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.88 / 202.94 | ms | 0.87653 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8440247755621665, 0.8850688048756211], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 93.75 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.25], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.477 / 56.984 | MiB | 1.0085 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.008023590728295, 1.009256085018855], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-99b4162c4f8b7a8f5f2085c6e568cc7694403fcb0ee9f021342f402bcdd05fce"></a>
-
-## copy_texture_to_texture_subresource
-
-Observation: `99b4162c4f8b7a8f5f2085c6e568cc7694403fcb0ee9f021342f402bcdd05fce`; execution: `catalog-d3d12-be4d0f6d1d7730/copy_texture_to_texture_subresource/summary`.
-
-Machine: unknown:59c72dab7326aa4b2dea45be; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 3.6845 / 0.6864 | ms | 5.1842 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.3445199660152936, 5.6886655011655005], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0038 / 0.0366 | ms | 0.10106 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07734806629834254, 0.16045845272206302], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.1929 / 1.2106 | ms | 0.15015 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.016040423756827807, 0.16736438941836645], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 3.875 / 1.9874 | ms | 1.7529 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3027383330041188, 2.215785779841278], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 179.53 / 170.62 | ms | 1.0517 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0067822969705211, 1.0757132145856045], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0004 / 0.0005 | ms | 0.8 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.42857142857142855, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0038 / 0.0041 | ms | 0.87179 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5, 0.9268292682926829], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1316 / 10.114 | ms | 0.0098774 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0057222857352464684, 0.03641193071772453], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.1384 / 10.125 | ms | 0.010528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006107877329391717, 0.038186684325249014], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 175.9 / 178.94 | ms | 0.98032 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9403838054094141, 1.0322970265803044], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.434 / 56.992 | MiB | 1.0078 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0074749691400358, 1.0083670530141966], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-7decef3dcebe306faef9ef65dd71ff7654feda34964d6981c24d2255ff50c1ed"></a>
-
-## inference_gemma3_1b_decode_1tok
-
-Observation: `7decef3dcebe306faef9ef65dd71ff7654feda34964d6981c24d2255ff50c1ed`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_1b_decode_1tok/summary`.
-
-Machine: unknown:799bc1400ebc4d64a1f62a3b; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 649.29 / 312.45 | ms | 2.0781 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0577842854856776, 2.1990142911726083], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0917 / 10.463 | ms | 0.0088541 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.007593440971650507, 0.00949143479174226], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 87.481 / 783.33 | ms | 0.11256 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11080098321674302, 0.12167169838759093], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 736.63 / 1104 | ms | 0.68616 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.656514333412335, 0.6949862859030309], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 910.53 / 1268 | ms | 0.73641 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7047802118607053, 0.7455038379386791], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 25.465 / 40.212 | ms | 0.63216 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6095517562946845, 0.7108616376467075], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0917 / 10.463 | ms | 0.0088541 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.007593440971650507, 0.00949143479174226], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 87.481 / 783.33 | ms | 0.11256 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11080098321674302, 0.12167169838759093], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 113.2 / 834.21 | ms | 0.13791 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.13434086977786247, 0.14933167601438455], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 285.75 / 998.27 | ms | 0.28943 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.28167305773599877, 0.2976829382250551], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 1015.6 / 609.38 | ms | 1.6667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6486486486486487, 1.794871794871795], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| max_rss_mib | 584.19 / 549.91 | MiB | 1.0623 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0621279920448896, 1.2588419983377968], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e937fb29394764a3042640af378cdf919149231f54193ae7d94289ade8721255"></a>
-
-## inference_gemma3_1b_prefill_32tok
-
-Observation: `e937fb29394764a3042640af378cdf919149231f54193ae7d94289ade8721255`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_1b_prefill_32tok/summary`.
-
-Machine: unknown:1de2e6e05be80c284e6d1439; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 233.46 / 262.15 | ms | 0.88496 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.85706080173784, 1.0013010465196084], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.1165 / 10.975 | ms | 0.010482 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009038305643816214, 0.012173675338284203], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 108.84 / 793.21 | ms | 0.13287 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11920737848565562, 0.15078903648380912], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 341.11 / 1069.9 | ms | 0.31883 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2817170087479998, 0.364079203464058], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 528.07 / 1255.5 | ms | 0.42586 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3803267757614718, 0.4740234268439789], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 30.755 / 49.315 | ms | 0.64899 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5983852205287958, 0.671807213528259], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.1165 / 10.975 | ms | 0.010482 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009038305643816214, 0.012173675338284203], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 108.84 / 793.21 | ms | 0.13287 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11920737848565562, 0.15078903648380912], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 139.71 / 850.66 | ms | 0.16037 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14328490318751338, 0.18103842871869738], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 326.67 / 1033.2 | ms | 0.31566 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2800669668756491, 0.3503346606460026], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 640.62 / 593.75 | ms | 1.1081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0256410256410255, 1.1578947368421053], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| max_rss_mib | 548.12 / 551.13 | MiB | 0.9946 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7537667920472864, 0.9946411103392546], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-2828af015564dd76d5cbdfeff0e4ea5323567829d7562a2062994f6d92377572"></a>
-
-## inference_gemma3_1b_prefill_64tok_decode_64tok
-
-Observation: `2828af015564dd76d5cbdfeff0e4ea5323567829d7562a2062994f6d92377572`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_1b_prefill_64tok_decode_64tok/summary`.
-
-Machine: unknown:afe9496efb74b4342a628c36; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 984.21 / 882.02 | ms | 1.1632 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1116122576214829, 1.1726832028797294], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 3.7077 / 63.205 | ms | 0.065607 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.054207164676478764, 0.06824381283337812], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 869.89 / 41154 | ms | 0.020993 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.020897337882100835, 0.02242904896622908], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1859.1 / 42113 | ms | 0.044073 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.043710413516274346, 0.04647679046653475], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 2045.4 / 42287 | ms | 0.048416 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.047742272442476835, 0.05051288677933283], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 209.23 / 424.62 | ms | 0.54081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.468968022383131, 0.5414827858337712], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 3.7077 / 63.205 | ms | 0.065607 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.054207164676478764, 0.06824381283337812], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 869.89 / 41154 | ms | 0.020993 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.020897337882100835, 0.02242904896622908], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 1086.5 / 41655 | ms | 0.025819 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.02578521930185867, 0.02787702920702713], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 1265.9 / 41829 | ms | 0.03025 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.029964345201381182, 0.03203467075086611], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 1812.5 / 953.12 | ms | 1.9016 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.896551724137931, 2.1311475409836067], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 847.46 / 818.25 | MiB | 1.0357 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0351097448039488, 1.0359269428196252], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-19cc2f0b90d8c1555a380b94c74ad4d37e5f7457e6a650ea3fbba9b009c8cc4c"></a>
-
-## inference_gemma3_270m_decode_1tok
-
-Observation: `19cc2f0b90d8c1555a380b94c74ad4d37e5f7457e6a650ea3fbba9b009c8cc4c`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_decode_1tok/summary`.
-
-Machine: unknown:30eda2d6f0d92770558ae35e; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 644.76 / 305.41 | ms | 2.1135 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7199537485737022, 2.131278656921509], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0795 / 11.201 | ms | 0.0070852 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006862059888718447, 0.007913399189010557], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 34.597 / 686.76 | ms | 0.050231 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.04760279985017929, 0.05600690987276096], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 679.46 / 1017.8 | ms | 0.67909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6454106348765778, 0.8038928358627189], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 857.62 / 1185.9 | ms | 0.73445 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7049915899973725, 0.8518744221605544], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 15.188 / 25.342 | ms | 0.59932 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5693275157762193, 0.6359665562584623], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0795 / 11.201 | ms | 0.0070852 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.006862059888718447, 0.007913399189010557], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 34.597 / 686.76 | ms | 0.050231 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.04760279985017929, 0.05600690987276096], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 49.941 / 722.71 | ms | 0.068697 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06548826560117083, 0.07682746938631475], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 228.9 / 889.86 | ms | 0.256 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.24657472859647714, 0.29297100645188984], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 906.25 / 468.75 | ms | 1.931 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4489795918367347, 2.0714285714285716], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | loss |
-| max_rss_mib | 205.89 / 207.3 | MiB | 1.0372 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9918295116533002, 1.0436204047547128], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-6a30b52e4fbdcefc36523933daa4258e131e53b9c6e175a58263987ea7490b4b"></a>
-
-## inference_gemma3_270m_literal_prefill_32tok_decode_1tok
-
-Observation: `6a30b52e4fbdcefc36523933daa4258e131e53b9c6e175a58263987ea7490b4b`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_literal_prefill_32tok_decode_1tok/summary`.
-
-Machine: unknown:9d2849fc159378a2022906bd; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 645.6 / 367.23 | ms | 1.8645 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7580448174984908, 1.94982282312955], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.1616 / 11.032 | ms | 0.014454 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.013695379504389978, 0.016434308091154662], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 70.463 / 1347.3 | ms | 0.052298 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05118878229966721, 0.06216355454042649], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 714.92 / 1725.5 | ms | 0.41868 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.41433510889540953, 0.5917752994344598], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 888.68 / 1891.2 | ms | 0.47246 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4699008055762963, 0.6332040086403418], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 41.007 / 67.979 | ms | 0.60513 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5986478772899735, 0.871853449290371], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.1616 / 11.032 | ms | 0.014454 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.013695379504389978, 0.016434308091154662], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 70.463 / 1347.3 | ms | 0.052298 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05118878229966721, 0.06216355454042649], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 110.85 / 1426.7 | ms | 0.077794 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07732715157594718, 0.10017776714717913], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 284.08 / 1593.9 | ms | 0.17839 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1771121739085154, 0.20537891722604412], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 921.88 / 562.5 | ms | 1.6383 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5277777777777777, 1.7878787878787878], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 269.2 / 288.46 | MiB | 0.93322 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9315937559180802, 1.0193097219181082], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e7ec2e0934cfedf9fe9695625d6eb60d5b22330986bb3ba7808d59e138178cd4"></a>
-
-## inference_gemma3_270m_prefill_32tok
-
-Observation: `e7ec2e0934cfedf9fe9695625d6eb60d5b22330986bb3ba7808d59e138178cd4`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_prefill_32tok/summary`.
-
-Machine: unknown:7f3e3672b134d6f35ae124cc; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 212.63 / 242.11 | ms | 0.88142 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8657213110059201, 0.9318407679623115], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0.0937 / 10.769 | ms | 0.0084784 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.007092198581560284, 0.0092132641010741], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 38.979 / 706.78 | ms | 0.053793 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05109561673345596, 0.061144291671667], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 251.64 / 963.2 | ms | 0.26125 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.24861490303410816, 0.41521320687767344], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 430.65 / 1131.9 | ms | 0.38142 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3618226428747336, 0.494975120482506], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 16.558 / 29.438 | ms | 0.56439 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5079999500393441, 0.6149876857749469], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0937 / 10.769 | ms | 0.0084784 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.007092198581560284, 0.0092132641010741], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 38.979 / 706.78 | ms | 0.053793 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05109561673345596, 0.061144291671667], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 55.547 / 748.93 | ms | 0.073351 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07068568701410202, 0.0831153072533055], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 234.58 / 918.65 | ms | 0.25536 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.23960522678451449, 0.266372818629237], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 453.12 / 421.88 | ms | 1.1481 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9642857142857143, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 195.87 / 191.1 | MiB | 1.0249 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9127205199628597, 1.0252856646429958], 'unit': 'ratio'} | {'implementation': 5, 'comparator': 5, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-f8d441445e7bf21564df8cbc51d29284e99a2b23e41b223c27b7f4d3c1eb9269"></a>
-
-## inference_gemma3_270m_prefill_64tok_decode_64tok
-
-Observation: `f8d441445e7bf21564df8cbc51d29284e99a2b23e41b223c27b7f4d3c1eb9269`; execution: `catalog-d3d12-be4d0f6d1d7730/inference_gemma3_270m_prefill_64tok_decode_64tok/summary`.
-
-Machine: unknown:75088f01d50bda4e8ee4b107; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 946.56 / 797.95 | ms | 1.1862 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1821395219782023, 1.2063225805956965], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 3.5698 / 57.652 | ms | 0.06192 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05673546508626475, 0.06965214611606754], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 456.75 / 40899 | ms | 0.011203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.011125864121618773, 0.011450910506744075], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1409.9 / 41773 | ms | 0.03397 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03363236842584543, 0.034138172580274094], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 1609.5 / 41941 | ms | 0.038237 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.038128013687789036, 0.03839530780621657], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 174.55 / 344.89 | ms | 0.50611 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5021882178240132, 0.5296042936839457], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 3.5698 / 57.652 | ms | 0.06192 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05673546508626475, 0.06965214611606754], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 456.75 / 40899 | ms | 0.011203 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.011125864121618773, 0.011450910506744075], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 637.91 / 41319 | ms | 0.015475 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.015382971686001232, 0.0157599299414535], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 835.47 / 41487 | ms | 0.020113 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.019754576260880227, 0.020137914990307444], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 1640.6 / 734.38 | ms | 2.0588 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9574468085106382, 2.3777777777777778], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 284.48 / 303.65 | MiB | 0.93651 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9281574130567419, 1.0282668549241087], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-c1721e0627a934b8bbdfc86d97035aaa58ff74a5d01b9ee073668998437f8284"></a>
-
-## lifecycle_refcount
-
-Observation: `c1721e0627a934b8bbdfc86d97035aaa58ff74a5d01b9ee073668998437f8284`; execution: `catalog-d3d12-be4d0f6d1d7730/lifecycle_refcount/summary`.
-
-Machine: unknown:3125041853005ef46f9fb00b; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 39.491 / 16.708 | ms | 2.9664 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.723774319066148, 3.382254188468291], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 39.497 / 16.717 | ms | 2.9646 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7233259145616806, 3.3802828895266157], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 217.96 / 183.15 | ms | 1.1849 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1386269223506704, 1.2515821598757833], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 32.971 / 15.939 | ms | 2.0615 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9686526871301728, 2.1725564875888743], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 32.974 / 15.942 | ms | 2.0612 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9684512603045201, 2.172402888314974], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 212.04 / 182.97 | ms | 1.1589 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1352661179557446, 1.183108704498138], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 125 / 85.938 | ms | 1.5385 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4545454545454546, 1.7], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 62.543 / 58.434 | MiB | 1.0709 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0693962062516698, 1.0724084855785319], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-f57dbec016139b9d15adf4f5f0b25a12d6c2c452bbbcfc012756d514053d3b62"></a>
-
-## lifecycle_refcount_200
-
-Observation: `f57dbec016139b9d15adf4f5f0b25a12d6c2c452bbbcfc012756d514053d3b62`; execution: `catalog-d3d12-be4d0f6d1d7730/lifecycle_refcount_200/summary`.
-
-Machine: unknown:1f0ba7128d57ab617e0428a5; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 8154.4 / 3563.3 | ms | 2.2894 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0046815755203147, 2.3075575993200435], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 8154.4 / 3563.3 | ms | 2.2894 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0046764234087386, 2.3075523415409265], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.complete_ms | 8336 / 3750.6 | ms | 2.221 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9617113060110298, 2.2491959557441117], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.setup_ms | 8260.5 / 3563.3 | ms | 2.3076 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.004681435857358, 2.896272029742042], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 8260.5 / 3563.3 | ms | 2.3076 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0046762837455487, 2.8962697749291726], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.complete_ms | 8435.9 / 3733.4 | ms | 2.2492 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9617111669566711, 2.795595181785305], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cpu_ms | 8437.5 / 171.88 | ms | 49.091 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [29.3125, 98.66666666666667], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 64.27 / 64.625 | MiB | 0.99486 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8996609798775154, 0.9956379498364231], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-15b835a0fb2dac42ac658d0f696e9927aea27d4d6378b6b21fec69dbc6f0be83"></a>
-
-## pipeline_async_diagnostics
-
-Observation: `15b835a0fb2dac42ac658d0f696e9927aea27d4d6378b6b21fec69dbc6f0be83`; execution: `catalog-d3d12-be4d0f6d1d7730/pipeline_async_diagnostics/summary`.
-
-Machine: unknown:c3e15298bdc010a107deb866; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 33.566 / 13.631 | ms | 2.4915 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8443699680265035, 4.328777268179869], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 33.572 / 13.639 | ms | 2.4905 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8437907382247627, 4.323464158287382], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 211.5 / 187.08 | ms | 1.1636 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1156489516690948, 1.173746771398114], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 32.254 / 16.148 | ms | 1.9927 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1645690819919783, 2.0121908290875408], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 32.257 / 16.151 | ms | 1.9926 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1645273840000567, 2.012015683368837], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 210.34 / 189.06 | ms | 1.12 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0593718566907744, 1.131959045837986], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 132.81 / 85.938 | ms | 1.5 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4166666666666667, 1.6153846153846154], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 58.051 / 57.555 | MiB | 1.0087 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.007191804057263, 1.0099789559432488], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0ec1580bb642a5612b4e9bd2aaaad6cca0dcc54f16fdb634f9893654f4e1f29d"></a>
-
-## pipeline_compile_stress
-
-Observation: `0ec1580bb642a5612b4e9bd2aaaad6cca0dcc54f16fdb634f9893654f4e1f29d`; execution: `catalog-d3d12-be4d0f6d1d7730/pipeline_compile_stress/summary`.
-
-Machine: unknown:b2c69c465c6d1cb4aaa845e5; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 450.46 / 106.68 | ms | 4.2223 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.095593642585166, 4.755252062988721], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.031 / 10.62 | ms | 0.002919 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0028681680520044155, 0.0032313982627701467], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 91.788 / 53.725 | ms | 1.7497 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.38211881789303, 1.769249288266427], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 543.82 / 171.72 | ms | 3.3507 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.125827146627087, 3.4833944966443817], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 722.12 / 346.38 | ms | 2.1196 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0651018076361938, 2.2018523097920126], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 2.8351 / 16.025 | ms | 0.14466 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11560082485542833, 0.20346961680295014], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0.0169 / 0.0727 | ms | 0.20963 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.19204545454545455, 0.29465449804432853], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 89.332 / 64.01 | ms | 1.4306 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1565780847319331, 1.4519045334847434], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 92.461 / 90.799 | ms | 1.0363 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9917718294298418, 1.1951132206403625], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 273.24 / 260.6 | ms | 1.0625 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.032081615952941, 1.0656345209657239], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 328.12 / 140.62 | ms | 2.3529 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.1578947368421053, 2.588235294117647], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 63.816 / 62.82 | MiB | 1.0159 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0142830528472955, 1.0177315995769303], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-dda8b79df39c0937e99b0830d542cf6e21e55489709403ec1ccf91583ada6c05"></a>
-
-## render_bundle_dynamic_bindings
-
-Observation: `dda8b79df39c0937e99b0830d542cf6e21e55489709403ec1ccf91583ada6c05`; execution: `catalog-d3d12-be4d0f6d1d7730/render_bundle_dynamic_bindings/summary`.
-
-Machine: unknown:34e8f8cfd9cf837b41b0c689; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.058 / 7.6643 | ms | 4.9653 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.759607808806794, 5.099317787316496], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.4059 / 11.507 | ms | 0.11839 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11395369353040717, 0.1297172705123486], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 17.161 / 25.188 | ms | 0.69431 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.5132780830555805, 0.8005812351787731], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 57.038 / 46.288 | ms | 1.2725 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1017342857307133, 1.4552088243612706], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 237.73 / 219.85 | ms | 1.101 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0662191138034838, 1.1451307471529333], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.6625 / 0.0788 | ms | 8.4443 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.974012474012475, 9.452292441140026], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.3761 / 0.1662 | ms | 8.2508 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.901060070671377, 8.33937198067633], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 14.942 / 32.144 | ms | 0.43211 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.301823366473087, 0.4767628230660646], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 17.324 / 32.446 | ms | 0.50169 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.35441186743553516, 0.5566420932470015], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 196.29 / 205.7 | ms | 0.96276 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.923377739558641, 0.9822829627874018], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 132.81 / 109.38 | ms | 1.2857 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0625, 1.4545454545454546], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 104.8 / 66.215 | MiB | 1.5804 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.580005897965202, 1.583161248451236], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-d39c1ada6b213a25672cb691afad4de7fcba2193618185a682cb7bb35bfb9cd5"></a>
-
-## render_bundle_dynamic_pipeline_bindings
-
-Observation: `d39c1ada6b213a25672cb691afad4de7fcba2193618185a682cb7bb35bfb9cd5`; execution: `catalog-d3d12-be4d0f6d1d7730/render_bundle_dynamic_pipeline_bindings/summary`.
-
-Machine: unknown:3e90dee0eb05f88f50b5eab8; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.337 / 7.6245 | ms | 5.0202 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.829298095334072, 5.109605177822191], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.4193 / 11.444 | ms | 0.12298 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.1187810399592861, 0.13189318183841928], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 16.988 / 26.929 | ms | 0.63881 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.48795584319300245, 0.8969885513884763], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 56.882 / 46.25 | ms | 1.2495 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0986591358326872, 1.4944696080669913], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 237.33 / 217.83 | ms | 1.0973 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0573138829137712, 1.138559738134206], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.6582 / 0.083 | ms | 7.7552 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.114457831325301, 9.091494845360824], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.335 / 0.1652 | ms | 8.1236 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.682968929804372, 8.514030612244898], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 14.887 / 32.299 | ms | 0.42392 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3011412521452536, 0.4767997094288461], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 17.197 / 32.553 | ms | 0.49004 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3526100364959375, 0.5484106515862411], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 198.08 / 210.24 | ms | 0.94214 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9117799164445893, 0.9738704826726552], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 125 / 101.56 | ms | 1.3636 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0666666666666667, 1.4166666666666667], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 104.78 / 66.227 | MiB | 1.5818 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5801580747906099, 1.5839037054519707], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-adceb0dff417296b5f55ad73947da56f835ed8578f0886c1507340f9fd882c3d"></a>
-
-## render_bundle_dynamic_pipeline_bindings_200k
-
-Observation: `adceb0dff417296b5f55ad73947da56f835ed8578f0886c1507340f9fd882c3d`; execution: `catalog-d3d12-be4d0f6d1d7730/render_bundle_dynamic_pipeline_bindings_200k/summary`.
-
-Machine: unknown:b5b3efc720ad87b1e473fab9; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.913 / 7.5569 | ms | 4.98 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.973945214105794, 5.285451648486334], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 137.88 / 20.558 | ms | 6.704 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.635295131491385, 6.752268553659313], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.submit_wait_ms | 1406.4 / 58.009 | ms | 24.713 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [21.257085118153316, 26.516531084023313], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.operation_ms | 1583.2 / 86.139 | ms | 18.681 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [16.719709066791708, 19.89770010993871], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.complete_ms | 1762.8 / 255.53 | ms | 6.8861 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.693349837865752, 7.439493571960732], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.setup_ms | 37.912 / 7.3426 | ms | 5.2855 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.974048465605689, 10.824338624338623], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.encode_ms | 138.59 / 20.421 | ms | 6.7523 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.635295131491385, 19.065092863460098], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1406.4 / 66.16 | ms | 22.418 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [21.257085118153316, 24.713286083884242], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.operation_ms | 1583.2 / 84.443 | ms | 18.681 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [16.719779401591968, 22.08734222033846], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.complete_ms | 1762.8 / 255.53 | ms | 6.8861 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.6933560903928635, 7.684916547018631], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cpu_ms | 1796.9 / 203.12 | ms | 8.8462 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.6, 16.5], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 4200.4 / 72.828 | MiB | 57.682 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [57.672012443681616, 57.68424440748887], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-9c1217dd65deb36cd325470df2e689f78bdd21a958ed30118f023da25060f370"></a>
-
-## render_draw_indexed_200k
-
-Observation: `9c1217dd65deb36cd325470df2e689f78bdd21a958ed30118f023da25060f370`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_200k/summary`.
-
-Machine: unknown:c5928cb13f1a21f7f8864494; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-094917d500b38f38b56fc96cd0d07a9c292a8fd0c130358ab56b05cad20efe16"></a>
-
-## render_draw_indexed_baseline
-
-Observation: `094917d500b38f38b56fc96cd0d07a9c292a8fd0c130358ab56b05cad20efe16`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_baseline/summary`.
-
-Machine: unknown:9534749688083f82eaad4ef9; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 42.637 / 7.9707 | ms | 5.3908 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.77000645095576, 5.746527016394288], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.7149 / 0.1648 | ms | 10.505 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.130713370354549, 10.700983606557376], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.submit_wait_ms | 118.37 / 7.2175 | ms | 18.796 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.08000534190778, 38.64801754065412], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 163.79 / 17.24 | ms | 10.187 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.323091505602077, 12.390209886665797], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 327.52 / 188.66 | ms | 1.6995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6431414110389024, 1.8667548628833337], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 42.455 / 7.8753 | ms | 5.5177 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.955635348570883, 5.806393736747676], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.6693 / 0.1637 | ms | 10.57 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [9.19921875, 11.179269882659714], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 120.34 / 7.2175 | ms | 18.796 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.08000534190778, 61.68797709923664], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 163.79 / 15.367 | ms | 11.953 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.767710102321864, 18.91555606883012], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 324.19 / 188.66 | ms | 1.6995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6576126340635222, 1.8667482246904588], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 312.5 / 203.12 | ms | 1.7 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4285714285714286, 1.8333333333333333], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 233.12 / 61.57 | MiB | 3.787 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.784481664763355, 3.7892063492063492], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-48c331bd1d55ca24ae50d5452cd3cf498448a326e6ea69050308756495096b2c"></a>
-
-## render_draw_indexed_indirect_u16
-
-Observation: `48c331bd1d55ca24ae50d5452cd3cf498448a326e6ea69050308756495096b2c`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_indirect_u16/summary`.
-
-Machine: unknown:3c042b99f342f0474f38656f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.267 / 8.3969 | ms | 4.5339 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.456863072121226, 4.870096760423089], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.5125 / 95.489 | ms | 0.0053007 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0051823682693079715, 0.005388713216583096], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 30.997 / 28.14 | ms | 1.1015 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.928180878229596, 1.2949076789439689], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 69.735 / 131.85 | ms | 0.52931 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4979198267651685, 0.5701477617790867], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 249.58 / 300.2 | ms | 0.82183 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8045552563475312, 0.8463683107037099], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.5106 / 0.0955 | ms | 5.1791 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.986261040235525, 5.825555555555556], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.4845 / 0.1432 | ms | 3.4089 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.1119691119691115, 3.574712643678161], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 28.349 / 31.788 | ms | 0.89451 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6452000458970512, 0.906113184581659], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 29.636 / 32.027 | ms | 0.92538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6740740077735685, 0.9429771575794184], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 209.11 / 202.36 | ms | 1.0252 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9781467503994373, 1.0549124566512402], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 132.81 / 148.44 | ms | 0.89474 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.75, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 123.71 / 66.715 | MiB | 1.854 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8532888576779025, 1.8557033218114711], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-bebb9b83eb0f98881961b2b0fc162b7d8d05fcaf4c58b5f927f9b5fa587f1f39"></a>
-
-## render_draw_indexed_indirect_u32
-
-Observation: `bebb9b83eb0f98881961b2b0fc162b7d8d05fcaf4c58b5f927f9b5fa587f1f39`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_indexed_indirect_u32/summary`.
-
-Machine: unknown:88dd70330d0de5ab74648965; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.132 / 8.5018 | ms | 4.4744 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.405543779175498, 4.572451255486006], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.4997 / 95.502 | ms | 0.0052446 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.004935860018590692, 0.005461156775159131], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 29.099 / 24.953 | ms | 1.198 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8737450773336222, 1.372713812511271], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 68.182 / 129.01 | ms | 0.53125 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.49461471665509593, 0.5499824831024068], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 247.52 / 296.4 | ms | 0.82539 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.810802126065234, 0.8380050999132893], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.501 / 0.0994 | ms | 5.0503 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.686293436293436, 5.480957562568009], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.505 / 0.1453 | ms | 3.4092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.0205382436260626, 3.609721229449607], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 27.846 / 33.114 | ms | 0.82597 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6213604262173213, 0.8677536062523956], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 29.148 / 33.382 | ms | 0.85587 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6478979886466527, 0.9003443962255409], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 208.21 / 208.66 | ms | 1.0085 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9768635501844143, 1.0296972364542738], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 125 / 148.44 | ms | 0.88889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8333333333333334, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 123.7 / 66.727 | MiB | 1.853 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8524887407147452, 1.8546498008901382], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-c470efabb479e85cee80c00f9fede0b14d2842ec1aaf94074a8f71e944056a72"></a>
-
-## render_draw_indirect_legacy_equivalent
-
-Observation: `c470efabb479e85cee80c00f9fede0b14d2842ec1aaf94074a8f71e944056a72`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_indirect_legacy_equivalent/summary`.
-
-Machine: unknown:c0fb7ca9adf435012bc79c9f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.968 / 8.5322 | ms | 4.4468 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.281898119374812, 4.59943144956769], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.7878 / 95.646 | ms | 0.008236 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.007981218207904005, 0.008309256929473522], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 47.963 / 28.358 | ms | 1.7371 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.312307488124402, 2.2369356583168662], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 86.905 / 132.46 | ms | 0.66443 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.619768126067492, 0.6827522651798277], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 264.6 / 300.74 | ms | 0.8741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.849837327736475, 0.8871182067624068], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.5012 / 0.0902 | ms | 5.5371 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.337028824833703, 5.909287257019439], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.6792 / 0.1593 | ms | 4.2982 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.012315270935961, 4.501746216530849], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 46.055 / 31.608 | ms | 1.4571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4257022963778267, 1.4727896132976253], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 47.609 / 31.864 | ms | 1.4942 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4605921243529785, 1.5070845477371082], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 225.32 / 201.83 | ms | 1.1283 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0924897373661089, 1.1343494215348486], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 148.44 / 148.44 | ms | 1.0526 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9473684210526315, 1.1111111111111112], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 151.44 / 66.707 | MiB | 2.2702 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.2105509690262894, 2.2716092761770907], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-2e04b2c22f00aec92be998bfe272c46e3272eaf9820cf84a19b61d753cd3e917"></a>
-
-## render_draw_redundant_pipeline_bindings
-
-Observation: `2e04b2c22f00aec92be998bfe272c46e3272eaf9820cf84a19b61d753cd3e917`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_redundant_pipeline_bindings/summary`.
-
-Machine: unknown:64e51f99a41825f018fa94d8; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.004 / 7.5681 | ms | 5.0493 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.899703434670709, 5.158022252946211], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.4289 / 11.4 | ms | 0.12486 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12098216271518171, 0.134561424911553], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 16.954 / 25.445 | ms | 0.68268 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.528755224579876, 0.7088993019585822], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 56.572 / 45.255 | ms | 1.2604 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1200987310183192, 1.349633146854913], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 235.7 / 215.86 | ms | 1.0882 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0651019400956865, 1.1038818345653942], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.707 / 0.081 | ms | 8.7075 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.968850698174006, 9.666666666666666], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.3806 / 0.1666 | ms | 8.426 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.9357743097238895, 8.531176470588234], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 14.868 / 31.569 | ms | 0.44081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4097310979905606, 0.48855481072555207], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 17.267 / 31.843 | ms | 0.50755 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.47936735627635496, 0.5625783103514488], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 195.96 / 201.59 | ms | 0.96499 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.935114590145395, 0.9843813411754827], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 132.81 / 101.56 | ms | 1.3077 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2142857142857142, 1.5], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 104.82 / 66.227 | MiB | 1.5821 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.581057970159816, 1.5834217663011438], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e1d9ae46be4f557b7f4f2c5acf658b52f16c1320f54d276fee9fdcdc5885d34e"></a>
-
-## render_draw_redundant_pipeline_bindings_200k
-
-Observation: `e1d9ae46be4f557b7f4f2c5acf658b52f16c1320f54d276fee9fdcdc5885d34e`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_redundant_pipeline_bindings_200k/summary`.
-
-Machine: unknown:02612f96c3c5fab0cb659d29; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.842 / 7.4802 | ms | 5.1328 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.085211625357611, 5.248740426566531], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 138.77 / 20.075 | ms | 6.9125 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.644232618983494, 7.021041403565266], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.submit_wait_ms | 1394.7 / 48.828 | ms | 28.5 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [18.667063837166225, 28.563051300798524], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.operation_ms | 1572 / 77.04 | ms | 20.405 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [15.411976931459817, 20.495275767936178], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.complete_ms | 1747.8 / 246.01 | ms | 7.1047 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.508648179697955, 7.14017757569139], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.setup_ms | 38.84 / 7.4028 | ms | 5.2489 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.132868149440325, 10.566839378238342], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.encode_ms | 139.54 / 19.875 | ms | 7.021 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.644232618983494, 19.915487560847538], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1394.7 / 48.828 | ms | 28.5 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [26.599883350547852, 28.563051300798524], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.operation_ms | 1572 / 75.462 | ms | 20.495 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [20.405583867040153, 25.82330280598905], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.complete_ms | 1747.8 / 241.74 | ms | 7.1402 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.104694964880951, 7.732942626282612], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cpu_ms | 1703.1 / 187.5 | ms | 9.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.533333333333333, 16.692307692307693], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 4200.4 / 72.883 | MiB | 57.673 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [57.632222103119304, 57.69492978883053], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-5ddc57999327fcd59c7d898b5e71b8986767ad8b3eaee099a558cc07ba0171b8"></a>
-
-## render_draw_state_bindings
-
-Observation: `5ddc57999327fcd59c7d898b5e71b8986767ad8b3eaee099a558cc07ba0171b8`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_state_bindings/summary`.
-
-Machine: unknown:e4595ca67fb893838ff513e5; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.846 / 7.473 | ms | 5.0502 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.016708860759494, 5.118456524363256], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.4247 / 11.495 | ms | 0.12447 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12106966775738438, 0.12628949754503618], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 15.349 / 28.955 | ms | 0.53008 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.48677695686564904, 0.6226229109200064], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 54.623 / 48.094 | ms | 1.133 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0718876244692837, 1.2496853871728995], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 231.89 / 217 | ms | 1.0646 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0526711676020288, 1.1028317443350935], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.6851 / 0.0769 | ms | 8.9089 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.645006016847172, 9.57750342935528], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.3574 / 0.168 | ms | 7.8464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.6555819477434675, 8.988116458704694], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 13.424 / 31.557 | ms | 0.43839 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4208310670112549, 0.47986935675901793], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 15.739 / 31.761 | ms | 0.51361 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4891525218273399, 0.5515576250725115], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 192.71 / 199.05 | ms | 0.96485 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9476993165371483, 0.9849443913574993], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 132.81 / 109.38 | ms | 1.3077 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1428571428571428, 1.4285714285714286], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 104.8 / 66.23 | MiB | 1.5812 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5803255484784147, 1.5829646670205864], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-5adfc680775699b45c32aa499e8774e1cb5ab55cab6a6a0b6b22ba277bc1be54"></a>
-
-## render_draw_throughput_200k
-
-Observation: `5adfc680775699b45c32aa499e8774e1cb5ab55cab6a6a0b6b22ba277bc1be54`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_throughput_200k/summary`.
-
-Machine: unknown:8eb07001b1395c550eb9ed6d; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.775 / 7.5906 | ms | 5.108 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.0825231207019215, 5.159076092018255], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.encode_ms | 139.96 / 21.058 | ms | 6.6332 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.589113711902229, 6.850073901168547], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.submit_wait_ms | 1609.8 / 236.9 | ms | 6.7952 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.545480395174613, 6.810376507605371], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.operation_ms | 1788.5 / 265.57 | ms | 6.7348 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.530335706147291, 6.746224005697591], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cold.complete_ms | 1966.1 / 434.87 | ms | 4.521 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.469196196512486, 4.532591271691157], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.setup_ms | 38.578 / 7.5154 | ms | 5.1592 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.082714097496707, 8.674168297455969], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.encode_ms | 139.68 / 21.058 | ms | 6.6332 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.589113711902229, 19.295778353156198], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1609.8 / 232.39 | ms | 6.8104 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.795240551554359, 7.5542952751731125], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.operation_ms | 1788.5 / 261.16 | ms | 6.7462 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.734760442841, 7.917607387508795], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| warm.complete_ms | 1966.1 / 428.38 | ms | 4.5326 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.52099945455365, 5.042123690162267], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| cpu_ms | 1734.4 / 203.12 | ms | 8.5385 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.533333333333333, 12.222222222222221], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-| max_rss_mib | 4200.7 / 72.891 | MiB | 57.63 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [57.62940136127338, 57.6296910969538], 'unit': 'ratio'} | {'implementation': 3, 'comparator': 3, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-d7113c7db3d7fc7d798ad84a7bcacccceb74031ea7bdeeb732b9c396e90647b2"></a>
-
-## render_draw_throughput_baseline
-
-Observation: `d7113c7db3d7fc7d798ad84a7bcacccceb74031ea7bdeeb732b9c396e90647b2`; execution: `catalog-d3d12-be4d0f6d1d7730/render_draw_throughput_baseline/summary`.
-
-Machine: unknown:2c6ecd81a6e8f25490d2c056; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.237 / 7.6251 | ms | 5.0225 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.954347255056475, 5.131848074084016], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.3844 / 11.683 | ms | 0.11872 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11544483016813015, 0.12051621725567283], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 15.144 / 29.015 | ms | 0.50076 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.45303245942242143, 0.6161912919863676], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 55.121 / 48.528 | ms | 1.1273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0090631471796132, 1.1963776589454878], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 234.97 / 219.53 | ms | 1.0648 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0510038738330985, 1.0727027235765632], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.6378 / 0.0826 | ms | 8.155 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.2473867595818815, 8.821236559139786], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.3514 / 0.1674 | ms | 8.1947 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.629080118694362, 8.509766855702583], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 13.366 / 31.87 | ms | 0.41225 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2970712506028863, 0.43012177021656905], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 15.929 / 32.106 | ms | 0.48384 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.34900264818216714, 0.5065136937946579], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 195.5 / 203.85 | ms | 0.94529 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8994145114692067, 0.973699721439638], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 140.62 / 109.38 | ms | 1.1875 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0666666666666667, 1.5], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 104.82 / 66.211 | MiB | 1.5831 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.580909680844788, 1.583716814159292], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-38e298bee7663feb23dba0899e68d2c5fe6fc9cdac443ced26678f9bd02ca1ae"></a>
-
-## render_multidraw
-
-Observation: `38e298bee7663feb23dba0899e68d2c5fe6fc9cdac443ced26678f9bd02ca1ae`; execution: `catalog-d3d12-be4d0f6d1d7730/render_multidraw/summary`.
-
-Machine: unknown:924041d30ab25469a380435c; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.042 / 8.5471 | ms | 4.4509 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.346261650297381, 4.600213270710024], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.7204 / 96.88 | ms | 0.017638 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.017331530290815345, 0.018102372685607427], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 118.35 / 27.013 | ms | 4.326 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.9550360251426517, 5.398660541018675], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 158.64 / 132.47 | ms | 1.1845 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0888745354780167, 1.2705471029612199], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 339.15 / 303.1 | ms | 1.1196 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0525309643679595, 1.1417667054029523], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.5419 / 0.0925 | ms | 5.7989 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.2955010224948875, 6.128348214285714], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.5925 / 0.3146 | ms | 4.9809 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.603598014888337, 5.498767171539274], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 121.91 / 43.769 | ms | 2.7807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7057268488382906, 3.88975335469689], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 124.36 / 44.193 | ms | 2.8089 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7446483180428136, 3.921146775161079], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 305.85 / 213.74 | ms | 1.431 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.421188467136174, 1.469521469179804], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 187.5 / 148.44 | ms | 1.3889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2105263157894737, 1.4210526315789473], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 266.8 / 67 | MiB | 3.982 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.8638245757275325, 4.316507344369317], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-d769ba1ee716c8bf61a1ba1845416e7ef4bb1414280719bf8b28b66c3d3046c4"></a>
-
-## render_multidraw_indexed
-
-Observation: `d769ba1ee716c8bf61a1ba1845416e7ef4bb1414280719bf8b28b66c3d3046c4`; execution: `catalog-d3d12-be4d0f6d1d7730/render_multidraw_indexed/summary`.
-
-Machine: unknown:3437c6dff1c773be9dd2c295; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.327 / 8.4264 | ms | 4.5567 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.516970725498515, 4.639656481860139], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 1.7289 / 96.003 | ms | 0.018017 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.017424818660559414, 0.018900411652944902], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 121.17 / 31.665 | ms | 3.8242 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.507145874705069, 4.465539823656386], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 161.42 / 135.64 | ms | 1.19 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.171670732561397, 1.226361079412064], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 339.31 / 309.44 | ms | 1.121 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0782579471984046, 1.1379483909376638], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.5503 / 0.1053 | ms | 5.2483 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.823734729493892, 5.90450643776824], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 1.6344 / 0.3312 | ms | 4.971 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.539857064321056, 5.109096592685214], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 123.28 / 30.862 | ms | 3.9907 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.952082966002533, 4.172249095152725], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 125.79 / 31.31 | ms | 4.0147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.9800166922741327, 4.193419341934193], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 304.13 / 200.77 | ms | 1.5236 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.4719919669462778, 1.5398726680633137], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 179.69 / 148.44 | ms | 1.2105 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1, 1.25], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 266.84 / 67.062 | MiB | 3.9779 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.9757886159934817, 4.039676066185039], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0eb458ee8a280e25f60f41596d0d7903370c2456212bf907874184646802282d"></a>
-
-## render_pass_depth_stencil
-
-Observation: `0eb458ee8a280e25f60f41596d0d7903370c2456212bf907874184646802282d`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pass_depth_stencil/summary`.
-
-Machine: unknown:f44fa7fc9937d9e9483be92c; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.978 / 7.4724 | ms | 5.0719 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.994511599266429, 5.12377495462795], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.2261 / 11.304 | ms | 0.020051 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.017957768282865813, 0.02106732885004551], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.4797 / 32.529 | ms | 0.073894 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.059160064034202466, 0.12607372336827866], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 40.826 / 51.176 | ms | 0.78655 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6698240954985276, 1.0756979359182908], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 217.28 / 220.54 | ms | 0.98525 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9302651687010706, 1.0605287819563476], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.6027 / 0.0751 | ms | 8.0133 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.3503267973856214, 8.488732394366199], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.1855 / 0.0633 | ms | 2.8778 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.422575976845152, 3.143759873617694], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1.5556 / 31.805 | ms | 0.046687 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.04623263267574766, 0.05054343136722283], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2.4951 / 31.945 | ms | 0.076581 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0739652895739511, 0.07926563884908999], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.83 / 199.72 | ms | 0.8887 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8705672591511058, 0.9028126300170934], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 117.19 / 101.56 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.2142857142857142], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 67.18 / 66.23 | MiB | 1.0141 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.013622692693283, 1.014567974048953], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-d068563c79c0da3ed5c9b3e319f83fdc93542fb0c18c81dba10fac227c926458"></a>
-
-## render_pass_dynamic_viewport_scissor
-
-Observation: `d068563c79c0da3ed5c9b3e319f83fdc93542fb0c18c81dba10fac227c926458`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pass_dynamic_viewport_scissor/summary`.
-
-Machine: unknown:f68ba73787d61cc409c361d7; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.66 / 7.5681 | ms | 4.9556 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.872939649578196, 4.97971490540727], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.2689 / 11.441 | ms | 0.023106 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.02091428876301585, 0.024129702535298628], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.6239 / 32.809 | ms | 0.081475 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07855799861081172, 0.09514566716864671], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 40.729 / 51.71 | ms | 0.80368 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7681397821805743, 0.8721781413474704], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 217.06 / 219.06 | ms | 0.98727 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9776067361385921, 1.0042787989233841], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.5965 / 0.0808 | ms | 7.5229 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.921985815602837, 7.963951935914554], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.2032 / 0.0688 | ms | 2.9985 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.485190409026798, 3.2654600301659125], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1.8113 / 32.136 | ms | 0.053722 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.04088142680045441, 0.05608331089416436], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2.7889 / 32.295 | ms | 0.083196 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06329358976289372, 0.08647008298702775], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.7 / 204.77 | ms | 0.8801 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8449796265321996, 0.8921860665072973], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 125 / 101.56 | ms | 1.2727 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.5454545454545454], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 68.238 / 66.195 | MiB | 1.0307 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0303798961774422, 1.0313385269121813], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-c6a19db9e96e807afdfacebf37151c09fb0b89016a9818cd1c37a1fa014c40e2"></a>
-
-## render_pass_loadops_clear_load
-
-Observation: `c6a19db9e96e807afdfacebf37151c09fb0b89016a9818cd1c37a1fa014c40e2`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pass_loadops_clear_load/summary`.
-
-Machine: unknown:8c499888e167d7be3ac62b15; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.853 / 7.4585 | ms | 5.0734 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.041083298919632, 5.088482504900776], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.2404 / 11.283 | ms | 0.021147 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.020884301505384024, 0.023091108319747707], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.6563 / 29.903 | ms | 0.094446 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07560388498341337, 0.1351864062896272], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 40.963 / 48.939 | ms | 0.83737 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7837169743657603, 1.0731145937904738], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 218.75 / 218.08 | ms | 1.0096 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9836127469064113, 1.0459823686887921], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.6111 / 0.0817 | ms | 7.3766 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.037780401416764, 8.023316062176164], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.1901 / 0.0664 | ms | 2.914 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.6176046176046177, 3.2954186413902056], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1.7894 / 32.625 | ms | 0.049873 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.040464648918432475, 0.056511591918975], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2.7882 / 32.783 | ms | 0.079951 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06308576215077047, 0.08608663672111978], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 180.51 / 204.89 | ms | 0.8754 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8534741331215191, 0.8932604253943055], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 117.19 / 109.38 | ms | 1.0769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9375, 1.3076923076923077], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 67.996 / 66.277 | MiB | 1.0256 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0254067436925254, 1.0266430887120541], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-9c9ffc6fe3975ffe217f744b52d9977513169d268a7986e03b9bebea30a0e213"></a>
-
-## render_pass_multisample_resolve
-
-Observation: `9c9ffc6fe3975ffe217f744b52d9977513169d268a7986e03b9bebea30a0e213`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pass_multisample_resolve/summary`.
-
-Machine: unknown:396efc1186c317641d4f11e4; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.124 / 7.5809 | ms | 5.0521 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.852619680680258, 5.17504241025989], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.1995 / 11.418 | ms | 0.017421 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.01710382274379297, 0.017768587800304908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.2995 / 29.395 | ms | 0.081909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.071185621737776, 0.08820917914332078], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 40.793 / 48.68 | ms | 0.83698 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7711514734364074, 0.9151960120998895], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 218.1 / 218.47 | ms | 0.99457 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9417541553236305, 1.022365748142575], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.5995 / 0.0832 | ms | 7.4842 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.8894230769230775, 8.129191321499015], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.18 / 0.0704 | ms | 2.4778 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.262111801242236, 2.710526315789474], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1.3994 / 31.981 | ms | 0.043262 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03306007257089101, 0.04426036693900912], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2.3556 / 32.168 | ms | 0.072341 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.059186812077812956, 0.07456291245738592], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.68 / 202.89 | ms | 0.88559 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8500957938153021, 0.8885245645062838], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 117.19 / 101.56 | ms | 1.1538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0714285714285714, 1.3333333333333333], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 66.789 / 66.289 | MiB | 1.0078 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0072476577691356, 1.0081914078613943], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-f4b7c7a94cdb21c48fbef04be39d859984fe0b9da41b38510929414b5e705414"></a>
-
-## render_pass_stencil_ref_sweep
-
-Observation: `f4b7c7a94cdb21c48fbef04be39d859984fe0b9da41b38510929414b5e705414`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pass_stencil_ref_sweep/summary`.
-
-Machine: unknown:77e84af437c7f841b96716ba; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 37.998 / 7.5876 | ms | 4.984 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.927519159072079, 5.105448363118772], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.1913 / 11.514 | ms | 0.016665 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.015058076080108609, 0.017284057845138315], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.1629 / 33.241 | ms | 0.061626 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.052014050619420056, 0.0806015867647802], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 40.605 / 52.496 | ms | 0.75991 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6400395753383156, 0.8741888953475855], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 218.47 / 222.11 | ms | 0.97827 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9512611732223875, 1.0207073029909974], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.5965 / 0.0767 | ms | 7.8384 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.002087682672234, 8.198902606310012], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.154 / 0.063 | ms | 2.4093 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.197916666666667, 2.5854063018242126], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1.2769 / 32.044 | ms | 0.039047 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.037386930293654405, 0.04015981068773205], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2.168 / 32.206 | ms | 0.068048 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.06455010719109758, 0.06850298437727233], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.9 / 200.49 | ms | 0.8973 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.88410537770657, 0.9097144845396073], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 109.38 / 101.56 | ms | 1.1667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0769230769230769, 1.4444444444444444], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 66.32 / 66.27 | MiB | 1.0009 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0001768346595932, 1.0017684508370668], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-6d9c069608ac6483eade675c9fc6ca9db52841b6ab128095fa71a8b4a6cde888"></a>
-
-## render_pass_storeops_discard
-
-Observation: `6d9c069608ac6483eade675c9fc6ca9db52841b6ab128095fa71a8b4a6cde888`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pass_storeops_discard/summary`.
-
-Machine: unknown:5b7fcffacf064f5b9e35f77a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.123 / 7.6276 | ms | 5.0212 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.953705639471071, 5.13680581047774], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.2664 / 11.43 | ms | 0.023464 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.02178814915685876, 0.023755666143296876], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.6712 / 31.497 | ms | 0.084497 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.07703557392857246, 0.11169972402885593], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 41.256 / 50.356 | ms | 0.81819 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7686702857528475, 0.9702446056334808], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 219.69 / 217.46 | ms | 1.0161 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9953811392490509, 1.036869447773225], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.6022 / 0.0781 | ms | 7.6627 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [7.36441717791411, 7.926330150068212], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.202 / 0.0689 | ms | 2.6436 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.4396135265700485, 3.003120124804992], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 1.7805 / 31.863 | ms | 0.055358 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.05472093263502578, 0.05858622138273616], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 2.7738 / 32.049 | ms | 0.085495 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08502354612745311, 0.08941237281159364], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 181.21 / 199.08 | ms | 0.90721 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8943500633210639, 0.9264688213384595], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 117.19 / 101.56 | ms | 1.0769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.3076923076923077], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 67.992 / 66.258 | MiB | 1.0261 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0257105790777215, 1.0267704463706586], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-eb9eed92446acaa360b08bcd7f2bc4e733d41ca67679c2186b6b737d305e1be4"></a>
-
-## render_pixel_local_storage_barrier
-
-Observation: `eb9eed92446acaa360b08bcd7f2bc4e733d41ca67679c2186b6b737d305e1be4`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pixel_local_storage_barrier/summary`.
-
-Machine: unknown:eb53039f7cea532bce3555ce; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 36.351 / 12.488 | ms | 2.911 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.5907455233543906, 3.7271237451299704], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 36.358 / 12.497 | ms | 2.9094 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.589730939459591, 3.725121021732413], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 213.28 / 181.34 | ms | 1.1752 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1608532553615576, 1.1824185609064528], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 32.264 / 14.69 | ms | 2.2035 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.189823306829978, 2.3161979434633584], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 32.267 / 14.693 | ms | 2.2032 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1897939747472117, 2.31588518271655], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 209.5 / 187.46 | ms | 1.1359 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0687928361308536, 1.1555649411951445], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 125 / 85.938 | ms | 1.3846 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.25, 1.5454545454545454], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 59.949 / 57.871 | MiB | 1.0357 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0347339313414716, 1.0362617327300965], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0658ed59a2e87f1ae2a5518a2dd6be9ddbda38726e4fdc1ac14e9ed9f3e9a368"></a>
-
-## render_pixel_local_storage_barrier_500
-
-Observation: `0658ed59a2e87f1ae2a5518a2dd6be9ddbda38726e4fdc1ac14e9ed9f3e9a368`; execution: `catalog-d3d12-be4d0f6d1d7730/render_pixel_local_storage_barrier_500/summary`.
-
-Machine: unknown:cd8f00c6eded2eb24979806a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 36.33 / 12.742 | ms | 2.8325 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.220868533982126, 3.1725987119623777], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 36.337 / 12.751 | ms | 2.831 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.220139427747466, 3.171171697609189], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 213.96 / 181.16 | ms | 1.181 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1277406701965367, 1.1995977483706193], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 32.025 / 14.144 | ms | 2.2642 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.1326753135211662, 2.3270076827106183], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 32.028 / 14.146 | ms | 2.264 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.13241963183599, 2.3268968435181607], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 209.4 / 181.44 | ms | 1.1489 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.100594446866659, 1.1584178342403741], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 125 / 85.938 | ms | 1.4545 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3333333333333333, 1.5454545454545454], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| max_rss_mib | 59.91 / 57.875 | MiB | 1.0352 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0345595680053998, 1.0356395545055688], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-1132c6d4b1c53e8a18cc45f7582ebe91de1c8450442a9a4e0660b8c22ab77915"></a>
-
-## render_uniform_buffer_update_writebuffer_partial_single
-
-Observation: `1132c6d4b1c53e8a18cc45f7582ebe91de1c8450442a9a4e0660b8c22ab77915`; execution: `catalog-d3d12-be4d0f6d1d7730/render_uniform_buffer_update_writebuffer_partial_single/summary`.
-
-Machine: unknown:d021623d1a83c9bfea8fa514; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 38.708 / 7.1887 | ms | 5.4092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.29606140613517, 5.434684937661463], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0166 / 10.566 | ms | 0.0015897 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0015266743942777981, 0.0018025391443297965], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.7562 / 28.816 | ms | 0.095995 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.08462222222222222, 0.13291106599841535], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 41.662 / 46.628 | ms | 0.89189 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8396617256178659, 1.0326725102062675], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 220.6 / 217.72 | ms | 1.0145 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9920937713788311, 1.0632664076303548], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.4302 / 0.0906 | ms | 4.6656 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.306517311608961, 5.524608501118569], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.0086 / 0.0506 | ms | 0.14381 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11812865497076022, 0.22657952069716772], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.3723 / 31.845 | ms | 0.011457 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009396613088908615, 0.011845059586427797], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.9727 / 31.994 | ms | 0.030184 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.024030218426671045, 0.031054254755352364], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.74 / 203.08 | ms | 0.87809 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8667722985982511, 0.904920092162721], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 125 / 93.75 | ms | 1.25 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1428571428571428, 1.3636363636363635], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 63.496 / 66.188 | MiB | 0.95899 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9579643405360727, 0.9603779155594921], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e5bf2e5c6752b6e8c6b2906d194fbaff5a1520211f9d572d991b9afb2331b852"></a>
-
-## resource_buffer_map_double_request_guard
-
-Observation: `e5bf2e5c6752b6e8c6b2906d194fbaff5a1520211f9d572d991b9afb2331b852`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_double_request_guard/summary`.
-
-Machine: unknown:e974a782e1b84e1668f78729; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.6679 / 0.7869 | ms | 1.9581 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8319210554542529, 2.9417786308381313], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0019 / 3.882 | ms | 0.00048944 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.0002718176103834327, 0.0050568900126422255], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1.6861 / 4.5624 | ms | 0.45161 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.23907834101382486, 1.3459552495697076], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 179.39 / 173.75 | ms | 1.0335 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0221565579673813, 1.0502119865104682], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0012 / 0.0018 | ms | 0.6875 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6111111111111112, 0.8461538461538463], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.0006 / 0.0017 | ms | 0.35294 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3, 0.5], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.0087 / 0.0074 | ms | 1.15 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9325842696629214, 1.45], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.71 / 170.62 | ms | 1.0517 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.02580555814696, 1.067445567173149], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9090909090909091, 1.2727272727272727], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 59.496 / 56.504 | MiB | 1.0527 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0523878637086184, 1.0537849982716903], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-a60bc176a471df6ba6ea99b1e5abdbf89d5d8479229f6d737f47f3ff444ce546"></a>
-
-## resource_buffer_map_partial_read_4kb
-
-Observation: `a60bc176a471df6ba6ea99b1e5abdbf89d5d8479229f6d737f47f3ff444ce546`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_partial_read_4kb/summary`.
-
-Machine: unknown:95c1e8626de364856ceb405d; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.7064 / 0.6736 | ms | 2.4419 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.1745142448444392, 2.7329146104381636], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0014 / 7.5526 | ms | 0.00013118 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00011592074884803754, 0.00029698069625474344], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1.7147 / 8.263 | ms | 0.19844 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12632769727638554, 0.26665996293795696], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 181.15 / 174.45 | ms | 1.0257 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9889274052869347, 1.052036942406684], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0011 / 0.0031 | ms | 0.35714 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2, 0.4838709677419355], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.0004 / 0.0015 | ms | 0.26667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.10526315789473685, 0.3125], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.0059 / 0.0077 | ms | 0.77632 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.38064516129032255, 1.325], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.62 / 168.17 | ms | 1.0647 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0496411305428532, 1.082873898740696], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 85.938 | ms | 1.1667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0833333333333333, 1.3], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 59.492 / 56.477 | MiB | 1.053 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.05199474521192, 1.0574116345023172], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-a1efe8cd5df72bdc16d1fc9f8fcd96c967a5805df966a32a66e87eca7a22a5dd"></a>
-
-## resource_buffer_map_partial_write_64kb
-
-Observation: `a1efe8cd5df72bdc16d1fc9f8fcd96c967a5805df966a32a66e87eca7a22a5dd`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_partial_write_64kb/summary`.
-
-Machine: unknown:ca4b509dba922dd071f93dd1; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 3.9455 / 0.6184 | ms | 6.422 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.659305621162021, 6.981846206542216], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0013 / 0.0056 | ms | 0.22807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.22033898305084745, 0.2545454545454546], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 3.9882 / 0.6332 | ms | 6.3353 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.625608907446067, 6.863264965816241], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 181.44 / 169.37 | ms | 1.0701 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0558530115849556, 1.0807802957353687], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.185 / 0.0011 | ms | 160.91 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [154.45454545454544, 173.41666666666669], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.001 / 0.0009 | ms | 1.1111 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.2222222222222223], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.2005 / 0.0054 | ms | 35.418 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [34.27777777777777, 41.833333333333336], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 177.32 / 168.64 | ms | 1.0511 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0385604526312404, 1.0623936631127975], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 62.445 / 55.145 | MiB | 1.1323 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1320727993768147, 1.1332577261128438], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-dfb58fe8008b23ecf5fb3cfc93f314d12330c46e76f9720e6a2d66291abb132f"></a>
-
-## resource_buffer_map_readback_1kb
-
-Observation: `dfb58fe8008b23ecf5fb3cfc93f314d12330c46e76f9720e6a2d66291abb132f`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_readback_1kb/summary`.
-
-Machine: unknown:d18b7d121ce89891ab32fb3c; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.8766 / 0.6287 | ms | 3.2467 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.943633044272022, 3.5783831282952554], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0013 / 6.7573 | ms | 0.00038164 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00013479324789515159, 0.0004999375078115235], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1.8876 / 7.3424 | ms | 0.288 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.19758796323400266, 0.5030962708350383], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 180.9 / 175.03 | ms | 1.0379 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9976749238482683, 1.0482409020266394], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0011 / 0.003 | ms | 0.36667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3125, 0.7499999999999999], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.0004 / 0.0014 | ms | 0.28571 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.25, 0.33333333333333337], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.006 / 0.0075 | ms | 0.83333 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6404494382022472, 1.0129870129870129], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 179.16 / 168.83 | ms | 1.075 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0428652570686225, 1.083866833178001], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.25], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 59.574 / 56.477 | MiB | 1.0544 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0506880575340571, 1.0560935122423571], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-edf3d1218a1398959f9b6186d0537a7e742ad52ebb6d3263b6dfb64026678fe1"></a>
-
-## resource_buffer_map_readback_64kb
-
-Observation: `edf3d1218a1398959f9b6186d0537a7e742ad52ebb6d3263b6dfb64026678fe1`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_readback_64kb/summary`.
-
-Machine: unknown:8b8197614b2a2b2c03a94c3d; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.7442 / 0.837 | ms | 2.5624 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8870604147880976, 2.9125934445083383], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0013 / 6.3089 | ms | 0.00020606 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00013032086368437658, 0.0037410071942446045], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 1.7533 / 7.2224 | ms | 0.27917 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11346333863566439, 1.7057106722443818], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 180.81 / 176.3 | ms | 1.0348 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9595103387495031, 1.0624154386700928], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.001 / 0.003 | ms | 0.46667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.19230769230769232, 0.5555555555555556], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.0004 / 0.0014 | ms | 0.25 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.18181818181818182, 0.35714285714285715], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.0059 / 0.0086 | ms | 0.74359 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6140350877192983, 1.156862745098039], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 178.8 / 170.2 | ms | 1.0564 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0297592992730562, 1.0673048683522481], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.2727272727272727], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 59.535 / 56.48 | MiB | 1.0541 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0510585305105853, 1.0547954671089], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0a55d62c52fea066d3c98c1b701f11d8db4bc27907a4da06edb077b7ce03189d"></a>
-
-## resource_buffer_map_unmap_storm
-
-Observation: `0a55d62c52fea066d3c98c1b701f11d8db4bc27907a4da06edb077b7ce03189d`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_unmap_storm/summary`.
-
-Machine: unknown:f9b4c0f6c127d1a2ad47efc8; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 4.0924 / 1.9183 | ms | 1.9245 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.478918708673668, 2.4250426863972687], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0024 / 10.433 | ms | 0.00025298 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00015680285790252316, 0.0004834633556752005], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 4.1332 / 12.373 | ms | 0.30171 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.23445583460382868, 0.6662603451594278], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 182.31 / 179.15 | ms | 1.0169 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0073163422477815, 1.0557243873367217], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.1364 / 0.0394 | ms | 3.6265 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.803312629399586, 9.77432712215321], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.0016 / 14.495 | ms | 0.00012418 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.00010379042637107154, 0.00020018416943588102], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.1574 / 14.558 | ms | 0.011559 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.009985772424974358, 0.03345415849156995], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 178.68 / 181.33 | ms | 0.97485 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9659109916579537, 1.0077649495147671], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8571428571428571, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 62.43 / 60.539 | MiB | 1.0312 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0308426893792748, 1.051334967109506], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-2cf8b8e8ceb70d0fde416397856b89112576e6cce7a86cb4139812761325035d"></a>
-
-## resource_buffer_map_write_1kb
-
-Observation: `2cf8b8e8ceb70d0fde416397856b89112576e6cce7a86cb4139812761325035d`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_write_1kb/summary`.
-
-Machine: unknown:db3b3f67d048c68b824355c1; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 3.8412 / 0.5948 | ms | 6.3915 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.417487684729065, 6.963292181069958], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0014 / 0.0056 | ms | 0.24561 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2, 0.2777777777777778], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 3.8791 / 0.6088 | ms | 6.2807 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.363929146537842, 6.867353509336767], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 181.39 / 168.92 | ms | 1.0808 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0593761824900378, 1.0853424989210978], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.1667 / 0.0012 | ms | 161.91 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [137.16666666666669, 164.3], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.001 / 0.001 | ms | 1.1111 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8999999999999999, 2.3], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.1809 / 0.0043 | ms | 43.951 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [41.372093023255815, 49.452380952380956], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 177.83 / 168.3 | ms | 1.0624 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0409607250470365, 1.0660385605128948], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.2307692307692308], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 62.344 / 55.129 | MiB | 1.1312 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.128677773839064, 1.1330688018139303], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-7c336fd12883462682969aabc4f68c3967793b81553525a1104d67dd7bf3ce27"></a>
-
-## resource_buffer_map_write_64kb
-
-Observation: `7c336fd12883462682969aabc4f68c3967793b81553525a1104d67dd7bf3ce27`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_buffer_map_write_64kb/summary`.
-
-Machine: unknown:16e91f8b442d83c75839046d; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 3.9613 / 0.58 | ms | 6.5065 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.4992780825873515, 7.095289271001255], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.0014 / 0.0058 | ms | 0.22951 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.21428571428571427, 0.3157894736842105], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 4 / 0.5961 | ms | 6.3985 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.430810505506918, 6.9613644274277755], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 182.9 / 167.78 | ms | 1.0838 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0743970947529378, 1.0974636050721938], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.1849 / 0.0012 | ms | 159.62 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [148.41666666666669, 163.75000000000003], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.001 / 0.001 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9090909090909091, 1.25], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.2002 / 0.0054 | ms | 36.172 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [34.925925925925924, 39.315789473684205], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 179.22 / 166.92 | ms | 1.0666 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0552986024386535, 1.078375547902692], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.2727272727272727], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 62.457 / 55.137 | MiB | 1.1319 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1298710500212554, 1.1341031453669594], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-c48169406568b9045e00bf6c0dd949d453cc1b33b71e175caf1b499c859771e9"></a>
-
-## resource_lifecycle
-
-Observation: `c48169406568b9045e00bf6c0dd949d453cc1b33b71e175caf1b499c859771e9`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_lifecycle/summary`.
-
-Machine: unknown:c3bd157607af3cb5b9b37800; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.6162 / 0.565 | ms | 3.0314 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.3787806048967832, 3.2607079646017696], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.613 / 0.7708 | ms | 2.1854 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.870635518713891, 2.274714426738119], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 3.3133 / 1.374 | ms | 2.5289 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.068306385311044, 2.737287495277673], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 182.58 / 170.69 | ms | 1.0697 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0600527982046017, 1.0782783789103245], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0364 / 0.0257 | ms | 1.375 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.852017937219731, 1.455252918287938], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4201 / 0.0104 | ms | 42.6 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [31.60576923076923, 44.22105263157894], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.4753 / 0.0467 | ms | 8.9336 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.9840728100113765, 11.250549450549451], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 179.78 / 169.23 | ms | 1.0596 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0513695786172863, 1.0713223761270663], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1.0769 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.3], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.145 / 55.199 | MiB | 1.0355 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0347045518801243, 1.0358734875822544], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-0fe2556ef4281c36b294bf39aa245357cba0bd7ea279f911036ec84c974d85d6"></a>
-
-## resource_table_immediates
-
-Observation: `0fe2556ef4281c36b294bf39aa245357cba0bd7ea279f911036ec84c974d85d6`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_table_immediates/summary`.
-
-Machine: unknown:19b5869651c437b16a7c0ef8; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 2.8872 / 0.7847 | ms | 3.6269 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.680758705293951, 4.261684820074452], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 2.8933 / 0.7937 | ms | 3.5886 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.6666354615240593, 4.219754768392369], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 179.81 / 168.81 | ms | 1.0615 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0596634355082306, 1.0839793027237283], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0108 / 0.0136 | ms | 0.81752 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7352941176470589, 0.8455882352941176], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.0118 / 0.0146 | ms | 0.81944 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.761904761904762, 0.8686131386861314], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 176.8 / 167.79 | ms | 1.0519 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0448952404882061, 1.0741055413952612], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8461538461538461, 1.2222222222222223], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.367 / 51.488 | MiB | 1.1124 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1102684665554376, 1.1143485848698687], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-17942d35971ccdc144e976e6bbb7271bb24b66c3272c28713372a50932b581f9"></a>
-
-## resource_table_immediates_500
-
-Observation: `17942d35971ccdc144e976e6bbb7271bb24b66c3272c28713372a50932b581f9`; execution: `catalog-d3d12-be4d0f6d1d7730/resource_table_immediates_500/summary`.
-
-Machine: unknown:7565f9246689281d21504e6a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 2.7472 / 0.7548 | ms | 3.6527 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7324044301536263, 4.232706310679611], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 2.7534 / 0.7638 | ms | 3.6196 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7121301426382174, 4.18876404494382], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 180.31 / 170.87 | ms | 1.0636 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0468707888568558, 1.0745929642795866], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.011 / 0.0134 | ms | 0.8209 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7443609022556392, 0.912], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 0.0121 / 0.0145 | ms | 0.83448 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7551020408163266, 0.9333333333333333], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 177.4 / 170.09 | ms | 1.0525 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0345716273382712, 1.0629010497517881], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 93.75 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.203 / 51.488 | MiB | 1.1108 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1100326078713885, 1.1144719884769918], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-aaa0b0f89839a3c7c02e7c714b434f2afe16acf08d15a07546ce2357b1ebb805"></a>
-
-## surface_full_presentation
-
-Observation: `aaa0b0f89839a3c7c02e7c714b434f2afe16acf08d15a07546ce2357b1ebb805`; execution: `catalog-d3d12-be4d0f6d1d7730/surface_full_presentation/summary`.
-
-Machine: unknown:ec1aaf4f0d79bbc2b976168a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-f2fe8c8d81cc40b5dea03359a73cbd094f3fbbdfb8523106427fb44f26ea1728"></a>
-
-## surface_presentation
-
-Observation: `f2fe8c8d81cc40b5dea03359a73cbd094f3fbbdfb8523106427fb44f26ea1728`; execution: `catalog-d3d12-be4d0f6d1d7730/surface_presentation/summary`.
-
-Machine: unknown:6023651750b7a4f76a445356; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-95e65851dcae719da8b28cc0931731287ad6431cb687a61bd98f4ca3152e600e"></a>
-
-## texture_sampler_write_query_destroy
-
-Observation: `95e65851dcae719da8b28cc0931731287ad6431cb687a61bd98f4ca3152e600e`; execution: `catalog-d3d12-be4d0f6d1d7730/texture_sampler_write_query_destroy/summary`.
-
-Machine: unknown:e9eb697890f9daf95e6994d2; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 41.52 / 6.5861 | ms | 6.2934 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.211308665219175, 6.497779572062979], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0706 / 0.071 | ms | 0.96448 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.7933042212518195, 1.0793650793650795], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.2221 / 1.22 | ms | 0.91846 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6925131858346462, 1.2774995682956314], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 43.567 / 7.8545 | ms | 5.5024 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.135611325007043, 5.63033194355356], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 203.69 / 176.77 | ms | 1.1546 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1409483122098416, 1.1642053374244237], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 1.1815 / 0.0744 | ms | 15.994 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [15.100271002710027, 16.69489247311828], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.0367 / 0.016 | ms | 2.3881 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9702380952380951, 2.59375], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.3881 / 16.061 | ms | 0.02669 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.02412129136701846, 0.03774048381708491], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 1.9629 / 16.193 | ms | 0.12692 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.11331862951033934, 0.20426645396003967], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 162.61 / 181.59 | ms | 0.88151 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8581325439752371, 0.9153887924630129], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 109.38 / 101.56 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9285714285714286, 1.1818181818181819], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 59.727 / 62.887 | MiB | 0.95081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9477607304801541, 0.9517151379567487], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-149f60781e6f7b3335c57006cf4991d5b0b8870aac0c5ba334bd6e5830184d6d"></a>
-
-## texture_sampler_write_query_destroy_500
-
-Observation: `149f60781e6f7b3335c57006cf4991d5b0b8870aac0c5ba334bd6e5830184d6d`; execution: `catalog-d3d12-be4d0f6d1d7730/texture_sampler_write_query_destroy_500/summary`.
-
-Machine: unknown:6c3905dae43a259e5b1f747c; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 40.075 / 7.1728 | ms | 5.6391 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.3576845923442615, 5.709742482564664], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.3895 / 10.473 | ms | 0.037197 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.03446691176470588, 0.03885554488124566], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 7.5615 / 29.33 | ms | 0.25676 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.23623338727716925, 0.3210789194212133], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 48.631 / 46.895 | ms | 1.0394 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9760537090558766, 1.1862364532490692], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 226.96 / 216.37 | ms | 1.049 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.034266144617027, 1.0773537510150837], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.9541 / 0.1525 | ms | 6.2894 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.034920634920635, 6.412459016393442], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.3882 / 0.0845 | ms | 4.4607 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.301775147928994, 4.7226277372262775], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.submit_wait_ms | 5.7657 / 44.609 | ms | 0.13859 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.12523145346048142, 0.1817050149537835], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 7.4589 / 44.858 | ms | 0.17854 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.16355599974351093, 0.2332415030973161], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 186.22 / 211.63 | ms | 0.8816 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8633175001613881, 0.9250003101436833], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 125 / 101.56 | ms | 1.25 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1538461538461537, 1.3333333333333333], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| max_rss_mib | 73.719 / 66.297 | MiB | 1.1123 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1118510224527078, 1.1129460336184016], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-5fcb891232c7d9dcffaebd5d257f9ddc53107bf274c891eda71eb90494ecab8c"></a>
-
-## texture_sampler_write_query_destroy_mip8
-
-Observation: `5fcb891232c7d9dcffaebd5d257f9ddc53107bf274c891eda71eb90494ecab8c`; execution: `catalog-d3d12-be4d0f6d1d7730/texture_sampler_write_query_destroy_mip8/summary`.
-
-Machine: unknown:4f014b5b817a578d08f2fd3a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 41.073 / 6.4238 | ms | 6.3667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [6.225312767523242, 6.4480972682772775], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0.0655 / 0.0693 | ms | 0.88889 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.6839762611275965, 1.0922266139657444], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.0699 / 1.2324 | ms | 0.87108 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8358124494745351, 0.9259996537995501], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 42.66 / 7.7731 | ms | 5.4882 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [5.372373608823677, 5.566003039319601], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 201.85 / 176.89 | ms | 1.1297 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1277470205571805, 1.1590403009739623], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 1.1163 / 0.075 | ms | 15.297 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [14.433986928104577, 15.62449528936743], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0.0349 / 0.0162 | ms | 2.2089 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.710526315789474, 2.670886075949367], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4011 / 8.5614 | ms | 0.045549 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.034316598855251366, 0.09436167104878761], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 1.924 / 8.6615 | ms | 0.21265 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.14602567277882636, 0.40941352259992525], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 160.99 / 176.61 | ms | 0.90278 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8864797664691434, 0.9394934555592307], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 109.38 / 93.75 | ms | 1.1538 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.3], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 59.691 / 62.898 | MiB | 0.94876 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9486033519553073, 0.9503695881731784], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-6c32e364945bd6b8a298aff1fbd927281bdbe332ffaf3b996bc6c59b36b960e2"></a>
-
-## texture_sampling_raster_baseline
-
-Observation: `6c32e364945bd6b8a298aff1fbd927281bdbe332ffaf3b996bc6c59b36b960e2`; execution: `catalog-d3d12-be4d0f6d1d7730/texture_sampling_raster_baseline/summary`.
-
-Machine: unknown:9b8afae7bb74e566192a2a94; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-d3824fb018816bc0f6bce3c2cffa3d5585ebf334fcbb725429f5dfb6f55b906b"></a>
-
-## upload_write_buffer_16mb
-
-Observation: `d3824fb018816bc0f6bce3c2cffa3d5585ebf334fcbb725429f5dfb6f55b906b`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_16mb/summary`.
-
-Machine: unknown:7befad6ae746a605cfab4780; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 3.5336 / 1.2025 | ms | 2.535 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.1332651853445954, 2.9351275022842427], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 6.7472 / 20.825 | ms | 0.33184 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2875326165902997, 0.4547324668005213], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 10.558 / 22.655 | ms | 0.47173 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.40755718222381476, 0.6329255385197581], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 188.84 / 192.07 | ms | 0.98199 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9693170522930588, 1.0105087507842254], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.9657 / 2.326 | ms | 0.43309 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.39215183380353935, 0.5620172245405309], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 4.8327 / 14.255 | ms | 0.34418 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3220272189268703, 0.3633290334059873], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 6.0697 / 16.517 | ms | 0.37429 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.3546568465750631, 0.39838143913403146], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 185.8 / 188.12 | ms | 0.98551 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9708776257233229, 1.0028620549893905], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.2727272727272727], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 89.148 / 84.48 | MiB | 1.0553 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.054337772844987, 1.0566604995374653], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-4c55f6bb2d678327f6977433dbc34fb09d0b20ea5d7760f0af31780c02156797"></a>
-
-## upload_write_buffer_16mb_staged
-
-Observation: `4c55f6bb2d678327f6977433dbc34fb09d0b20ea5d7760f0af31780c02156797`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_16mb_staged/summary`.
-
-Machine: unknown:bc1de435fa76d80725605799; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 3.2498 / 1.3603 | ms | 2.389 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.662153877592725, 2.818437061300889], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 6.41 / 16.495 | ms | 0.39649 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.26278972959286584, 0.721798424510384], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 9.7644 / 17.596 | ms | 0.57337 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.35845818215938946, 0.9491276282993544], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 189.31 / 189.66 | ms | 0.98732 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9697032693123171, 1.0522913483740979], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 1.0293 / 2.1938 | ms | 0.47784 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4452797580470944, 0.632967890107033], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 4.5368 / 14.324 | ms | 0.30886 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.17335608671733785, 0.3374993660385014], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 5.813 / 16.517 | ms | 0.34192 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.2050676520434529, 0.37345202916596976], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 185.33 / 187.07 | ms | 0.9931 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9459120256681245, 1.0093919775542302], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9230769230769231, 1.1666666666666667], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 89.156 / 84.469 | MiB | 1.0551 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0528821707576388, 1.0564187939326675], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-3327c2ccc05aa497b1ab4c0e87ae43925baa54f9b43bf8e68ee11ca492d49b32"></a>
-
-## upload_write_buffer_1gb
-
-Observation: `3327c2ccc05aa497b1ab4c0e87ae43925baa54f9b43bf8e68ee11ca492d49b32`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1gb/summary`.
-
-Machine: unknown:b955f3cc84268be1816e503c; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-09f2c552229ffc515b5f9a1cc1b4d7dd943acd80597063f4017fa152f1abafab"></a>
-
-## upload_write_buffer_1gb_staged
-
-Observation: `09f2c552229ffc515b5f9a1cc1b4d7dd943acd80597063f4017fa152f1abafab`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1gb_staged/summary`.
-
-Machine: unknown:c7af4d48119d4059a89dc526; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e1be60cd7b83c6e4cadd7f77ff6c331d4d898bdb83d0ef4364cb55c17f4e1f39"></a>
-
-## upload_write_buffer_1kb
-
-Observation: `e1be60cd7b83c6e4cadd7f77ff6c331d4d898bdb83d0ef4364cb55c17f4e1f39`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1kb/summary`.
-
-Machine: unknown:a6967344412555ed917a268d; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.6081 / 0.898 | ms | 1.7806 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8008124040223907, 2.0123702231058096], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.1228 / 0.8341 | ms | 1.3271 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.092058562555457, 1.4255757107937734], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 2.7632 / 1.711 | ms | 1.55 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9551324216721481, 1.793819787068294], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 185.36 / 177.2 | ms | 1.0467 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0194972840006773, 1.062904386348566], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.0119 / 0.0072 | ms | 1.6129 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1868131868131868, 2.072463768115942], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1457 / 0.0033 | ms | 43.788 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [35.15384615384615, 46.12903225806451], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.1688 / 0.014 | ms | 12.12 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [10.294871794871796, 12.727999999999998], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 182.81 / 175.38 | ms | 1.0414 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0136658616828047, 1.059059393248825], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8666666666666667, 1.1818181818181819], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.145 / 55.121 | MiB | 1.0371 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0350864757584348, 1.0375646750301226], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-e6fb18530f6530f01515fa2fe4e347ddb7a7bfe207997420d96ac59dc84b3d96"></a>
-
-## upload_write_buffer_1kb_staged
-
-Observation: `e6fb18530f6530f01515fa2fe4e347ddb7a7bfe207997420d96ac59dc84b3d96`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1kb_staged/summary`.
-
-Machine: unknown:ed1e37c71c8229fb14d36074; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.707 / 0.5707 | ms | 3.0286 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.7069457659372027, 3.4259187620889757], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.1647 / 0.6576 | ms | 1.7396 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6652980535279807, 1.8441162305345964], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 2.9444 / 1.2237 | ms | 2.3891 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.18187119886695, 2.4837857909068406], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 181.08 / 169.41 | ms | 1.0671 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0476921679452118, 1.0850323022118464], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0114 / 0.0065 | ms | 1.7015 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.5846153846153848, 2.59375], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1413 / 0.0031 | ms | 46.933 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [44.53124999999999, 50.800000000000004], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.1578 / 0.0127 | ms | 12.246 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [11.601562499999998, 13.952380952380953], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 178.5 / 168.23 | ms | 1.0604 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0394799595399857, 1.0757836948552422], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.0833 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.1818181818181819], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.078 / 55.137 | MiB | 1.0348 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.03407239498477, 1.0364177412498228], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-ec653335a7ed51c0d2e1e7cc68bc2bd33b97acc95cf45f647758e4a940f128d9"></a>
-
-## upload_write_buffer_1mb
-
-Observation: `ec653335a7ed51c0d2e1e7cc68bc2bd33b97acc95cf45f647758e4a940f128d9`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1mb/summary`.
-
-Machine: unknown:2c4de4cef788296c30fdf5d2; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.6185 / 0.5491 | ms | 2.9077 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.5698474827912, 3.248043347381096], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.5289 / 0.8733 | ms | 1.7596 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.719809502211135, 1.8162150105944017], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 3.1693 / 1.4591 | ms | 2.1865 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.067027619765609, 2.3527582376897445], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 182.94 / 170.89 | ms | 1.076 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0563165214759984, 1.083031489658514], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0187 / 0.0147 | ms | 1.255 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.1785714285714288, 1.860655737704918], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.3863 / 0.1933 | ms | 2.0489 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.914313534566699, 2.2222847495779403], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.4162 / 0.2124 | ms | 1.9663 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.8522474410324878, 2.1348600508905853], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 179.53 / 169.54 | ms | 1.0672 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0473283435694976, 1.0768246186078776], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9166666666666666, 1.1818181818181819], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 58.141 / 56.055 | MiB | 1.0374 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0354654403567447, 1.0389519894084036], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-3a12cacd3e9c6d2bc7b835ea138190f39e978f41b83d99432028b1e1dd6b8afe"></a>
-
-## upload_write_buffer_1mb_staged
-
-Observation: `3a12cacd3e9c6d2bc7b835ea138190f39e978f41b83d99432028b1e1dd6b8afe`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_1mb_staged/summary`.
-
-Machine: unknown:8893d58c7c9a7eba5ae0025d; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.5657 / 0.5454 | ms | 2.982 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.036297839675403, 3.1179321486268177], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.5898 / 0.8568 | ms | 1.8781 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.72093837535014, 2.0644533625197616], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 3.1646 / 1.3974 | ms | 2.2187 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.973424212106053, 2.372917137902435], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 181.12 / 170.76 | ms | 1.0691 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0499453907126146, 1.0776187221953446], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0189 / 0.0144 | ms | 1.3125 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2083333333333333, 1.5347222222222223], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.4017 / 0.1889 | ms | 2.1896 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9684638860630723, 2.2545885139135584], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.4353 / 0.2073 | ms | 2.1161 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.915388191538819, 2.1828850855745725], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 177.91 / 169.37 | ms | 1.058 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0423820280976297, 1.0684778989058183], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 93.75 / 85.938 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 58.176 / 56.066 | MiB | 1.0375 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0362813370473538, 1.040496270997421], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-7383d8e86bc269941b1c2771baf0e7cb458346fa28d14b6a09b578912dfa2dd2"></a>
-
-## upload_write_buffer_256mb
-
-Observation: `7383d8e86bc269941b1c2771baf0e7cb458346fa28d14b6a09b578912dfa2dd2`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_256mb/summary`.
-
-Machine: unknown:b8888a6c0f0388ad2bb9af2b; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 13.706 / 12.232 | ms | 1.094 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0744283390151979, 1.1632605589339715], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 83.403 / 97.781 | ms | 0.85296 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8070670349875549, 0.8775611868717038], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 98.397 / 109.79 | ms | 0.90182 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8527293384247011, 0.9148306264063363], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 276.91 / 283.09 | ms | 0.98032 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9692325297259614, 0.9964148491159481], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 12.542 / 13.801 | ms | 0.91044 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8453299956023139, 0.957944466987421], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 80.969 / 96.853 | ms | 0.83222 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8275339632422002, 0.8596382546805398], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 95.158 / 110.31 | ms | 0.85856 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8499118189772815, 0.8842476245237484], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 273.43 / 280.18 | ms | 0.97253 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9663501974872196, 0.9800117782031018], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 156.25 / 148.44 | ms | 1.05 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9473684210526315, 1.1111111111111112], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 569.23 / 564.46 | MiB | 1.0084 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0083667241057155, 1.0085752252813422], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-5d553c8aa9342edde269b73849f81fefaa566731aed2f2f4c202125e0d87d1a4"></a>
-
-## upload_write_buffer_256mb_staged
-
-Observation: `5d553c8aa9342edde269b73849f81fefaa566731aed2f2f4c202125e0d87d1a4`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_256mb_staged/summary`.
-
-Machine: unknown:f0ba8c26bb3cc2fb0e4fce8f; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 13.182 / 12.188 | ms | 1.0973 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9974319182625272, 1.2424563040471865], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 83.494 / 98.356 | ms | 0.85187 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8136267151808861, 0.8612875074272133], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.operation_ms | 98.039 / 111.07 | ms | 0.88237 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8603715711612621, 0.8996843109903825], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.complete_ms | 276.93 / 281.42 | ms | 0.98663 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9831085823042188, 1.003017574038438], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 12.164 / 13.356 | ms | 0.87229 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8246379133778727, 0.9216790841359259], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 81.966 / 97.886 | ms | 0.83735 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8310826705386585, 0.8431536602007391], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.operation_ms | 95.764 / 111.5 | ms | 0.85561 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8528490971000695, 0.8622519460979624], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.complete_ms | 274.39 / 279.41 | ms | 0.98088 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9720022870540515, 0.9824448320858263], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 148.44 / 156.25 | ms | 0.95238 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.95, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 569.02 / 564.44 | MiB | 1.0081 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0080760127887503, 1.0084289490802896], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-f3e7708433ed731b695533d968e081ddf5ad58e593eeb1e3d155faa3d220b96c"></a>
-
-## upload_write_buffer_4gb
-
-Observation: `f3e7708433ed731b695533d968e081ddf5ad58e593eeb1e3d155faa3d220b96c`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4gb/summary`.
-
-Machine: unknown:12e57dbe2c9b9734a072ae36; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-de8403f854200574029b4f7d64bc57c71853d9cd5a7119cfe0aee6f97c41e4fd"></a>
-
-## upload_write_buffer_4gb_staged
-
-Observation: `de8403f854200574029b4f7d64bc57c71853d9cd5a7119cfe0aee6f97c41e4fd`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4gb_staged/summary`.
-
-Machine: unknown:c91e41786288456f1e0406a3; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: failed-or-uncompared.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Doe: exit_1; Dawn: skipped_after_doe_fail
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-4de697ba297540156d1560f5393c535144280b081697de040ace4f0fbe005b5e"></a>
-
-## upload_write_buffer_4mb
-
-Observation: `4de697ba297540156d1560f5393c535144280b081697de040ace4f0fbe005b5e`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4mb/summary`.
-
-Machine: unknown:3d07d9c37e44370f8d95e481; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.779 / 0.5407 | ms | 3.0933 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.102339872370598, 3.6872602463153643], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.9335 / 1.3656 | ms | 2.092 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0169741697416974, 2.27473635235732], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 4.8603 / 1.8973 | ms | 2.3858 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.1872552990414476, 2.638447780608097], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 185.07 / 172.52 | ms | 1.0728 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0557136071196151, 1.075732047223195], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.5327 / 0.5003 | ms | 1.0648 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9976608187134504, 1.2030456852791878], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 1.7076 / 1.3441 | ms | 1.2741 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2443085287121984, 1.3326226012793176], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 2.4774 / 1.8733 | ms | 1.3226 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.2556512924480485, 1.3533486067451648], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 182.68 / 172.27 | ms | 1.0605 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.040369414653249, 1.0650566363315541], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 85.938 / 93.75 | ms | 0.92308 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9090909090909091, 1.0909090909090908], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 69.129 / 63.098 | MiB | 1.0959 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.094966879217483, 1.0966084911498948], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-44e901de26e2c2b342f78987d6265fe8bd3a71c8a9ab0c226c8132d56cb3f295"></a>
-
-## upload_write_buffer_4mb_staged
-
-Observation: `44e901de26e2c2b342f78987d6265fe8bd3a71c8a9ab0c226c8132d56cb3f295`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_4mb_staged/summary`.
-
-Machine: unknown:979bc1e222a1286034db1643; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.5888 / 0.5892 | ms | 2.8359 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.7622878554110644, 3.126342387871131], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 2.8303 / 1.3727 | ms | 2.1251 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.990092518394405, 2.188263491572599], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.operation_ms | 4.5283 / 1.9943 | ms | 2.45 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.0557951604848594, 2.5052661064425776], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cold.complete_ms | 181.95 / 168.03 | ms | 1.0778 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0655953137766008, 1.0945448677718725], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.5235 / 0.4953 | ms | 1.0806 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0098154691794268, 1.112999806837937], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 1.743 / 1.2789 | ms | 1.3853 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.3316386678455643, 1.4141987829614606], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.operation_ms | 2.4066 / 1.7945 | ms | 1.371 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.357007009726675, 1.4015761821366024], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| warm.complete_ms | 179.74 / 167.78 | ms | 1.0659 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0523738595183108, 1.0855092719559714], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 93.75 | ms | 1.1667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9285714285714286, 1.3333333333333333], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 69.141 / 63.09 | MiB | 1.0957 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0953617810760667, 1.0977210800099084], 'unit': 'ratio'} | {'implementation': 7, 'comparator': 7, 'unit': 'observations'} | loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-976139ea17f98e6d93812552177cbbec7b9dd206cad7b7c13ea76c06bef4b4fa"></a>
-
-## upload_write_buffer_64kb
-
-Observation: `976139ea17f98e6d93812552177cbbec7b9dd206cad7b7c13ea76c06bef4b4fa`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_64kb/summary`.
-
-Machine: unknown:baa378c2af095dae71c5c21a; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 0.7444 / 0.5824 | ms | 1.2505 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0441857202973768, 1.7668743509865004], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 0.7515 / 0.6532 | ms | 1.1299 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0590896239751202, 1.361715255283048], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 1.4938 / 1.2376 | ms | 1.187 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0842049815636994, 1.6255480099716324], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 163.24 / 173.56 | ms | 0.94255 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.933221444222241, 0.9793611146847815], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.setup_ms | 0.035 / 0.0334 | ms | 1.0528 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0305810397553516, 1.1744966442953022], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1231 / 0.0052 | ms | 24.578 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [21.000000000000004, 28.999999999999996], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.1677 / 0.0416 | ms | 3.8059 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [3.7012345679012344, 4.502403846153846], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 161.92 / 172.4 | ms | 0.9433 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.9301751331148467, 0.9773014690870612], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cpu_ms | 85.938 / 93.75 | ms | 0.91667 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8461538461538461, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 47.633 / 55.242 | MiB | 0.86236 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.8617472434266328, 0.8626299780717267], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
-- Only retained aggregate statistics; individual execution samples are unavailable.
-- The catalog policy classifies losses only; all other rows are not automatically wins.
-- comparator.sourceCommit is unknown.
-- executedAt is unknown; no receipt value was retained.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-
-<a id="row-3114679a222e2039cfaa03fe9ba7631cf4b9f548d987fd33f0ecb195b2242270"></a>
-
-## upload_write_buffer_64kb_staged
-
-Observation: `3114679a222e2039cfaa03fe9ba7631cf4b9f548d987fd33f0ecb195b2242270`; execution: `catalog-d3d12-be4d0f6d1d7730/upload_write_buffer_64kb_staged/summary`.
-
-Machine: unknown:047028a7510a252a1cb097be; OS: win32; backend: d3d12; GPU: unknown; driver: unknown.
-
-Build: doe 6258de498566/308f7fc32aae; comparator: dawn unknown/dcc7af755828.
-
-Executed: unknown; reported: unknown; contract frozen: 2026-11-01T18:18:29Z.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| cold.setup_ms | 1.6654 / 0.5807 | ms | 3.099 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [2.319061583577713, 3.3108317547787154], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| cold.submit_wait_ms | 1.3124 / 0.6614 | ms | 1.7731 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.6602834740651387, 2.1940613337660233], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.operation_ms | 2.9648 / 1.2089 | ms | 2.2985 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.9792003231017767, 2.7295748920624376], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cold.complete_ms | 182.9 / 169.49 | ms | 1.0764 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0648401722978835, 1.0928648998030042], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.setup_ms | 0.0166 / 0.0297 | ms | 0.56849 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [0.4778156996587031, 1.0521978021978022], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.encode_ms | 0 / 0 | ms | 1 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| warm.submit_wait_ms | 0.1508 / 0.0053 | ms | 29.128 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [26.49122807017544, 33.0], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.operation_ms | 0.1737 / 0.0382 | ms | 4.5273 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [4.102301790281329, 6.312], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| warm.complete_ms | 180.18 / 168.06 | ms | 1.065 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0537244747766634, 1.0837025600517036], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | loss |
-| cpu_ms | 101.56 / 85.938 | ms | 1.0909 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0, 1.2727272727272727], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-| max_rss_mib | 57.18 / 55.227 | MiB | 1.0356 | {'kind': 'reported confidence interval', 'level': 0.95, 'bounds': [1.0352316943756632, 1.0362067746269712], 'unit': 'ratio'} | {'implementation': 11, 'comparator': 11, 'unit': 'observations'} | not-classified-as-loss |
-
-Evidence:
-
-- [report](../catalog-20261101/catalog_windows-d3d12.json): retained.
-- [reanalysis](../catalog-20261101/REANALYSIS.md): retained.
-- [policy](../catalog-20261101/classification-policy.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
 - Duration-based 3/5-pair exceptions and command-repeat1 cold/warm aliasing limit interpretation; see REANALYSIS.md.
 - Only retained aggregate statistics; individual execution samples are unavailable.
 - The catalog policy classifies losses only; all other rows are not automatically wins.

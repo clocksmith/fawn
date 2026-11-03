@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -23,6 +24,7 @@ from bench.lib import benchmark_inventory_sources as sources
 from bench.lib.benchmark_cube_dashboard_html import build_dashboard_html
 from bench.inventory.adapters.phases import apply_window_receipt
 from bench.inventory.sources import Source
+from bench.inventory import builder as inventory_builder
 from bench.tools.native_catalog_report import is_loss, load_policy
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -304,6 +306,13 @@ class TestBenchmarkInventory(unittest.TestCase):
             subprocess.run(['git', '-C', str(root), 'add', path.name], check=True)
             self.assertEqual(sources.evidence_reference(root, ref)['availability'], 'retained')
 
+    def test_inventory_owner_imports_without_legacy_script_bootstrap(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run([sys.executable, '-c', 'import bench.inventory.builder'],
+                cwd=directory, env={**os.environ, 'PYTHONPATH': str(ROOT)},
+                capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_generation_check_duplicates_and_dashboard_share_selection(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -323,7 +332,7 @@ class TestBenchmarkInventory(unittest.TestCase):
             args = argparse.Namespace(policy='config/benchmark-cube-policy.json', sources='sources.json',
                 index_out='index.json', current_out='CURRENT.md', source_ref='HEAD', check=False,
                 dashboard_html_out='')
-            with patch.object(builder, 'load_policy', return_value={'raw': {'inventory': POLICY}}), \
+            with patch.object(inventory_builder, 'load_validated_config', return_value={'inventory': {**POLICY, 'storageVersion': 4}}), \
                  patch('subprocess.check_output', return_value='b' * 40), redirect_stdout(io.StringIO()):
                 payload = builder.build_inventory(args, root)
                 before = (root / 'index.json').read_bytes()

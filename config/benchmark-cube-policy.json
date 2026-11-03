@@ -153,7 +153,7 @@
       "unknownMachineRule": "isolate-by-registration-and-execution"
     },
     "schemaVersion": 2,
-    "storageVersion": 3
+    "storageVersion": 4
   },
   "products": [
     {
@@ -204,7 +204,7 @@
       ]
     }
   ],
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "surfaces": [
     {
       "defaultMissingStatus": "unimplemented",

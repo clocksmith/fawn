@@ -2,6 +2,7 @@
 
 Inherit [benchmark instructions](../AGENTS.md) and [this charter](CATSCAN.md).
 
+- `builder.py`: orchestration, schema validation, output generation and freshness.
 - `sources.py`: verified receipt I/O, shared adapter helpers and dispatch.
 - `adapters/`: separate native, phase, browser, workspace and comparison readers;
   no inferred identity or invented samples.

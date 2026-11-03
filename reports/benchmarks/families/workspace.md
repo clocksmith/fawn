@@ -6,369 +6,553 @@
 
 149 observations; 128 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [agent-killed-during-order-transient-confirmation](#row-2252a74ee783da06b5478d216c72a952812a22e3a5e910b908149cf43d0c45d0) | unknown | unknown:c36a7701c6009aad21d213e1 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / passed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [agent-killed-during-send](#row-cba5aede0b5c886886b9c27c9621992f2120c76be80c895059895a4df9941aa9) | unknown | unknown:cb403916291683d4afceea48 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / passed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [human-takes-control-at-checkout](#row-53e51d6be01e61ac81a8229d4552c1167c2d166d14feda35b2d93db178dcae2e) | unknown | unknown:291d4aacc99937f3bf151700 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / passed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [irrelevant-activity-churn](#row-15caa36733dc6c57c720bbcf17a8295cdf7ef83e6521adc0aed68f7bda62a1db) | unknown | unknown:4077f4995e8eb746f33de13a | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / passed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [live-queue-churn](#row-554c059e233b3f797f3ad0d07ad0c90ea1af09910636510989b2f8fe35f8257b) | unknown | unknown:5c88a5dae0b2159f13b9f589 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / passed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [price-rises-during-think-time](#row-a5d31e256bc06ad8dcd178fdee1e971a574da5ca1db28cec828e98e0c755c68b) | unknown | unknown:8a7d447744da61f7cd58ed90 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / passed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [supervisor-edits-draft](#row-11947e7702a0003f29193d0a056c82b4b49a88d98ab56b7c8407393b0a04eafe) | unknown | unknown:25f2a5b9a3ebde276bf53e05 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / failed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [ticket-claimed-during-think-time](#row-c1d5f359c476e412fbf6519d1a8829eaf1a99be0fd02e158ccfafe43d13a2cc1) | unknown | unknown:8403e25c930cfb945445a3a1 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/1 | unknown / failed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-4ef5eef9c1b54053b5c4284be669029e0b3f4e1ab6401c17886859feeed21345) | unknown | unknown:bce193fa25fce431e152e9b2 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-57716c8576f4204aebb63e1fee92d9814134dca8714fa6ca8c20440790b35f1c) | unknown | unknown:e7d935a453c95edeb329a61b | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-ddd0031d49a93176d54d6a28bf88feb81a963cbf8850bcf2f7641a1ef23fa8b6) | unknown | unknown:ae55ae5f3ac26bfc3c726969 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea) | 2026-10-15T12:05:45.919000Z | unknown:1ce8365b0d36c1bfa43a581d | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff) | 2026-10-15T12:06:54.363000Z | unknown:e61bb34d646ae35db25a38f0 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c) | 2026-10-15T12:43:27.244000Z | unknown:ad7bf0e85285f4bc1c580059 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0) | 2026-10-15T13:14:40.966000Z | unknown:05ebe15cf91a7996bb50b89f | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f) | 2026-10-26T21:36:56.876000Z | unknown:d8c1d3d22ca94ecb3e8b759f | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff) | 2026-10-26T21:46:14.581000Z | unknown:74897bfd017d3c438c615d67 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23) | 2026-10-26T21:48:32.340000Z | unknown:845a940d0b95b878f53baf49 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9) | 2026-10-26T21:55:47.568000Z | unknown:0d21d580307965a7701f7066 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75) | 2026-10-26T21:57:34.314000Z | unknown:271d5e3fdd8f074073127f67 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+| [workspace](#row-50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8) | 2026-10-26T21:59:16.879000Z | unknown:e7c090bc177fb75221b1d78a | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | machine identity, contract hash, implementation build, comparator build |
+
+## Complete records
 
 <a id="row-2252a74ee783da06b5478d216c72a952812a22e3a5e910b908149cf43d0c45d0"></a>
 
-## agent-killed-during-order-transient-confirmation
+<details>
+<summary>agent-killed-during-order-transient-confirmation — unknown; requirement-met; 1 metrics</summary>
 
-Observation: `2252a74ee783da06b5478d216c72a952812a22e3a5e910b908149cf43d0c45d0`; execution: `workspace-338289d6a1ad20/agent-killed-during-order-transient-confirmation/requirement:3`.
+Record `2252a74ee783da06b5478d216c72a952812a22e3a5e910b908149cf43d0c45d0` · execution `workspace-338289d6a1ad20/agent-killed-during-order-transient-confirmation/requirement:3` · campaign `reports/fawn-workspace/20261015-revalidated-control/differentiation`.
 
-Machine: unknown:c36a7701c6009aad21d213e1; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:c36a7701c6009aad21d213e1; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / passed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| humanReviewsPlusDuplicateOrders | 0 / 3 | count | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| humanReviewsPlusDuplicateOrders | 0 / 3 | count | unknown | unknown | unknown/unknown unknown | requirement-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-cba5aede0b5c886886b9c27c9621992f2120c76be80c895059895a4df9941aa9"></a>
 
-## agent-killed-during-send
+<details>
+<summary>agent-killed-during-send — unknown; requirement-met; 1 metrics</summary>
 
-Observation: `cba5aede0b5c886886b9c27c9621992f2120c76be80c895059895a4df9941aa9`; execution: `workspace-003efe41239ca5/agent-killed-during-send/requirement:3`.
+Record `cba5aede0b5c886886b9c27c9621992f2120c76be80c895059895a4df9941aa9` · execution `workspace-003efe41239ca5/agent-killed-during-send/requirement:3` · campaign `reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation`.
 
-Machine: unknown:cb403916291683d4afceea48; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:cb403916291683d4afceea48; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / passed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| humanReviewsPlusDuplicateEffects | 0 / 3 | count | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| humanReviewsPlusDuplicateEffects | 0 / 3 | count | unknown | unknown | unknown/unknown unknown | requirement-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-53e51d6be01e61ac81a8229d4552c1167c2d166d14feda35b2d93db178dcae2e"></a>
 
-## human-takes-control-at-checkout
+<details>
+<summary>human-takes-control-at-checkout — unknown; requirement-met; 1 metrics</summary>
 
-Observation: `53e51d6be01e61ac81a8229d4552c1167c2d166d14feda35b2d93db178dcae2e`; execution: `workspace-338289d6a1ad20/human-takes-control-at-checkout/requirement:2`.
+Record `53e51d6be01e61ac81a8229d4552c1167c2d166d14feda35b2d93db178dcae2e` · execution `workspace-338289d6a1ad20/human-takes-control-at-checkout/requirement:2` · campaign `reports/fawn-workspace/20261015-revalidated-control/differentiation`.
 
-Machine: unknown:291d4aacc99937f3bf151700; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:291d4aacc99937f3bf151700; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / passed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| incorrectActions | 0 / 3 | count | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| incorrectActions | 0 / 3 | count | unknown | unknown | unknown/unknown unknown | requirement-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-15caa36733dc6c57c720bbcf17a8295cdf7ef83e6521adc0aed68f7bda62a1db"></a>
 
-## irrelevant-activity-churn
+<details>
+<summary>irrelevant-activity-churn — unknown; requirement-met; 1 metrics</summary>
 
-Observation: `15caa36733dc6c57c720bbcf17a8295cdf7ef83e6521adc0aed68f7bda62a1db`; execution: `workspace-338289d6a1ad20/irrelevant-activity-churn/requirement:1`.
+Record `15caa36733dc6c57c720bbcf17a8295cdf7ef83e6521adc0aed68f7bda62a1db` · execution `workspace-338289d6a1ad20/irrelevant-activity-churn/requirement:1` · campaign `reports/fawn-workspace/20261015-revalidated-control/differentiation`.
 
-Machine: unknown:4077f4995e8eb746f33de13a; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:4077f4995e8eb746f33de13a; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / passed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| observationBytes | unknown / unknown | bytes | 0.30536 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| observationBytes | unknown / unknown | bytes | 0.30536 | unknown | unknown/unknown unknown | requirement-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-554c059e233b3f797f3ad0d07ad0c90ea1af09910636510989b2f8fe35f8257b"></a>
 
-## live-queue-churn
+<details>
+<summary>live-queue-churn — unknown; requirement-met; 1 metrics</summary>
 
-Observation: `554c059e233b3f797f3ad0d07ad0c90ea1af09910636510989b2f8fe35f8257b`; execution: `workspace-003efe41239ca5/live-queue-churn/requirement:1`.
+Record `554c059e233b3f797f3ad0d07ad0c90ea1af09910636510989b2f8fe35f8257b` · execution `workspace-003efe41239ca5/live-queue-churn/requirement:1` · campaign `reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation`.
 
-Machine: unknown:5c88a5dae0b2159f13b9f589; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:5c88a5dae0b2159f13b9f589; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / passed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| observationBytes | unknown / unknown | bytes | 0.35833 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| observationBytes | unknown / unknown | bytes | 0.35833 | unknown | unknown/unknown unknown | requirement-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-a5d31e256bc06ad8dcd178fdee1e971a574da5ca1db28cec828e98e0c755c68b"></a>
 
-## price-rises-during-think-time
+<details>
+<summary>price-rises-during-think-time — unknown; requirement-met; 1 metrics</summary>
 
-Observation: `a5d31e256bc06ad8dcd178fdee1e971a574da5ca1db28cec828e98e0c755c68b`; execution: `workspace-338289d6a1ad20/price-rises-during-think-time/requirement:0`.
+Record `a5d31e256bc06ad8dcd178fdee1e971a574da5ca1db28cec828e98e0c755c68b` · execution `workspace-338289d6a1ad20/price-rises-during-think-time/requirement:0` · campaign `reports/fawn-workspace/20261015-revalidated-control/differentiation`.
 
-Machine: unknown:8a7d447744da61f7cd58ed90; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:8a7d447744da61f7cd58ed90; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / passed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| constraintViolatingMutations | 0 / 3 | count | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| constraintViolatingMutations | 0 / 3 | count | unknown | unknown | unknown/unknown unknown | requirement-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-11947e7702a0003f29193d0a056c82b4b49a88d98ab56b7c8407393b0a04eafe"></a>
 
-## supervisor-edits-draft
+<details>
+<summary>supervisor-edits-draft — unknown; requirement-not-met; 1 metrics</summary>
 
-Observation: `11947e7702a0003f29193d0a056c82b4b49a88d98ab56b7c8407393b0a04eafe`; execution: `workspace-003efe41239ca5/supervisor-edits-draft/requirement:2`.
+Record `11947e7702a0003f29193d0a056c82b4b49a88d98ab56b7c8407393b0a04eafe` · execution `workspace-003efe41239ca5/supervisor-edits-draft/requirement:2` · campaign `reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation`.
 
-Machine: unknown:25f2a5b9a3ebde276bf53e05; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:25f2a5b9a3ebde276bf53e05; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / failed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-not-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| incorrectActions | 0 / 0 | count | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-not-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| incorrectActions | 0 / 0 | count | unknown | unknown | unknown/unknown unknown | requirement-not-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-c1d5f359c476e412fbf6519d1a8829eaf1a99be0fd02e158ccfafe43d13a2cc1"></a>
 
-## ticket-claimed-during-think-time
+<details>
+<summary>ticket-claimed-during-think-time — unknown; requirement-not-met; 1 metrics</summary>
 
-Observation: `c1d5f359c476e412fbf6519d1a8829eaf1a99be0fd02e158ccfafe43d13a2cc1`; execution: `workspace-003efe41239ca5/ticket-claimed-during-think-time/requirement:0`.
+Record `c1d5f359c476e412fbf6519d1a8829eaf1a99be0fd02e158ccfafe43d13a2cc1` · execution `workspace-003efe41239ca5/ticket-claimed-during-think-time/requirement:0` · campaign `reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation`.
 
-Machine: unknown:8403e25c930cfb945445a3a1; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:8403e25c930cfb945445a3a1; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / failed / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: requirement-not-met.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| incorrectActions | 0 / 0 | count | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | requirement-not-met |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| incorrectActions | 0 / 0 | count | unknown | unknown | unknown/unknown unknown | requirement-not-met | fixture requirement |
 
-Evidence:
-
-- [report](../../fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json): retained.
-
-Limitations:
-
-- Actual machine identity is not bound by the retained receipt.
-- Recorded fixture requirement, not release or native-runtime qualification.
-- comparator.binaryHash is unknown.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.binaryHash is unknown.
-- implementation.sourceCommit is unknown.
-- machine.architecture is unknown.
-- machine.driver is unknown.
-- machine.gpu is unknown.
-- machine.os is unknown.
-- machine.osVersion is unknown.
-- reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-4ef5eef9c1b54053b5c4284be669029e0b3f4e1ab6401c17886859feeed21345"></a>
 
-## workspace
+<details>
+<summary>workspace — unknown; fixture-advantage-established; 0 metrics</summary>
 
-Observation: `4ef5eef9c1b54053b5c4284be669029e0b3f4e1ab6401c17886859feeed21345`; execution: `workspace-003efe41239ca5/workspace/report-summary`.
+Record `4ef5eef9c1b54053b5c4284be669029e0b3f4e1ab6401c17886859feeed21345` · execution `workspace-003efe41239ca5/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-revalidated-control/revalidated-differentiation`.
 
-Machine: unknown:bce193fa25fce431e152e9b2; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
+Machine: unknown:bce193fa25fce431e152e9b2; unknown/unknown; GPU unknown; driver unknown.
 
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
 
 Executed: unknown; reported: unknown; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: fixture-advantage-established.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
+</details>
+
+<a id="row-57716c8576f4204aebb63e1fee92d9814134dca8714fa6ca8c20440790b35f1c"></a>
+
+<details>
+<summary>workspace — unknown; fixture-advantage-established; 0 metrics</summary>
+
+Record `57716c8576f4204aebb63e1fee92d9814134dca8714fa6ca8c20440790b35f1c` · execution `workspace-338289d6a1ad20/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-revalidated-control/differentiation`.
+
+Machine: unknown:e7d935a453c95edeb329a61b; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-ddd0031d49a93176d54d6a28bf88feb81a963cbf8850bcf2f7641a1ef23fa8b6"></a>
+
+<details>
+<summary>workspace — unknown; behavioral-status-only; 0 metrics</summary>
+
+Record `ddd0031d49a93176d54d6a28bf88feb81a963cbf8850bcf2f7641a1ef23fa8b6` · execution `workspace-799a129c5f324b/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-revalidated-control/comparison`.
+
+Machine: unknown:ae55ae5f3ac26bfc3c726969; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea"></a>
+
+<details>
+<summary>workspace — 2026-10-15T12:05:45.919000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea` · execution `workspace-5e9c791589528e/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-revalidated-control/qualification`.
+
+Machine: unknown:1ce8365b0d36c1bfa43a581d; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-15T12:05:45.919000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea`; latest qualified: `None`. [Evidence and limitations](#evidence-6).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff"></a>
+
+<details>
+<summary>workspace — 2026-10-15T12:06:54.363000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff` · execution `workspace-cb62df1065d867/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome`.
+
+Machine: unknown:e61bb34d646ae35db25a38f0; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-15T12:06:54.363000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff`; latest qualified: `None`. [Evidence and limitations](#evidence-7).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c"></a>
+
+<details>
+<summary>workspace — 2026-10-15T12:43:27.244000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c` · execution `workspace-9abfd64f0c3993/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed`.
+
+Machine: unknown:ad7bf0e85285f4bc1c580059; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-15T12:43:27.244000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c`; latest qualified: `None`. [Evidence and limitations](#evidence-8).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0"></a>
+
+<details>
+<summary>workspace — 2026-10-15T13:14:40.966000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0` · execution `workspace-950211bbe883a5/workspace/report-summary` · campaign `reports/fawn-workspace/20261015-service-v3-3/qualification`.
+
+Machine: unknown:05ebe15cf91a7996bb50b89f; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-15T13:14:40.966000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0`; latest qualified: `None`. [Evidence and limitations](#evidence-9).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f"></a>
+
+<details>
+<summary>workspace — 2026-10-26T21:36:56.876000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f` · execution `workspace-97be08531b5460/workspace/report-summary` · campaign `reports/fawn-workspace/20261026-platforms/rejected-linux-lazy-recovery`.
+
+Machine: unknown:d8c1d3d22ca94ecb3e8b759f; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-26T21:36:56.876000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f`; latest qualified: `None`. [Evidence and limitations](#evidence-10).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff"></a>
+
+<details>
+<summary>workspace — 2026-10-26T21:46:14.581000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff` · execution `workspace-a39302442e4cc4/workspace/report-summary` · campaign `reports/fawn-workspace/20261026-platforms/rejected-macos-profile-race`.
+
+Machine: unknown:74897bfd017d3c438c615d67; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-26T21:46:14.581000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff`; latest qualified: `None`. [Evidence and limitations](#evidence-11).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23"></a>
+
+<details>
+<summary>workspace — 2026-10-26T21:48:32.340000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23` · execution `workspace-9a720291251f48/workspace/report-summary` · campaign `reports/fawn-workspace/20261026-platforms/compatibility-windows`.
+
+Machine: unknown:845a940d0b95b878f53baf49; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-26T21:48:32.340000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23`; latest qualified: `None`. [Evidence and limitations](#evidence-12).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9"></a>
+
+<details>
+<summary>workspace — 2026-10-26T21:55:47.568000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9` · execution `workspace-cc8b6ee9073c79/workspace/report-summary` · campaign `reports/fawn-workspace/20261026-platforms/compatibility-macos`.
+
+Machine: unknown:0d21d580307965a7701f7066; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-26T21:55:47.568000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9`; latest qualified: `None`. [Evidence and limitations](#evidence-13).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75"></a>
+
+<details>
+<summary>workspace — 2026-10-26T21:57:34.314000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75` · execution `workspace-2a28dc97c75efa/workspace/report-summary` · campaign `reports/fawn-workspace/20261026-platforms/qualification`.
+
+Machine: unknown:271d5e3fdd8f074073127f67; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-26T21:57:34.314000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75`; latest qualified: `None`. [Evidence and limitations](#evidence-14).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8"></a>
+
+<details>
+<summary>workspace — 2026-10-26T21:59:16.879000Z; behavioral-status-only; 0 metrics</summary>
+
+Record `50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8` · execution `workspace-e8bb15cff0071b/workspace/report-summary` · campaign `reports/fawn-workspace/20261026-platforms/compatibility-linux-headed`.
+
+Machine: unknown:e7c090bc177fb75221b1d78a; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: 2026-10-26T21:59:16.879000Z; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8`; latest qualified: `None`. [Evidence and limitations](#evidence-15).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
+
+- [report](../../fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- Recorded fixture requirement, not release or native-runtime qualification.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="evidence-2"></a>
+
+### Evidence 2
 
 - [report](../../fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json): retained.
+- Actual machine identity is not bound by the retained receipt.
+- Recorded fixture requirement, not release or native-runtime qualification.
+- comparator.binaryHash is unknown.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.binaryHash is unknown.
+- implementation.sourceCommit is unknown.
+- machine.architecture is unknown.
+- machine.driver is unknown.
+- machine.gpu is unknown.
+- machine.os is unknown.
+- machine.osVersion is unknown.
+- reportedAt is unknown; no receipt value was retained.
+- workloadContractHash is unknown; no receipt value was retained.
 
-Limitations:
+<a id="evidence-3"></a>
 
+### Evidence 3
+
+- [report](../../fawn-workspace/20261015-revalidated-control/revalidated-differentiation/differentiation.json): retained.
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - Does not establish broad-product-superiority
@@ -389,31 +573,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-57716c8576f4204aebb63e1fee92d9814134dca8714fa6ca8c20440790b35f1c"></a>
+<a id="evidence-4"></a>
 
-## workspace
-
-Observation: `57716c8576f4204aebb63e1fee92d9814134dca8714fa6ca8c20440790b35f1c`; execution: `workspace-338289d6a1ad20/workspace/report-summary`.
-
-Machine: unknown:e7d935a453c95edeb329a61b; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: fixture-advantage-established.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 4
 
 - [report](../../fawn-workspace/20261015-revalidated-control/differentiation/differentiation.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - Does not establish broad-product-superiority
@@ -433,31 +597,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-ddd0031d49a93176d54d6a28bf88feb81a963cbf8850bcf2f7641a1ef23fa8b6"></a>
+<a id="evidence-5"></a>
 
-## workspace
-
-Observation: `ddd0031d49a93176d54d6a28bf88feb81a963cbf8850bcf2f7641a1ef23fa8b6`; execution: `workspace-799a129c5f324b/workspace/report-summary`.
-
-Machine: unknown:ae55ae5f3ac26bfc3c726969; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 5
 
 - [report](../../fawn-workspace/20261015-revalidated-control/comparison/comparison.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -474,31 +618,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea"></a>
+<a id="evidence-6"></a>
 
-## workspace
-
-Observation: `06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea`; execution: `workspace-5e9c791589528e/workspace/report-summary`.
-
-Machine: unknown:1ce8365b0d36c1bfa43a581d; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-15T12:05:45.919000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `06bac1c0891a8962d10c1a44b782898b587d69f852cd9f289ebe3f4f19b03aea`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 6
 
 - [report](../../fawn-workspace/20261015-revalidated-control/qualification/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -514,31 +638,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff"></a>
+<a id="evidence-7"></a>
 
-## workspace
-
-Observation: `e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff`; execution: `workspace-cb62df1065d867/workspace/report-summary`.
-
-Machine: unknown:e61bb34d646ae35db25a38f0; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-15T12:06:54.363000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `e158ebb4f7fcfb84fdbb5a9e1a57491ce5826032d2ec85373ccc01aef8b360ff`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 7
 
 - [report](../../fawn-workspace/20261015-revalidated-control/compatibility-chrome/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -554,31 +658,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c"></a>
+<a id="evidence-8"></a>
 
-## workspace
-
-Observation: `4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c`; execution: `workspace-9abfd64f0c3993/workspace/report-summary`.
-
-Machine: unknown:ad7bf0e85285f4bc1c580059; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-15T12:43:27.244000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `4fd98ced85cd33b36e4eaebb05c8f6965131feedae2f9281bdcced43a3e4ea1c`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 8
 
 - [report](../../fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -594,31 +678,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0"></a>
+<a id="evidence-9"></a>
 
-## workspace
-
-Observation: `d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0`; execution: `workspace-950211bbe883a5/workspace/report-summary`.
-
-Machine: unknown:05ebe15cf91a7996bb50b89f; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-15T13:14:40.966000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `d87b4bea3f4b10bf284a7b8729525d6e98ec651f47c784afb57d4963850eacb0`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 9
 
 - [report](../../fawn-workspace/20261015-service-v3-3/qualification/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -634,31 +698,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f"></a>
+<a id="evidence-10"></a>
 
-## workspace
-
-Observation: `39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f`; execution: `workspace-97be08531b5460/workspace/report-summary`.
-
-Machine: unknown:d8c1d3d22ca94ecb3e8b759f; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-26T21:36:56.876000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `39d6f8a50dc454a7c117a760d0c487e03c03ee7077cd13dab366ee78bde3e33f`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 10
 
 - [report](../../fawn-workspace/20261026-platforms/rejected-linux-lazy-recovery/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -674,31 +718,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff"></a>
+<a id="evidence-11"></a>
 
-## workspace
-
-Observation: `29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff`; execution: `workspace-a39302442e4cc4/workspace/report-summary`.
-
-Machine: unknown:74897bfd017d3c438c615d67; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-26T21:46:14.581000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `29a55a53537ce0fb2caf8daf4eda9b46c937f2762b7d7e499587f3a1d73dd5ff`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 11
 
 - [report](../../fawn-workspace/20261026-platforms/rejected-macos-profile-race/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -714,31 +738,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23"></a>
+<a id="evidence-12"></a>
 
-## workspace
-
-Observation: `67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23`; execution: `workspace-9a720291251f48/workspace/report-summary`.
-
-Machine: unknown:845a940d0b95b878f53baf49; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-26T21:48:32.340000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `67398f2039cb6b64664e6b7460744d366a0c976d1bd270b191b08c03745e3d23`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 12
 
 - [report](../../fawn-workspace/20261026-platforms/compatibility-windows/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -754,31 +758,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9"></a>
+<a id="evidence-13"></a>
 
-## workspace
-
-Observation: `92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9`; execution: `workspace-cc8b6ee9073c79/workspace/report-summary`.
-
-Machine: unknown:0d21d580307965a7701f7066; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-26T21:55:47.568000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `92fea1cf2c70b6823c3d314c4eed652a47286c9e7a2f93a6f2b39b574c4bb2a9`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 13
 
 - [report](../../fawn-workspace/20261026-platforms/compatibility-macos/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -794,31 +778,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75"></a>
+<a id="evidence-14"></a>
 
-## workspace
-
-Observation: `9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75`; execution: `workspace-2a28dc97c75efa/workspace/report-summary`.
-
-Machine: unknown:271d5e3fdd8f074073127f67; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-26T21:57:34.314000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `9d460f2b0d1c81416dd1efc02c89f6ded7a7437845dbe23fcc41b788b5665b75`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 14
 
 - [report](../../fawn-workspace/20261026-platforms/qualification/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.
@@ -834,31 +798,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8"></a>
+<a id="evidence-15"></a>
 
-## workspace
-
-Observation: `50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8`; execution: `workspace-e8bb15cff0071b/workspace/report-summary`.
-
-Machine: unknown:e7c090bc177fb75221b1d78a; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: 2026-10-26T21:59:16.879000Z; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `50c853cb9431e518b6ac7edaeacd8bfd0ddc23eaef07cc68e1cc177645eb91e8`; latest qualified: `None`; verdict: behavioral-status-only.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 15
 
 - [report](../../fawn-workspace/20261026-platforms/compatibility-linux-headed/result.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Behavioral summary does not supply execution dates or native-runtime qualification.
 - comparator.binaryHash is unknown.

@@ -6,34 +6,150 @@
 
 39 observations; 34 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [apple_metal_bun_ort_webgpu_provider_compare_gemma3_270m_prefill_32tok_decode_1tok](#row-0bd9350761862b2730a3b3d4c99583927c454914f84b77bdadedebf9bf0d7402) | unknown | mac.lan | tjs_ort_bun_doe unknown/14b0008f960e vs tjs_ort_bun_webgpu_package unknown/14b0008f960e | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [apple_metal_node_ort_webgpu_provider_compare_gemma3_270m_prefill_64tok_decode_64tok](#row-cdad38cd920aa2057a1fc2d56a8745438c8d7ace9b79bcc7b09e4514df2c1dbf) | unknown | mac.lan | tjs_ort_node_doe unknown/49161ba4e67a vs tjs_ort_node_webgpu_package unknown/49161ba4e67a | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [onnx-ort](#row-8d7c0caf7589fc5ebebba9443ca0914703cc2621048ab8f690da2e69cfc45910) | unknown | unknown:d632ed958aa0c2f06dd0ad0f | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/7 | unknown / failed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [onnx-ort](#row-bd222fbc77d28f1ddc6550f08ae7e32d77a397520ad0f262d9593863f36ff54f) | unknown | unknown:d5d659b6c0dfbe9df5edc621 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/7 | unknown / failed | execution date, machine identity, contract hash, implementation build, comparator build |
+| [onnx-ort](#row-c150c6728335358e74274115e8b95f6fe3e59233f4bf01a343234adeb75b7d92) | unknown | unknown:a370ca3504daf60046532640 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | not-run / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+
+## Complete records
 
 <a id="row-0bd9350761862b2730a3b3d4c99583927c454914f84b77bdadedebf9bf0d7402"></a>
 
-## apple_metal_bun_ort_webgpu_provider_compare_gemma3_270m_prefill_32tok_decode_1tok
+<details>
+<summary>apple_metal_bun_ort_webgpu_provider_compare_gemma3_270m_prefill_32tok_decode_1tok — unknown; reported-diagnostic; 0 metrics</summary>
 
-Observation: `0bd9350761862b2730a3b3d4c99583927c454914f84b77bdadedebf9bf0d7402`; execution: `onnx-ort-262626f9594da9/apple_metal_bun_ort_webgpu_provider_compare_gemma3_270m_prefill_32tok_decode_1tok/summary`.
+Record `0bd9350761862b2730a3b3d4c99583927c454914f84b77bdadedebf9bf0d7402` · execution `onnx-ort-262626f9594da9/apple_metal_bun_ort_webgpu_provider_compare_gemma3_270m_prefill_32tok_decode_1tok/summary` · campaign `bench/out/apple-metal-ort-bun/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: webgpu; GPU: Apple M3; driver: 1.0.0.
+Machine: mac.lan; darwin/webgpu; GPU Apple M3; driver 1.0.0.
 
-Build: tjs_ort_bun_doe unknown/14b0008f960e; comparator: tjs_ort_bun_webgpu_package unknown/14b0008f960e.
+Build: tjs_ort_bun_doe unknown/14b0008f960e; comparator: tjs_ort_bun_webgpu_package unknown/14b0008f960e. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:52:58.271236Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-diagnostic.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
+</details>
+
+<a id="row-cdad38cd920aa2057a1fc2d56a8745438c8d7ace9b79bcc7b09e4514df2c1dbf"></a>
+
+<details>
+<summary>apple_metal_node_ort_webgpu_provider_compare_gemma3_270m_prefill_64tok_decode_64tok — unknown; reported-diagnostic; 0 metrics</summary>
+
+Record `cdad38cd920aa2057a1fc2d56a8745438c8d7ace9b79bcc7b09e4514df2c1dbf` · execution `onnx-ort-b7b9aa4bab6d30/apple_metal_node_ort_webgpu_provider_compare_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `bench/out/apple-metal-ort-node/20260705T163736Z`.
+
+Machine: mac.lan; darwin/webgpu; GPU Apple M3; driver 1.0.0.
+
+Build: tjs_ort_node_doe unknown/49161ba4e67a; comparator: tjs_ort_node_webgpu_package unknown/49161ba4e67a. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:52:03.604761Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-8d7c0caf7589fc5ebebba9443ca0914703cc2621048ab8f690da2e69cfc45910"></a>
+
+<details>
+<summary>onnx-ort — unknown; no-material-advantage; 7 metrics</summary>
+
+Record `8d7c0caf7589fc5ebebba9443ca0914703cc2621048ab8f690da2e69cfc45910` · execution `onnx-ort-2f12b3d3d57dab/onnx-ort/summary` · campaign `reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign`.
+
+Machine: unknown:d632ed958aa0c2f06dd0ad0f; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / failed / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| primaryRatio | 1.04 / unknown | ratio | unknown | unknown | unknown/unknown unknown | unknown | reported application decision |
+| lowerConfidenceRatio | 1.0012 / unknown | ratio | unknown | unknown | unknown/unknown unknown | unknown | reported application decision |
+| aaMedianRatio | 1.0064 / unknown | ratio | unknown | unknown | unknown/unknown unknown | unknown | reported application decision |
+| coldProcessWall | unknown / unknown | ratio | 0.90544 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+| peakRss | unknown / unknown | ratio | 1.0357 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+| processCpu | unknown / unknown | ratio | 1.3623 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+| warmP95 | unknown / unknown | ratio | 0.97798 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+
+</details>
+
+<a id="row-bd222fbc77d28f1ddc6550f08ae7e32d77a397520ad0f262d9593863f36ff54f"></a>
+
+<details>
+<summary>onnx-ort — unknown; no-material-advantage; 7 metrics</summary>
+
+Record `bd222fbc77d28f1ddc6550f08ae7e32d77a397520ad0f262d9593863f36ff54f` · execution `onnx-ort-43bb6f4b77d684/onnx-ort/summary` · campaign `reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/raw/measurement-qualified`.
+
+Machine: unknown:d5d659b6c0dfbe9df5edc621; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / failed / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| primaryRatio | 1.04 / unknown | ratio | unknown | unknown | unknown/unknown unknown | unknown | reported application decision |
+| lowerConfidenceRatio | 1.0012 / unknown | ratio | unknown | unknown | unknown/unknown unknown | unknown | reported application decision |
+| aaMedianRatio | 1.0064 / unknown | ratio | unknown | unknown | unknown/unknown unknown | unknown | reported application decision |
+| warmP95 | unknown / unknown | ratio | 0.97798 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+| coldProcessWall | unknown / unknown | ratio | 0.90544 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+| processCpu | unknown / unknown | ratio | 1.3623 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+| peakRss | unknown / unknown | ratio | 1.0357 | unknown | unknown/unknown unknown | unknown | reported regression ratio |
+
+</details>
+
+<a id="row-c150c6728335358e74274115e8b95f6fe3e59233f4bf01a343234adeb75b7d92"></a>
+
+<details>
+<summary>onnx-ort — unknown; unknown; 0 metrics</summary>
+
+Record `c150c6728335358e74274115e8b95f6fe3e59233f4bf01a343234adeb75b7d92` · execution `onnx-ort-bc93a6508fe29b/onnx-ort/unavailable` · campaign `onnx-ort-unmeasured`.
+
+Machine: unknown:a370ca3504daf60046532640; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
 
 - [report](../../../bench/out/apple-metal-ort-bun/20260705T163736Z/gemma270m-prefill32-decode1.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry ort-bun-apple-metal; recorded claimState=diagnostic. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -42,32 +158,12 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-cdad38cd920aa2057a1fc2d56a8745438c8d7ace9b79bcc7b09e4514df2c1dbf"></a>
+<a id="evidence-2"></a>
 
-## apple_metal_node_ort_webgpu_provider_compare_gemma3_270m_prefill_64tok_decode_64tok
-
-Observation: `cdad38cd920aa2057a1fc2d56a8745438c8d7ace9b79bcc7b09e4514df2c1dbf`; execution: `onnx-ort-b7b9aa4bab6d30/apple_metal_node_ort_webgpu_provider_compare_gemma3_270m_prefill_64tok_decode_64tok/summary`.
-
-Machine: mac.lan; OS: darwin; backend: webgpu; GPU: Apple M3; driver: 1.0.0.
-
-Build: tjs_ort_node_doe unknown/49161ba4e67a; comparator: tjs_ort_node_webgpu_package unknown/49161ba4e67a.
-
-Executed: unknown; reported: 2026-07-05T16:52:03.604761Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 2
 
 - [report](../../../bench/out/apple-metal-ort-node/20260705T163736Z/gemma270m.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry ort-node-apple-metal; recorded claimState=diagnostic. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -76,38 +172,11 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-8d7c0caf7589fc5ebebba9443ca0914703cc2621048ab8f690da2e69cfc45910"></a>
+<a id="evidence-3"></a>
 
-## onnx-ort
-
-Observation: `8d7c0caf7589fc5ebebba9443ca0914703cc2621048ab8f690da2e69cfc45910`; execution: `onnx-ort-2f12b3d3d57dab/onnx-ort/summary`.
-
-Machine: unknown:d632ed958aa0c2f06dd0ad0f; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / failed / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: no-material-advantage.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| primaryRatio | 1.04 / unknown | ratio | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| lowerConfidenceRatio | 1.0012 / unknown | ratio | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| aaMedianRatio | 1.0064 / unknown | ratio | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| coldProcessWall | unknown / unknown | ratio | 0.90544 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| peakRss | unknown / unknown | ratio | 1.0357 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| processCpu | unknown / unknown | ratio | 1.3623 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| warmP95 | unknown / unknown | ratio | 0.97798 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-
-Evidence:
+### Evidence 3
 
 - [report](../amd-vulkan/20261005-onnx-vulkan-campaign/measurement-summary.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - No execution identities, dates or samples are inferred from an application verdict or report directory name.
 - comparator.binaryHash is unknown.
@@ -124,38 +193,11 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-bd222fbc77d28f1ddc6550f08ae7e32d77a397520ad0f262d9593863f36ff54f"></a>
+<a id="evidence-4"></a>
 
-## onnx-ort
-
-Observation: `bd222fbc77d28f1ddc6550f08ae7e32d77a397520ad0f262d9593863f36ff54f`; execution: `onnx-ort-43bb6f4b77d684/onnx-ort/summary`.
-
-Machine: unknown:d5d659b6c0dfbe9df5edc621; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / failed / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: no-material-advantage.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-| primaryRatio | 1.04 / unknown | ratio | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| lowerConfidenceRatio | 1.0012 / unknown | ratio | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| aaMedianRatio | 1.0064 / unknown | ratio | unknown | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| warmP95 | unknown / unknown | ratio | 0.97798 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| coldProcessWall | unknown / unknown | ratio | 0.90544 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| processCpu | unknown / unknown | ratio | 1.3623 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-| peakRss | unknown / unknown | ratio | 1.0357 | unknown | {'implementation': None, 'comparator': None, 'unit': None} | unknown |
-
-Evidence:
+### Evidence 4
 
 - [report](../amd-vulkan/20261005-onnx-vulkan-campaign/raw/measurement-qualified/measurement.json.gz): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - No execution identities, dates or samples are inferred from an application verdict or report directory name.
 - comparator.binaryHash is unknown.
@@ -172,32 +214,12 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-c150c6728335358e74274115e8b95f6fe3e59233f4bf01a343234adeb75b7d92"></a>
+<a id="evidence-5"></a>
 
-## onnx-ort
-
-Observation: `c150c6728335358e74274115e8b95f6fe3e59233f4bf01a343234adeb75b7d92`; execution: `onnx-ort-bc93a6508fe29b/onnx-ort/unavailable`.
-
-Machine: unknown:a370ca3504daf60046532640; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: unknown.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 5
 
 - report: missing.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Historical publication entry ort-browser-apple-metal; recorded claimState=scaffolded. Publication authority stays in reports/claim-index.json.
 - Registered measurement evidence unavailable; no result is invented.

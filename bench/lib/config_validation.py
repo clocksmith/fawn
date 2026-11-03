@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import jsonschema
+from referencing import Registry, Resource
 
 
 def _infer_schema_path(config_path: Path) -> Path:
@@ -80,12 +81,13 @@ def load_validated_config(
         raise ValueError(f"invalid config: expected JSON object in {config_path}")
 
     resolved_schema_path = (
-        Path(schema_path) if schema_path is not None else _infer_schema_path(config_path)
+        Path(schema_path)
+        if schema_path is not None
+        else _infer_schema_path(config_path)
     )
     if not resolved_schema_path.exists():
         raise FileNotFoundError(
-            f"schema file not found: {resolved_schema_path} "
-            f"(for config {config_path})"
+            f"schema file not found: {resolved_schema_path} (for config {config_path})"
         )
 
     schema = json.loads(resolved_schema_path.read_text(encoding="utf-8"))
@@ -95,12 +97,8 @@ def load_validated_config(
         key=lambda e: tuple(str(p) for p in e.absolute_path),
     )
     if errors:
-        details = "; ".join(
-            f"{_format_path(e)}: {e.message}" for e in errors[:5]
-        )
-        count_note = (
-            f" (+{len(errors) - 5} more)" if len(errors) > 5 else ""
-        )
+        details = "; ".join(f"{_format_path(e)}: {e.message}" for e in errors[:5])
+        count_note = f" (+{len(errors) - 5} more)" if len(errors) > 5 else ""
         raise jsonschema.ValidationError(
             f"config {config_path.name} failed schema validation "
             f"({resolved_schema_path.name}): {details}{count_note}"
@@ -112,3 +110,33 @@ def _format_path(error: jsonschema.ValidationError) -> str:
     if not error.absolute_path:
         return "<root>"
     return ".".join(str(part) for part in error.absolute_path)
+
+
+def validate_schema(schema_path: Path, payload: Any) -> None:
+    schema_payload = json.loads(schema_path.read_text(encoding="utf-8"))
+    registry = Registry()
+    if schema_path.name == "benchmark-cube.schema.json":
+        row_schema = json.loads(
+            schema_path.with_name("benchmark-cube-row.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        registry = registry.with_resource(
+            row_schema["$id"], Resource.from_contents(row_schema)
+        )
+    validator = jsonschema.Draft202012Validator(
+        schema_payload, registry=registry, format_checker=jsonschema.FormatChecker()
+    )
+    errors = sorted(
+        validator.iter_errors(payload),
+        key=lambda item: tuple(str(part) for part in item.absolute_path),
+    )
+    if not errors:
+        return
+    first = jsonschema.exceptions.best_match(errors) or errors[0]
+    location = (
+        ".".join(str(part) for part in first.absolute_path)
+        if first.absolute_path
+        else "<root>"
+    )
+    raise ValueError(f"{schema_path}: {location}: {first.message}")

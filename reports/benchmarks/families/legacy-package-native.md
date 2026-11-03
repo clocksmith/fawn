@@ -6,839 +6,1630 @@
 
 68 observations; 0 individual executions.
 
-All aggregate and unavailable observations follow, including historical failures. Displayed numbers are rounded; exact values, sample counts and uncertainty remain in index.json. Execution, report and contract clocks remain separate.
+Every aggregate and unavailable observation is listed below. Expand a record for every metric. Shared evidence notes are printed once; unknown machines remain distinct. Numbers are rounded for reading; index.json preserves exact values and all executions.
+
+| Workload / record | Executed | Machine | Measured builds | Metric W/L/I/? | Execution / acceptance | Missing evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| [compute_concurrent_execution_single](#row-18a5d8661e58ebca0a30a3f316761e65bd49a52f2db00eb482a4007049a26bf3) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_concurrent_execution_single](#row-2fde42f89138b43d6de00274df465b8d1f12418ee03a8b731e47ad71daa794c1) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_concurrent_execution_single](#row-7d3d1ebb91131c5e37ae38d7f6dbd091e6a1a4386be4730fda2c8260a7cbbb3b) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_dispatch_fallback](#row-91463248ee5065efe3e517370014831f9163347cc729c85cad79ac70f6eccee3) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_dispatch_grid](#row-ab4c87c29a1ca237a3db2b5da8401b7ae23cfaa5ddc2478b2e14c66a69d96bfc) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_matvec_32768x2048_f32](#row-e89603f9db4e2c012e58dfd6eca352cf2248c1dbb14b65df51a22c045177300e) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_matvec_32768x2048_f32_swizzle1](#row-c31a1283c26db21c17a345343ddba15f51b9e3284f33f9c7ec76b603ab17a2f8) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_matvec_32768x2048_f32_workgroupshared_swizzle1](#row-6ba09726370d8305d839fa9ad47484271815edbe704b46aa0cabe0e46610278c) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces](#row-0e3dd83f1f238bef2dbea2c66ea20897e8d25aa1a7a46f80256d950af8931f5c) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_stable_fluids_multistage_256grid_18pressure_4steps](#row-ecf34d8860051156f9d83de1d02ec40af61bca34949a1b3cf460e2c35e9b61b7) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_workgroup_atomic_1024](#row-10f5884fe3841665eb6b45701c04824137311147c861e5193a316d474cc88a53) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_workgroup_atomic_1024](#row-4e95e16b200d3d9382ed4f756c834e138d597049581c76e7c1ea7175986938e8) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_workgroup_atomic_1024](#row-56b3324cd481f6f8c5dd92b220532f8cb911467e0eda0bcdb7138afc41928049) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_workgroup_non_atomic_1024](#row-47ad8d2e8104f51621aa242382dd0b5fdd4e8b144e22936d46b498285cebc8f3) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_workgroup_non_atomic_1024](#row-64626e37fcffe8aa85090851fcd55ba737b41ae51bc25e5f4fba1a8fccdc3563) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_workgroup_non_atomic_1024](#row-a1841b0543ebe45868ae775ad8b8f29f427ce15a19e42debf088bb5ea0529d39) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_zero_initialize_workgroup_memory_256](#row-6c45e02a7a026b3dec0f84cea08c8a87ab8eb4134d681ef27da2608920ef7ae6) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [compute_zero_initialize_workgroup_memory_256](#row-dd50236a0eeb88407b2c0035b38743c7b770a0f51745fe42c3ecf1a50bdfa992) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [copy_buffer_to_texture](#row-4caf5836abe4eb210047cfc22ada7c7ba7676eabb57a2e849ce9eafa78987113) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [copy_buffer_to_texture](#row-b029c974a989cb6c0e8d736f940ae0429fba4098f935b32621df2bc0284707e4) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [copy_protocol](#row-d538f854207236d77bc272e0dc7cf88f7ea4098a4eec42e400a771bb015350d7) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [copy_texture_to_texture](#row-e23f97a63ba925370b8c29b53750233c5c0f9119f7118fd2e53f3b7cb25aab5b) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [copy_texture_to_texture](#row-fccdd45cdcc61f277ef79071b4072b9b11d8e83b23f2e596a34ee153c1ef3289) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [inference_gemma3_270m_prefill_64tok_decode_64tok](#row-0cfe393f11ef5d22d259552db0004c49d83f8f11c020dad38fd8894fd2cfa11a) | unknown | mac.lan | doe_gpu_node_package_prepared unknown/49161ba4e67a vs node_webgpu_package_prepared unknown/49161ba4e67a | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [inference_gemma3_270m_prefill_64tok_decode_64tok](#row-4900e087653f53e624c81602648bdf20e931d68d8cca3c453db11efc9e33e48a) | unknown | 128 | doe_gpu_bun_package_prepared unknown/3632a4fae998 vs bun_webgpu_package_prepared unknown/3632a4fae998 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [inference_gemma3_270m_prefill_64tok_decode_64tok](#row-61896967b354cac428d19f746c3d97bfaa8a8f1a2ce282d9fcc5dcf8f8e26ad0) | unknown | mac.lan | doe_gpu_bun_package_prepared unknown/14b0008f960e vs bun_webgpu_package_prepared unknown/14b0008f960e | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [inference_gemma3_270m_prefill_64tok_decode_64tok](#row-6af9bfe0b7b3f9211ceed1ad6b703b3251ee288c39e6db5b5a538925fd52ccf9) | unknown | 128 | doe_gpu_deno_package_prepared unknown/1529ffb22d32 vs deno_webgpu_package_prepared unknown/1529ffb22d32 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [inference_gemma3_270m_prefill_64tok_decode_64tok](#row-e11ded7fde1e1e184e02c4631769e7b5dafeb369fb56c8def30fe2578a6dfddd) | unknown | 128 | doe_gpu_node_package_prepared unknown/d0efb6fcb9d0 vs node_webgpu_package_prepared unknown/d0efb6fcb9d0 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [legacy-package-native](#row-1fffa0a81dd0fccfc046936911b56001477ad12f51b333af840c74b998bf4352) | unknown | unknown:81deae36f9639d37270c8278 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | unknown / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [legacy-package-native](#row-2e06ab29def9c8cda6bb430a2ec6a62c3a82b952deef47672cb39dcb2cf7a9ec) | unknown | unknown:d6344ecb8c1a605716019198 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | not-run / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [legacy-package-native](#row-56bd305365a67d8a0ec01682062eca4ecf326b784437577098f19f30eaa340b9) | unknown | unknown:07246b7db237524e059322a4 | unknown unknown/unknown vs unknown unknown/unknown | 0/0/0/0 | not-run / unknown | execution date, machine identity, contract hash, implementation build, comparator build |
+| [pipeline_compile_stress](#row-5cb2aa3a6b02582cf8494820ad941ce8967b77df6fad339271a5182f4fbd6170) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [pipeline_compile_stress](#row-839526230760e9843b2b932f77cc190d4d9faf1ebb4ff778d83dc44ee6c8f89d) | unknown | 128 | doe unknown/098c6808d890 vs dawn_delegate unknown/098c6808d890 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [pipeline_compile_stress](#row-e32b144c3aedd3638a55f41908d2a583416feac29291e42b9626f4a3d42b83a4) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_bundle_dynamic_bindings](#row-9418cd1ffce1b8a602e00ca136eecf416e4aa0613d726d9a080cef73cf68fc05) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_bundle_dynamic_bindings](#row-c1a5cfbc2ec9cdc7da2c41fa8fdf100817fcd35ffaef28b8defdfd8ea2361fc7) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_bundle_dynamic_pipeline_bindings_200k](#row-314901c386f8c7ea71a119e395f5d6965f93c7d8269d61a132221895c2336fb4) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_bundle_dynamic_pipeline_bindings_200k](#row-a583fe0f8f8f6d60171ebdb30da572e1b982117dc8584ddb0cbd3e5d511bc6b8) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_draw_redundant_pipeline_bindings_200k](#row-8ef06abf93c947f26a6becceb1df1366825d3882ddeb8f84c324cfab42d35af5) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_draw_redundant_pipeline_bindings_200k](#row-eafc65e0c5dbf55851d3ce50a7087a8038dee90e6ebf44fd70523ca292628ee7) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_draw_state_bindings](#row-239ff8dcd1e7fe8b41580b60649673e72a344e14da52c9d19799d31377e9739c) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_draw_state_bindings](#row-f5c2b30d864251e82cc2da450fde30df4b20f1d79f011588ddf791657aec9280) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_draw_throughput_200k](#row-6f9ab06b282410590590a5e77ae8f4258df20e532f3c00cafcf579d407fe1154) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_draw_throughput_200k](#row-e883fe06c498534405b0904c0a30a6d48d86e525d0e725e6db26dc7c76654795) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_uniform_buffer_update_writebuffer_partial_single](#row-1e1e8a6a12593aaff21a16ca47acec344c8035eba45e98ed41d5831e73e5c004) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [render_uniform_buffer_update_writebuffer_partial_single](#row-716743df459825ec5de283752c4c5de3a6ab2595d8c0f75f487f5a1b79580d31) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [texture_sampler_write_query_destroy](#row-2677ab33cc24a2161385e8fa60306d5f10166e358cfac151884c219a4cc3f671) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [texture_sampler_write_query_destroy](#row-d0da460abd6b321607c10afa2680556ef4c8a0b6eaef446bb8950d5c7805277c) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [texture_sampler_write_query_destroy_500](#row-0a8e015fb19b7efcf54cc01522290d8177029f558170d5dd05bade2f7c9fed67) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [texture_sampler_write_query_destroy_500](#row-164246600830bac90b70e6b32cfe0b2384277c4e009db2248151ca1509adc6fd) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [texture_sampler_write_query_destroy_mip8](#row-b682a4f016fcacecf7d5be4720634581dde2eac94e512d4309814c27aab36beb) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [texture_sampler_write_query_destroy_mip8](#row-f00899c3275e2925f94b67fb55bea9f3010596348199ce2f2727a1c708f91a19) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_16mb_staged](#row-25285404369d69d45959f63788fc1172487c02d12b805150b6952692ae8840fb) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_16mb_staged](#row-b26fddbc354811ca5745b1fb632c2baa1c964d716139281acecd9020ed50905a) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_1gb_staged](#row-b89020ca3c4383779f7a955495f3f95e5fff93fc1e164acfee36bd517c8ea994) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_1gb_staged](#row-ee217d2e379f0f6af321883e36302570998d12353310143388b2a4cd6b9c1e2c) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_1kb_staged](#row-75d53787ceef37da50c41d4d7af783577b7168b3100129ca7d6da5175d86e41b) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_1kb_staged](#row-ca424f991fbf51d80a7684a8440dbbadef3a25bf8bf24b9e6668732dec6c5453) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_1mb_staged](#row-3f30e01e46032b4bb92eee8d88e69719cb9de37ff2f2cb1f6b8b37fcf2eddff6) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_1mb_staged](#row-a7a86231a2b66d4275f940e9bc17e7db8dc03038a90d382db6d3662c03f6873b) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_256mb_staged](#row-9c3d035d8a7451d90312f45355bd0e2f406108ad15791777597bffa8df844250) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_256mb_staged](#row-a029b7aa23d34fae2f2e2e93455fafd39ffdb984db9a3f481e68721e5badbacb) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_4gb_staged](#row-0dd89da89c089a2e2c35cd58914053599ecf389dbdedb9cd42fe7f956e57fd4f) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_4gb_staged](#row-34f4d55e5e33c00ae44a6dd60a347ab7ea88da1128582507f6fd4e2ad11e401d) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_4mb_staged](#row-1c3427c0fab8ba2ade1b6b9112f8b1334a142ac7e9e675bcd6f7ab2bb025190f) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_4mb_staged](#row-b2e3ac3a410301bfc6b9dadf6020ee90c19f4caebd07ef5cd8878c7427758f94) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_64kb_staged](#row-0ae559475783562683716fc32e23ddad51a08e18fe8df55952bdfaab28d02502) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+| [upload_write_buffer_64kb_staged](#row-170155bb04769b7805e5dc50ed1777622901ec37120f0fc1411958152347eda6) | unknown | mac.lan | doe unknown/09afd3d6e757 vs dawn_delegate unknown/09afd3d6e757 | 0/0/0/0 | unknown / unknown | execution date, contract hash, implementation build, comparator build |
+
+## Complete records
 
 <a id="row-18a5d8661e58ebca0a30a3f316761e65bd49a52f2db00eb482a4007049a26bf3"></a>
 
-## compute_concurrent_execution_single
+<details>
+<summary>compute_concurrent_execution_single — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `18a5d8661e58ebca0a30a3f316761e65bd49a52f2db00eb482a4007049a26bf3`; execution: `legacy-package-native-5eaf3b588715c5/compute_concurrent_execution_single/summary`.
+Record `18a5d8661e58ebca0a30a3f316761e65bd49a52f2db00eb482a4007049a26bf3` · execution `legacy-package-native-5eaf3b588715c5/compute_concurrent_execution_single/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-2fde42f89138b43d6de00274df465b8d1f12418ee03a8b731e47ad71daa794c1"></a>
 
-## compute_concurrent_execution_single
+<details>
+<summary>compute_concurrent_execution_single — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `2fde42f89138b43d6de00274df465b8d1f12418ee03a8b731e47ad71daa794c1`; execution: `legacy-package-native-e811d6a7a41021/compute_concurrent_execution_single/summary`.
+Record `2fde42f89138b43d6de00274df465b8d1f12418ee03a8b731e47ad71daa794c1` · execution `legacy-package-native-e811d6a7a41021/compute_concurrent_execution_single/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-7d3d1ebb91131c5e37ae38d7f6dbd091e6a1a4386be4730fda2c8260a7cbbb3b"></a>
 
-## compute_concurrent_execution_single
+<details>
+<summary>compute_concurrent_execution_single — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `7d3d1ebb91131c5e37ae38d7f6dbd091e6a1a4386be4730fda2c8260a7cbbb3b`; execution: `legacy-package-native-b09e34b03a0f3a/compute_concurrent_execution_single/summary`.
+Record `7d3d1ebb91131c5e37ae38d7f6dbd091e6a1a4386be4730fda2c8260a7cbbb3b` · execution `legacy-package-native-b09e34b03a0f3a/compute_concurrent_execution_single/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-91463248ee5065efe3e517370014831f9163347cc729c85cad79ac70f6eccee3"></a>
 
-## compute_dispatch_fallback
+<details>
+<summary>compute_dispatch_fallback — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `91463248ee5065efe3e517370014831f9163347cc729c85cad79ac70f6eccee3`; execution: `legacy-package-native-5eaf3b588715c5/compute_dispatch_fallback/summary`.
+Record `91463248ee5065efe3e517370014831f9163347cc729c85cad79ac70f6eccee3` · execution `legacy-package-native-5eaf3b588715c5/compute_dispatch_fallback/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-ab4c87c29a1ca237a3db2b5da8401b7ae23cfaa5ddc2478b2e14c66a69d96bfc"></a>
 
-## compute_dispatch_grid
+<details>
+<summary>compute_dispatch_grid — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `ab4c87c29a1ca237a3db2b5da8401b7ae23cfaa5ddc2478b2e14c66a69d96bfc`; execution: `legacy-package-native-5eaf3b588715c5/compute_dispatch_grid/summary`.
+Record `ab4c87c29a1ca237a3db2b5da8401b7ae23cfaa5ddc2478b2e14c66a69d96bfc` · execution `legacy-package-native-5eaf3b588715c5/compute_dispatch_grid/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-e89603f9db4e2c012e58dfd6eca352cf2248c1dbb14b65df51a22c045177300e"></a>
 
-## compute_matvec_32768x2048_f32
+<details>
+<summary>compute_matvec_32768x2048_f32 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `e89603f9db4e2c012e58dfd6eca352cf2248c1dbb14b65df51a22c045177300e`; execution: `legacy-package-native-b09e34b03a0f3a/compute_matvec_32768x2048_f32/summary`.
+Record `e89603f9db4e2c012e58dfd6eca352cf2248c1dbb14b65df51a22c045177300e` · execution `legacy-package-native-b09e34b03a0f3a/compute_matvec_32768x2048_f32/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-c31a1283c26db21c17a345343ddba15f51b9e3284f33f9c7ec76b603ab17a2f8"></a>
 
-## compute_matvec_32768x2048_f32_swizzle1
+<details>
+<summary>compute_matvec_32768x2048_f32_swizzle1 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `c31a1283c26db21c17a345343ddba15f51b9e3284f33f9c7ec76b603ab17a2f8`; execution: `legacy-package-native-b09e34b03a0f3a/compute_matvec_32768x2048_f32_swizzle1/summary`.
+Record `c31a1283c26db21c17a345343ddba15f51b9e3284f33f9c7ec76b603ab17a2f8` · execution `legacy-package-native-b09e34b03a0f3a/compute_matvec_32768x2048_f32_swizzle1/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-6ba09726370d8305d839fa9ad47484271815edbe704b46aa0cabe0e46610278c"></a>
 
-## compute_matvec_32768x2048_f32_workgroupshared_swizzle1
+<details>
+<summary>compute_matvec_32768x2048_f32_workgroupshared_swizzle1 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `6ba09726370d8305d839fa9ad47484271815edbe704b46aa0cabe0e46610278c`; execution: `legacy-package-native-b09e34b03a0f3a/compute_matvec_32768x2048_f32_workgroupshared_swizzle1/summary`.
+Record `6ba09726370d8305d839fa9ad47484271815edbe704b46aa0cabe0e46610278c` · execution `legacy-package-native-b09e34b03a0f3a/compute_matvec_32768x2048_f32_workgroupshared_swizzle1/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-0e3dd83f1f238bef2dbea2c66ea20897e8d25aa1a7a46f80256d950af8931f5c"></a>
 
-## compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces
+<details>
+<summary>compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `0e3dd83f1f238bef2dbea2c66ea20897e8d25aa1a7a46f80256d950af8931f5c`; execution: `legacy-package-native-b09e34b03a0f3a/compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces/summary`.
+Record `0e3dd83f1f238bef2dbea2c66ea20897e8d25aa1a7a46f80256d950af8931f5c` · execution `legacy-package-native-b09e34b03a0f3a/compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-ecf34d8860051156f9d83de1d02ec40af61bca34949a1b3cf460e2c35e9b61b7"></a>
 
-## compute_stable_fluids_multistage_256grid_18pressure_4steps
+<details>
+<summary>compute_stable_fluids_multistage_256grid_18pressure_4steps — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `ecf34d8860051156f9d83de1d02ec40af61bca34949a1b3cf460e2c35e9b61b7`; execution: `legacy-package-native-b09e34b03a0f3a/compute_stable_fluids_multistage_256grid_18pressure_4steps/summary`.
+Record `ecf34d8860051156f9d83de1d02ec40af61bca34949a1b3cf460e2c35e9b61b7` · execution `legacy-package-native-b09e34b03a0f3a/compute_stable_fluids_multistage_256grid_18pressure_4steps/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-10f5884fe3841665eb6b45701c04824137311147c861e5193a316d474cc88a53"></a>
 
-## compute_workgroup_atomic_1024
+<details>
+<summary>compute_workgroup_atomic_1024 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `10f5884fe3841665eb6b45701c04824137311147c861e5193a316d474cc88a53`; execution: `legacy-package-native-b09e34b03a0f3a/compute_workgroup_atomic_1024/summary`.
+Record `10f5884fe3841665eb6b45701c04824137311147c861e5193a316d474cc88a53` · execution `legacy-package-native-b09e34b03a0f3a/compute_workgroup_atomic_1024/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-4e95e16b200d3d9382ed4f756c834e138d597049581c76e7c1ea7175986938e8"></a>
 
-## compute_workgroup_atomic_1024
+<details>
+<summary>compute_workgroup_atomic_1024 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `4e95e16b200d3d9382ed4f756c834e138d597049581c76e7c1ea7175986938e8`; execution: `legacy-package-native-5eaf3b588715c5/compute_workgroup_atomic_1024/summary`.
+Record `4e95e16b200d3d9382ed4f756c834e138d597049581c76e7c1ea7175986938e8` · execution `legacy-package-native-5eaf3b588715c5/compute_workgroup_atomic_1024/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-56b3324cd481f6f8c5dd92b220532f8cb911467e0eda0bcdb7138afc41928049"></a>
 
-## compute_workgroup_atomic_1024
+<details>
+<summary>compute_workgroup_atomic_1024 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `56b3324cd481f6f8c5dd92b220532f8cb911467e0eda0bcdb7138afc41928049`; execution: `legacy-package-native-e811d6a7a41021/compute_workgroup_atomic_1024/summary`.
+Record `56b3324cd481f6f8c5dd92b220532f8cb911467e0eda0bcdb7138afc41928049` · execution `legacy-package-native-e811d6a7a41021/compute_workgroup_atomic_1024/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-47ad8d2e8104f51621aa242382dd0b5fdd4e8b144e22936d46b498285cebc8f3"></a>
 
-## compute_workgroup_non_atomic_1024
+<details>
+<summary>compute_workgroup_non_atomic_1024 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `47ad8d2e8104f51621aa242382dd0b5fdd4e8b144e22936d46b498285cebc8f3`; execution: `legacy-package-native-5eaf3b588715c5/compute_workgroup_non_atomic_1024/summary`.
+Record `47ad8d2e8104f51621aa242382dd0b5fdd4e8b144e22936d46b498285cebc8f3` · execution `legacy-package-native-5eaf3b588715c5/compute_workgroup_non_atomic_1024/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-64626e37fcffe8aa85090851fcd55ba737b41ae51bc25e5f4fba1a8fccdc3563"></a>
 
-## compute_workgroup_non_atomic_1024
+<details>
+<summary>compute_workgroup_non_atomic_1024 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `64626e37fcffe8aa85090851fcd55ba737b41ae51bc25e5f4fba1a8fccdc3563`; execution: `legacy-package-native-e811d6a7a41021/compute_workgroup_non_atomic_1024/summary`.
+Record `64626e37fcffe8aa85090851fcd55ba737b41ae51bc25e5f4fba1a8fccdc3563` · execution `legacy-package-native-e811d6a7a41021/compute_workgroup_non_atomic_1024/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-a1841b0543ebe45868ae775ad8b8f29f427ce15a19e42debf088bb5ea0529d39"></a>
 
-## compute_workgroup_non_atomic_1024
+<details>
+<summary>compute_workgroup_non_atomic_1024 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `a1841b0543ebe45868ae775ad8b8f29f427ce15a19e42debf088bb5ea0529d39`; execution: `legacy-package-native-b09e34b03a0f3a/compute_workgroup_non_atomic_1024/summary`.
+Record `a1841b0543ebe45868ae775ad8b8f29f427ce15a19e42debf088bb5ea0529d39` · execution `legacy-package-native-b09e34b03a0f3a/compute_workgroup_non_atomic_1024/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
 
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
 
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
 
 Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-6c45e02a7a026b3dec0f84cea08c8a87ab8eb4134d681ef27da2608920ef7ae6"></a>
 
-## compute_zero_initialize_workgroup_memory_256
+<details>
+<summary>compute_zero_initialize_workgroup_memory_256 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `6c45e02a7a026b3dec0f84cea08c8a87ab8eb4134d681ef27da2608920ef7ae6`; execution: `legacy-package-native-5eaf3b588715c5/compute_zero_initialize_workgroup_memory_256/summary`.
+Record `6c45e02a7a026b3dec0f84cea08c8a87ab8eb4134d681ef27da2608920ef7ae6` · execution `legacy-package-native-5eaf3b588715c5/compute_zero_initialize_workgroup_memory_256/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-dd50236a0eeb88407b2c0035b38743c7b770a0f51745fe42c3ecf1a50bdfa992"></a>
 
-## compute_zero_initialize_workgroup_memory_256
+<details>
+<summary>compute_zero_initialize_workgroup_memory_256 — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `dd50236a0eeb88407b2c0035b38743c7b770a0f51745fe42c3ecf1a50bdfa992`; execution: `legacy-package-native-e811d6a7a41021/compute_zero_initialize_workgroup_memory_256/summary`.
+Record `dd50236a0eeb88407b2c0035b38743c7b770a0f51745fe42c3ecf1a50bdfa992` · execution `legacy-package-native-e811d6a7a41021/compute_zero_initialize_workgroup_memory_256/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-4caf5836abe4eb210047cfc22ada7c7ba7676eabb57a2e849ce9eafa78987113"></a>
 
-## copy_buffer_to_texture
+<details>
+<summary>copy_buffer_to_texture — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `4caf5836abe4eb210047cfc22ada7c7ba7676eabb57a2e849ce9eafa78987113`; execution: `legacy-package-native-e811d6a7a41021/copy_buffer_to_texture/summary`.
+Record `4caf5836abe4eb210047cfc22ada7c7ba7676eabb57a2e849ce9eafa78987113` · execution `legacy-package-native-e811d6a7a41021/copy_buffer_to_texture/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-b029c974a989cb6c0e8d736f940ae0429fba4098f935b32621df2bc0284707e4"></a>
 
-## copy_buffer_to_texture
+<details>
+<summary>copy_buffer_to_texture — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `b029c974a989cb6c0e8d736f940ae0429fba4098f935b32621df2bc0284707e4`; execution: `legacy-package-native-5eaf3b588715c5/copy_buffer_to_texture/summary`.
+Record `b029c974a989cb6c0e8d736f940ae0429fba4098f935b32621df2bc0284707e4` · execution `legacy-package-native-5eaf3b588715c5/copy_buffer_to_texture/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-d538f854207236d77bc272e0dc7cf88f7ea4098a4eec42e400a771bb015350d7"></a>
 
-## copy_protocol
+<details>
+<summary>copy_protocol — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `d538f854207236d77bc272e0dc7cf88f7ea4098a4eec42e400a771bb015350d7`; execution: `legacy-package-native-5eaf3b588715c5/copy_protocol/summary`.
+Record `d538f854207236d77bc272e0dc7cf88f7ea4098a4eec42e400a771bb015350d7` · execution `legacy-package-native-5eaf3b588715c5/copy_protocol/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-e23f97a63ba925370b8c29b53750233c5c0f9119f7118fd2e53f3b7cb25aab5b"></a>
 
-## copy_texture_to_texture
+<details>
+<summary>copy_texture_to_texture — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `e23f97a63ba925370b8c29b53750233c5c0f9119f7118fd2e53f3b7cb25aab5b`; execution: `legacy-package-native-e811d6a7a41021/copy_texture_to_texture/summary`.
+Record `e23f97a63ba925370b8c29b53750233c5c0f9119f7118fd2e53f3b7cb25aab5b` · execution `legacy-package-native-e811d6a7a41021/copy_texture_to_texture/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-fccdd45cdcc61f277ef79071b4072b9b11d8e83b23f2e596a34ee153c1ef3289"></a>
 
-## copy_texture_to_texture
+<details>
+<summary>copy_texture_to_texture — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `fccdd45cdcc61f277ef79071b4072b9b11d8e83b23f2e596a34ee153c1ef3289`; execution: `legacy-package-native-5eaf3b588715c5/copy_texture_to_texture/summary`.
+Record `fccdd45cdcc61f277ef79071b4072b9b11d8e83b23f2e596a34ee153c1ef3289` · execution `legacy-package-native-5eaf3b588715c5/copy_texture_to_texture/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
 
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
 
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
+</details>
 
 <a id="row-0cfe393f11ef5d22d259552db0004c49d83f8f11c020dad38fd8894fd2cfa11a"></a>
 
-## inference_gemma3_270m_prefill_64tok_decode_64tok
+<details>
+<summary>inference_gemma3_270m_prefill_64tok_decode_64tok — unknown; reported-comparable; 0 metrics</summary>
 
-Observation: `0cfe393f11ef5d22d259552db0004c49d83f8f11c020dad38fd8894fd2cfa11a`; execution: `legacy-package-native-4e0d8c7de34400/inference_gemma3_270m_prefill_64tok_decode_64tok/summary`.
+Record `0cfe393f11ef5d22d259552db0004c49d83f8f11c020dad38fd8894fd2cfa11a` · execution `legacy-package-native-4e0d8c7de34400/inference_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `bench/out/apple-metal/20260706T001434Z`.
 
-Machine: mac.lan; OS: darwin; backend: webgpu; GPU: Apple M3; driver: 1.0.0.
+Machine: mac.lan; darwin/webgpu; GPU Apple M3; driver 1.0.0.
 
-Build: doe_gpu_node_package_prepared unknown/49161ba4e67a; comparator: node_webgpu_package_prepared unknown/49161ba4e67a.
+Build: doe_gpu_node_package_prepared unknown/49161ba4e67a; comparator: node_webgpu_package_prepared unknown/49161ba4e67a. Contract `unknown`.
 
 Executed: unknown; reported: 2026-07-06T00:14:45.638291Z; contract frozen: unknown.
 
 Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
 
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-4).
 
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
-Evidence:
+</details>
+
+<a id="row-4900e087653f53e624c81602648bdf20e931d68d8cca3c453db11efc9e33e48a"></a>
+
+<details>
+<summary>inference_gemma3_270m_prefill_64tok_decode_64tok — unknown; reported-comparable; 0 metrics</summary>
+
+Record `4900e087653f53e624c81602648bdf20e931d68d8cca3c453db11efc9e33e48a` · execution `legacy-package-native-05cdc409430aeb/inference_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T162200Z`.
+
+Machine: 128; linux/webgpu; GPU Radeon 8060S Graphics (RADV STRIX_HALO); driver 109051907.
+
+Build: doe_gpu_bun_package_prepared unknown/3632a4fae998; comparator: bun_webgpu_package_prepared unknown/3632a4fae998. Contract `unknown`.
+
+Executed: unknown; reported: 2026-08-10T16:22:16.474211Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-5).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-61896967b354cac428d19f746c3d97bfaa8a8f1a2ce282d9fcc5dcf8f8e26ad0"></a>
+
+<details>
+<summary>inference_gemma3_270m_prefill_64tok_decode_64tok — unknown; reported-comparable; 0 metrics</summary>
+
+Record `61896967b354cac428d19f746c3d97bfaa8a8f1a2ce282d9fcc5dcf8f8e26ad0` · execution `legacy-package-native-d0e02b20f2ab87/inference_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/webgpu; GPU Apple M3; driver 1.0.0.
+
+Build: doe_gpu_bun_package_prepared unknown/14b0008f960e; comparator: bun_webgpu_package_prepared unknown/14b0008f960e. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:49:33.932479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-6).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-6af9bfe0b7b3f9211ceed1ad6b703b3251ee288c39e6db5b5a538925fd52ccf9"></a>
+
+<details>
+<summary>inference_gemma3_270m_prefill_64tok_decode_64tok — unknown; reported-diagnostic; 0 metrics</summary>
+
+Record `6af9bfe0b7b3f9211ceed1ad6b703b3251ee288c39e6db5b5a538925fd52ccf9` · execution `legacy-package-native-5133f61dff97ef/inference_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T224707Z`.
+
+Machine: 128; linux/webgpu; GPU Radeon 8060S Graphics (RADV STRIX_HALO); driver 109051907.
+
+Build: doe_gpu_deno_package_prepared unknown/1529ffb22d32; comparator: deno_webgpu_package_prepared unknown/1529ffb22d32. Contract `unknown`.
+
+Executed: unknown; reported: 2026-08-10T22:47:54.758519Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-7).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-e11ded7fde1e1e184e02c4631769e7b5dafeb369fb56c8def30fe2578a6dfddd"></a>
+
+<details>
+<summary>inference_gemma3_270m_prefill_64tok_decode_64tok — unknown; reported-comparable; 0 metrics</summary>
+
+Record `e11ded7fde1e1e184e02c4631769e7b5dafeb369fb56c8def30fe2578a6dfddd` · execution `legacy-package-native-227092949543e0/inference_gemma3_270m_prefill_64tok_decode_64tok/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T223806Z`.
+
+Machine: 128; linux/webgpu; GPU Radeon 8060S Graphics (RADV STRIX_HALO); driver 109051907.
+
+Build: doe_gpu_node_package_prepared unknown/d0efb6fcb9d0; comparator: node_webgpu_package_prepared unknown/d0efb6fcb9d0. Contract `unknown`.
+
+Executed: unknown; reported: 2026-08-10T22:39:22.054289Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-8).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-1fffa0a81dd0fccfc046936911b56001477ad12f51b333af840c74b998bf4352"></a>
+
+<details>
+<summary>legacy-package-native — unknown; unknown; 0 metrics</summary>
+
+Record `1fffa0a81dd0fccfc046936911b56001477ad12f51b333af840c74b998bf4352` · execution `legacy-package-native-83e53732afca2e/legacy-package-native/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T221159Z/dropin`.
+
+Machine: unknown:81deae36f9639d37270c8278; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: 2026-08-10T22:16:20.609456Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-9).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-2e06ab29def9c8cda6bb430a2ec6a62c3a82b952deef47672cb39dcb2cf7a9ec"></a>
+
+<details>
+<summary>legacy-package-native — unknown; unknown; 0 metrics</summary>
+
+Record `2e06ab29def9c8cda6bb430a2ec6a62c3a82b952deef47672cb39dcb2cf7a9ec` · execution `legacy-package-native-c022b77d958d2b/legacy-package-native/unavailable` · campaign `legacy-package-native-unmeasured`.
+
+Machine: unknown:d6344ecb8c1a605716019198; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-10).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-56bd305365a67d8a0ec01682062eca4ecf326b784437577098f19f30eaa340b9"></a>
+
+<details>
+<summary>legacy-package-native — unknown; unknown; 0 metrics</summary>
+
+Record `56bd305365a67d8a0ec01682062eca4ecf326b784437577098f19f30eaa340b9` · execution `legacy-package-native-a3f2d1c02cba29/legacy-package-native/unavailable` · campaign `legacy-package-native-unmeasured`.
+
+Machine: unknown:07246b7db237524e059322a4; unknown/unknown; GPU unknown; driver unknown.
+
+Build: unknown unknown/unknown; comparator: unknown unknown/unknown. Contract `unknown`.
+
+Executed: unknown; reported: unknown; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-11).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-5cb2aa3a6b02582cf8494820ad941ce8967b77df6fad339271a5182f4fbd6170"></a>
+
+<details>
+<summary>pipeline_compile_stress — unknown; reported-comparable; 0 metrics</summary>
+
+Record `5cb2aa3a6b02582cf8494820ad941ce8967b77df6fad339271a5182f4fbd6170` · execution `legacy-package-native-e811d6a7a41021/pipeline_compile_stress/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-839526230760e9843b2b932f77cc190d4d9faf1ebb4ff778d83dc44ee6c8f89d"></a>
+
+<details>
+<summary>pipeline_compile_stress — unknown; reported-comparable; 0 metrics</summary>
+
+Record `839526230760e9843b2b932f77cc190d4d9faf1ebb4ff778d83dc44ee6c8f89d` · execution `legacy-package-native-b09e34b03a0f3a/pipeline_compile_stress/summary` · campaign `reports/benchmarks/amd-vulkan/20260810T222323Z`.
+
+Machine: 128; linux/vulkan; GPU unknown; driver 24.0.0.
+
+Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890. Contract `unknown`.
+
+Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-3).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-e32b144c3aedd3638a55f41908d2a583416feac29291e42b9626f4a3d42b83a4"></a>
+
+<details>
+<summary>pipeline_compile_stress — unknown; reported-comparable; 0 metrics</summary>
+
+Record `e32b144c3aedd3638a55f41908d2a583416feac29291e42b9626f4a3d42b83a4` · execution `legacy-package-native-5eaf3b588715c5/pipeline_compile_stress/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-9418cd1ffce1b8a602e00ca136eecf416e4aa0613d726d9a080cef73cf68fc05"></a>
+
+<details>
+<summary>render_bundle_dynamic_bindings — unknown; reported-comparable; 0 metrics</summary>
+
+Record `9418cd1ffce1b8a602e00ca136eecf416e4aa0613d726d9a080cef73cf68fc05` · execution `legacy-package-native-5eaf3b588715c5/render_bundle_dynamic_bindings/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-c1a5cfbc2ec9cdc7da2c41fa8fdf100817fcd35ffaef28b8defdfd8ea2361fc7"></a>
+
+<details>
+<summary>render_bundle_dynamic_bindings — unknown; reported-comparable; 0 metrics</summary>
+
+Record `c1a5cfbc2ec9cdc7da2c41fa8fdf100817fcd35ffaef28b8defdfd8ea2361fc7` · execution `legacy-package-native-e811d6a7a41021/render_bundle_dynamic_bindings/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-314901c386f8c7ea71a119e395f5d6965f93c7d8269d61a132221895c2336fb4"></a>
+
+<details>
+<summary>render_bundle_dynamic_pipeline_bindings_200k — unknown; reported-comparable; 0 metrics</summary>
+
+Record `314901c386f8c7ea71a119e395f5d6965f93c7d8269d61a132221895c2336fb4` · execution `legacy-package-native-5eaf3b588715c5/render_bundle_dynamic_pipeline_bindings_200k/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-a583fe0f8f8f6d60171ebdb30da572e1b982117dc8584ddb0cbd3e5d511bc6b8"></a>
+
+<details>
+<summary>render_bundle_dynamic_pipeline_bindings_200k — unknown; reported-comparable; 0 metrics</summary>
+
+Record `a583fe0f8f8f6d60171ebdb30da572e1b982117dc8584ddb0cbd3e5d511bc6b8` · execution `legacy-package-native-e811d6a7a41021/render_bundle_dynamic_pipeline_bindings_200k/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-8ef06abf93c947f26a6becceb1df1366825d3882ddeb8f84c324cfab42d35af5"></a>
+
+<details>
+<summary>render_draw_redundant_pipeline_bindings_200k — unknown; reported-comparable; 0 metrics</summary>
+
+Record `8ef06abf93c947f26a6becceb1df1366825d3882ddeb8f84c324cfab42d35af5` · execution `legacy-package-native-e811d6a7a41021/render_draw_redundant_pipeline_bindings_200k/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-eafc65e0c5dbf55851d3ce50a7087a8038dee90e6ebf44fd70523ca292628ee7"></a>
+
+<details>
+<summary>render_draw_redundant_pipeline_bindings_200k — unknown; reported-comparable; 0 metrics</summary>
+
+Record `eafc65e0c5dbf55851d3ce50a7087a8038dee90e6ebf44fd70523ca292628ee7` · execution `legacy-package-native-5eaf3b588715c5/render_draw_redundant_pipeline_bindings_200k/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-239ff8dcd1e7fe8b41580b60649673e72a344e14da52c9d19799d31377e9739c"></a>
+
+<details>
+<summary>render_draw_state_bindings — unknown; reported-comparable; 0 metrics</summary>
+
+Record `239ff8dcd1e7fe8b41580b60649673e72a344e14da52c9d19799d31377e9739c` · execution `legacy-package-native-5eaf3b588715c5/render_draw_state_bindings/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-f5c2b30d864251e82cc2da450fde30df4b20f1d79f011588ddf791657aec9280"></a>
+
+<details>
+<summary>render_draw_state_bindings — unknown; reported-comparable; 0 metrics</summary>
+
+Record `f5c2b30d864251e82cc2da450fde30df4b20f1d79f011588ddf791657aec9280` · execution `legacy-package-native-e811d6a7a41021/render_draw_state_bindings/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-6f9ab06b282410590590a5e77ae8f4258df20e532f3c00cafcf579d407fe1154"></a>
+
+<details>
+<summary>render_draw_throughput_200k — unknown; reported-comparable; 0 metrics</summary>
+
+Record `6f9ab06b282410590590a5e77ae8f4258df20e532f3c00cafcf579d407fe1154` · execution `legacy-package-native-5eaf3b588715c5/render_draw_throughput_200k/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-e883fe06c498534405b0904c0a30a6d48d86e525d0e725e6db26dc7c76654795"></a>
+
+<details>
+<summary>render_draw_throughput_200k — unknown; reported-comparable; 0 metrics</summary>
+
+Record `e883fe06c498534405b0904c0a30a6d48d86e525d0e725e6db26dc7c76654795` · execution `legacy-package-native-e811d6a7a41021/render_draw_throughput_200k/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-1e1e8a6a12593aaff21a16ca47acec344c8035eba45e98ed41d5831e73e5c004"></a>
+
+<details>
+<summary>render_uniform_buffer_update_writebuffer_partial_single — unknown; reported-comparable; 0 metrics</summary>
+
+Record `1e1e8a6a12593aaff21a16ca47acec344c8035eba45e98ed41d5831e73e5c004` · execution `legacy-package-native-e811d6a7a41021/render_uniform_buffer_update_writebuffer_partial_single/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-716743df459825ec5de283752c4c5de3a6ab2595d8c0f75f487f5a1b79580d31"></a>
+
+<details>
+<summary>render_uniform_buffer_update_writebuffer_partial_single — unknown; reported-comparable; 0 metrics</summary>
+
+Record `716743df459825ec5de283752c4c5de3a6ab2595d8c0f75f487f5a1b79580d31` · execution `legacy-package-native-5eaf3b588715c5/render_uniform_buffer_update_writebuffer_partial_single/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-2677ab33cc24a2161385e8fa60306d5f10166e358cfac151884c219a4cc3f671"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy — unknown; reported-comparable; 0 metrics</summary>
+
+Record `2677ab33cc24a2161385e8fa60306d5f10166e358cfac151884c219a4cc3f671` · execution `legacy-package-native-5eaf3b588715c5/texture_sampler_write_query_destroy/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-d0da460abd6b321607c10afa2680556ef4c8a0b6eaef446bb8950d5c7805277c"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy — unknown; reported-comparable; 0 metrics</summary>
+
+Record `d0da460abd6b321607c10afa2680556ef4c8a0b6eaef446bb8950d5c7805277c` · execution `legacy-package-native-e811d6a7a41021/texture_sampler_write_query_destroy/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-0a8e015fb19b7efcf54cc01522290d8177029f558170d5dd05bade2f7c9fed67"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy_500 — unknown; reported-comparable; 0 metrics</summary>
+
+Record `0a8e015fb19b7efcf54cc01522290d8177029f558170d5dd05bade2f7c9fed67` · execution `legacy-package-native-5eaf3b588715c5/texture_sampler_write_query_destroy_500/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-164246600830bac90b70e6b32cfe0b2384277c4e009db2248151ca1509adc6fd"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy_500 — unknown; reported-comparable; 0 metrics</summary>
+
+Record `164246600830bac90b70e6b32cfe0b2384277c4e009db2248151ca1509adc6fd` · execution `legacy-package-native-e811d6a7a41021/texture_sampler_write_query_destroy_500/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-b682a4f016fcacecf7d5be4720634581dde2eac94e512d4309814c27aab36beb"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy_mip8 — unknown; reported-comparable; 0 metrics</summary>
+
+Record `b682a4f016fcacecf7d5be4720634581dde2eac94e512d4309814c27aab36beb` · execution `legacy-package-native-e811d6a7a41021/texture_sampler_write_query_destroy_mip8/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-f00899c3275e2925f94b67fb55bea9f3010596348199ce2f2727a1c708f91a19"></a>
+
+<details>
+<summary>texture_sampler_write_query_destroy_mip8 — unknown; reported-comparable; 0 metrics</summary>
+
+Record `f00899c3275e2925f94b67fb55bea9f3010596348199ce2f2727a1c708f91a19` · execution `legacy-package-native-5eaf3b588715c5/texture_sampler_write_query_destroy_mip8/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-25285404369d69d45959f63788fc1172487c02d12b805150b6952692ae8840fb"></a>
+
+<details>
+<summary>upload_write_buffer_16mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `25285404369d69d45959f63788fc1172487c02d12b805150b6952692ae8840fb` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_16mb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-b26fddbc354811ca5745b1fb632c2baa1c964d716139281acecd9020ed50905a"></a>
+
+<details>
+<summary>upload_write_buffer_16mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `b26fddbc354811ca5745b1fb632c2baa1c964d716139281acecd9020ed50905a` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_16mb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-b89020ca3c4383779f7a955495f3f95e5fff93fc1e164acfee36bd517c8ea994"></a>
+
+<details>
+<summary>upload_write_buffer_1gb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `b89020ca3c4383779f7a955495f3f95e5fff93fc1e164acfee36bd517c8ea994` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_1gb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-ee217d2e379f0f6af321883e36302570998d12353310143388b2a4cd6b9c1e2c"></a>
+
+<details>
+<summary>upload_write_buffer_1gb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `ee217d2e379f0f6af321883e36302570998d12353310143388b2a4cd6b9c1e2c` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_1gb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-75d53787ceef37da50c41d4d7af783577b7168b3100129ca7d6da5175d86e41b"></a>
+
+<details>
+<summary>upload_write_buffer_1kb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `75d53787ceef37da50c41d4d7af783577b7168b3100129ca7d6da5175d86e41b` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_1kb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-ca424f991fbf51d80a7684a8440dbbadef3a25bf8bf24b9e6668732dec6c5453"></a>
+
+<details>
+<summary>upload_write_buffer_1kb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `ca424f991fbf51d80a7684a8440dbbadef3a25bf8bf24b9e6668732dec6c5453` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_1kb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-3f30e01e46032b4bb92eee8d88e69719cb9de37ff2f2cb1f6b8b37fcf2eddff6"></a>
+
+<details>
+<summary>upload_write_buffer_1mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `3f30e01e46032b4bb92eee8d88e69719cb9de37ff2f2cb1f6b8b37fcf2eddff6` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_1mb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-a7a86231a2b66d4275f940e9bc17e7db8dc03038a90d382db6d3662c03f6873b"></a>
+
+<details>
+<summary>upload_write_buffer_1mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `a7a86231a2b66d4275f940e9bc17e7db8dc03038a90d382db6d3662c03f6873b` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_1mb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-9c3d035d8a7451d90312f45355bd0e2f406108ad15791777597bffa8df844250"></a>
+
+<details>
+<summary>upload_write_buffer_256mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `9c3d035d8a7451d90312f45355bd0e2f406108ad15791777597bffa8df844250` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_256mb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-a029b7aa23d34fae2f2e2e93455fafd39ffdb984db9a3f481e68721e5badbacb"></a>
+
+<details>
+<summary>upload_write_buffer_256mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `a029b7aa23d34fae2f2e2e93455fafd39ffdb984db9a3f481e68721e5badbacb` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_256mb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-0dd89da89c089a2e2c35cd58914053599ecf389dbdedb9cd42fe7f956e57fd4f"></a>
+
+<details>
+<summary>upload_write_buffer_4gb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `0dd89da89c089a2e2c35cd58914053599ecf389dbdedb9cd42fe7f956e57fd4f` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_4gb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-34f4d55e5e33c00ae44a6dd60a347ab7ea88da1128582507f6fd4e2ad11e401d"></a>
+
+<details>
+<summary>upload_write_buffer_4gb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `34f4d55e5e33c00ae44a6dd60a347ab7ea88da1128582507f6fd4e2ad11e401d` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_4gb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-1c3427c0fab8ba2ade1b6b9112f8b1334a142ac7e9e675bcd6f7ab2bb025190f"></a>
+
+<details>
+<summary>upload_write_buffer_4mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `1c3427c0fab8ba2ade1b6b9112f8b1334a142ac7e9e675bcd6f7ab2bb025190f` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_4mb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-b2e3ac3a410301bfc6b9dadf6020ee90c19f4caebd07ef5cd8878c7427758f94"></a>
+
+<details>
+<summary>upload_write_buffer_4mb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `b2e3ac3a410301bfc6b9dadf6020ee90c19f4caebd07ef5cd8878c7427758f94` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_4mb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-0ae559475783562683716fc32e23ddad51a08e18fe8df55952bdfaab28d02502"></a>
+
+<details>
+<summary>upload_write_buffer_64kb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `0ae559475783562683716fc32e23ddad51a08e18fe8df55952bdfaab28d02502` · execution `legacy-package-native-e811d6a7a41021/upload_write_buffer_64kb_staged/summary` · campaign `bench/out/apple-metal/release/20260706T001555Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-2).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+<a id="row-170155bb04769b7805e5dc50ed1777622901ec37120f0fc1411958152347eda6"></a>
+
+<details>
+<summary>upload_write_buffer_64kb_staged — unknown; reported-comparable; 0 metrics</summary>
+
+Record `170155bb04769b7805e5dc50ed1777622901ec37120f0fc1411958152347eda6` · execution `legacy-package-native-5eaf3b588715c5/upload_write_buffer_64kb_staged/summary` · campaign `bench/out/apple-metal/20260705T163736Z`.
+
+Machine: mac.lan; darwin/metal; GPU unknown; driver 1.0.0.
+
+Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757. Contract `unknown`.
+
+Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
+
+Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
+
+Latest measured: `None`; latest qualified: `None`. [Evidence and limitations](#evidence-1).
+
+| Metric | Implementation / comparator | Unit | Ratio | Confidence interval | Samples I/C | Outcome | Scope |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+</details>
+
+## Evidence and limitations
+
+<a id="evidence-1"></a>
+
+### Evidence 1
+
+- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
+- [publication-index](../../claim-index.json): retained.
+- Historical claim/index labels are publication authority, not new qualification or current source evidence.
+- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.sourceCommit is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="evidence-2"></a>
+
+### Evidence 2
+
+- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
+- [publication-index](../../claim-index.json): retained.
+- Historical claim/index labels are publication authority, not new qualification or current source evidence.
+- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.sourceCommit is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="evidence-3"></a>
+
+### Evidence 3
+
+- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
+- [publication-index](../../claim-index.json): retained.
+- Historical claim/index labels are publication authority, not new qualification or current source evidence.
+- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
+- comparator.sourceCommit is unknown.
+- contractFrozenAt is unknown; no receipt value was retained.
+- executedAt is unknown; no receipt value was retained.
+- implementation.sourceCommit is unknown.
+- machine.gpu is unknown.
+- workloadContractHash is unknown; no receipt value was retained.
+
+<a id="evidence-4"></a>
+
+### Evidence 4
 
 - [report](../../../bench/out/apple-metal/20260706T001434Z/gemma64.node-package.warm.ir.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry package-node-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -847,32 +1638,12 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-4900e087653f53e624c81602648bdf20e931d68d8cca3c453db11efc9e33e48a"></a>
+<a id="evidence-5"></a>
 
-## inference_gemma3_270m_prefill_64tok_decode_64tok
-
-Observation: `4900e087653f53e624c81602648bdf20e931d68d8cca3c453db11efc9e33e48a`; execution: `legacy-package-native-05cdc409430aeb/inference_gemma3_270m_prefill_64tok_decode_64tok/summary`.
-
-Machine: 128; OS: linux; backend: webgpu; GPU: Radeon 8060S Graphics (RADV STRIX_HALO); driver: 109051907.
-
-Build: doe_gpu_bun_package_prepared unknown/3632a4fae998; comparator: bun_webgpu_package_prepared unknown/3632a4fae998.
-
-Executed: unknown; reported: 2026-08-10T16:22:16.474211Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 5
 
 - [report](../amd-vulkan/20260810T162200Z/gemma64.bun-package.warm.ir.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry package-bun-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -881,32 +1652,12 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-61896967b354cac428d19f746c3d97bfaa8a8f1a2ce282d9fcc5dcf8f8e26ad0"></a>
+<a id="evidence-6"></a>
 
-## inference_gemma3_270m_prefill_64tok_decode_64tok
-
-Observation: `61896967b354cac428d19f746c3d97bfaa8a8f1a2ce282d9fcc5dcf8f8e26ad0`; execution: `legacy-package-native-d0e02b20f2ab87/inference_gemma3_270m_prefill_64tok_decode_64tok/summary`.
-
-Machine: mac.lan; OS: darwin; backend: webgpu; GPU: Apple M3; driver: 1.0.0.
-
-Build: doe_gpu_bun_package_prepared unknown/14b0008f960e; comparator: bun_webgpu_package_prepared unknown/14b0008f960e.
-
-Executed: unknown; reported: 2026-07-05T16:49:33.932479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 6
 
 - [report](../../../bench/out/apple-metal/20260705T163736Z/gemma64.bun-package.warm.ir.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry package-bun-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -915,32 +1666,12 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-6af9bfe0b7b3f9211ceed1ad6b703b3251ee288c39e6db5b5a538925fd52ccf9"></a>
+<a id="evidence-7"></a>
 
-## inference_gemma3_270m_prefill_64tok_decode_64tok
-
-Observation: `6af9bfe0b7b3f9211ceed1ad6b703b3251ee288c39e6db5b5a538925fd52ccf9`; execution: `legacy-package-native-5133f61dff97ef/inference_gemma3_270m_prefill_64tok_decode_64tok/summary`.
-
-Machine: 128; OS: linux; backend: webgpu; GPU: Radeon 8060S Graphics (RADV STRIX_HALO); driver: 109051907.
-
-Build: doe_gpu_deno_package_prepared unknown/1529ffb22d32; comparator: deno_webgpu_package_prepared unknown/1529ffb22d32.
-
-Executed: unknown; reported: 2026-08-10T22:47:54.758519Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-diagnostic.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 7
 
 - [report](../amd-vulkan/20260810T224707Z/gemma64.deno-package.warm.ir.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry package-deno-amd-vulkan; recorded claimState=diagnostic. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -949,32 +1680,12 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-e11ded7fde1e1e184e02c4631769e7b5dafeb369fb56c8def30fe2578a6dfddd"></a>
+<a id="evidence-8"></a>
 
-## inference_gemma3_270m_prefill_64tok_decode_64tok
-
-Observation: `e11ded7fde1e1e184e02c4631769e7b5dafeb369fb56c8def30fe2578a6dfddd`; execution: `legacy-package-native-227092949543e0/inference_gemma3_270m_prefill_64tok_decode_64tok/summary`.
-
-Machine: 128; OS: linux; backend: webgpu; GPU: Radeon 8060S Graphics (RADV STRIX_HALO); driver: 109051907.
-
-Build: doe_gpu_node_package_prepared unknown/d0efb6fcb9d0; comparator: node_webgpu_package_prepared unknown/d0efb6fcb9d0.
-
-Executed: unknown; reported: 2026-08-10T22:39:22.054289Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 8
 
 - [report](../amd-vulkan/20260810T223806Z/gemma64.node-package.warm.ir.compare.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Historical claim/index labels are publication authority, not new qualification or current source evidence.
 - Historical publication entry package-node-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
 - comparator.sourceCommit is unknown.
@@ -983,32 +1694,12 @@ Limitations:
 - implementation.sourceCommit is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-1fffa0a81dd0fccfc046936911b56001477ad12f51b333af840c74b998bf4352"></a>
+<a id="evidence-9"></a>
 
-## legacy-package-native
-
-Observation: `1fffa0a81dd0fccfc046936911b56001477ad12f51b333af840c74b998bf4352`; execution: `legacy-package-native-83e53732afca2e/legacy-package-native/summary`.
-
-Machine: unknown:81deae36f9639d37270c8278; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: 2026-08-10T22:16:20.609456Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: unknown.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 9
 
 - [report](../amd-vulkan/20260810T221159Z/dropin/dropin-cutover-rehearsal-receipt.json): retained.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Historical publication entry dropin-cutover-linux-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
 - Source format contains no recognized individual observations.
@@ -1025,32 +1716,12 @@ Limitations:
 - machine.osVersion is unknown.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-2e06ab29def9c8cda6bb430a2ec6a62c3a82b952deef47672cb39dcb2cf7a9ec"></a>
+<a id="evidence-10"></a>
 
-## legacy-package-native
-
-Observation: `2e06ab29def9c8cda6bb430a2ec6a62c3a82b952deef47672cb39dcb2cf7a9ec`; execution: `legacy-package-native-c022b77d958d2b/legacy-package-native/unavailable`.
-
-Machine: unknown:d6344ecb8c1a605716019198; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: unknown.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 10
 
 - report: missing.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Historical publication entry native-d3d12; recorded claimState=scaffolded. Publication authority stays in reports/claim-index.json.
 - Registered measurement evidence unavailable; no result is invented.
@@ -1069,32 +1740,12 @@ Limitations:
 - reportedAt is unknown; no receipt value was retained.
 - workloadContractHash is unknown; no receipt value was retained.
 
-<a id="row-56bd305365a67d8a0ec01682062eca4ecf326b784437577098f19f30eaa340b9"></a>
+<a id="evidence-11"></a>
 
-## legacy-package-native
-
-Observation: `56bd305365a67d8a0ec01682062eca4ecf326b784437577098f19f30eaa340b9`; execution: `legacy-package-native-a3f2d1c02cba29/legacy-package-native/unavailable`.
-
-Machine: unknown:07246b7db237524e059322a4; OS: unknown; backend: unknown; GPU: unknown; driver: unknown.
-
-Build: unknown unknown/unknown; comparator: unknown unknown/unknown.
-
-Executed: unknown; reported: unknown; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: unknown.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
+### Evidence 11
 
 - report: missing.
 - [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
 - Actual machine identity is not bound by the retained receipt.
 - Historical publication entry browser-chromium-release; recorded claimState=scaffolded. Publication authority stays in reports/claim-index.json.
 - Registered measurement evidence unavailable; no result is invented.
@@ -1111,1299 +1762,4 @@ Limitations:
 - machine.osVersion is unknown.
 - report evidence missing: None
 - reportedAt is unknown; no receipt value was retained.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-5cb2aa3a6b02582cf8494820ad941ce8967b77df6fad339271a5182f4fbd6170"></a>
-
-## pipeline_compile_stress
-
-Observation: `5cb2aa3a6b02582cf8494820ad941ce8967b77df6fad339271a5182f4fbd6170`; execution: `legacy-package-native-e811d6a7a41021/pipeline_compile_stress/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-839526230760e9843b2b932f77cc190d4d9faf1ebb4ff778d83dc44ee6c8f89d"></a>
-
-## pipeline_compile_stress
-
-Observation: `839526230760e9843b2b932f77cc190d4d9faf1ebb4ff778d83dc44ee6c8f89d`; execution: `legacy-package-native-b09e34b03a0f3a/pipeline_compile_stress/summary`.
-
-Machine: 128; OS: linux; backend: vulkan; GPU: unknown; driver: 24.0.0.
-
-Build: doe unknown/098c6808d890; comparator: dawn_delegate unknown/098c6808d890.
-
-Executed: unknown; reported: 2026-08-10T22:16:04.938089Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../amd-vulkan/20260810T222323Z/dawn-vs-doe.amd.vulkan.release.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-amd-vulkan; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-e32b144c3aedd3638a55f41908d2a583416feac29291e42b9626f4a3d42b83a4"></a>
-
-## pipeline_compile_stress
-
-Observation: `e32b144c3aedd3638a55f41908d2a583416feac29291e42b9626f4a3d42b83a4`; execution: `legacy-package-native-5eaf3b588715c5/pipeline_compile_stress/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-9418cd1ffce1b8a602e00ca136eecf416e4aa0613d726d9a080cef73cf68fc05"></a>
-
-## render_bundle_dynamic_bindings
-
-Observation: `9418cd1ffce1b8a602e00ca136eecf416e4aa0613d726d9a080cef73cf68fc05`; execution: `legacy-package-native-5eaf3b588715c5/render_bundle_dynamic_bindings/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-c1a5cfbc2ec9cdc7da2c41fa8fdf100817fcd35ffaef28b8defdfd8ea2361fc7"></a>
-
-## render_bundle_dynamic_bindings
-
-Observation: `c1a5cfbc2ec9cdc7da2c41fa8fdf100817fcd35ffaef28b8defdfd8ea2361fc7`; execution: `legacy-package-native-e811d6a7a41021/render_bundle_dynamic_bindings/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-314901c386f8c7ea71a119e395f5d6965f93c7d8269d61a132221895c2336fb4"></a>
-
-## render_bundle_dynamic_pipeline_bindings_200k
-
-Observation: `314901c386f8c7ea71a119e395f5d6965f93c7d8269d61a132221895c2336fb4`; execution: `legacy-package-native-5eaf3b588715c5/render_bundle_dynamic_pipeline_bindings_200k/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-a583fe0f8f8f6d60171ebdb30da572e1b982117dc8584ddb0cbd3e5d511bc6b8"></a>
-
-## render_bundle_dynamic_pipeline_bindings_200k
-
-Observation: `a583fe0f8f8f6d60171ebdb30da572e1b982117dc8584ddb0cbd3e5d511bc6b8`; execution: `legacy-package-native-e811d6a7a41021/render_bundle_dynamic_pipeline_bindings_200k/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-8ef06abf93c947f26a6becceb1df1366825d3882ddeb8f84c324cfab42d35af5"></a>
-
-## render_draw_redundant_pipeline_bindings_200k
-
-Observation: `8ef06abf93c947f26a6becceb1df1366825d3882ddeb8f84c324cfab42d35af5`; execution: `legacy-package-native-e811d6a7a41021/render_draw_redundant_pipeline_bindings_200k/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-eafc65e0c5dbf55851d3ce50a7087a8038dee90e6ebf44fd70523ca292628ee7"></a>
-
-## render_draw_redundant_pipeline_bindings_200k
-
-Observation: `eafc65e0c5dbf55851d3ce50a7087a8038dee90e6ebf44fd70523ca292628ee7`; execution: `legacy-package-native-5eaf3b588715c5/render_draw_redundant_pipeline_bindings_200k/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-239ff8dcd1e7fe8b41580b60649673e72a344e14da52c9d19799d31377e9739c"></a>
-
-## render_draw_state_bindings
-
-Observation: `239ff8dcd1e7fe8b41580b60649673e72a344e14da52c9d19799d31377e9739c`; execution: `legacy-package-native-5eaf3b588715c5/render_draw_state_bindings/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-f5c2b30d864251e82cc2da450fde30df4b20f1d79f011588ddf791657aec9280"></a>
-
-## render_draw_state_bindings
-
-Observation: `f5c2b30d864251e82cc2da450fde30df4b20f1d79f011588ddf791657aec9280`; execution: `legacy-package-native-e811d6a7a41021/render_draw_state_bindings/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-6f9ab06b282410590590a5e77ae8f4258df20e532f3c00cafcf579d407fe1154"></a>
-
-## render_draw_throughput_200k
-
-Observation: `6f9ab06b282410590590a5e77ae8f4258df20e532f3c00cafcf579d407fe1154`; execution: `legacy-package-native-5eaf3b588715c5/render_draw_throughput_200k/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-e883fe06c498534405b0904c0a30a6d48d86e525d0e725e6db26dc7c76654795"></a>
-
-## render_draw_throughput_200k
-
-Observation: `e883fe06c498534405b0904c0a30a6d48d86e525d0e725e6db26dc7c76654795`; execution: `legacy-package-native-e811d6a7a41021/render_draw_throughput_200k/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-1e1e8a6a12593aaff21a16ca47acec344c8035eba45e98ed41d5831e73e5c004"></a>
-
-## render_uniform_buffer_update_writebuffer_partial_single
-
-Observation: `1e1e8a6a12593aaff21a16ca47acec344c8035eba45e98ed41d5831e73e5c004`; execution: `legacy-package-native-e811d6a7a41021/render_uniform_buffer_update_writebuffer_partial_single/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-716743df459825ec5de283752c4c5de3a6ab2595d8c0f75f487f5a1b79580d31"></a>
-
-## render_uniform_buffer_update_writebuffer_partial_single
-
-Observation: `716743df459825ec5de283752c4c5de3a6ab2595d8c0f75f487f5a1b79580d31`; execution: `legacy-package-native-5eaf3b588715c5/render_uniform_buffer_update_writebuffer_partial_single/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-2677ab33cc24a2161385e8fa60306d5f10166e358cfac151884c219a4cc3f671"></a>
-
-## texture_sampler_write_query_destroy
-
-Observation: `2677ab33cc24a2161385e8fa60306d5f10166e358cfac151884c219a4cc3f671`; execution: `legacy-package-native-5eaf3b588715c5/texture_sampler_write_query_destroy/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-d0da460abd6b321607c10afa2680556ef4c8a0b6eaef446bb8950d5c7805277c"></a>
-
-## texture_sampler_write_query_destroy
-
-Observation: `d0da460abd6b321607c10afa2680556ef4c8a0b6eaef446bb8950d5c7805277c`; execution: `legacy-package-native-e811d6a7a41021/texture_sampler_write_query_destroy/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-0a8e015fb19b7efcf54cc01522290d8177029f558170d5dd05bade2f7c9fed67"></a>
-
-## texture_sampler_write_query_destroy_500
-
-Observation: `0a8e015fb19b7efcf54cc01522290d8177029f558170d5dd05bade2f7c9fed67`; execution: `legacy-package-native-5eaf3b588715c5/texture_sampler_write_query_destroy_500/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-164246600830bac90b70e6b32cfe0b2384277c4e009db2248151ca1509adc6fd"></a>
-
-## texture_sampler_write_query_destroy_500
-
-Observation: `164246600830bac90b70e6b32cfe0b2384277c4e009db2248151ca1509adc6fd`; execution: `legacy-package-native-e811d6a7a41021/texture_sampler_write_query_destroy_500/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-b682a4f016fcacecf7d5be4720634581dde2eac94e512d4309814c27aab36beb"></a>
-
-## texture_sampler_write_query_destroy_mip8
-
-Observation: `b682a4f016fcacecf7d5be4720634581dde2eac94e512d4309814c27aab36beb`; execution: `legacy-package-native-e811d6a7a41021/texture_sampler_write_query_destroy_mip8/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-f00899c3275e2925f94b67fb55bea9f3010596348199ce2f2727a1c708f91a19"></a>
-
-## texture_sampler_write_query_destroy_mip8
-
-Observation: `f00899c3275e2925f94b67fb55bea9f3010596348199ce2f2727a1c708f91a19`; execution: `legacy-package-native-5eaf3b588715c5/texture_sampler_write_query_destroy_mip8/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-25285404369d69d45959f63788fc1172487c02d12b805150b6952692ae8840fb"></a>
-
-## upload_write_buffer_16mb_staged
-
-Observation: `25285404369d69d45959f63788fc1172487c02d12b805150b6952692ae8840fb`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_16mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-b26fddbc354811ca5745b1fb632c2baa1c964d716139281acecd9020ed50905a"></a>
-
-## upload_write_buffer_16mb_staged
-
-Observation: `b26fddbc354811ca5745b1fb632c2baa1c964d716139281acecd9020ed50905a`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_16mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-b89020ca3c4383779f7a955495f3f95e5fff93fc1e164acfee36bd517c8ea994"></a>
-
-## upload_write_buffer_1gb_staged
-
-Observation: `b89020ca3c4383779f7a955495f3f95e5fff93fc1e164acfee36bd517c8ea994`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_1gb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-ee217d2e379f0f6af321883e36302570998d12353310143388b2a4cd6b9c1e2c"></a>
-
-## upload_write_buffer_1gb_staged
-
-Observation: `ee217d2e379f0f6af321883e36302570998d12353310143388b2a4cd6b9c1e2c`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_1gb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-75d53787ceef37da50c41d4d7af783577b7168b3100129ca7d6da5175d86e41b"></a>
-
-## upload_write_buffer_1kb_staged
-
-Observation: `75d53787ceef37da50c41d4d7af783577b7168b3100129ca7d6da5175d86e41b`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_1kb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-ca424f991fbf51d80a7684a8440dbbadef3a25bf8bf24b9e6668732dec6c5453"></a>
-
-## upload_write_buffer_1kb_staged
-
-Observation: `ca424f991fbf51d80a7684a8440dbbadef3a25bf8bf24b9e6668732dec6c5453`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_1kb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-3f30e01e46032b4bb92eee8d88e69719cb9de37ff2f2cb1f6b8b37fcf2eddff6"></a>
-
-## upload_write_buffer_1mb_staged
-
-Observation: `3f30e01e46032b4bb92eee8d88e69719cb9de37ff2f2cb1f6b8b37fcf2eddff6`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_1mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-a7a86231a2b66d4275f940e9bc17e7db8dc03038a90d382db6d3662c03f6873b"></a>
-
-## upload_write_buffer_1mb_staged
-
-Observation: `a7a86231a2b66d4275f940e9bc17e7db8dc03038a90d382db6d3662c03f6873b`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_1mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-9c3d035d8a7451d90312f45355bd0e2f406108ad15791777597bffa8df844250"></a>
-
-## upload_write_buffer_256mb_staged
-
-Observation: `9c3d035d8a7451d90312f45355bd0e2f406108ad15791777597bffa8df844250`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_256mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-a029b7aa23d34fae2f2e2e93455fafd39ffdb984db9a3f481e68721e5badbacb"></a>
-
-## upload_write_buffer_256mb_staged
-
-Observation: `a029b7aa23d34fae2f2e2e93455fafd39ffdb984db9a3f481e68721e5badbacb`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_256mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-0dd89da89c089a2e2c35cd58914053599ecf389dbdedb9cd42fe7f956e57fd4f"></a>
-
-## upload_write_buffer_4gb_staged
-
-Observation: `0dd89da89c089a2e2c35cd58914053599ecf389dbdedb9cd42fe7f956e57fd4f`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_4gb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-34f4d55e5e33c00ae44a6dd60a347ab7ea88da1128582507f6fd4e2ad11e401d"></a>
-
-## upload_write_buffer_4gb_staged
-
-Observation: `34f4d55e5e33c00ae44a6dd60a347ab7ea88da1128582507f6fd4e2ad11e401d`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_4gb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-1c3427c0fab8ba2ade1b6b9112f8b1334a142ac7e9e675bcd6f7ab2bb025190f"></a>
-
-## upload_write_buffer_4mb_staged
-
-Observation: `1c3427c0fab8ba2ade1b6b9112f8b1334a142ac7e9e675bcd6f7ab2bb025190f`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_4mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-b2e3ac3a410301bfc6b9dadf6020ee90c19f4caebd07ef5cd8878c7427758f94"></a>
-
-## upload_write_buffer_4mb_staged
-
-Observation: `b2e3ac3a410301bfc6b9dadf6020ee90c19f4caebd07ef5cd8878c7427758f94`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_4mb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-0ae559475783562683716fc32e23ddad51a08e18fe8df55952bdfaab28d02502"></a>
-
-## upload_write_buffer_64kb_staged
-
-Observation: `0ae559475783562683716fc32e23ddad51a08e18fe8df55952bdfaab28d02502`; execution: `legacy-package-native-e811d6a7a41021/upload_write_buffer_64kb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-06T00:18:06.315245Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/release/20260706T001555Z/runtime.apple-metal.release.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-release-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
-- workloadContractHash is unknown; no receipt value was retained.
-
-<a id="row-170155bb04769b7805e5dc50ed1777622901ec37120f0fc1411958152347eda6"></a>
-
-## upload_write_buffer_64kb_staged
-
-Observation: `170155bb04769b7805e5dc50ed1777622901ec37120f0fc1411958152347eda6`; execution: `legacy-package-native-5eaf3b588715c5/upload_write_buffer_64kb_staged/summary`.
-
-Machine: mac.lan; OS: darwin; backend: metal; GPU: unknown; driver: 1.0.0.
-
-Build: doe unknown/09afd3d6e757; comparator: dawn_delegate unknown/09afd3d6e757.
-
-Executed: unknown; reported: 2026-07-05T16:42:37.392479Z; contract frozen: unknown.
-
-Correctness / fallback / acceptance / qualification: unknown / unknown / unknown / unqualified.
-
-Latest measured: `None`; latest qualified: `None`; verdict: reported-comparable.
-
-| Metric | Implementation / comparator | Unit | Ratio | Uncertainty | Samples | Outcome |
-| --- | --- | --- | --- | --- | --- | --- |
-
-Evidence:
-
-- [report](../../../bench/out/apple-metal/20260705T163736Z/runtime.apple-metal.compare.json): retained.
-- [publication-index](../../claim-index.json): retained.
-
-Limitations:
-
-- Historical claim/index labels are publication authority, not new qualification or current source evidence.
-- Historical publication entry native-strict-apple-metal; recorded claimState=claim-indexed. Publication authority stays in reports/claim-index.json.
-- comparator.sourceCommit is unknown.
-- contractFrozenAt is unknown; no receipt value was retained.
-- executedAt is unknown; no receipt value was retained.
-- implementation.sourceCommit is unknown.
-- machine.gpu is unknown.
 - workloadContractHash is unknown; no receipt value was retained.

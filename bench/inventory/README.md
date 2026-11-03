@@ -6,10 +6,11 @@ workloads or grants public claim authority.
 
 | Job | Owner |
 | --- | --- |
+| Build and verify generated outputs | `builder.py` |
 | Verify evidence and dispatch formats | `sources.py` |
 | Read each retained format | `adapters/native.py`, `phases.py`, `browser.py`, `workspace.py`, `comparisons.py` |
 | Separate clocks, identities and current selections | `model.py` |
-| Read v2/v3 and write compact v3 without loss | `storage.py` |
+| Read v2/v3/v4 and write compact v4 without loss | `storage.py` |
 | Generate the family overview and complete histories | `markdown.py` |
 | Filter and paginate the same observations/selections | `dashboard.py`, `dashboard.js` |
 | Dispatch, validate and check all generated outputs | `../tools/build_benchmark_cube.py` |
@@ -23,7 +24,8 @@ Run everything through `python3 bench/cli.py inventory`. The maintained
 [CURRENT](../../reports/benchmarks/CURRENT.md) is a family overview across five
 sections. Each family links to generated `families/<id>.md`, which preserves every
 aggregate and unavailable observation. Individual executions and failures stay in
-the index. Front-page outcome counts count metrics, not campaign wins; a
+the index. Family pages begin with a linked record table; expandable records keep
+every metric and reference shared evidence notes printed once. Front-page outcome counts count metrics, not campaign wins; a
 loss-only classification never implies that the remaining metrics won. Failed observation counts are separate from metric outcomes;
 aggregates and process records are not unique-run counts.
 
@@ -37,13 +39,15 @@ requested dashboard without running measurements.
 
 ## Storage migration
 
-The cube policy is version 4 (inventory policy version 2), declaring storage
-version 3 without changing classification thresholds or grouping. The index now
-has `schemaVersion: 3`. Exact shared values are interned in `tables`;
-row fields use typed references. A metric stores a template reference plus values
-in its template's explicit `valueKeys` order. Null and absent fields, false, zero,
-sample counts, units, uncertainty and floating-point values survive expansion.
-Interning changes storage, never row, machine, artifact or series identity.
+The cube policy is version 5 (inventory policy version 2), declaring storage
+version 4 without changing classification, grouping or any logical v2 field.
+V4 stores repeated observation context once and keeps each confidence interval
+with its metric values rather than cloning its whole definition. The existing
+exact-value interning owner handles both; there is no new ingestion or database.
+Null versus absent, false, zero, units, counts, uncertainty and numeric precision
+survive expansion. Context cannot overwrite row, execution, machine or artifact
+identity. Old expanded v2 and compact v3 indexes remain readable. Explicit
+`storage.compact(data, version=3)` still emits the historical format.
 
 ```python
 from bench.inventory.storage import load_inventory
@@ -51,14 +55,14 @@ inventory = load_inventory('reports/benchmarks/index.json')
 # inventory['rows'] has the unchanged logical v2 observation contract.
 ```
 
-Old v2 indexes remain readable. Existing Python import paths delegate to this
+All supported versions expand to the same logical v2 observations. Existing Python import paths delegate to this
 owner. External consumers needing expanded JSON can request it explicitly:
 
 ```sh
 python3 bench/cli.py inventory --expanded-index-out bench/out/inventory-v2.json
 ```
 
-Legacy cube v1 generation remains independent and unchanged. The v3 migration
+Legacy cube v1 generation remains independent and unchanged. The v4 migration
 is an intentional serialized-format change; historical measurements and current
 selection semantics are preserved exactly.
 
@@ -93,3 +97,25 @@ Focused dashboard UI control (installed Chrome, synthetic data only):
 python3 -m bench.tests.test_benchmark_inventory_views --dashboard-fixture bench/out/inventory-dashboard-fixture.html
 node bench/tests/inventory_dashboard_browser.mjs bench/out/inventory-dashboard-fixture.html /absolute/path/to/chrome
 ```
+
+## Losses and evidence gaps
+
+Generate every recorded metric loss, one per line, through the same builder:
+
+```sh
+python3 bench/cli.py inventory --losses-out bench/out/all-losses.md
+```
+
+This projection preserves provider labels, historical executions, units, scope,
+uncertainty and row identity. It never interprets an unknown ratio as a loss,
+turns a rejected timing window into a result, or counts phase losses as workload
+losses. The ignored export is a query result, not another maintained scoreboard.
+Use family records and their evidence notes for missing clocks, machine/build
+identity and raw samples. Historical omissions cannot be repaired by organization
+or backfilled from modification times. New captures use the provenance owner.
+
+Compatibility files in `bench/lib/` remain exercised facades or live legacy-cube
+implementations. The CLI dispatches to this package for registered inventory;
+legacy cube and tested-profile reporting keep their distinct contracts. Removal
+requires consumer migration, not a filename match. CI runs focused CPU tests and
+inventory freshness using `bench/requirements.txt`; GPU qualification is separate.

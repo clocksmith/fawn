@@ -1,0 +1,2 @@
+# Schema validation for the benchmark CLI and its focused CPU-only controls.
+jsonschema[format-nongpl]==4.25.1
