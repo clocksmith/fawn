@@ -139,9 +139,9 @@ native installation front door is the
 Optional integrations and qualification tooling support compilation and
 execution.
 
-1. `runtime/zig`
-   The core Doe runtime: WGSL pipeline, backend execution, runtime artifacts,
-   and shared-library outputs.
+1. `runtime/c` (with `runtime/zig` retained as the reference and explicit legacy route)
+   The native Doe runtime and compiler: WGSL pipeline, native objects, resource
+   admission, backend execution, runtime artifacts, and shared-library outputs.
 2. `packages/doe-gpu`
    The JavaScript package surface for Node.js, Bun, Deno, and browser-facing
    wrappers.
@@ -178,10 +178,11 @@ work that can be prepared and retained. The decomposition is:
    hashes and contracts.
 2. **Independent native runtime surface**
    The native WebGPU runtime path remains its own product surface:
-   `doe-zig-runtime`, `libwebgpu_doe`, the JavaScript package bindings, and
-   native/drop-in lanes. Chromium integration should prove this runtime in a
-   browser process model; it should not collapse the runtime product into a
-   browser fork.
+   `runtime/c` (`libwebgpu_doe` and the default CLI/compiler binaries, with
+   `runtime/zig` / `doe-zig-runtime` retained as the explicit legacy route), the
+   JavaScript package bindings, and native/drop-in lanes. Chromium integration
+   should prove this runtime in a browser process model; it should not collapse
+   the runtime product into a browser fork.
 3. **Evidence and trust discipline**
    Receipt-backed claims and compiler/proof discipline are one trust system.
    A claim against Tint, Dawn, or Chromium is valid only when the relevant
@@ -196,10 +197,12 @@ and binds specialized evidence through typed extensions; see
 
 ## Architectural law: Hexagonal inside, vertically integrated outside
 
-1. **Inside the Zig Runtime:** Decoupled, contract-governed, and acyclic
-   (`src/contracts/` -> `src/backend/ports/` -> `src/app/` -> leaf backends).
-   No browser-specific globals, no direct cross-backend imports.
-2. **Outside the Zig Runtime:** Applications select `DoeRuntime` through the
+1. **Inside the Native Runtime:** Decoupled, contract-governed, and acyclic
+   (`common`/`resources`/`compiler`/`native` -> leaf `backends` in `runtime/c`;
+   `src/contracts/` -> `src/backend/ports/` -> `src/app/` -> leaf backends in the
+   retained `runtime/zig` reference). No browser-specific globals, no direct
+   cross-backend imports.
+2. **Outside the Native Runtime:** Applications select `DoeRuntime` through the
    package or native embedding. `DoeLab` tests improvements offline and
    `DoeProof` records evidence. Compiler users may adopt WGSL processing and
    target lowering independently. Browser replacement is optional and deferred,
@@ -212,7 +215,7 @@ and binds specialized evidence through typed extensions; see
 
 The important boundary distinctions are:
 
-- `runtime/zig` is the real runtime implementation
+- `runtime/c` is the default-selected native runtime and compiler implementation; `runtime/zig` retains the reference and explicit legacy runtime route
 - `runtime/bridge/onnxruntime-ep` retains a historical repo-only plugin experiment and routes to the qualified existing-provider ONNX Vulkan integration
 - `doe-gpu` is the package surface over that runtime
 - `doe-gpu/browser` is a browser wrapper, not the Doe runtime running inside the browser
@@ -398,7 +401,7 @@ The optional `doe-gpu/compute-program` contract binds inline WGSL, fixed buffer
 sizes and roles, ordered dispatches, and a readback output. Preparation retains
 private allocations, shaders, pipelines, and bindings. Explicit `gpu-recorded`
 execution owns compiled Vulkan commands and their pipeline and descriptor
-lifetimes. `native-recorded` retains host commands and replays them through Zig;
+lifetimes. `native-recorded` retains host commands and replays them through the native runtime (`runtime/c` by default; `runtime/zig` on the legacy route);
 `webgpu` retains resources and encodes each invocation as an explicit control.
 GPU recordings validate native buffer identities before submission and own
 private descriptor state. A device-local registry shares live Vulkan compute
@@ -507,7 +510,7 @@ The design rule is:
 There are two distinct browser-related paths:
 
 1. `packages/doe-gpu/browser`
-   A JS shim that forwards to the browser's own WebGPU objects. No Doe Zig
+   A JS shim that forwards to the browser's own WebGPU objects. No Doe native
    runtime executes there.
 2. `browser/chromium`
    The Track A lane that aims to make browser `navigator.gpu` run on Doe
