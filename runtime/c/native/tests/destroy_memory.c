@@ -68,9 +68,12 @@ int main(void)
     const uint64_t leaked = (uint64_t)(CYCLES - WARMUP) * bytes_per_cycle;
     printf("destroy footprint: base %.1f MiB, end %.1f MiB, growth %.1f MiB over %u cycles (%.1f MiB if retained)\n",
         base / 1048576.0, end / 1048576.0, growth / 1048576.0, CYCLES - WARMUP, leaked / 1048576.0);
-    /* The driver reclaims freed allocations asynchronously, so a few cycles can
-     * still be counted (observed 0-73 MiB); retaining either the textures or
-     * the buffers alone would exceed half the retained total. */
+    /* The driver reclaims freed allocations asynchronously, so recent cycles can
+     * still be counted. The backlog depends on submission pace: Apple M3 showed
+     * 0-73 MiB while buffer creation CPU-cleared its contents, 139-160 MiB
+     * without that clear (Dawn's rate and level), and the same level either
+     * way once each cycle has equal added CPU work. Retaining either the
+     * textures or the buffers alone would exceed half the retained total. */
     assert(growth * 4 < leaked);
 
     /* A destroyed texture's live view, and the destroyed buffer, reject use. */

@@ -791,7 +791,13 @@ check-destroy-memory: $(BUILD)/destroy-memory
 	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/destroy-memory
 check-lazy-texture-init: $(BUILD)/lazy-texture-init
 	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/lazy-texture-init
-PHYSICAL_CLIENTS += destroy-memory lazy-texture-init
+# Fresh buffers read zero after dirty same-size reuse, without creation writes.
+$(BUILD)/buffer-zero-init: tests/buffer_zero_init.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-buffer-zero-init
+check-buffer-zero-init: $(BUILD)/buffer-zero-init
+	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/buffer-zero-init
+PHYSICAL_CLIENTS += destroy-memory lazy-texture-init buffer-zero-init
 endif
 
 # CPU call-ledger boundary; no hardware adapter or Metal GPU execution.

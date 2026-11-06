@@ -30,7 +30,9 @@ doe_mtl_status doe_mtl_buffer_create(doe_mtl_context *context, uint64_t size,
         if (contents == NULL) {
             status = doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "buffer contents", error);
         } else {
-            memset(contents, 0, (size_t)size);
+            /* newBufferWithLength:options: returns zero-filled memory, so
+             * creation writes nothing; native/tests/buffer_zero_init.c checks
+             * fresh buffers after dirty same-size reuse. */
             buffer->initialized = true;
         }
     }

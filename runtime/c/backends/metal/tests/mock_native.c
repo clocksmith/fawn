@@ -150,9 +150,9 @@ static doe_mtl_status buffer_create(void *userdata, void *device, size_t length,
     buffer = object_create(mock, MOCK_KIND_BUFFER);
     buffer->length = length;
     if (memory == DOE_MTL_SHARED) {
-        buffer->bytes = malloc(length);
+        /* newBufferWithLength:options: returns zero-filled memory. */
+        buffer->bytes = calloc(1, length);
         assert(buffer->bytes != NULL);
-        memset(buffer->bytes, 0xa5, length);
     }
     *out = buffer;
     return doe_mtl_fail(DOE_MTL_OK, "mock buffer", error);
