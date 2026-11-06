@@ -75,9 +75,13 @@ GPU completion or authorize early reuse. Device loss and submission failures
 must reach the caller; this sequence's successful path is not a claim that every
 failure or backend has passed physical acceptance.
 
-Source owners: [command references](../runtime/zig/src/native/command/doe_command_references.zig),
+Source owners in the default C runtime: [native frontend ownership and execution path](../runtime/c/native/README.md#actual-ownership-and-execution-path),
+[resource and command owner](../runtime/c/resources/README.md#owner-and-use), and
+[Vulkan backend ownership](../runtime/c/backends/vulkan/README.md#ownership-and-unsupported-work).
+The retained Zig reference, an explicit legacy route rather than the default, keeps
+the same sequence in [command references](../runtime/zig/src/native/command/doe_command_references.zig),
 [queue dispatch](../runtime/zig/src/native/queue/doe_queue_submit_native.zig),
-[Vulkan command submission](../runtime/zig/src/native/queue/doe_queue_submit_vulkan.zig),
+[Vulkan command submission](../runtime/zig/src/native/queue/doe_queue_submit_vulkan.zig)
 and [queue lifecycle](../runtime/zig/src/native/queue/doe_queue_lifecycle.zig).
 
 ### Optional prepared-program resource lifetime
