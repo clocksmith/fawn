@@ -94,6 +94,10 @@ typedef struct doe_mtl_objc {
     void *metal_library;
     void *(*get_class)(const char *);
     void *(*selector)(const char *);
+    /* The runtime's autorelease-pool entry points (what @autoreleasepool
+     * compiles to): push returns the token that pop drains back to. */
+    void *(*pool_push)(void);
+    void (*pool_pop)(void *);
     void *(*create_device)(void);
     void *(*copy_devices)(void); /* Optional MTLCopyAllDevices (macOS). */
     /* Typed views of the same native dispatcher, separately callable at the
@@ -140,7 +144,6 @@ typedef struct doe_mtl_objc {
     void *upload_image, *read_image, *copy_image, *set_texture, *set_sampler;
     void *supports_family, *supports_bc, *supports_samples, *supports_depth24, *supports_float_filter;
     void *read_write_texture_support;
-    void *pool_class;
     void *string_class;
     void *responds;
     void *new_object;
@@ -149,7 +152,6 @@ typedef struct doe_mtl_objc {
     void *release;
     void *count;
     void *first_object;
-    void *drain;
     void *new_queue;
     void *new_buffer;
     void *contents;

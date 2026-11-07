@@ -52,22 +52,21 @@ static doe_mtl_status block(wait_fixture *fixture, uint64_t timeout)
  * that reports once to the caller's notify/data; nothing runs at registration. */
 typedef struct handler_fixture {
     doe_mtl_objc runtime;
-    int command, selector, pool_class, new_object, drain, pool;
+    int command, selector, pool;
     unsigned registrations, notified, pools, drains;
 #if defined(__BLOCKS__)
     void (^handler)(void *);
 #endif
 } handler_fixture;
 static handler_fixture *handlers;
-static void *pool_new(void *receiver, void *selector)
+static void *pool_push(void)
 {
-    assert(receiver == &handlers->pool_class && selector == &handlers->new_object);
     ++handlers->pools;
     return &handlers->pool;
 }
-static void pool_drain(void *receiver, void *selector)
+static void pool_pop(void *pool)
 {
-    assert(receiver == &handlers->pool && selector == &handlers->drain);
+    assert(pool == &handlers->pool);
     ++handlers->drains;
 }
 #if defined(__BLOCKS__)
@@ -84,11 +83,8 @@ static void completed_handler(void)
 {
     handler_fixture fixture = {0};
     handlers = &fixture;
-    fixture.runtime.pool_class = &fixture.pool_class;
-    fixture.runtime.new_object = &fixture.new_object;
-    fixture.runtime.drain = &fixture.drain;
-    fixture.runtime.object_call = pool_new;
-    fixture.runtime.void_call = pool_drain;
+    fixture.runtime.pool_push = pool_push;
+    fixture.runtime.pool_pop = pool_pop;
     fixture.runtime.add_completed_handler = &fixture.selector;
 #if defined(__BLOCKS__)
     fixture.runtime.handler_message = (doe_objc_message)add_handler;

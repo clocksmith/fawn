@@ -96,8 +96,9 @@ static void *get_class(const char *name) {
     for (i = 0; i < 5; ++i) if (strcmp(name, names[i]) == 0) return &active->classes[i];
     assert(false); return NULL;
 }
+static void *pool_push(void) { active->pools++; return &active->pool; }
+static void pool_pop(void *pool) { assert(pool == &active->pool); active->drains++; }
 static void *object_call(void *object, void *sel) {
-    if (object == &active->pool) { assert(named(sel, "new")); active->pools++; return &active->pool; }
     if (object == &active->classes[2]) {
         assert(named(sel, "new")); return active->no_descriptor ? NULL : &active->descriptor;
     }
@@ -108,8 +109,7 @@ static void *object_call(void *object, void *sel) {
     assert(named(sel, "stencilAttachment")); return &active->stencil;
 }
 static void void_call(void *object, void *sel) {
-    if (named(sel, "drain")) { assert(object == &active->pool); active->drains++; }
-    else if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
+    if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
     else { assert(object == &active->encoder && named(sel, "endEncoding")); active->ends++; }
 }
 static void *indexed(void *object, void *sel, size_t index) {
@@ -287,8 +287,8 @@ static void initialize(fixture *f) {
     r->queries.set_fragment_end = selector("setEndOfFragmentSampleIndex:");
     for (i = 0; i < 8; ++i) f->attachments[i].index = i;
     f->depth.index = 8; f->stencil.index = 9;
-    r->pool_class = &f->pool; r->new_object = selector("new"); r->release = selector("release");
-    r->drain = selector("drain"); r->end_encoding = selector("endEncoding");
+    r->pool_push = pool_push; r->pool_pop = pool_pop; r->new_object = selector("new");
+    r->release = selector("release"); r->end_encoding = selector("endEncoding");
     r->object_call = object_call; r->void_call = void_call; r->named_call = named_call;
     r->set_size_call = set_size; r->set_object_call = set_object; r->bind_buffer_call = bind_buffer;
     r->bind_bytes_call = bind_bytes; r->bind_image_call = bind_image;

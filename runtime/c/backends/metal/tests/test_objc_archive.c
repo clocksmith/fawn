@@ -30,12 +30,17 @@ static object *make(kind type, bool owned) {
     return result;
 }
 static void *name(const char *value) { return (void *)value; }
+static void *pool_push(void) { return make(POOL, true); }
+static void pool_pop(void *pool) {
+    object *o = pool;
+    assert(o->type == POOL && o->references && active->live);
+    --o->references; --active->live;
+}
 static void *object_call(void *receiver, void *sel) {
     if (selector(sel, "retain")) {
         object *o = receiver; ++o->references; ++active->live; return receiver;
     }
     if (selector(sel, "new")) {
-        if (!strcmp(receiver, "Pool")) return make(POOL, true);
         assert(!strcmp(receiver, "MTLBinaryArchiveDescriptor") || !strcmp(receiver, "MTLComputePipelineDescriptor"));
         return make(DESCRIPTOR, true);
     }
@@ -46,7 +51,7 @@ static void *object_call(void *receiver, void *sel) {
 }
 static void void_call(void *receiver, void *sel) {
     object *o = receiver;
-    assert(selector(sel, "release") || (selector(sel, "drain") && o->type == POOL));
+    assert(selector(sel, "release"));
     assert(o->references && active->live);
     --o->references; --active->live;
 }
@@ -147,9 +152,9 @@ static void initialize(fixture *f) {
     memset(f, 0, sizeof(*f)); active = f;
     doe_mtl_objc *r = &f->runtime;
     r->get_class = name; r->selector = name;
-    r->pool_class = name("Pool"); r->string_class = name("NSString");
+    r->pool_push = pool_push; r->pool_pop = pool_pop; r->string_class = name("NSString");
     r->new_object = name("new"); r->alloc = name("alloc"); r->retain = name("retain");
-    r->release = name("release"); r->drain = name("drain"); r->responds = name("respondsToSelector:");
+    r->release = name("release"); r->responds = name("respondsToSelector:");
     r->string_init = name("initWithBytes:length:encoding:"); r->utf8 = name("UTF8String");
     r->localized_description = name("localizedDescription"); r->code = name("code");
     r->new_library = name("newLibraryWithSource:options:error:"); r->new_function = name("newFunctionWithName:");

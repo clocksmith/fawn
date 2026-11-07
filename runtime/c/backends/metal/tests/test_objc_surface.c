@@ -8,7 +8,7 @@ typedef struct fixture fixture;
 typedef struct object { fixture *owner; } object;
 struct fixture {
     doe_mtl_objc runtime;
-    object pool_class, pool, layer, device, drawable, texture, command;
+    object pool, layer, device, drawable, texture, command;
     unsigned pools, drains, retains, configured, presentations;
     bool available, missing_selector, wrong_width;
     size_t status;
@@ -16,18 +16,15 @@ struct fixture {
 static void *selector(const char *name) { return (void *)name; }
 static bool is(void *token, const char *name) { return !strcmp(token, name); }
 static fixture *owner(void *receiver) { assert(receiver); return ((object *)receiver)->owner; }
+static fixture *active;
+static void *pool_push(void) { ++active->pools; return &active->pool; }
+static void pool_pop(void *pool) { assert(pool == &active->pool); ++active->drains; }
 static void *object_call(void *receiver, void *token) {
     fixture *f = owner(receiver);
-    if (is(token, "new")) { assert(receiver == &f->pool_class); ++f->pools; return &f->pool; }
     if (is(token, "retain")) { ++f->retains; return receiver; }
     if (is(token, "nextDrawable")) { assert(receiver == &f->layer); return f->available ? &f->drawable : NULL; }
     assert(is(token, "texture") && receiver == &f->drawable);
     return &f->texture;
-}
-static void void_call(void *receiver, void *token) {
-    fixture *f = owner(receiver);
-    assert(is(token, "drain") && receiver == &f->pool);
-    ++f->drains;
 }
 static doe_objc_bool responds(void *receiver, void *token, void *method) {
     fixture *f = owner(receiver);
@@ -64,11 +61,12 @@ static size_t size_call(void *receiver, void *token) {
 }
 int main(void) {
     fixture f = {0};
-    f.pool_class.owner = f.pool.owner = f.layer.owner = f.device.owner = f.drawable.owner =
+    active = &f;
+    f.pool.owner = f.layer.owner = f.device.owner = f.drawable.owner =
         f.texture.owner = f.command.owner = &f;
-    f.runtime = (doe_mtl_objc){.selector=selector,.pool_class=&f.pool_class,.new_object=selector("new"),
-        .retain=selector("retain"),.drain=selector("drain"),.responds=selector("respondsToSelector:"),
-        .status=selector("status"),.object_call=object_call,.void_call=void_call,.responds_call=responds,
+    f.runtime = (doe_mtl_objc){.selector=selector,.pool_push=pool_push,.pool_pop=pool_pop,
+        .retain=selector("retain"),.responds=selector("respondsToSelector:"),
+        .status=selector("status"),.object_call=object_call,.responds_call=responds,
         .set_object_call=set_object,.set_size_call=set_size,.set_bool_call=set_bool,
         .set_drawable_size_call=set_dimensions,.size_call=size_call};
     doe_mtl_surface_desc desc = {8,4,DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_COPY_SRC,DOE_MTL_BGRA8_UNORM,true,true};

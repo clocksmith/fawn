@@ -11,7 +11,7 @@ typedef struct call_object {
 } call_object;
 
 typedef enum selector_index {
-    SELECT_NEW, SELECT_ALLOC, SELECT_RETAIN, SELECT_RELEASE, SELECT_DRAIN,
+    SELECT_ALLOC, SELECT_RETAIN, SELECT_RELEASE,
     SELECT_UTF8, SELECT_STRING_INIT, SELECT_NEW_LIBRARY, SELECT_NEW_FUNCTION,
     SELECT_NEW_PIPELINE, SELECT_PIPELINE_MAX, SELECT_DESCRIPTION, SELECT_CODE,
     SELECT_NEW_COMMAND, SELECT_BLIT_ENCODER, SELECT_COMPUTE_ENCODER,
@@ -22,7 +22,7 @@ typedef enum selector_index {
 struct call_fixture {
     doe_mtl_objc runtime;
     unsigned selector[SELECT_COUNT];
-    call_object pool_class, string_class, pool, device, queue, command;
+    call_object string_class, pool, device, queue, command;
     call_object source, name, library, function, pipeline, encoder, source_buffer,
         destination_buffer, error, description;
     unsigned pools, drains, strings, releases, retain_calls, ends, pipeline_sets;
@@ -45,15 +45,22 @@ static call_fixture *owner(void *object) {
     return ((call_object *)object)->fixture;
 }
 
+static call_fixture *active;
+
+static void *pool_push(void) {
+    if (active->fail_pool) return NULL;
+    active->pools++;
+    return &active->pool;
+}
+
+static void pool_pop(void *pool) {
+    assert(pool == &active->pool);
+    active->drains++;
+}
+
 static void *object_call(void *receiver, void *selector) {
     call_fixture *fixture = owner(receiver);
     doe_mtl_objc *runtime = &fixture->runtime;
-    if (selector == runtime->new_object) {
-        assert(receiver == &fixture->pool_class);
-        if (fixture->fail_pool) return NULL;
-        fixture->pools++;
-        return &fixture->pool;
-    }
     if (selector == runtime->alloc) {
         call_object *result;
         assert(receiver == &fixture->string_class);
@@ -88,10 +95,7 @@ static void *object_call(void *receiver, void *selector) {
 static void void_call(void *receiver, void *selector) {
     call_fixture *fixture = owner(receiver);
     doe_mtl_objc *runtime = &fixture->runtime;
-    if (selector == runtime->drain) {
-        assert(receiver == &fixture->pool);
-        fixture->drains++;
-    } else if (selector == runtime->release) {
+    if (selector == runtime->release) {
         call_object *object = receiver;
         assert(object->references > 0);
         object->references--;
@@ -256,7 +260,7 @@ static void barrier_call(void *receiver, void *selector, size_t scope) {
 
 static void fixture_init(call_fixture *fixture) {
     doe_mtl_objc *runtime = &fixture->runtime;
-    call_object *objects[] = {&fixture->pool_class, &fixture->string_class, &fixture->pool,
+    call_object *objects[] = {&fixture->string_class, &fixture->pool,
         &fixture->device, &fixture->queue, &fixture->command, &fixture->source,
         &fixture->name, &fixture->library, &fixture->function, &fixture->pipeline,
         &fixture->encoder, &fixture->source_buffer, &fixture->destination_buffer,
@@ -264,13 +268,13 @@ static void fixture_init(call_fixture *fixture) {
     size_t i;
     memset(fixture, 0, sizeof(*fixture));
     for (i = 0; i < sizeof(objects) / sizeof(objects[0]); ++i) objects[i]->fixture = fixture;
-    runtime->pool_class = &fixture->pool_class;
+    active = fixture;
+    runtime->pool_push = pool_push;
+    runtime->pool_pop = pool_pop;
     runtime->string_class = &fixture->string_class;
-    runtime->new_object = &fixture->selector[SELECT_NEW];
     runtime->alloc = &fixture->selector[SELECT_ALLOC];
     runtime->retain = &fixture->selector[SELECT_RETAIN];
     runtime->release = &fixture->selector[SELECT_RELEASE];
-    runtime->drain = &fixture->selector[SELECT_DRAIN];
     runtime->utf8 = &fixture->selector[SELECT_UTF8];
     runtime->string_init = &fixture->selector[SELECT_STRING_INIT];
     runtime->new_library = &fixture->selector[SELECT_NEW_LIBRARY];

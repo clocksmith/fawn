@@ -33,13 +33,14 @@ static void *get_class(const char *name) {
     return &active->sampler_class;
 }
 static void *selector(const char *name) { return (void *)name; }
+static void *pool_push(void) {
+    if (active->no_pool) return NULL;
+    active->pools++;
+    return &active->pool;
+}
+static void pool_pop(void *pool) { assert(pool == &active->pool); active->drains++; }
 static void *object_call(void *object, void *sel) {
     fixture *f = active;
-    if (object == &f->pool && named(sel, "new")) {
-        if (f->no_pool) return NULL;
-        f->pools++;
-        return &f->pool;
-    }
     if (object == &f->texture_class || object == &f->sampler_class) {
         assert(named(sel, "new"));
         return f->no_descriptor ? NULL : &f->descriptor;
@@ -48,8 +49,7 @@ static void *object_call(void *object, void *sel) {
     return f->no_encoder ? NULL : &f->encoder;
 }
 static void void_call(void *object, void *sel) {
-    if (named(sel, "drain")) { assert(object == &active->pool); active->drains++; }
-    else if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
+    if (named(sel, "release")) { assert(object == &active->descriptor); active->releases++; }
     else { assert(object == &active->encoder && named(sel, "endEncoding")); active->ends++; }
 }
 static void set_size(void *object, void *sel, size_t value) {
@@ -166,8 +166,8 @@ static void initialize(fixture *f) {
     doe_mtl_objc *r;
     memset(f, 0, sizeof(*f)); active = f; r = &f->runtime;
     r->get_class = get_class; r->selector = selector;
-    r->pool_class = &f->pool; r->new_object = selector("new");
-    r->release = selector("release"); r->drain = selector("drain"); r->responds = selector("respondsToSelector:");
+    r->pool_push = pool_push; r->pool_pop = pool_pop; r->new_object = selector("new");
+    r->release = selector("release"); r->responds = selector("respondsToSelector:");
     r->blit_encoder = selector("blitCommandEncoder"); r->compute_encoder = selector("computeCommandEncoder");
     r->end_encoding = selector("endEncoding"); r->set_pipeline = selector("setComputePipelineState:");
     r->set_buffer = selector("setBuffer:offset:atIndex:"); r->dispatch = selector("dispatchThreadgroups:threadsPerThreadgroup:");

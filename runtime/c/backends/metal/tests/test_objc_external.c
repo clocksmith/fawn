@@ -24,6 +24,18 @@ static fixture *owner(void *raw, unsigned kind)
     assert(handle && handle->kind == kind);
     return handle->owner;
 }
+static fixture *active;
+static void *pool_push(void)
+{
+    if (active->no_pool) return NULL;
+    ++active->pools;
+    return &active->objects[POOL];
+}
+static void pool_pop(void *pool)
+{
+    assert(pool == &active->objects[POOL]);
+    ++active->drained;
+}
 static void *object_call(void *raw, void *selector)
 {
     object *handle = raw;
@@ -34,11 +46,6 @@ static void *object_call(void *raw, void *selector)
         return raw;
     }
     assert(named(selector, "new"));
-    if (handle->kind == POOL) {
-        if (f->no_pool) return NULL;
-        ++f->pools;
-        return &f->objects[POOL];
-    }
     assert(handle->kind == CLASS);
     if (f->no_descriptor) return NULL;
     ++f->descriptors;
@@ -48,14 +55,9 @@ static void void_call(void *raw, void *selector)
 {
     object *handle = raw;
     fixture *f = handle->owner;
-    if (named(selector, "drain")) {
-        assert(handle->kind == POOL);
-        ++f->drained;
-    } else {
-        assert(named(selector, "release"));
-        assert(handle->kind == DESCRIPTOR || handle->kind == PLANE0 || handle->kind == PLANE1);
-        if (handle->kind != DESCRIPTOR) ++f->released_planes;
-    }
+    assert(named(selector, "release"));
+    assert(handle->kind == DESCRIPTOR || handle->kind == PLANE0 || handle->kind == PLANE1);
+    if (handle->kind != DESCRIPTOR) ++f->released_planes;
 }
 static void set_size(void *raw, void *selector, size_t value)
 {
@@ -153,8 +155,9 @@ static void initialize(fixture *f)
 {
     *f = (fixture){.expected_usage=1,.count=2,.widths={16,8},.heights={8,4},.format=0x34323076};
     for (unsigned i = 0; i < OBJECTS; ++i) f->objects[i] = (object){f,i};
-    f->runtime = (doe_mtl_objc){.pool_class=&f->objects[POOL],.texture_class=&f->objects[CLASS],
-        .new_object="new",.retain="retain",.release="release",.drain="drain",.responds="responds",
+    active = f;
+    f->runtime = (doe_mtl_objc){.pool_push=pool_push,.pool_pop=pool_pop,.texture_class=&f->objects[CLASS],
+        .new_object="new",.retain="retain",.release="release",.responds="responds",
         .set_type="type",.set_format="format",.set_width="width",.set_height="height",
         .set_depth="depth",.set_layers="layers",.set_mips="mips",.set_samples="samples",
         .set_storage="storage",.set_usage="usage",.object_call=object_call,.void_call=void_call,

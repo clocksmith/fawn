@@ -8,7 +8,7 @@ typedef struct object { const char *kind; unsigned references, index; } object;
 typedef struct setting { object *receiver; const char *selector; uint64_t value; void *object_value; } setting;
 typedef struct fixture {
     doe_mtl_objc runtime;
-    object pool_class, string_class, classes[5], pool, device, error, description;
+    object string_class, classes[5], pool, device, error, description;
     object objects[128];
     setting settings[160];
     unsigned object_count, setting_count, pools, drains, libraries, functions, strings, stage;
@@ -38,11 +38,10 @@ static void *get_class(const char *name) {
     }
     assert(false); return NULL;
 }
+static void *pool_push(void) { active->pools++; return &active->pool; }
+static void pool_pop(void *pool) { assert(pool == &active->pool); active->drains++; }
 static void *object_call(void *receiver, void *sel) {
     object *value = receiver;
-    if (receiver == &active->pool_class) {
-        assert(named(sel, "new")); active->pools++; return &active->pool;
-    }
     if (receiver == &active->string_class) {
         assert(named(sel, "alloc")); active->strings++; return make_object("string", true);
     }
@@ -56,12 +55,9 @@ static void *object_call(void *receiver, void *sel) {
     return make_object(sel, false);
 }
 static void void_call(void *receiver, void *sel) {
-    if (named(sel, "drain")) { assert(receiver == &active->pool); active->drains++; }
-    else {
-        object *value = receiver;
-        assert(named(sel, "release") && value->references == 1);
-        value->references--;
-    }
+    object *value = receiver;
+    assert(named(sel, "release") && value->references == 1);
+    value->references--;
 }
 static void *string_init(void *receiver, void *sel, const void *bytes, size_t length, size_t encoding) {
     unsigned index = active->strings - 1;
@@ -148,8 +144,8 @@ static void initialize(fixture *f) {
     memset(f, 0, sizeof(*f)); active = f; r = &f->runtime;
     r->get_class = get_class; r->selector = selector;
     assert(doe_mtl_objc_load_render(r, NULL));
-    r->pool_class = &f->pool_class; r->string_class = &f->string_class;
-    r->new_object = selector("new"); r->alloc = selector("alloc"); r->release = selector("release"); r->drain = selector("drain");
+    r->pool_push = pool_push; r->pool_pop = pool_pop; r->string_class = &f->string_class;
+    r->new_object = selector("new"); r->alloc = selector("alloc"); r->release = selector("release");
     r->string_init = selector("initWithBytes:length:encoding:"); r->new_library = selector("newLibraryWithSource:options:error:");
     r->new_function = selector("newFunctionWithName:"); r->set_format = selector("setPixelFormat:");
     r->localized_description = selector("localizedDescription"); r->code = selector("code"); r->utf8 = selector("UTF8String");

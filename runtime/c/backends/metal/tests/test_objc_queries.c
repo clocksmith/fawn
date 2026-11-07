@@ -8,7 +8,7 @@ typedef struct fixture fixture;
 typedef struct object { fixture *fixture; } object;
 struct fixture {
     doe_mtl_objc runtime;
-    object pool_class, pool, device, descriptor_class, descriptor, sets, set, set_name,
+    object pool, device, descriptor_class, descriptor, sets, set, set_name,
         counters, counter, counter_name, common_set, common_counter, samples,
         command, encoder, destination, compute_class, compute_descriptor, attachments, attachment,
         error, description, event;
@@ -23,12 +23,18 @@ struct fixture {
     size_t count, storage, sample_index, resolve_first, resolve_count, destination_offset, begin, end;
 };
 static fixture *owner(void *receiver) { assert(receiver != NULL); return ((object *)receiver)->fixture; }
+static fixture *active;
+static void *pool_push(void) {
+    if (active->fail_pool) return NULL;
+    active->pools++;
+    return &active->pool;
+}
+static void pool_pop(void *pool) { assert(pool == &active->pool); active->drains++; }
 static void *object_call(void *receiver, void *selector) {
     fixture *f = owner(receiver);
     doe_mtl_objc *r = &f->runtime;
     doe_mtl_objc_queries *q = &r->queries;
     if (selector == r->new_object) {
-        if (receiver == &f->pool_class) { if (f->fail_pool) return NULL; f->pools++; return &f->pool; }
         if (f->fail_descriptor) return NULL;
         if (receiver == &f->descriptor_class) return &f->descriptor;
         assert(receiver == &f->compute_class);
@@ -57,8 +63,7 @@ static void *object_call(void *receiver, void *selector) {
 }
 static void void_call(void *receiver, void *selector) {
     fixture *f = owner(receiver);
-    if (selector == f->runtime.drain) { assert(receiver == &f->pool); f->drains++; }
-    else if (selector == f->runtime.release) { assert(receiver == &f->descriptor || receiver == &f->compute_descriptor); f->releases++; }
+    if (selector == f->runtime.release) { assert(receiver == &f->descriptor || receiver == &f->compute_descriptor); f->releases++; }
     else {
         assert(selector == f->runtime.end_encoding && receiver == &f->encoder);
         f->ends++;
@@ -188,21 +193,22 @@ static void dispatch_call(void *receiver, void *selector, doe_mtl_size grid, doe
 static void init(fixture *f) {
     doe_mtl_objc *r = &f->runtime;
     doe_mtl_objc_queries *q = &r->queries;
-    object *objects[] = {&f->pool_class, &f->pool, &f->device, &f->descriptor_class, &f->descriptor,
+    object *objects[] = {&f->pool, &f->device, &f->descriptor_class, &f->descriptor,
         &f->sets, &f->set, &f->set_name, &f->counters, &f->counter, &f->counter_name, &f->common_set,
         &f->common_counter, &f->samples, &f->command, &f->encoder, &f->destination,
         &f->compute_class, &f->compute_descriptor, &f->attachments, &f->attachment, &f->error, &f->description, &f->event};
     size_t i;
     memset(f, 0, sizeof(*f));
     for (i = 0; i < sizeof(objects) / sizeof(objects[0]); ++i) objects[i]->fixture = f;
-    r->pool_class = &f->pool_class;
+    active = f;
+    r->pool_push = pool_push;
+    r->pool_pop = pool_pop;
     q->descriptor_class = &f->descriptor_class;
     q->compute_pass_class = &f->compute_class;
     q->blit_pass_class = &f->compute_class;
     q->common_timestamp_set = &f->common_set;
     q->common_timestamp = &f->common_counter;
     r->new_object = &f->tokens[0];
-    r->drain = &f->tokens[1];
     r->release = &f->tokens[2];
     r->responds = &f->tokens[3];
     r->name = &f->tokens[4];

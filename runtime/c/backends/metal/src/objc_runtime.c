@@ -17,11 +17,11 @@ size_t doe_mtl_objc_size(doe_mtl_objc *runtime, void *object, void *selector) {
 }
 
 void *doe_mtl_objc_pool(doe_mtl_objc *runtime) {
-    return doe_mtl_objc_object(runtime, runtime->pool_class, runtime->new_object);
+    return runtime->pool_push();
 }
 
 void doe_mtl_objc_drain(doe_mtl_objc *runtime, void *pool) {
-    if (pool != NULL) doe_mtl_objc_void(runtime, pool, runtime->drain);
+    if (pool != NULL) runtime->pool_pop(pool);
 }
 
 void doe_mtl_objc_release(void *userdata, void *object) {
@@ -216,7 +216,6 @@ static bool load_function(void *library, const char *name, void *out, size_t siz
 }
 
 static bool load_selectors(doe_mtl_objc *runtime) {
-    runtime->pool_class = runtime->get_class("NSAutoreleasePool");
     runtime->string_class = runtime->get_class("NSString");
     runtime->responds = runtime->selector("respondsToSelector:");
     runtime->new_object = runtime->selector("new");
@@ -225,7 +224,6 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->release = runtime->selector("release");
     runtime->count = runtime->selector("count");
     runtime->first_object = runtime->selector("firstObject");
-    runtime->drain = runtime->selector("drain");
     runtime->new_queue = runtime->selector("newCommandQueue");
     runtime->new_buffer = runtime->selector("newBufferWithLength:options:");
     runtime->contents = runtime->selector("contents");
@@ -259,9 +257,9 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->wait = runtime->selector("waitUntilCompleted");
     runtime->status = runtime->selector("status");
     runtime->error = runtime->selector("error");
-    return runtime->pool_class != NULL && runtime->string_class != NULL && runtime->responds != NULL &&
+    return runtime->string_class != NULL && runtime->responds != NULL &&
         runtime->new_object != NULL && runtime->alloc != NULL &&
-        runtime->retain != NULL && runtime->release != NULL && runtime->drain != NULL &&
+        runtime->retain != NULL && runtime->release != NULL &&
         runtime->new_queue != NULL && runtime->new_buffer != NULL &&
         runtime->contents != NULL && runtime->max_buffer_length != NULL &&
         runtime->max_threads != NULL && runtime->max_threadgroup_memory != NULL &&
@@ -297,6 +295,10 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
         !load_function(runtime->objc_library, "sel_registerName", &runtime->selector,
             sizeof(runtime->selector)) ||
         !load_function(runtime->objc_library, "objc_msgSend", &message, sizeof(message)) ||
+        !load_function(runtime->objc_library, "objc_autoreleasePoolPush", &runtime->pool_push,
+            sizeof(runtime->pool_push)) ||
+        !load_function(runtime->objc_library, "objc_autoreleasePoolPop", &runtime->pool_pop,
+            sizeof(runtime->pool_pop)) ||
         !load_function(runtime->metal_library, "MTLCreateSystemDefaultDevice",
             &runtime->create_device, sizeof(runtime->create_device))) goto unavailable;
     /* Optional: absent enumeration keeps MTLCreateSystemDefaultDevice. */
