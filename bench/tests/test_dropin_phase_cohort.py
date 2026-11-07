@@ -274,6 +274,17 @@ class CompleteMetricTest(unittest.TestCase):
         self.assertAlmostEqual(metrics["complete"], 7.75)
         self.assertNotIn("warm.uploadDoe", metrics)
 
+    def test_issue_path_sums_each_iteration_beside_its_phases(self) -> None:
+        phases = {name: [9000, 9000, 9000, 9000] for name in cohort.LOOP_PHASES}
+        phases["upload"], phases["encode"], phases["submit"] = [500, 100, 100, 400], [50, 10, 10, 10], [700, 40, 90, 1]
+        result = {"maxRssKiB": 1024, "phases": phases}
+        metrics = cohort.process_metrics({"processWallNs": 1, "childCpuMs": 1.0, "result": result})
+        self.assertAlmostEqual(metrics["first.uploadEncodeSubmit"], 0.00125)
+        # Per-iteration sums (150, 200, 411), not the sum of separate phase medians (100 + 10 + 40).
+        self.assertAlmostEqual(metrics["warm.uploadEncodeSubmit"], 0.0002)
+        self.assertAlmostEqual(metrics["warm.submit"], 0.00004)
+        self.assertAlmostEqual(metrics["warmP95.uploadEncodeSubmit"], 0.000411)
+
     def test_split_upload_phases_become_metrics(self) -> None:
         phases = {name: [1000, 1000] for name in cohort.LOOP_PHASES}
         phases["uploadSource"], phases["uploadDoe"] = [400, 300], [600, 700]

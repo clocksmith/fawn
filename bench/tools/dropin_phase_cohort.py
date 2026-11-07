@@ -70,6 +70,11 @@ SECOND_SET_SEED_OFFSET = 1000
 ONE_TIME = ("setupNs", "setupInstanceNs", "setupAdapterNs", "setupDeviceNs", "compileNs", "pipelineNs", "resourcesNs", "teardownNs", "teardownReleaseNs", "teardownDeviceNs", "processInMainNs", "providerLoadNs")
 IMAGE_COUNTS = ("frameworkImagesBeforeSetup", "imagesBeforeSetup", "providerImagesLoaded", "setupImagesLoaded")
 LOOP_PHASES = ("upload", "encode", "submit", "completion", "map", "operation")
+# Host work that issues one operation, summed per iteration. Runtimes place
+# encoder and command-buffer creation in different phases (Dawn opens its blit
+# encoder in writeBuffer; Doe's writeBuffer is a CPU copy), so this is gated
+# beside, never instead of, each phase.
+ISSUE_PHASES = ("upload", "encode", "submit")
 # Present only in harnesses built with --upload-split.
 SPLIT_PHASES = ("uploadSource", "uploadDoe")
 BOOTSTRAP_RESAMPLES = 10000
@@ -372,6 +377,12 @@ def process_metrics(row: dict) -> dict[str, float]:
         warm = series[depth:] or series
         metrics[f"{prefix}warm.{phase}"] = statistics.median(warm) / 1e6
         metrics[f"{prefix}warmP95.{phase}"] = percentile(warm, 0.95) / 1e6
+    prefix = "" if depth == 1 else "pipelinedLatency."
+    issue = [sum(values) for values in zip(*(result["phases"][phase] for phase in ISSUE_PHASES))]
+    warm = issue[depth:] or issue
+    metrics[f"{prefix}first.uploadEncodeSubmit"] = issue[0] / 1e6
+    metrics[f"{prefix}warm.uploadEncodeSubmit"] = statistics.median(warm) / 1e6
+    metrics[f"{prefix}warmP95.uploadEncodeSubmit"] = percentile(warm, 0.95) / 1e6
     return metrics
 
 
