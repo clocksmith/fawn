@@ -32,13 +32,14 @@ export function createCliPlanner({ executable, model, directory, config, spawn =
         child.once('close', code => {
           clearTimeout(timeout); clearTimeout(killTimer); signal.removeEventListener('abort', abort);
           if (failure) return reject(failure);
-          if (code !== 0) return reject(Error(`Planner exited with status ${code}`));
           try {
             const response = JSON.parse(output), proposal = response.structured_output;
-            if (response.is_error || !proposal || !Object.hasOwn(PLANNER_TOOLS, proposal.tool)
-              || !proposal.input || typeof proposal.input !== 'object' || Array.isArray(proposal.input)) throw Error('Planner returned no valid structured tool proposal');
-            resolve({ ...proposal, usage: { ...response.usage, costUsd: response.total_cost_usd ?? null,
-              models: Object.keys(response.modelUsage ?? {}) } });
+            const usage = { ...response.usage, costUsd: response.total_cost_usd ?? null, models: Object.keys(response.modelUsage ?? {}) };
+            if (code !== 0 || response.is_error) throw Object.assign(Error(response.subtype === 'error_max_budget_usd'
+              ? 'Planner per-request budget reached' : `Planner exited with status ${code}`), { usage });
+            if (!proposal || !Object.hasOwn(PLANNER_TOOLS, proposal.tool)
+              || !proposal.input || typeof proposal.input !== 'object' || Array.isArray(proposal.input)) throw Object.assign(Error('Planner returned no valid structured tool proposal'), { usage });
+            resolve({ ...proposal, usage });
           } catch (error) { reject(error); }
         });
         if (signal.aborted) abort();

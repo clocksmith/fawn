@@ -124,6 +124,7 @@ export class WorkspaceController {
     this.owners.set(id, owner);
     const controller = new AbortController(), observations = new Map();
     const initialArtifacts = new Set(Object.keys(this.store.get(id).artifacts));
+    const visibleArtifacts = new Set(shareRecords ? initialArtifacts : []);
     const startSequence = this.store.journal.records.at(-1)?.seq ?? 0;
     this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId });
     const assertCurrent = () => { if (this.owners.get(id)?.ownerGeneration !== owner.ownerGeneration) throw Error('Agent ownership changed'); };
@@ -134,10 +135,14 @@ export class WorkspaceController {
       if (tool === 'observe') {
         const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return observation;
       }
-      if (tool === 'capture') return this.capture(id, { ...input, pageId }, owner);
+      if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
+      if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);
-      if (tool === 'repository_read') return this.readRepository(id, input);
-      if (tool === 'record') return this.record(id, input);
+      if (tool === 'repository_read') { const artifact = await this.readRepository(id, input); visibleArtifacts.add(artifact.id); return artifact; }
+      if (tool === 'record') {
+        if ((input.id && !visibleArtifacts.has(input.id)) || input.dependsOn?.some(key => !visibleArtifacts.has(key))) throw Error('Reasoning depends on records not shared with this task');
+        const artifact = this.record(id, input); visibleArtifacts.add(artifact.id); return artifact;
+      }
       if (tool !== 'act') throw Error(`Unsupported product tool ${tool}`);
       const observed = observations.get(pageId);
       if (!observed) throw Error('Observe this page before proposing an action');
@@ -148,7 +153,7 @@ export class WorkspaceController {
     };
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
       execute, signal: controller.signal, assertCurrent, context: () => investigationContext(this.store.get(id), {
-        task, permissions: { pageIds, origins, regions, actionKinds }, initialArtifacts, startSequence, shareRecords
+        task, permissions: { pageIds, origins, regions, actionKinds }, initialArtifacts, startSequence, shareRecords, visibleArtifacts
       }) });
     const settled = run.done.then(async () => {
       await this.exclusive(id, async () => {

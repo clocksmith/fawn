@@ -18,6 +18,10 @@ try {
   assert.equal(args[args.indexOf('--model') + 1], 'selected-model');
   assert.equal(args[args.indexOf('--max-budget-usd') + 1], String(config.cliMaxBudgetUsd));
   assert.deepEqual(JSON.parse(readFileSync(join(directory, 'input.json'))), { goal: 'Bounded context' });
+  writeFileSync(executable, `#!${process.execPath}\nconsole.log(JSON.stringify({is_error:true,subtype:'error_max_budget_usd',usage:{input_tokens:42},modelUsage:{controlled:{}},total_cost_usd:0.02}));process.exitCode=1;`);
+  await assert.rejects(planner.next({ goal: 'budget' }, { signal: new AbortController().signal }), error => {
+    assert.match(error.message, /budget reached/); assert.equal(error.usage.costUsd, 0.02); return true;
+  });
   writeFileSync(executable, `#!${process.execPath}\nrequire('node:fs').writeFileSync('pid',String(process.pid));setInterval(()=>{},1000);`);
   const controller = new AbortController();
   const pending = planner.next({ goal: 'cancel' }, { signal: controller.signal });

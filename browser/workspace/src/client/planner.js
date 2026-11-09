@@ -29,7 +29,7 @@ export function createPlanner({ model, endpoint, apiKey, maxOutputTokens, timeou
       const result = await response.json();
       const calls = result.content?.filter(block => block.type === 'tool_use') ?? [];
       if (calls.length !== 1 || !TOOL_NAMES.includes(calls[0].name) || !calls[0].input || typeof calls[0].input !== 'object' || Array.isArray(calls[0].input)) throw Error('Planner must propose exactly one supported tool');
-      return { tool: calls[0].name, input: calls[0].input, usage: result.usage ?? null };
+      return { tool: calls[0].name, input: calls[0].input, usage: { ...result.usage, model: result.model ?? null } };
     }
   };
 }

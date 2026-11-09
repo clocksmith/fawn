@@ -854,6 +854,7 @@ class BrowserBenchmarkSupersetCheckerTests(unittest.TestCase):
                 "scenarioTemplate": "fawn_visual_resource",
                 "resourcePath": resource_path,
                 "resourceSha256": HASH_A,
+                "resourceDependencies": {"unbound.js": HASH_B},
                 "claimScope": "l2_diagnostic_only",
                 "requiredStatus": "optional",
                 "runtimes": {
@@ -879,6 +880,7 @@ class BrowserBenchmarkSupersetCheckerTests(unittest.TestCase):
         )
 
         self.assertIn("L2 row resourceSha256 drift for fawn_visual_particle_trails", errors)
+        self.assertIn("L2 row resourceDependencies drift for fawn_visual_particle_trails", errors)
         self.assertIn(
             "L2:fawn_visual_particle_trails: metrics.resourceSha256 drift for mode 'doe'",
             errors,
@@ -1160,6 +1162,20 @@ class BrowserBenchmarkSupersetCheckerTests(unittest.TestCase):
         )
 
         self.assertIn("report workloadIdentity missing", errors)
+
+    def test_real_visual_manifest_binds_fixture_and_shader_dependency_bytes(self) -> None:
+        path = REPO_ROOT / "browser/chromium/bench/workflows/browser-workflow-manifest.json"
+        manifest = self.module.parse_workflow_manifest(json.loads(path.read_text(encoding="utf-8")))
+        visual = [row for row in manifest["rows"] if row.get("resourcePath")]
+        self.assertTrue(visual)
+        for row in visual:
+            self.assertEqual(row["resourceSha256"], hashlib.sha256((REPO_ROOT / row["resourcePath"]).read_bytes()).hexdigest())
+            for dependency, digest in row["resourceDependencies"].items():
+                self.assertEqual(digest, hashlib.sha256((REPO_ROOT / dependency).read_bytes()).hexdigest())
+        tampered = json.loads(path.read_text(encoding="utf-8"))
+        next(row for row in tampered["rows"] if row.get("resourcePath"))["resourceDependencies"] = ["../outside.js"]
+        with self.assertRaisesRegex(ValueError, "invalid resource dependency"):
+            self.module.parse_workflow_manifest(tampered)
 
     def test_parse_workflow_manifest_requires_module_contracts_owner(self) -> None:
         workflow = _workflow_manifest()

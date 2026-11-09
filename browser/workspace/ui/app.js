@@ -29,7 +29,7 @@ function render(state) {
   const human = workspace.ownerId === 'human';
   $('#owner').textContent = human ? 'You have control' : 'Agent has control';
   $('#take-over').disabled = human;
-  $('#run-status').textContent = investigation.run ? `${investigation.run.status.replaceAll('-', ' ')} · ${investigation.run.turns ?? 0} model turns` : 'Ready when you are';
+  $('#run-status').textContent = investigation.run ? `${investigation.run.status.replaceAll('-', ' ')} · ${investigation.run.turns ?? 0} planner requests` : 'Ready when you are';
   const unresolved = workspace.actions.filter(action => action.isUncertain || (action.dispatchStatus === 'dispatched' && !action.outcome));
   const needsReview = Object.values(investigation.artifacts).filter(artifact => artifact.status === 'needs-review');
   const attention = [];

@@ -57,9 +57,18 @@ function planner(arm) {
     if (totalCost + policy.maxTurnCostUsd > policy.maxTotalCostUsd) throw Error('Paired comparison spend ceiling reached');
     const started = performance.now();
     totalCost += policy.maxTurnCostUsd; // Reserve worst-case exposure before a call, including failed calls.
-    const result = await provider.next(...input);
+    let result;
+    try { result = await provider.next(...input); }
+    catch (error) {
+      const measured = error.usage?.costUsd;
+      if (Number.isFinite(measured) && measured >= 0) totalCost += measured - policy.maxTurnCostUsd;
+      rawCalls.push({ arm, inputBytes: Buffer.byteLength(JSON.stringify(input[0])), durationMs: performance.now() - started,
+        error: error.message, usage: error.usage ?? null, reservedCostUsd: Number.isFinite(measured) ? null : policy.maxTurnCostUsd });
+      throw error;
+    }
+    if (result.usage?.models?.length !== 1 || result.usage.models[0] !== policy.model) throw Error('Planner reported a different model; matched comparison is not established');
     if (!Number.isFinite(result.usage?.costUsd) || result.usage.costUsd < 0) throw Error('Provider cost receipt missing; no further calls admitted');
-    totalCost += result.usage.costUsd - policy.maxTurnCostUsd; rawCalls.push({ arm, durationMs: performance.now() - started, usage: result.usage });
+    totalCost += result.usage.costUsd - policy.maxTurnCostUsd; rawCalls.push({ arm, inputBytes: Buffer.byteLength(JSON.stringify(input[0])), durationMs: performance.now() - started, usage: result.usage });
     return result;
   } };
 }
@@ -137,7 +146,8 @@ try {
   const report = { schemaVersion: 1, classification: controlled ? 'controlled-planner preflight' : 'live-planner diagnostic paired probe',
     sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     sourceDirty: !!execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim(),
-    policySha256: sha256Hex(JSON.stringify(policy)), sourceRepro: { charges, expected: 2 }, rows, rawCalls, accountedCostUpperBoundUsd: totalCost,
+    policySha256: sha256Hex(JSON.stringify(policy)), armOrder: ['fawn', 'stock-browser-and-tracker'],
+    cacheState: 'Provider-controlled cache; not reset between arms. One pair is diagnostic.', sourceRepro: { charges, expected: 2 }, rows, rawCalls, accountedCostUpperBoundUsd: totalCost,
     productAdvantageEstablished: false, limitations: [policy.promotion, 'Node host, browser and model costs are not interchangeable. CPU/GPU memory and p50/p95 require additional repetitions and instrumentation.',
       'This read-only investigation probe does not qualify interruption, multi-user experience or external retention. The independent workflow comparison retains those separate gates.'] };
   writeFileSync(join(out, 'product-comparison.json'), JSON.stringify(report, null, 2));

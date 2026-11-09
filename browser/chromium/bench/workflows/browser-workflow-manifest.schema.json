@@ -129,7 +129,7 @@
         },
         "resourcePath": {
           "type": "string",
-          "pattern": "^browser/chromium/resources/[^.][^\\n]*\\.html$"
+          "pattern": "^(bench/browser/fixtures/fawn|browser/chromium/resources)/[^.][^\\n]*\\.html$"
         },
         "statusSelector": {
           "type": "string",
@@ -146,6 +146,14 @@
         "adapterSelector": {
           "type": "string",
           "minLength": 1
+        },
+        "resourceDependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(bench/browser/fixtures/fawn|browser/chromium/resources)/[^.][^\\n]*$"
+          }
         }
       },
       "allOf": [
@@ -156,10 +164,14 @@
                 "const": "fawn_visual_resource"
               }
             },
-            "required": ["scenarioTemplate"]
+            "required": [
+              "scenarioTemplate"
+            ]
           },
           "then": {
-            "required": ["resourcePath"],
+            "required": [
+              "resourcePath"
+            ],
             "properties": {
               "comparabilityExpectation": {
                 "const": "none"
@@ -177,7 +189,9 @@
           },
           "else": {
             "not": {
-              "required": ["resourcePath"]
+              "required": [
+                "resourcePath"
+              ]
             }
           }
         }

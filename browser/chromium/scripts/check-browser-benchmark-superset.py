@@ -79,7 +79,7 @@ VALID_RUNTIME_STATUS_CODES = {
 }
 VALID_HEX = set("0123456789abcdef")
 VISUAL_RESOURCE_TEMPLATE = "fawn_visual_resource"
-VISUAL_RESOURCE_PREFIX = "browser/chromium/resources/"
+VISUAL_RESOURCE_PREFIXES = ("bench/browser/fixtures/fawn/", "browser/chromium/resources/")
 VISUAL_RESOURCE_REQUIRED_METRICS = {"avgFrameMs", "p95FrameMs", "avgFps", "frameCount"}
 CATEGORY_BY_DOMAIN = {
     "compute": "compute",
@@ -825,12 +825,12 @@ def parse_workflow_manifest(workflows_payload: dict[str, Any]) -> dict[str, Any]
                 f"workflow.rows[{index}].resourcePath",
             )
             if (
-                not resource_path.startswith(VISUAL_RESOURCE_PREFIX)
+                not resource_path.startswith(VISUAL_RESOURCE_PREFIXES)
                 or not resource_path.endswith(".html")
                 or ".." in resource_path
             ):
                 raise ValueError(
-                    f"workflow {workflow_id} resourcePath must be a browser/chromium/resources/*.html path"
+                    f"workflow {workflow_id} resourcePath must be a retained Fawn fixture or browser resource HTML path"
                 )
             if not (REPO_ROOT / resource_path).is_file():
                 raise ValueError(f"workflow {workflow_id} resourcePath does not exist: {resource_path}")
@@ -841,6 +841,17 @@ def parse_workflow_manifest(workflows_payload: dict[str, Any]) -> dict[str, Any]
                 )
             workflow["resourcePath"] = resource_path
             workflow["resourceSha256"] = file_sha256(REPO_ROOT / resource_path)
+            dependencies = row_raw.get("resourceDependencies", [])
+            if (not isinstance(dependencies, list) or any(not isinstance(path, str) for path in dependencies)
+                    or len(set(dependencies)) != len(dependencies)):
+                raise ValueError(f"workflow {workflow_id} resourceDependencies must be distinct paths")
+            hashes = {}
+            for dependency in dependencies:
+                if (not isinstance(dependency, str) or not dependency.startswith(VISUAL_RESOURCE_PREFIXES)
+                        or ".." in dependency or not (REPO_ROOT / dependency).is_file()):
+                    raise ValueError(f"workflow {workflow_id} invalid resource dependency: {dependency}")
+                hashes[dependency] = file_sha256(REPO_ROOT / dependency)
+            workflow["resourceDependencies"] = hashes
         elif isinstance(resource_path, str) and resource_path.strip():
             raise ValueError(
                 f"workflow {workflow_id} resourcePath is only valid for {VISUAL_RESOURCE_TEMPLATE}"
@@ -2803,6 +2814,8 @@ def check_report_coverage(
                 errors.append(f"L2 row resourcePath drift for {workflow_id}")
             if report_row.get("resourceSha256") != resource_sha256:
                 errors.append(f"L2 row resourceSha256 drift for {workflow_id}")
+            if report_row.get("resourceDependencies", {}) != workflow_row.get("resourceDependencies", {}):
+                errors.append(f"L2 row resourceDependencies drift for {workflow_id}")
 
         if required_modes:
             runtimes = report_row.get("runtimes")
