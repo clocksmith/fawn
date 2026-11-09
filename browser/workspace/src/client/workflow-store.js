@@ -1,18 +1,16 @@
 // Personal workflow persistence on one host. Only verified runs publish; no graph import API.
 // Exclusive file creation serializes processes. A crashed lock is never automatically stolen.
 import { randomUUID } from 'node:crypto';
-import { closeSync, constants, fsyncSync, fstatSync, lstatSync, mkdirSync, openSync,
-  readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
+import { PrivateJsonFile } from './private-json-file.js';
 import { canonicalJson, sha256Hex } from '../journal.js';
 import { TraceDag } from './trace-dag.js';
 import { runWorkflow } from './workflow-agent.js';
 
 const VERSION = 1;
 const HASH = /^[a-f0-9]{64}$/;
-const FILE_MODE = 0o600, DIRECTORY_MODE = 0o700;
-const SOURCE_FILES = ['workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'controller.js',
+const SOURCE_FILES = ['private-json-file.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'controller.js',
   'agent.js', '../adapters/page-query.js', '../service.js'];
 const exactKeys = (value, keys) => value && typeof value === 'object'
   && !Array.isArray(value) && Object.keys(value).sort().join() === [...keys].sort().join();
@@ -26,19 +24,12 @@ const RUN_KEYS = ['runId', 'startedAt', 'completedAt', 'mode', 'completed', 'rev
   'verificationId', 'policyHash', 'sourceHashes', 'taskSourceHashes', 'planner', 'modelCalls',
   'cacheSteps', 'elapsedMs', 'fallbackReason', 'interventionRequests', 'workflowId', 'baseVersion', 'resultVersion'];
 
-function privateStat(stat, directory = false) {
-  if (!(directory ? stat.isDirectory() : stat.isFile())
-    || stat.uid !== process.getuid() || (stat.mode & 0o077)) {
-    fail('workflow-store-private', 'Workflow storage must be owner-only, owned by this process user');
-  }
-}
-
 /** Trusted host API, not an HTTP body or a public recipe importer. The caller supplies an
  * independently implemented account verifier and task review oracle, never model callbacks.
  * Limits and lock timing are explicit host policy. The whole export, including key, is sensitive.
  */
 export class WorkflowStore {
-  constructor({ directory, ownerScope, limits, maxBytes, lockWaitMs, lockRetryMs }) {
+  constructor({ directory, ownerScope, limits, maxBytes, lockWaitMs, lockRetryMs, sync = null }) {
     if (typeof process.getuid !== 'function') throw Error('Private workflow store requires POSIX permissions');
     if (!identifier(ownerScope) || !identifier(directory)
       || [maxBytes, lockWaitMs, lockRetryMs].some(value => !Number.isSafeInteger(value) || value < 1)) {
@@ -46,10 +37,12 @@ export class WorkflowStore {
     }
     new TraceDag(limits);
     this.directory = resolve(directory);
-    mkdirSync(this.directory, { recursive: true, mode: DIRECTORY_MODE });
-    privateStat(lstatSync(this.directory), true);
     this.path = join(this.directory, 'workflows.private.json');
     this.lockPath = join(this.directory, 'workflows.lock');
+    this.file = new PrivateJsonFile(this.path, { maxBytes, lockWaitMs, lockRetryMs });
+    this.file.lockPath = this.lockPath;
+    if (sync && sync.ownerScope !== ownerScope) throw Error('Sync owner differs from local owner');
+    this.sync = sync;
     this.ownerScope = ownerScope;
     this.limits = Object.freeze({ ...limits });
     this.maxBytes = maxBytes;
@@ -61,19 +54,7 @@ export class WorkflowStore {
     return sha256Hex(canonicalJson([this.ownerScope, accountScope, template]));
   }
   #read() {
-    let fd;
-    try { fd = openSync(this.path, constants.O_RDONLY | constants.O_NOFOLLOW); }
-    catch (error) {
-      if (error.code === 'ENOENT') return { version: VERSION, workflows: {}, workflowVersions: {}, workflowRuns: [] };
-      throw error;
-    }
-    let state;
-    try {
-      const stat = fstatSync(fd); privateStat(stat);
-      if (stat.size > this.maxBytes) fail('workflow-store-limit', 'Workflow store exceeds the byte budget');
-      state = JSON.parse(readFileSync(fd, 'utf8'));
-    } finally { closeSync(fd); }
-    return this.#validate(state);
+    return this.#validate(this.file.read({ version: VERSION, workflows: {}, workflowVersions: {}, workflowRuns: [] }));
   }
   #validate(state) {
     if (!exactKeys(state, ['version', 'workflows', 'workflowVersions', 'workflowRuns']) || state.version !== VERSION
@@ -113,41 +94,8 @@ export class WorkflowStore {
     }
     return state;
   }
-  #write(state) {
-    this.#validate(state);
-    const bytes = JSON.stringify(state) + '\n';
-    if (Buffer.byteLength(bytes) > this.maxBytes) fail('workflow-store-limit', 'Workflow store exceeds the byte budget');
-    const temporary = `${this.path}.${randomUUID()}.tmp`;
-    const fd = openSync(temporary, 'wx', FILE_MODE);
-    try { writeFileSync(fd, bytes); fsyncSync(fd); }
-    catch (error) { unlinkSync(temporary); throw error; }
-    finally { closeSync(fd); }
-    try {
-      renameSync(temporary, this.path);
-      const directoryFd = openSync(this.directory, 'r');
-      try { fsyncSync(directoryFd); } finally { closeSync(directoryFd); }
-    } finally {
-      try { unlinkSync(temporary); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-    }
-  }
-  async #transaction(update) {
-    const deadline = performance.now() + this.lockWaitMs;
-    let fd;
-    for (;;) {
-      try { fd = openSync(this.lockPath, 'wx', FILE_MODE); break; }
-      catch (error) {
-        if (error.code !== 'EEXIST') throw error;
-        if (performance.now() >= deadline) fail('workflow-store-busy', 'Workflow publisher is locked; no browser action was retried');
-        await delay(Math.min(this.lockRetryMs, Math.max(1, deadline - performance.now())));
-      }
-    }
-    try {
-      writeFileSync(fd, JSON.stringify({ pid: process.pid }));
-      fsyncSync(fd);
-      // Reload only after acquiring the cross-process lock; a checkout is never write authority.
-      return update(this.#read());
-    } finally { closeSync(fd); unlinkSync(this.lockPath); }
-  }
+  #write(state) { this.#validate(state); this.file.write(state); }
+  async #transaction(update) { return this.file.transaction(() => update(this.#read())); }
   async checkout(scope) {
     const id = this.#namespace(scope);
     const initial = this.#read();
@@ -161,11 +109,33 @@ export class WorkflowStore {
       if (!state.workflows[id]) {
         const versionId = randomUUID();
         state.workflowVersions[versionId] = { workflowId: id, revision: 0, parentVersion: null,
-          dag: new TraceDag(this.limits).export() };
+          dag: this.sync ? this.sync.empty(scope, this.limits) : new TraceDag(this.limits).export() };
         state.workflows[id] = { revision: 0, currentVersion: versionId };
         this.#write(state);
       }
       return snapshot(state);
+    });
+  }
+  async synchronize(scope) {
+    if (!this.sync) return { status: 'disabled' };
+    const local = await this.checkout(scope);
+    const state = this.#read();
+    const runs = state.workflowRuns.filter(run => run.workflowId === this.#namespace(scope)).map(run => ({ ...run,
+      baseGraph: this.sync.version(scope, state.workflowVersions[run.baseVersion].dag),
+      resultGraph: this.sync.version(scope, state.workflowVersions[run.resultVersion].dag) }));
+    const remote = await this.sync.exchange(scope, local.dag, runs, this.limits);
+    return this.#transaction(state => {
+      const id = this.#namespace(scope), pointer = state.workflows[id];
+      const latest = state.workflowVersions[pointer.currentVersion];
+      const merged = TraceDag.merge(latest.dag, remote.dag, this.limits).export();
+      if (canonicalJson(merged) !== canonicalJson(latest.dag)) {
+        const versionId = randomUUID();
+        state.workflowVersions[versionId] = { workflowId: id, revision: pointer.revision + 1,
+          parentVersion: pointer.currentVersion, dag: merged };
+        state.workflows[id] = { revision: pointer.revision + 1, currentVersion: versionId };
+        this.#write(state);
+      }
+      return { status: 'synced', revision: remote.revision };
     });
   }
   async #complete(scope, checkout, trace, receipt) {
@@ -216,6 +186,14 @@ export class WorkflowStore {
       if (await verifyAccount(identity) !== accountScope) fail('workflow-account-mismatch', 'Website account does not match this private workflow scope');
     };
     await assertContext();
+    let synchronization = { status: 'disabled' };
+    if (this.sync) {
+      try { synchronization = await this.synchronize(scope); }
+      catch (error) {
+        if (!error.offline) throw error;
+        synchronization = { status: 'offline', code: error.code };
+      }
+    }
     const checkout = await this.checkout(scope);
     const sourceHashes = Object.fromEntries(SOURCE_FILES.map(path => [path,
       sha256Hex(readFileSync(new URL(path, import.meta.url)))]));
@@ -254,6 +232,10 @@ export class WorkflowStore {
       persistence = { status: 'failed', receiptStored: false,
         code: error.code ?? 'workflow-publication-failed', detail: error.message };
     }
-    return { ...result, persistence };
+    if (this.sync && persistence.receiptStored) {
+      try { synchronization = await this.synchronize(scope); }
+      catch (error) { synchronization = { status: 'pending', code: error.code ?? 'workflow-sync-failed' }; }
+    }
+    return { ...result, persistence, synchronization };
   }
 }

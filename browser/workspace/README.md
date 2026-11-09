@@ -413,3 +413,5 @@ time, source hashes, dependency coverage, failures and the independent duplicate
 charge reproduction. It is diagnostic: a single pair and mechanical source checks
 establish neither semantic answer quality nor a product advantage. Historical
 workflow comparisons and frozen promotion criteria remain independently required.
+
+Private cross-client workflow storage and deployment: [shared registry](workflow-registry.md).

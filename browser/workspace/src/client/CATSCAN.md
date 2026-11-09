@@ -4,17 +4,17 @@ Parent: [Fawn workspace](../../CATSCAN.md)
 
 ## Target
 
-Investigations and workflow reuse under human control.
+Human-controlled investigations and workflow reuse.
 
 ## Authority
 
-- Owns sessions, planning, investigation records and personal workflows.
+- Owns sessions, planning, investigation records and private workflow synchronization.
 - Consumes service authority, dispatch and reconciliation.
 - Excludes model semantics, GPU qualification and product-advantage verdicts.
 
 ## Scope
 
-- Loopback client, repository evidence, investigations and opt-in workflow reuse.
+- Loopback client, investigations, workflow reuse and sealed registry.
 
 ## Contracts
 
@@ -35,16 +35,14 @@ Outputs:
 - Corrections invalidate dependents without mutating earlier revisions.
 - HTTP exposes no browser handles or service credentials.
 - Trace replay preserves service admission and stops before submission.
-- Verified workflows publish under a cross-process lock; account/disclosure checks precede effects.
+- Shared graphs are encrypted on clients; remote storage grants no browser authority.
+- Publication locks across processes; account/disclosure checks precede effects.
 
 ## Acceptance
 
-- Evidence: [Client tests](../../test/unit/product-client.test.js): interruption, HTTP authority and restart.
-- [Investigation tests](../../test/unit/investigation.test.js): revisions and source containment.
-- [Workflow tests](../../test/unit/workflow-agent.test.js): learning, reuse and fallback.
-- [Persistence tests](../../test/unit/workflow-store.test.js) and
-  [browser test](../../test/browser/workflow-store.test.js): isolation, snapshots, concurrent/crashed publication.
-- [Browser journey](../../test/browser/product-surface.test.js): UI, uncertainty and resumption with a controlled planner.
+- Evidence: [Client tests](../../test/unit/product-client.test.js): authority/restart.
+- [Persistence checks](../../workflow-store.md#focused-checks): isolation, concurrency and crash preservation.
+- [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
 - Parent comparison remains mandatory; controlled planners prove no product advantage.
 
 ## Non-goals

@@ -12,6 +12,7 @@ import { createCdpAdapter } from '../adapters/cdp-adapter.js';
 import { createCliPlanner } from './cli-planner.js';
 import { createPlanner } from './planner.js';
 import { WorkspaceController } from './controller.js';
+import { WorkflowSync } from './workflow-sync.js';
 import { WorkflowStore } from './workflow-store.js';
 import { startWorkspaceServer } from './server.js';
 
@@ -37,7 +38,8 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
   let controller, http;
   try {
     const workflowStore = workflowPersistence ? new WorkflowStore({ ...workflowPersistence,
-      directory: join(directory, 'workflows') }) : null;
+      directory: join(directory, 'workflows'),
+      sync: workflowPersistence.sync ? new WorkflowSync({ ...workflowPersistence.sync, ownerScope: workflowPersistence.ownerScope }) : null }) : null;
     controller = new WorkspaceController({ service, stateDir: directory, config, planner, workflowStore, workflowTasks });
     await controller.restore();
     http = await startWorkspaceServer({ controller, config, port });

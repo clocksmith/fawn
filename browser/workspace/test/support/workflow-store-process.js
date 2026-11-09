@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
+import { WorkflowSync } from '../../src/client/workflow-sync.js';
 import { WorkflowStore } from '../../src/client/workflow-store.js';
 import { InvestigationStore } from '../../src/client/investigation.js';
 import { sha256Hex } from '../../src/journal.js';
@@ -11,7 +12,7 @@ process.once('message', async message => {
   const store = new InvestigationStore(join(directory, `run-${process.pid}`));
   const persistent = new WorkflowStore({ directory: join(directory, 'cache'), ownerScope,
     limits: { maxNodes: 32, maxEdges: 32, maxSteps: 8 }, maxBytes: message.maxBytes ?? 100000,
-    lockWaitMs: 200, lockRetryMs: 5 });
+    lockWaitMs: 200, lockRetryMs: 5, sync: message.sync ? new WorkflowSync({ ...message.sync, ownerScope }) : null });
   let value = '', version = 0, checks = 0;
   const calls = [];
   const service = { outstanding: async () => [],

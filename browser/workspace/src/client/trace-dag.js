@@ -61,6 +61,23 @@ export class TraceDag {
     dag.nodes = nodes;
     return dag;
   }
+  /** Union same-key private snapshots. Validation precedes publication; order remains significant. */
+  static merge(left, right, limits) {
+    const a = TraceDag.restore(left, limits), b = TraceDag.restore(right, limits);
+    if (a.key !== b.key) throw Error('Workflow key lineage differs');
+    for (const [id, incoming] of b.nodes) {
+      const node = a.nodes.get(id);
+      if (!node) { a.nodes.set(id, incoming); continue; }
+      if (node.depth !== incoming.depth) throw Error('Workflow depth differs');
+      node.terminal ||= incoming.terminal;
+      for (const edge of incoming.edges) {
+        if (!node.edges.some(existing => canonicalJson(existing) === canonicalJson(edge))) node.edges.push(edge);
+      }
+    }
+    // Stable ordering gives independently merged clients the same version identity.
+    for (const node of a.nodes.values()) node.edges.sort((x, y) => canonicalJson(x).localeCompare(canonicalJson(y)));
+    return TraceDag.restore({ ...a.export(), nodes: [...a.nodes].sort(([x], [y]) => x.localeCompare(y)) }, limits);
+  }
   session(options) { return new TraceSession(this, options); }
   publish(records, terminal) {
     // Validate the entire merged graph before replacing the current cache.

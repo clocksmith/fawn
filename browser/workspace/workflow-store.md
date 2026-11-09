@@ -102,8 +102,8 @@ then remove the abandoned lock and temporary files in that directory. The
 committed cache remains readable before recovery. This protocol is for a local
 filesystem on one host; network filesystems need separate implementation/tests.
 
-Public imports, shared-tier encryption and repair candidates remain separate
-contracts. Same-key compatibility, graph validation and provenance never authorize
+Optional [shared synchronization](workflow-registry.md) now adds client-side encryption
+and cross-client merging. Public imports and repair candidates remain separate contracts. Same-key compatibility, graph validation and provenance never authorize
 disclosure. If a future database operator is outside the trust boundary, encrypt
 graph and key on the client before upload; row access rules alone do not do that.
 

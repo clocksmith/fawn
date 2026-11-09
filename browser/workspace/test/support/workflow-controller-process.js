@@ -4,11 +4,12 @@ import { join } from 'node:path';
 import { WorkspaceService } from '../../src/service.js';
 import { loadServiceConfig } from '../../src/config.js';
 import { createPlaywrightAdapter } from '../../src/adapters/playwright-adapter.js';
+import { WorkflowSync } from '../../src/client/workflow-sync.js';
 import { WorkflowStore } from '../../src/client/workflow-store.js';
 import { WorkspaceController } from '../../src/client/controller.js';
 import { sha256Hex } from '../../src/journal.js';
 
-process.once('message', async ({ root, url, mode, accountScope, inputs }) => {
+process.once('message', async ({ root, url, mode, accountScope, inputs, sync }) => {
   let service, controller, adapter;
   try {
     const config = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
@@ -35,7 +36,7 @@ process.once('message', async ({ root, url, mode, accountScope, inputs }) => {
         : { tool: 'finish', input: { summary: 'Review reached' } };
     } };
     const workflowStore = new WorkflowStore({ directory: join(root, 'shared-cache'), ownerScope: 'synthetic-person',
-      limits: { maxNodes: 64, maxEdges: 64, maxSteps: 12 }, maxBytes: 200000, lockWaitMs: 1000, lockRetryMs: 10 });
+      limits: { maxNodes: 64, maxEdges: 64, maxSteps: 12 }, maxBytes: 200000, lockWaitMs: 1000, lockRetryMs: 10, sync: sync ? new WorkflowSync({ ...sync, ownerScope: 'synthetic-person' }) : null });
     let rendered;
     const template = 'synthetic-application-v1';
     controller = new WorkspaceController({ service, stateDir: join(root, `client-${process.pid}`), config,
