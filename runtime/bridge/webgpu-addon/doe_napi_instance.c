@@ -215,10 +215,18 @@ static bool doe_read_u32_prop(napi_env env, napi_value obj, const char* key, uin
     napi_valuetype vt = napi_undefined;
     if (napi_typeof(env, value, &vt) != napi_ok) return false;
     if (vt == napi_undefined || vt == napi_null) return true;
-    if (napi_get_value_uint32(env, value, out) != napi_ok) {
+    double numeric_value = 0;
+    if (napi_get_value_double(env, value, &numeric_value) != napi_ok) {
         NAPI_THROW(env, "descriptor.requiredLimits contains a non-number value");
         return false;
     }
+    /* Check the exclusive width bound before narrowing. Positive fractions
+     * retain the existing truncation semantics; NaN and wrapping do not. */
+    if (!isfinite(numeric_value) || numeric_value < 0 || numeric_value >= 0x1p32) {
+        NAPI_THROW(env, "descriptor.requiredLimits contains an out-of-range u32 value");
+        return false;
+    }
+    *out = (uint32_t)numeric_value;
     return true;
 }
 
@@ -231,6 +239,10 @@ static bool doe_read_u64_prop(napi_env env, napi_value obj, const char* key, uin
     double numeric_value = 0;
     if (napi_get_value_double(env, value, &numeric_value) != napi_ok || !isfinite(numeric_value) || numeric_value < 0) {
         NAPI_THROW(env, "descriptor.requiredLimits contains a non-number value");
+        return false;
+    }
+    if (numeric_value >= 0x1p64) {
+        NAPI_THROW(env, "descriptor.requiredLimits contains an out-of-range u64 value");
         return false;
     }
     *out = (uint64_t)numeric_value;
@@ -340,7 +352,8 @@ static bool doe_parse_feature_array(napi_env env, napi_value features_value, WGP
         }
         feature_name[sizeof(feature_name) - 1] = '\0';
         uint32_t feature_value = 0;
-        if (!doe_feature_name_from_string(feature_name, &feature_value)) {
+        if (feature_name_len != strlen(feature_name)
+            || !doe_feature_name_from_string(feature_name, &feature_value)) {
             free(features);
             NAPI_THROW(env, "descriptor.requiredFeatures contains an unsupported feature");
             return false;

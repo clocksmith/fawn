@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { createNativeDirect } from '../../src/native.js';
 import { setupGlobals } from '../../src/index.js';
 import { loadNativeAddon } from './native-addon-test-helper.js';
+import { createDeviceDescriptorEntryPoints } from './device-descriptor-test-helper.js';
 
 const addon = await loadNativeAddon();
 const nativeAdapter = await createNativeDirect().requestAdapter().catch(() => null);
@@ -50,43 +51,7 @@ assert.equal(await gpuDevice.popErrorScope(), null, 'a labeled query set is crea
 assert.equal(querySet.label, 'labeled queries');
 console.log('ok: query set labels reach the provider');
 
-const entryPoints = [
-  {
-    name: 'standard',
-    request: async (desc) => {
-      const inst = addon.createInstance();
-      try {
-        const rawAdapter = addon.requestAdapter(inst);
-        try {
-          const rawDevice = addon.requestDevice(inst, rawAdapter, desc);
-          const limits = addon.deviceGetLimits(rawDevice);
-          addon.deviceRelease(rawDevice);
-          return limits;
-        } finally {
-          addon.adapterRelease(rawAdapter);
-        }
-      } finally {
-        addon.instanceRelease(inst);
-      }
-    },
-  },
-  {
-    name: 'native-direct',
-    request: async (desc) => {
-      const nextAdapter = await createNativeDirect().requestAdapter();
-      try {
-        const nextDevice = await nextAdapter.requestDevice(desc);
-        try {
-          return nextDevice.limits;
-        } finally {
-          nextDevice.destroy?.();
-        }
-      } finally {
-        nextAdapter.destroy?.();
-      }
-    },
-  },
-];
+const { entryPoints } = createDeviceDescriptorEntryPoints(addon);
 
 for (const entry of entryPoints) {
   const omittedLimits = await entry.request({ requiredLimits: { maxBindGroups: undefined } });
