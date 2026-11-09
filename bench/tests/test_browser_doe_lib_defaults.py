@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -10,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlparse
 from unittest.mock import patch
 
 
@@ -693,11 +695,21 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             arguments = result.stdout.splitlines()
             runtime = next(value.split("=", 1)[1] for value in arguments
                            if value.startswith("--doe-webgpu-library-path="))
-            bundled = moved / "Contents/Frameworks/libwebgpu_doe_full.dylib"
-            self.assertEqual(Path(runtime).resolve(), bundled.resolve())
+            bundled = Path(runtime).resolve()
+            self.assertTrue(bundled.is_relative_to((moved / "Contents/Frameworks").resolve()))
+            self.assertEqual(bundled.name, "libwebgpu_doe_full.dylib")
             self.assertEqual(bundled.read_bytes(), b"selected runtime")
             self.assertEqual(arguments[-1], "--extra-argument=with spaces")
-            self.assertTrue((moved / "Contents/Resources/fawn-formation.js").is_file())
+            homepage = next(value.split("=", 1)[1] for value in arguments if value.startswith("--homepage="))
+            entry = Path(unquote(urlparse(homepage).path)).resolve()
+            self.assertTrue(entry.is_relative_to((moved / "Contents/Resources").resolve()))
+            html = entry.read_text(encoding="utf-8")
+            scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)', html)
+            inline = re.findall(r'<script(?![^>]*\bsrc\b)[^>]*>(.*?)</script>', html, re.DOTALL)
+            self.assertTrue(scripts or any(body.strip() for body in inline),
+                            "The launched homepage must contain or load its packaged scene code")
+            for script in scripts:
+                self.assertTrue((entry.parent / script).is_file(), script)
             default_profile = next(value for value in arguments if value.startswith("--user-data-dir="))
             self.assertEqual(default_profile, f"--user-data-dir={env['HOME']}/Library/Application Support/Fawn/doe-c")
             launcher = str(moved / "Contents/MacOS/Chromium")

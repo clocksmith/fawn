@@ -28,8 +28,8 @@
     "configVersion": { "type": "string", "minLength": 1 },
     "protocolVersion": {
       "type": "integer",
-      "const": 3,
-      "description": "Protocol 3 adds region groups, the outline view with deltas against a base version, and handle targets; protocol 2 added regions-scoped actions and link destinations. Earlier journals replay unchanged; their observations carry no handles, and protocol 1 observations cannot authorize link-following actions."
+      "const": 4,
+      "description": "Protocol 4 adds explicit page identity and opt-in scoped observation grants, preserving main-page legacy workspaces. Protocol 3 adds region groups, the outline view with deltas against a base version, and handle targets; protocol 2 added regions-scoped actions and link destinations. Earlier journals replay unchanged; their observations carry no handles, and protocol 1 observations cannot authorize link-following actions."
     },
     "contractPath": { "type": "string", "const": "docs/fawn-workspace-contract.md" },
     "journal": {

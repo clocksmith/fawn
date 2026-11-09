@@ -40,7 +40,14 @@ const TREATMENT_RECOVERY = Object.freeze({ form: 'form-recovery', export: 'expor
 
 function parseArgs(argv) {
   const options = {};
-  for (let index = 0; index < argv.length; index += 2) options[argv[index].replace(/^--/, '')] = argv[index + 1];
+  const allowed = ['out', 'scenarios', 'browser-channel', 'browser-config'];
+  for (let index = 0; index < argv.length; index += 2) {
+    const flag = argv[index];
+    if (!flag.startsWith('--') || !allowed.includes(flag.slice(2)) || !argv[index + 1] || argv[index + 1].startsWith('--')) {
+      throw new Error(`Unknown or incomplete comparison argument: ${flag}`);
+    }
+    options[flag.slice(2)] = argv[index + 1];
+  }
   return { out: options.out ?? null, scenarios: options.scenarios ? options.scenarios.split(',') : null,
     browserChannel: options['browser-channel'] ?? null, browserConfig: options['browser-config'] ?? null };
 }
@@ -381,4 +388,5 @@ async function main() {
   process.exit(sameBrowser ? 0 : 1);
 }
 
-await main();
+if (process.argv.includes('--help')) console.log('Usage: node qualification/compare.js [--out DIR] [--scenarios id,id] [--browser-channel CHANNEL | --browser-config PATH]');
+else await main();

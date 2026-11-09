@@ -168,7 +168,15 @@ class Journal {
    */
   append(type, body) {
     if (this._fd === null) throw new Error('journal is closed');
-    const entry = { seq: this._records.length + FIRST_SEQUENCE, type, at: new Date().toISOString(), body };
+    // Hash the JSON representation that is actually persisted, including null array holes.
+    // Optional undefined object fields disappear in JSON; hashing them before encoding corrupts replay.
+    const persistedBody = JSON.parse(JSON.stringify(body, (_key, value) => {
+      if (['function', 'symbol', 'bigint'].includes(typeof value) || (typeof value === 'number' && !Number.isFinite(value))) {
+        throw new TypeError('Journal records require finite JSON values');
+      }
+      return value;
+    }));
+    const entry = { seq: this._records.length + FIRST_SEQUENCE, type, at: new Date().toISOString(), body: persistedBody };
     const hash = recordHash(this._lastHash, entry);
     const record = { ...entry, prevHash: this._lastHash, hash };
     writeSync(this._fd, `${JSON.stringify(record)}${RECORD_TERMINATOR}`);

@@ -325,3 +325,56 @@ POSIX signal on Windows.
   `dispatch.actionTimeoutMs`.
 - One process holds a journal; the journal is not compacted, and observation
   history is kept for the current owner generation.
+
+## Human workspace client
+
+```bash
+npm --prefix browser/workspace start
+# Optional explicit planner configuration:
+FAWN_MODEL=<selected-model> ANTHROPIC_API_KEY=<credential> npm --prefix browser/workspace start
+```
+
+Open the private loopback login link printed by the command. The browser remains
+the work surface; **Compact view** opens a companion control window. Create an
+investigation, browse its pages, keep source evidence, then delegate only the
+selected pages, regions, origins and actions. Saved evidence/notes require separate
+disclosure consent. Take over at any time; already dispatched effects may still
+complete. **Check result** reads evidence and never repeats an action.
+
+State defaults to `~/.local/state/fawn-workspace`; use `--state-dir` to select
+another directory. Admin credentials stay in its private `client-credentials.json`.
+`--port`, `--adapter playwright|cdp`, `--headless` and `FAWN_BROWSER_CHANNEL` select
+local presentation without changing workspace authority. The planner is disabled
+unless both model and credential are configured. No model runs on startup.
+
+Protocol 4 adds page identity and opt-in scoped read grants. Earlier journals replay
+with main-page compatibility. Restored tabs open blank with an explicit Reopen
+control; no page navigation or pending tool is silently repeated. The product
+client remains unqualified for general task advantage until its own complete-task
+comparison passes. Prior frozen-suite results keep their original scope.
+
+With an already authenticated Claude Code installation, select the planner-only
+CLI port instead of an API key:
+
+```bash
+FAWN_PLANNER=claude-cli npm --prefix browser/workspace start
+```
+
+The CLI port disables built-in tools, MCP, plugins/project discovery and session
+persistence. It runs in a separate empty directory, requests only structured tool
+proposals, and records the actual provider-reported model and usage. Its per-turn
+budget and cancellation grace are in `fawn-workspace-client.json`. The workspace
+service, not the CLI, performs authorized browser actions. No CLI call starts until
+a person delegates.
+
+### Investigation comparison
+
+`node qualification/product-compare.js --out <directory>` compares the product
+client with stock Chromium plus the same durable evidence/issue tracker and
+planner. The policy fixes source pages, repository code, model, tool contract and
+spend ceiling. `--controlled` checks the harness without model calls. The live
+probe records provider-reported models/usage, complete-task and preparation wall
+time, source hashes, dependency coverage, failures and the independent duplicate
+charge reproduction. It is diagnostic: a single pair and mechanical source checks
+establish neither semantic answer quality nor a product advantage. Historical
+workflow comparisons and frozen promotion criteria remain independently required.

@@ -8,7 +8,7 @@ import { BROWSER_CHANNELS, validateFawnBuild } from './browser-launch.js';
 
 const DEFAULT_CONFIG_URL = new URL('../../../config/fawn-workspace-service.json', import.meta.url);
 const SUPPORTED_SCHEMA_VERSION = 4;
-const SUPPORTED_PROTOCOL_VERSION = 3;
+const SUPPORTED_PROTOCOL_VERSION = 4;
 
 const POSITIVE_INTEGER_FIELDS = Object.freeze([
   'credentials.secretBytes',
@@ -49,7 +49,7 @@ function validateServiceConfig(config, { platform = process.platform } = {}) {
   if (![3, SUPPORTED_SCHEMA_VERSION].includes(config?.schemaVersion)) {
     throw invalid('schemaVersion', SUPPORTED_SCHEMA_VERSION, config?.schemaVersion);
   }
-  if (config.protocolVersion !== SUPPORTED_PROTOCOL_VERSION) {
+  if (![3, SUPPORTED_PROTOCOL_VERSION].includes(config.protocolVersion)) {
     throw invalid('protocolVersion', SUPPORTED_PROTOCOL_VERSION, config.protocolVersion);
   }
   for (const field of POSITIVE_INTEGER_FIELDS) {

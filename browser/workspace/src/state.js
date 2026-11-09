@@ -6,6 +6,7 @@
 const RECORD_TYPES = Object.freeze({
   SERVICE_RESTORED: 'service-restored',
   WORKSPACE_CREATED: 'workspace-created',
+  PAGE_REGISTERED: 'page-registered',
   AUTHORIZATION_GRANTED: 'authorization-granted',
   AUTHORIZATION_REVOKED: 'authorization-revoked',
   OWNERSHIP_ADVANCED: 'ownership-advanced',
@@ -53,6 +54,9 @@ const REDUCERS = Object.freeze({
   [RECORD_TYPES.WORKSPACE_CREATED]: (state, body) => {
     state.workspaces.set(body.workspaceId, {
       workspaceId: body.workspaceId,
+      scopedReads: body.scopedReads === true,
+      pages: new Map([['main', { pageId: 'main', url: 'about:blank', closed: false }]]),
+      pageObservations: new Map(),
       adminCredentialHash: body.adminCredentialHash,
       ownerGeneration: 0,
       ownerId: null,
@@ -63,6 +67,11 @@ const REDUCERS = Object.freeze({
       observations: new Map(),
       actions: new Map(),
     });
+  },
+  [RECORD_TYPES.PAGE_REGISTERED]: (state, body, record) => {
+    const workspace = requireWorkspace(state, body.workspaceId, record);
+    workspace.pages.set(body.pageId, { ...body });
+    if (body.closed) workspace.pageObservations.delete(body.pageId);
   },
   [RECORD_TYPES.AUTHORIZATION_GRANTED]: (state, body, record) => {
     const workspace = requireWorkspace(state, body.workspaceId, record);
@@ -81,6 +90,7 @@ const REDUCERS = Object.freeze({
     workspace.ownerCredentialHashes.set(body.ownerGeneration, body.ownerCredentialHash);
     // Observations from earlier generations can never be cited again.
     workspace.observations.clear();
+    workspace.pageObservations.clear();
   },
   [RECORD_TYPES.OBSERVATION_RECORDED]: (state, body, record) => {
     const workspace = requireWorkspace(state, body.workspaceId, record);
@@ -90,6 +100,7 @@ const REDUCERS = Object.freeze({
     workspace.observationVersion = body.observationVersion;
     workspace.observation = { ...body, regions: body.regions ?? {} };
     workspace.observations.set(body.observationVersion, workspace.observation);
+    workspace.pageObservations.set(body.pageId ?? 'main', workspace.observation);
   },
   [RECORD_TYPES.ACTION_ADMITTED]: (state, body, record) => {
     const workspace = requireWorkspace(state, body.workspaceId, record);
@@ -168,6 +179,9 @@ function describeAction(action) {
   const outcome = action.outcome?.outcome ?? null;
   return {
     actionId: action.request.actionId,
+    pageId: action.request.pageId ?? 'main',
+    target: action.request.target,
+    completion: action.request.completion ?? null,
     kind: action.request.kind,
     authorizedIntent: action.request.authorizedIntent,
     ownerId: action.request.ownerId,

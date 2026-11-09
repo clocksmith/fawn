@@ -181,3 +181,45 @@ service and independent behavioral and workflow evidence satisfy this contract.
 `fawnWorkspace` in the strategy schema binds each step's assessment to admitted
 evidence; passing `bench.tests.test_fawn_workspace_strategy` checks that binding,
 not runtime behavior.
+
+## Protocol 4: product clients and page identity
+
+A workspace retains one profile and owner generation, with independently identified
+pages. Omitted `pageId` means `main` for existing clients and journals. Observations
+have globally monotonic versions but page-local currentness: reading another tab
+does not invalidate a page, and a version from another page cannot authorize an
+action. All action, completion and reconciliation probes address the recorded page.
+Playwright and raw CDP discover popups and retain closed identities. Administrators
+can inspect pages, create a blank tab, focus a tab and select a region through the
+supported service API. Raw browser handles are never public.
+
+New product workspaces use `scopedReads: true`. Their grants require explicit
+`pageIds` and `readRegions` (null means whole page). Reads check page identity,
+origin, expiry and revocation before observation and recheck the returned origin.
+Region grants disclose only contained text and controls, not the surrounding page.
+A popup requires a separate grant. Legacy workspaces preserve their protocol-3 read
+behavior; replay does not silently expand or replace their authority.
+
+Form destinations honor the form action unless the submitter explicitly overrides
+it. That inherited destination participates in target identity, including regional
+actions whose button markup stayed unchanged. Optional journal fields are encoded
+before hashing, so the persisted JSON and its hash agree across restart. Existing
+valid journal hashes are unchanged; corrupt records remain rejected.
+
+On restart, open page identities are recreated as blank pages. The client shows
+the last known URL and requires explicit reopening: restoration never replays a
+navigation or external effect. Closed tabs and their evidence remain recorded.
+
+The loopback product client is a separate human and agent client of this protocol.
+It keeps source captures, repository evidence, assumptions, findings, decisions and
+questions in a separate hash-linked investigation journal. Revisions bind their
+source and dependency revisions; corrections mark transitive dependents for review.
+Those records do not authorize browser effects or establish that a conclusion is true.
+
+A delegation names pages, origins, regions, allowed actions and a bounded task.
+Sharing saved investigation records is a separate explicit choice. Selected local
+repository roots are independent read capabilities. The planner receives neither
+browser-control handles nor service credentials. Restart takes human control and
+makes no model calls; resuming always requires a new delegation. Client development
+checks and controlled-planner journeys do not discharge the frozen complete-task
+comparison or establish live-model quality, external adoption or Doe GPU ownership.

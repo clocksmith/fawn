@@ -1,3 +1,4 @@
+import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow raw-CDP adapter over stock Chromium
 //
 // Speaks the Chrome DevTools Protocol directly over --remote-debugging-pipe (fds 3 and 4), so,
@@ -183,7 +184,7 @@ class CdpWorkspaceAdapter {
     this._workspaces = new Map();
   }
 
-  async openWorkspace(workspaceId) {
+  async openWorkspace(workspaceId, { pages = [] } = {}) {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
     const launch = prepareFawnLaunch(this._config.browser);
@@ -202,17 +203,24 @@ class CdpWorkspaceAdapter {
       await cdp.send('Page.enable', {}, sessionId);
       await cdp.send('Runtime.enable', {}, sessionId);
       await cdp.send('Browser.setDownloadBehavior', { behavior: 'allowAndName', downloadPath: downloadDir, eventsEnabled: true });
-      this._workspaces.set(workspaceId, { cdp, sessionId, downloadDir });
+      this._workspaces.set(workspaceId, { cdp, sessionId, downloadDir,
+        pages: new Map([['main', { sessionId, targetId: pageTarget.targetId }]]) });
+      for (const saved of pages.filter(value => value.pageId !== 'main')) await this.openPage(workspaceId, saved.pageId);
     } catch (error) {
       await cdp.abortLaunch();
+      this._workspaces.delete(workspaceId);
       throw error;
     }
   }
 
   _entry(workspaceId) {
-    const entry = this._workspaces.get(workspaceId);
+    const id = typeof workspaceId === 'object' ? workspaceId.workspaceId : workspaceId;
+    const entry = this._workspaces.get(id);
     if (!entry) throw new Error(`workspace ${workspaceId} has no open browser`);
-    return entry;
+    if (typeof workspaceId !== 'object') return entry;
+    const page = entry.pages.get(workspaceId.pageId ?? 'main');
+    if (!page || page.closed) throw new Error('Page is closed or unknown');
+    return { ...entry, ...page };
   }
 
   async _evaluate(workspaceId, expression, signal = undefined) {
@@ -230,17 +238,17 @@ class CdpWorkspaceAdapter {
 
   async snapshot(workspaceId, read = {}) {
     const { cdp } = this._entry(workspaceId);
-    const raw = await this._query(workspaceId, snapshotArgs(this._config, read));
+    const raw = await this._query({ workspaceId, pageId: read.pageId }, snapshotArgs(this._config, read));
     const { targetInfos } = await cdp.send('Target.getTargets');
     return buildSnapshot(raw, targetInfos.filter((target) => target.type === 'page').length);
   }
 
-  async probeUrl(workspaceId) {
-    return this._evaluate(workspaceId, 'location.href');
+  async probeUrl(workspaceId, pageId) {
+    return this._evaluate(pageId ? { workspaceId, pageId } : workspaceId, 'location.href');
   }
 
-  async probeElement(workspaceId, selector) {
-    return buildProbe(await this._query(workspaceId, elementArgs(selector)));
+  async probeElement(workspaceId, selector, pageId, readRoots = null) {
+    return buildProbe(await this._query(pageId ? { workspaceId, pageId } : workspaceId, { ...elementArgs(selector), readRoots }));
   }
 
   /** Centre of the single element matching selector, scrolled into view; fails on 0 or >1. */
@@ -271,7 +279,44 @@ class CdpWorkspaceAdapter {
   async execute(workspaceId, request) {
     const effect = EFFECTS[request.kind];
     if (!effect) throw new Error(`unsupported action kind ${request.kind}`);
-    return effect.call(this, workspaceId, request);
+    return effect.call(this, request.pageId ? { workspaceId, pageId: request.pageId } : workspaceId, request);
+  }
+
+  async openPage(workspaceId, pageId) {
+    const entry = this._entry(workspaceId);
+    const { targetId } = await entry.cdp.send('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await entry.cdp.send('Target.attachToTarget', { targetId, flatten: true });
+    await entry.cdp.send('Page.enable', {}, sessionId);
+    await entry.cdp.send('Runtime.enable', {}, sessionId);
+    entry.pages.set(pageId, { targetId, sessionId });
+  }
+
+  async listPages(workspaceId) {
+    const entry = this._entry(workspaceId);
+    const { targetInfos } = await entry.cdp.send('Target.getTargets');
+    for (const target of targetInfos.filter(value => value.type === 'page')) {
+      if ([...entry.pages.values()].some(page => page.targetId === target.targetId)) continue;
+      const { sessionId } = await entry.cdp.send('Target.attachToTarget', { targetId: target.targetId, flatten: true });
+      await entry.cdp.send('Page.enable', {}, sessionId);
+      await entry.cdp.send('Runtime.enable', {}, sessionId);
+      entry.pages.set(`page-${target.targetId}`, { targetId: target.targetId, sessionId });
+    }
+    return [...entry.pages].map(([pageId, page]) => {
+      const target = targetInfos.find(value => value.targetId === page.targetId);
+      page.closed = !target;
+      return { pageId, url: target?.url ?? '', title: target?.title ?? '', closed: !target,
+        openerId: [...entry.pages].find(([, value]) => value.targetId === target?.openerId)?.[0] ?? null };
+    });
+  }
+
+  async selectRegion(workspaceId, pageId) {
+    await this.focusPage(workspaceId, pageId);
+    return this._evaluate({ workspaceId, pageId }, `(${pickRegion.toString()})(${this._config.dispatch.actionTimeoutMs})`);
+  }
+
+  async focusPage(workspaceId, pageId) {
+    const { cdp, targetId } = this._entry({ workspaceId, pageId });
+    await cdp.send('Target.activateTarget', { targetId });
   }
 
   async close() {

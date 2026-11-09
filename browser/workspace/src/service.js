@@ -4,6 +4,8 @@
 // dispatcher re-checks authority at dispatch, and the journal keeps outcomes across restart.
 
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { MAIN_PAGE, pageView, readGrant, scopedRead } from './page-scope.js';
 import {
   REGIONS_SCOPE,
   authenticateAdmin,
@@ -226,7 +228,7 @@ class WorkspaceService {
 
   async #page(workspaceId) {
     const runtime = this.#runtimeFor(workspaceId);
-    runtime.opened ??= this.#bounded(this.#adapter.openWorkspace(workspaceId)).catch((error) => {
+    runtime.opened ??= this.#bounded(this.#adapter.openWorkspace(workspaceId, { pages: [...this.#workspace(workspaceId).pages.values()].filter(page => !page.closed) })).catch((error) => {
       runtime.opened = null;
       throw error;
     });
@@ -238,23 +240,29 @@ class WorkspaceService {
     return withTimeout(promise, this.#config.dispatch.actionTimeoutMs);
   }
 
-  #snapshot(workspaceId, read = {}) {
-    return this.#bounded(this.#adapter.snapshot(workspaceId, read));
+  #snapshot(workspaceId, read = {}, pageId = MAIN_PAGE) {
+    return this.#bounded(this.#adapter.snapshot(workspaceId, { ...read, pageId }));
   }
 
   #nowMs() {
     return this.#clock();
   }
 
-  #probe(workspaceId) {
-    return {
-      url: () => this.#bounded(this.#adapter.probeUrl(workspaceId)),
-      element: (selector) => this.#bounded(this.#adapter.probeElement(workspaceId, selector)),
-    };
+  #probe(workspaceId, pageId = MAIN_PAGE, command = null) {
+    const url = () => this.#bounded(this.#adapter.probeUrl(workspaceId, pageId));
+    return { url, validate: async condition => {
+      const grant = command ? readGrant(this.#workspace(workspaceId), command, await url(), this.#nowMs()) : null;
+      if (grant?.readRegions && condition.kind === 'element-absent') {
+        throw workspaceError(REJECTION_CODES.UNSUPPORTED_CONDITION, 'A regional grant cannot establish whole-page absence');
+      }
+    }, element: async selector => {
+      const grant = command ? readGrant(this.#workspace(workspaceId), command, await url(), this.#nowMs()) : null;
+      return this.#bounded(this.#adapter.probeElement(workspaceId, selector, pageId, grant?.readRegions ?? null));
+    } };
   }
 
   /** Record a new observation version from a live snapshot. */
-  #recordObservation(workspace, snapshot, reason) {
+  #recordObservation(workspace, snapshot, reason, pageId = MAIN_PAGE) {
     const issuedMs = this.#nowMs();
     const targetDigests = Object.fromEntries(snapshot.elements.map((element) => [element.selector, element.digest]));
     const targetFormActions = Object.fromEntries(snapshot.elements
@@ -268,6 +276,7 @@ class WorkspaceService {
       .map((element) => [element.handle, element.selector]));
     this.#append(RECORD_TYPES.OBSERVATION_RECORDED, {
       workspaceId: workspace.workspaceId,
+      pageId,
       observationVersion: workspace.observationVersion + 1,
       ownerGeneration: workspace.ownerGeneration,
       reason,
@@ -287,7 +296,7 @@ class WorkspaceService {
   /**
    * Create a durable workspace; the admin credential is returned once.
    */
-  async createWorkspace({ workspaceId }) {
+  async createWorkspace({ workspaceId, scopedReads = false }) {
     if (!this.#ready) throw workspaceError(REJECTION_CODES.AUTHORITY_UNAVAILABLE, 'service is not restored');
     if (typeof workspaceId !== 'string' || !/^[a-z0-9-]+$/.test(workspaceId)) {
       throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'workspaceId: expected [a-z0-9-]+', {
@@ -299,12 +308,14 @@ class WorkspaceService {
       throw workspaceError(REJECTION_CODES.DUPLICATE_WORKSPACE, workspaceId, { workspaceId });
     }
     const { credential, credentialHash } = issueCredential(this.#config.credentials.secretBytes);
-    this.#append(RECORD_TYPES.WORKSPACE_CREATED, { workspaceId, adminCredentialHash: credentialHash });
+    if (scopedReads && this.#config.protocolVersion < 4) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Scoped reads require protocol 4');
+    if (typeof scopedReads !== 'boolean') throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'scopedReads must be boolean');
+    this.#append(RECORD_TYPES.WORKSPACE_CREATED, { workspaceId, scopedReads, adminCredentialHash: credentialHash });
     return { workspaceId, adminCredential: credential };
   }
 
   async grantAuthorization({ workspaceId, adminCredential, grantId, ownerId, intents, actionKinds,
-    targetOrigins, expiresAt = null }) {
+    targetOrigins, expiresAt = null, pageIds, readRegions }) {
     const workspace = this.#workspace(workspaceId);
     authenticateAdmin(workspace, adminCredential);
     for (const [path, list] of [['intents', intents], ['actionKinds', actionKinds], ['targetOrigins', targetOrigins]]) {
@@ -334,11 +345,20 @@ class WorkspaceService {
         });
       }
     });
+    if (pageIds !== undefined && (!Array.isArray(pageIds) || !pageIds.length
+      || pageIds.some(id => !workspace.pages.has(id) || workspace.pages.get(id).closed))) {
+      throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'pageIds must name open workspace pages');
+    }
+    if (readRegions !== undefined && readRegions !== null) validateRegionSelectors(readRegions, this.#config, 'readRegions');
+    if (workspace.scopedReads && (!pageIds || readRegions === undefined)) {
+      throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Scoped workspaces require pageIds and readRegions (null means whole page)');
+    }
     return this.#runtimeFor(workspaceId).mutex.run(() => {
       this.#append(RECORD_TYPES.AUTHORIZATION_GRANTED, {
         workspaceId,
         grantId,
-        grant: { ownerId, intents, actionKinds, targetOrigins: origins, expiresAt },
+        grant: { ownerId, intents, actionKinds, targetOrigins: origins, expiresAt, ...(pageIds ? { pageIds } : {}),
+          ...(readRegions !== undefined ? { readRegions } : {}) },
       });
       return { grantId };
     });
@@ -405,18 +425,22 @@ class WorkspaceService {
   async observe(command) {
     const workspace = this.#workspace(command.workspaceId);
     authenticateOwner(workspace, command);
-    const read = validateObservationRead(command, this.#config);
+    if (this.#config.protocolVersion < 4 && command.pageId && command.pageId !== MAIN_PAGE) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Additional pages require protocol 4');
+    const requested = validateObservationRead(command, this.#config);
+    const pageId = command.pageId ?? MAIN_PAGE;
+    pageView(workspace, pageId);
     await this.#page(command.workspaceId);
     return this.#runtimeFor(command.workspaceId).mutex.run(async () => {
       authenticateOwner(workspace, command);
+      const url = await this.#probe(command.workspaceId, pageId).url();
+      const read = scopedRead(workspace, command, url, requested, this.#config, this.#nowMs());
       const snapshot = await this.#snapshot(command.workspaceId, {
-        regions: read.regions,
-        regionGroups: read.regionGroups,
-        outline: read.view === OUTLINE_VIEW,
-      });
-      const recorded = this.#recordObservation(workspace, snapshot, 'observe');
-      if (read.view === OUTLINE_VIEW) return outlineView(workspace, recorded, snapshot, read.sinceVersion);
-      return { ...recorded, boundary: NONATOMIC_BOUNDARY };
+        ...read, outline: read.view === OUTLINE_VIEW,
+      }, pageId);
+      readGrant(workspace, command, snapshot.url, this.#nowMs());
+      const recorded = this.#recordObservation(workspace, snapshot, 'observe', pageId);
+      if (read.view === OUTLINE_VIEW) return { ...outlineView(workspace, recorded, snapshot, read.sinceVersion), ...(command.pageId ? { pageId } : {}) };
+      return structuredClone({ ...recorded, ...(workspace.scopedReads ? { readScope: { pageId, regions: read.readRoots ?? null } } : {}), boundary: NONATOMIC_BOUNDARY });
     });
   }
 
@@ -431,7 +455,7 @@ class WorkspaceService {
       let grantId;
       let resolved;
       try {
-        ({ grantId, command: resolved } = checkAdmission(workspace, command, this.#config, this.#nowMs()));
+        ({ grantId, command: resolved } = checkAdmission(pageView(workspace, command.pageId), { ...command, pageId: command.pageId ?? MAIN_PAGE }, this.#config, this.#nowMs()));
       } catch (error) {
         if (isWorkspaceError(error)) {
           this.#append(RECORD_TYPES.COMMAND_REJECTED, {
@@ -476,16 +500,19 @@ class WorkspaceService {
   async #checkLiveDispatch(workspace, action) {
     const { workspaceId } = workspace;
     const request = action.request;
-    checkDispatchAuthority(workspace, request, this.#nowMs());
+    checkDispatchAuthority(pageView(workspace, request.pageId), request, this.#nowMs());
     const scope = request.observationScope;
     const regions = scope?.kind === REGIONS_SCOPE ? scope.selectors : [];
-    const snapshot = await this.#snapshot(workspaceId, { regions });
-    if (snapshot.contentHash !== workspace.observation.contentHash || snapshot.url !== workspace.observation.url) {
-      this.#recordObservation(workspace, snapshot, 'page-change');
+    const current = pageView(workspace, request.pageId);
+    const permission = readGrant(workspace, request, await this.#probe(workspaceId, request.pageId).url(), this.#nowMs());
+    const snapshot = await this.#snapshot(workspaceId, { regions, readRoots: permission?.readRegions ?? null }, request.pageId);
+    readGrant(workspace, request, snapshot.url, this.#nowMs());
+    if (snapshot.contentHash !== current.observation?.contentHash || snapshot.url !== current.observation?.url) {
+      this.#recordObservation(workspace, snapshot, 'page-change', request.pageId);
     }
     const live = { url: snapshot.url, regions: snapshot.regionDigests };
-    checkDispatchAuthority(workspace, request, this.#nowMs(), live);
-    const probe = this.#probe(workspaceId);
+    checkDispatchAuthority(pageView(workspace, request.pageId), request, this.#nowMs(), live);
+    const probe = this.#probe(workspaceId, request.pageId, request);
     let targetDigest = null;
     if (request.target.selector) {
       const element = await probe.element(request.target.selector);
@@ -545,9 +572,13 @@ class WorkspaceService {
     return runtime.mutex.run(async () => {
       let postObservationVersion = null;
       try {
-        const snapshot = await this.#snapshot(workspaceId);
-        if (snapshot.contentHash !== workspace.observation.contentHash || snapshot.url !== workspace.observation.url) {
-          this.#recordObservation(workspace, snapshot, 'post-action');
+        const current = pageView(workspace, begun.action.request.pageId);
+        const request = begun.action.request;
+        const permission = readGrant(workspace, request, await this.#probe(workspaceId, request.pageId).url(), this.#nowMs());
+        const snapshot = await this.#snapshot(workspaceId, { readRoots: permission?.readRegions ?? null }, request.pageId);
+        readGrant(workspace, request, snapshot.url, this.#nowMs());
+        if (snapshot.contentHash !== current.observation?.contentHash || snapshot.url !== current.observation?.url) {
+          this.#recordObservation(workspace, snapshot, 'post-action', begun.action.request.pageId);
         }
         postObservationVersion = workspace.observationVersion;
       } catch (error) {
@@ -578,11 +609,11 @@ class WorkspaceService {
     }
     this.#hooks.afterEffect?.(request);
     const completion = request.completion;
-    if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect);
+    if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request);
     if (request.kind === 'fill' || request.kind === 'select') {
       const check = await evaluateConditions(
         [{ kind: 'input-value-equals', selector: request.target.selector, value: request.params.value }],
-        this.#probe(workspaceId),
+        this.#probe(workspaceId, request.pageId, request),
       );
       return check.allEstablished
         ? { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect, check } }
@@ -591,8 +622,8 @@ class WorkspaceService {
     return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect } };
   }
 
-  async #awaitCompletion(workspaceId, completion, effect) {
-    const probe = this.#probe(workspaceId);
+  async #awaitCompletion(workspaceId, completion, effect, request) {
+    const probe = this.#probe(workspaceId, request.pageId, request);
     const deadline = this.#nowMs() + this.#config.dispatch.completionTimeoutMs;
     let last = null;
     for (;;) {
@@ -613,12 +644,12 @@ class WorkspaceService {
   }
 
   #describe(workspace, actionId) {
-    return { ...describeAction(workspace.actions.get(actionId)), boundary: NONATOMIC_BOUNDARY };
+    return structuredClone({ ...describeAction(workspace.actions.get(actionId)), boundary: NONATOMIC_BOUNDARY });
   }
 
   #outstanding(workspace) {
     return [...workspace.actions.values()]
-      .map(describeAction)
+      .map(action => structuredClone(describeAction(action)))
       .filter((action) => action.isUncertain
         || action.dispatchStatus === ACTION_STATUS.QUEUED
         || (action.dispatchStatus === ACTION_STATUS.DISPATCHED && action.outcome === null)
@@ -723,7 +754,7 @@ class WorkspaceService {
     if (command.method === 'human-review') {
       return { result: 'human-review-requested', resolvesUncertainty: false, permitsResubmission: false, basis: {} };
     }
-    const probe = this.#probe(workspace.workspaceId);
+    const probe = this.#probe(workspace.workspaceId, action.request.pageId, command);
     const present = await evaluateConditions(command.effectPresentWhen ?? [], probe);
     const absent = await evaluateConditions(command.effectAbsentWhen ?? [], probe);
     const isPresent = (command.effectPresentWhen ?? []).length > 0 && present.allEstablished;
@@ -766,6 +797,63 @@ class WorkspaceService {
       });
       return this.#describe(workspace, actionId);
     });
+  }
+
+  /** Supported client boundary: metadata contains no control credentials or browser handles. */
+  async inspect({ workspaceId, adminCredential }) {
+    const workspace = this.#workspace(workspaceId);
+    authenticateAdmin(workspace, adminCredential);
+    await this.#page(workspaceId);
+    return this.#runtimeFor(workspaceId).mutex.run(async () => {
+      const pages = this.#adapter.listPages ? await this.#bounded(this.#adapter.listPages(workspaceId))
+        : [{ pageId: MAIN_PAGE, url: await this.#probe(workspaceId).url(), closed: false }];
+      for (const page of pages) {
+        const previous = workspace.pages.get(page.pageId);
+        const needsReopen = page.url === 'about:blank' && !!previous?.lastKnownUrl;
+        const value = { workspaceId, ...page, lastKnownUrl: page.url.startsWith('http') ? page.url : previous?.lastKnownUrl ?? null, needsReopen };
+        if (JSON.stringify(previous) !== JSON.stringify(value)) {
+          this.#append(RECORD_TYPES.PAGE_REGISTERED, value);
+        }
+      }
+      return structuredClone({ workspaceId, scopedReads: workspace.scopedReads, ownerId: workspace.ownerId,
+        ownerGeneration: workspace.ownerGeneration, pages: [...workspace.pages.values()],
+        grants: [...workspace.grants.values()], actions: [...workspace.actions.values()].map(describeAction),
+        boundary: NONATOMIC_BOUNDARY });
+    });
+  }
+
+  async openPage({ workspaceId, adminCredential, pageId = `page-${randomUUID()}` }) {
+    if (this.#config.protocolVersion < 4) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Additional pages require protocol 4');
+    const workspace = this.#workspace(workspaceId);
+    authenticateAdmin(workspace, adminCredential);
+    await this.#page(workspaceId);
+    if (!this.#adapter.openPage) throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Adapter does not support additional pages');
+    return this.#runtimeFor(workspaceId).mutex.run(async () => {
+      if (typeof pageId !== 'string' || !/^[a-z0-9-]{1,128}$/i.test(pageId) || workspace.pages.has(pageId)) {
+        throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'pageId must be unique, including closed page identities');
+      }
+      await this.#bounded(this.#adapter.openPage(workspaceId, pageId));
+      this.#append(RECORD_TYPES.PAGE_REGISTERED, { workspaceId, pageId, url: 'about:blank', closed: false });
+      return { pageId };
+    });
+  }
+
+  async selectRegion({ workspaceId, adminCredential, pageId }) {
+    const workspace = this.#workspace(workspaceId);
+    authenticateAdmin(workspace, adminCredential);
+    if (workspace.ownerId !== 'human') throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Take over before selecting a page region');
+    pageView(workspace, pageId);
+    await this.#page(workspaceId);
+    return this.#bounded(this.#adapter.selectRegion(workspaceId, pageId));
+  }
+
+  async focusPage({ workspaceId, adminCredential, pageId }) {
+    const workspace = this.#workspace(workspaceId);
+    authenticateAdmin(workspace, adminCredential);
+    pageView(workspace, pageId);
+    await this.#page(workspaceId);
+    await this.#adapter.focusPage(workspaceId, pageId);
+    return { pageId };
   }
 
   /** Stop accepting commands and release the browser and journal. */

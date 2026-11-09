@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Matched Fawn investigation diagnostic probe",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "classification",
+    "task",
+    "model",
+    "maxTurnsPerArm",
+    "maxTurnCostUsd",
+    "maxTotalCostUsd",
+    "requiredSources",
+    "requiredQuestions",
+    "provider",
+    "promotion"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "fawn-investigation-comparison.schema.json"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "classification": {
+      "const": "diagnostic"
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "maxTurnsPerArm": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxTurnCostUsd": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "maxTotalCostUsd": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "requiredSources": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "requiredQuestions": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "promotion": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

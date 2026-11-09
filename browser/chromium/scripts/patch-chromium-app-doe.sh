@@ -176,20 +176,8 @@ if [[ "$(basename "${DOE_LIB}")" == libwebgpu_doe_c.dylib ]]; then
 fi
 
 FRAMEWORKS_DIR="${APP_PATH}/Contents/Frameworks"
-DOE_LIB_NAME="$(basename "${DOE_LIB}")"
-mkdir -p "${FRAMEWORKS_DIR}"
-RUNTIME_DESTINATION="${FRAMEWORKS_DIR}/${DOE_LIB_NAME}"
-if [[ ! "${DOE_LIB}" -ef "${RUNTIME_DESTINATION}" ]]; then
-  cp -p "${DOE_LIB}" "${RUNTIME_DESTINATION}"
-fi
-if [[ "${DOE_LIB_NAME}" == libwebgpu_doe_c.dylib ]]; then
-  COMPILER_SOURCE="$(dirname "${DOE_LIB}")/libdoe_compiler.dylib"
-  COMPILER_DESTINATION="${FRAMEWORKS_DIR}/libdoe_compiler.dylib"
-  if [[ ! "${COMPILER_SOURCE}" -ef "${COMPILER_DESTINATION}" ]]; then
-    cp -p "${COMPILER_SOURCE}" "${COMPILER_DESTINATION}"
-  fi
-fi
-DOE_LIB="${FRAMEWORKS_DIR}/${DOE_LIB_NAME}"
+DOE_LIB="$(node "${SCRIPT_DIR}/stage-app-runtime.mjs" --app "${APP_PATH}" --library "${DOE_LIB}")"
+DOE_LIB_RELATIVE_PATH="${DOE_LIB#"${FRAMEWORKS_DIR}/"}"
 
 MACOS_BIN="${APP_PATH}/Contents/MacOS/Chromium"
 REAL_BIN="${MACOS_BIN}-real"
@@ -239,9 +227,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REAL_BINARY="${SCRIPT_DIR}/Chromium-real"
 EOF
-  printf 'DOE_LIB_NAME=%q\n' "${DOE_LIB_NAME}" >> "${MACOS_BIN}"
+  printf 'DOE_LIB_RELATIVE_PATH=%q\n' "${DOE_LIB_RELATIVE_PATH}" >> "${MACOS_BIN}"
   cat >> "${MACOS_BIN}" <<'EOF'
-DOE_LIB="${SCRIPT_DIR}/../Frameworks/${DOE_LIB_NAME}"
+DOE_LIB="${SCRIPT_DIR}/../Frameworks/${DOE_LIB_RELATIVE_PATH}"
 
 if [[ -n "${FAWN_DOE_LIB:-}" ]]; then
   DOE_LIB="${FAWN_DOE_LIB}"

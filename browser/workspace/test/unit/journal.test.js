@@ -64,3 +64,19 @@ function freshDirectory() {
 }
 
 console.log('ok: journal');
+
+// Optional fields and missing usage must hash exactly the JSON bytes that survive restart.
+{
+  const directory = freshDirectory();
+  const journal = Journal.open({ directory, ...FILES });
+  const body = { optional: undefined, usage: [undefined, null], nested: { present: true, omitted: undefined } };
+  journal.append('json-body', body);
+  body.nested.present = false;
+  for (const invalid of [NaN, Infinity, () => {}]) assert.throws(() => journal.append('invalid', { invalid }), /finite JSON/);
+  journal.append('after-rejection', { valid: true });
+  journal.close();
+  const restored = Journal.open({ directory, ...FILES });
+  assert.deepEqual(restored.records[0].body, { usage: [null, null], nested: { present: true } });
+  assert.equal(restored.records.length, 2);
+  restored.close();
+}

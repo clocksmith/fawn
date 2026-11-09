@@ -10,8 +10,14 @@ const ELEMENT_MODE = 'element';
 const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
-function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false }) {
+function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null }) {
   const INTERACTIVE = 'a[href], button, input, select, textarea, [role="button"], [role="link"]';
+  const permissionRoots = readRoots === null ? null : readRoots.map(selector => {
+    const matches = document.querySelectorAll(selector);
+    if (matches.length !== 1) throw Error('A shared region must still match exactly one element');
+    return matches[0];
+  });
+  const permitted = node => permissionRoots === null || permissionRoots.some(root => root === node || root.contains(node));
   const isUnique = (candidate) => {
     try {
       return document.querySelectorAll(candidate).length === 1;
@@ -55,7 +61,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       .map((attribute) => [attribute.name, attribute.value])
       .sort((a, b) => (a[0] < b[0] ? -1 : 1));
     const formAction = node.form && ['submit', 'image'].includes(node.type)
-      ? (node.formAction || node.form.action)
+      ? (node.hasAttribute('formaction') ? node.formAction : node.form.action)
       : null;
     const text = fullText(node);
     return {
@@ -69,7 +75,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     };
   };
   if (mode === 'element') {
-    const nodes = document.querySelectorAll(selector);
+    const nodes = [...document.querySelectorAll(selector)].filter(permitted);
     if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null };
     return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]) };
   }
@@ -77,7 +83,9 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
   const VALUE_TAGS = ['INPUT', 'SELECT', 'TEXTAREA'];
   const SKIPPED_TAGS = ['SCRIPT', 'STYLE', 'TEMPLATE'];
   const ROLES = { a: 'link', button: 'button', select: 'combobox', textarea: 'textbox' };
-  const nodes = [...document.querySelectorAll(INTERACTIVE)];
+  const roots = permissionRoots;
+  const allowed = permitted;
+  const nodes = [...document.querySelectorAll(INTERACTIVE)].filter(allowed);
   // A handle names an element by its stable selector, so it survives unrelated page changes.
   const handleFor = (stable) => `h${fingerprint(stable).split(':')[1]}`;
   const handles = new Map();
@@ -133,22 +141,22 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     } catch {
       return { selector: regionSelector, count: 0, html: null, values: null, outline: null };
     }
-    if (matches.length !== 1) return { selector: regionSelector, count: matches.length, html: null, values: null, outline: null };
+    if (matches.length !== 1 || !allowed(matches[0])) return { selector: regionSelector, count: matches.length, html: null, values: null, outline: null };
     return describeRegion(regionSelector, matches[0]);
   };
   // Every element matching a group selector becomes its own region, named by its stable selector.
   const readGroup = (groupSelector) => {
     try {
-      return [...document.querySelectorAll(groupSelector)].map((node) => describeRegion(stableSelector(node), node, groupSelector));
+      return [...document.querySelectorAll(groupSelector)].filter(allowed).map((node) => describeRegion(stableSelector(node), node, groupSelector));
     } catch {
       return [];
     }
   };
   return {
     url: location.href,
-    title: document.title,
+    title: roots === null ? document.title : '',
     html: document.documentElement.outerHTML,
-    text: (document.body?.innerText ?? '').slice(0, maxTextChars),
+    text: (roots === null ? (document.body?.innerText ?? '') : roots.map(fullText).join('\n')).slice(0, maxTextChars),
     isTruncated: nodes.length > maxElements,
     elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), handle: handles.get(node), ...describe(node) })),
     regions: [...regions.map(readRegion), ...regionGroups.flatMap(readGroup)],
@@ -161,12 +169,14 @@ function elementDigest(element) {
     attributes: element.attributes,
     text: element.text,
     textFingerprint: element.textFingerprint,
+    ...(element.formAction ? { formAction: element.formAction } : {}),
   }));
 }
 
-function snapshotArgs(config, { regions = [], regionGroups = [], outline = false } = {}) {
+function snapshotArgs(config, { regions = [], regionGroups = [], outline = false, readRoots = null } = {}) {
   return {
     mode: SNAPSHOT_MODE,
+    readRoots,
     maxElements: config.observation.maxElements,
     maxTextChars: config.observation.maxTextChars,
     elementTextChars: ELEMENT_TEXT_CHARS,
@@ -211,6 +221,7 @@ function buildSnapshot(raw, pageCount) {
  * text: a displayed prefix would make text-excludes report absence that is not established.
  */
 function buildProbe(result) {
+  if (result.forbidden) throw new Error('Element probe exceeds the selected observation regions');
   if (!result.element) return { count: result.count, digest: null, text: null, value: null };
   return {
     count: result.count,

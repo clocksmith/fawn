@@ -4,8 +4,7 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Provide durable agent workspaces through shared observation, action and recovery
-above stock Chromium.
+Workspace observation, action and recovery above Chromium.
 
 ## Authority
 
@@ -16,8 +15,8 @@ above stock Chromium.
 
 ## Scope
 
-- Shared service, Playwright/raw-CDP adapters, research/form-submission/export
-  workflows, qualification and baseline-comparison harness.
+- Shared service, page-bound Playwright/raw-CDP adapters, human control UI,
+  investigation client, workflows, qualification and baseline-comparison harness.
 
 ## Contracts
 
@@ -34,14 +33,14 @@ Outputs:
 ## Invariants
 
 - Automated mutations pass trusted dispatch.
+- Pages bind observations, targets and grants; popups inherit no grant.
+- Clients own planning/records; service owns authority and effect truth.
 - Persist owner generations; adapters reject stale commands identically.
 - Completed/failed/unknown outcomes survive restart/handoff; missing acknowledgment
   never authorizes resubmission.
 - Research/form-submission/export behave consistently.
 - Workspace acceptance excludes browser/GPU recovery and artwork receipts.
-- Before launch, explicit build selection binds image/private runtime closure;
-  both adapters force selected C/Dawn without fallback. Launch identity proves
-  no GPU ownership.
+- Adapters enforce selected build/runtime closure without fallback; launch proves no GPU ownership.
 - Treatment/control share requested launch configuration; image mismatches prove
   no comparison advantage.
 
@@ -55,8 +54,8 @@ Outputs:
 
 ## Non-goals
 
-- Workflow-specific planning, implicit resubmission or atomic external effects.
+- Model planning inside trusted dispatch, implicit resubmission or atomic external effects.
 
 ## Freedom
 
-Preserve boundaries and earn independent evidence.
+Preserve boundaries and independent evidence.

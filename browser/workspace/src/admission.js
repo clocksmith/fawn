@@ -194,6 +194,7 @@ function grantsForIntent(workspace, command, nowMs) {
 function authorize(forIntent, command, cited) {
   const origins = touchedOrigins(command, cited);
   const grant = forIntent.find((candidate) => candidate.actionKinds.includes(command.kind)
+    && (!candidate.pageIds || candidate.pageIds.includes(command.pageId ?? 'main'))
     && origins.every((origin) => origin !== null && candidate.targetOrigins.includes(origin)));
   if (!grant) {
     reject(REJECTION_CODES.UNAUTHORIZED_TARGET, `${command.kind} on ${origins.join(', ')}`, {

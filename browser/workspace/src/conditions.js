@@ -99,6 +99,7 @@ async function evaluateConditions(conditions, probe) {
   const results = [];
   for (const condition of conditions) {
     try {
+      await probe.validate?.(condition);
       const result = await CONDITION_EVALUATORS[condition.kind](probe, condition);
       results.push({ condition, ...result });
     } catch (error) {

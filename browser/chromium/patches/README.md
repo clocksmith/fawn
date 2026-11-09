@@ -140,3 +140,10 @@ The patches retain upstream copyright and license notices. A rebase requires
 updating the pins, reviewing every source change, rebuilding, and repeating
 provider attribution and application correctness checks; changing a revision
 constant alone cannot establish compatibility.
+
+The macOS app wrapper and diagnostic lane prepare immutable app-local runtime
+closures through `scripts/stage-app-runtime.mjs`. The C runtime and its compiler
+sibling publish together under a content identity. Refreshing never overwrites a
+library that a GPU process may still have mapped. Existing closures must match
+their bytes before reuse; failed preparation preserves the earlier bundle. This
+also keeps selected runtime files within the GPU sandbox's readable app bundle.

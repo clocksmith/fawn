@@ -1,9 +1,10 @@
+import { pickRegion } from './region-picker.js';
 // Fawn workspace — narrow Playwright adapter over stock Chromium
 //
 // Only the service constructs this adapter. Chromium is launched over Playwright's private pipe
 // with a persistent per-workspace profile, so no debugging endpoint exists for other clients.
 
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
@@ -20,7 +21,7 @@ class PlaywrightWorkspaceAdapter {
     this._workspaces = new Map();
   }
 
-  async openWorkspace(workspaceId) {
+  async openWorkspace(workspaceId, { pages = [] } = {}) {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
     const launchOptions = playwrightLaunchOptions(this._config.browser);
@@ -31,39 +32,81 @@ class PlaywrightWorkspaceAdapter {
       acceptDownloads: true,
       timeout: this._config.dispatch.actionTimeoutMs,
     });
-    const page = context.pages()[0] ?? await context.newPage();
-    page.setDefaultTimeout(this._config.dispatch.actionTimeoutMs);
-    this._workspaces.set(workspaceId, { context, page });
+    try {
+      const page = context.pages()[0] ?? await context.newPage();
+      page.setDefaultTimeout(this._config.dispatch.actionTimeoutMs);
+      const entry = { context, page, pages: new Map([['main', page]]) };
+      this._workspaces.set(workspaceId, entry);
+      for (const saved of pages.filter(value => value.pageId !== 'main')) {
+        const restored = await context.newPage();
+        entry.pages.set(saved.pageId, restored);
+      }
+      context.on('page', next => {
+        if (![...entry.pages.values()].includes(next)) entry.pages.set(`page-${randomUUID()}`, next);
+        next.setDefaultTimeout(this._config.dispatch.actionTimeoutMs);
+      });
+    } catch (error) {
+      this._workspaces.delete(workspaceId);
+      await context.close();
+      throw error;
+    }
   }
 
-  _page(workspaceId) {
+  _page(workspaceId, pageId = 'main') {
     const entry = this._workspaces.get(workspaceId);
     if (!entry) throw new Error(`workspace ${workspaceId} has no open browser`);
-    return entry.page;
+    const page = entry.pages.get(pageId);
+    if (!page || page.isClosed()) throw new Error(`Page ${pageId} is closed or unknown`);
+    return page;
   }
 
   async snapshot(workspaceId, read = {}) {
-    const raw = await this._page(workspaceId).evaluate(queryPage, snapshotArgs(this._config, read));
+    const raw = await this._page(workspaceId, read.pageId).evaluate(queryPage, snapshotArgs(this._config, read));
     return buildSnapshot(raw, this._workspaces.get(workspaceId).context.pages().length);
   }
 
-  async probeUrl(workspaceId) {
-    return this._page(workspaceId).url();
+  async probeUrl(workspaceId, pageId = 'main') {
+    return this._page(workspaceId, pageId).url();
   }
 
-  async probeElement(workspaceId, selector) {
-    return buildProbe(await this._page(workspaceId).evaluate(queryPage, elementArgs(selector)));
+  async probeElement(workspaceId, selector, pageId = 'main', readRoots = null) {
+    return buildProbe(await this._page(workspaceId, pageId).evaluate(queryPage, { ...elementArgs(selector), readRoots }));
   }
 
   /**
    * Perform one admitted mutation. Called only by the service's dispatcher.
    */
   async execute(workspaceId, request) {
-    const page = this._page(workspaceId);
+    const page = this._page(workspaceId, request.pageId);
     const effect = EFFECTS[request.kind];
     if (!effect) throw new Error(`unsupported action kind ${request.kind}`);
     return effect.call(this, page, request, workspaceId);
   }
+
+  async listPages(workspaceId) {
+    const { context, pages } = this._workspaces.get(workspaceId);
+    for (const page of context.pages()) if (![...pages.values()].includes(page)) pages.set(`page-${randomUUID()}`, page);
+    return Promise.all([...pages].map(async ([pageId, page]) => {
+      const opener = await page.opener().catch(() => null);
+      return { pageId, url: page.url(), title: page.isClosed() ? '' : await page.title().catch(() => ''),
+        closed: page.isClosed(), openerId: [...pages].find(([, candidate]) => candidate === opener)?.[0] ?? null };
+    }));
+  }
+
+  async openPage(workspaceId, pageId) {
+    const entry = this._workspaces.get(workspaceId);
+    const page = await entry.context.newPage();
+    for (const [id, current] of entry.pages) if (current === page) entry.pages.delete(id);
+    entry.pages.set(pageId, page);
+  }
+
+  async selectRegion(workspaceId, pageId) {
+    const page = this._page(workspaceId, pageId);
+    await page.bringToFront();
+    return page.evaluate(pickRegion, this._config.dispatch.actionTimeoutMs);
+  }
+
+  async focusPage(workspaceId, pageId) { await this._page(workspaceId, pageId).bringToFront(); }
 
   async close() {
     const contexts = [...this._workspaces.values()].map((entry) => entry.context);

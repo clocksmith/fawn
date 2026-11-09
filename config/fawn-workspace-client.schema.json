@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fawn workspace human and agent client configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "host",
+    "port",
+    "pollMs",
+    "maxBodyBytes",
+    "maxEvidenceBytes",
+    "maxRepositoryFiles",
+    "maxTurns",
+    "maxInputBytes",
+    "maxOutputTokens",
+    "modelTimeoutMs",
+    "shutdownWaitMs",
+    "modelEndpoint",
+    "apiKeyEnvironment",
+    "delegationMaxAgeMs",
+    "cliMaxBudgetUsd",
+    "cliTerminationGraceMs"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "fawn-workspace-client.schema.json"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "host": {
+      "const": "127.0.0.1"
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "modelEndpoint": {
+      "type": "string",
+      "format": "uri"
+    },
+    "apiKeyEnvironment": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "pollMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxBodyBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxEvidenceBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxRepositoryFiles": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxTurns": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxInputBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxOutputTokens": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "modelTimeoutMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "shutdownWaitMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "delegationMaxAgeMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cliMaxBudgetUsd": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "cliTerminationGraceMs": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

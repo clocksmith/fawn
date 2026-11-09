@@ -8,7 +8,8 @@
     "test:browser": "node test/run-tests.js --browser",
     "qualify": "node qualification/run.js",
     "compare": "node qualification/compare.js",
-    "differentiate": "node qualification/differentiate.js"
+    "differentiate": "node qualification/differentiate.js",
+    "start": "node src/client/main.js"
   },
   "dependencies": {
     "playwright-core": "1.58.2"

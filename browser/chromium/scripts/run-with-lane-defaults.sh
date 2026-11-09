@@ -38,7 +38,6 @@ while [[ $# -gt 0 ]]; do
         exit 2
       fi
       doe_lib="$2"
-      forward_args+=("$1" "$2")
       shift 2
       ;;
     --dawn-chrome)
@@ -134,6 +133,16 @@ if [[ "${skip_run}" -eq 0 ]]; then
   if [[ ("${mode}" == "doe" || "${mode}" == "both") && ! -f "${doe_lib}" ]]; then
     echo "missing doe runtime library: ${doe_lib}" >&2
     exit 1
+  fi
+fi
+
+# A sandboxed macOS GPU process can read its selected app bundle, not an arbitrary build cache.
+# Prepare an immutable closure without changing the app's ordinary launch defaults.
+if [[ "${skip_run}" -eq 0 && "$(uname -s)" == Darwin && ("${mode}" == doe || "${mode}" == both) ]]; then
+  selected_doe_browser="${doe_chrome_bin:-${chrome_bin}}"
+  if [[ "${selected_doe_browser}" == *.app/Contents/MacOS/* ]]; then
+    selected_app="${selected_doe_browser%/Contents/MacOS/*}"
+    doe_lib="$(node "${SCRIPT_DIR}/stage-app-runtime.mjs" --app "${selected_app}" --library "${doe_lib}")"
   fi
 fi
 
