@@ -1,29 +1,62 @@
 # Browser-control failure catalogue
 
-[catalogue.json](catalogue.json) collects 21 failure cases from 24 sources across
-10 categories. The owner requested collection from local Codex, Claude and Gemini
+[catalogue.json](catalogue.json) collects 78 failure cases from 164 sources across
+16 categories. The owner requested collection from local Codex, Claude and Gemini
 histories and the internet on November 9, 2026. This is research for choosing
 reproductions, not a change to Fawn's goals or evidence that Fawn solves them.
 
-The cases comprise 12 public-report cases, eight cases drawn from inspected local
-tool outputs, one Gemini browser-subagent report corroborated by an exact error
-string in its conversation payload. Multiple sources can describe one case; one source can describe two
-different failures. These counts are not incident frequency or failure rates.
+The cases comprise:
+
+- 12 cases from individual public issue reports;
+- 45 failure classes from a second public pass over benchmark error analyses,
+  vendor limitation documentation, automation-tool documentation and issues
+  (21 rest on benchmark analyses, 21 on issues and 3 on documentation alone);
+- 19 cases drawn from inspected local tool outputs, 11 of them added by a second
+  local pass;
+- 2 cases resting on an agent's own report: a Gemini browser-subagent note
+  corroborated by an exact error string, and an agent's account of a second
+  session sharing its browser.
+
+Multiple sources can describe one case; one source can describe several. These
+counts are not incident frequency or failure rates.
 
 ## What was found
 
-| Boundary | Examples | Cases |
+| Category | What fails | Cases |
 | --- | --- | --- |
-| Control connection | Host unavailable; relay cannot reconnect; idle heartbeat tears down session; target closes | `BF-local-host-unavailable`, `BF-relay-reconnect`, `BF-heartbeat-session-loss`, `BF-local-target-closed` |
-| Window discovery | Computer-use server returns `noWindowsAvailable` | `BF-local-no-windows` |
-| Launch configuration | Missing browser binary; requested channel ignored; missing display; Linux-only mode on macOS | `BF-local-browser-binary-missing`, `BF-browser-selection-dropped`, `BF-headful-display-loss`, `BF-local-gemini-platform-refusal` |
-| Target identity | Human interaction loses the intended tab; selectors match multiple controls | `BF-human-tab-drift`, `BF-local-ambiguous-locator` |
-| Ownership | A second client disconnects the first | `BF-second-client-takeover` |
-| Input routing | Drawers or other elements intercept click/tap input | `BF-local-occluded-target` |
-| Control state | Disabled select; selected value reverts | `BF-local-disabled-select`, `BF-reactive-dropdown-reset`, `BF-dropdown-backend-regression` |
-| Observation freshness | Cached text disagrees with current page; navigation destroys evaluation context | `BF-stale-content-after-action`, `BF-local-navigation-context-loss` |
-| Action scope | Upload fallback clicks a submit target; text fill becomes Enter/Tab input | `BF-upload-click-fallback`, `BF-fill-control-characters` |
-| Outcome verification | Upload tool reports success despite an invalid attachment | `BF-upload-false-success` |
+| `connection-lifecycle` | The agent loses or cannot reach its control connection | 8 |
+| `window-discovery` | The control tool cannot find or keep its window or element binding | 2 |
+| `launch-configuration` | The browser does not start as requested | 5 |
+| `target-identity` | The action reaches a different tab or element than intended | 3 |
+| `ownership-concurrency` | More than one controller or person drives the same browser | 3 |
+| `input-routing` | Input is intercepted, mis-addressed or never delivered | 6 |
+| `control-state` | The page does not keep the value or choice the action set | 8 |
+| `observation-freshness` | The agent reads an out-of-date page state | 4 |
+| `action-scope` | An action does more or less than the requested operation | 3 |
+| `outcome-verification` | Success and failure reports disagree with what happened | 5 |
+| `observation-coverage` | The agent cannot see content or controls on the page | 10 |
+| `native-surface` | A dialog, picker or prompt outside the page blocks the task | 5 |
+| `page-topology` | Tabs, frames, navigations and downloads move work out of view | 5 |
+| `control-permission` | The control tool is not authorized to drive the browser | 1 |
+| `access-control` | Login, verification or bot walls stop the task (blockers only) | 3 |
+| `agent-reasoning` | The model plans or judges wrongly; the browser can supply evidence only | 7 |
+
+Case IDs for each category are in [catalogue.json](catalogue.json).
+
+The local records add three patterns. Losing the control connection or the
+window binding recurs across tasks and dates. The native file dialog's confirm
+button stayed disabled for a valid file across separate batches, sites and two
+browsers. A custom combobox showed a different option than the one requested. No
+local record shows an agent claiming false success; agents flagged unverified
+saves and submissions instead.
+
+The public classes add layers the first pass had not covered: observation gaps
+(shadow DOM, canvas-rendered applications, snapshot and screenshot fidelity),
+browser-owned surfaces (JavaScript dialogs, file choosers, select popups and
+browser prompts), page topology (new tabs, cross-origin frames, downloads and
+navigation policy), access walls, and model-side failures (grounding, loops,
+unverified completion, prompt injection). Model-side classes are kept so a
+comparison can separate them; for those the browser can only supply evidence.
 
 The useful distinction is between a rejected action and an incorrect success.
 An ambiguous selector or a disabled control should be refused. A timeout there
@@ -61,6 +94,16 @@ response alongside the report, rather than treating closure as a fix.
 - `resolution` describes what this collection establishes. Upstream issue state
   is separately retained under its source. Closed, fixed, reproduced and verified
   in Fawn are different states.
+- Public sources from the second pass carry `excerpts`: the quoted text or
+  reported figure, keyed to the case that cites it. Their `kind` is
+  `public-issue`, `benchmark-analysis`, `paper`, `vendor-doc` or `tool-doc`.
+- `layerAssessment.fixableInBrowser` is the public pass's judgment of whether a
+  browser or control layer could detect or fix the class. It is untested.
+- `local-agent-message` sources are an agent's own narration or ledger text,
+  not tool results.
+- `related-development-check` means a Fawn development test exercises a synthetic
+  version of the mechanism, named in `fawnChecks`. It does not reproduce the
+  cited reports and is not a resolution.
 
 No selected observation establishes a Doe GPU cause. Start at the named control,
 application or launch boundary. Attribute a GPU opportunity only after a trace
@@ -77,6 +120,14 @@ error bytes across 60,525 conversation steps in local SQLite stores. Gemini
 binary payloads were not fully decoded. Compressed Codex archives were not
 searched. This is a bounded, non-exhaustive sample.
 
+A second local pass on the same day extended this to 109 Codex session files and
+their 109 compressed archives (the archives held no primary records), the Codex
+log database, 25 Claude project folders and about 120 Gemini conversation
+databases. A second public pass collected 45 classes. Quotes were matched against
+the retrieved text, title-only citations are marked, and the state of every cited
+GitHub issue was read on the collection date. Published rates of models
+attempting CAPTCHA bypass were deliberately left out.
+
 Search hits include copied text, historical summaries, test source, web results,
 forked history and this collection's own searches. Those are not independent
 incidents. Selected examples exclude research echoes; repeated underlying calls
@@ -92,11 +143,15 @@ Tracked files omit credentials, cookies, personal answers, employer/application
 identifiers, private URLs and copied conversations. Generic error strings alone
 are retained.
 
-Two previously included cases based solely on a supplied progress narrative were
-withdrawn after owner corrections disputed the underlying events. They are not
-part of the current case or source counts. Conflicting agent-written records are
-kept private for reconciliation against original tool results; repetition in a
-summary does not corroborate an event. The older local examples above remain
+Two cases first included on a supplied progress narrative were withdrawn when
+relayed corrections disputed the events. The second local pass found the original
+tool results for both: the disabled confirm button in the native file dialog
+(November 3 and November 9, in Chrome and Safari) and the combobox that showed
+"option Yes, selected" after setValue "No" (November 9). They return as
+`BF-local-native-file-dialog-confirm-disabled` and
+`BF-local-combobox-choice-not-retained` on that tool evidence. The private source
+map records which relayed corrections the records contradicted. Repetition in a
+summary still does not corroborate an event, and the older local examples remain
 historical examples, not evidence that separate recent task batches were one run.
 
 ## Adding a case or turning one into a test
