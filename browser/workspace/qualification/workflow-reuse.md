@@ -82,3 +82,8 @@ source/policy identities, inputs, results and failures. `workflow.private.json`
 contains the reusable HMAC graph and stays private/ignored. A passing
 `syntheticReuseEstablished` is scoped to this fixture; the report leaves
 `productAdvantageEstablished` false for the broader product claim.
+
+The [retained decision](../../../reports/fawn-workspace/20261109-workflow-reuse/decision.json)
+binds the live source, model identity, paired outcomes, independent audit and
+initial failed trial. Raw activity and the private graph remain in ignored local
+storage; the projection is diagnostic evidence, not portable release qualification.

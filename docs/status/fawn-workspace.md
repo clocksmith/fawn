@@ -23,16 +23,18 @@ observation. Scripted workflows show no material overall advantage over competen
 stock automation. None of that evidence transfers automatically to the new client,
 protocol, browser build or platform.
 
+The opt-in [workflow API](../../browser/workspace/trace-dag.md) has
+[matched Sonnet reuse evidence](../../reports/fawn-workspace/20261109-workflow-reuse/decision.json)
+on a frozen synthetic application. The diagnostic establishes verified learning,
+parameterized replay and safe fallback within that fixture. It preserves the
+initial failed trial and all paired results; it does not promote the broader
+product or establish superiority over scripted automation.
+
 ## Active blockers
 
-2026-11-09 development addition: the opt-in [trace session API](../../browser/workspace/trace-dag.md)
-records slot-bound pre-submit paths and replays them through normal service
-admission. Synthetic browser checks exercise four-step reuse across different
-requisition IDs through Playwright and CDP without planner calls or submissions.
-The live observation response adds structural label metadata and a truncation
-flag; existing journals are unchanged. The prototype is not wired into automatic
-client delegation and has no live ATS or matched-performance qualification.
-
+- Workflow reuse remains a programmatic API. UI integration, live ATS coverage,
+  website-account binding, variable-length loops and learning from repairs remain
+  unimplemented or unqualified.
 - The product client has development and bounded live-planner evidence, not
   general task superiority or release admission. Its matched investigation probe
   completed on both arms; Fawn did not establish an advantage.
