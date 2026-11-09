@@ -39,6 +39,12 @@ absent from the grant, the recording API rejects native submit targets, and the
 fixture independently counts any submission request. No account identity is
 inferred from service ownership.
 
+Profile inputs may include fields an application never requests. The task requires
+review of requested fields, not display of every profile slot. The initial live
+trial exposed ambiguous wording here: Sonnet reached review but asked for help
+about the unused phone slot. That failed trial is retained separately; the oracle
+and required form fields were not relaxed when clarifying the task.
+
 Three familiar pairs alternate arm order. One pair per fault then exercises:
 
 - Changed fields: a new required phone question in the second stage. Reuse must

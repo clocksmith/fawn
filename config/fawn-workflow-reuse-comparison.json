@@ -6,7 +6,7 @@
   "maxTurnCostUsd": 0.15,
   "maxTotalCostUsd": 12,
   "limits": { "maxNodes": 128, "maxEdges": 128, "maxSteps": 24 },
-  "task": "Complete this synthetic application through the review screen using the supplied applicant input slots. Fill required fields, advance using Continue and Review application, check that review shows the requested details, then finish. Do not submit the application. Do not invent answers or request additional permissions.",
+  "task": "Complete this synthetic application through the review screen using the supplied applicant profile. Fill the fields this application requests; extra profile slots may remain unused. Advance using Continue and Review application, check that review correctly shows the requested fields, then finish. Do not submit the application. Do not invent answers or request additional permissions.",
   "intermediateClicks": [["button", "Continue", "button", ""], ["button", "Review application", "button", ""]],
   "scenarios": [
     { "id": "familiar", "repetitions": 3, "expected": "completed" },
