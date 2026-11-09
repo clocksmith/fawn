@@ -199,7 +199,7 @@
       "recordSha256": "9a8c18ad9651c7d1a936b95ab0390b29104be9173cd7a9590321c6b22e648d77",
       "signature": "browser access host is unavailable",
       "context": "computer-use-tool",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:codex:2fe237b4b67e76d8",
@@ -209,7 +209,7 @@
       "recordSha256": "2fe237b4b67e76d8e77a202a9b5707dd698e8bb9d1f33783b11d8db6492fc3f4",
       "signature": "noWindowsAvailable",
       "context": "computer-use-tool",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:codex:8ef0a48257097f82",
@@ -219,7 +219,7 @@
       "recordSha256": "8ef0a48257097f82f6e29995f750617e94a9e12e5553aba1aa6f8322988c5a55",
       "signature": "strict mode violation",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:codex:a5be24c8200d1d57",
@@ -229,7 +229,7 @@
       "recordSha256": "a5be24c8200d1d57898521d89486a2c406070fcb5abf1452dad089bf974e0aa8",
       "signature": "intercepts pointer events",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:codex:b2f0daa6e9aeb069",
@@ -239,7 +239,7 @@
       "recordSha256": "b2f0daa6e9aeb0697ac3de6a8d700e3676840414bbbfeda4d40b15250f0a28e9",
       "signature": "intercepts pointer events",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:codex:76e101c11b1b5953",
@@ -249,7 +249,7 @@
       "recordSha256": "76e101c11b1b59537823aabfa2654e5a5e3faa6209af94d36865baa9cf13b238",
       "signature": "Executable doesn",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:codex:8d09a5bc892d4a57",
@@ -259,7 +259,7 @@
       "recordSha256": "8d09a5bc892d4a5759118aa9b2e882aab8e47bccf26e9392fe637410a0350e12",
       "signature": "Execution context was destroyed",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:claude:ee45deab7a9dc6ce",
@@ -269,7 +269,7 @@
       "recordSha256": "ee45deab7a9dc6ce195db9906935fbcc531db791de8d8fcf8b50f037e517969e",
       "signature": "TimeoutError",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:claude:4c746269cde37cc0",
@@ -279,7 +279,7 @@
       "recordSha256": "4c746269cde37cc0b5b712c38f91ba0ac40d46a503ba6fb2a2c0014cc85fe863",
       "signature": "intercepts pointer events",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:claude:793a448073af737f",
@@ -289,7 +289,7 @@
       "recordSha256": "793a448073af737fe9fc20cfedd7e1338268e46670fb2dbd23fe1403fb834687",
       "signature": "strict mode violation",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:claude:d3f21e15e9f9729c",
@@ -299,7 +299,7 @@
       "recordSha256": "d3f21e15e9f9729c5f3920094bfb6de6955db299f559398cd86ddf8bb379c12c",
       "signature": "Target page, context or browser has been closed",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:claude:298a18026eb63a87",
@@ -309,7 +309,7 @@
       "recordSha256": "298a18026eb63a8736e01426f1593025db80fe597a9b3fe5367b210416dc900a",
       "signature": "intercepts pointer events",
       "context": "agent-run-browser-test-or-script",
-      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
     },
     {
       "id": "local:gemini:2f0a6ea526ac838b",
@@ -320,13 +320,6 @@
       "signature": "local chrome mode is only supported on Linux",
       "context": "browser-subagent",
       "evidenceLimit": "Readable scratchpad reports the launch refusal; exact error bytes also occur in a conversation step payload. Binary payload was not fully decoded, so this is not classified as an independently decoded tool result. Observation date is unknown."
-    },
-    {
-      "id": "user:browser-form-failures-20261109",
-      "kind": "user-supplied-agent-transcript",
-      "observedAt": null,
-      "suppliedAt": "2026-11-09",
-      "evidenceLimit": "Owner pasted an agent progress report. Form state, screenshots and event trace were not independently inspected. Personal answers, employers and application identifiers omitted."
     }
   ],
   "cases": [
@@ -837,54 +830,6 @@
         "passCondition": "Advertise capability before dispatch and refuse unsupported launch clearly; do not present it as a website failure."
       },
       "resolution": "historical-outcome-only; current resolution not checked"
-    },
-    {
-      "id": "BF-reported-choice-not-retained",
-      "category": "control-state",
-      "sourceIds": [
-        "user:browser-form-failures-20261109"
-      ],
-      "evidenceLevel": "user-supplied-report",
-      "observation": "Agent reported that some dropdown choices did not commit reliably and tried another browser.",
-      "rootCause": {
-        "status": "not-established",
-        "assessment": "No original event trace; browser-switch outcome does not establish root cause."
-      },
-      "fawn": {
-        "candidateOwner": "browser/workspace/src/conditions.js",
-        "ownerMapping": "research inference, not assigned implementation work",
-        "doeRelevance": "No GPU fault reported."
-      },
-      "reproduction": {
-        "status": "proposed-not-run",
-        "setup": "Use a custom combobox whose framework state rerenders after selection; inspect value after blur and the next form step.",
-        "passCondition": "Verify application-visible retention; do not count a click or temporary highlight as commitment."
-      },
-      "resolution": "unverified"
-    },
-    {
-      "id": "BF-reported-upload-disabled",
-      "category": "control-state",
-      "sourceIds": [
-        "user:browser-form-failures-20261109"
-      ],
-      "evidenceLevel": "user-supplied-report",
-      "observation": "Agent reported the same disabled upload button in two different browsers.",
-      "rootCause": {
-        "status": "not-established",
-        "assessment": "No original event trace; browser-switch outcome does not establish root cause."
-      },
-      "fawn": {
-        "candidateOwner": "browser/workspace/src/conditions.js",
-        "ownerMapping": "research inference, not assigned implementation work",
-        "doeRelevance": "No GPU fault reported."
-      },
-      "reproduction": {
-        "status": "proposed-not-run",
-        "setup": "Disable upload pending required fields or validation, then inspect the UI and any real file input without altering disabled state.",
-        "passCondition": "Distinguish application-disabled upload from an unsupported native picker; surface observable prerequisites."
-      },
-      "resolution": "unverified"
     }
   ],
   "collectionScope": {
@@ -899,7 +844,7 @@
       "method": "Targeted web discovery followed by primary GitHub issue metadata/body reads; selected maintainer/reporter comments checked.",
       "limit": "Convenience sample; no denominator, failure-rate estimate or product ranking."
     },
-    "privacy": "Public catalogue retains generic symptoms, minimal error signatures and hashes. Ignored local provenance maps fingerprints to private source paths; raw histories are not copied to tracked files."
+    "privacy": "Public catalogue retains generic symptoms, minimal error signatures and hashes. Exact private source locations and disputed records are retained in the private owner research repository. Raw histories and private page content are not copied to tracked public files."
   },
   "categories": [
     "connection-lifecycle",

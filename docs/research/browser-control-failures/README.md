@@ -1,14 +1,13 @@
 # Browser-control failure catalogue
 
-[catalogue.json](catalogue.json) collects 23 failure cases from 25 sources across
+[catalogue.json](catalogue.json) collects 21 failure cases from 24 sources across
 10 categories. The owner requested collection from local Codex, Claude and Gemini
 histories and the internet on November 9, 2026. This is research for choosing
 reproductions, not a change to Fawn's goals or evidence that Fawn solves them.
 
 The cases comprise 12 public-report cases, eight cases drawn from inspected local
 tool outputs, one Gemini browser-subagent report corroborated by an exact error
-string in its conversation payload, and two cases from the owner's supplied
-transcript. Multiple sources can describe one case; one source can describe two
+string in its conversation payload. Multiple sources can describe one case; one source can describe two
 different failures. These counts are not incident frequency or failure rates.
 
 ## What was found
@@ -21,7 +20,7 @@ different failures. These counts are not incident frequency or failure rates.
 | Target identity | Human interaction loses the intended tab; selectors match multiple controls | `BF-human-tab-drift`, `BF-local-ambiguous-locator` |
 | Ownership | A second client disconnects the first | `BF-second-client-takeover` |
 | Input routing | Drawers or other elements intercept click/tap input | `BF-local-occluded-target` |
-| Control state | Disabled select; selected value reverts; upload remains disabled | `BF-local-disabled-select`, `BF-reactive-dropdown-reset`, `BF-dropdown-backend-regression`, `BF-reported-choice-not-retained`, `BF-reported-upload-disabled` |
+| Control state | Disabled select; selected value reverts | `BF-local-disabled-select`, `BF-reactive-dropdown-reset`, `BF-dropdown-backend-regression` |
 | Observation freshness | Cached text disagrees with current page; navigation destroys evaluation context | `BF-stale-content-after-action`, `BF-local-navigation-context-loss` |
 | Action scope | Upload fallback clicks a submit target; text fill becomes Enter/Tab input | `BF-upload-click-fallback`, `BF-fill-control-characters` |
 | Outcome verification | Upload tool reports success despite an invalid attachment | `BF-upload-false-success` |
@@ -53,11 +52,11 @@ response alongside the report, rather than treating closure as a fix.
 - `cases` separate the observation from the root-cause assessment. A reporter's
   diagnosis is attributed, not promoted to an independently established cause.
 - `evidenceLevel` distinguishes local tool output, local agent report,
-  user-supplied report and upstream report. A shell-run browser test is labeled
+  and upstream report. A shell-run browser test is labeled
   as such; it is not counted as a direct computer-use agent failure.
 - `fawn.candidateOwner` maps a possible investigation to an existing source file.
   It is an inference, not an implementation assignment or coverage claim.
-- `reproduction` describes a proposed setup and pass condition. All 23 are
+- `reproduction` describes a proposed setup and pass condition. All 21 are
   `proposed-not-run`; none is an implemented regression fixture yet.
 - `resolution` describes what this collection establishes. Upstream issue state
   is separately retained under its source. Closed, fixed, reproduced and verified
@@ -83,16 +82,22 @@ forked history and this collection's own searches. Those are not independent
 incidents. Selected examples exclude research echoes; repeated underlying calls
 are not counted twice. Category counts describe this catalogue only.
 
-Raw paths, record line numbers/call IDs and Gemini database row locations stay
-in ignored `bench/out/browser-failure-research/private-provenance.json` in this
-checkout. Fingerprints in the catalogue map to that file. Raw histories remain
-in their original locations. The local map is not portable evidence and is not
-pushed; another machine can assess the public sources but cannot independently
-verify private examples without authorized source access.
+Exact source paths, record line numbers/call IDs and Gemini database row locations
+are retained in the private owner research repository. Public fingerprints allow
+an authorized reviewer with that private map to identify the original evidence.
+Raw histories remain in their original locations. Another machine cannot verify
+these private examples from this public catalogue alone.
 
 Tracked files omit credentials, cookies, personal answers, employer/application
 identifiers, private URLs and copied conversations. Generic error strings alone
-are retained. The owner-supplied form report is summarized without those details.
+are retained.
+
+Two previously included cases based solely on a supplied progress narrative were
+withdrawn after owner corrections disputed the underlying events. They are not
+part of the current case or source counts. Conflicting agent-written records are
+kept private for reconciliation against original tool results; repetition in a
+summary does not corroborate an event. The older local examples above remain
+historical examples, not evidence that separate recent task batches were one run.
 
 ## Adding a case or turning one into a test
 
