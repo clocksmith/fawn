@@ -14,7 +14,7 @@ Delegate bounded investigations and resume from saved evidence with human contro
 
 ## Scope
 
-- Loopback HTTP, controller, planner, repository evidence and reasoning journal.
+- Loopback HTTP, controller, planner, repository evidence, reasoning journal and opt-in trace sessions.
 
 ## Contracts
 
@@ -34,11 +34,13 @@ Outputs:
 - Model output grants no permission. Repository reads stay under the selected root, including symlinks.
 - Corrections invalidate dependents without mutating earlier revisions.
 - Credentials stay private; HTTP exposes no browser handle or service credential.
+- Trace replay preserves service admission and stops before submission.
 
 ## Acceptance
 
 - Evidence: [Client tests](../../test/unit/product-client.test.js): interruption, HTTP authority and restart.
 - [Investigation tests](../../test/unit/investigation.test.js): revisions and source containment.
+- [Trace tests](../../test/browser/trace-dag.test.js): slot-bound replay and refusal boundaries.
 - [Browser journey](../../test/browser/product-surface.test.js): UI, uncertainty and resumption with a controlled planner.
 - Parent comparison remains mandatory; controlled planners prove no live-model quality or product advantage.
 

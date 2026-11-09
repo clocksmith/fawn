@@ -128,8 +128,29 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
   }
   const roleOf = (node) => {
     const tag = node.tagName.toLowerCase();
+    if (node.hasAttribute('role')) return node.getAttribute('role');
     if (tag === 'input') return ['checkbox', 'radio', 'submit', 'button'].includes(node.type) ? node.type : 'textbox';
     return node.getAttribute('role') ?? ROLES[tag] ?? tag;
+  };
+  // A bounded label reader, not a replacement for Chromium's accessibility-name algorithm.
+  // Never use a textbox's current value or a select's option list as its label.
+  const labelOf = (node) => {
+    const labelText = (root) => {
+      const visit = (current) => {
+        if (current.nodeType === Node.TEXT_NODE) return current.textContent;
+        if (current.nodeType !== Node.ELEMENT_NODE || (current !== root
+          && current.matches('input, select, textarea, [role="combobox"], [role="listbox"], script, style'))) return '';
+        return [...current.childNodes].map(visit).join(' ');
+      };
+      return visit(root);
+    };
+    const references = (node.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+    const referenced = references.map(id => document.getElementById(id)).filter(value => value && permitted(value));
+    const labels = [...(node.labels ?? [])].filter(permitted);
+    const text = referenced.map(labelText).join(' ') || node.getAttribute('aria-label')
+      || labels.map(labelText).join(' ')
+      || (['button', 'link', 'option', 'tab', 'menuitem'].includes(roleOf(node)) ? fullText(node) : '');
+    return text.replace(/\s+/g, ' ').trim();
   };
   // Compact outline: collapsed text and interactive elements as [handle role "name" = "value"].
   const renderOutline = (root) => {
@@ -191,7 +212,8 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     html: document.documentElement.outerHTML,
     text: (roots === null ? (document.body?.innerText ?? '') : roots.map(fullText).join('\n')).slice(0, maxTextChars),
     isTruncated: nodes.length > maxElements,
-    elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), handle: handles.get(node), ...describe(node) })),
+    elements: nodes.slice(0, maxElements).map((node) => ({ selector: stableSelector(node), handle: handles.get(node),
+      role: roleOf(node), label: labelOf(node), inputType: node.tagName === 'INPUT' ? node.type : '', ...describe(node) })),
     regions: [...regions.map(readRegion), ...regionGroups.flatMap(readGroup)],
   };
 }
@@ -204,6 +226,16 @@ function elementDigest(element) {
     textFingerprint: element.textFingerprint,
     ...(element.formAction ? { formAction: element.formAction } : {}),
   }));
+}
+
+/** Structural hints exclude instance IDs, prose, URLs and control values; never authority. */
+function structuralLocator(element) {
+  return [element.role ?? '', (element.label ?? '').replace(/\s+/g, ' ').trim(),
+    element.tag ?? '', element.inputType ?? ''];
+}
+
+function structuralOutlineHash(elements) {
+  return sha256Hex(canonicalJson(elements.map(structuralLocator)));
 }
 
 function snapshotArgs(config, { regions = [], regionGroups = [], outline = false, readRoots = null } = {}) {
@@ -239,6 +271,7 @@ function buildSnapshot(raw, pageCount) {
     text: raw.text,
     isTruncated: raw.isTruncated,
     elements,
+    structuralHash: structuralOutlineHash(elements),
     pageCount,
     contentHash: sha256Hex(canonicalJson({ url: raw.url, html: raw.html, controlValues })),
     regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
@@ -265,4 +298,4 @@ function buildProbe(result) {
   };
 }
 
-export { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs };
+export { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs, structuralLocator, structuralOutlineHash };

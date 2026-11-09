@@ -40,6 +40,14 @@ policy cannot move into the GPU runtime or shared authority machinery.
 
 ## Versioned observations and action admission
 
+The optional [client trace prototype](../browser/workspace/trace-dag.md) reuses
+completed, slot-bound paths above this service. Its structural fingerprints are
+lookup hints, not authority. Replay binds fresh observations and retains normal
+admission, dispatch and value-retention checks. Final submission is excluded.
+Live element metadata adds role, bounded label and input type; the structural
+hash and truncation flag are live response fields, not new journal authority.
+Existing journals remain readable unchanged.
+
 Observations carry workspace identity, a durable version and the owner generation
 under which they were issued. Page changes produce new observations or explicit
 versioned changes. Every automated mutation identifies:

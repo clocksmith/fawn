@@ -389,6 +389,11 @@ a person delegates.
 
 ### Investigation comparison
 
+The optional [trace session prototype](trace-dag.md) records completed
+parameterized paths and replays them through the service without planner calls,
+stopping at an unknown branch or the pre-submit boundary. It is a programmatic
+API, not automatic product-client behavior or a qualified live-site capability.
+
 `node qualification/product-compare.js --out <directory>` compares the product
 client with stock Chromium plus the same durable evidence/issue tracker and
 planner. The policy fixes source pages, repository code, model, tool contract and

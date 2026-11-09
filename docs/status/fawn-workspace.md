@@ -25,6 +25,14 @@ protocol, browser build or platform.
 
 ## Active blockers
 
+2026-11-09 development addition: the opt-in [trace session API](../../browser/workspace/trace-dag.md)
+records slot-bound pre-submit paths and replays them through normal service
+admission. Synthetic browser checks exercise four-step reuse across different
+requisition IDs through Playwright and CDP without planner calls or submissions.
+The live observation response adds structural label metadata and a truncation
+flag; existing journals are unchanged. The prototype is not wired into automatic
+client delegation and has no live ATS or matched-performance qualification.
+
 - The product client has development and bounded live-planner evidence, not
   general task superiority or release admission. Its matched investigation probe
   completed on both arms; Fawn did not establish an advantage.

@@ -293,7 +293,8 @@ class WorkspaceService {
       handles,
       regions: snapshot.regionDigests,
     });
-    return { ...workspace.observation, title: snapshot.title, text: snapshot.text, elements: snapshot.elements };
+    return { ...workspace.observation, title: snapshot.title, text: snapshot.text, elements: snapshot.elements,
+      structuralHash: snapshot.structuralHash, isTruncated: snapshot.isTruncated };
   }
 
   /**
