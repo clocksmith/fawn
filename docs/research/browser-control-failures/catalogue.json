@@ -5256,5 +5256,23 @@
     "control-permission",
     "access-control",
     "agent-reasoning"
+  ],
+  "priorArt": [
+    {
+      "id": "webgpu-inspector-pixel-history",
+      "kind": "documented-capability",
+      "url": "https://github.com/brendan-duncan/webgpu_inspector/blob/main/docs/capture.md#pixel-history",
+      "checkedAt": "2026-11-09",
+      "scope": "Documents per-pixel rendering history, draw/primitive/instance information and shader debugging.",
+      "evidenceLimit": "Primary documentation checked; implementation coverage, overhead and reliability not independently qualified."
+    },
+    {
+      "id": "webgpu-reconstruct-native-replay",
+      "kind": "documented-capability",
+      "url": "https://github.com/Chainsawkitten/WebGPUReconstruct",
+      "checkedAt": "2026-11-09",
+      "scope": "Documents recording browser WebGPU and replaying captures natively using Dawn or wgpu.",
+      "evidenceLimit": "Primary documentation checked; declared limitations remain and no head-to-head run was performed."
+    }
   ]
 }

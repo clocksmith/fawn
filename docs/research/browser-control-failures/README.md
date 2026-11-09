@@ -111,6 +111,11 @@ places the failure there. The [workspace status](../../status/fawn-workspace.md)
 and [workspace contract](../../fawn-workspace-contract.md) retain their existing
 authority; this catalogue does not promote their acceptance.
 
+The separate [claims and experiment boundary](claims-boundary.md) records GPU
+inspection/native-replay prior art, application-ID limits, headless discovery,
+presentation evidence, redaction and local-planner comparison requirements.
+`priorArt` records are not additional browser failure cases or incident counts.
+
 ## Collection and privacy
 
 The local discovery pass scanned 53 Codex session JSONL files and 235 Claude

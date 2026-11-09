@@ -86,6 +86,9 @@ of repeated prose does not delete them.
 
 ## Browser
 
+- [`research/browser-control-failures/claims-boundary.md`](research/browser-control-failures/claims-boundary.md):
+  inspection/replay prior art and independently tested capture, control and planning boundaries
+
 - [`research/browser-control-failures/README.md`](research/browser-control-failures/README.md):
   structured local and public browser-control failures, upstream dispositions,
   and proposed reproductions; research, not qualification or a roadmap change

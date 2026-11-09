@@ -19,16 +19,17 @@ const executable = realpathSync(options['--executable']);
 const output = resolve(options['--out']);
 mkdirSync(output, { recursive: false });
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const controlFlags = ['--enable-begin-frame-control', '--run-all-compositor-stages-before-draw'];
 const receipt = {
   schemaVersion: 1, classification: 'diagnostic capability probe; not render-on-demand qualification',
   observedAt: new Date().toISOString(), executable: { path: executable, sha256: sha256(readFileSync(executable)) },
-  requestedFlags: ['--headless', '--enable-begin-frame-control'], transport: 'isolated Playwright CDP pipe',
+  requestedFlags: ['--headless', ...controlFlags], transport: 'isolated Playwright CDP pipe',
   status: 'not-run', limitations: ['An available method does not establish frame cadence, application readiness or presentation correctness.'],
 };
 let context;
 try {
   context = await chromium.launchPersistentContext(join(output, 'profile'), {
-    executablePath: executable, headless: true, args: ['--enable-begin-frame-control'], timeout: 30000,
+    executablePath: executable, headless: true, args: controlFlags, timeout: 30000,
   });
   const page = context.pages()[0] ?? await context.newPage();
   await page.goto('data:text/html,<title>Isolated render-control probe</title><canvas width="8" height="8"></canvas>');

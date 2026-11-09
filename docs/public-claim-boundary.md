@@ -44,6 +44,14 @@ Browser replacement requires the published-browser contract and its checked
 artifacts under `browser/chromium/contracts/`. Package browser wrappers, native
 runtime rows, and local browser diagnostics do not satisfy that contract.
 
+The [browser inspection and experiment boundary](research/browser-control-failures/claims-boundary.md)
+also governs GPU attribution, native replay, headless control, presentation,
+redaction and local-planner comparisons. Existing wrapper/native-replay tools
+preclude exclusivity claims without a narrower demonstrated distinction.
+Queue completion does not prove presentation, operational identifiers do not
+prove application meaning, and a shared GPU does not establish cross-process
+scheduling or kernel preemption.
+
 ## Public documentation
 
 The public claim checker scans the root and package READMEs plus the compact
