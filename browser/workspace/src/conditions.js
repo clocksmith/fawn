@@ -16,6 +16,7 @@ const CONDITION_FIELDS = Object.freeze({
   'element-text-includes': ['selector', 'value'],
   'element-text-excludes': ['selector', 'value'],
   'input-value-equals': ['selector', 'value'],
+  'choice-equals': ['selector', 'value'],
 });
 
 const CONDITION_EVALUATORS = Object.freeze({
@@ -54,6 +55,14 @@ const CONDITION_EVALUATORS = Object.freeze({
     const element = await probe.element(condition.selector);
     const established = element.count === SINGLE_MATCH && element.value === condition.value;
     return { established, observed: { count: element.count, value: element.value } };
+  },
+  // The choice the control shows: a native select's selected option (value or label), an ARIA
+  // combobox's own value or text, or a listbox's single selected option.
+  'choice-equals': async (probe, condition) => {
+    const element = await probe.element(condition.selector);
+    const choice = element.count === SINGLE_MATCH ? (element.choice ?? null) : null;
+    const established = choice !== null && (choice.value === condition.value || choice.label === condition.value);
+    return { established, observed: { count: element.count, choice } };
   },
 });
 

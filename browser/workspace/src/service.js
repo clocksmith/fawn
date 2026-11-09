@@ -41,6 +41,9 @@ const KIND_COMPLETION_BASIS = Object.freeze({
   download: 'artifact-saved',
 });
 
+// The live-page condition that shows a fill or select took effect.
+const VALUE_CONDITIONS = Object.freeze({ fill: 'input-value-equals', select: 'choice-equals' });
+
 const RESTART_RULES = Object.freeze([
   {
     matches: (action) => action.status === ACTION_STATUS.QUEUED,
@@ -610,16 +613,35 @@ class WorkspaceService {
     this.#hooks.afterEffect?.(request);
     const completion = request.completion;
     if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request);
-    if (request.kind === 'fill' || request.kind === 'select') {
-      const check = await evaluateConditions(
-        [{ kind: 'input-value-equals', selector: request.target.selector, value: request.params.value }],
-        this.#probe(workspaceId, request.pageId, request),
-      );
-      return check.allEstablished
-        ? { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect, check } }
-        : { outcome: OUTCOMES.UNKNOWN, basis: 'value-unverified', evidence: { effect, check } };
-    }
+    if (VALUE_CONDITIONS[request.kind]) return this.#awaitValue(workspaceId, request, effect);
     return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect } };
+  }
+
+  /**
+   * A filled or chosen value counts only once the page shows it and still shows it after
+   * dispatch.valueSettleMs, so a page that resets the value (late hydration, a re-render) is
+   * caught. Never shown: value-unverified. Shown, then lost: value-reverted. Both stay unknown.
+   * Waits count poll intervals rather than clock time, so an injected clock cannot stall them.
+   */
+  async #awaitValue(workspaceId, request, effect) {
+    const conditions = [{ kind: VALUE_CONDITIONS[request.kind], selector: request.target.selector, value: request.params.value }];
+    const probe = this.#probe(workspaceId, request.pageId, request);
+    const { completionTimeoutMs, completionPollMs, valueSettleMs } = this.#config.dispatch;
+    const pause = () => new Promise((resolve) => setTimeout(resolve, completionPollMs));
+    let check = await evaluateConditions(conditions, probe);
+    for (let waitedMs = 0; !check.allEstablished && waitedMs < completionTimeoutMs; waitedMs += completionPollMs) {
+      await pause();
+      check = await evaluateConditions(conditions, probe);
+    }
+    if (!check.allEstablished) return { outcome: OUTCOMES.UNKNOWN, basis: 'value-unverified', evidence: { effect, check } };
+    for (let heldMs = 0; heldMs < valueSettleMs; heldMs += completionPollMs) {
+      await pause();
+      const recheck = await evaluateConditions(conditions, probe);
+      if (!recheck.allEstablished) {
+        return { outcome: OUTCOMES.UNKNOWN, basis: 'value-reverted', evidence: { effect, check, recheck } };
+      }
+    }
+    return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect, check } };
   }
 
   async #awaitCompletion(workspaceId, completion, effect, request) {

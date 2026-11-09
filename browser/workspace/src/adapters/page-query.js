@@ -11,7 +11,37 @@ const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
 function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null }) {
-  const INTERACTIVE = 'a[href], button, input, select, textarea, [role="button"], [role="link"]';
+  // Custom widgets declare their ARIA role; without these, a custom dropdown and its options
+  // never appear in an observation and cannot be targeted.
+  const WIDGET_ROLES = ['button', 'link', 'checkbox', 'radio', 'switch', 'combobox', 'listbox', 'option',
+    'menuitem', 'menuitemcheckbox', 'menuitemradio', 'tab', 'textbox', 'searchbox', 'spinbutton', 'slider'];
+  const INTERACTIVE = ['a[href]', 'button', 'input', 'select', 'textarea', ...WIDGET_ROLES.map((role) => `[role="${role}"]`)].join(', ');
+  // The choice a select, combobox or listbox currently shows: native selects report the selected
+  // option; ARIA comboboxes their own value or text; listboxes their one aria-selected option.
+  // Null for other elements, and a null label when the page shows no single choice.
+  const choiceOf = (node) => {
+    const visibleText = (element) => (element.innerText ?? element.textContent ?? '').trim();
+    if (node.tagName === 'SELECT') {
+      const option = node.selectedOptions[0];
+      return option ? { value: option.value, label: option.label.trim() } : { value: null, label: null };
+    }
+    const role = node.getAttribute('role');
+    if (role === 'combobox') {
+      const shown = ['INPUT', 'TEXTAREA'].includes(node.tagName) ? node.value.trim() : visibleText(node);
+      return { value: shown, label: shown };
+    }
+    if (role === 'listbox') {
+      const selected = node.querySelectorAll('[role="option"][aria-selected="true"]');
+      const label = selected.length === 1 ? visibleText(selected[0]) : null;
+      return { value: label, label };
+    }
+    return null;
+  };
+  const statesOf = (node) => [
+    (node.getAttribute('aria-checked') === 'true' || (node.tagName === 'INPUT' && ['checkbox', 'radio'].includes(node.type) && node.checked)) && 'checked',
+    node.getAttribute('aria-selected') === 'true' && 'selected',
+    node.getAttribute('aria-expanded') === 'true' && 'expanded',
+  ].filter(Boolean);
   const permissionRoots = readRoots === null ? null : readRoots.map(selector => {
     const matches = document.querySelectorAll(selector);
     if (matches.length !== 1) throw Error('A shared region must still match exactly one element');
@@ -76,8 +106,8 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
   };
   if (mode === 'element') {
     const nodes = [...document.querySelectorAll(selector)].filter(permitted);
-    if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null };
-    return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]) };
+    if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null, choice: null };
+    return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]), choice: choiceOf(nodes[0]) };
   }
   const CONTROLS = 'input, select, textarea';
   const VALUE_TAGS = ['INPUT', 'SELECT', 'TEXTAREA'];
@@ -114,8 +144,11 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       const handle = handles.get(node);
       if (handle) {
         const name = (node.innerText ?? '').trim() || node.getAttribute('aria-label') || node.getAttribute('name') || '';
-        const value = VALUE_TAGS.includes(node.tagName) ? ` = ${JSON.stringify(String(node.value))}` : '';
-        parts.push(`[${handle} ${roleOf(node)} ${JSON.stringify(name)}${value}]`);
+        const choice = node.tagName === 'SELECT' ? null : choiceOf(node);
+        const value = VALUE_TAGS.includes(node.tagName) ? ` = ${JSON.stringify(String(node.value))}`
+          : choice ? ` = ${JSON.stringify(choice.label ?? '')}` : '';
+        const states = statesOf(node).map((state) => ` ${state}`).join('');
+        parts.push(`[${handle} ${roleOf(node)} ${JSON.stringify(name)}${value}${states}]`);
         return;
       }
       node.childNodes.forEach(visit);
@@ -222,12 +255,13 @@ function buildSnapshot(raw, pageCount) {
  */
 function buildProbe(result) {
   if (result.forbidden) throw new Error('Element probe exceeds the selected observation regions');
-  if (!result.element) return { count: result.count, digest: null, text: null, value: null };
+  if (!result.element) return { count: result.count, digest: null, text: null, value: null, choice: null };
   return {
     count: result.count,
     digest: elementDigest(result.element),
     text: result.fullText,
     value: result.element.value,
+    choice: result.choice ?? null,
   };
 }
 

@@ -11,6 +11,7 @@ import { mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import playwrightRegistry from 'playwright-core/lib/server/registry/index';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
+import { performChoice } from './choice-query.js';
 import { prepareFawnLaunch } from '../browser-launch.js';
 
 const MESSAGE_TERMINATOR = '\0';
@@ -265,8 +266,12 @@ class CdpWorkspaceAdapter {
   }
 
   async _click(workspaceId, selector, signal = undefined) {
-    const { cdp, sessionId } = this._entry(workspaceId);
     const { x, y } = await this._point(workspaceId, selector, signal);
+    await this._clickAt(workspaceId, x, y, signal);
+  }
+
+  async _clickAt(workspaceId, x, y, signal = undefined) {
+    const { cdp, sessionId } = this._entry(workspaceId);
     await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }, sessionId, signal);
     for (const type of ['mousePressed', 'mouseReleased']) {
       await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: LEFT_BUTTON, clickCount: SINGLE_CLICK }, sessionId, signal);
@@ -359,14 +364,18 @@ const EFFECTS = Object.freeze({
     return { selector: request.target.selector };
   },
   async select(workspaceId, request) {
-    const selected = await this._evaluate(workspaceId, `(() => {
-      const node = document.querySelector(${JSON.stringify(request.target.selector)});
-      node.value = ${JSON.stringify(request.params.value)};
-      node.dispatchEvent(new Event('input', { bubbles: true }));
-      node.dispatchEvent(new Event('change', { bubbles: true }));
-      return [node.value];
-    })()`);
-    return { selector: request.target.selector, selected };
+    const { completionPollMs, completionTimeoutMs } = this._config.dispatch;
+    return performChoice({
+      evaluate: (fn, args) => this._evaluate(workspaceId, `(${fn.toString()})(${JSON.stringify(args)})`),
+      clickSelector: (selector) => this._click(workspaceId, selector),
+      clickPoint: (x, y) => this._clickAt(workspaceId, x, y),
+      setNative: (selector, value) => this._evaluate(workspaceId, `(() => {
+        const node = document.querySelector(${JSON.stringify(selector)});
+        node.value = ${JSON.stringify(value)};
+        node.dispatchEvent(new Event('input', { bubbles: true }));
+        node.dispatchEvent(new Event('change', { bubbles: true }));
+      })()`),
+    }, { selector: request.target.selector, value: request.params.value, pollMs: completionPollMs, timeoutMs: completionTimeoutMs });
   },
   async download(workspaceId, request) {
     const { cdp, downloadDir } = this._entry(workspaceId);

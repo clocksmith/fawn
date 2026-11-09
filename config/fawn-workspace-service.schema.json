@@ -64,11 +64,12 @@
     "dispatch": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["actionTimeoutMs", "completionTimeoutMs", "completionPollMs"],
+      "required": ["actionTimeoutMs", "completionTimeoutMs", "completionPollMs", "valueSettleMs"],
       "properties": {
         "actionTimeoutMs": { "type": "integer", "minimum": 1 },
         "completionTimeoutMs": { "type": "integer", "minimum": 1 },
-        "completionPollMs": { "type": "integer", "minimum": 1 }
+        "completionPollMs": { "type": "integer", "minimum": 1 },
+        "valueSettleMs": { "type": "integer", "minimum": 1, "description": "How long a filled or chosen value must stay on the page before it counts as kept; polled every completionPollMs." }
       }
     },
     "browser": {
@@ -249,7 +250,8 @@
           "element-absent",
           "element-text-includes",
           "element-text-excludes",
-          "input-value-equals"
+          "input-value-equals",
+          "choice-equals"
         ]
       }
     },

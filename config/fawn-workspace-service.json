@@ -21,7 +21,8 @@
   "dispatch": {
     "actionTimeoutMs": 15000,
     "completionTimeoutMs": 10000,
-    "completionPollMs": 10
+    "completionPollMs": 10,
+    "valueSettleMs": 300
   },
   "browser": {
     "engine": "chromium",
@@ -54,7 +55,8 @@
     "element-absent",
     "element-text-includes",
     "element-text-excludes",
-    "input-value-equals"
+    "input-value-equals",
+    "choice-equals"
   ],
   "reconciliationMethods": [
     "application-state",

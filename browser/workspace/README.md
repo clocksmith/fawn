@@ -69,6 +69,11 @@ The contract's semantic names map to these concrete rules.
   `observation.maxAgeMs`. `observe` may name up to `observation.maxRegions`
   region selectors; the version records a digest of each region's markup and
   control values, or none when the selector does not match exactly one element.
+  Targetable elements are links, buttons, inputs, selects, textareas and elements
+  with an ARIA widget role (button, link, checkbox, radio, switch, combobox,
+  listbox, option, menu items, tab, textbox, searchbox, spinbutton, slider).
+  The outline shows a combobox or listbox's current choice and the `checked`,
+  `selected` and `expanded` states.
 - **Observation scope.** An action's `observationScope` (one of
   `observationScopes`) binds its staleness:
   - `page` (the default): the cited version must be the current one. At
@@ -112,6 +117,21 @@ The contract's semantic names map to these concrete rules.
   conditions, a verified value, or a saved artifact hash. Exceptions, timeouts
   and restarts after dispatch began are `unknown`. Queued actions that end at
   dispatch, handoff or restart are `never-dispatched`.
+- **Values and choices.** Without caller completion conditions, a `fill` is
+  verified with `input-value-equals` and a `select` with `choice-equals`. The
+  service polls until the page shows the value, then requires it to stay for
+  `dispatch.valueSettleMs`. A value never shown is `unknown` with basis
+  `value-unverified`; one shown and then lost, for example to late hydration,
+  is `unknown` with basis `value-reverted`. `select` takes an option's value or
+  label. It sets a native `<select>` directly. For an ARIA `combobox` it opens
+  the popup when collapsed, then clicks the one visible option with that name
+  among the elements the combobox names in `aria-controls` or `aria-owns`, or
+  anywhere when it names none. For a `listbox` it clicks the option inside it.
+  `choice-equals` reads a native select's selected option, a combobox's own
+  value or text, or a listbox's single `aria-selected` option. A widget that
+  shows its choice elsewhere (some libraries render it beside an empty input)
+  stays `value-unverified` unless the caller supplies a completion condition
+  that reads where the page shows it.
 - **Handoff.** `assignOwner` serializes with admission and dispatch. It
   advances the generation durably and ends queued commands. It returns the
   outstanding records, including in-flight and unknown ones, and the

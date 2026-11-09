@@ -19,6 +19,7 @@ const POSITIVE_INTEGER_FIELDS = Object.freeze([
   'dispatch.actionTimeoutMs',
   'dispatch.completionTimeoutMs',
   'dispatch.completionPollMs',
+  'dispatch.valueSettleMs',
 ]);
 
 const NON_EMPTY_LIST_FIELDS = Object.freeze([

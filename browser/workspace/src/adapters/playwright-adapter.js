@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
+import { performChoice } from './choice-query.js';
 import { playwrightLaunchOptions } from '../browser-launch.js';
 
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
@@ -133,8 +134,13 @@ const EFFECTS = Object.freeze({
     return { selector: request.target.selector };
   },
   async select(page, request) {
-    const selected = await page.locator(request.target.selector).selectOption(request.params.value);
-    return { selector: request.target.selector, selected };
+    const { completionPollMs, completionTimeoutMs } = this._config.dispatch;
+    return performChoice({
+      evaluate: (fn, args) => page.evaluate(fn, args),
+      clickSelector: (selector) => page.locator(selector).click(),
+      clickPoint: (x, y) => page.mouse.click(x, y),
+      setNative: (selector, value) => page.locator(selector).selectOption({ value }),
+    }, { selector: request.target.selector, value: request.params.value, pollMs: completionPollMs, timeoutMs: completionTimeoutMs });
   },
   async download(page, request, workspaceId) {
     const directory = join(this._artifactRoot, workspaceId);
