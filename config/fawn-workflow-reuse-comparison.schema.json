@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Synthetic Sonnet workflow reuse comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "model", "maxTurnsPerRun", "maxTurnCostUsd", "maxTotalCostUsd", "limits", "task", "intermediateClicks", "scenarios", "applicants", "acceptance"],
+  "properties": {
+    "$schema": { "const": "fawn-workflow-reuse-comparison.schema.json" },
+    "schemaVersion": { "const": 1 },
+    "model": { "const": "sonnet" },
+    "maxTurnsPerRun": { "type": "integer", "minimum": 1 },
+    "maxTurnCostUsd": { "type": "number", "exclusiveMinimum": 0 },
+    "maxTotalCostUsd": { "type": "number", "exclusiveMinimum": 0 },
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxNodes", "maxEdges", "maxSteps"],
+      "properties": {
+        "maxNodes": { "type": "integer", "minimum": 1 },
+        "maxEdges": { "type": "integer", "minimum": 1 },
+        "maxSteps": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "task": { "type": "string", "minLength": 1 },
+    "intermediateClicks": {
+      "type": "array", "minItems": 1,
+      "items": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "string" } }
+    },
+    "scenarios": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "repetitions", "expected"],
+        "properties": {
+          "id": { "enum": ["familiar", "changed-fields", "stale-page", "revoked-permission", "uncertain-outcome"] },
+          "repetitions": { "type": "integer", "minimum": 1 },
+          "expected": { "enum": ["completed", "safe-stop"] }
+        }
+      }
+    },
+    "applicants": {
+      "type": "object", "additionalProperties": false, "required": ["learning", "evaluation"],
+      "properties": { "learning": { "$ref": "#/$defs/applicant" }, "evaluation": { "$ref": "#/$defs/applicant" } }
+    },
+    "acceptance": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "applicant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fullName", "email", "location", "workMode", "phone"],
+      "properties": {
+        "fullName": { "type": "string", "minLength": 1 }, "email": { "type": "string", "minLength": 1 },
+        "location": { "type": "string", "minLength": 1 }, "workMode": { "type": "string", "minLength": 1 },
+        "phone": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

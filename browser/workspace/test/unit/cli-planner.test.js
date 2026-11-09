@@ -18,6 +18,14 @@ try {
   assert.equal(args[args.indexOf('--model') + 1], 'selected-model');
   assert.equal(args[args.indexOf('--max-budget-usd') + 1], String(config.cliMaxBudgetUsd));
   assert.deepEqual(JSON.parse(readFileSync(join(directory, 'input.json'))), { goal: 'Bounded context' });
+  const custom = createCliPlanner({ executable, directory, model: 'selected-model', config,
+    system: 'Workflow-only system', tools: { finish: 'Stop at review' } });
+  await custom.next({}, { signal: new AbortController().signal });
+  const customArgs = JSON.parse(readFileSync(join(directory, 'arguments.json')));
+  assert.match(customArgs[customArgs.indexOf('--system-prompt') + 1], /^Workflow-only system/);
+  assert.deepEqual(JSON.parse(customArgs[customArgs.indexOf('--json-schema') + 1]).properties.tool.enum, ['finish']);
+  await assert.rejects(createCliPlanner({ executable, directory, config, tools: { observe: 'Read' } })
+    .next({}, { signal: new AbortController().signal }), /valid structured tool/);
   writeFileSync(executable, `#!${process.execPath}\nconsole.log(JSON.stringify({is_error:true,subtype:'error_max_budget_usd',usage:{input_tokens:42},modelUsage:{controlled:{}},total_cost_usd:0.02}));process.exitCode=1;`);
   await assert.rejects(planner.next({ goal: 'budget' }, { signal: new AbortController().signal }), error => {
     assert.match(error.message, /budget reached/); assert.equal(error.usage.costUsd, 0.02); return true;

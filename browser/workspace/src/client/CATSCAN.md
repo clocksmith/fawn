@@ -14,7 +14,7 @@ Delegate bounded investigations and resume from saved evidence with human contro
 
 ## Scope
 
-- Loopback HTTP, controller, planner, repository evidence, reasoning journal and opt-in trace sessions.
+- Loopback client, bounded planning, repository evidence, investigation records and opt-in workflow reuse.
 
 ## Contracts
 
@@ -40,7 +40,7 @@ Outputs:
 
 - Evidence: [Client tests](../../test/unit/product-client.test.js): interruption, HTTP authority and restart.
 - [Investigation tests](../../test/unit/investigation.test.js): revisions and source containment.
-- [Trace tests](../../test/browser/trace-dag.test.js): slot-bound replay and refusal boundaries.
+- [Workflow tests](../../test/unit/workflow-agent.test.js): verified learning, slot-bound reuse and safe fallback.
 - [Browser journey](../../test/browser/product-surface.test.js): UI, uncertainty and resumption with a controlled planner.
 - Parent comparison remains mandatory; controlled planners prove no live-model quality or product advantage.
 

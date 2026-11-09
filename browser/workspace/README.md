@@ -394,6 +394,10 @@ parameterized paths and replays them through the service without planner calls,
 stopping at an unknown branch or the pre-submit boundary. It is a programmatic
 API, not automatic product-client behavior or a qualified live-site capability.
 
+The [workflow reuse comparison](qualification/workflow-reuse.md) adds explicit
+Sonnet-driven learning and safe planner fallback, with a frozen synthetic
+application, independent review checks and fresh-planner controls.
+
 `node qualification/product-compare.js --out <directory>` compares the product
 client with stock Chromium plus the same durable evidence/issue tracker and
 planner. The policy fixes source pages, repository code, model, tool contract and

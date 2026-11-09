@@ -48,6 +48,13 @@ Live element metadata adds role, bounded label and input type; the structural
 hash and truncation flag are live response fields, not new journal authority.
 Existing journals remain readable unchanged.
 
+The opt-in workflow agent may publish a planner-derived trace only after a
+caller-provided independent review check succeeds. Structural cache misses and
+proven never-dispatched stale actions may return to the planner with a fresh
+observation. Unknown effects, pending actions and authorization failures stop
+instead. Model output cannot grant permission, renew a revoked grant or authorize
+submission. A planner's completion assertion alone does not establish completion.
+
 Observations carry workspace identity, a durable version and the owner generation
 under which they were issued. Page changes produce new observations or explicit
 versioned changes. Every automated mutation identifies:

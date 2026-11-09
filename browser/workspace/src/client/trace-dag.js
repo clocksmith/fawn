@@ -107,19 +107,24 @@ class TraceSession {
     catch (error) { this.stopped = true; throw error; }
     finally { this.busy = false; }
   }
-  async observe() {
+  async assertSettled() {
     this.signal?.throwIfAborted();
     const outstanding = await this.service.outstanding(this.identity);
     if (outstanding.some(action => action.isUncertain || action.dispatchStatus === 'queued'
       || (action.dispatchStatus === 'dispatched' && !action.outcome))) {
       throw Error('Resolve outstanding actions before recording or replaying a trace');
     }
-    const observation = await this.service.observe(this.identity);
+  }
+  frame(observation) {
     if (observation.isTruncated !== false || !Array.isArray(observation.elements)) throw Error('Trace requires a complete element observation');
     const scope = [this.template, new URL(observation.url).origin, observation.readScope ?? null];
     // Scope includes origin and read grants; raw requisition URLs and personal labels stay out.
     const id = this.dag.hash([scope, this.prefix, structuralOutlineHash(observation.elements)]);
     return { observation, id };
+  }
+  async observe() {
+    await this.assertSettled();
+    return this.frame(await this.service.observe(this.identity));
   }
   async execute(before, step) {
     if (this.depth >= this.dag.limits.maxSteps) return this.stop('step-limit');
@@ -143,7 +148,7 @@ class TraceSession {
     return { status: 'completed', result, after };
   }
   /** Slot provenance is structural: callers cannot pass a literal params.value at this API. */
-  record(spec) {
+  record(spec, observation = null) {
     return this.exclusive(async () => {
       if (!spec || Object.keys(spec).some(key => !['kind', 'locator', 'slot'].includes(key))
         || !KINDS.includes(spec.kind) || !Array.isArray(spec.locator) || spec.locator.length !== 4
@@ -151,7 +156,10 @@ class TraceSession {
         || (spec.kind === 'click' ? spec.slot !== undefined : typeof spec.slot !== 'string')) return this.stop('uncacheable-step');
       const step = { kind: spec.kind, locator: this.dag.hash(['locator', spec.locator]),
         slot: spec.kind === 'click' ? null : this.dag.hash(['slot', spec.slot]) };
-      const before = await this.observe();
+      // A planner must execute against the observation it actually saw, not silently rebind
+      // its decision after the page changes. Cache replay still resolves a fresh live target.
+      await this.assertSettled();
+      const before = observation ? this.frame(observation) : await this.observe();
       if (this.records.length && this.records.at(-1).next !== before.id) return this.stop('unseen-branch');
       const depth = this.depth;
       const executed = await this.execute(before, step);

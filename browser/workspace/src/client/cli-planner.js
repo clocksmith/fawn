@@ -3,10 +3,11 @@ import { spawn as spawnProcess } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { PLANNER_SYSTEM, PLANNER_TOOLS } from './planner.js';
 
-export function createCliPlanner({ executable, model, directory, config, spawn = spawnProcess }) {
+export function createCliPlanner({ executable, model, directory, config, spawn = spawnProcess,
+  system = PLANNER_SYSTEM, tools = PLANNER_TOOLS }) {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const schema = { type: 'object', additionalProperties: false, required: ['tool', 'input'], properties: {
-    tool: { type: 'string', enum: Object.keys(PLANNER_TOOLS) }, input: { type: 'object' }
+    tool: { type: 'string', enum: Object.keys(tools) }, input: { type: 'object' }
   } };
   return {
     identity: { provider: 'claude-cli', model: model ?? 'CLI configured default; actual model recorded per turn' },
@@ -15,7 +16,7 @@ export function createCliPlanner({ executable, model, directory, config, spawn =
       const args = ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
         '--tools', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--safe-mode', '--restricted',
         '--setting-sources', '', '--no-session-persistence', '--max-budget-usd', String(config.cliMaxBudgetUsd),
-        '--system-prompt', `${PLANNER_SYSTEM}\nTool contracts: ${JSON.stringify(PLANNER_TOOLS)}`,
+        '--system-prompt', `${system}\nTool contracts: ${JSON.stringify(tools)}`,
         ...(model ? ['--model', model] : [])];
       return new Promise((resolve, reject) => {
         const child = spawn(executable, args, { cwd: directory, stdio: ['pipe', 'pipe', 'pipe'], shell: false });
@@ -37,7 +38,7 @@ export function createCliPlanner({ executable, model, directory, config, spawn =
             const usage = { ...response.usage, costUsd: response.total_cost_usd ?? null, models: Object.keys(response.modelUsage ?? {}) };
             if (code !== 0 || response.is_error) throw Object.assign(Error(response.subtype === 'error_max_budget_usd'
               ? 'Planner per-request budget reached' : `Planner exited with status ${code}`), { usage });
-            if (!proposal || !Object.hasOwn(PLANNER_TOOLS, proposal.tool)
+            if (!proposal || !Object.hasOwn(tools, proposal.tool)
               || !proposal.input || typeof proposal.input !== 'object' || Array.isArray(proposal.input)) throw Object.assign(Error('Planner returned no valid structured tool proposal'), { usage });
             resolve({ ...proposal, usage });
           } catch (error) { reject(error); }

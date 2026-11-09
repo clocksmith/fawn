@@ -1,10 +1,18 @@
 # Bounded trace prototype
 
 `src/client/trace-dag.js` is an opt-in session API above stock Chromium. It is
-not connected to automatic delegation or the HTTP/UI command surface. The caller
+not connected to the HTTP/UI command surface. The caller
 selects a task template, supplies current input slots, authorizes intermediate
 clicks and explicitly starts recording or replay. It cannot acquire ownership or
 grant permission. Existing service credentials and grants are required.
+
+`src/client/workflow-agent.js` composes this cache with the bounded planner loop.
+`runWorkflow` supports explicit `learn`, `fresh` and `reuse` modes. Learning
+records the planner's slot-bound actions and publishes only after the caller's
+independent review verifier accepts the actual output. Reuse can hand a structural
+miss or a proven never-dispatched stale action to the planner. Authorization
+failure and uncertainty stop the run; neither causes renewed grants or a retry.
+Both fresh and fallback planning use the same tools and action checks.
 
 ```js
 const dag = new TraceDag({ maxNodes: 64, maxEdges: 64, maxSteps: 12 });
@@ -42,7 +50,9 @@ Service ownership is not website account identity. This prototype does not check
 the logged-in account, tenant or session identity; the caller must restrict cache
 reuse accordingly. Matching origin and structure does not prove account
 equivalence. Fixed repeated steps can be unrolled into a trace, but variable-length
-loops, recovery policies and automatic learning from repaired runs are absent.
+loops and automatic learning from repaired runs are absent. Safe replanning is
+implemented by the workflow agent; uncertain-effect reconciliation remains a
+separate explicit operation.
 
 Each step re-observes through the service, requires one structural target and
 binds its live handle, selector, digest and observation version. Admission,
@@ -81,6 +91,12 @@ export must use private storage; do not add it to the public repository.
 acyclic depth relationships. It does not resume a session. There is no prior
 trace format to migrate, and no offline induction from `journal.jsonl`.
 
+`record(spec, observation)` optionally accepts the exact service observation
+shown to the planner. Its action binds that version; it cannot silently replace
+a stale planner decision with a fresh target. Existing callers omitting the
+observation retain the explicit session API. The generated graph format is
+unchanged.
+
 ## Development checks
 
 ```sh
@@ -98,5 +114,6 @@ uncertain traces, cancellation, conflicting paths and resource bounds.
 
 This proves neither live Greenhouse/Ashby coverage nor a performance advantage
 over competent stock automation. Loading a cache does not enable replay in the
-product client. UI integration and a matched complete-task comparison remain
-separate work.
+product client. UI integration remains separate. The [Sonnet comparison](qualification/workflow-reuse.md)
+measures learning, reuse and safe fallback against fresh planning on a frozen
+synthetic application; it does not establish live ATS support.
