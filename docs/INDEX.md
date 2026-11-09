@@ -86,6 +86,9 @@ of repeated prose does not delete them.
 
 ## Browser
 
+- [`research/browser-control-failures/README.md`](research/browser-control-failures/README.md):
+  structured local and public browser-control failures, upstream dispositions,
+  and proposed reproductions; research, not qualification or a roadmap change
 - [`fawn-browser-product-requirements-proposal.md`](fawn-browser-product-requirements-proposal.md):
   user-supplied Fawn browser PRD; proposal, not adopted or validated
 - [`python-browser-scripting-incubation.md`](python-browser-scripting-incubation.md):

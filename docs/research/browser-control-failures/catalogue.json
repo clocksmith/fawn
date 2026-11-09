@@ -1,0 +1,916 @@
+{
+  "schemaVersion": 1,
+  "collectedAt": "2026-11-09",
+  "purpose": "Failure discovery and future regression design for Fawn browser control; not a benchmark, product promotion or roadmap change.",
+  "sourceRevision": "068cc6aef66ea88cb9464596eef7973334afc073",
+  "sources": [
+    {
+      "id": "github:microsoft/playwright#41874",
+      "kind": "public-issue",
+      "url": "https://github.com/microsoft/playwright/issues/41874",
+      "title": "[Bug]: --extension mode: relay does not reconnect to browser extension after disconnect",
+      "reportedAt": "2026-07-20T06:36:58Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-08-03T16:40:42Z",
+        "closedAt": "2026-08-03T16:40:42Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection.",
+      "resolutionEvidence": [
+        {
+          "url": "https://github.com/microsoft/playwright/pull/41966",
+          "summary": "Issue page links this closing PR; patch not independently exercised."
+        }
+      ]
+    },
+    {
+      "id": "github:microsoft/playwright-mcp#1646",
+      "kind": "public-issue",
+      "url": "https://github.com/microsoft/playwright-mcp/issues/1646",
+      "title": "[Bug]: [MCP] Streamable HTTP heartbeat unconditionally kills sessions, causing extension mode to reopen connect.html on every tool call",
+      "reportedAt": "2026-06-07T18:09:37Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-06-10T21:35:32Z",
+        "closedAt": "2026-06-10T17:44:37Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:microsoft/playwright-mcp#1465",
+      "kind": "public-issue",
+      "url": "https://github.com/microsoft/playwright-mcp/issues/1465",
+      "title": "[Bug] Extension mode loses the target tab context and starts acting on a chrome-extension:// page after manual browser interaction on Edge",
+      "reportedAt": "2026-03-15T16:10:54Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-03-15T16:21:45Z",
+        "closedAt": "2026-03-15T16:21:45Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:microsoft/playwright-mcp#1589",
+      "kind": "public-issue",
+      "url": "https://github.com/microsoft/playwright-mcp/issues/1589",
+      "title": "--browser flag silently dropped on --extension path; cliOptions={} in createBrowser → always defaults to chrome",
+      "reportedAt": "2026-05-01T12:59:47Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-05-01T18:41:06Z",
+        "closedAt": "2026-05-01T18:41:06Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:microsoft/playwright#41838",
+      "kind": "public-issue",
+      "url": "https://github.com/microsoft/playwright/issues/41838",
+      "title": "Playwright Extension: only one MCP client connection is supported at a time",
+      "reportedAt": "2026-07-17T06:52:37Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-08-15T00:19:08Z",
+        "closedAt": "2026-08-15T00:19:08Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:google-gemini/gemini-cli#22006",
+      "kind": "public-issue",
+      "url": "https://github.com/google-gemini/gemini-cli/issues/22006",
+      "title": "Browser Agent Headful Mode Fails Due to Environment Variable Propagation Issue in Linux Environments",
+      "reportedAt": "2026-03-11T10:56:38Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "duplicate",
+        "updatedAt": "2026-03-11T11:03:50Z",
+        "closedAt": "2026-03-11T11:01:47Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:ChromeDevTools/chrome-devtools-mcp#3180",
+      "kind": "public-issue",
+      "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/3180",
+      "title": "Options to keep upload_file and fill_form from clicking or pressing keys beyond their target",
+      "reportedAt": "2026-10-15T17:21:09Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "open",
+        "stateReason": null,
+        "updatedAt": "2026-10-20T09:07:38Z",
+        "closedAt": null
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:ChromeDevTools/chrome-devtools-mcp#2944",
+      "kind": "public-issue",
+      "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/2944",
+      "title": "`upload_file` reports success for a nonexistent path or a directory and attaches a bogus file",
+      "reportedAt": "2026-10-06T23:14:20Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "not_planned",
+        "updatedAt": "2026-10-13T12:23:30Z",
+        "closedAt": "2026-10-13T12:23:30Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection.",
+      "resolutionEvidence": [
+        {
+          "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp/issues/2944#issuecomment-6145457955",
+          "summary": "Maintainer closed as not planned, citing deferred validation and different MCP/browser filesystems; caller should verify application state."
+        }
+      ]
+    },
+    {
+      "id": "github:browser-use/browser-use#3415",
+      "kind": "public-issue",
+      "url": "https://github.com/browser-use/browser-use/issues/3415",
+      "title": "Interaction Issue: Agent Fails To Select Dropdown Menu Items",
+      "reportedAt": "2025-10-24T19:23:52Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2025-10-25T13:52:43Z",
+        "closedAt": "2025-10-25T02:13:23Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection.",
+      "resolutionEvidence": [
+        {
+          "url": "https://github.com/browser-use/browser-use/issues/3415#issuecomment-3445440145",
+          "summary": "Maintainer reported changing focus, value assignment, input/change dispatch and blur. This is their explanation, not a universal framework rule."
+        },
+        {
+          "url": "https://github.com/browser-use/browser-use/issues/3415#issuecomment-3446727520",
+          "summary": "Original reporter confirmed the new main worked."
+        }
+      ]
+    },
+    {
+      "id": "github:browser-use/browser-use#2867",
+      "kind": "public-issue",
+      "url": "https://github.com/browser-use/browser-use/issues/2867",
+      "title": "Interaction Issues: Cannot select item from drop down",
+      "reportedAt": "2025-08-29T21:22:48Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-09-02T22:50:06Z",
+        "closedAt": "2026-01-26T20:14:19Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "github:OpenHands/software-agent-sdk#6340",
+      "kind": "public-issue",
+      "url": "https://github.com/OpenHands/software-agent-sdk/issues/6340",
+      "title": "[Bug]: browser_get_content returns stale page text after DOM changes",
+      "reportedAt": "2026-10-30T09:39:21Z",
+      "checkedAt": "2026-11-09",
+      "upstream": {
+        "state": "closed",
+        "stateReason": "completed",
+        "updatedAt": "2026-10-30T09:43:55Z",
+        "closedAt": "2026-10-30T09:43:55Z"
+      },
+      "evidenceLimit": "Reporter account and upstream metadata; not independently reproduced in this collection."
+    },
+    {
+      "id": "local:codex:9a8c18ad9651c7d1",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-10-28T11:34:33.198Z",
+      "recordSha256": "9a8c18ad9651c7d1a936b95ab0390b29104be9173cd7a9590321c6b22e648d77",
+      "signature": "browser access host is unavailable",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:codex:2fe237b4b67e76d8",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-09T14:53:28.440Z",
+      "recordSha256": "2fe237b4b67e76d8e77a202a9b5707dd698e8bb9d1f33783b11d8db6492fc3f4",
+      "signature": "noWindowsAvailable",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:codex:8ef0a48257097f82",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-10-30T17:17:58.065Z",
+      "recordSha256": "8ef0a48257097f82f6e29995f750617e94a9e12e5553aba1aa6f8322988c5a55",
+      "signature": "strict mode violation",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:codex:a5be24c8200d1d57",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-10-26T17:28:33.976Z",
+      "recordSha256": "a5be24c8200d1d57898521d89486a2c406070fcb5abf1452dad089bf974e0aa8",
+      "signature": "intercepts pointer events",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:codex:b2f0daa6e9aeb069",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-10-27T16:10:30.530Z",
+      "recordSha256": "b2f0daa6e9aeb0697ac3de6a8d700e3676840414bbbfeda4d40b15250f0a28e9",
+      "signature": "intercepts pointer events",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:codex:76e101c11b1b5953",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-09T12:59:03.750Z",
+      "recordSha256": "76e101c11b1b59537823aabfa2654e5a5e3faa6209af94d36865baa9cf13b238",
+      "signature": "Executable doesn",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:codex:8d09a5bc892d4a57",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-03T18:28:10.801Z",
+      "recordSha256": "8d09a5bc892d4a5759118aa9b2e882aab8e47bccf26e9392fe637410a0350e12",
+      "signature": "Execution context was destroyed",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:claude:ee45deab7a9dc6ce",
+      "kind": "local-tool-result",
+      "provider": "claude",
+      "observedAt": "2026-10-22T15:08:56.489Z",
+      "recordSha256": "ee45deab7a9dc6ce195db9906935fbcc531db791de8d8fcf8b50f037e517969e",
+      "signature": "TimeoutError",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:claude:4c746269cde37cc0",
+      "kind": "local-tool-result",
+      "provider": "claude",
+      "observedAt": "2026-10-27T13:46:32.135Z",
+      "recordSha256": "4c746269cde37cc0b5b712c38f91ba0ac40d46a503ba6fb2a2c0014cc85fe863",
+      "signature": "intercepts pointer events",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:claude:793a448073af737f",
+      "kind": "local-tool-result",
+      "provider": "claude",
+      "observedAt": "2026-11-05T02:45:17.216Z",
+      "recordSha256": "793a448073af737fe9fc20cfedd7e1338268e46670fb2dbd23fe1403fb834687",
+      "signature": "strict mode violation",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:claude:d3f21e15e9f9729c",
+      "kind": "local-tool-result",
+      "provider": "claude",
+      "observedAt": "2026-10-15T14:06:09.111Z",
+      "recordSha256": "d3f21e15e9f9729c5f3920094bfb6de6955db299f559398cd86ddf8bb379c12c",
+      "signature": "Target page, context or browser has been closed",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:claude:298a18026eb63a87",
+      "kind": "local-tool-result",
+      "provider": "claude",
+      "observedAt": "2026-10-22T12:13:34.402Z",
+      "recordSha256": "298a18026eb63a8736e01426f1593025db80fe597a9b3fe5367b210416dc900a",
+      "signature": "intercepts pointer events",
+      "context": "agent-run-browser-test-or-script",
+      "evidenceLimit": "Inspected historical tool output, not a reproduction now. Raw location stays in the ignored private provenance file; no private page content is published."
+    },
+    {
+      "id": "local:gemini:2f0a6ea526ac838b",
+      "kind": "local-agent-note-with-blob-match",
+      "provider": "gemini-antigravity",
+      "observedAt": null,
+      "recordSha256": "2f0a6ea526ac838b38b1e1c865f57020eb680b87959744b29a50b193e2da6359",
+      "signature": "local chrome mode is only supported on Linux",
+      "context": "browser-subagent",
+      "evidenceLimit": "Readable scratchpad reports the launch refusal; exact error bytes also occur in a conversation step payload. Binary payload was not fully decoded, so this is not classified as an independently decoded tool result. Observation date is unknown."
+    },
+    {
+      "id": "user:browser-form-failures-20261109",
+      "kind": "user-supplied-agent-transcript",
+      "observedAt": null,
+      "suppliedAt": "2026-11-09",
+      "evidenceLimit": "Owner pasted an agent progress report. Form state, screenshots and event trace were not independently inspected. Personal answers, employers and application identifiers omitted."
+    }
+  ],
+  "cases": [
+    {
+      "id": "BF-relay-reconnect",
+      "category": "connection-lifecycle",
+      "sourceIds": [
+        "github:microsoft/playwright#41874"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "An extension disconnect left subsequent tool calls unable to reconnect without restarting the MCP server.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Reporter attributes the failure to a missing reconnect path; closure is recorded, not a current-version failure claim."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/playwright-adapter.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Disconnect the extension after a successful read, then request another read.",
+        "passCondition": "Reconnect to the same authorized session or report a precise unavailable state; do not repeat earlier mutations."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-heartbeat-session-loss",
+      "category": "connection-lifecycle",
+      "sourceIds": [
+        "github:microsoft/playwright-mcp#1646"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Idle time between HTTP tool calls reportedly destroyed the session and reopened connection consent.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Reporter attributes teardown to heartbeat delivery; transport behavior needs independent verification."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/client/server.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Use Streamable HTTP, perform a read, idle beyond heartbeat timeout, then read again.",
+        "passCondition": "Keep the intended session or explicitly recover it without silently changing tabs."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-human-tab-drift",
+      "category": "target-identity",
+      "sourceIds": [
+        "github:microsoft/playwright-mcp#1465"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "After manual interaction, subsequent tools reportedly targeted an extension page instead of the work tab.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "The reported symptoms do not establish exactly where attachment identity was lost."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/page-scope.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Interact manually during navigation, then resume an observation and a harmless edit.",
+        "passCondition": "Revalidate tab and document identity; never act on a replacement extension page."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-browser-selection-dropped",
+      "category": "launch-configuration",
+      "sourceIds": [
+        "github:microsoft/playwright-mcp#1589"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Extension mode reportedly launched regular Chrome despite an explicit Chrome Beta selection.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Reporter traced lost CLI options; upstream closure does not qualify every distribution."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/browser-launch.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Install two browser channels and request the non-default channel through extension mode.",
+        "passCondition": "Actual process, profile and channel match the requested selection or launch fails explicitly."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-second-client-takeover",
+      "category": "ownership-concurrency",
+      "sourceIds": [
+        "github:microsoft/playwright#41838"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "A second MCP client reportedly disconnected the first despite targeting different tabs.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Single-connection extension ownership was reported; current support must be tested separately."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/service.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Connect two clients to distinct tab groups and interleave reads and authorized edits.",
+        "passCondition": "No silent takeover; isolation or explicit rejection, with stale-owner mutations refused."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-headful-display-loss",
+      "category": "launch-configuration",
+      "sourceIds": [
+        "github:google-gemini/gemini-cli#22006"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Headful browser launch reportedly failed with a missing-display error on Linux/WSL despite a working host display.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "The issue points to environment propagation and was closed as duplicate; resolution not established here."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/browser-launch.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Launch the browser subprocess through the agent host with a known working display configuration.",
+        "passCondition": "Preserve permitted display environment or report missing prerequisites before launching."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-upload-click-fallback",
+      "category": "action-scope",
+      "sourceIds": [
+        "github:ChromeDevTools/chrome-devtools-mcp#3180"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Reporter describes upload fallback clicking its target after direct upload fails, allowing a mistaken submit-button target to cause submission.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "This is a reported tool behavior and proposed policy option, not a reproduced Fawn defect."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/admission.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Call upload on a non-file submit control in a local form with an independent submission counter.",
+        "passCondition": "Reject the target without any submit event or network mutation; no implicit expansion from upload to click."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-fill-control-characters",
+      "category": "action-scope",
+      "sourceIds": [
+        "github:ChromeDevTools/chrome-devtools-mcp#3180"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Reporter describes short fill values containing newline or tab becoming key presses that can submit a form or move focus.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Reported typing-path behavior depends on value length and library version."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/playwright-adapter.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Fill single-line fields with control characters using lengths on both sides of the reported typing threshold.",
+        "passCondition": "Respect the declared fill operation; reject unsupported characters or set text without unintended submission."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-upload-false-success",
+      "category": "outcome-verification",
+      "sourceIds": [
+        "github:ChromeDevTools/chrome-devtools-mcp#2944"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Reporter observed upload success messages for nonexistent paths and directories, with bogus page file entries.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Maintainer considers deferred browser-side validation expected and says application state must be checked; local and remote path ownership differ."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/conditions.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Upload a real file, a missing path and a directory into a local fixture; inspect file metadata and received bytes.",
+        "passCondition": "Report actual attachment outcome; for remote browsers validate at the filesystem owner, not blindly on the MCP host."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-reactive-dropdown-reset",
+      "category": "control-state",
+      "sourceIds": [
+        "github:browser-use/browser-use#3415"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Dropdown choices reportedly appeared selected, then reverted before submission in a Vue application.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Maintainer reported an event-sequence fix and the reporter confirmed success. Do not generalize that explanation to every Vue version or control."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/playwright-adapter.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Select in a controlled native dropdown, blur, rerender and inspect both application state and submitted value.",
+        "passCondition": "Selection persists through the relevant update and the independent form receiver gets the intended value."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-dropdown-backend-regression",
+      "category": "control-state",
+      "sourceIds": [
+        "github:browser-use/browser-use#2867"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Reporter could not select a native dropdown after a backend change, despite varying prompts and models.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Report calls it a regression from the Playwright path; root cause not independently established here."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/playwright-adapter.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Exercise identical native dropdown inputs through both backend paths, followed by rerender and submission inspection.",
+        "passCondition": "Equivalent intended value reaches the receiver; errors identify the unsupported control rather than triggering prompt retries."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-stale-content-after-action",
+      "category": "observation-freshness",
+      "sourceIds": [
+        "github:OpenHands/software-agent-sdk#6340"
+      ],
+      "evidenceLevel": "upstream-report",
+      "observation": "Content extraction reportedly returned cached pre-edit text; after back navigation it paired an old page body with the current URL.",
+      "rootCause": {
+        "status": "unverified-by-this-collection",
+        "assessment": "Reporter attributes this to reuse of a cached DOM tree; issue is closed completed, not evidence of a current unpatched failure."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/page-query.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this report; investigate browser/control boundary first."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Observe, edit and save, then read content without requesting another state snapshot; repeat across back navigation and tab switches.",
+        "passCondition": "Content and URL identify the same current document; stale handles cannot silently target a different node."
+      },
+      "resolution": "not-tested-in-fawn"
+    },
+    {
+      "id": "BF-local-host-unavailable",
+      "category": "connection-lifecycle",
+      "sourceIds": [
+        "local:codex:9a8c18ad9651c7d1"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "Computer-use availability call returned that the browser access host was unavailable.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "The error identifies the control surface, not a Chrome crash or GPU fault."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/client/server.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Start a connected browser session, stop its control host, then request a read.",
+        "passCondition": "Identify the missing host; recover the same authorized session where possible without replaying mutations."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-no-windows",
+      "category": "window-discovery",
+      "sourceIds": [
+        "local:codex:2fe237b4b67e76d8"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "Computer-use operation returned server error -10005: noWindowsAvailable.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "The record alone cannot distinguish no window from a discovery, permissions or attachment failure."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/playwright-adapter.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Retain a tab identity, remove or hide its window, then attempt a visual action; also test a running browser with no windows.",
+        "passCondition": "Resolve and report the actual target state; never redirect the action to another window silently."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-ambiguous-locator",
+      "category": "target-identity",
+      "sourceIds": [
+        "local:codex:8ef0a48257097f82",
+        "local:claude:793a448073af737f"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "A click selector matched two summary elements; a separate visibility assertion matched three status elements. Both were rejected as ambiguous.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "These can be bad agent/test selectors. Refusal is correct behavior, not evidence that the browser misclicked."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/page-query.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Present two similar controls and an ambiguous selector; then provide a scoped unique target.",
+        "passCondition": "Reject ambiguity without effects and expose enough scoped information to resolve it."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-occluded-target",
+      "category": "input-routing",
+      "sourceIds": [
+        "local:codex:a5be24c8200d1d57",
+        "local:codex:b2f0daa6e9aeb069",
+        "local:claude:4c746269cde37cc0",
+        "local:claude:298a18026eb63a87"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "Click or tap attempts retried while another viewport, open drawer or button intercepted pointer events.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "The logs establish occlusion, not whether layout, target selection or an intended overlay caused it."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/playwright-adapter.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Open a drawer over an otherwise visible control and attempt click/tap at desktop and narrow layouts.",
+        "passCondition": "Identify the intercepting element; do not force a hidden control activation or claim the intended action succeeded."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-browser-binary-missing",
+      "category": "launch-configuration",
+      "sourceIds": [
+        "local:codex:76e101c11b1b5953"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "Browser launch failed because the configured Playwright executable did not exist.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "Missing installation or mismatched executable selection; not a model-reasoning or rendering failure."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/browser-launch.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Launch with a deliberately absent executable and a separately installed valid browser.",
+        "passCondition": "Report the selected executable and missing dependency; no silent browser/provider substitution."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-navigation-context-loss",
+      "category": "observation-freshness",
+      "sourceIds": [
+        "local:codex:8d09a5bc892d4a57"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "Page evaluation during session setup failed because its execution context was destroyed, with navigation named as the likely reason.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "A navigation race is suggested by the tool; the ordering that caused it has not been reconstructed."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/adapters/page-query.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Navigate while an evaluation or observation is in flight.",
+        "passCondition": "Discard old-document results and reacquire identity; repeat only reads, not unverified mutations."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-disabled-select",
+      "category": "control-state",
+      "sourceIds": [
+        "local:claude:ee45deab7a9dc6ce"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "A native select action timed out after 30 seconds; the locator resolved to a disabled select.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "This proves the control was disabled during the wait. It does not prove input delivery or framework-state corruption."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/conditions.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Try a native select disabled by a prerequisite; test both eventual enablement and permanent disablement.",
+        "passCondition": "Explain or expose the prerequisite where observable; preserve disabled semantics and report an unmet condition."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-target-closed",
+      "category": "connection-lifecycle",
+      "sourceIds": [
+        "local:claude:d3f21e15e9f9729c"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "A text-content read failed because the target page, context or browser had closed.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "The generic error does not identify which object closed or why."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/service.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Close a tab or browser during a pending read; repeat while a separate mutation is pending.",
+        "passCondition": "Distinguish lost read from uncertain mutation; recover only after confirming target and ownership."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-gemini-platform-refusal",
+      "category": "launch-configuration",
+      "sourceIds": [
+        "local:gemini:2f0a6ea526ac838b"
+      ],
+      "evidenceLevel": "local-agent-report",
+      "observation": "Browser subagent recorded a Linux-only local Chrome mode error while attempting a local page check on macOS.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "The note attributes the block to platform support. Browser rendering was not reached."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/browser-launch.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Request a local browser-control mode on both a supported and unsupported platform.",
+        "passCondition": "Advertise capability before dispatch and refuse unsupported launch clearly; do not present it as a website failure."
+      },
+      "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-reported-choice-not-retained",
+      "category": "control-state",
+      "sourceIds": [
+        "user:browser-form-failures-20261109"
+      ],
+      "evidenceLevel": "user-supplied-report",
+      "observation": "Agent reported that some dropdown choices did not commit reliably and tried another browser.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "No original event trace; browser-switch outcome does not establish root cause."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/conditions.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No GPU fault reported."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Use a custom combobox whose framework state rerenders after selection; inspect value after blur and the next form step.",
+        "passCondition": "Verify application-visible retention; do not count a click or temporary highlight as commitment."
+      },
+      "resolution": "unverified"
+    },
+    {
+      "id": "BF-reported-upload-disabled",
+      "category": "control-state",
+      "sourceIds": [
+        "user:browser-form-failures-20261109"
+      ],
+      "evidenceLevel": "user-supplied-report",
+      "observation": "Agent reported the same disabled upload button in two different browsers.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "No original event trace; browser-switch outcome does not establish root cause."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/conditions.js",
+        "ownerMapping": "research inference, not assigned implementation work",
+        "doeRelevance": "No GPU fault reported."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Disable upload pending required fields or validation, then inspect the UI and any real file input without altering disabled state.",
+        "passCondition": "Distinguish application-disabled upload from an unsupported native picker; surface observable prerequisites."
+      },
+      "resolution": "unverified"
+    }
+  ],
+  "collectionScope": {
+    "local": {
+      "codexSessionJsonlFiles": 53,
+      "claudeProjectJsonlFiles": 235,
+      "geminiConversationStepsScannedForExactErrors": 60525,
+      "method": "Literal error-signature discovery followed by manual inspection of selected tool outputs. Search results, code literals, copied conversations and this research session are excluded from admitted local examples. Repeated matching text is not an incident count.",
+      "excluded": "Compressed Codex archives, browser profiles/cookies, credentials, encrypted/fully undecoded Gemini trajectories, and unrelated content. Gemini history and readable browser notes were inspected; coverage is not exhaustive."
+    },
+    "public": {
+      "method": "Targeted web discovery followed by primary GitHub issue metadata/body reads; selected maintainer/reporter comments checked.",
+      "limit": "Convenience sample; no denominator, failure-rate estimate or product ranking."
+    },
+    "privacy": "Public catalogue retains generic symptoms, minimal error signatures and hashes. Ignored local provenance maps fingerprints to private source paths; raw histories are not copied to tracked files."
+  },
+  "categories": [
+    "connection-lifecycle",
+    "window-discovery",
+    "launch-configuration",
+    "target-identity",
+    "ownership-concurrency",
+    "input-routing",
+    "control-state",
+    "observation-freshness",
+    "action-scope",
+    "outcome-verification"
+  ]
+}
