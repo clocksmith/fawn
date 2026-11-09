@@ -5,7 +5,7 @@
 <main>
 <section id="welcome" class="welcome"><div class="eyebrow">Keep the thread</div><h1>Browse freely.<br>Pick up where you left off.</h1><p class="lede">Give an investigation a place to keep its sources, open questions and decisions. You keep control of the browser.</p>
 <form id="create-form"><label>What are we trying to find out?<textarea name="goal" required rows="3" placeholder="Investigate why our checkout sometimes creates two orders"></textarea></label><label>Starting page <span>optional</span><input name="url" type="url" placeholder="https://…"></label><details><summary>Include a local repository</summary><label>Repository folder<input name="repositoryRoot" placeholder="Absolute path to a repository"></label><p>When delegated, files under this folder can be sent to your configured model.</p></details><button class="primary" type="submit">Start investigation <span>→</span></button></form></section>
-<section id="workspace" hidden><div class="work-heading"><div><div class="eyebrow">Investigation</div><h1 id="goal"></h1></div><button id="take-over" class="primary">Take over</button></div>
+<section id="workspace" hidden><div class="work-heading"><div><div class="eyebrow">Investigation</div><h1 id="goal"></h1></div><div class="button-row"><button id="resume-task" hidden>Review & resume task</button><button id="take-over" class="primary">Take over</button></div></div>
 <div class="owner-line"><span id="owner" class="pill"></span><span id="run-status"></span></div>
 <div id="attention" class="attention" hidden></div>
 <div class="workspace-grid"><div class="work-controls">

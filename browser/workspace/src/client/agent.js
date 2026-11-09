@@ -25,7 +25,7 @@ export function startAgent({ projectId, store, planner, execute, config, signal,
     try {
       while (turns < config.maxTurns) {
         assertCurrent(); signal.throwIfAborted();
-        const context = getContext();
+        const context = { ...getContext(), budget: { maxRequests: config.maxTurns, remainingRequests: config.maxTurns - turns } };
         if (Buffer.byteLength(JSON.stringify(context)) > config.maxInputBytes) throw Error('Investigation input budget reached');
         const requestId = randomUUID();
         turns += 1; usage.push(null);

@@ -29,6 +29,7 @@ function render(state) {
   const human = workspace.ownerId === 'human';
   $('#owner').textContent = human ? 'You have control' : 'Agent has control';
   $('#take-over').disabled = human;
+  $('#resume-task').hidden = !['stopped', 'needs-attention'].includes(investigation.run?.status);
   $('#run-status').textContent = investigation.run ? `${investigation.run.status.replaceAll('-', ' ')} · ${investigation.run.turns ?? 0} planner requests` : 'Ready when you are';
   const unresolved = workspace.actions.filter(action => action.isUncertain || (action.dispatchStatus === 'dispatched' && !action.outcome));
   const needsReview = Object.values(investigation.artifacts).filter(artifact => artifact.status === 'needs-review');
@@ -125,7 +126,7 @@ function render(state) {
     }
     return item;
   }));
-  $('#activity').replaceChildren(...investigation.activity.slice(-8).reverse().map(event => {
+  $('#activity').replaceChildren(...investigation.activity.filter(event => event.type !== 'run-updated' && !['planner-requested', 'planner-result'].includes(event.event)).slice(-8).reverse().map(event => {
     const item = node('li'); item.append(node('time', new Date(event.at).toLocaleString()), node('span',
       event.event === 'tool-requested' ? `Agent requested ${event.tool}` : event.event === 'tool-result' ? 'Tool result recorded' : event.event === 'human-control' ? 'You took control' : event.event === 'delegated' ? event.task : event.type === 'artifact-revised' ? `Saved ${event.artifact.kind}` : event.event || event.run?.detail || event.type));
     return item;
@@ -155,6 +156,21 @@ $('#record-form').onsubmit = event => { event.preventDefault(); act(async () => 
   const data = new FormData(event.target); await command('record', { kind: data.get('kind'), text: data.get('text'), dependsOn: data.getAll('dependsOn') }); event.target.reset();
 }); };
 $('#repository-form').onsubmit = event => { event.preventDefault(); act(() => command('repositoryRead', { path: new FormData(event.target).get('path') })); };
+$('#resume-task').onclick = () => {
+  const prior = current?.investigation.activity.findLast(event => event.event === 'delegated');
+  if (!prior) return;
+  $('#delegate-form [name=task]').value = prior.task;
+  $('#delegate-form [name=origins]').value = prior.origins.join(', ');
+  $('#regions').value = prior.regions?.join(', ') || '';
+  for (const [name, kinds] of Object.entries({ navigate: ['navigate'], interact: ['click', 'fill', 'select'], submit: ['submit'], download: ['download'] })) {
+    $(`#delegate-form [name=${name}]`).checked = kinds.some(kind => prior.actionKinds.includes(kind));
+  }
+  $('#delegate-form [name=shareRecords]').checked = true;
+  selectedPages.clear();
+  for (const id of prior.pageIds) if (current.workspace.pages.some(page => page.pageId === id && !page.closed)) selectedPages.add(id);
+  $('#delegate-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  notice('Review the selected pages, saved records and permissions, then give control to resume. No model call has started.');
+};
 $('#take-over').onclick = () => act(() => command('takeOver'));
 $('#open-page').onclick = () => act(async () => { const page = await command('openPage'); pageId = page.pageId; });
 $('#browse').onclick = () => act(() => command('focusPage', { pageId }));
