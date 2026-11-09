@@ -54,6 +54,12 @@ loops and automatic learning from repaired runs are absent. Safe replanning is
 implemented by the workflow agent; uncertain-effect reconciliation remains a
 separate explicit operation.
 
+The opt-in [personal store](workflow-store.md) adds a required account namespace,
+task-specific account checks and pre-dispatch slot disclosure rules. Scoped
+sessions append `accountScope` to node identity; unscoped sessions retain their
+existing fingerprints. Prefix order is unchanged. The host must provide real
+account/review verifiers; the synthetic fixture supplies only its own oracle.
+
 Each step re-observes through the service, requires one structural target and
 binds its live handle, selector, digest and observation version. Admission,
 dispatch authority and value settling remain in the existing service. Unknown or

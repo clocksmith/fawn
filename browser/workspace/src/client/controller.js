@@ -10,8 +10,10 @@ import { createOwnerSession } from '../workflows/owner-session.js';
 import { sha256Hex } from '../journal.js';
 
 export class WorkspaceController {
-  constructor({ service, stateDir, config, planner = null }) {
+  constructor({ service, stateDir, config, planner = null, workflowStore = null, workflowTasks = new Map() }) {
     this.service = service; this.config = config; this.planner = planner; this.active = new Map(); this.owners = new Map(); this.operations = new Map();
+    this.workflowStore = workflowStore;
+    this.workflowTasks = new Map(workflowTasks);
     mkdirSync(stateDir, { recursive: true, mode: 0o700 }); chmodSync(stateDir, 0o700);
     this.credentialsPath = join(stateDir, 'client-credentials.json');
     this.credentials = existsSync(this.credentialsPath) ? JSON.parse(readFileSync(this.credentialsPath, 'utf8')) : {};
@@ -104,6 +106,53 @@ export class WorkspaceController {
   record(id, input) {
     if (input.kind === 'evidence' || (input.id && this.store.get(id).artifacts[input.id]?.kind === 'evidence')) throw Error('Capture a page or repository file to create evidence');
     return this.store.revise(id, input);
+  }
+  /** Trusted host entrypoint. Task/account/disclosure/oracle definitions are installed by the
+   * host, not accepted from HTTP, a model, or a downloaded graph. No final-submit permission.
+   */
+  runPersonalWorkflow(id, { template, pageId, inputs, mode }) {
+    return this.exclusive(id, async () => {
+      const definition = this.workflowTasks.get(template);
+      if (!this.workflowStore || !definition || !['learn', 'reuse', 'fresh'].includes(mode)) {
+        throw Error('Select an installed personal workflow and explicit mode');
+      }
+      if (this.active.has(id)) throw Error('The prior agent has not settled');
+      const before = await this.service.inspect(this.admin(id));
+      if (before.actions.some(action => action.isUncertain || action.dispatchStatus === 'queued'
+        || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Review unresolved actions before delegating');
+      const grantId = `workflow-${randomUUID()}`, runId = randomUUID();
+      const { disclosurePolicy, accountScope, verifyAccount, verifyReview, verificationId, taskSourceHashes, planner, task } = definition;
+      const profile = structuredClone(inputs);
+      await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent',
+        intents: ['personal-workflow'], targetOrigins: [disclosurePolicy.origin],
+        actionKinds: ['fill', 'select', 'click'], pageIds: [pageId], readRegions: null,
+        expiresAt: new Date(Date.now() + this.config.delegationMaxAgeMs).toISOString() });
+      for (const grant of before.grants.filter(value => value.ownerId === 'agent')) {
+        await this.service.revokeAuthorization({ ...this.admin(id), grantId: grant.grantId });
+      }
+      const assigned = await this.service.assignOwner({ ...this.admin(id), ownerId: 'agent' });
+      const owner = createOwnerSession(this.service, { workspaceId: id, ...assigned }).identity;
+      this.owners.set(id, owner);
+      const controller = new AbortController();
+      this.store.activity(id, { event: 'personal-workflow-started', template, mode, grantId });
+      const done = this.workflowStore.run({ template, mode, pageId, inputs: profile,
+        accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, service: this.service, owner,
+        intent: 'personal-workflow', task, planner, config: this.config, store: this.store,
+        projectId: id, signal: controller.signal,
+        verifyReview: () => verifyReview({ service: this.service, owner, pageId, inputs: profile }),
+      }).then(result => {
+        this.store.activity(id, { event: 'personal-workflow-finished', completed: result.completed,
+          persistence: result.persistence, modelCalls: result.modelCalls, cacheSteps: result.cacheSteps });
+        return result;
+      }).finally(() => this.exclusive(id, async () => {
+        await this.service.revokeAuthorization({ ...this.admin(id), grantId });
+        if (this.owners.get(id)?.ownerGeneration === owner.ownerGeneration) await this.takeOverNow(id);
+      }));
+      this.active.set(id, { id: runId, done, controller });
+      const release = () => { if (this.active.get(id)?.id === runId) this.active.delete(id); };
+      done.then(release, release);
+      return { runId, done };
+    });
   }
   delegate(id, input) { return this.exclusive(id, () => this.delegateNow(id, input)); }
   async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false }) {

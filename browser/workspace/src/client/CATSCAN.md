@@ -4,17 +4,17 @@ Parent: [Fawn workspace](../../CATSCAN.md)
 
 ## Target
 
-Delegate bounded investigations and resume from saved evidence with human control.
+Investigations and workflow reuse under human control.
 
 ## Authority
 
-- Owns human sessions, bounded planning and investigation artifacts.
-- Consumes service authority, dispatch and reconciliation; cannot replace them.
+- Owns sessions, planning, investigation records and personal workflows.
+- Consumes service authority, dispatch and reconciliation.
 - Excludes model semantics, GPU qualification and product-advantage verdicts.
 
 ## Scope
 
-- Loopback client, bounded planning, repository evidence, investigation records and opt-in workflow reuse.
+- Loopback client, repository evidence, investigations and opt-in workflow reuse.
 
 ## Contracts
 
@@ -23,26 +23,29 @@ Inputs:
 - [Configuration](../../../../config/fawn-workspace-client.json).
 
 Outputs:
-- Human controls, explicit delegation and source-bound reasoning revisions.
+- Explicit delegation and source-bound revisions.
 
 ## Invariants
 
 - Only the service dispatches browser effects.
-- Page/region/action grants and saved-record disclosure are explicit; delegations inherit no prior grants.
-- Restart begins with human ownership and no model calls; pending tools are never replayed.
-- Takeover invalidates future work, not dispatched effects. Uncertainty never triggers retries.
-- Model output grants no permission. Repository reads stay under the selected root, including symlinks.
+- Grants and record disclosure are explicit; delegations inherit no grants.
+- Restart restores human ownership; no model calls or tool replay.
+- Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.
+- Models grant no permission. Repository reads, including symlinks, stay under the selected root.
 - Corrections invalidate dependents without mutating earlier revisions.
-- Credentials stay private; HTTP exposes no browser handle or service credential.
+- HTTP exposes no browser handles or service credentials.
 - Trace replay preserves service admission and stops before submission.
+- Verified workflows publish under a cross-process lock; account/disclosure checks precede effects.
 
 ## Acceptance
 
 - Evidence: [Client tests](../../test/unit/product-client.test.js): interruption, HTTP authority and restart.
 - [Investigation tests](../../test/unit/investigation.test.js): revisions and source containment.
-- [Workflow tests](../../test/unit/workflow-agent.test.js): verified learning, slot-bound reuse and safe fallback.
+- [Workflow tests](../../test/unit/workflow-agent.test.js): learning, reuse and fallback.
+- [Persistence tests](../../test/unit/workflow-store.test.js) and
+  [browser test](../../test/browser/workflow-store.test.js): isolation, snapshots, concurrent/crashed publication.
 - [Browser journey](../../test/browser/product-surface.test.js): UI, uncertainty and resumption with a controlled planner.
-- Parent comparison remains mandatory; controlled planners prove no live-model quality or product advantage.
+- Parent comparison remains mandatory; controlled planners prove no product advantage.
 
 ## Non-goals
 

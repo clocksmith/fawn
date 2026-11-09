@@ -12,9 +12,11 @@ import { createCdpAdapter } from '../adapters/cdp-adapter.js';
 import { createCliPlanner } from './cli-planner.js';
 import { createPlanner } from './planner.js';
 import { WorkspaceController } from './controller.js';
+import { WorkflowStore } from './workflow-store.js';
 import { startWorkspaceServer } from './server.js';
 
-export async function openWorkspaceApp({ stateDir, port, headless = false, adapter = 'playwright', config: supplied, planner: suppliedPlanner } = {}) {
+export async function openWorkspaceApp({ stateDir, port, headless = false, adapter = 'playwright', config: supplied, planner: suppliedPlanner,
+  workflowPersistence = null, workflowTasks = new Map() } = {}) {
   const config = supplied ?? JSON.parse(await readFile(new URL('../../../../config/fawn-workspace-client.json', import.meta.url), 'utf8'));
   for (const field of ['port', 'maxBodyBytes', 'maxEvidenceBytes', 'maxRepositoryFiles', 'maxTurns', 'maxInputBytes', 'maxOutputTokens', 'modelTimeoutMs', 'pollMs', 'delegationMaxAgeMs', 'shutdownWaitMs', 'cliTerminationGraceMs']) {
     if (!Number.isSafeInteger(config[field]) || config[field] < (field === 'port' ? 0 : 1)) throw Error(`Invalid client config ${field}`);
@@ -34,7 +36,9 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
     config: loadServiceConfig(undefined, { browserChannel: process.env.FAWN_BROWSER_CHANNEL ?? 'chrome', headless }), createAdapter: factory });
   let controller, http;
   try {
-    controller = new WorkspaceController({ service, stateDir: directory, config, planner });
+    const workflowStore = workflowPersistence ? new WorkflowStore({ ...workflowPersistence,
+      directory: join(directory, 'workflows') }) : null;
+    controller = new WorkspaceController({ service, stateDir: directory, config, planner, workflowStore, workflowTasks });
     await controller.restore();
     http = await startWorkspaceServer({ controller, config, port });
     return { ...http, controller, service, async close() { await http.close(); await controller.close(); await service.close(); } };

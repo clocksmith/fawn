@@ -256,3 +256,6 @@ reports/maintenance/*-fawn-*/
 # Local caches and retired status snapshots never belong in source commits.
 /.cache/
 /docs/status/archive/
+# Workflow graphs include private matching keys; protect exports regardless of directory.
+*.private.json
+*.private.json.*.tmp

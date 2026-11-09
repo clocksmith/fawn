@@ -398,6 +398,12 @@ The [workflow reuse comparison](qualification/workflow-reuse.md) adds explicit
 Sonnet-driven learning and safe planner fallback, with a frozen synthetic
 application, independent review checks and fresh-planner controls.
 
+The opt-in [personal workflow store](workflow-store.md) persists account-scoped
+versions and run records with cross-process publication. Trusted host task
+definitions supply account/review verifiers and pre-dispatch disclosure rules.
+Controller integration is programmatic; ordinary UI delegation does not learn
+or reuse workflows automatically.
+
 `node qualification/product-compare.js --out <directory>` compares the product
 client with stock Chromium plus the same durable evidence/issue tracker and
 planner. The policy fixes source pages, repository code, model, tool contract and

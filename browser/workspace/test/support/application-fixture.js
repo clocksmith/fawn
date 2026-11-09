@@ -17,6 +17,7 @@ export async function applicationFixture() {
       <p id="revision">Review the supplied applicant details. This is a test application.</p>
       <main data-stage="contact"></main><script>
       const key = ${JSON.stringify(key)}, changed = ${entry.changed}, applicant = {};
+      document.documentElement.dataset.account = ${JSON.stringify(entry.account)};
       const labels = {fullName:'Full name',email:'Email address',location:'Current city',workMode:'Work arrangement',phone:'Phone number'};
       const main = document.querySelector('main');
       const field = (slot, type='text') => '<label for="'+slot+'-'+key+'">'+labels[slot]+'</label><input required id="'+slot+'-'+key+'" data-slot="'+slot+'" type="'+type+'">';
@@ -48,7 +49,7 @@ export async function applicationFixture() {
   const origin = `http://127.0.0.1:${server.address().port}`;
   return {
     origin,
-    add(name, changed = false, company = name) { cases.set(name, { name, company, changed, submissions: 0 }); return `${origin}/application/${name}`; },
+    add(name, changed = false, company = name, account = 'fixture-account') { cases.set(name, { name, company, changed, account, submissions: 0 }); return `${origin}/application/${name}`; },
     async verify(name, page, inputs) {
       const entry = cases.get(name);
       const expected = { 'Full name': inputs.fullName, 'Email address': inputs.email,

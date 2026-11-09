@@ -40,6 +40,14 @@ assert.equal(service.calls[1].params.value, 'PRIVATE_VALUE');
 assert.ok(service.calls[1].observationVersion > service.calls[0].observationVersion);
 assert.equal(service.calls[1].target.digest, first.digest);
 
+const scoped = new TraceDag(limits);
+const accountA = scoped.session({ ...options, service: fixture(), accountScope: 'account-a' });
+await accountA.record(fillName); await accountA.finish();
+const accountBService = fixture();
+assert.equal((await scoped.session({ ...options, service: accountBService, accountScope: 'account-b' })
+  .replay()).reason, 'unseen-branch', 'Account isolation remains even with the same key and graph');
+assert.equal(accountBService.calls.length, 0);
+
 for (const outcome of ['unknown', 'failed', null]) {
   const failed = fixture({ outcome });
   const session = dag.session({ ...options, service: failed });

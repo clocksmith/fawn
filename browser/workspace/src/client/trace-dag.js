@@ -82,7 +82,8 @@ export class TraceDag {
  * Changing template purpose requires a new template string. Each session starts at depth zero.
  */
 class TraceSession {
-  constructor(dag, { service, owner, pageId, intent, template, inputs = {}, intermediateClicks = [], signal }) {
+  constructor(dag, { service, owner, pageId, intent, template, inputs = {}, intermediateClicks = [], signal,
+    assertContext = async () => {}, authorizeStep = async () => {}, accountScope = null }) {
     if (typeof template !== 'string' || !template || typeof pageId !== 'string' || !pageId
       || typeof intent !== 'string' || !intent) throw Error('Trace requires template, pageId and intent');
     this.dag = dag;
@@ -90,7 +91,12 @@ class TraceSession {
     this.identity = { ...owner, pageId };
     this.intent = intent;
     this.template = template;
+    if (accountScope !== null && (typeof accountScope !== 'string' || !accountScope.trim())) throw Error('Invalid trace account scope');
+    this.accountScope = accountScope;
     this.inputs = new Map(Object.entries(inputs).map(([slot, value]) => [dag.hash(['slot', slot]), value]));
+    this.slotNames = new Map(Object.keys(inputs).map(slot => [dag.hash(['slot', slot]), slot]));
+    this.assertContext = assertContext;
+    this.authorizeStep = authorizeStep;
     this.clicks = new Set(intermediateClicks.map(locator => dag.hash(['locator', locator])));
     this.signal = signal;
     this.prefix = dag.hash(['start']);
@@ -109,6 +115,7 @@ class TraceSession {
   }
   async assertSettled() {
     this.signal?.throwIfAborted();
+    await this.assertContext();
     const outstanding = await this.service.outstanding(this.identity);
     if (outstanding.some(action => action.isUncertain || action.dispatchStatus === 'queued'
       || (action.dispatchStatus === 'dispatched' && !action.outcome))) {
@@ -118,6 +125,7 @@ class TraceSession {
   frame(observation) {
     if (observation.isTruncated !== false || !Array.isArray(observation.elements)) throw Error('Trace requires a complete element observation');
     const scope = [this.template, new URL(observation.url).origin, observation.readScope ?? null];
+    if (this.accountScope !== null) scope.push(this.accountScope);
     // Scope includes origin and read grants; raw requisition URLs and personal labels stay out.
     const id = this.dag.hash([scope, this.prefix, structuralOutlineHash(observation.elements)]);
     return { observation, id };
@@ -135,6 +143,9 @@ class TraceSession {
     if (!element.label || element.formAction || ['submit', 'image', 'file', 'password', 'hidden'].includes(element.inputType)) return this.stop('unsupported-target');
     if (step.kind === 'click' && !this.clicks.has(step.locator)) return this.stop('intermediate-click-not-authorized');
     if (step.kind !== 'click' && (!this.inputs.has(step.slot) || typeof this.inputs.get(step.slot) !== 'string')) return this.stop('missing-input-slot');
+    await this.assertContext();
+    await this.authorizeStep({ origin: new URL(before.observation.url).origin, kind: step.kind,
+      locator: structuralLocator(element), slot: this.slotNames.get(step.slot) ?? null });
     this.signal?.throwIfAborted();
     const admitted = await this.service.submitAction({ ...this.identity, actionId: randomUUID(),
       authorizedIntent: this.intent, observationVersion: before.observation.observationVersion,

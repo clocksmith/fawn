@@ -30,11 +30,17 @@ parameterized replay and safe fallback within that fixture. It preserves the
 initial failed trial and all paired results; it does not promote the broader
 product or establish superiority over scripted automation.
 
+The opt-in [personal store](../../browser/workspace/workflow-store.md) adds local
+account-scoped persistence and trusted host controller integration. Its
+[process tests](../../browser/workspace/test/unit/workflow-store.test.js) and
+[synthetic browser check](../../browser/workspace/test/browser/workflow-store.test.js)
+exercise publication and isolation; they do not promote live-site support.
+
 ## Active blockers
 
-- Workflow reuse remains a programmatic API. UI integration, live ATS coverage,
-  website-account binding, variable-length loops and learning from repairs remain
-  unimplemented or unqualified.
+- Workflow reuse remains a programmatic API. UI integration, live ATS account/review
+  verifiers, variable-length loops and learning from repairs remain unimplemented
+  or unqualified. The personal store requires trusted task-specific verifiers.
 - The product client has development and bounded live-planner evidence, not
   general task superiority or release admission. Its matched investigation probe
   completed on both arms; Fawn did not establish an advantage.

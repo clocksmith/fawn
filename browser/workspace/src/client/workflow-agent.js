@@ -34,11 +34,13 @@ function view(observation) {
  * replays then asks the same planner on a safe miss. Unknown effects/authority failures stop.
  */
 export async function runWorkflow({ dag, mode, service, owner, pageId, intent, template, inputs,
-  intermediateClicks, task, planner, config, store, projectId, verifyReview, signal }) {
+  intermediateClicks, task, planner, config, store, projectId, verifyReview, signal,
+  assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null }) {
   if (!['learn', 'fresh', 'reuse'].includes(mode)) throw Error('Invalid workflow mode');
   const started = performance.now();
   const identity = { ...owner, pageId };
-  const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal };
+  const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
+    assertContext, authorizeStep, accountScope };
   let recorder = dag.session(options), observation, cacheSteps = 0, fallbackReason = null;
   let canPublish = mode === 'learn', lastResult = null, modelCalls = 0;
   const finish = (completed, detail, verification = null) => ({
@@ -48,6 +50,7 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
   });
   const observe = async () => {
     signal.throwIfAborted();
+    await assertContext();
     const outstanding = await service.outstanding(identity);
     if (outstanding.some(action => action.isUncertain || action.dispatchStatus === 'queued'
       || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Outstanding action needs review; no retry');
@@ -116,6 +119,8 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
     if (canPublish) {
       const published = await recorder.finish();
       if (published.reason !== 'recorded-submit-boundary') return finish(false, published.reason, verification);
+      if (publishTrace) await publishTrace({ records: structuredClone(recorder.records),
+        terminal: { id: recorder.records.at(-1).next, depth: recorder.depth } });
     }
     return finish(true, canPublish ? 'Learned verified workflow' : 'Planner completed verified review', verification);
   } catch (error) {
