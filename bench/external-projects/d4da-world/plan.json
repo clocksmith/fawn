@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 1,
+  "$schema": "plan.schema.json",
+  "schemaVersion": 2,
   "application": "sites/d4da-com/index.html",
   "comparisonClass": "unchanged-application-replacement",
   "viewport": {"width": 1280, "height": 720},
@@ -8,12 +9,17 @@
   "sampleFrames": 180,
   "timeoutMs": 60000,
   "cases": [
-    {"id": "solid", "alpha": 1},
-    {"id": "translucent", "alpha": 0.7},
-    {"id": "ghost", "alpha": 0.3}
+    {"id": "solid", "alpha": 1, "renderedAlpha": 1},
+    {"id": "translucent", "alpha": 0.7, "renderedAlpha": 0.35},
+    {"id": "ghost", "alpha": 0.3, "renderedAlpha": 0.08}
   ],
   "oracle": {"size": 16, "canvasSize": 512, "gridStep": 0.7088607594936709, "origin": -28, "channelTolerance": 2},
-  "browserArgs": ["--no-sandbox", "--enable-unsafe-webgpu", "--ignore-gpu-blocklist", "--use-angle=vulkan", "--enable-features=Vulkan", "--disable-vulkan-surface"],
+  "browserArgs": ["--enable-unsafe-webgpu", "--ignore-gpu-blocklist"],
+  "platformBrowserArgs": {
+    "linux": ["--use-angle=vulkan", "--enable-features=Vulkan", "--disable-vulkan-surface"],
+    "darwin": ["--use-angle=metal"],
+    "win32": ["--use-angle=d3d11"]
+  },
   "stoppingRule": "One browser process, independent terrain pixel oracle, then the declared application cases. Retain failures. No performance promotion from this diagnostic baseline.",
-  "limitations": ["Live animation inputs are not deterministic across providers", "Frame cadence and queue completion are not physical display scanout latency", "The terrain oracle does not qualify the entire scene", "Observer perturbation and independent process variation are unqualified", "Forced-Doe page ownership remains a separate prerequisite"]
+  "limitations": ["Live animation inputs are not deterministic across providers", "Frame cadence and queue completion are not physical display scanout latency", "The terrain oracle does not qualify the entire scene", "Compositor consistency samples a held texture recomposited through a 2D canvas under the same DOM/CSS, outside timed batches; it is not an independent scene oracle", "Observer perturbation and independent process variation are unqualified", "Forced-Doe page ownership remains a separate prerequisite"]
 }

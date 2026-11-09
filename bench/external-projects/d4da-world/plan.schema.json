@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "D4DA unchanged application diagnostic plan v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "application",
+    "comparisonClass",
+    "viewport",
+    "deviceScaleFactor",
+    "warmupFrames",
+    "sampleFrames",
+    "timeoutMs",
+    "cases",
+    "oracle",
+    "browserArgs",
+    "platformBrowserArgs",
+    "stoppingRule",
+    "limitations"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "plan.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "application": {
+      "type": "string"
+    },
+    "comparisonClass": {
+      "const": "unchanged-application-replacement"
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "deviceScaleFactor": {
+      "const": 1
+    },
+    "warmupFrames": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sampleFrames": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timeoutMs": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "alpha",
+          "renderedAlpha"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "alpha": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "renderedAlpha": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "size",
+        "canvasSize",
+        "gridStep",
+        "origin",
+        "channelTolerance"
+      ],
+      "properties": {
+        "size": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 64
+        },
+        "canvasSize": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "gridStep": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "origin": {
+          "type": "number"
+        },
+        "channelTolerance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        }
+      }
+    },
+    "browserArgs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "platformBrowserArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "linux",
+        "darwin",
+        "win32"
+      ],
+      "properties": {
+        "linux": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "darwin": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "win32": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "stoppingRule": {
+      "type": "string"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

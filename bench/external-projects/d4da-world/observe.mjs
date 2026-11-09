@@ -3,8 +3,30 @@ export function observeWorld() {
   localStorage.setItem('d4da-renderer-preference', 'webgpu');
   const evidence = window.doeGraphics = {
     frames: [], shaders: [], adapters: [], errors: [], createdDevices: 0, destroyedDevices: 0,
-    submissions: 0, canvasAcquires: 0, active: false, pending: [],
+    submissions: 0, canvasAcquires: 0, active: false, pending: [], sceneRenderer: null,
+    frameCallback: null, actualTileAlpha: null,
   };
+  // The application now closes its runtime over private state. Observe its
+  // existing factory and draw boundary instead of depending on leaked globals.
+  let factory, currentFrame = null;
+  Object.defineProperty(window, 'SimulatteWorldRendererFactory', {
+    configurable: true,
+    get: () => factory,
+    set(value) {
+      factory = Object.freeze({ ...value, async createSceneRenderer(options) {
+        const renderer = await value.createSceneRenderer(options);
+        if (options.canvas.id !== 'field') return renderer;
+        evidence.sceneRenderer = renderer;
+        const draw = renderer.draw;
+        renderer.draw = function (frame) {
+          if (currentFrame) currentFrame.sceneDrawn = true;
+          evidence.actualTileAlpha = frame.mesh.tileAlpha;
+          return draw.call(this, frame);
+        };
+        return renderer;
+      } });
+    },
+  });
   if (!globalThis.GPUAdapter) throw new Error('WebGPU is unavailable');
   const requestDevice = GPUAdapter.prototype.requestDevice;
   GPUAdapter.prototype.requestDevice = async function (...args) {
@@ -43,10 +65,14 @@ export function observeWorld() {
   const raf = window.requestAnimationFrame.bind(window);
   let previous = null;
   window.requestAnimationFrame = callback => raf(timestamp => {
-    if (callback !== window.tick || !evidence.active) return callback(timestamp);
     const started = performance.now();
     const submissions = evidence.submissions, acquires = evidence.canvasAcquires;
-    callback(timestamp);
+    const scope = { sceneDrawn: false };
+    currentFrame = scope;
+    try { callback(timestamp); } finally { currentFrame = null; }
+    if (!scope.sceneDrawn) return;
+    evidence.frameCallback = callback;
+    if (!evidence.active) return;
     const row = { timestamp, intervalMs: previous === null ? null : timestamp - previous,
       cpuWorkMs: performance.now() - started,
       submissions: evidence.submissions - submissions,
@@ -54,7 +80,7 @@ export function observeWorld() {
     previous = timestamp;
     evidence.frames.push(row);
     // Only the scene's device: capability-probe devices may already be destroyed.
-    const device = sceneRenderer.renderer.backend.device;
+    const device = evidence.sceneRenderer.renderer.backend.device;
     evidence.pending.push(device.queue.onSubmittedWorkDone().then(() => {
       row.completedMs = performance.now() - started;
     }, error => evidence.errors.push(String(error))));

@@ -6,10 +6,12 @@ import { decodePng } from '../../../browser/workspace/test/support/gpu-presentat
 // Evaluated in the page. Hold only the application's next tick; unrelated rAFs
 // keep running so Chromium can composite and Playwright can take its screenshot.
 export function installWorldPresentationCapture() {
+  if (typeof doeGraphics.frameCallback !== 'function') throw new Error('No observed application frame callback');
+  const applicationFrame = doeGraphics.frameCallback;
   const raf = window.requestAnimationFrame;
   const acquire = GPUCanvasContext.prototype.getCurrentTexture;
   let request = null, heldTick = null, frozen = false, sequence = 0;
-  let texture = null, configuration = null;
+  let texture = null, configuration = null, sourcePixels = null, referenceCanvas = null, originalCanvas = null;
   GPUCanvasContext.prototype.getCurrentTexture = function (...args) {
     const result = acquire.apply(this, args);
     if (this.canvas === window.document.querySelector('#field')) {
@@ -30,6 +32,12 @@ export function installWorldPresentationCapture() {
     }
     const device = configuration.device;
     const { width, height, format } = texture;
+    const runtime = window.SimulatteWorldRuntime;
+    const camera = doeGraphics.sceneRenderer.camera;
+    const application = { routeId: runtime.getRouteId(), state: structuredClone(runtime.diagnostics.state),
+      ambientCamera: structuredClone(runtime.diagnostics.ambientCamera),
+      camera: { projectionMatrix: Array.from(camera.projectionMatrix.elements),
+        matrixWorld: Array.from(camera.matrixWorld.elements) } };
     const bytesPerRow = Math.ceil(width * 4 / 256) * 256;
     const buffer = device.createBuffer({ size: bytesPerRow * height,
       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
@@ -46,17 +54,21 @@ export function installWorldPresentationCapture() {
       if (error) throw new Error(error.message);
       await buffer.mapAsync(GPUMapMode.READ);
       const data = new Uint8Array(buffer.getMappedRange());
+      sourcePixels = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        const source = y * bytesPerRow + x * 4, target = (y * width + x) * 4;
+        sourcePixels.set(data.subarray(source, source + 4), target);
+        if (format === 'bgra8unorm') [sourcePixels[target], sourcePixels[target + 2]] = [sourcePixels[target + 2], sourcePixels[target]];
+      }
       const pixels = [];
       for (let row = 0; row < gridSize; row++) for (let column = 0; column < gridSize; column++) {
         const x = Math.floor((column + 0.5) * width / gridSize);
         const y = Math.floor((row + 0.5) * height / gridSize);
         const rgba = [...data.slice(y * bytesPerRow + x * 4, y * bytesPerRow + x * 4 + 4)];
         if (format === 'bgra8unorm') [rgba[0], rgba[2]] = [rgba[2], rgba[0]];
-        // HUD occlusion is a separate UI surface; do not call its pixels terrain.
-        const visible = document.elementFromPoint(rect.x + x + 0.5, rect.y + y + 0.5) === canvas;
-        pixels.push({ x, y, rgba, visible });
+        pixels.push({ x, y, rgba, visible: true });
       }
-      return { sequence: frameSequence, queueCompleted: true, width, height, format, pixels,
+      return { sequence: frameSequence, queueCompleted: true, width, height, format, pixels, application,
         submissions: doeGraphics.submissions, canvasAcquires: doeGraphics.canvasAcquires };
     } finally {
       if (scopeOpen) await device.popErrorScope();
@@ -65,7 +77,7 @@ export function installWorldPresentationCapture() {
     }
   }
   window.requestAnimationFrame = callback => raf(timestamp => {
-    if (callback !== window.tick) return callback(timestamp);
+    if (callback !== applicationFrame) return callback(timestamp);
     if (frozen) { heldTick = callback; return; }
     texture = null;
     callback(timestamp);
@@ -83,7 +95,21 @@ export function installWorldPresentationCapture() {
       if (request || frozen) throw new Error('A presentation capture is already active');
       return new Promise((resolve, reject) => { request = { resolve, reject, gridSize }; });
     },
+    showReference() {
+      if (!frozen || !sourcePixels || referenceCanvas) throw new Error('A held texture is required for the reference composite');
+      originalCanvas = document.querySelector('#field');
+      referenceCanvas = originalCanvas.cloneNode(false);
+      referenceCanvas.getContext('2d').putImageData(new ImageData(sourcePixels, originalCanvas.width, originalCanvas.height), 0, 0);
+      originalCanvas.replaceWith(referenceCanvas);
+      return referenceCanvas.toDataURL('image/png').split(',')[1];
+    },
+    restoreReference() {
+      if (referenceCanvas) referenceCanvas.replaceWith(originalCanvas);
+      referenceCanvas = originalCanvas = null;
+    },
     resume() {
+      this.restoreReference();
+      sourcePixels = null;
       request?.reject(new Error('Presentation capture cancelled'));
       request = null;
       frozen = false;
@@ -92,7 +118,7 @@ export function installWorldPresentationCapture() {
   };
 }
 
-export function validateWorldPresentation(png, frame, after, tolerance) {
+export function validateWorldPresentation(png, frame, after, tolerance, referencePng = null) {
   assert.equal(frame.queueCompleted, true, 'Missing GPU queue completion');
   assert(Number.isSafeInteger(frame.sequence) && frame.sequence > 0, 'Missing held frame identity');
   assert.equal(after.submissions, frame.submissions, 'GPU submission changed during capture');
@@ -101,6 +127,11 @@ export function validateWorldPresentation(png, frame, after, tolerance) {
   const image = decodePng(png);
   assert.equal(image.width, frame.width);
   assert.equal(image.height, frame.height);
+  const reference = referencePng ? decodePng(referencePng) : null;
+  if (reference) {
+    assert.equal(reference.width, image.width);
+    assert.equal(reference.height, image.height);
+  }
   const visible = frame.pixels.filter(pixel => pixel.visible);
   assert(visible.length > 0, 'No visible canvas samples');
   assert(new Set(visible.map(pixel => pixel.rgba.slice(0, 3).join(','))).size > 1,
@@ -114,13 +145,15 @@ export function validateWorldPresentation(png, frame, after, tolerance) {
     for (let channel = 0; channel < 4; channel++) {
       assert(Number.isInteger(rgba[channel]) && rgba[channel] >= 0 && rgba[channel] <= 255);
       const actual = image.pixels[(y * image.width + x) * 4 + channel];
-      const error = Math.abs(actual - rgba[channel]);
+      const expected = reference ? reference.pixels[(y * image.width + x) * 4 + channel] : rgba[channel];
+      const error = Math.abs(actual - expected);
       maxError = Math.max(maxError, error);
-      assert(error <= tolerance, `Compositor pixel (${x},${y}) channel ${channel}: expected ${rgba[channel]}, got ${actual}`);
+      assert(error <= tolerance, `Compositor pixel (${x},${y}) channel ${channel}: expected ${expected}, got ${actual}`);
     }
   }
   return { passed: true, sequence: frame.sequence, queueCompleted: true,
     pngSha256: createHash('sha256').update(png).digest('hex'), maxError,
+    referencePngSha256: referencePng ? createHash('sha256').update(referencePng).digest('hex') : null,
     sampleCount: frame.pixels.length, visibleSampleCount: visible.length,
-    scope: 'Held-frame GPU-to-compositor sampled pixel consistency; not whole-scene correctness or physical scanout' };
+    scope: 'Held-frame sampled compositor consistency against texture readback composed through a 2D canvas with the same DOM/CSS; not whole-scene correctness or physical scanout' };
 }

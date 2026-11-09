@@ -17,6 +17,9 @@ external requests, including analytics, recording those exclusions. It requires
 WebGPU and rejects application fallback and software adapters. Headless Chrome on
 the initial host completed GPU work while omitting the visible canvas; the runner
 therefore uses a visible browser window. Retained failed runs remain diagnostics.
+Plan v2 selects Metal on macOS, Vulkan on Linux and D3D11 ANGLE on Windows;
+requested and actual browser arguments are retained. It keeps Chromium's sandbox
+enabled. These platform choices do not establish qualified coverage on each OS.
 
 The independent CPU oracle checks a planar fixture using the application's real
 terrain material: palette texture upload, lighting, both triangles and time
@@ -28,6 +31,35 @@ Raw samples distinguish application frame cadence, CPU callback work and elapsed
 time through GPU queue completion. Every measured frame must submit work and
 acquire a canvas texture. Screenshots retain visible composition. Preparation is
 navigation to readiness after the material oracle, not cold-cache startup.
+The observer follows the application's renderer factory and actual draw calls;
+it does not depend on the runtime exporting its private animation callback or
+renderer. The plan records both control values and the application's current
+surface mapping: 1→1, 0.7→0.35 and 0.3→0.08. The observed draw must match that
+declared mapping; historical plans retain their original interpretation.
+
+After each timed batch, the harness holds one application frame, copies that
+frame's canvas texture before yielding, and separately waits for queue
+completion. It retains a PNG of the texture and composes those same bytes through
+a temporary 2D canvas in the same DOM/CSS position. The actual WebGPU compositor
+screenshot must match that reference at the sample points; the original canvas
+is restored before resuming. This reference is needed because pointer-events-none
+overlays affect pixels even though DOM hit-testing does not select them.
+Two animation callbacks are only a compositor opportunity, not a presentation
+receipt. Any intervening submission/acquisition or mismatched sample fails the
+run. The frame sequence, application state, camera matrices, raw samples,
+screenshot hash and sample coverage
+are retained. This does not prove redaction, semantic scene correctness or
+physical display scanout. The separate planar material oracle remains the
+independent correctness reference.
+
+Presentation checks require an opaque, unscaled 8-bit canvas at DPR 1 and run
+outside timed batches. Blank, stale, wrong-color and changed-frame rejection are
+covered by the focused checks. Missing prerequisites fail instead of accepting
+an unverified screenshot.
+`--negative-control omit-canvas` makes only the actual compositor capture
+transparent, after queue completion, and restores it before the reference
+capture. That run must fail the pixel oracle, retaining the failed receipt.
+
 Process CPU counters, RSS and Linux DRM client counters are checkpoint samples;
 they do not establish peak physical GPU memory. Explicit scene disposal checks
 device destruction separately from browser process shutdown.

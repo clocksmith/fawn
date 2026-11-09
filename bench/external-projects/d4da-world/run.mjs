@@ -19,14 +19,16 @@ const { values } = parseArgs({ options: {
   browser: { type: 'string', default: '/opt/google/chrome/chrome' },
   provider: { type: 'string', default: 'dawn' },
   'doe-library': { type: 'string' },
+  'negative-control': { type: 'string' },
   help: { type: 'boolean', default: false },
 } });
 if (values.help) {
-  console.log('Usage: graphics --source-root /path/to/d4da --out bench/out/graphics/run-id [--browser PATH] [--provider dawn|doe --doe-library PATH]\nRequires a graphical display; runs a visible Chromium window.');
+  console.log('Usage: graphics --source-root /path/to/d4da --out bench/out/graphics/run-id [--browser PATH] [--provider dawn|doe --doe-library PATH] [--negative-control omit-canvas]\nRequires a graphical display; runs a visible Chromium window.');
   process.exit(0);
 }
 assert(values['source-root'] && values.out, '--source-root and --out are required');
 assert(['dawn', 'doe'].includes(values.provider), '--provider must be dawn or doe');
+assert(values['negative-control'] === undefined || values['negative-control'] === 'omit-canvas', 'Unknown negative control');
 const source = await realpath(values['source-root']);
 const webRoot = await realpath(resolve(source, 'sites/d4da-com'));
 const out = resolve(values.out);
@@ -36,6 +38,7 @@ const writeJSON = (name, value) => writeFile(resolve(out, name), JSON.stringify(
 const plan = JSON.parse(await readFile(resolve(here, 'plan.json')));
 const result = { schemaVersion: 1, status: 'running', claimStatus: 'diagnostic',
   requestedProvider: values.provider, pageRuntimeOwnershipVerified: false,
+  negativeControl: values['negative-control'] ?? null,
   plan, sourceRoot: source, sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: source, encoding: 'utf8' }).trim(),
   sourceDirty: execFileSync('git', ['status', '--porcelain'], { cwd: source, encoding: 'utf8' }),
   cases: [], errors: [], console: [], blockedRequests: [], assets: [], shaders: [] };
@@ -57,7 +60,9 @@ try {
   result.harness = await Promise.all(['run.mjs', 'observe.mjs', 'oracle.mjs', 'presentation.mjs',
     '../../../browser/workspace/test/support/gpu-presentation-oracle.js', 'process-metrics.mjs', 'plan.json'].map(async name =>
     ({ name, sha256: sha256(await readFile(resolve(here, name))) })));
-  const args = [...plan.browserArgs, `--use-webgpu-runtime=${values.provider}`];
+  assert.equal(plan.schemaVersion, 2, 'Expected graphics plan v2');
+  assert(Object.hasOwn(plan.platformBrowserArgs, process.platform), `Unsupported platform: ${process.platform}`);
+  const args = [...plan.browserArgs, ...plan.platformBrowserArgs[process.platform], `--use-webgpu-runtime=${values.provider}`];
   if (values.provider === 'doe') {
     assert(values['doe-library'], 'Forced Doe requires --doe-library');
     const library = await realpath(values['doe-library']);
@@ -65,6 +70,7 @@ try {
     throw new Error('Forced-Doe page ownership cannot yet be verified by this harness; refusing to treat requested browser switches as runtime evidence');
   }
   result.browserArgs = args;
+  result.platform = process.platform;
   result.headless = false;
   await mkdir(resolve(out, 'assets'));
   await mkdir(resolve(out, 'shaders'));
@@ -93,9 +99,10 @@ try {
   const origin = `http://127.0.0.1:${server.address().port}`;
   const playwright = process.env.DOE_PLAYWRIGHT_MODULE || pathToFileURL(resolve(source, 'node_modules/playwright/index.mjs')).href;
   const { chromium } = await import(playwright);
-  browser = await chromium.launch({ executablePath: result.browserPath, headless: result.headless, args });
+  browser = await chromium.launch({ executablePath: result.browserPath, headless: result.headless, args, chromiumSandbox: true });
   result.browserVersion = browser.version();
   const cdp = await browser.newBrowserCDPSession();
+  result.browserCommandLine = await cdp.send('Browser.getBrowserCommandLine');
   result.systemInfo = await cdp.send('SystemInfo.getInfo');
   const context = await browser.newContext({ viewport: plan.viewport, deviceScaleFactor: plan.deviceScaleFactor });
   await context.route('**/*', route => {
@@ -128,10 +135,11 @@ try {
   assert(result.adapters.length > 0, 'Missing physical adapter evidence');
   assert(!result.adapters.some(info => /swiftshader|llvmpipe|software/i.test(JSON.stringify(info))), 'Software adapter rejected');
   result.before = await processSnapshot(cdp);
+  await page.waitForFunction(() => typeof doeGraphics.frameCallback === 'function', null, { timeout: plan.timeoutMs });
   await page.evaluate(installWorldPresentationCapture);
   for (const item of plan.cases) {
     await page.evaluate(alpha => {
-      setTileAlphaMode(alpha);
+      SimulatteWorldRuntime.diagnostics.setTileAlphaMode(alpha);
       doeGraphics.frames = []; doeGraphics.pending = []; doeGraphics.active = true;
     }, item.alpha);
     await page.waitForFunction(count => doeGraphics.frames.length >= count, plan.warmupFrames + plan.sampleFrames,
@@ -139,16 +147,18 @@ try {
     const measured = await page.evaluate(async ({ warmupFrames, sampleFrames }) => {
       doeGraphics.active = false;
       await Promise.all(doeGraphics.pending);
+      const canvas = document.querySelector('#field');
       return { frames: doeGraphics.frames.slice(warmupFrames, warmupFrames + sampleFrames),
         profile: SimulatteWorldRuntime.getRendererProfile(), errors: doeGraphics.errors,
         canvas: { width: canvas.width, height: canvas.height, connected: canvas.isConnected },
-        actualTileAlpha: renderSettings.tileAlpha };
+        actualTileAlpha: doeGraphics.actualTileAlpha };
     }, plan);
     const caseResult = { ...item, ...measured };
     result.cases.push(caseResult);
     assert.deepEqual(measured.errors, []);
     assert.equal(measured.profile.capability, 'webgpu');
     assert.equal(measured.profile.deviceLost, false);
+    assert.equal(measured.actualTileAlpha, item.renderedAlpha, 'Requested material mode did not reach the renderer');
     assert(measured.canvas.connected && measured.canvas.width > 0 && measured.canvas.height > 0);
     assert(measured.frames.every(row => row.submissions > 0 && row.canvasAcquires > 0
       && Number.isFinite(row.completedMs) && row.completedMs >= row.cpuWorkMs), 'Missing rendered/completed work');
@@ -158,9 +168,28 @@ try {
       const held = await bounded(page.evaluate(gridSize => doePresentation.hold(gridSize), plan.oracle.size), 'Held frame readback');
       caseResult.presentationFrame = held;
       await bounded(page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))), 'Compositor opportunity');
-      const png = await page.locator('#field').screenshot({ path: resolve(out, `${item.id}.png`), timeout: plan.timeoutMs });
+      let savedStyle;
+      if (values['negative-control'] === 'omit-canvas') savedStyle = await page.locator('#field').evaluate(canvas => {
+        const style = canvas.style.cssText;
+        canvas.style.setProperty('opacity', '0', 'important');
+        return style;
+      });
+      let png;
+      try {
+        png = await page.locator('#field').screenshot({ path: resolve(out, `${item.id}.png`), timeout: plan.timeoutMs });
+      } finally {
+        if (savedStyle !== undefined) await page.locator('#field').evaluate((canvas, style) => { canvas.style.cssText = style; }, savedStyle);
+      }
+      // Preserve CSS overlays and composition. Hit-testing cannot detect a
+      // pointer-events:none overlay, and raw texture pixels alone omit it.
+      const raw = Buffer.from(await page.evaluate(() => doePresentation.showReference()), 'base64');
+      await writeFile(resolve(out, `${item.id}-texture.png`), raw);
+      caseResult.presentationTextureSha256 = sha256(raw);
+      await bounded(page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))), 'Reference compositor opportunity');
+      const reference = await page.locator('#field').screenshot({ path: resolve(out, `${item.id}-reference.png`), timeout: plan.timeoutMs });
+      await page.evaluate(() => doePresentation.restoreReference());
       const after = await page.evaluate(() => ({ submissions: doeGraphics.submissions, canvasAcquires: doeGraphics.canvasAcquires }));
-      caseResult.presentation = validateWorldPresentation(png, held, after, plan.oracle.channelTolerance);
+      caseResult.presentation = validateWorldPresentation(png, held, after, plan.oracle.channelTolerance, reference);
     } finally { await page.evaluate(() => doePresentation.resume()); }
     caseResult.summary = summarizeFrames(measured.frames);
     caseResult.processSnapshot = await processSnapshot(cdp);
@@ -170,9 +199,9 @@ try {
   assert.deepEqual(result.errors, []);
   result.lifecycle = await page.evaluate(async () => {
     doeGraphics.active = false;
-    const device = sceneRenderer.renderer.backend.device;
+    const device = doeGraphics.sceneRenderer.renderer.backend.device;
     await device.queue.onSubmittedWorkDone();
-    await sceneRenderer.dispose();
+    await doeGraphics.sceneRenderer.dispose();
     const loss = await device.lost;
     return { createdDevices: doeGraphics.createdDevices, destroyedDevices: doeGraphics.destroyedDevices,
       sceneDeviceLossReason: loss.reason };
@@ -197,6 +226,7 @@ try {
     } catch (error) { result.captureFailure = error.message; }
   }
   await browser?.close();
+  result.browserClosed = browser ? !browser.isConnected() : null;
   if (server) await new Promise(done => server.close(done));
   result.assets = [...assets.values()].map(({ path, sha256, bytes }) => ({ path, sha256, byteLength: bytes.length }));
   result.finishedAt = new Date().toISOString();
