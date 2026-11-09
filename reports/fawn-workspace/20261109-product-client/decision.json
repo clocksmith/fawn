@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 1,
+  "classification": "development acceptance and product/release promotion rejection",
+  "consumer": "docs/status/fawn-workspace.md; implementation review of the workspace client and separate GPU integration",
+  "implementationSourceCommit": "c8834c7ddb3bdbb7bc52f21a12bdb74221c80753",
+  "intent": "Add human control, bounded planning, scoped pages and evidence dependencies; preserve the trusted dispatcher and independent Doe mission.",
+  "localEvidenceManifest": {
+    "path": "bench/out/fawn-workspace-client-20261109/SHA256SUMS",
+    "sha256": "8b78e8e9246e4a38faedaf2f2c1cc5c22fdea714a83327d1863629fe29a8575f",
+    "bytes": 29758,
+    "availability": "local ignored evidence; not published"
+  },
+  "qualification": {
+    "sourceCommit": "c8834c7ddb3bdbb7bc52f21a12bdb74221c80753",
+    "sourceDirty": [],
+    "scope": "full",
+    "runsChecked": 102,
+    "admitted": true,
+    "currentSourceCheck": {
+      "admitted": true,
+      "scope": "full",
+      "failures": []
+    },
+    "identity": {
+      "caseSet": {
+        "path": "config/fawn-workspace-qualification.json",
+        "sha256": "e9faad64630e7f35f68b03bed1b54d6682b10f64705680c7fc500d399d54d8df"
+      },
+      "serviceConfig": {
+        "path": "config/fawn-workspace-service.json",
+        "sha256": "d0916898b0033f2326204bcbb64b39b7a32cb9f55bfb27c7805408013fed7ca6"
+      },
+      "serviceSource": {
+        "path": "browser/workspace/src",
+        "sha256": "240c734f745eecd3b36cc4199410066e0d740cc6ab7398e70e394d1534092a15",
+        "fileCount": 27
+      },
+      "harness": {
+        "path": "browser/workspace/qualification",
+        "sha256": "2d248465ec136e830c34142d86db238841473b5ea603910715190d0e9f2526c5",
+        "fileCount": 46
+      },
+      "os": {
+        "platform": "darwin",
+        "release": "25.6.0",
+        "arch": "arm64"
+      }
+    },
+    "result": {
+      "path": "bench/out/fawn-workspace-client-20261109/qualification/result.json",
+      "sha256": "3adbef240432bf744ac4fabb2d45df627b2917975b65254de634cc37233a08a4",
+      "bytes": 3528605,
+      "availability": "local ignored evidence; not published"
+    },
+    "verdict": {
+      "path": "bench/out/fawn-workspace-client-20261109/qualification/verdict.json",
+      "sha256": "213dc13ace06b13d9b628e0717d34a482786203fb34dbb066a178bf7ce880b8c",
+      "bytes": 12533,
+      "availability": "local ignored evidence; not published"
+    },
+    "limits": [
+      "Recorded macOS stock Chrome and frozen fixtures only.",
+      "No cross-platform transfer, live-planner quality or release admission.",
+      "Full raw evidence remains local. This projection does not replace independent semantic revalidation."
+    ]
+  },
+  "browserUi": {
+    "artifact": {
+      "path": "bench/out/fawn-workspace-client-20261109/browser-ui/report.json",
+      "sha256": "514c5cded69ba44927950c22b4c268e18ce238f9beeb931b1543add26b1c7335",
+      "bytes": 473,
+      "availability": "local ignored evidence; not published"
+    },
+    "planner": "controlled test planner",
+    "viewportWidths": [
+      1280,
+      430
+    ],
+    "submissions": 1,
+    "modelCallsAfterRestart": 0,
+    "checks": [
+      "Correction invalidates dependent finding.",
+      "Unknown submission is not retried; Check result leaves the submission count at one.",
+      "Restart retains evidence and uncertainty."
+    ]
+  },
+  "liveInvestigationProbes": [
+    {
+      "stage": "initial",
+      "sourceCommit": "97ca0f395beb411a3b09989e9611ea62ebbc3930",
+      "sourceDirty": false,
+      "artifact": {
+        "path": "bench/out/fawn-workspace-client-20261109/investigation/initial/product-comparison.json",
+        "sha256": "f7a41aa5bceff49cd04f6541e0dd2444d473038f42057053d4af3941723969d3",
+        "bytes": 146615,
+        "availability": "local ignored evidence; not published"
+      },
+      "classification": "live-planner diagnostic paired probe",
+      "providerModels": [
+        "claude-opus-5-5"
+      ],
+      "accountedCostUpperBoundUsd": 0.5542288,
+      "independentDuplicateChargeReproduction": {
+        "charges": 2,
+        "expected": 2
+      },
+      "rows": [
+        {
+          "arm": "fawn",
+          "preparationMs": 744.765625,
+          "completeTaskMs": 17643.210791999998,
+          "acceptance": {
+            "sourceCount": 2,
+            "questionCount": 0,
+            "sourcesBound": true,
+            "findingConnected": false,
+            "finished": false,
+            "qualitativeReview": "not-performed"
+          }
+        },
+        {
+          "arm": "stock-browser-and-tracker",
+          "preparationMs": 370.7962919999991,
+          "completeTaskMs": 16840.043959,
+          "acceptance": {
+            "sourceCount": 2,
+            "questionCount": 0,
+            "sourcesBound": true,
+            "findingConnected": false,
+            "finished": false,
+            "qualitativeReview": "not-performed"
+          }
+        }
+      ],
+      "productAdvantageEstablished": false,
+      "limitations": [
+        "No product-advantage verdict: one paired probe, qualitative review and retained-user evidence remain required.",
+        "Node host, browser and model costs are not interchangeable. CPU/GPU memory and p50/p95 require additional repetitions and instrumentation.",
+        "This read-only investigation probe does not qualify interruption, multi-user experience or external retention. The independent workflow comparison retains those separate gates."
+      ]
+    },
+    {
+      "stage": "compact-context",
+      "sourceCommit": "9735b9b79bb0cbe2b2393a83619ae00e721be2ac",
+      "sourceDirty": false,
+      "artifact": {
+        "path": "bench/out/fawn-workspace-client-20261109/investigation/compact-context/product-comparison.json",
+        "sha256": "e3e4852d9e29ed06bd77d5b374510530471b5f38f0c55c311ad754cef1af2507",
+        "bytes": 474357,
+        "availability": "local ignored evidence; not published"
+      },
+      "classification": "live-planner diagnostic paired probe",
+      "providerModels": [
+        "claude-opus-5-5"
+      ],
+      "accountedCostUpperBoundUsd": 0.3970796000000002,
+      "independentDuplicateChargeReproduction": {
+        "charges": 2,
+        "expected": 2
+      },
+      "rows": [
+        {
+          "arm": "fawn",
+          "preparationMs": 654.431209,
+          "completeTaskMs": 38598.4245,
+          "acceptance": {
+            "sourceCount": 3,
+            "questionCount": 1,
+            "sourcesBound": true,
+            "findingConnected": true,
+            "finished": false,
+            "qualitativeReview": "not-performed"
+          }
+        },
+        {
+          "arm": "stock-browser-and-tracker",
+          "preparationMs": 386.72591600000305,
+          "completeTaskMs": 42150.899166,
+          "acceptance": {
+            "sourceCount": 3,
+            "questionCount": 1,
+            "sourcesBound": true,
+            "findingConnected": true,
+            "finished": true,
+            "qualitativeReview": "not-performed"
+          }
+        }
+      ],
+      "productAdvantageEstablished": false,
+      "limitations": [
+        "No product-advantage verdict: one paired probe, qualitative review and retained-user evidence remain required.",
+        "Node host, browser and model costs are not interchangeable. CPU/GPU memory and p50/p95 require additional repetitions and instrumentation.",
+        "This read-only investigation probe does not qualify interruption, multi-user experience or external retention. The independent workflow comparison retains those separate gates."
+      ]
+    },
+    {
+      "stage": "request-budget-aware",
+      "sourceCommit": "c8834c7ddb3bdbb7bc52f21a12bdb74221c80753",
+      "sourceDirty": false,
+      "artifact": {
+        "path": "bench/out/fawn-workspace-client-20261109/investigation/request-budget-aware/product-comparison.json",
+        "sha256": "08d54a19d912b346243b88776063c8e35c44f1ed17e8868a2e63ca0ff2c1711a",
+        "bytes": 464071,
+        "availability": "local ignored evidence; not published"
+      },
+      "classification": "live-planner diagnostic paired probe",
+      "providerModels": [
+        "claude-opus-5-5"
+      ],
+      "accountedCostUpperBoundUsd": 0.43788119999999986,
+      "independentDuplicateChargeReproduction": {
+        "charges": 2,
+        "expected": 2
+      },
+      "rows": [
+        {
+          "arm": "fawn",
+          "preparationMs": 665.46,
+          "completeTaskMs": 55769.955166,
+          "acceptance": {
+            "sourceCount": 3,
+            "questionCount": 1,
+            "sourcesBound": true,
+            "findingConnected": true,
+            "finished": true,
+            "qualitativeReview": "not-performed"
+          }
+        },
+        {
+          "arm": "stock-browser-and-tracker",
+          "preparationMs": 386.40441600000486,
+          "completeTaskMs": 46350.472375000005,
+          "acceptance": {
+            "sourceCount": 3,
+            "questionCount": 1,
+            "sourcesBound": true,
+            "findingConnected": true,
+            "finished": true,
+            "qualitativeReview": "not-performed"
+          }
+        }
+      ],
+      "productAdvantageEstablished": false,
+      "limitations": [
+        "No product-advantage verdict: one paired probe, qualitative review and retained-user evidence remain required.",
+        "Node host, browser and model costs are not interchangeable. CPU/GPU memory and p50/p95 require additional repetitions and instrumentation.",
+        "This read-only investigation probe does not qualify interruption, multi-user experience or external retention. The independent workflow comparison retains those separate gates."
+      ]
+    }
+  ],
+  "gpuDiagnostic": {
+    "report": {
+      "path": "bench/out/fawn-workspace-client-20261109/gpu/fawn-current-application-comparison.json",
+      "sha256": "fea359148abf080ec2508d509d81cddf8f596c8411f8394355bff6b2c2a84d63",
+      "bytes": 5234173,
+      "availability": "local ignored evidence; not published"
+    },
+    "check": {
+      "path": "bench/out/fawn-workspace-client-20261109/gpu/fawn-current-application-check.json",
+      "sha256": "a725b313a8b04fe5e65cba890ffece9f83997af50b5f0bf8223a31adecd7461f",
+      "bytes": 490,
+      "availability": "local ignored evidence; not published"
+    },
+    "score": {
+      "path": "bench/out/fawn-workspace-client-20261109/gpu/fawn-current-application-score.json",
+      "sha256": "8f193df90f7a746bebfec565987d0e1db435e7b8b0139dcae3c4e50d154b6dcf",
+      "bytes": 334784,
+      "availability": "local ignored evidence; not published"
+    },
+    "comparisonStatus": "diagnostic",
+    "claimStatus": "diagnostic",
+    "cohortStopped": false,
+    "summary": {
+      "l1": {
+        "dawn": {
+          "ok": 35,
+          "fail": 0,
+          "unsupported": 0,
+          "l0_only": 15,
+          "missing": 0,
+          "requiredFailures": 0,
+          "kind": "l1"
+        },
+        "doe": {
+          "ok": 35,
+          "fail": 0,
+          "unsupported": 0,
+          "l0_only": 15,
+          "missing": 0,
+          "requiredFailures": 0,
+          "kind": "l1"
+        }
+      },
+      "l2": {
+        "dawn": {
+          "ok": 7,
+          "fail": 0,
+          "unsupported": 0,
+          "l0_only": 0,
+          "missing": 0,
+          "requiredFailures": 0,
+          "kind": "l2"
+        },
+        "doe": {
+          "ok": 7,
+          "fail": 0,
+          "unsupported": 0,
+          "l0_only": 0,
+          "missing": 0,
+          "requiredFailures": 0,
+          "kind": "l2"
+        }
+      },
+      "perMode": {
+        "dawn": {
+          "l1": {
+            "ok": 35,
+            "fail": 0,
+            "unsupported": 0,
+            "l0_only": 15,
+            "missing": 0,
+            "requiredFailures": 0,
+            "kind": "l1"
+          },
+          "l2": {
+            "ok": 7,
+            "fail": 0,
+            "unsupported": 0,
+            "l0_only": 0,
+            "missing": 0,
+            "requiredFailures": 0,
+            "kind": "l2"
+          },
+          "requiredFailures": 0
+        },
+        "doe": {
+          "l1": {
+            "ok": 35,
+            "fail": 0,
+            "unsupported": 0,
+            "l0_only": 15,
+            "missing": 0,
+            "requiredFailures": 0,
+            "kind": "l1"
+          },
+          "l2": {
+            "ok": 7,
+            "fail": 0,
+            "unsupported": 0,
+            "l0_only": 0,
+            "missing": 0,
+            "requiredFailures": 0,
+            "kind": "l2"
+          },
+          "requiredFailures": 0
+        }
+      },
+      "overallRequiredFailures": 0
+    },
+    "checkerPassed": true,
+    "overall": {
+      "baselineLeadPercent": -17.135852277292464,
+      "baselineMode": "doe",
+      "baselineScore": 46.05411725019754,
+      "comparisonDeltaPercent": -17.135852277292464,
+      "comparisonMode": "dawn",
+      "comparisonScore": 53.94588274980246,
+      "fasterRowCount": 16,
+      "geomeanRatio": 1.1713585227729246,
+      "legacyRatioScore": 117.13585227729246,
+      "parityRowCount": 0,
+      "rowCount": 42,
+      "score": 46.05411725019754,
+      "slowerRowCount": 26
+    },
+    "categoryBalancedOverall": {
+      "baselineLeadPercent": -15.132314538820069,
+      "baselineMode": "doe",
+      "baselineScore": 46.48302149045826,
+      "categoryCount": 10,
+      "comparisonDeltaPercent": -15.132314538820069,
+      "comparisonMode": "dawn",
+      "comparisonScore": 53.51697850954174,
+      "fasterCategoryCount": 3,
+      "geomeanRatio": 1.1513231453882007,
+      "legacyRatioScore": 115.13231453882007,
+      "parityCategoryCount": 0,
+      "rowCount": 42,
+      "score": 46.48302149045826,
+      "slowerCategoryCount": 7
+    },
+    "strictComparableOverall": {
+      "baselineLeadPercent": 23.82835973719246,
+      "baselineMode": "doe",
+      "baselineScore": 56.76282507832873,
+      "comparisonDeltaPercent": 23.82835973719246,
+      "comparisonMode": "dawn",
+      "comparisonScore": 43.23717492167127,
+      "fasterRowCount": 4,
+      "geomeanRatio": 0.7617164026280754,
+      "legacyRatioScore": 76.17164026280754,
+      "parityRowCount": 0,
+      "rowCount": 6,
+      "score": 56.76282507832873,
+      "slowerRowCount": 2
+    },
+    "limits": [
+      "Retained browser artifact; not a source-matched current Chromium release.",
+      "Some scoped host checks overlapped measurement. Diagnostic timing only.",
+      "Projection rows and workflow diagnostics do not qualify all unchanged applications.",
+      "Aggregate performance target was not met; six strict-comparable rows do not waive losses elsewhere.",
+      "The configured external Chromium source checkout is absent."
+    ]
+  },
+  "promotion": {
+    "productAdvantageEstablished": false,
+    "releaseQualified": false,
+    "integratedDoeProofEstablished": false,
+    "remaining": [
+      "Frozen model-driven differentiation campaign and held-out applications.",
+      "New multi-page protocol cross-platform qualification.",
+      "External retained use and complete-task value against the competent baseline.",
+      "Source-matched forced-Doe browser build and application correctness/performance gates."
+    ]
+  }
+}
