@@ -10,7 +10,7 @@ import { chromium } from 'playwright-core';
 import { loadServiceConfig } from '../../src/config.js';
 import { prepareFawnLaunch, playwrightLaunchOptions } from '../../src/browser-launch.js';
 import { inspectBrowserProcesses, resultIdentity, sha256File, waitForProfileRelease } from '../../qualification/identity.js';
-import { assertSolidPixels, extractRenderShaders } from '../support/gpu-presentation-oracle.js';
+import { extractRenderShaders, presentationReceipt } from '../support/gpu-presentation-oracle.js';
 
 const options = {};
 for (let index = 2; index < process.argv.length; index += 2) {
@@ -49,7 +49,7 @@ const result = { scope: 'Development compositor-visible PNG pixels; no physical 
   oracleSha256: sha256File(fileURLToPath(new URL('../support/gpu-presentation-oracle.js', import.meta.url))),
   shaders: Object.fromEntries(Object.entries(shaders).map(([stage, source]) => [stage, createHash('sha256').update(source).digest('hex')])),
   headless: config.browser.headless, negativeControl: options['--negative-control'] ?? null,
-  observations: [], errors: [], gpuCompletion: 'not-dispatched', passed: false };
+  observations: [], submissions: [], errors: [], gpuCompletion: 'not-dispatched', passed: false };
 let context;
 let page;
 let initialized = false;
@@ -62,12 +62,10 @@ async function bounded(promise, label, limit = 30000) {
     })]);
   } finally { clearTimeout(timer); }
 }
-async function capture(name, rgba) {
-  result.gpuCompletion = 'unknown';
+async function capture(name, rgba, submission = null) {
   const png = await bounded(page.locator('#canvas').screenshot({ type: 'png', animations: 'disabled' }), `${name} compositor screenshot`);
-  result.gpuCompletion = 'completed';
   writeFileSync(join(output, `${name}.png`), png);
-  result.observations.push({ name, ...assertSolidPixels(png, rgba) });
+  result.observations.push({ name, ...presentationReceipt(png, rgba, submission) });
 }
 try {
   context = await chromium.launchPersistentContext(profile, { ...playwrightLaunchOptions(config.browser),
@@ -96,6 +94,7 @@ try {
       fragment: { module: device.createShaderModule({ code: shaders.fragment }), entryPoint: 'main', targets: [{ format }] } });
     const setupError = await device.popErrorScope();
     if (setupError) throw new Error(setupError.message);
+    let sequence = 0;
     window.present = async ({ draw, clearValue }) => {
       device.pushErrorScope('validation');
       const encoder = device.createCommandEncoder();
@@ -108,7 +107,7 @@ try {
       const error = await device.popErrorScope();
       if (error) throw new Error(error.message);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      return { queueCompleted: true, frames: 2 };
+      return { queueCompleted: true, sequence: ++sequence, frames: 2 };
     };
     window.finish = async () => {
       await device.queue.onSubmittedWorkDone();
@@ -130,7 +129,9 @@ try {
     const work = await bounded(page.evaluate(work => window.present(work), { draw: selectedDraw, clearValue }), name);
     assert.equal(work.queueCompleted, true);
     result.gpuCompletion = 'completed';
-    await capture(name, rgba);
+    assert.equal(work.sequence, result.submissions.length + 1);
+    result.submissions.push({ name, ...work });
+    await capture(name, rgba, work);
   }
   result.inspection = inspectBrowserProcesses(process.pid, profile);
   assert.ok(result.inspection.executables.every(image => image.sha256 === launch.identity.executable.sha256));

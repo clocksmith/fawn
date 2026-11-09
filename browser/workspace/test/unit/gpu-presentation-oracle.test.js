@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { assertSolidPixels, decodePng, extractRenderShaders } from '../support/gpu-presentation-oracle.js';
+import { assertSolidPixels, decodePng, extractRenderShaders, presentationReceipt } from '../support/gpu-presentation-oracle.js';
 
 // Independent Pillow RGBA encodings, not produced by the decoder under test.
 const samples = [
@@ -20,6 +20,14 @@ for (const [encoded, expected] of samples) {
 }
 assert.throws(() => assertSolidPixels(Buffer.from(samples[3][0], 'base64'), [255, 0, 0, 255]), /compositor pixel 0/,
   'a blue GPU endpoint must reject a red/blue channel swap');
+const green = Buffer.from(samples[2][0], 'base64');
+assert.equal(presentationReceipt(green, samples[2][1]).queueCompleted, null,
+  'a screenshot by itself proves no GPU completion');
+assert.equal(presentationReceipt(green, samples[2][1], { queueCompleted: true, sequence: 3 }).submissionSequence, 3);
+assert.throws(() => presentationReceipt(green, samples[2][1], { queueCompleted: false, sequence: 3 }), /queue completion/);
+assert.throws(() => presentationReceipt(green, samples[2][1], { queueCompleted: true, sequence: 0 }), /submission sequence/);
+assert.throws(() => presentationReceipt(green, samples[3][1], { queueCompleted: true, sequence: 3 }), /compositor pixel/,
+  'queue completion alone cannot qualify a wrong or stale screenshot');
 const fixture = readFileSync(new URL('../fixtures/gpu-composition.html', import.meta.url), 'utf8');
 const shaders = extractRenderShaders(fixture);
 assert.match(shaders.vertex, /@vertex/);

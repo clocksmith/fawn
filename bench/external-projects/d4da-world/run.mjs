@@ -10,6 +10,7 @@ import { parseArgs } from 'node:util';
 import { observeWorld } from './observe.mjs';
 import { captureTerrainOracle, validateTerrainOracle } from './oracle.mjs';
 import { processSnapshot, summarizeFrames } from './process-metrics.mjs';
+import { installWorldPresentationCapture, validateWorldPresentation } from './presentation.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
@@ -42,10 +43,19 @@ const assets = new Map();
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
 let browser, server, page;
+async function bounded(promise, label) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_resolve, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label}: completion unknown after ${plan.timeoutMs}ms`)), plan.timeoutMs);
+    })]);
+  } finally { clearTimeout(timer); }
+}
 try {
   result.browserPath = await realpath(values.browser);
   result.browserSha256 = sha256(await readFile(result.browserPath));
-  result.harness = await Promise.all(['run.mjs', 'observe.mjs', 'oracle.mjs', 'process-metrics.mjs', 'plan.json'].map(async name =>
+  result.harness = await Promise.all(['run.mjs', 'observe.mjs', 'oracle.mjs', 'presentation.mjs',
+    '../../../browser/workspace/test/support/gpu-presentation-oracle.js', 'process-metrics.mjs', 'plan.json'].map(async name =>
     ({ name, sha256: sha256(await readFile(resolve(here, name))) })));
   const args = [...plan.browserArgs, `--use-webgpu-runtime=${values.provider}`];
   if (values.provider === 'doe') {
@@ -118,6 +128,7 @@ try {
   assert(result.adapters.length > 0, 'Missing physical adapter evidence');
   assert(!result.adapters.some(info => /swiftshader|llvmpipe|software/i.test(JSON.stringify(info))), 'Software adapter rejected');
   result.before = await processSnapshot(cdp);
+  await page.evaluate(installWorldPresentationCapture);
   for (const item of plan.cases) {
     await page.evaluate(alpha => {
       setTileAlphaMode(alpha);
@@ -141,7 +152,16 @@ try {
     assert(measured.canvas.connected && measured.canvas.width > 0 && measured.canvas.height > 0);
     assert(measured.frames.every(row => row.submissions > 0 && row.canvasAcquires > 0
       && Number.isFinite(row.completedMs) && row.completedMs >= row.cpuWorkMs), 'Missing rendered/completed work');
-    await page.locator('#field').screenshot({ path: resolve(out, `${item.id}.png`) });
+    // Presentation validation is outside the measured frame batch. rAF only
+    // gives the compositor an opportunity; actual PNG pixels decide acceptance.
+    try {
+      const held = await bounded(page.evaluate(gridSize => doePresentation.hold(gridSize), plan.oracle.size), 'Held frame readback');
+      caseResult.presentationFrame = held;
+      await bounded(page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))), 'Compositor opportunity');
+      const png = await page.locator('#field').screenshot({ path: resolve(out, `${item.id}.png`), timeout: plan.timeoutMs });
+      const after = await page.evaluate(() => ({ submissions: doeGraphics.submissions, canvasAcquires: doeGraphics.canvasAcquires }));
+      caseResult.presentation = validateWorldPresentation(png, held, after, plan.oracle.channelTolerance);
+    } finally { await page.evaluate(() => doePresentation.resume()); }
     caseResult.summary = summarizeFrames(measured.frames);
     caseResult.processSnapshot = await processSnapshot(cdp);
     console.log(`${item.id}: ${measured.frames.length} completed canvas frames`);

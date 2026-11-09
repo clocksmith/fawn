@@ -90,4 +90,13 @@ function assertSolidPixels(png, rgba) {
   return { width: 8, height: 8, pixelCount: 64, expectedRgba: rgba, pngSha256: sha256(png) };
 }
 
-export { assertSolidPixels, decodePng, extractRenderShaders };
+function presentationReceipt(png, rgba, submission = null) {
+  if (submission !== null) {
+    assert.equal(submission.queueCompleted, true, 'queue completion requires an independent receipt');
+    assert.ok(Number.isSafeInteger(submission.sequence) && submission.sequence > 0, 'submission sequence');
+  }
+  return { status: 'image-verified', submissionSequence: submission?.sequence ?? null,
+    queueCompleted: submission?.queueCompleted ?? null, ...assertSolidPixels(png, rgba) };
+}
+
+export { assertSolidPixels, decodePng, extractRenderShaders, presentationReceipt };
