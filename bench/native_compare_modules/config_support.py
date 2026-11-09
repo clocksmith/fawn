@@ -8,7 +8,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
 
-from bench.lib.bench_utils import load_json_object
+from bench.lib.bench_utils import (
+    GPU_BACKEND_ALIASES,
+    HOST_ALLOWED_GPU_BACKENDS,
+    KNOWN_GPU_BACKENDS,
+    load_json_object,
+)
 from native_compare_modules.reporting import parse_int
 
 DEFAULT_WORKLOADS_PATH = "bench/workloads/specialized/workloads.generic.json"
@@ -83,16 +88,6 @@ NATIVE_EXECUTION_OPERATION_TIMING_SOURCES = {
     "doe-execution-dispatch-window-ns",
     "doe-execution-encode-ns",
     "doe-execution-gpu-timestamp-ns",
-}
-KNOWN_GPU_BACKENDS = {"vulkan", "metal", "d3d12", "webgpu"}
-GPU_BACKEND_ALIASES = {
-    "dx12": "d3d12",
-    "direct3d12": "d3d12",
-}
-HOST_ALLOWED_GPU_BACKENDS = {
-    "darwin": {"metal", "webgpu"},
-    "linux": {"vulkan", "webgpu"},
-    "windows": {"vulkan", "d3d12", "webgpu"},
 }
 
 @dataclass(frozen=True)

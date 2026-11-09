@@ -9,12 +9,15 @@ from pathlib import Path
 from typing import Any
 
 from bench.lib import doe_runtime_providers
-from native_compare_modules.config_support import (
-    Workload,
-    KNOWN_GPU_BACKENDS,
+from bench.lib.bench_utils import (
     GPU_BACKEND_ALIASES,
     HOST_ALLOWED_GPU_BACKENDS,
+    KNOWN_GPU_BACKENDS,
+    backend_from_token,
+    extract_backends_from_command,
+    infer_backend_from_lane_name,
 )
+from native_compare_modules.config_support import Workload
 from native_compare_modules.runner import parse_int, command_for
 
 
@@ -384,98 +387,6 @@ def enforce_strict_dawn_vs_doe_direct_operation_timing(
             "normalization (baselineTimingDivisor=1 and comparisonTimingDivisor=1) for comparable workloads: "
             f"{details}"
         )
-
-
-def backend_from_token(value: str) -> str | None:
-    normalized = value.strip().lower()
-    normalized = GPU_BACKEND_ALIASES.get(normalized, normalized)
-    if normalized in KNOWN_GPU_BACKENDS:
-        return normalized
-    return None
-
-
-def infer_backend_from_lane_name(lane: str) -> str | None:
-    lane_lower = lane.strip().lower()
-    if "vulkan" in lane_lower:
-        return "vulkan"
-    if "metal" in lane_lower:
-        return "metal"
-    if "d3d12" in lane_lower:
-        return "d3d12"
-    return None
-
-
-def extract_backends_from_command(command: list[str]) -> set[str]:
-    backends: set[str] = set()
-    index = 0
-    while index < len(command):
-        token = command[index]
-        if token == "--backend" and index + 1 < len(command):
-            backend = backend_from_token(command[index + 1])
-            if backend:
-                backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--backend="):
-            backend = backend_from_token(token.split("=", 1)[1])
-            if backend:
-                backends.add(backend)
-            index += 1
-            continue
-        if token == "--api" and index + 1 < len(command):
-            backend = backend_from_token(command[index + 1])
-            if backend:
-                backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--api="):
-            backend = backend_from_token(token.split("=", 1)[1])
-            if backend:
-                backends.add(backend)
-            index += 1
-            continue
-        if token == "--backend-lane" and index + 1 < len(command):
-            backend = infer_backend_from_lane_name(command[index + 1])
-            if backend:
-                backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--backend-lane="):
-            backend = infer_backend_from_lane_name(token.split("=", 1)[1])
-            if backend:
-                backends.add(backend)
-            index += 1
-            continue
-        if token == "--dawn-extra-args" and index + 1 < len(command):
-            extra_arg = command[index + 1]
-            if extra_arg == "--backend" and index + 2 < len(command):
-                backend = backend_from_token(command[index + 2])
-                if backend:
-                    backends.add(backend)
-                index += 3
-                continue
-            if extra_arg.startswith("--backend="):
-                backend = backend_from_token(extra_arg.split("=", 1)[1])
-                if backend:
-                    backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--dawn-extra-args="):
-            extra_arg = token.split("=", 1)[1]
-            if extra_arg == "--backend" and index + 1 < len(command):
-                backend = backend_from_token(command[index + 1])
-                if backend:
-                    backends.add(backend)
-                index += 2
-                continue
-            if extra_arg.startswith("--backend="):
-                backend = backend_from_token(extra_arg.split("=", 1)[1])
-                if backend:
-                    backends.add(backend)
-            index += 1
-            continue
-        index += 1
-    return backends
 
 
 def infer_workload_queue_sync_mode(workload: Workload) -> str:

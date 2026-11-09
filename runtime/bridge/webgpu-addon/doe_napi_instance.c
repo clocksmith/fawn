@@ -381,7 +381,7 @@ static bool doe_parse_queue_label(napi_env env, napi_value queue_value, WGPUStri
     return true;
 }
 
-static bool doe_parse_device_descriptor(
+bool doe_parse_device_descriptor(
     napi_env env,
     napi_value descriptor_value,
     WGPUDeviceDescriptor* out_desc,

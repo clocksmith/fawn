@@ -85,6 +85,13 @@ import {
 import {
   createNativeBrowserCanvasBackend,
 } from "./shared/browser-native-canvas-backend.js";
+import {
+  ADDON_SUBMIT_BREAKDOWN_FIELD_ENTRIES,
+  DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT,
+  ZERO_READBACK_BREAKDOWN_NS,
+  elapsedNsSince,
+  zeroQueueSubmitBreakdown,
+} from "./shared/submit-breakdown.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -112,23 +119,9 @@ const READBACK_BREAKDOWN_DEFERRED_RESOLVE = 2;
 const READBACK_BREAKDOWN_MAP = 3;
 const READBACK_BREAKDOWN_COPY = 4;
 const READBACK_BREAKDOWN_UNMAP = 5;
-const DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT = 12;
-const DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY = 0;
-const DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT = 1;
-const DISPATCH_FLUSH_BREAKDOWN_FLUSH = 2;
-const DISPATCH_FLUSH_BREAKDOWN_WAIT_COMPLETED = 3;
-const DISPATCH_FLUSH_BREAKDOWN_DEFERRED_COPY = 4;
-const DISPATCH_FLUSH_BREAKDOWN_DEFERRED_RESOLVE = 5;
-const DISPATCH_FLUSH_BREAKDOWN_COMMAND_BUFFER_END = 6;
-const DISPATCH_FLUSH_BREAKDOWN_SYNC_PREPARE = 7;
-const DISPATCH_FLUSH_BREAKDOWN_DRIVER_SUBMIT = 8;
-const DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_PREPARE = 9;
-const DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_RECORD = 10;
-const DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_COPY = 11;
 const STYPE_SHADER_SOURCE_WGSL = 0x00000002;
 const STYPE_RENDER_PASS_MAX_DRAW_COUNT = 0x00000003;
 const PROCESS_EVENTS_TIMEOUT_NS = 5_000_000_000;
-const NS_PER_MS = 1_000_000;
 let processEventsTimeoutNs = PROCESS_EVENTS_TIMEOUT_NS;
 const BUFFER_MAP_STATE = Object.freeze({
     unmapped: 0,
@@ -836,14 +829,6 @@ function copyNativeErrorMeta(symbolName) {
 }
 
 const fastPathStats = { dispatchFlush: 0, flushAndMap: 0, commandBufferBuild: 0 };
-const ZERO_READBACK_BREAKDOWN_NS = Object.freeze({
-    readbackMapReadCopyUnmapQueueWaitCompletedTotalNs: 0,
-    readbackMapReadCopyUnmapDeferredCopyTotalNs: 0,
-    readbackMapReadCopyUnmapDeferredResolveTotalNs: 0,
-    readbackMapReadCopyUnmapMapTotalNs: 0,
-    readbackMapReadCopyUnmapCopyTotalNs: 0,
-    readbackMapReadCopyUnmapUnmapTotalNs: 0,
-});
 const QUEUE_SYNC_INFO_BACKEND_VULKAN = 1;
 const QUEUE_SYNC_INFO_TIMELINE_SEMAPHORE = 2;
 const QUEUE_SYNC_INFO_FENCE_POOL = 4;
@@ -1025,34 +1010,8 @@ function cachedShaderSourceBytes(code) {
     return encoded;
 }
 
-function elapsedNsSince(startedAtMs) {
-    return Math.max(0, Math.round((performance.now() - startedAtMs) * NS_PER_MS));
-}
-
 function submitTimingStart() {
     return DOE_WEBGPU_SUBMIT_BREAKDOWN ? performance.now() : 0;
-}
-
-function zeroQueueSubmitBreakdown() {
-    return {
-        submitCommandPrepTotalNs: 0,
-        submitAddonCallTotalNs: 0,
-        submitAddonCommandReplayTotalNs: 0,
-        submitAddonCommandReplayPrepareTotalNs: 0,
-        submitAddonCommandReplayRecordTotalNs: 0,
-        submitAddonCommandReplayCopyTotalNs: 0,
-        submitAddonQueueSubmitTotalNs: 0,
-        submitAddonCommandBufferEndTotalNs: 0,
-        submitAddonSyncPrepareTotalNs: 0,
-        submitAddonDriverSubmitTotalNs: 0,
-        submitAddonFlushTotalNs: 0,
-        submitPostSubmitBookkeepingTotalNs: 0,
-        submitQueueFlushTotalNs: 0,
-        submitQueueFlushWaitCompletedTotalNs: 0,
-        submitQueueFlushDeferredCopyTotalNs: 0,
-        submitQueueFlushDeferredResolveTotalNs: 0,
-        submitQueueWaitBookkeepingTotalNs: 0,
-    };
 }
 
 function accumulateQueueSubmitBreakdown(queue, field, startedAtMs) {
@@ -1070,42 +1029,9 @@ function queueDispatchFlushBreakdownScratch(queue) {
 }
 
 function accumulateDispatchFlushBreakdown(queue, breakdown) {
-    queue._submitBreakdownNs.submitAddonCommandReplayTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY],
-    );
-    queue._submitBreakdownNs.submitAddonCommandReplayPrepareTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_PREPARE],
-    );
-    queue._submitBreakdownNs.submitAddonCommandReplayRecordTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_RECORD],
-    );
-    queue._submitBreakdownNs.submitAddonCommandReplayCopyTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_COPY],
-    );
-    queue._submitBreakdownNs.submitAddonQueueSubmitTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT],
-    );
-    queue._submitBreakdownNs.submitAddonCommandBufferEndTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_COMMAND_BUFFER_END],
-    );
-    queue._submitBreakdownNs.submitAddonSyncPrepareTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_SYNC_PREPARE],
-    );
-    queue._submitBreakdownNs.submitAddonDriverSubmitTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_DRIVER_SUBMIT],
-    );
-    queue._submitBreakdownNs.submitAddonFlushTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_FLUSH],
-    );
-    queue._submitBreakdownNs.submitQueueFlushWaitCompletedTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_WAIT_COMPLETED],
-    );
-    queue._submitBreakdownNs.submitQueueFlushDeferredCopyTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_DEFERRED_COPY],
-    );
-    queue._submitBreakdownNs.submitQueueFlushDeferredResolveTotalNs += Number(
-        breakdown[DISPATCH_FLUSH_BREAKDOWN_DEFERRED_RESOLVE],
-    );
+    for (const [field, , slotIndex] of ADDON_SUBMIT_BREAKDOWN_FIELD_ENTRIES) {
+        queue._submitBreakdownNs[field] += Number(breakdown[slotIndex]);
+    }
 }
 
 function updatePassPipelineState(pass, pipelineNative) {

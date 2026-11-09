@@ -98,6 +98,113 @@ def canonical_source(source: Any) -> str:
     return canonical(source)
 
 
+KNOWN_GPU_BACKENDS: set[str] = {"vulkan", "metal", "d3d12", "webgpu"}
+GPU_BACKEND_ALIASES: dict[str, str] = {
+    "dx12": "d3d12",
+    "direct3d12": "d3d12",
+}
+HOST_ALLOWED_GPU_BACKENDS: dict[str, set[str]] = {
+    "darwin": {"metal", "webgpu"},
+    "linux": {"vulkan", "webgpu"},
+    "windows": {"vulkan", "d3d12", "webgpu"},
+}
+
+
+def backend_from_token(value: str) -> str | None:
+    """Resolve a backend token or alias to a canonical GPU backend name."""
+    normalized = value.strip().lower()
+    normalized = GPU_BACKEND_ALIASES.get(normalized, normalized)
+    if normalized in KNOWN_GPU_BACKENDS:
+        return normalized
+    return None
+
+
+def infer_backend_from_lane_name(lane: str) -> str | None:
+    """Infer the canonical GPU backend from a lane identifier."""
+    lane_lower = lane.strip().lower()
+    if "vulkan" in lane_lower:
+        return "vulkan"
+    if "metal" in lane_lower:
+        return "metal"
+    if "d3d12" in lane_lower or "dx12" in lane_lower or "direct3d12" in lane_lower:
+        return "d3d12"
+    return None
+
+
+def extract_backends_from_command(command: list[str]) -> set[str]:
+    """Extract canonical GPU backends referenced in a command argument list."""
+    backends: set[str] = set()
+    index = 0
+    while index < len(command):
+        token = command[index]
+        if token == "--backend" and index + 1 < len(command):
+            backend = backend_from_token(command[index + 1])
+            if backend:
+                backends.add(backend)
+            index += 2
+            continue
+        if token.startswith("--backend="):
+            backend = backend_from_token(token.split("=", 1)[1])
+            if backend:
+                backends.add(backend)
+            index += 1
+            continue
+        if token == "--api" and index + 1 < len(command):
+            backend = backend_from_token(command[index + 1])
+            if backend:
+                backends.add(backend)
+            index += 2
+            continue
+        if token.startswith("--api="):
+            backend = backend_from_token(token.split("=", 1)[1])
+            if backend:
+                backends.add(backend)
+            index += 1
+            continue
+        if token == "--backend-lane" and index + 1 < len(command):
+            backend = infer_backend_from_lane_name(command[index + 1])
+            if backend:
+                backends.add(backend)
+            index += 2
+            continue
+        if token.startswith("--backend-lane="):
+            backend = infer_backend_from_lane_name(token.split("=", 1)[1])
+            if backend:
+                backends.add(backend)
+            index += 1
+            continue
+        if token == "--dawn-extra-args" and index + 1 < len(command):
+            extra_arg = command[index + 1]
+            if extra_arg == "--backend" and index + 2 < len(command):
+                backend = backend_from_token(command[index + 2])
+                if backend:
+                    backends.add(backend)
+                index += 3
+                continue
+            if extra_arg.startswith("--backend="):
+                backend = backend_from_token(extra_arg.split("=", 1)[1])
+                if backend:
+                    backends.add(backend)
+            index += 2
+            continue
+        if token.startswith("--dawn-extra-args="):
+            extra_arg = token.split("=", 1)[1]
+            if extra_arg == "--backend" and index + 1 < len(command):
+                backend = backend_from_token(command[index + 1])
+                if backend:
+                    backends.add(backend)
+                index += 2
+                continue
+            if extra_arg.startswith("--backend="):
+                backend = backend_from_token(extra_arg.split("=", 1)[1])
+                if backend:
+                    backends.add(backend)
+            index += 1
+            continue
+        index += 1
+    return backends
+
+
 def detect_repo_root(explicit_root: str) -> Path:
     """Resolve the Fawn repository root directory.
 

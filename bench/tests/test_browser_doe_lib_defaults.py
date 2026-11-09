@@ -792,11 +792,36 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
                         self.assertIn(f"default: {override or library}", line)
 
     def test_playwright_runners_prefer_real_app_binary_before_launcher(self) -> None:
+        selector_text = (
+            REPO_ROOT / "browser/chromium/scripts/browser-runtime-selector.mjs"
+        ).read_text(encoding="utf-8")
+        real_index = selector_text.index('"Fawn.app/Contents/MacOS/Chromium-real"')
+        launcher_index = selector_text.index('"Fawn.app/Contents/MacOS/Chromium"')
+        self.assertLess(real_index, launcher_index)
         for path in JS_RUNNERS:
             text = path.read_text(encoding="utf-8")
-            real_index = text.index('"Fawn.app/Contents/MacOS/Chromium-real"')
-            launcher_index = text.index('"Fawn.app/Contents/MacOS/Chromium"')
-            self.assertLess(real_index, launcher_index, str(path))
+            self.assertIn("defaultChromePath", text, str(path))
+            self.assertIn("defaultDoeLibPath", text, str(path))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir = root / "browser/chromium/out/fawn_release_local/Fawn.app/Contents/MacOS"
+            app_dir.mkdir(parents=True)
+            launcher = app_dir / "Chromium"
+            real = app_dir / "Chromium-real"
+            launcher.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            real.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            script = (
+                "import { defaultChromePath } from './browser/chromium/scripts/browser-runtime-selector.mjs';"
+                f"console.log(defaultChromePath({{ root: {json.dumps(str(root))}, env: {{}} }}));"
+            )
+            completed = subprocess.run(
+                ["node", "--input-type=module", "-e", script],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            self.assertEqual(Path(completed.stdout.strip()), real)
 
     def test_layered_runner_uses_cross_origin_isolation_for_timing_precision(self) -> None:
         text = JS_RUNNERS[1].read_text(encoding="utf-8")

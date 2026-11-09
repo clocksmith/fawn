@@ -14,7 +14,7 @@ CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -ffp-contract=off
 include sources.mk
 CORE = $(CLI_CORE) $(BUILD)/quirk_toggles.c
-CORE_HEADERS = src/oracle.h ../common/include/doe_sha256.h src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
+CORE_HEADERS = src/oracle.h ../common/include/doe_sha256.h ../common/include/doe_json.h src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/numeric_eval.h src/numeric_annotation.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = $(CLI_RUNTIME) $(SURFACE_HOST)
@@ -81,7 +81,7 @@ check-dawn: check-host $(BUILD)/dawn-c-runtime
 bench-bin: $(BUILD)/doe-c-runtime
 	mkdir -p bin
 	cp '$(BUILD)/doe-c-runtime' bin/doe-c-runtime
-$(BUILD)/test_json: tests/test_json.c src/json.c src/json.h | $(BUILD)
+$(BUILD)/test_json: tests/test_json.c src/json.c src/json.h ../common/include/doe_json.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_json.c src/json.c $(LDLIBS) -lm -o $@
 $(BUILD)/test_stream: tests/test_stream.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_stream.c $(CORE) $(LDLIBS) -lm -o $@

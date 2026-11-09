@@ -744,7 +744,7 @@ test-dxil-tsir-sanitize: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) $
 # Kept separate from production libdoe_compiler until its migration gates pass.
 TSIR_TOOL_SOURCES = $(wildcard src/tsir/*.c)
 TSIR_TOOL_OBJECTS = $(patsubst src/tsir/%.c,build/tsir/%.o,$(TSIR_TOOL_SOURCES))
-TSIR_TOOL_HEADERS = $(wildcard src/tsir/*.h)
+TSIR_TOOL_HEADERS = $(wildcard src/tsir/*.h) ../common/include/doe_json.h
 TSIR_TOOL_CFLAGS = $(CFLAGS) -g -fPIC $(EXTRA_CFLAGS)
 build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile build/compiler.flags $(COMPILER_FLAGS_CHANGED) | build/.ready
 	mkdir -p $(dir $@)

@@ -29,6 +29,11 @@ def main() -> int:
         owner = parent / "compiler"
         owner.mkdir()
         shutil.copy2(ROOT.parent / "build-root.mk", parent / "build-root.mk")
+        common_include = parent / "common" / "include"
+        common_include.mkdir(parents=True, exist_ok=True)
+        for source in (ROOT.parent / "common" / "include").iterdir():
+            if source.is_file() and source.suffix == ".h":
+                shutil.copy2(source, common_include / source.name)
         for name in ("Makefile", "src/sources.txt", "src/tsir/tests/oracle_alloc.h"):
             destination = owner / name
             destination.parent.mkdir(parents=True, exist_ok=True)

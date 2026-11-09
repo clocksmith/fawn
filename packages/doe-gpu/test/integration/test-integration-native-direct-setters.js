@@ -49,5 +49,73 @@ const querySet = gpuDevice.createQuerySet({ type: 'occlusion', count: 1, label: 
 assert.equal(await gpuDevice.popErrorScope(), null, 'a labeled query set is created without errors');
 assert.equal(querySet.label, 'labeled queries');
 console.log('ok: query set labels reach the provider');
+
+const entryPoints = [
+  {
+    name: 'standard',
+    request: async (desc) => {
+      const inst = addon.createInstance();
+      try {
+        const rawAdapter = addon.requestAdapter(inst);
+        try {
+          const rawDevice = addon.requestDevice(inst, rawAdapter, desc);
+          const limits = addon.deviceGetLimits(rawDevice);
+          addon.deviceRelease(rawDevice);
+          return limits;
+        } finally {
+          addon.adapterRelease(rawAdapter);
+        }
+      } finally {
+        addon.instanceRelease(inst);
+      }
+    },
+  },
+  {
+    name: 'native-direct',
+    request: async (desc) => {
+      const nextAdapter = await createNativeDirect().requestAdapter();
+      try {
+        const nextDevice = await nextAdapter.requestDevice(desc);
+        try {
+          return nextDevice.limits;
+        } finally {
+          nextDevice.destroy?.();
+        }
+      } finally {
+        nextAdapter.destroy?.();
+      }
+    },
+  },
+];
+
+for (const entry of entryPoints) {
+  const omittedLimits = await entry.request({ requiredLimits: { maxBindGroups: undefined } });
+  assert.ok(omittedLimits.maxBindGroups > 0, `${entry.name}: omitted limit preserves default maxBindGroups`);
+  assert.ok(omittedLimits.minUniformBufferOffsetAlignment > 0, `${entry.name}: absent alignment limit stays undefined rather than zero`);
+
+  await assert.rejects(
+    () => entry.request({ requiredLimits: { minUniformBufferOffsetAlignment: 0 } }),
+    /requestDevice failed/,
+    `${entry.name}: explicit zero alignment limit reaches the provider rather than becoming undefined`,
+  );
+
+  await assert.rejects(
+    () => entry.request({ requiredLimits: { maxBindGroups: 'not-a-number' } }),
+    /descriptor\.requiredLimits contains a non-number value/,
+    `${entry.name}: invalid u32 limit number is rejected`,
+  );
+  await assert.rejects(
+    () => entry.request({ requiredLimits: { maxBufferSize: -1 } }),
+    /descriptor\.requiredLimits contains a non-number value/,
+    `${entry.name}: negative u64 limit number is rejected`,
+  );
+  await assert.rejects(
+    () => entry.request({ requiredFeatures: ['unknown-feature'] }),
+    /descriptor\.requiredFeatures contains an unsupported feature/,
+    `${entry.name}: unknown feature is rejected`,
+  );
+}
+console.log('ok: standard and native-direct device descriptor parsing share limit and feature checks');
+
 gpuDevice.destroy();
 device.destroy?.();

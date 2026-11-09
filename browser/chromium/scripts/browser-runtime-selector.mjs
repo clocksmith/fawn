@@ -1,5 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { cWorkspaceLibraryCandidates } from "../../../packages/doe-gpu/src/vendor/webgpu/platform-package.js";
 
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const DEFAULT_ROOT = resolve(SCRIPT_DIR, "..", "..", "..");
 const DEFAULT_KILL_SWITCH = "DOE_BROWSER_DISABLE_DOE_RUNTIME";
 const TRUTHY_VALUES = new Set(["1", "true", "yes", "on"]);
 const DEFAULT_PROFILE = Object.freeze({
@@ -18,6 +24,82 @@ const DEFAULT_ADAPTER_DENYLIST = Object.freeze({
   deviceFamily: "",
   driverPattern: "",
 });
+
+export function defaultChromeCandidates({ root = DEFAULT_ROOT, env = process.env } = {}) {
+  const releaseLocalOut =
+    env.FAWN_CHROMIUM_RELEASE_LOCAL_OUT ??
+    resolve(root, "browser/chromium/out/fawn_release_local");
+  const chromiumLaneOut = resolve(root, "browser/chromium_webgpu_lane/out/fawn_release_local");
+  const hostFawnApp = resolve(env.HOME ?? "", "Applications/Fawn.app/Contents/MacOS/Chromium");
+  const hostFawnReal = resolve(env.HOME ?? "", "Applications/Fawn.app/Contents/MacOS/Chromium-real");
+  const envChrome = env.FAWN_CHROME_BIN;
+  return [
+    envChrome,
+    resolve(releaseLocalOut, "chrome"),
+    resolve(releaseLocalOut, "Fawn.app/Contents/MacOS/Chromium-real"),
+    resolve(releaseLocalOut, "Fawn.app/Contents/MacOS/Chromium"),
+    resolve(releaseLocalOut, "Chromium.app/Contents/MacOS/Chromium-real"),
+    resolve(releaseLocalOut, "Chromium.app/Contents/MacOS/Chromium"),
+    resolve(chromiumLaneOut, "chrome"),
+    resolve(chromiumLaneOut, "Fawn.app/Contents/MacOS/Chromium-real"),
+    resolve(chromiumLaneOut, "Fawn.app/Contents/MacOS/Chromium"),
+    resolve(chromiumLaneOut, "Chromium.app/Contents/MacOS/Chromium-real"),
+    resolve(chromiumLaneOut, "Chromium.app/Contents/MacOS/Chromium"),
+    hostFawnReal,
+    hostFawnApp,
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    resolve(root, "browser/chromium/src/out/fawn_release/chrome"),
+    resolve(root, "browser/chromium/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_release/chrome"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium/src/out/fawn_debug/chrome"),
+    resolve(root, "browser/chromium/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_debug/chrome"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium-real"),
+    resolve(root, "browser/chromium_webgpu_lane/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium"),
+  ].filter((value) => typeof value === "string" && value.length > 0);
+}
+
+export function defaultChromePath({
+  root = DEFAULT_ROOT,
+  env = process.env,
+  existsFn = existsSync,
+} = {}) {
+  const candidates = defaultChromeCandidates({ root, env });
+  for (const candidate of candidates) {
+    if (existsFn(candidate)) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+export function defaultDoeLibPath({
+  root = DEFAULT_ROOT,
+  env = process.env,
+  existsFn = existsSync,
+  workspaceLibraries = cWorkspaceLibraryCandidates,
+} = {}) {
+  // Explicit selections never fall back, even if the path does not exist.
+  // Retained legacy providers require this explicit path; discovery is C-only.
+  if (env.FAWN_DOE_LIB) return env.FAWN_DOE_LIB;
+  const candidates = workspaceLibraries(root);
+  return candidates.find((candidate) => existsFn(candidate)) ?? candidates[0];
+}
 
 // Shared by browser diagnostics and workspace launchers after runtime selection.
 // A nonexistent explicit path is allowed here so the real browser's fail-closed

@@ -4,10 +4,11 @@ import http from "node:http";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import process from "node:process";
-import { cWorkspaceLibraryCandidates } from "../../../packages/doe-gpu/src/vendor/webgpu/platform-package.js";
 import { fileURLToPath } from "node:url";
 import { pathWithin } from "./browser-path-containment.mjs";
 import {
+  defaultChromePath,
+  defaultDoeLibPath,
   loadRuntimeSelectorPolicy,
   resolveRuntimeSelection,
 } from "./browser-runtime-selector.mjs";
@@ -94,70 +95,6 @@ const TASKS = Object.freeze({
   }),
 });
 
-function defaultChromePath() {
-  const releaseLocalOut =
-    process.env.FAWN_CHROMIUM_RELEASE_LOCAL_OUT ??
-    resolve(ROOT, "browser/chromium/out/fawn_release_local");
-  const chromiumLaneOut = resolve(ROOT, "browser/chromium_webgpu_lane/out/fawn_release_local");
-  const hostFawnApp = resolve(process.env.HOME ?? "", "Applications/Fawn.app/Contents/MacOS/Chromium");
-  const hostFawnReal = resolve(process.env.HOME ?? "", "Applications/Fawn.app/Contents/MacOS/Chromium-real");
-  const envChrome = process.env.FAWN_CHROME_BIN;
-  const candidates = [
-    envChrome,
-    resolve(releaseLocalOut, "chrome"),
-    resolve(releaseLocalOut, "Fawn.app/Contents/MacOS/Chromium-real"),
-    resolve(releaseLocalOut, "Fawn.app/Contents/MacOS/Chromium"),
-    resolve(releaseLocalOut, "Chromium.app/Contents/MacOS/Chromium-real"),
-    resolve(releaseLocalOut, "Chromium.app/Contents/MacOS/Chromium"),
-    resolve(chromiumLaneOut, "chrome"),
-    resolve(chromiumLaneOut, "Fawn.app/Contents/MacOS/Chromium-real"),
-    resolve(chromiumLaneOut, "Fawn.app/Contents/MacOS/Chromium"),
-    resolve(chromiumLaneOut, "Chromium.app/Contents/MacOS/Chromium-real"),
-    resolve(chromiumLaneOut, "Chromium.app/Contents/MacOS/Chromium"),
-    hostFawnReal,
-    hostFawnApp,
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/google-chrome",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    resolve(ROOT, "browser/chromium/src/out/fawn_release/chrome"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_release/chrome"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_release/Fawn.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_release/Chromium.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_debug/chrome"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_debug/chrome"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_debug/Fawn.app/Contents/MacOS/Chromium"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium-real"),
-    resolve(ROOT, "browser/chromium_webgpu_lane/src/out/fawn_debug/Chromium.app/Contents/MacOS/Chromium"),
-  ].filter((value) => typeof value === "string" && value.length > 0);
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return candidates[0];
-}
-
-function defaultDoeLibPath() {
-  // Explicit selections never fall back, even if the path does not exist.
-  // Retained legacy providers require this explicit path; discovery is C-only.
-  if (process.env.FAWN_DOE_LIB) return process.env.FAWN_DOE_LIB;
-  const candidates = cWorkspaceLibraryCandidates(ROOT);
-  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
-}
-
 function defaultJetstreamBuildRoot() {
   const envJetstreamBuild = process.env.FAWN_TRANSFORMERSJS_BUILD;
   const candidates = [
@@ -181,7 +118,7 @@ function usage() {
 Options:
   --mode dawn|doe|auto|both Runtime mode to run (default: both)
   --chrome PATH             Chrome binary path
-  --doe-lib PATH            Doe provider path (default: ${defaultDoeLibPath()})
+  --doe-lib PATH            Doe provider path (default: ${defaultDoeLibPath({ root: ROOT })})
   --transformersjs-build PATH
                             Transformers.js browser build root
   --runtime-selector-policy PATH
@@ -259,8 +196,8 @@ function ensureAllowedOutPath(outPath, allowBenchOut) {
 function parseArgs(argv) {
   const args = {
     mode: "both",
-    chromePath: defaultChromePath(),
-    doeLibPath: defaultDoeLibPath(),
+    chromePath: defaultChromePath({ root: ROOT }),
+    doeLibPath: defaultDoeLibPath({ root: ROOT }),
     jetstreamBuildRoot: defaultJetstreamBuildRoot(),
     runtimeSelectorPolicyPath: DEFAULT_RUNTIME_SELECTOR_POLICY,
     runtimeSelectorPolicy: null,

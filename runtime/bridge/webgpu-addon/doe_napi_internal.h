@@ -873,7 +873,6 @@ void pop_error_scope_native_callback(uint32_t error_type, WGPUStringView message
 void js_call_uncaptured_error(napi_env env, napi_value js_cb, void* context, void* data);
 void js_call_lost_callback(napi_env env, napi_value js_cb, void* context, void* data);
 void uncaptured_error_native_callback(uint32_t error_type, WGPUStringView message, void* userdata1, void* userdata2);
-
 void lost_native_callback(uint32_t reason, const char* message_ptr, size_t message_len, void* userdata);
 
 /* Map/queue callbacks */
@@ -882,6 +881,7 @@ void buffer_map_callback(uint32_t status, WGPUStringView message, void* userdata
 void queue_work_done_callback(uint32_t status, WGPUStringView message, void* userdata1, void* userdata2);
 void adapter_callback(uint32_t status, WGPUAdapter adapter, WGPUStringView message, void* userdata1, void* userdata2);
 void device_callback(uint32_t status, WGPUDevice device, WGPUStringView message, void* userdata1, void* userdata2);
+bool doe_parse_device_descriptor(napi_env env, napi_value descriptor_value, WGPUDeviceDescriptor* out_desc, WGPUFeatureName** out_required_features, WGPULimits* out_required_limits);
 
 /* Pipeline helpers */
 size_t parse_js_override_constants(napi_env env, napi_value constants_obj, WGPUConstantEntry** out_entries);

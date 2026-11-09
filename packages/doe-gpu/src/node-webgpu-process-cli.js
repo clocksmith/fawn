@@ -6,6 +6,13 @@ import { createRequire } from 'node:module';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  assertKnownKeys,
+  assertNonEmptyString,
+  assertPlainObject,
+  assertSha256,
+  assertStringArray,
+} from './node-process-validation.js';
+import {
   runGovernedNodeWebGPUProcess,
   validateGovernedNodeWebGPUProcessReceipt,
 } from './node-webgpu-process.js';
@@ -15,7 +22,6 @@ export const DOE_PROOF_PROCESS_CONTRACT_SCHEMA =
 export const DOE_PROOF_PROCESS_ARTIFACT_SCHEMA =
   'doe.governed-node-webgpu-process-cli-artifact/v1';
 
-const SHA256_PATTERN = /^sha256:[a-f0-9]{64}$/;
 const CONTRACT_KEYS = new Set([
   'schema',
   'provider',
@@ -50,40 +56,6 @@ const ENVIRONMENT_KEYS = new Set(['mode', 'values']);
 const FILESYSTEM_KEYS = new Set(['mode']);
 const EVALUATOR_KEYS = new Set(['module', 'sha256', 'export']);
 const RUNTIME_FILE_KEYS = new Set(['id', 'path', 'sha256']);
-
-function assertPlainObject(value, label) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError(`${label} must be an object.`);
-  }
-  return value;
-}
-
-function assertKnownKeys(value, allowed, label) {
-  for (const key of Object.keys(value)) {
-    if (!allowed.has(key)) throw new TypeError(`${label} contains unsupported field "${key}".`);
-  }
-}
-
-function assertNonEmptyString(value, label) {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new TypeError(`${label} must be a non-empty string.`);
-  }
-  return value;
-}
-
-function assertSha256(value, label) {
-  if (typeof value !== 'string' || !SHA256_PATTERN.test(value)) {
-    throw new TypeError(`${label} must be a lowercase sha256:<64 hex> digest.`);
-  }
-  return value;
-}
-
-function assertStringArray(value, label) {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
-    throw new TypeError(`${label} must be an array of strings.`);
-  }
-  return [...value];
-}
 
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);

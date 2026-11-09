@@ -92,6 +92,12 @@ import {
 import {
   createNativeMetalCanvasBackend as createNativeMetalCanvasBackendImpl,
 } from './shared/native-metal-canvas-backend.js';
+import {
+  ADDON_SUBMIT_BREAKDOWN_FIELD_ENTRIES,
+  ZERO_READBACK_BREAKDOWN_NS,
+  elapsedNsSince,
+  zeroQueueSubmitBreakdown,
+} from './shared/submit-breakdown.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -135,7 +141,6 @@ const TEXTURE_SWIZZLE_COMPONENT_MAP = Object.freeze({
   b: 5,
   a: 6,
 });
-const NS_PER_MS = 1_000_000;
 const REQUEST_ADAPTER_STATUS_UNAVAILABLE = 3;
 const WHOLE_SIZE_SENTINEL = -1;
 const fastPathStats = { dispatchFlush: 0, flushAndMap: 0, commandBufferBuild: 0 };
@@ -162,14 +167,6 @@ const PROVIDER_FAILURE_REASONS = Object.freeze([
   'runner_error',
 ]);
 const PROVIDER_FAILURE_REASON_SET = new Set(PROVIDER_FAILURE_REASONS);
-const ZERO_READBACK_BREAKDOWN_NS = Object.freeze({
-  readbackMapReadCopyUnmapQueueWaitCompletedTotalNs: 0,
-  readbackMapReadCopyUnmapDeferredCopyTotalNs: 0,
-  readbackMapReadCopyUnmapDeferredResolveTotalNs: 0,
-  readbackMapReadCopyUnmapMapTotalNs: 0,
-  readbackMapReadCopyUnmapCopyTotalNs: 0,
-  readbackMapReadCopyUnmapUnmapTotalNs: 0,
-});
 const NODE_QUEUE_WRITE_BATCH_MAX_BYTES = UINT32_MAX;
 function envFlagEnabled(value) {
   return value === '1' || value === 'true' || value === 'yes' || value === 'on';
@@ -1031,34 +1028,8 @@ function flattenBatchedCommands(commandBuffers) {
   return commands;
 }
 
-function elapsedNsSince(startedAtMs) {
-  return Math.max(0, Math.round((performance.now() - startedAtMs) * NS_PER_MS));
-}
-
 function submitTimingStart() {
   return DOE_WEBGPU_SUBMIT_BREAKDOWN ? performance.now() : 0;
-}
-
-function zeroQueueSubmitBreakdown() {
-  return {
-    submitCommandPrepTotalNs: 0,
-    submitAddonCallTotalNs: 0,
-    submitAddonCommandReplayTotalNs: 0,
-    submitAddonCommandReplayPrepareTotalNs: 0,
-    submitAddonCommandReplayRecordTotalNs: 0,
-    submitAddonCommandReplayCopyTotalNs: 0,
-    submitAddonQueueSubmitTotalNs: 0,
-    submitAddonCommandBufferEndTotalNs: 0,
-    submitAddonSyncPrepareTotalNs: 0,
-    submitAddonDriverSubmitTotalNs: 0,
-    submitAddonFlushTotalNs: 0,
-    submitPostSubmitBookkeepingTotalNs: 0,
-    submitQueueFlushTotalNs: 0,
-    submitQueueFlushWaitCompletedTotalNs: 0,
-    submitQueueFlushDeferredCopyTotalNs: 0,
-    submitQueueFlushDeferredResolveTotalNs: 0,
-    submitQueueWaitBookkeepingTotalNs: 0,
-  };
 }
 
 function accumulateQueueSubmitBreakdown(queue, field, startedAtMs) {
@@ -1081,20 +1052,7 @@ function accumulateAddonSubmitBreakdown(queue, addonBreakdown) {
   if (!addonBreakdown || typeof addonBreakdown !== 'object') {
     return;
   }
-  for (const [field, sourceField] of [
-    ['submitAddonCommandReplayTotalNs', 'commandReplayNs'],
-    ['submitAddonCommandReplayPrepareTotalNs', 'commandReplayPrepareNs'],
-    ['submitAddonCommandReplayRecordTotalNs', 'commandReplayRecordNs'],
-    ['submitAddonCommandReplayCopyTotalNs', 'commandReplayCopyNs'],
-    ['submitAddonQueueSubmitTotalNs', 'queueSubmitNs'],
-    ['submitAddonCommandBufferEndTotalNs', 'commandBufferEndNs'],
-    ['submitAddonSyncPrepareTotalNs', 'syncPrepareNs'],
-    ['submitAddonDriverSubmitTotalNs', 'driverSubmitNs'],
-    ['submitAddonFlushTotalNs', 'flushNs'],
-    ['submitQueueFlushWaitCompletedTotalNs', 'waitCompletedNs'],
-    ['submitQueueFlushDeferredCopyTotalNs', 'deferredCopyNs'],
-    ['submitQueueFlushDeferredResolveTotalNs', 'deferredResolveNs'],
-  ]) {
+  for (const [field, sourceField] of ADDON_SUBMIT_BREAKDOWN_FIELD_ENTRIES) {
     accumulateQueueSubmitValue(queue, field, addonBreakdown[sourceField]);
   }
 }

@@ -32,22 +32,20 @@ if str(BENCH_ROOT) not in sys.path:
     sys.path.insert(0, str(BENCH_ROOT))
 
 from bench.lib import output_paths
+from bench.lib.bench_utils import (
+    GPU_BACKEND_ALIASES,
+    HOST_ALLOWED_GPU_BACKENDS,
+    KNOWN_GPU_BACKENDS,
+    backend_from_token,
+    extract_backends_from_command,
+    infer_backend_from_lane_name,
+)
 from bench.native_compare_modules import executor_registry as executor_registry_mod
 
 
 NS_PER_MS: float = 1_000_000.0
 DEFAULT_TIMESTAMP = "1970-01-01T00:00:00Z"
 TRACE_SEED = "0x9e3779b97f4a7c15"
-KNOWN_GPU_BACKENDS = {"vulkan", "metal", "d3d12", "webgpu"}
-GPU_BACKEND_ALIASES = {
-    "dx12": "d3d12",
-    "direct3d12": "d3d12",
-}
-HOST_ALLOWED_GPU_BACKENDS = {
-    "darwin": {"metal", "webgpu"},
-    "linux": {"vulkan", "webgpu"},
-    "windows": {"vulkan", "d3d12", "webgpu"},
-}
 
 
 @dataclass
@@ -356,98 +354,6 @@ def render_extra_args(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         return shlex.join(str(arg) for arg in value)
     return str(value)
-
-
-def backend_from_token(value: str) -> str | None:
-    normalized = value.strip().lower()
-    normalized = GPU_BACKEND_ALIASES.get(normalized, normalized)
-    if normalized in KNOWN_GPU_BACKENDS:
-        return normalized
-    return None
-
-
-def infer_backend_from_lane_name(lane: str) -> str | None:
-    lane_lower = lane.strip().lower()
-    if "vulkan" in lane_lower:
-        return "vulkan"
-    if "metal" in lane_lower:
-        return "metal"
-    if "d3d12" in lane_lower or "dx12" in lane_lower:
-        return "d3d12"
-    return None
-
-
-def extract_backends_from_command(command: list[str]) -> set[str]:
-    backends: set[str] = set()
-    index = 0
-    while index < len(command):
-        token = command[index]
-        if token == "--backend" and index + 1 < len(command):
-            backend = backend_from_token(command[index + 1])
-            if backend:
-                backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--backend="):
-            backend = backend_from_token(token.split("=", 1)[1])
-            if backend:
-                backends.add(backend)
-            index += 1
-            continue
-        if token == "--api" and index + 1 < len(command):
-            backend = backend_from_token(command[index + 1])
-            if backend:
-                backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--api="):
-            backend = backend_from_token(token.split("=", 1)[1])
-            if backend:
-                backends.add(backend)
-            index += 1
-            continue
-        if token == "--backend-lane" and index + 1 < len(command):
-            backend = infer_backend_from_lane_name(command[index + 1])
-            if backend:
-                backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--backend-lane="):
-            backend = infer_backend_from_lane_name(token.split("=", 1)[1])
-            if backend:
-                backends.add(backend)
-            index += 1
-            continue
-        if token == "--dawn-extra-args" and index + 1 < len(command):
-            extra_arg = command[index + 1]
-            if extra_arg == "--backend" and index + 2 < len(command):
-                backend = backend_from_token(command[index + 2])
-                if backend:
-                    backends.add(backend)
-                index += 3
-                continue
-            if extra_arg.startswith("--backend="):
-                backend = backend_from_token(extra_arg.split("=", 1)[1])
-                if backend:
-                    backends.add(backend)
-            index += 2
-            continue
-        if token.startswith("--dawn-extra-args="):
-            extra_arg = token.split("=", 1)[1]
-            if extra_arg == "--backend" and index + 1 < len(command):
-                backend = backend_from_token(command[index + 1])
-                if backend:
-                    backends.add(backend)
-                index += 2
-                continue
-            if extra_arg.startswith("--backend="):
-                backend = backend_from_token(extra_arg.split("=", 1)[1])
-                if backend:
-                    backends.add(backend)
-            index += 1
-            continue
-        index += 1
-    return backends
 
 
 def enforce_host_backend_policy(

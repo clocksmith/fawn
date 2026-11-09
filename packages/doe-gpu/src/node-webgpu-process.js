@@ -2,6 +2,14 @@
 
 import { spawn } from 'node:child_process';
 import { terminateProcess } from './node-process-termination.js';
+import {
+  SHA256_PATTERN,
+  assertKnownKeys,
+  assertNonEmptyString,
+  assertPlainObject,
+  assertSha256,
+  assertStringArray,
+} from './node-process-validation.js';
 import { createHash } from 'node:crypto';
 import { realpathSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
@@ -30,7 +38,6 @@ export const NODE_WEBGPU_GOVERNED_PROCESS_ERROR_CODES = Object.freeze([
   'DOE_GOVERNED_PROCESS_RECEIPT_SINK_FAILED',
 ]);
 
-const SHA256_PATTERN = /^sha256:[a-f0-9]{64}$/;
 const PROVIDER_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const PROVIDER_KEYS = new Set(['id', 'module']);
 const WORKLOAD_KEYS = new Set([
@@ -59,39 +66,6 @@ const observerPath = fileURLToPath(new URL('./observe.js', import.meta.url));
 
 function own(object, key) {
   return Object.prototype.hasOwnProperty.call(object, key);
-}
-
-function assertPlainObject(value, label) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError(`${label} must be an object.`);
-  }
-  return value;
-}
-
-function assertKnownKeys(value, allowed, label) {
-  for (const key of Object.keys(value)) {
-    if (!allowed.has(key)) throw new TypeError(`${label} contains unsupported field "${key}".`);
-  }
-}
-
-function assertNonEmptyString(value, label) {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new TypeError(`${label} must be a non-empty string.`);
-  }
-  return value;
-}
-
-function assertSha256(value, label) {
-  if (typeof value !== 'string' || !SHA256_PATTERN.test(value)) {
-    throw new TypeError(`${label} must be a lowercase sha256:<64 hex> digest.`);
-  }
-}
-
-function assertStringArray(value, label) {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
-    throw new TypeError(`${label} must be an array of strings.`);
-  }
-  return [...value];
 }
 
 function cloneJsonValue(value, label) {
