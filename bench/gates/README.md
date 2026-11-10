@@ -52,6 +52,11 @@ Gate classes:
   digests, physical tuple, oracle, replay, lifecycle, and reliability joins.
 - **Fixture regen** (`cluster_b_fixture_regen_gate.py`) — pin fixture
   freshness for cross-repo bring-up lanes.
+- **C migration 50% quality/size audit** (`c_quality_target_audit.py`) — verify
+  immutable baseline `zig-inventory.json` hashes/denominators, exact byte-level
+  physical line accounting across all seven required views in
+  `docs/c-migration/quality-counting-contract.json`, symmetric half-open
+  byte-interval test-span reconciliation, and `--require-achieved` enforcement.
 
 Per `docs/process.md`:
 - blocking in v0: schema, correctness, trace, verification
