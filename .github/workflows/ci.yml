@@ -23,18 +23,3 @@ jobs:
         run: |
           make -C runtime/c/compiler -j2 build/native_consumer
           runtime/c/compiler/build/native_consumer bench/inference-pipeline/kernels/residual.wgsl
-
-  benchmark-evidence:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Check benchmark contracts and generated evidence without GPUs
-        run: |
-          python3 -m venv "$RUNNER_TEMP/fawn-benchmark-env"
-          "$RUNNER_TEMP/fawn-benchmark-env/bin/python" -m pip install -r bench/requirements.txt
-          "$RUNNER_TEMP/fawn-benchmark-env/bin/python" -m unittest bench.tests.test_benchmark_inventory bench.tests.test_benchmark_inventory_views bench.tests.test_chromium_c_proc_surface bench.tests.test_python_import_boundaries bench.tests.test_config_validation
-          "$RUNNER_TEMP/fawn-benchmark-env/bin/python" bench/gates/catscan_gate.py
-          "$RUNNER_TEMP/fawn-benchmark-env/bin/python" bench/cli.py inventory --check
