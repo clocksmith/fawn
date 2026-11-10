@@ -257,14 +257,21 @@ class WorkspaceService {
   }
 
   #probe(workspaceId, pageId = MAIN_PAGE, command = null) {
-    const url = () => this.#bounded(this.#adapter.probeUrl(workspaceId, pageId));
+    // The resource being probed owns the page identity, including reconciliation of an
+    // earlier action. A caller's omitted/different pageId cannot select another tab's grant.
+    const readCommand = command ? { ...command, pageId } : null;
+    const url = async () => {
+      const value = await this.#bounded(this.#adapter.probeUrl(workspaceId, pageId));
+      if (readCommand) readGrant(this.#workspace(workspaceId), readCommand, value, this.#nowMs());
+      return value;
+    };
     return { url, validate: async condition => {
-      const grant = command ? readGrant(this.#workspace(workspaceId), command, await url(), this.#nowMs()) : null;
+      const grant = readCommand ? readGrant(this.#workspace(workspaceId), readCommand, await url(), this.#nowMs()) : null;
       if (grant?.readRegions && condition.kind === 'element-absent') {
         throw workspaceError(REJECTION_CODES.UNSUPPORTED_CONDITION, 'A regional grant cannot establish whole-page absence');
       }
     }, element: async selector => {
-      const grant = command ? readGrant(this.#workspace(workspaceId), command, await url(), this.#nowMs()) : null;
+      const grant = readCommand ? readGrant(this.#workspace(workspaceId), readCommand, await url(), this.#nowMs()) : null;
       return this.#bounded(this.#adapter.probeElement(workspaceId, selector, pageId, grant?.readRegions ?? null));
     } };
   }

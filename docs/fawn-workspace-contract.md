@@ -227,6 +227,11 @@ pages. Omitted `pageId` means `main` for existing clients and journals. Observat
 have globally monotonic versions but page-local currentness: reading another tab
 does not invalidate a page, and a version from another page cannot authorize an
 action. All action, completion and reconciliation probes address the recorded page.
+Reconciliation derives both the probe and its read grant from the original action's
+page, regardless of an omitted or different caller `pageId`. URL-only and empty
+condition checks still require that page's current read authority. The focused
+[two-adapter regression](../browser/workspace/test/browser/reconciliation-scope.test.js)
+covers wrong-tab grants, revocation, regional limits and recovery without retry.
 Playwright and raw CDP discover popups and retain closed identities. Administrators
 can inspect pages, create a blank tab, focus a tab and select a region through the
 supported service API. Raw browser handles are never public.
