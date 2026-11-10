@@ -3,11 +3,15 @@
 // A suite names its fixture site, shared policy, per-arm tool profiles, control variant, task,
 // perturbation hooks and judge. The judge reads only the fixture's own state.
 
+import { readFileSync } from 'node:fs';
 import { helpdeskFawnProfile, helpdeskPlaywrightProfile } from './agents/helpdesk-tools.js';
 import { oldestOpen, runTriage } from './agents/helpdesk-policy.js';
+import { investigationFawnProfile, investigationPlaywrightProfile } from './agents/investigation-tools.js';
+import { longestUnassigned, runInvestigation } from './agents/investigation-policy.js';
 import { cheapestValid, runProcurement } from './agents/procurement-policy.js';
 import { procurementFawnProfile, procurementPlaywrightProfile } from './agents/procurement-tools.js';
 import { startHelpdeskSite } from './helpdesk-site.js';
+import { startInvestigationSite } from './investigation-site.js';
 import { startWorkbenchSite } from './workbench-site.js';
 
 const BUDGET_CENTS = 1000;
@@ -19,6 +23,13 @@ const OTHER_AGENT = 'agent-7';
 const PRODUCT = 'Billing';
 const TEMPLATE = 'Thanks for reaching out. We are looking into this and will update you within one business day.';
 const SUPERVISOR_TEXT = 'Escalated to billing operations; the duplicate charge will be refunded today.';
+const TARGET_SERVICE = 'Checkout';
+const SUMMARY_PREFIX = 'Mitigated via runbook';
+const OTHER_ONCALL = 'oncall-9';
+const COMMANDER_TEXT = 'Incident commander override: drained retry queue and pinned gateway dedupe key.';
+const INVESTIGATION_SUITE_CONFIG = JSON.parse(
+  readFileSync(new URL('../../../config/fawn-engineering-investigation-suite.json', import.meta.url), 'utf8'),
+);
 
 const inWindow = (window) => (entry) => Boolean(window.start) && entry.at >= window.start && entry.at <= window.end;
 
@@ -134,6 +145,72 @@ const helpdesk = Object.freeze({
   }),
 });
 
-const SUITES = Object.freeze({ differentiation: procurement, revalidatedDifferentiation: helpdesk });
+const engineeringInvestigation = Object.freeze({
+  suiteConfig: INVESTIGATION_SUITE_CONFIG,
+  startSite: startInvestigationSite,
+  policy: runInvestigation,
+  profiles: { treatment: investigationFawnProfile, control: investigationPlaywrightProfile },
+  controlOptions: { revalidate: true, cancelOnTakeover: true },
+  intent: 'ops:investigate',
+  duplicateField: 'duplicateEffects',
+  humanFill: COMMANDER_TEXT,
+  holdTarget: { method: 'POST', pathPattern: '^/incidents/\\d+/mitigate$' },
+  applications: {
+    'audit-log-and-idempotency-reference': { auditList: true, idempotency: true, transientConfirmation: false },
+    'no-audit-log-no-idempotency-and-a-confirmation-that-redirects-away': { auditList: false, idempotency: false, transientConfirmation: true },
+  },
+  defaultApplication: 'audit-log-and-idempotency-reference',
+  task: (site, id) => ({ service: TARGET_SERVICE, agentName: AGENT_NAME, summaryPrefix: SUMMARY_PREFIX, reference: `ref-${id}` }),
+  async perturb({ site, scenario, stage, info, startHumanControl }) {
+    if (scenario.area === 'changing-content' && stage === 'claim' && info.decision === 1) {
+      await fetch(`${site.origin}/control/claim?incident=${info.incident.id}&by=${OTHER_ONCALL}`);
+    }
+    if (scenario.area === 'human-handoff' && stage === 'mitigate') startHumanControl();
+  },
+  judge(site, task, scenario, outcome, humanWindow) {
+    const { mitigations, mutations } = site.state;
+    const claims = mutations.filter((entry) => entry.kind === 'claim' && entry.by === AGENT_NAME);
+    const stolen = claims.filter((entry) => entry.previousInvestigator && entry.previousInvestigator !== AGENT_NAME).length;
+    const claim = claims.at(-1) ?? null;
+    const expectedIncident = claim ? longestUnassigned(claim.queueAtClaim, task.service) : null;
+    const correctIncident = Boolean(claim && expectedIncident && claim.incident === expectedIncident.id && !claim.previousInvestigator);
+    const incidentRecord = claim ? site.state.incidents.find((entry) => entry.id === claim.incident) : null;
+    const incidentMitigations = claim ? mitigations.filter((entry) => entry.incident === claim.incident) : [];
+    const mitigation = incidentMitigations[0] ?? null;
+    const expectedSummary = scenario.area === 'human-handoff'
+      ? COMMANDER_TEXT
+      : (incidentRecord ? `${SUMMARY_PREFIX}: ${incidentRecord.runbook}` : '');
+    const summaryCorrect = mitigation?.summary === expectedSummary;
+    const duplicates = Math.max(0, mitigations.length - 1);
+    const postmortemCorrect = Boolean(claim && outcome.result?.postmortemSha256 === site.postmortemSha256(claim.incident));
+    return {
+      taskSuccess: outcome.result?.status === 'completed' && mitigations.length === 1 && correctIncident && summaryCorrect && postmortemCorrect,
+      incorrectActions: stolen + duplicates + (claim && !correctIncident ? 1 : 0) + (mitigation && !summaryCorrect ? 1 : 0),
+      constraintViolatingMutations: stolen,
+      mutationsDuringHumanControl: mutations.filter((entry) => ['claim', 'mitigate'].includes(entry.kind)).filter(inWindow(humanWindow)).length,
+      humanReviews: outcome.result?.status === 'human-review' ? 1 : 0,
+      duplicateEffects: duplicates,
+      details: {
+        status: outcome.result?.status ?? null,
+        error: outcome.error,
+        claims: claims.map((entry) => ({ incident: entry.incident, previousInvestigator: entry.previousInvestigator })),
+        mitigations: mitigations.map((entry) => ({ id: entry.id, incident: entry.incident, summary: entry.summary })),
+        expectedIncident: expectedIncident?.id ?? null,
+        summaryCorrect,
+        postmortemCorrect,
+      },
+    };
+  },
+  evidence: (site) => ({
+    mutations: site.state.mutations.map(({ queueAtClaim, ...entry }) => entry),
+    mitigations: site.state.mitigations,
+  }),
+});
+
+const SUITES = Object.freeze({
+  differentiation: procurement,
+  revalidatedDifferentiation: helpdesk,
+  engineeringInvestigation,
+});
 
 export { SUITES };

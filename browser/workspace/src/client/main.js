@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadClientServiceConfig } from './browser-selection.js';
 import { WorkspaceService } from '../service.js';
 import { createPlaywrightAdapter } from '../adapters/playwright-adapter.js';
@@ -54,11 +54,17 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), value = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
   if (args.includes('--help')) {
-    console.log('Usage: npm --prefix browser/workspace start -- [--browser-config PATH | --browser-channel chrome|chromium|chromium-headless-shell] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
+    console.log('Usage: npm --prefix browser/workspace start -- [--browser-config PATH | --browser-channel chrome|chromium|chromium-headless-shell] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
     console.log('Default: pinned Fawn from <state-dir>/browser-profile.json. FAWN_BROWSER_CONFIG selects another profile; FAWN_BROWSER_CHANNEL explicitly selects a comparison browser. No fallback or automatic agent run.');
   } else {
+    const workflowModulePath = value('--workflow-module') ?? process.env.FAWN_WORKFLOW_MODULE;
+    const loadedWorkflow = workflowModulePath ? await import(pathToFileURL(resolve(workflowModulePath)).href) : null;
+    const workflowConfig = typeof loadedWorkflow?.createWorkflowConfig === 'function'
+      ? await loadedWorkflow.createWorkflowConfig() : (loadedWorkflow ?? {});
     const app = await openWorkspaceApp({ stateDir: value('--state-dir'), port: value('--port') === undefined ? undefined : Number(value('--port')),
       adapter: value('--adapter'), headless: args.includes('--headless'),
+      workflowPersistence: workflowConfig.workflowPersistence ?? null,
+      workflowTasks: workflowConfig.workflowTasks ?? new Map(),
       browserConfig: value('--browser-config'), browserChannel: value('--browser-channel') });
     console.log(`Fawn workspace (${app.browser.channel}, ${app.browser.fawnBuild?.runtime.mode ?? 'stock provider'}): ${app.loginUrl}`);
     console.log('Start with human control. Model calls occur only after an explicit delegation.');

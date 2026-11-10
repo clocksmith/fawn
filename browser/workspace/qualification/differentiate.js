@@ -8,7 +8,7 @@
 // time against a fresh workbench site per run, interleaved per repetition. The workbench's own
 // orders, cart and mutation log judge every run; the frozen requirements decide each area.
 //
-// Usage: node qualification/differentiate.js [--suite differentiation|revalidatedDifferentiation]
+// Usage: node qualification/differentiate.js [--suite differentiation|revalidatedDifferentiation|engineeringInvestigation]
 //   [--out DIR] [--scenarios id,id] [--repetitions n] [--scripted-comparison comparison.json]
 //   [--prior-suites differentiation.json,...]
 //   --suite modelDrivenDifferentiation --mode compatibility|smoke|full|offline runs the model-driven suite
@@ -192,8 +192,8 @@ async function main() {
     process.exit(process.exitCode ?? 0);
   }
   const comparison = JSON.parse(readFileSync(join(REPO_ROOT, POLICY_PATH), 'utf8')).workspaceComparison;
-  const suite = comparison[options.suite];
   const definition = SUITES[options.suite];
+  const suite = comparison[options.suite] ?? definition?.suiteConfig;
   if (!suite || !definition) throw new Error(`unknown suite ${options.suite}`);
   const stamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
   const outDir = options.out ?? join(REPO_ROOT, DEFAULT_OUT_ROOT, `${stamp}Z`);

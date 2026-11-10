@@ -36,28 +36,39 @@ initial failed trial and all paired results; it does not promote the broader
 product or establish superiority over scripted automation.
 
 The opt-in [personal store](../../browser/workspace/workflow-store.md) adds local
-account-scoped persistence and trusted host controller integration. Its
-[process tests](../../browser/workspace/test/unit/workflow-store.test.js) and
-[synthetic browser check](../../browser/workspace/test/browser/workflow-store.test.js)
-exercise publication and isolation; they do not promote live-site support.
+account-isolated persistence, verified changed-form repair suffixes and explicit
+loopback UI delegation for host-installed task definitions. Its
+[process tests](../../browser/workspace/test/unit/workflow-store.test.js),
+[synthetic browser check](../../browser/workspace/test/browser/workflow-store.test.js),
+[separate-process repair check](../../browser/workspace/test/browser/workflow-repair.test.js)
+and [UI workflow check](../../browser/workspace/test/browser/product-workflow-ui.test.js)
+exercise publication, repair reuse and secret containment on synthetic forms.
+[`engineering-investigation.js`](../../browser/workspace/src/workflows/engineering-investigation.js)
+([unit check](../../browser/workspace/test/unit/engineering-investigation.test.js))
+and the [`engineeringInvestigation`](../../config/fawn-engineering-investigation-suite.json)
+differentiation suite cover incident evidence capture, foreign-origin skipping,
+precondition guards, postmortem export and interruption recovery against the
+revalidating Playwright control. Together with the controlled
+[shopping comparison](../../browser/workspace/qualification/shopping/README.md),
+these local fixtures do not establish live-site merchant or ATS support.
 
 ## Active blockers
 
-- Workflow reuse remains a programmatic API. UI integration, live ATS account/review
-  verifiers, variable-length loops and learning from repairs remain unimplemented
-  or unqualified. The personal store requires trusted task-specific verifiers.
-- The product client has development and bounded live-planner evidence, not
+- Personal workflow learning, verified repair-suffix reuse and UI delegation
+  require host-installed task definitions and local verifiers. Live ATS and
+  merchant account/review verifiers, variable-length loops and open-web workflow
+  generalization remain unimplemented and unqualified.
+- The product client has development and live-planner probe evidence, not
   general task superiority or release admission. Its matched investigation probe
   completed on both arms; Fawn did not establish an advantage.
 - The separate frozen model-driven differentiation campaign has not run. The
-  small product probe does not satisfy it or its held-out application coverage.
+  product probe does not satisfy it or its held-out application coverage.
 - Multi-page behavior has local browser checks; the new protocol needs its own
   cross-platform qualification and external retention evidence.
-- [Integrated proof](../thesis.md#three-proofs) still requires a source-matched
-  forced-Doe browser and complete-application correctness/performance admission.
-  The configured external Chromium source checkout is unavailable. Retained
-  browser diagnostic runs and passing workloads do not qualify that build or
-  establish the required aggregate performance advantage.
+- [Integrated proof](../thesis.md#three-proofs) still requires direct Doe wire
+  ownership in Chromium and complete-application correctness/performance
+  admission over Dawn. Retained diagnostic runs and passing workloads do not
+  qualify a release browser or establish the aggregate performance win.
 
 Workspace evidence, [GPU integration](../browser-lane.md) and
 [hosted artwork](fawn-start.md) have separate authority and acceptance.

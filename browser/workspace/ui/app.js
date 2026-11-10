@@ -1,7 +1,7 @@
 const $ = selector => document.querySelector(selector);
 let projectId = localStorage.getItem('fawn-project') || '', pageId = 'main', current = null, pollMs = 1500, timer;
 const selectedPages = new Set(['main']);
-let artifactsIdentity = '';
+let artifactsIdentity = '', workflowsIdentity = '', workflowModePinned = false, latestWorkflows = [], workflowBlocked = false;
 function notice(text) { $('#notice').textContent = text; $('#notice').hidden = !text; }
 async function api(path, options) {
   const response = await fetch(path, { ...options, headers: { 'content-type': 'application/json', ...options?.headers } });
@@ -14,7 +14,36 @@ async function command(operation, input = {}) {
 function node(tag, text, className) { const element = document.createElement(tag); if (text != null) element.textContent = text; if (className) element.className = className; return element; }
 function button(text, action, className) { const element = node('button', text, className); element.type = 'button'; element.addEventListener('click', () => act(action)); return element; }
 async function act(action) { try { await action(); await refresh(); } catch (error) { notice(error.message); } }
-function choose(id) { projectId = id; pageId = 'main'; selectedPages.clear(); selectedPages.add('main'); artifactsIdentity = ''; localStorage.setItem('fawn-project', id); }
+function choose(id) { projectId = id; pageId = 'main'; selectedPages.clear(); selectedPages.add('main'); artifactsIdentity = ''; workflowsIdentity = ''; workflowModePinned = false; localStorage.setItem('fawn-project', id); }
+function renderWorkflowFields(workflow) {
+  const existing = Object.fromEntries([...$('#workflow-fields').querySelectorAll('[data-slot]')].map(input => [input.dataset.slot, input.value]));
+  $('#workflow-fields').replaceChildren(...(workflow?.fields ?? []).map(field => {
+    const label = node('label', field.label);
+    let control;
+    if (Array.isArray(field.options) && field.options.length) {
+      control = document.createElement('select');
+      control.replaceChildren(...field.options.map(option => new Option(option, option)));
+    } else {
+      control = document.createElement('input');
+      control.type = ['email', 'tel', 'url'].includes(field.inputType) ? field.inputType : 'text';
+    }
+    control.name = field.slot; control.dataset.slot = field.slot;
+    if (Object.hasOwn(existing, field.slot)) control.value = existing[field.slot];
+    label.append(control); return label;
+  }));
+}
+function syncWorkflowMeta() {
+  const active = latestWorkflows.find(item => item.template === $('#workflow-template').value) ?? latestWorkflows[0];
+  if (!active) return;
+  if (!workflowModePinned && !$('#workflow-form').contains(document.activeElement)) {
+    $('#workflow-mode').value = active.hasLearnedGraph ? 'reuse' : 'learn';
+  }
+  $('#workflow-status').textContent = active.hasLearnedGraph ? `Learned · rev ${active.revision}` : 'Not learned yet';
+  $('#workflow-task').textContent = active.task;
+  $('#workflow-origin').textContent = `Origin: ${active.origin} · Active tab: ${pageId} · Stops at review without submitting.`;
+  const mode = $('#workflow-mode').value;
+  $('#run-workflow').disabled = workflowBlocked || (!active.plannerConfigured && (mode !== 'reuse' || !active.hasLearnedGraph));
+}
 function render(state) {
   pollMs = state.pollMs;
   if (state.missingProjectId) { choose(''); notice('That saved investigation is unavailable. Choose one from the list or start a new one.'); }
@@ -58,6 +87,20 @@ function render(state) {
   }));
   if (!$('#delegate-form [name=origins]').value && pages.find(page => page.pageId === pageId)?.url.startsWith('http')) {
     $('#delegate-form [name=origins]').value = new URL(pages.find(page => page.pageId === pageId).url).origin;
+  }
+  latestWorkflows = state.workflows ?? [];
+  workflowBlocked = unresolved.length > 0 || investigation.run?.status === 'running';
+  $('#workflow-panel').hidden = !latestWorkflows.length;
+  if (latestWorkflows.length) {
+    const nextWorkflows = JSON.stringify(latestWorkflows.map(({ template, label, fields }) => ({ template, label, fields })));
+    if (nextWorkflows !== workflowsIdentity && !$('#workflow-form').contains(document.activeElement)) {
+      const chosen = $('#workflow-template').value;
+      $('#workflow-template').replaceChildren(...latestWorkflows.map(item => new Option(item.label, item.template)));
+      if (latestWorkflows.some(item => item.template === chosen)) $('#workflow-template').value = chosen;
+      workflowsIdentity = nextWorkflows;
+      renderWorkflowFields(latestWorkflows.find(item => item.template === $('#workflow-template').value) ?? latestWorkflows[0]);
+    }
+    syncWorkflowMeta();
   }
   $('#grants').replaceChildren(...workspace.grants.filter(grant => grant.ownerId === 'agent').map(grant => {
     const row = node('div', null, 'grant');
@@ -127,8 +170,17 @@ function render(state) {
     return item;
   }));
   $('#activity').replaceChildren(...investigation.activity.filter(event => event.type !== 'run-updated' && !['planner-requested', 'planner-result'].includes(event.event)).slice(-8).reverse().map(event => {
-    const item = node('li'); item.append(node('time', new Date(event.at).toLocaleString()), node('span',
-      event.event === 'tool-requested' ? `Agent requested ${event.tool}` : event.event === 'tool-result' ? 'Tool result recorded' : event.event === 'human-control' ? 'You took control' : event.event === 'delegated' ? event.task : event.type === 'artifact-revised' ? `Saved ${event.artifact.kind}` : event.event || event.run?.detail || event.type));
+    const text = event.event === 'tool-requested' ? `Agent requested ${event.tool}`
+      : event.event === 'tool-result' ? 'Tool result recorded'
+      : event.event === 'human-control' ? 'You took control'
+      : event.event === 'delegated' ? event.task
+      : event.event === 'personal-workflow-started' ? `Started workflow ${event.template} (${event.mode})`
+      : event.event === 'workflow-replay' ? `Replayed ${event.steps} cached step(s) (${event.reason})`
+      : event.event === 'personal-workflow-finished' ? `${event.completed ? 'Completed' : 'Stopped'} workflow · ${event.cacheSteps} cached, ${event.modelCalls} model call(s)${event.attempt?.runId ? ` · attempt ${event.attempt.runId.slice(0, 8)}` : ''}`
+      : event.event === 'personal-workflow-rejected' ? `Workflow rejected (${event.code})${event.attempt?.runId ? ` · attempt ${event.attempt.runId.slice(0, 8)}` : ''}`
+      : event.type === 'artifact-revised' ? `Saved ${event.artifact.kind}`
+      : event.event || event.run?.detail || event.type;
+    const item = node('li'); item.append(node('time', new Date(event.at).toLocaleString()), node('span', text));
     return item;
   }));
 }
@@ -143,6 +195,17 @@ $('#create-form').onsubmit = event => { event.preventDefault(); act(async () => 
 }); };
 $('#navigate-form').onsubmit = event => { event.preventDefault(); act(async () => {
   await command('navigate', { pageId, url: new FormData(event.target).get('url') }); event.target.reset();
+}); };
+$('#workflow-template').onchange = () => {
+  workflowModePinned = false;
+  renderWorkflowFields(latestWorkflows.find(item => item.template === $('#workflow-template').value) ?? latestWorkflows[0]);
+  syncWorkflowMeta();
+};
+$('#workflow-mode').onchange = () => { workflowModePinned = true; syncWorkflowMeta(); };
+$('#workflow-form').onsubmit = event => { event.preventDefault(); act(async () => {
+  const inputs = Object.fromEntries([...$('#workflow-fields').querySelectorAll('[data-slot]')].map(input => [input.dataset.slot, input.value]));
+  await command('runWorkflow', { template: $('#workflow-template').value, mode: $('#workflow-mode').value, pageId, inputs });
+  workflowModePinned = false;
 }); };
 $('#delegate-form').onsubmit = event => { event.preventDefault(); act(async () => {
   const data = new FormData(event.target), actionKinds = [];

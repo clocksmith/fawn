@@ -110,19 +110,50 @@ export class WorkspaceController {
   /** Trusted host entrypoint. Task/account/disclosure/oracle definitions are installed by the
    * host, not accepted from HTTP, a model, or a downloaded graph. No final-submit permission.
    */
-  runPersonalWorkflow(id, { template, pageId, inputs, mode }) {
+  #workflowFields(definition) {
+    const seen = new Set(), fields = [];
+    for (const field of definition.disclosurePolicy?.fields ?? []) {
+      if (seen.has(field.slot)) continue;
+      seen.add(field.slot);
+      const options = Array.isArray(definition.slotOptions?.[field.slot]) ? [...definition.slotOptions[field.slot]] : undefined;
+      fields.push({ slot: field.slot, kind: field.kind, label: definition.slotLabels?.[field.slot] ?? field.locator[1],
+        inputType: field.locator[3] || 'text', ...(options ? { options } : {}) });
+    }
+    return fields;
+  }
+  #workflowSummaries() {
+    if (!this.workflowStore || !this.workflowTasks.size) return [];
+    return [...this.workflowTasks.entries()].map(([template, definition]) => {
+      const { revision, hasLearnedGraph } = this.workflowStore.summary({ accountScope: definition.accountScope, template });
+      return { template, label: definition.label ?? template, task: definition.task,
+        origin: definition.disclosurePolicy.origin, plannerConfigured: Boolean(definition.planner ?? this.planner),
+        learnRepairs: definition.learnRepairs ?? true, revision, hasLearnedGraph, fields: this.#workflowFields(definition) };
+    });
+  }
+  runPersonalWorkflow(id, { template, pageId = 'main', inputs, mode } = {}) {
     return this.exclusive(id, async () => {
-      const definition = this.workflowTasks.get(template);
+      const definition = typeof template === 'string' ? this.workflowTasks.get(template) : null;
       if (!this.workflowStore || !definition || !['learn', 'reuse', 'fresh'].includes(mode)) {
         throw Error('Select an installed personal workflow and explicit mode');
       }
+      if (!inputs || typeof inputs !== 'object' || Array.isArray(inputs)) throw Error('Provide workflow slot values');
+      const allowedSlots = new Set(definition.disclosurePolicy.fields.map(field => field.slot));
+      for (const [slot, value] of Object.entries(inputs)) {
+        if (!allowedSlots.has(slot)) throw Error(`Unknown workflow input slot ${slot}`);
+        if (typeof value !== 'string' || Buffer.byteLength(value) > this.config.maxInputBytes) {
+          throw Error(`Provide a string value within budget for workflow slot ${slot}`);
+        }
+      }
+      const planner = definition.planner ?? this.planner;
+      if (!planner && mode !== 'reuse') throw Error('Configure FAWN_MODEL and the planner API credential before delegating');
       if (this.active.has(id)) throw Error('The prior agent has not settled');
       const before = await this.service.inspect(this.admin(id));
+      if (!before.pages.some(value => value.pageId === pageId && !value.closed)) throw Error('Select an open page');
       if (before.actions.some(action => action.isUncertain || action.dispatchStatus === 'queued'
         || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Review unresolved actions before delegating');
       const grantId = `workflow-${randomUUID()}`, runId = randomUUID();
       const { disclosurePolicy, accountScope, verifyAccount, verifyReview, verificationId, taskSourceHashes,
-        planner, task, fieldGroups = null, learnRepairs = true } = definition;
+        task, fieldGroups = null, learnRepairs = true } = definition;
       const profile = structuredClone(inputs);
       await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent',
         intents: ['personal-workflow'], targetOrigins: [disclosurePolicy.origin],
@@ -146,6 +177,12 @@ export class WorkspaceController {
           persistence: result.persistence, attempt: result.attempt, modelCalls: result.modelCalls, cacheSteps: result.cacheSteps });
         return result;
       }).catch(error => {
+        if (!controller.signal.aborted) {
+          const prior = this.store.get(id).run;
+          this.store.run(id, { id: prior?.id ?? runId, status: 'needs-attention',
+            detail: error.message || 'Personal workflow rejected', turns: prior?.turns ?? 0,
+            usage: prior?.usage ?? [], planner: planner?.identity ?? null });
+        }
         this.store.activity(id, { event: 'personal-workflow-rejected', attempt: error.attempt ?? null,
           code: error.code ?? 'workflow-attempt-failed' });
         throw error;
@@ -242,7 +279,7 @@ export class WorkspaceController {
     const projects = [...this.store.projects.keys()].map(key => this.store.get(key));
     const exists = id && this.store.projects.has(id);
     return { projects, missingProjectId: id && !exists ? id : null, selected: exists ? { investigation: this.store.get(id), workspace: await this.service.inspect(this.admin(id)) } : null,
-      planner: this.planner?.identity ?? null, pollMs: this.config.pollMs };
+      workflows: this.#workflowSummaries(), planner: this.planner?.identity ?? null, pollMs: this.config.pollMs };
   }
   async close() {
     for (const id of this.active.keys()) await this.takeOver(id);

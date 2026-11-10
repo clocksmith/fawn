@@ -137,7 +137,11 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       lastResult = { status: 'completed', kind: input.kind, label: matches[0].label, slot: input.slot ?? null };
       return lastResult;
     };
-    const countedPlanner = { identity: planner.identity, next: (...args) => { modelCalls++; return planner.next(...args); } };
+    const countedPlanner = { identity: planner?.identity ?? null, next: (...args) => {
+      if (!planner) throw Error('Configure FAWN_MODEL and the planner API credential before learning or repairing a workflow');
+      modelCalls++;
+      return planner.next(...args);
+    } };
     const run = startAgent({ projectId, store, planner: countedPlanner, execute, config, signal,
       runId, assertCurrent, verifyCompletion,
       context: () => ({ task, inputs, observation: view(observation), lastResult,

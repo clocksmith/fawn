@@ -48,6 +48,11 @@ export async function startWorkspaceServer({ controller, config, port = config.p
         selectRegion: () => controller.service.selectRegion({ ...controller.admin(projectId), pageId: input.pageId }),
         capture: () => controller.capture(projectId, input), record: () => controller.record(projectId, input),
         repositoryRead: () => controller.readRepository(projectId, input),
+        runWorkflow: async () => {
+          const { runId, done } = await controller.runPersonalWorkflow(projectId, input);
+          done.catch(() => {});
+          return { runId };
+        },
         delegate: () => controller.delegate(projectId, input), takeOver: () => controller.takeOver(projectId),
         revoke: () => controller.revoke(projectId, input), check: () => controller.check(projectId, input),
         decide: async () => {

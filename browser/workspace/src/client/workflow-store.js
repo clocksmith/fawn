@@ -99,6 +99,14 @@ export class WorkflowStore {
   }
   #write(state) { this.#validate(state); this.file.write(state); }
   async #transaction(update) { return this.file.transaction(() => update(this.#read())); }
+  summary(scope) {
+    const id = this.#namespace(scope);
+    const state = this.#read();
+    const pointer = state.workflows[id];
+    if (!pointer) return { revision: 0, hasLearnedGraph: false };
+    const dag = state.workflowVersions[pointer.currentVersion].dag;
+    return { revision: pointer.revision, hasLearnedGraph: Object.keys(dag.nodes).length > 0 };
+  }
   async checkout(scope) {
     const id = this.#namespace(scope);
     const initial = this.#read();

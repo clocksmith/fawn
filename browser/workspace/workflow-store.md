@@ -31,14 +31,16 @@ Each entry in the trusted `workflowTasks` Map is keyed by template and supplies:
 - Optional `learnRepairs` (default `true`): publish verified structural repairs.
   Set `false` for frozen evaluation or completion without collecting repairs.
 
-An explicitly requested host call
+An explicitly requested call
 `controller.runPersonalWorkflow(projectId, {template, pageId, inputs, mode})`
-returns `{runId, done}`. Await `done` for the result and persistence outcome.
-The controller creates a fresh scoped grant, revokes previous agent grants, and
-returns control to the human after settlement. Takeover cancels future work.
-There is no workflow HTTP endpoint or UI control, graph-upload method, or
-automatic workflow run on startup. Trusted host definitions cannot come from
-model output or HTTP command bodies.
+(or loopback `/api/command` `operation: "runWorkflow"` from `#workflow-panel`)
+returns `{runId, done}` (`{runId}` over HTTP). Await `done` for the result and persistence outcome.
+The controller validates declared slot inputs, creates a fresh grant, revokes previous
+agent grants, and returns control to the human after settlement. Takeover cancels future work.
+`/api/status` exposes only sanitized template, slot and revision summaries (`WorkflowStore.summary`),
+never `dag.key`, `dag.nodes`, handles or credentials. There is no graph-upload HTTP method or
+automatic workflow run on startup. Trusted host definitions (`--workflow-module` or `openWorkspaceApp`)
+cannot come from model output or HTTP command bodies.
 
 The lower-level `WorkflowStore.run` composes the existing workflow agent with
 these checks; direct callers must supply fresh service authority. Account checks
@@ -216,6 +218,7 @@ node browser/workspace/test/unit/workflow-sync.test.js
 node browser/workspace/test/unit/workflow-repair.test.js
 node browser/workspace/test/browser/workflow-store.test.js
 node browser/workspace/test/browser/workflow-repair.test.js
+node browser/workspace/test/browser/product-workflow-ui.test.js
 ```
 
 Separate-process tests cover verified learning/reuse, concurrent publication and

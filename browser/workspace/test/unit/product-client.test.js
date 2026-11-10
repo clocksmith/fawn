@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { WorkspaceService } from '../../src/service.js';
 import { loadServiceConfig } from '../../src/config.js';
 import { WorkspaceController } from '../../src/client/controller.js';
+import { WorkflowStore } from '../../src/client/workflow-store.js';
 import { startWorkspaceServer } from '../../src/client/server.js';
 import { createPlanner } from '../../src/client/planner.js';
+import { sha256Hex } from '../../src/journal.js';
 import { FakeAdapter, ORIGIN } from '../support/fake-adapter.js';
 const config = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
 const root = mkdtempSync(join(tmpdir(), 'fawn-product-client-'));
@@ -19,7 +21,32 @@ try {
   const delayed = Promise.withResolvers();
   let plannerContext;
   const planner = { identity: { model: 'controlled-test-planner' }, next: context => { plannerContext = context; return delayed.promise; } };
-  controller = new WorkspaceController({ service, stateDir: join(root, 'client'), config, planner });
+  const workflowStore = new WorkflowStore({ directory: join(root, 'workflows'), ownerScope: 'unit-owner',
+    limits: { maxNodes: 32, maxEdges: 32, maxSteps: 8 }, maxBytes: 100000, lockWaitMs: 500, lockRetryMs: 10 });
+  assert.deepEqual(workflowStore.summary({ accountScope: 'acct-1', template: 'contact-v1' }),
+    { revision: 0, hasLearnedGraph: false });
+  assert.equal(existsSync(join(root, 'workflows/workflows.private.json')), false,
+    'Read-only workflow summary must not initialize private store files');
+  const workflowGate = Promise.withResolvers();
+  const workflowTasks = new Map([['contact-v1', {
+    label: 'Contact draft',
+    accountScope: 'acct-1',
+    task: 'Fill contact fields and stop before submit',
+    planner: { identity: { model: 'controlled-workflow-planner' }, next: () => workflowGate.promise },
+    disclosurePolicy: {
+      origin: ORIGIN,
+      fields: [
+        { slot: 'name', kind: 'fill', locator: ['textbox', 'Name', 'input', 'text'] },
+        { slot: 'name', kind: 'fill', locator: ['textbox', 'Full name', 'input', 'text'] },
+      ],
+      intermediateClicks: [],
+    },
+    verificationId: 'unit-contact-review',
+    taskSourceHashes: { self: sha256Hex(readFileSync(new URL(import.meta.url))) },
+    verifyAccount: async () => 'acct-1',
+    verifyReview: async () => ({ completed: true }),
+  }]]);
+  controller = new WorkspaceController({ service, stateDir: join(root, 'client'), config, planner, workflowStore, workflowTasks });
   const { id } = await controller.create({ goal: 'Check a bounded task' });
   assert.equal(statSync(join(root, 'client/client-credentials.json')).mode & 0o777, 0o600);
   // FakeAdapter models one page. Browser tests cover actual multi-page adapters and scopes.
@@ -50,6 +77,29 @@ try {
   assert.ok(!contents.includes('adminCredential'));
   assert.ok(!contents.includes('ownerCredential'));
   assert.ok(!contents.includes(controller.credentials[id]));
+  const parsedStatus = JSON.parse(contents);
+  assert.equal(parsedStatus.workflows.length, 1);
+  assert.deepEqual(parsedStatus.workflows[0], {
+    template: 'contact-v1', label: 'Contact draft', task: 'Fill contact fields and stop before submit',
+    origin: ORIGIN, plannerConfigured: true, learnRepairs: true, revision: 0, hasLearnedGraph: false,
+    fields: [{ slot: 'name', kind: 'fill', label: 'Name', inputType: 'text' }],
+  });
+  const checkedOut = await workflowStore.checkout({ accountScope: 'acct-1', template: 'contact-v1' });
+  const statusAfterCheckout = await (await request(`/api/status?project=${id}`, { headers: { cookie } })).text();
+  assert.ok(!statusAfterCheckout.includes(checkedOut.dag.key), 'HTTP status must never leak private workflow HMAC keys');
+  assert.equal((await request('/api/command', { method: 'POST', headers: { cookie, origin: http.origin },
+    body: JSON.stringify({ operation: 'runWorkflow', projectId: id, input: { template: 'unknown', mode: 'learn', inputs: {} } }) })).status, 400);
+  assert.equal((await request('/api/command', { method: 'POST', headers: { cookie, origin: http.origin },
+    body: JSON.stringify({ operation: 'runWorkflow', projectId: id, input: { template: 'contact-v1', mode: 'learn', inputs: { undeclared: 'x' } } }) })).status, 400);
+  const startedWorkflow = await request('/api/command', { method: 'POST', headers: { cookie, origin: http.origin },
+    body: JSON.stringify({ operation: 'runWorkflow', projectId: id, input: { template: 'contact-v1', mode: 'learn', pageId: 'main', inputs: { name: 'Ada' } } }) });
+  assert.equal(startedWorkflow.status, 200);
+  const takeOverRes = await request('/api/command', { method: 'POST', headers: { cookie, origin: http.origin },
+    body: JSON.stringify({ operation: 'takeOver', projectId: id }) });
+  assert.equal(takeOverRes.status, 200);
+  workflowGate.resolve({ tool: 'finish', input: { summary: 'Done' } });
+  await Promise.all([...controller.active.values()].map(value => value.done));
+  assert.equal((await controller.service.inspect(controller.admin(id))).ownerId, 'human');
   assert.equal((await request('/api/command', { method: 'POST', headers: { cookie, origin: 'http://hostile.invalid' }, body: '{}' })).status, 403);
   assert.equal((await request('/api/command', { method: 'POST', headers: { cookie, origin: http.origin }, body: JSON.stringify({ operation: 'constructor' }) })).status, 400);
   const hostile = await new Promise((resolve, reject) => { const req = httpRequest(http.origin + '/api/status', { headers: { cookie, host: 'hostile.invalid' } }, res => { res.resume(); resolve(res.statusCode); }); req.on('error', reject); req.end(); });

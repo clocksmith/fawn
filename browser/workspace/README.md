@@ -24,8 +24,9 @@ scripted automation. Development tests are not the behavioral gates.
   admission and dispatch, declarative page conditions, and credentials.
 - `src/adapters/`: narrow browser adapters (Playwright, and raw CDP over
   `--remote-debugging-pipe`) plus the shared in-page reader.
-- `src/workflows/`: document research, controlled form submission and artifact
-  export. They contain the task logic and reach the browser only through the
+- `src/workflows/`: document research, controlled form submission, artifact
+  export and engineering incident investigation (`engineering-investigation.js`).
+  They contain the task logic and reach the browser only through the
   service API.
 - `qualification/`: the behavioral qualification harness and the
   competent-baseline comparison (see [Qualification](#qualification)).
@@ -241,18 +242,23 @@ every listed workflow.
   allowlist, exact locators, the application's idempotency reference and a
   submissions check before resubmitting.
 - `differentiate.js`, `differentiation-suites.js` and `agents/` run the frozen
-  differentiation suites in `workspaceComparison`:
+  differentiation suites in `workspaceComparison` and the engineering-investigation suite:
   - `differentiation`: a procurement workbench (`workbench-site.js`)
   - `revalidatedDifferentiation`: a helpdesk (`helpdesk-site.js`) against a
     stronger control that revalidates decisions before mutating and cancels
     pending calls on human takeover
+  - `engineeringInvestigation`: an incident queue, runbook and postmortem suite
+    (`investigation-site.js`, [`config/fawn-engineering-investigation-suite.json`](../../config/fawn-engineering-investigation-suite.json))
+    against the same revalidating, takeover-cancelling control
 
   Each agent has a core (`fawn-agent.js`, `playwright-agent.js`) and a
-  per-application profile (`procurement-tools.js`, `helpdesk-tools.js`).
+  per-application profile (`procurement-tools.js`, `helpdesk-tools.js`,
+  `investigation-tools.js`).
   - Workload: multipage agent workflows on a live site, judged by that site's
     own records.
   - Agent: one shared policy per application (`agents/procurement-policy.js`,
-    `agents/helpdesk-policy.js`) decides on both sides with the same think time.
+    `agents/helpdesk-policy.js`, `agents/investigation-policy.js`) decides on
+    both sides with the same think time.
   - Treatment: `agents/fawn-agent.js`, a client of this service using outline
     views, region-bound decisions and ownership handoff.
   - Control: `agents/playwright-agent.js` with `agents/playwright-tool-host.js`,
@@ -286,7 +292,7 @@ npm run test:browser   # adds a qualification subset through both adapters
 npm run test:browser -- --browser-channel chrome # use installed Chrome for both arms/adapters
 npm run qualify        # full case set; writes bench/out/fawn-workspace-qualification/<stamp>
 npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
-npm run differentiate  # first suite; --suite revalidatedDifferentiation runs the second
+npm run differentiate  # first suite; --suite revalidatedDifferentiation or --suite engineeringInvestigation runs the others
 npm run differentiate -- --suite modelDrivenDifferentiation --mode offline --scenarios clinic-clean   # wiring, no API
 npm run differentiate -- --suite modelDrivenDifferentiation --mode compatibility   # then smoke, then full
 npm run qualify -- --browser-channel chrome   # the case set on installed Google Chrome
@@ -459,11 +465,13 @@ The [workflow reuse comparison](qualification/workflow-reuse.md) adds explicit
 Sonnet-driven learning and safe planner fallback, with a frozen synthetic
 application, independent review checks and fresh-planner controls.
 
-The opt-in [personal workflow store](workflow-store.md) persists account-scoped
-versions and run records with cross-process publication. Trusted host task
-definitions supply account/review verifiers and pre-dispatch disclosure rules.
-Controller integration is programmatic; ordinary UI delegation does not learn
-or reuse workflows automatically.
+The opt-in [personal workflow store](workflow-store.md) persists account-isolated
+versions, verified repair suffixes and run records with cross-process publication.
+Trusted host task definitions supply account/review verifiers and pre-dispatch
+disclosure rules (`--workflow-module PATH` or `openWorkspaceApp({ workflowPersistence, workflowTasks })`).
+When host task definitions are installed, the loopback client UI exposes explicit
+workflow selection (`learn`, `reuse`, `fresh`) and slot inputs without graph
+upload, secret exposure or automatic startup execution.
 
 `node qualification/product-compare.js --out <directory>` compares the product
 client with stock Chromium plus the same durable evidence/issue tracker and
