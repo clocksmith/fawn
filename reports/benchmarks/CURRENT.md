@@ -2,7 +2,7 @@
 
 Generated from [sources.json](sources.json) by `python3 bench/cli.py inventory`.
 
-Current product-source frontier: `3cfe061087bf516fdb8d93e46f076e597e350fac`.
+Current product-source frontier: `22c6d4113ba98a933fb338584012db960203548a`.
 
 Newest dated campaigns are shown separately for each observed machine/adapter. Unbound evidence is grouped as history, never treated as one host or ranked across unknown machines. Undated evidence is never ranked by report or contract dates. Family links retain the complete history.
 

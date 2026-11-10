@@ -178,7 +178,9 @@
         "browser/workspace/qualification/run.js",
         "browser/workspace/qualification/validate.js",
         "browser/workspace/qualification/compare.js",
-        "browser/workspace/qualification/differentiate.js"
+        "browser/workspace/qualification/differentiate.js",
+        "browser/workspace/qualification/product-compare.js",
+        "browser/workspace/qualification/held-out-and-live-investigations.js"
       ],
       "docs": [
         "browser/workspace/README.md",

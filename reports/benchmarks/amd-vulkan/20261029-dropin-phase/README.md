@@ -526,19 +526,26 @@ retained but not used.
 Only the failed combined candidate is below Dawn in warm operation on all
 three workloads.
 
-### Landing: none
+### Landing: split profile rule (`fccbd09f5`)
 
-No runtime source landed. M7R and M2R each pass against main `1823497b5`.
-Their composition is the c-direct source, and c-direct fails its frozen
-contract. Landing either one also changes the control the other passed
-against. Choosing which mechanism lands, if any, is an owner decision, and
-both patches stay as receipts. Under the
-[C migration rules](../../../../docs/c-migration/MIGRATION.md), a landed
-mechanism would enter only the Doe C Vulkan backend, which the source package,
-compiler build and runtime CLI already select by default
+At the end of the round-5 windows (`2026-10-30`), neither single patch nor the
+unconditional combination was promoted directly from `1823497b5`. On `2026-10-31`,
+an owner-authorized split rule landed in `fccbd09f5`
+([`landing-c-direct-amd.json`](landing-c-direct-amd.json),
+[`device_selection.c`](../../../../runtime/c/backends/vulkan/src/device_selection.c)):
+`doe_vk_resource_profile_select` enables `DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS`
+for `vendorID == 0x1002` and enables `DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES`
+only when the first `DEVICE_LOCAL | HOST_VISIBLE | HOST_COHERENT` memory type's
+heap is at least `4 GiB` (`41.3 GiB` on Strix Halo; `256 MiB` on discrete RX 570
+selects `DESCRIPTOR_BLOCKS` only, verified in `952ad3321` under
+[`windows-amd-vulkan/20261030-dropin-phase`](../../windows-amd-vulkan/20261030-dropin-phase/README.md)).
+Non-AMD adapters retain `DOE_VK_RESOURCE_PROFILE_DEFAULT`. Post-landing RADV
+reruns against current source on `amd-host` await an uncontended GPU/CPU window.
+Under the [C migration rules](../../../../docs/c-migration/MIGRATION.md), the
+mechanism lives in the default-selected Doe C Vulkan backend
 ([README](../../../../README.md)); retained Zig requires explicit legacy
-selection. This
-record is a scoped native drop-in diagnostic, not the GOALS application win.
+selection. This record remains a native drop-in phase attribution, not the
+GOALS application win.
 
 ### Remaining owners of loss against Dawn
 

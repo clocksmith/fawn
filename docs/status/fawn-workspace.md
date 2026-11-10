@@ -48,9 +48,21 @@ exercise publication, repair reuse and secret containment on synthetic forms.
 and the [`engineeringInvestigation`](../../config/fawn-engineering-investigation-suite.json)
 differentiation suite cover incident evidence capture, foreign-origin skipping,
 precondition guards, postmortem export and interruption recovery against the
-revalidating Playwright control. Together with the controlled
-[shopping comparison](../../browser/workspace/qualification/shopping/README.md),
-these local fixtures do not establish live-site merchant or ATS support.
+revalidating Playwright control. In addition, the
+[held-out and live-site runner](../../browser/workspace/qualification/held-out-and-live-investigations.js)
+([browser check](../../browser/workspace/test/browser/held-out-investigations.test.js),
+[diagnostic receipt](../../reports/fawn-workspace/20261110-heldout-and-live-investigations/decision.json))
+evaluates the workspace on stock Chrome across three held-out local investigations
+(multi-page cache bleed with ungranted-origin rejection, mid-run human takeover
+with stale-generation rejection, and interrupted failover POST reconciliation
+with zero duplicate commits versus one duplicate on unguarded retry) and two
+read-only live public HTTPS investigations (`w3.org` + `developer.mozilla.org`
+with live ungranted-origin rejection, and `rfc-editor.org` paired with local code
+evidence), strictly separate from Doe GPU claims. On read-only multi-page capture
+without interruption or authority handoff, stock Chrome plus a local tracker
+completes in less wall-clock time than `WorkspaceService` mediation. Together with
+the controlled [shopping comparison](../../browser/workspace/qualification/shopping/README.md),
+these checks do not establish live-site merchant or ATS mutation support.
 
 ## Active blockers
 

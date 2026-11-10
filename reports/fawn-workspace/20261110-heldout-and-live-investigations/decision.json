@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "classification": "held-out local and live public HTTPS read-only workspace diagnostic; release promotion rejected",
+  "consumer": "docs/status/fawn-workspace.md; review of held-out workspace authority/recovery and live public HTTPS read-only execution separate from Doe GPU claims",
+  "baseSourceCommit": "22c6d4113ba98a933fb338584012db960203548a",
+  "requiresNativeRuntimeWins": false,
+  "gpuClaimsIncluded": false,
+  "browserIdentity": {
+    "channel": "chrome",
+    "version": "157.0.8103.39",
+    "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "executableSha256": "96832d133a25d835dfae36b6312de100e4d4cbe2f5e4eb0d2eac170da54672ad"
+  },
+  "localRawReport": {
+    "path": "bench/out/fawn-workspace-heldout-live-20261110/held-out-and-live-report.json",
+    "availability": "local ignored evidence; not published"
+  },
+  "summary": {
+    "allPassed": true,
+    "heldOutCount": 3,
+    "heldOutPassed": 3,
+    "liveSiteCount": 2,
+    "liveSitePassed": 2,
+    "productReleaseQualified": false
+  },
+  "heldOutOutcomes": [
+    {
+      "id": "cdn-stale-cache-investigation",
+      "fawnCompleteTaskMs": 1199.84,
+      "controlCompleteTaskMs": 839.15,
+      "ungrantedOriginRejected": true,
+      "sourcesBound": true,
+      "findingConnected": true
+    },
+    {
+      "id": "webhook-replay-human-takeover",
+      "staleGenerationRejected": true,
+      "unauthorizedMutations": 0,
+      "decisionCount": 1,
+      "sourcesBound": true,
+      "findingConnected": true
+    },
+    {
+      "id": "db-failover-interruption-recovery",
+      "interruptedStatus": "unknown",
+      "recoveredStatus": "completed",
+      "recoveryMethod": "application-state",
+      "fawnServerCommits": 1,
+      "fawnDuplicateSubmissions": 0,
+      "unguardedRetryControlCommits": 2,
+      "unguardedRetryDuplicateSubmissions": 1
+    }
+  ],
+  "liveSiteOutcomes": [
+    {
+      "id": "live-w3c-webgpu-and-mdn-gpudevice",
+      "urls": [
+        "https://www.w3.org/TR/webgpu/",
+        "https://developer.mozilla.org/en-US/docs/Web/API/GPUDevice"
+      ],
+      "ungrantedUrlTested": "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "ungrantedOriginRejected": true,
+      "fawnDelegatedMs": 5007.54,
+      "controlDelegatedMs": 5097.39,
+      "fawnCompleteTaskMs": 22626.82,
+      "controlCompleteTaskMs": 8114.99,
+      "sourcesBound": true,
+      "findingConnected": true
+    },
+    {
+      "id": "live-ietf-rfc9110-idempotency",
+      "urls": [
+        "https://www.rfc-editor.org/rfc/rfc9110.html"
+      ],
+      "fawnDelegatedMs": 1428.02,
+      "controlDelegatedMs": 1444.24,
+      "fawnCompleteTaskMs": 4889.23,
+      "controlCompleteTaskMs": 3201.09,
+      "sourcesBound": true,
+      "findingConnected": true
+    }
+  ],
+  "limits": [
+    "Runs on stock Google Chrome and establishes no Doe WebGPU runtime or Chromium patch claim.",
+    "Deterministic step drivers verify authority boundaries, owner-generation handoff, interruption reconciliation and live HTTPS DOM SHA-256 capture; billed model-driven differentiation and blind human preference studies remain unstarted.",
+    "Live public HTTPS checks are read-only GET observations with zero external form submissions, credentials or merchant/ATS mutations.",
+    "On read-only capture without interruption or authority handoff, stock Chrome plus a local tracker completes in less total wall-clock time than WorkspaceService setup and mediation."
+  ]
+}

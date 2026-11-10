@@ -129,22 +129,26 @@ Existing proof campaigns and browser milestone receipts retain their meaning;
 none is promoted by this intent change.
 
 The [local Mac comparison disposition](../../browser/chromium/artifacts/20261016-m3-current/disposition.json)
-retains same-browser provider diagnostics and a separate stock-Chrome comparison.
-Those timings used the existing sandbox-disabled harness, and native lookup
-inspection found Dawn capability fallback. The missing local instance-feature
-lookup is repaired and covered by the built-library
-[regression](../../runtime/zig/tests/instance_feature_lookup.c). Format-capability
-queries now reject the unadvertised extension inside Doe; capability-array
-cleanup also resolves locally. The built-library
-[capability regression](../../runtime/zig/tests/format_capability_lookup.c)
-checks resolution, feature rejection, output preservation and cleanup.
-The smoke wrapper accepts `--sandbox true` and rejects conflicting disabling
-arguments; its legacy diagnostic default remains sandbox-disabled. Sandboxed
-Chromium advances to missing `wgpuBufferCreateTexelView` ownership. This remains
-an unresolved runtime integration boundary; neither timing set establishes a
-self-contained Doe browser advantage. The configured external Chromium source
-checkout is absent on the Mac, so its existing browser binary was tested rather
-than rebuilt. The AMD checkout is separate and has uncommitted integration work.
+retains earlier provider diagnostics, and the newer
+[Fawn 158 comparison](../../reports/benchmarks/fawn-vs-chromium/20261102/README.md)
+measures the built macOS browser (`158.0.8108.0`) across Stock Chromium,
+`Fawn + Dawn` and `Fawn + Doe`. With an app-staged C runtime closure
+(`stage-app-runtime.mjs` at `22c6d4113`), `Fawn 158` passes `--sandbox true --strict`
+`dawn` and `doe` smoke (compute, render, render bundle, indirect draw, timestamp
+query, external-image copy, external-texture import, canvas context presentation,
+prismatic lifecycle and clean browser close), governed `auto` fallback to `dawn`
+under `DOE_BROWSER_DISABLE_DOE_RUNTIME=1` or missing-library controls, and
+fail-closed rejection (`requestAdapter() === null`) when `--use-webgpu-runtime=doe`
+is forced with an unavailable provider or `--disable-webgpu-doe`. Two explicit
+boundaries remain: (1) [`dawn-doe-runtime.patch`](../../browser/chromium/patches/README.md)
+still routes Doe through Dawn's `WebGPU-on-WebGPU` backend with Dawn's outer wire
+and validation wrappers retained rather than direct Doe wire ownership, and
+`Fawn + Doe` still loses to Stock Chromium on 7 of 9 workloads in the `2026-11-02`
+suite; (2) the Chromium source checkout (`browser/chromium/src`) is absent on the
+Mac, so the local `2026-11-02` binary predates the `2026-11-09` `c00e788ea`
+zero-size `mappedAtCreation` bridge hunk (`tests/zero-size-buffer.mjs` passes all
+5 cases on `dawn` and 4 of 5 on `doe`, failing only `size=0, mappedAtCreation=true,
+unmap=true` until `Fawn 158` is rebuilt with `c00e788ea`).
 
 ## Roadmap proofs
 
@@ -156,25 +160,26 @@ unestablished. Doe has promising execution evidence, not the final objective.
   uncontended GPU window (see the complete-generation campaign below).
   The [drop-in phase attribution](../../reports/benchmarks/amd-vulkan/20261029-dropin-phase/README.md)
   compares Doe C with source-built Dawn on three Node5 workloads, with phase
-  splits, balanced pairs and an A/A control. It accepted zero-copy read
-  mappings and shared adapter instances, and it rejected device-local placement
-  for a host-upload regression. Image invert passes its scoped rule. Vector and
-  upload/readback still lose warm operation time, mainly in completion and
-  submit. A second round rejected four placement and barrier candidates and two
-  descriptor-pool candidates under their frozen rules. The descriptor-pool
-  candidates halved submit but missed a per-workload and teardown criterion.
-  The remaining owner decisions are recorded there. Owner-revised
-  complete-operation contracts (M7R, M2R) also failed. M7R missed only its
-  upload/readback bound: 1.022 against 1.02. A side-by-side code read and a
-  counting layer record the memory types Doe and Dawn pick and their Vulkan
-  calls per submit. Power-sized reruns (M7R-2, M2R-2) and a combined
-  candidate ran across nine valid post-reboot windows under a measured
-  contamination gate: M7R-2 passed its rule, M2R-2 passed its primary
-  complete-operation rule while missing its separate upload-latency rule, and
-  the combined candidate beat Dawn on warm and complete operation across all
-  three workloads while missing its image teardown allowance (1.107 against
-  1.05) and vector upload rule (1.114), so no patch landed yet. Retained Zig is
-  unsupported there. This is diagnostic evidence, not the application win.
+  splits, balanced pairs and an A/A control. Power-sized reruns (`M7R-2`,
+  `M2R-2`) and a combined candidate ran across nine valid post-reboot windows
+  under a measured contamination gate: `M7R-2` passed its rule, `M2R-2` passed
+  its primary complete-operation rule while missing its separate upload-latency
+  rule, and the combined candidate beat Dawn on warm and complete operation
+  across all three workloads while missing its image teardown allowance (`1.107`
+  against `1.05`) and vector upload rule (`1.114`). On `2026-10-31`, commit
+  `fccbd09f5` integrated `doe_vk_resource_profile_select` in
+  [`device_selection.c`](../../runtime/c/backends/vulkan/src/device_selection.c)
+  (`DESCRIPTOR_BLOCKS` for `vendorID == 0x1002`; `DEVICE_LOCAL_HOST_WRITES` only
+  when the first `DEVICE_LOCAL | HOST_VISIBLE | HOST_COHERENT` heap is `>= 4 GiB`),
+  and commit `952ad3321` verified the `256 MiB` discrete-BAR split on
+  [`windows-amd-host`](../../reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/README.md).
+  Repeating RADV drop-in and unchanged-application (`doppler-generation`) cohorts
+  against current source (`22c6d4113`) on `amd-host` is currently gated on host
+  contention: as checked on `2026-11-10`, two active foreign `amdgpu` DRM
+  processes hold GPU contexts at `8.42%` host CPU, above the `3.0%` quiet-start
+  gate, `5.0%` window-validity ceiling and zero-foreign-DRM-client requirement.
+  Retained Zig is unsupported there. Native phase evidence remains diagnostic,
+  not the unchanged-application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss
