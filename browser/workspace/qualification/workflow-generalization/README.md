@@ -40,6 +40,22 @@ it, the fresh and cache-learning/fallback arms call real Sonnet through the
 existing restricted CLI planner, under explicit request and spend bounds.
 Scripted decisions are reported separately from model calls.
 
+The default `script` arm also passes through Fawn; it isolates planning cost but
+cannot establish an advantage over stock automation. Run the separate stock
+control as well:
+
+```sh
+node browser/workspace/qualification/workflow-generalization/stock-script.js --out bench/out/generalization-stock-script
+```
+
+That control uses stock Playwright, persistent task profiles and the existing
+baseline's durable progress file, without Fawn dispatch or planning. Exact labels,
+aliases and dependent-question meanings follow the already frozen script rules;
+the independent field-ID oracle remains unavailable to its decision logic.
+It checks retained values and origin/account/disclosure policy and never submits.
+Its report binds the same frozen fixture, profile, settling interval and actual
+browser version. A separate-run timing is not an interleaved performance trial.
+
 Evaluation freezes learned graphs: it never learns from holdouts or repairs.
 All arms get matched profiles, independent workspaces, fresh grants and isolated
 browser profiles. Arm order alternates by variant. The variants cover unrelated
