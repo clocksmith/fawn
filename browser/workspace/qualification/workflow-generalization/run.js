@@ -20,6 +20,10 @@ import { groupsFor, scriptedDecision, intermediateClicks } from './contracts.js'
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
 const here = fileURLToPath(new URL('./', import.meta.url));
 const policy = JSON.parse(readFileSync(join(here, 'policy.json')));
+const testFreeze = JSON.parse(readFileSync(join(here, 'test-freeze-v2.json')));
+for (const [path, hash] of Object.entries(testFreeze.sha256)) {
+  if (sha256Hex(readFileSync(join(here, path))) !== hash) throw Error(`Frozen test changed: ${path}`);
+}
 const client = JSON.parse(readFileSync(join(root, 'config/fawn-workspace-client.json')));
 const args = process.argv.slice(2);
 const get = name => args.includes(name) ? args[args.indexOf(name) + 1] : null;
@@ -48,7 +52,7 @@ paths.push('config/fawn-workspace-service.json', 'config/fawn-workspace-client.j
     'client/cli-planner', 'client/investigation'].map(path => `browser/workspace/src/${path}.js`));
 if (arms.includes('scoped')) paths.push('browser/workspace/src/client/field-group-scope.js');
 const hashes = () => Object.fromEntries(paths.map(path => [path, sha256Hex(readFileSync(join(root, path)))]));
-const frozen = { frozenAt: new Date().toISOString(), policy, arms, variants, controlled,
+const frozen = { frozenAt: new Date().toISOString(), testFreeze, policy, arms, variants, controlled,
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   sourceDirty: !!execFileSync('git', ['status', '--porcelain', '--ignore-submodules=all'], { cwd: root, encoding: 'utf8' }).trim(),
   sourceHashes: hashes() };

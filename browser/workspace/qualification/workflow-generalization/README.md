@@ -22,7 +22,7 @@ the oracle or its field-ID map. The oracle checks every observed input/change
 write and rendered review values. An email retained in the decoy field fails.
 Decoy and hidden duplicate controls must remain empty.
 
-`test-freeze.json` binds the forms, oracle, policy, group meanings and fixture
+`test-freeze-v2.json` binds the forms, oracle, policy, group meanings and fixture
 before evaluation. Each run also hashes its harness, service and client inputs
 into `frozen.json` before learning and checks them again before reporting.
 Choose a new output directory for every trial; preserve failures.

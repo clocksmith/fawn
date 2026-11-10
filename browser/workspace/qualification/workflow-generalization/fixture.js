@@ -18,11 +18,12 @@ export async function createFixture() {
     if (entry.variant === 'reordered') fields.reverse();
     if (entry.variant === 'changed-label') fields.find(f => f.id === 'email').label = 'Email address';
     if (entry.variant === 'extra-question') fields.push({ id: 'city', label: 'Current city', type: 'text' });
-    if (entry.variant === 'ambiguous-label') fields.push({ id: 'email-decoy', label: 'Email', type: 'text' });
-    if (entry.variant === 'hidden-duplicate') fields.push({ id: 'hidden-email', label: 'Email', type: 'text', hidden: true });
+    const emailType = fields.find(f => f.id === 'email').type;
+    if (entry.variant === 'ambiguous-label') fields.push({ id: 'email-decoy', label: 'Email', type: emailType });
+    if (entry.variant === 'hidden-duplicate') fields.push({ id: 'hidden-email', label: 'Email', type: emailType, hidden: true });
     if (entry.variant === 'semantic-decoy') {
       fields.find(f => f.id === 'email').label = 'Email address';
-      fields.push({ id: 'email-decoy', label: 'Email', type: 'text' });
+      fields.push({ id: 'email-decoy', label: 'Email', type: emailType });
     }
     res.end(`<!doctype html><title>Offline ${escape(entry.form.vendor)} contact projection</title>
       <h1>Local holdout ${escape(entry.name)}</h1><p id="revision">Synthetic, no application is transmitted.</p>
