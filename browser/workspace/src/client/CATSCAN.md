@@ -35,6 +35,7 @@ Outputs:
 - Corrections invalidate dependents without mutating earlier revisions.
 - HTTP exposes no browser handles or service credentials.
 - Trace replay preserves service admission and stops before submission.
+- Scoped reuse requires reviewed meanings, unique targets and ordered dependency boundaries.
 - Shared graphs are encrypted on clients; remote storage grants no browser authority.
 - Publication locks across processes; account/disclosure checks precede effects.
 
@@ -43,6 +44,7 @@ Outputs:
 - Evidence: [Client tests](../../test/unit/product-client.test.js): authority/restart.
 - [Persistence checks](../../workflow-store.md#focused-checks): isolation, concurrency and crash preservation.
 - [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
+- [Scoped replay](../../test/unit/scoped-trace.test.js): aliases, dependencies and safe stops.
 - Parent comparison remains mandatory; controlled planners prove no product advantage.
 
 ## Non-goals

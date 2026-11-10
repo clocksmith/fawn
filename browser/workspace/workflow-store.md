@@ -26,6 +26,8 @@ Each entry in the trusted `workflowTasks` Map is keyed by template and supplies:
 - `verifyReview({service, owner, pageId, inputs})`, `verificationId` and
   `taskSourceHashes`: an independent review check and frozen task source hashes.
 - `task` and a workflow-tool-compatible `planner`.
+- Optional `fieldGroups`: reviewed ordered groups described below. They are trusted
+  host definitions, never accepted from a model, graph import or HTTP body.
 
 An explicitly requested host call
 `controller.runPersonalWorkflow(projectId, {template, pageId, inputs, mode})`
@@ -44,6 +46,36 @@ observation, grant and retained value. These callbacks are task-specific checks,
 not an atomic guarantee against arbitrary website account changes. A matching
 origin or a caller-supplied account name alone is insufficient. General ATS
 account and review verifiers are not supplied.
+
+## Verified field groups
+
+An opt-in group is `{id, steps}`. Each nonterminal step declares
+`{kind: 'fill' | 'select', slot, locators}`; its aliases are reviewed structural
+locator tuples with compatible meanings. The final step is an approved
+`{kind: 'click', locators}` transition. Each group admits one write per field;
+groups and the learned action prefix remain ordered. This bounded form does not
+support repeated writes, loops or inferred dependency graphs.
+
+Scoped fingerprints include the entire group policy, account, origin, read scope
+and ordered prefix. They normalize reviewed aliases and DOM reordering within
+the current group. Missing fields miss; duplicate compatible targets, including
+hidden duplicates, stop. Unrelated controls can coexist with known-field reuse,
+but invalidate the transition boundary. The planner must handle that miss; the
+cache cannot silently skip an extra question or a newly revealed dependency.
+
+Every effect still resolves a unique fresh target, checks account and disclosure,
+and passes the workspace service's admission and value-settling checks. Group
+aliases do not widen disclosure: each permitted alias must also be listed in the
+task's slot-to-field disclosure policy. Policy and source hashes bind the new
+scope implementation. Existing unscoped fingerprints and receipt policy hashes
+retain their behavior. Graph exports stay version 1; scoped and unscoped nodes
+have disjoint fingerprints, so changing modes cannot reinterpret an old edge.
+
+A safe miss switches to ordinary fresh planning without publishing its partial
+repair. Unknown effects, ambiguity and authority failures stop. The host still
+supplies an independent review oracle: structural matching cannot establish
+real-site semantic correctness. The [frozen comparison](qualification/workflow-generalization/README.md)
+separates that obligation from DOM read-back and comparative product claims.
 
 ## Collection and publication
 

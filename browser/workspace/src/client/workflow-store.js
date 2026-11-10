@@ -10,7 +10,7 @@ import { runWorkflow } from './workflow-agent.js';
 
 const VERSION = 1;
 const HASH = /^[a-f0-9]{64}$/;
-const SOURCE_FILES = ['private-json-file.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'controller.js',
+const SOURCE_FILES = ['private-json-file.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'field-group-scope.js', 'controller.js',
   'agent.js', '../adapters/page-query.js', '../service.js'];
 const exactKeys = (value, keys) => value && typeof value === 'object'
   && !Array.isArray(value) && Object.keys(value).sort().join() === [...keys].sort().join();
@@ -169,6 +169,7 @@ export class WorkflowStore {
       throw Error('Trusted account and review verifiers are required');
     }
     const frozenTaskSources = structuredClone(taskSourceHashes);
+    const fieldGroups = options.fieldGroups ? structuredClone(options.fieldGroups) : null;
     // Snapshot trusted disclosure rules before any asynchronous work. Models cannot add rules.
     const policy = structuredClone(disclosurePolicy);
     if (!exactKeys(policy, ['origin', 'fields', 'intermediateClicks'])
@@ -205,7 +206,7 @@ export class WorkflowStore {
     } };
     const startedAt = new Date().toISOString();
     let learned = null;
-    const result = await runWorkflow({ ...options, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
+    const result = await runWorkflow({ ...options, fieldGroups, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
       intermediateClicks: policy.intermediateClicks, assertContext,
       authorizeStep: async step => {
         const permitted = step.origin === policy.origin && (step.kind === 'click'
@@ -222,7 +223,7 @@ export class WorkflowStore {
       persistence = await this.#complete(scope, checkout, result.completed ? learned : null, {
         runId: randomUUID(), startedAt, completedAt: new Date().toISOString(), mode: options.mode,
         completed: result.completed, reviewVerified: result.verification?.completed === true,
-        verificationId, policyHash: sha256Hex(canonicalJson(policy)), sourceHashes, taskSourceHashes: frozenTaskSources,
+        verificationId, policyHash: sha256Hex(canonicalJson(fieldGroups ? { disclosure: policy, fieldGroups } : policy)), sourceHashes, taskSourceHashes: frozenTaskSources,
         planner: { declaredModel: options.planner?.identity?.model ?? null, observedModels: [...observedModels] },
         modelCalls: result.modelCalls, cacheSteps: result.cacheSteps, elapsedMs: result.elapsedMs,
         fallbackReason: result.fallbackReason, interventionRequests: result.interventionRequests,

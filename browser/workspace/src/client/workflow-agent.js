@@ -35,12 +35,12 @@ function view(observation) {
  */
 export async function runWorkflow({ dag, mode, service, owner, pageId, intent, template, inputs,
   intermediateClicks, task, planner, config, store, projectId, verifyReview, signal,
-  assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null }) {
+  assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null, fieldGroups = null }) {
   if (!['learn', 'fresh', 'reuse'].includes(mode)) throw Error('Invalid workflow mode');
   const started = performance.now();
   const identity = { ...owner, pageId };
   const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
-    assertContext, authorizeStep, accountScope };
+    assertContext, authorizeStep, accountScope, fieldGroups };
   let recorder = dag.session(options), observation, cacheSteps = 0, fallbackReason = null;
   let canPublish = mode === 'learn', lastResult = null, modelCalls = 0;
   const finish = (completed, detail, verification = null) => ({
@@ -71,7 +71,9 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       }
       fallbackReason = replanCode(replay, failure) ?? (CACHE_MISSES.has(replay?.reason) ? replay.reason : null);
       if (!fallbackReason) return finish(false, failure?.message ?? replay?.reason ?? 'Replay stopped');
-      recorder = dag.session(options);
+      // A verified group miss returns the remaining page to ordinary fresh planning. A partial
+      // repaired suffix is neither forced into the first group nor published as a learned path.
+      recorder = dag.session({ ...options, fieldGroups: null });
     }
     await observe();
     const execute = async (tool, input) => {
@@ -88,7 +90,7 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       const stale = replanCode(recorded, failure);
       if (stale) {
         canPublish = false;
-        recorder = dag.session(options);
+        recorder = dag.session({ ...options, fieldGroups: null });
         await observe();
         lastResult = { status: 'needs-replan', code: stale, neverDispatched: true };
         return lastResult;

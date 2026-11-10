@@ -3,6 +3,7 @@
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { canonicalJson } from '../journal.js';
 import { structuralLocator, structuralOutlineHash } from '../adapters/page-query.js';
+import { createFieldGroupScope } from './field-group-scope.js';
 
 const VERSION = 1;
 const HASH = /^[a-f0-9]{64}$/;
@@ -78,7 +79,11 @@ export class TraceDag {
     for (const node of a.nodes.values()) node.edges.sort((x, y) => canonicalJson(x).localeCompare(canonicalJson(y)));
     return TraceDag.restore({ ...a.export(), nodes: [...a.nodes].sort(([x], [y]) => x.localeCompare(y)) }, limits);
   }
-  session(options) { return new TraceSession(this, options); }
+  session(options) {
+    if (options.fieldGroups && (!options.accountScope || typeof options.assertContext !== 'function'
+      || typeof options.authorizeStep !== 'function')) throw Error('Scoped reuse requires account and disclosure verifiers');
+    return new TraceSession(this, options);
+  }
   publish(records, terminal) {
     // Validate the entire merged graph before replacing the current cache.
     const nodes = new Map([...this.nodes].map(([id, node]) => [id, structuredClone(node)]));
@@ -100,7 +105,7 @@ export class TraceDag {
  */
 class TraceSession {
   constructor(dag, { service, owner, pageId, intent, template, inputs = {}, intermediateClicks = [], signal,
-    assertContext = async () => {}, authorizeStep = async () => {}, accountScope = null }) {
+    assertContext = async () => {}, authorizeStep = async () => {}, accountScope = null, fieldGroups = null }) {
     if (typeof template !== 'string' || !template || typeof pageId !== 'string' || !pageId
       || typeof intent !== 'string' || !intent) throw Error('Trace requires template, pageId and intent');
     this.dag = dag;
@@ -110,6 +115,7 @@ class TraceSession {
     this.template = template;
     if (accountScope !== null && (typeof accountScope !== 'string' || !accountScope.trim())) throw Error('Invalid trace account scope');
     this.accountScope = accountScope;
+    this.fieldScope = fieldGroups ? createFieldGroupScope(fieldGroups, dag.limits.maxSteps) : null;
     this.inputs = new Map(Object.entries(inputs).map(([slot, value]) => [dag.hash(['slot', slot]), value]));
     this.slotNames = new Map(Object.keys(inputs).map(slot => [dag.hash(['slot', slot]), slot]));
     this.assertContext = assertContext;
@@ -144,7 +150,10 @@ class TraceSession {
     const scope = [this.template, new URL(observation.url).origin, observation.readScope ?? null];
     if (this.accountScope !== null) scope.push(this.accountScope);
     // Scope includes origin and read grants; raw requisition URLs and personal labels stay out.
-    const id = this.dag.hash([scope, this.prefix, structuralOutlineHash(observation.elements)]);
+    const outline = this.fieldScope ? this.fieldScope.outline(observation, this.depth)
+      : structuralOutlineHash(observation.elements);
+    if (this.fieldScope) scope.push(['verified-field-groups-v1', this.fieldScope.policy]);
+    const id = this.dag.hash([scope, this.prefix, outline]);
     return { observation, id };
   }
   async observe() {
@@ -153,8 +162,9 @@ class TraceSession {
   }
   async execute(before, step) {
     if (this.depth >= this.dag.limits.maxSteps) return this.stop('step-limit');
-    const matches = before.observation.elements.filter(element =>
-      this.dag.hash(['locator', structuralLocator(element)]) === step.locator);
+    const matches = before.observation.elements.filter(element => this.fieldScope
+      ? this.fieldScope.matches(step, element, this.depth, this.dag)
+      : this.dag.hash(['locator', structuralLocator(element)]) === step.locator);
     if (matches.length !== 1) return this.stop(matches.length ? 'ambiguous-locator' : 'missing-locator');
     const element = matches[0];
     if (!element.label || element.formAction || ['submit', 'image', 'file', 'password', 'hidden'].includes(element.inputType)) return this.stop('unsupported-target');
