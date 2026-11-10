@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
+import { chromium } from 'playwright-core';
 
 const root = mkdtempSync(join(tmpdir(), 'fawn-participant-instrument-'));
 const probe = createServer();
@@ -17,6 +18,7 @@ const directory = join(root, 'run');
 const script = fileURLToPath(new URL('../../qualification/workflow-generalization/participant.js', import.meta.url));
 const child = spawn(process.execPath, [script, '--out', directory, '--port', String(port)], { stdio: ['ignore', 'pipe', 'pipe'] });
 child.stderr.resume();
+let browser;
 try {
   const ready = await new Promise((resolve, reject) => {
     let text = '';
@@ -30,6 +32,10 @@ try {
   });
   const url = new URL(ready.participantUrl), origin = url.origin;
   const headers = { authorization: `Bearer ${url.hash.slice(1)}` };
+  browser = await chromium.launch({ channel: 'chrome', headless: true });
+  const ui = await browser.newPage({ viewport: { width: 1080, height: 900 } });
+  await ui.goto(ready.participantUrl);
+  await ui.getByRole('button', { name: 'Start next task', exact: true }).waitFor();
   assert.equal((await fetch(origin + '/status')).status, 403);
   const markup = await (await fetch(origin)).text();
   assert.ok(markup.includes('Teach, reuse, repair, repeat'));
@@ -41,6 +47,14 @@ try {
     return { response, result };
   };
   await command({ operation: 'start' });
+  await ui.getByText('First Name', { exact: true }).waitFor();
+  const selection = ui.locator('article').filter({ has: ui.getByText('First Name', { exact: true }) }).locator('select');
+  await selection.selectOption('firstName');
+  await ui.waitForTimeout(1700);
+  assert.equal(await selection.inputValue(), 'firstName', 'Status polling must not erase a participant choice');
+  await ui.reload();
+  await ui.getByText('First Name', { exact: true }).waitFor();
+  if (process.env.FAWN_PARTICIPANT_SCREENSHOT) await ui.screenshot({ path: process.env.FAWN_PARTICIPANT_SCREENSHOT, fullPage: true });
   const before = await status();
   const wrong = await command({ operation: 'act', handle: before.current.observation.elements[0].handle, slot: 'email' });
   assert.equal(wrong.response.status, 400);
@@ -74,6 +88,7 @@ try {
   assert.equal(receipt.productAdvantageEstablished, false);
   console.log('ok: participant instrument teaches/reuses, preserves failed attempts and exposes repeated repair; not a user result');
 } finally {
+  await browser?.close();
   const exited = once(child, 'exit'); child.kill('SIGTERM'); await exited;
   rmSync(root, { recursive: true, force: true });
 }

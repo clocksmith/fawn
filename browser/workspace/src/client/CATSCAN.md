@@ -45,6 +45,7 @@ Outputs:
 - [Persistence checks](../../workflow-store.md#focused-checks): isolation, concurrency and crash preservation.
 - [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
 - [Scoped replay](../../test/unit/scoped-trace.test.js): aliases, dependencies and safe stops.
+- [Holdout decision](../../../../reports/fawn-workspace/20261109-field-group-reuse/decision.json): bounded reuse, no product verdict.
 - Parent comparison remains mandatory; controlled planners prove no product advantage.
 
 ## Non-goals
