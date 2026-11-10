@@ -32,6 +32,16 @@ and must be accounted for by observation and preconditions. Direct CDP access
 cannot be an undocumented route around Fawn's dispatch checks. Define adapter
 credentials, caller authentication and mutation coverage before runtime admission.
 
+File disclosure requires an administrator's explicit selected bytes and site/page
+grant. Agents receive file identifiers, never arbitrary local read paths. Upload
+dispatch checks those grants and immutable snapshots again, including revocation
+while queued. Attachment and application acceptance are separate observations;
+either can remain uncertain. A site may read attached bytes before form submission,
+and revocation cannot retract prior disclosure. Bounded staged snapshots outlive
+open-page use and retire only after browsers close. The
+[upload API and config migration](../browser/workspace/README.md#explicit-file-uploads)
+own the concrete input shapes and development checks.
+
 Add Chromium hooks and browser-runtime integration only when measured benefits
 justify their compatibility and maintenance costs. Authority, visibility or
 efficiency already available through existing interfaces is not such a benefit.

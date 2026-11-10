@@ -8,6 +8,11 @@ dispatcher. Restart returns control to the human without starting model calls.
 
 Protocol 4 gives pages separate identities and permissions. Legacy journals and
 omitted `pageId` inputs remain readable through the main-page compatibility path.
+Service config schema 5 adds explicitly selected file uploads, bounded staging and
+site-bound file grants without changing journal replay. The
+[local upload checks](../../browser/workspace/README.md#explicit-file-uploads)
+cover both adapters and human disclosure confirmation; real-site acceptance and
+cross-platform upload qualification remain open.
 The [implementation decision](../../reports/fawn-workspace/20261109-product-client/decision.json)
 binds current development checks, local qualification and rejected promotion.
 Its raw development evidence stays local; the projection is not a portable

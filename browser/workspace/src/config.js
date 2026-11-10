@@ -7,7 +7,7 @@ import { REJECTION_CODES, workspaceError } from './errors.js';
 import { BROWSER_CHANNELS, validateFawnBuild } from './browser-launch.js';
 
 const DEFAULT_CONFIG_URL = new URL('../../../config/fawn-workspace-service.json', import.meta.url);
-const SUPPORTED_SCHEMA_VERSION = 4;
+const SUPPORTED_SCHEMA_VERSION = 5;
 const SUPPORTED_PROTOCOL_VERSION = 4;
 
 const POSITIVE_INTEGER_FIELDS = Object.freeze([
@@ -47,7 +47,7 @@ function invalid(path, expected, received) {
  * @param {object} config
  */
 function validateServiceConfig(config, { platform = process.platform } = {}) {
-  if (![3, SUPPORTED_SCHEMA_VERSION].includes(config?.schemaVersion)) {
+  if (![3, 4, SUPPORTED_SCHEMA_VERSION].includes(config?.schemaVersion)) {
     throw invalid('schemaVersion', SUPPORTED_SCHEMA_VERSION, config?.schemaVersion);
   }
   if (![3, SUPPORTED_PROTOCOL_VERSION].includes(config.protocolVersion)) {
@@ -56,6 +56,14 @@ function validateServiceConfig(config, { platform = process.platform } = {}) {
   for (const field of POSITIVE_INTEGER_FIELDS) {
     const value = readPath(config, field);
     if (!Number.isInteger(value) || value < 1) throw invalid(field, 'positive integer', value);
+  }
+  if (config.schemaVersion >= 5 || config.actionKinds?.includes('upload')) {
+    for (const field of ['maxFilesPerAction', 'maxFileBytes', 'maxStagedBytes', 'maxNameBytes']) {
+      if (!Number.isSafeInteger(config.uploads?.[field]) || config.uploads[field] < 1) {
+        throw invalid(`uploads.${field}`, 'positive safe integer', config.uploads?.[field]);
+      }
+    }
+    if (config.uploads.maxStagedBytes < config.uploads.maxFileBytes) throw invalid('uploads.maxStagedBytes', 'at least maxFileBytes', config.uploads.maxStagedBytes);
   }
   for (const field of NON_EMPTY_LIST_FIELDS) {
     const value = config[field];

@@ -1,7 +1,7 @@
 {
   "$schema": "fawn-workspace-service.schema.json",
-  "schemaVersion": 4,
-  "configVersion": "2026-11-08-workspace-service-v4.1",
+  "schemaVersion": 5,
+  "configVersion": "2026-11-09-workspace-service-v5",
   "protocolVersion": 4,
   "contractPath": "docs/fawn-workspace-contract.md",
   "journal": {
@@ -37,7 +37,8 @@
     "fill",
     "select",
     "submit",
-    "download"
+    "download",
+    "upload"
   ],
   "observationScopes": [
     "page",
@@ -56,11 +57,18 @@
     "element-text-includes",
     "element-text-excludes",
     "input-value-equals",
-    "choice-equals"
+    "choice-equals",
+    "input-files-equal"
   ],
   "reconciliationMethods": [
     "application-state",
     "external-idempotency",
     "human-review"
-  ]
+  ],
+  "uploads": {
+    "maxFilesPerAction": 4,
+    "maxFileBytes": 16777216,
+    "maxStagedBytes": 134217728,
+    "maxNameBytes": 200
+  }
 }

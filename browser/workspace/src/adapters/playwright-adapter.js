@@ -77,11 +77,11 @@ class PlaywrightWorkspaceAdapter {
   /**
    * Perform one admitted mutation. Called only by the service's dispatcher.
    */
-  async execute(workspaceId, request) {
+  async execute(workspaceId, request, uploadFiles) {
     const page = this._page(workspaceId, request.pageId);
     const effect = EFFECTS[request.kind];
     if (!effect) throw new Error(`unsupported action kind ${request.kind}`);
-    return effect.call(this, page, request, workspaceId);
+    return effect.call(this, page, request, workspaceId, uploadFiles);
   }
 
   async listPages(workspaceId) {
@@ -117,6 +117,11 @@ class PlaywrightWorkspaceAdapter {
 }
 
 const EFFECTS = Object.freeze({
+  async upload(page, request, workspaceId, files) {
+    if (!files?.length) throw new Error('Upload bytes must come from trusted dispatch');
+    await page.locator(request.target.selector).setInputFiles(files.map(file => file.path));
+    return { files: files.map(({ fileId, name, byteLength, sha256 }) => ({ fileId, name, byteLength, sha256 })) };
+  },
   async navigate(page, request) {
     const response = await page.goto(request.target.url, { waitUntil: 'load' });
     return { status: response?.status() ?? null, finalUrl: page.url() };

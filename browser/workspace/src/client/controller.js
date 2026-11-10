@@ -155,7 +155,7 @@ export class WorkspaceController {
     });
   }
   delegate(id, input) { return this.exclusive(id, () => this.delegateNow(id, input)); }
-  async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false }) {
+  async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false, uploadFiles }) {
     if (!this.planner) throw Error('Configure FAWN_MODEL and the planner API credential before delegating');
     if (!Array.isArray(pageIds) || !pageIds.length || !Array.isArray(origins) || !origins.length) throw Error('Select pages and exact origins');
     if (!Array.isArray(actionKinds) || !actionKinds.length || typeof task !== 'string' || !task.trim()) throw Error('Select actions and provide a bounded task');
@@ -163,8 +163,9 @@ export class WorkspaceController {
     const before = await this.service.inspect(this.admin(id));
     if (before.actions.some(action => action.isUncertain || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Review unresolved actions before delegating');
     const grantId = `delegation-${randomUUID()}`;
-    await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent', intents: ['delegated-task'],
+    const approved = await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent', intents: ['delegated-task'],
       targetOrigins: origins, actionKinds, pageIds, readRegions: regions,
+      ...(uploadFiles !== undefined ? { uploadFiles } : {}),
       expiresAt: new Date(Date.now() + this.config.delegationMaxAgeMs).toISOString() });
     // A new task must not inherit an earlier delegation's wider access.
     for (const grant of before.grants.filter(value => value.ownerId === 'agent')) await this.service.revokeAuthorization({ ...this.admin(id), grantId: grant.grantId });
@@ -175,7 +176,8 @@ export class WorkspaceController {
     const initialArtifacts = new Set(Object.keys(this.store.get(id).artifacts));
     const visibleArtifacts = new Set(shareRecords ? initialArtifacts : []);
     const startSequence = this.store.journal.records.at(-1)?.seq ?? 0;
-    this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId });
+    this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId,
+      ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) });
     const assertCurrent = () => { if (this.owners.get(id)?.ownerGeneration !== owner.ownerGeneration) throw Error('Agent ownership changed'); };
     const execute = async (tool, input, { callId }) => {
       assertCurrent(); controller.signal.throwIfAborted();
@@ -202,7 +204,8 @@ export class WorkspaceController {
     };
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
       execute, signal: controller.signal, assertCurrent, context: () => investigationContext(this.store.get(id), {
-        task, permissions: { pageIds, origins, regions, actionKinds }, initialArtifacts, startSequence, shareRecords, visibleArtifacts
+        task, permissions: { pageIds, origins, regions, actionKinds,
+          ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) }, initialArtifacts, startSequence, shareRecords, visibleArtifacts
       }) });
     const settled = run.done.then(async () => {
       await this.exclusive(id, async () => {

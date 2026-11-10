@@ -18,6 +18,7 @@ import { issueCredential } from './authority.js';
 import { evaluateConditions, validateConditions } from './conditions.js';
 import { REJECTION_CODES, isWorkspaceError, workspaceError } from './errors.js';
 import { Journal } from './journal.js';
+import { UploadStore, checkUploadTarget } from './uploads.js';
 import {
   ACTION_STATUS,
   OUTCOMES,
@@ -39,6 +40,7 @@ const KIND_COMPLETION_BASIS = Object.freeze({
   fill: 'value-verified',
   select: 'value-verified',
   download: 'artifact-saved',
+  upload: 'files-attached',
 });
 
 // The live-page condition that shows a fill or select took effect.
@@ -150,16 +152,18 @@ class WorkspaceService {
   #adapter;
   #hooks;
   #clock;
+  #uploads;
   #runtime = new Map();
   #ready = false;
 
-  constructor({ journal, state, config, adapter, hooks, clock }) {
+  constructor({ journal, state, config, adapter, hooks, clock, uploads }) {
     this.#journal = journal;
     this.#state = state;
     this.#config = config;
     this.#adapter = adapter;
     this.#hooks = hooks;
     this.#clock = clock;
+    this.#uploads = uploads;
   }
 
   /**
@@ -180,7 +184,8 @@ class WorkspaceService {
         profileRoot: join(stateDir, PROFILE_DIRECTORY),
         artifactRoot: join(stateDir, ARTIFACT_DIRECTORY),
       });
-      const service = new WorkspaceService({ journal, state, config, adapter, hooks, clock });
+      const uploads = new UploadStore(join(stateDir, 'uploads'), config.uploads);
+      const service = new WorkspaceService({ journal, state, config, adapter, hooks, clock, uploads });
       service.#restore();
       return service;
     } catch (error) {
@@ -319,7 +324,7 @@ class WorkspaceService {
   }
 
   async grantAuthorization({ workspaceId, adminCredential, grantId, ownerId, intents, actionKinds,
-    targetOrigins, expiresAt = null, pageIds, readRegions }) {
+    targetOrigins, expiresAt = null, pageIds, readRegions, uploadFiles }) {
     const workspace = this.#workspace(workspaceId);
     authenticateAdmin(workspace, adminCredential);
     for (const [path, list] of [['intents', intents], ['actionKinds', actionKinds], ['targetOrigins', targetOrigins]]) {
@@ -357,14 +362,23 @@ class WorkspaceService {
     if (workspace.scopedReads && (!pageIds || readRegions === undefined)) {
       throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Scoped workspaces require pageIds and readRegions (null means whole page)');
     }
+    if (actionKinds.includes('upload') !== (uploadFiles !== undefined)) {
+      throw workspaceError(REJECTION_CODES.INVALID_COMMAND, 'Upload grants require explicitly selected uploadFiles; other grants cannot select files');
+    }
     return this.#runtimeFor(workspaceId).mutex.run(() => {
-      this.#append(RECORD_TYPES.AUTHORIZATION_GRANTED, {
-        workspaceId,
-        grantId,
-        grant: { ownerId, intents, actionKinds, targetOrigins: origins, expiresAt, ...(pageIds ? { pageIds } : {}),
-          ...(readRegions !== undefined ? { readRegions } : {}) },
-      });
-      return { grantId };
+      const files = uploadFiles === undefined ? [] : this.#uploads.stage(uploadFiles);
+      try {
+        this.#append(RECORD_TYPES.AUTHORIZATION_GRANTED, {
+          workspaceId,
+          grantId,
+          grant: { ownerId, intents, actionKinds, targetOrigins: origins, expiresAt, ...(pageIds ? { pageIds } : {}),
+            ...(readRegions !== undefined ? { readRegions } : {}), ...(files.length ? { uploadFiles: files } : {}) },
+        });
+      } catch (error) {
+        this.#uploads.discard(files);
+        throw error;
+      }
+      return { grantId, ...(files.length ? { uploadFiles: files } : {}) };
     });
   }
 
@@ -525,6 +539,10 @@ class WorkspaceService {
           count: element.count,
         });
       }
+      if (request.kind === 'upload') {
+        const grant = workspace.grants.get(request.grantId);
+        checkUploadTarget(element, this.#uploads.resolve(grant, request.params.fileIds));
+      }
       targetDigest = element.digest;
     }
     const preconditions = await evaluateConditions(request.preconditions ?? [], probe);
@@ -603,7 +621,9 @@ class WorkspaceService {
   async #performEffect(workspaceId, request) {
     let effect;
     try {
-      effect = await withTimeout(this.#adapter.execute(workspaceId, request), this.#config.dispatch.actionTimeoutMs);
+      const uploadFiles = request.kind === 'upload'
+        ? this.#uploads.resolve(this.#workspace(workspaceId).grants.get(request.grantId), request.params.fileIds) : null;
+      effect = await withTimeout(this.#adapter.execute(workspaceId, request, uploadFiles), this.#config.dispatch.actionTimeoutMs);
     } catch (error) {
       return {
         outcome: OUTCOMES.UNKNOWN,
@@ -612,6 +632,10 @@ class WorkspaceService {
       };
     }
     this.#hooks.afterEffect?.(request);
+    if (request.kind === 'upload') {
+      const attached = await this.#awaitValue(workspaceId, request, effect);
+      if (attached.outcome !== OUTCOMES.COMPLETED || !request.completion?.completedWhen?.length) return attached;
+    }
     const completion = request.completion;
     if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request);
     if (VALUE_CONDITIONS[request.kind]) return this.#awaitValue(workspaceId, request, effect);
@@ -625,7 +649,10 @@ class WorkspaceService {
    * Waits count poll intervals rather than clock time, so an injected clock cannot stall them.
    */
   async #awaitValue(workspaceId, request, effect) {
-    const conditions = [{ kind: VALUE_CONDITIONS[request.kind], selector: request.target.selector, value: request.params.value }];
+    const conditions = request.kind === 'upload'
+      ? [{ kind: 'input-files-equal', selector: request.target.selector,
+        files: effect.files.map(({ name, byteLength }) => ({ name, byteLength })) }]
+      : [{ kind: VALUE_CONDITIONS[request.kind], selector: request.target.selector, value: request.params.value }];
     const probe = this.#probe(workspaceId, request.pageId, request);
     const { completionTimeoutMs, completionPollMs, valueSettleMs } = this.#config.dispatch;
     const pause = () => new Promise((resolve) => setTimeout(resolve, completionPollMs));
@@ -883,7 +910,11 @@ class WorkspaceService {
   async close() {
     this.#ready = false;
     await this.#adapter.close();
-    this.#journal.close();
+    const retained = new Set([...this.#state.workspaces.values()].flatMap(workspace => [...workspace.grants.values()]
+      .filter(grant => grant.expiresAt === null || Date.parse(grant.expiresAt) > this.#nowMs())
+      .flatMap(grant => (grant.uploadFiles ?? []).map(file => file.fileId))));
+    try { this.#uploads.retireUnused(retained); }
+    finally { this.#journal.close(); }
   }
 }
 

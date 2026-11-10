@@ -15,8 +15,7 @@ Workspace observation, action and recovery above Chromium.
 
 ## Scope
 
-- Shared service, page-bound Playwright/raw-CDP adapters, human control UI,
-  investigation client, workflows, qualification and baseline-comparison harness.
+- Service, page-bound adapters, human/investigation clients, workflows and qualification/comparison harnesses.
 
 ## Contracts
 
@@ -34,10 +33,10 @@ Outputs:
 
 - Automated mutations pass trusted dispatch.
 - Pages bind observations, targets and grants; popups inherit no grant.
-- Clients own planning/records; service owns authority and effect truth.
+- Upload grants bind selected bytes to sites; attachment alone proves no business acceptance.
+- Client-owned planning/records; service-owned authority/effect truth.
 - Persist owner generations; adapters reject stale commands identically.
-- Completed/failed/unknown outcomes survive restart/handoff; missing acknowledgment
-  never authorizes resubmission.
+- Completed/failed/unknown outcomes survive restart/handoff; missing acknowledgment never authorizes retries.
 - Research/form-submission/export behave consistently.
 - Workspace acceptance excludes browser/GPU recovery and artwork receipts.
 - Adapters enforce selected build/runtime closure without fallback; launch proves no GPU ownership.
@@ -47,14 +46,14 @@ Outputs:
 ## Acceptance
 
 - Pass contract behavioral gates and competent-baseline comparison.
-- Evidence: a full [qualification](README.md#qualification) result admitted by
-  `qualification/validate.js` for committed source, and a frozen-criteria comparison.
+- Evidence: full [qualification](README.md#qualification) admitted by
+  `qualification/validate.js` for committed source, plus frozen-criteria comparison.
   [Development](test/run-tests.js) and [policy tests](../../bench/tests/test_fawn_workspace_strategy.py)
   replace neither.
 
 ## Non-goals
 
-- Model planning inside trusted dispatch, implicit resubmission or atomic external effects.
+- Model planning in dispatch, implicit resubmission or external atomicity.
 
 ## Freedom
 

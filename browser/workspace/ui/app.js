@@ -149,8 +149,19 @@ $('#delegate-form').onsubmit = event => { event.preventDefault(); act(async () =
   if (data.has('navigate')) actionKinds.push('navigate');
   if (data.has('interact')) actionKinds.push('click', 'fill', 'select');
   if (data.has('submit')) actionKinds.push('submit'); if (data.has('download')) actionKinds.push('download');
-  await command('delegate', { pageIds: [...selectedPages], origins: data.get('origins').split(',').map(value => value.trim()).filter(Boolean),
+  const files = [...event.target.elements.uploadFiles.files];
+  const origins = data.get('origins').split(',').map(value => value.trim()).filter(Boolean);
+  if (files.length && !confirm(`Allow this task to disclose ${files.map(file => file.name).join(', ')} to ${origins.join(', ')}? Attachment can send the bytes immediately.`)) return;
+  const uploadFiles = await Promise.all(files.map(file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(Error(`Cannot read ${file.name}`));
+    reader.onload = () => resolve({ name: file.name, base64: reader.result.slice(reader.result.indexOf(',') + 1) });
+    reader.readAsDataURL(file);
+  })));
+  if (uploadFiles.length) actionKinds.push('upload');
+  await command('delegate', { ...(uploadFiles.length ? { uploadFiles } : {}), pageIds: [...selectedPages], origins: data.get('origins').split(',').map(value => value.trim()).filter(Boolean),
     regions: data.get('regions').trim() ? [data.get('regions').trim()] : null, actionKinds, shareRecords: data.has('shareRecords'), task: data.get('task') });
+  event.target.elements.uploadFiles.value = '';
 }); };
 $('#record-form').onsubmit = event => { event.preventDefault(); act(async () => {
   const data = new FormData(event.target); await command('record', { kind: data.get('kind'), text: data.get('text'), dependsOn: data.getAll('dependsOn') }); event.target.reset();

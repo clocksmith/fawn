@@ -1,7 +1,7 @@
 // Product planner port. It proposes tools; the trusted service decides what may execute.
 export const PLANNER_TOOLS = Object.freeze({
   observe: 'Read a selected page. Input: pageId.',
-  act: 'Execute an action using the latest observation. Input: pageId, kind, target (handle or url), params, effect, completion. Never guess a handle.',
+  act: 'Execute an action using the latest observation. Input: pageId, kind, target (handle or url), params, effect, completion. Never guess a handle. Upload requires an observed file input, params.fileIds from permissions.uploadFiles, effect.external=true with a unique effectKey, and completion.completedWhen. input-files-equal conditions take selector and files [{name,byteLength}]. File attachment may disclose bytes immediately; never retry an uncertain upload.',
   capture: 'Save the latest observation as evidence. Input: pageId.',
   repository_files: 'List files under the human-selected repository.',
   repository_read: 'Read and save one repository file as evidence. Input: path.',

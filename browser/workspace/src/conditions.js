@@ -17,9 +17,19 @@ const CONDITION_FIELDS = Object.freeze({
   'element-text-excludes': ['selector', 'value'],
   'input-value-equals': ['selector', 'value'],
   'choice-equals': ['selector', 'value'],
+  'input-files-equal': ['selector'],
 });
 
 const CONDITION_EVALUATORS = Object.freeze({
+  'input-files-equal': async (probe, condition) => {
+    const element = await probe.element(condition.selector);
+    const files = element.files ?? null;
+    const established = element.count === SINGLE_MATCH && element.inputType === 'file'
+      && Array.isArray(files) && files.length === condition.files.length
+      && files.every((file, index) => file.name === condition.files[index].name
+        && file.byteLength === condition.files[index].byteLength);
+    return { established, observed: { count: element.count, files } };
+  },
   'url-equals': async (probe, condition) => {
     const url = await probe.url();
     return { established: url === condition.value, observed: url };
@@ -97,6 +107,11 @@ function validateConditions(conditions, allowedKinds, path) {
           received: condition[field],
         });
       }
+    }
+    if (condition.kind === 'input-files-equal' && (!Array.isArray(condition.files) || !condition.files.length
+      || condition.files.some(file => typeof file?.name !== 'string' || !file.name
+        || !Number.isSafeInteger(file.byteLength) || file.byteLength < 0))) {
+      throw workspaceError(REJECTION_CODES.INVALID_COMMAND, `${conditionPath}.files: expected file names and byte lengths`);
     }
   });
 }

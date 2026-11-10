@@ -15,6 +15,7 @@
     "credentials",
     "observation",
     "dispatch",
+    "uploads",
     "browser",
     "actionKinds",
     "observationScopes",
@@ -24,7 +25,7 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "fawn-workspace-service.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 4 },
+    "schemaVersion": { "type": "integer", "const": 5 },
     "configVersion": { "type": "string", "minLength": 1 },
     "protocolVersion": {
       "type": "integer",
@@ -70,6 +71,17 @@
         "completionTimeoutMs": { "type": "integer", "minimum": 1 },
         "completionPollMs": { "type": "integer", "minimum": 1 },
         "valueSettleMs": { "type": "integer", "minimum": 1, "description": "How long a filled or chosen value must stay on the page before it counts as kept; polled every completionPollMs." }
+      }
+    },
+    "uploads": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxFilesPerAction", "maxFileBytes", "maxStagedBytes", "maxNameBytes"],
+      "properties": {
+        "maxFilesPerAction": { "type": "integer", "minimum": 1 },
+        "maxFileBytes": { "type": "integer", "minimum": 1 },
+        "maxStagedBytes": { "type": "integer", "minimum": 1 },
+        "maxNameBytes": { "type": "integer", "minimum": 1 }
       }
     },
     "browser": {
@@ -219,7 +231,7 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "enum": ["navigate", "click", "fill", "select", "submit", "download"]
+        "enum": ["navigate", "click", "fill", "select", "submit", "download", "upload"]
       }
     },
     "observationScopes": {
@@ -251,7 +263,8 @@
           "element-text-includes",
           "element-text-excludes",
           "input-value-equals",
-          "choice-equals"
+          "choice-equals",
+          "input-files-equal"
         ]
       }
     },

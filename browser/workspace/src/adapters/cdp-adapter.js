@@ -281,10 +281,10 @@ class CdpWorkspaceAdapter {
   /**
    * Perform one admitted mutation. Called only by the service's dispatcher.
    */
-  async execute(workspaceId, request) {
+  async execute(workspaceId, request, uploadFiles) {
     const effect = EFFECTS[request.kind];
     if (!effect) throw new Error(`unsupported action kind ${request.kind}`);
-    return effect.call(this, request.pageId ? { workspaceId, pageId: request.pageId } : workspaceId, request);
+    return effect.call(this, request.pageId ? { workspaceId, pageId: request.pageId } : workspaceId, request, uploadFiles);
   }
 
   async openPage(workspaceId, pageId) {
@@ -332,6 +332,20 @@ class CdpWorkspaceAdapter {
 }
 
 const EFFECTS = Object.freeze({
+  async upload(workspaceId, request, files) {
+    if (!files?.length) throw new Error('Upload bytes must come from trusted dispatch');
+    const { cdp, sessionId } = this._entry(workspaceId);
+    const { result, exceptionDetails } = await cdp.send('Runtime.evaluate', {
+      expression: `document.querySelector(${JSON.stringify(request.target.selector)})`,
+    }, sessionId);
+    if (exceptionDetails || !result.objectId) throw new Error('File input no longer exists');
+    try {
+      await cdp.send('DOM.setFileInputFiles', { objectId: result.objectId, files: files.map(file => file.path) }, sessionId);
+    } finally {
+      await cdp.send('Runtime.releaseObject', { objectId: result.objectId }, sessionId);
+    }
+    return { files: files.map(({ fileId, name, byteLength, sha256 }) => ({ fileId, name, byteLength, sha256 })) };
+  },
   async navigate(workspaceId, request) {
     const { cdp, sessionId } = this._entry(workspaceId);
     const loaded = cdp.waitForEvents([{ name: 'loaded', method: 'Page.loadEventFired',

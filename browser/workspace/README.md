@@ -35,6 +35,46 @@ scripted automation. Development tests are not the behavioral gates.
 Tunables and protocol coverage come from
 [`config/fawn-workspace-service.json`](../../config/fawn-workspace-service.json).
 
+## Explicit file uploads
+
+The human client can select files when delegating a task. It confirms the filenames
+and allowed origins before sharing them, then clears the selection for the next
+task. A site can read an attached file immediately; no final submit is necessary.
+No file or site is implicitly authorized by a learned workflow.
+
+Trusted hosts may instead pass `uploadFiles: [{ name, base64 }]` to an administrator's
+`grantAuthorization`, with `upload` in `actionKinds`. The result returns opaque
+`fileId`, name, byte length and SHA-256 descriptors. Agent actions use
+`kind: 'upload'`, an observed native file-input target (including hidden inputs),
+`params: { fileIds: [...] }`, `effect: { external: true, effectKey }`, and explicit
+`completion.completedWhen`. No local path is accepted from an agent. A custom
+button or drop zone needs an actual file input; an arbitrary non-file element
+cannot receive bytes through this action.
+
+The service snapshots selected bytes outside the journal, enforces configured
+file/count/staging limits, rechecks authority and the snapshot hash before dispatch,
+and uses Playwright or CDP without a native chooser. It first verifies the input's
+filename/size list remains attached for the configured settling interval, then
+evaluates the caller's completion conditions. `input-files-equal` conditions take
+`selector` and `files: [{ name, byteLength }]`; that establishes attachment, not a
+server receipt or business acceptance. Sites that clear the input before this
+check remain unverified, even if they may already have received bytes. Missing
+acknowledgments remain unknown and never authorize automatic retry.
+
+Revocation stops queued actions, but cannot retract already disclosed bytes.
+Snapshots remain available to open pages for later submission. After all browsers
+close, unused/revoked snapshots are retired; live grants retain snapshots for
+restart. Staging exhaustion rejects new selections rather than evicting a file
+an open page could still use.
+
+Service config schema 5 adds `uploads` limits and optional upload grants while
+retaining protocol 4 and existing journal replay. Config schemas 3 and 4 still
+load without uploads. The client request limit includes base64 expansion. Focused
+checks: `node browser/workspace/test/unit/uploads.test.js`,
+`node browser/workspace/test/browser/uploads.test.js`, and
+`node browser/workspace/test/browser/product-uploads.test.js` from the repo root.
+These local controlled fixtures do not qualify real-site uploads or model quality.
+
 ## Protocol v3
 
 The contract's semantic names map to these concrete rules.
@@ -52,7 +92,7 @@ The contract's semantic names map to these concrete rules.
   names the build both adapters launch: Playwright's headless shell, Chromium,
   installed Google Chrome, or an explicit hash-bound Fawn build. Automated
   mutations are limited to `actionKinds` in the config: `navigate`, `click`,
-  `fill`, `select`, `submit` and `download`. A control that submits a form must
+  `fill`, `select`, `submit`, `download` and explicitly authorized `upload`. A control that submits a form must
   use `submit`. Anything else is `unsupported-action-kind`. Human browser
   activity remains possible and shows up as page changes.
 - **Authorization scope.** An admin grant names one owner, a set of intents,

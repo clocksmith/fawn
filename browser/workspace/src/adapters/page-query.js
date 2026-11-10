@@ -102,6 +102,9 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       value: 'value' in node ? String(node.value) : null,
       href: node.href ?? null,
       formAction,
+      ...(node.tagName === 'INPUT' && node.type === 'file' ? { inputType: 'file',
+        files: [...node.files].map(file => ({ name: file.name, byteLength: file.size })),
+        multiple: node.multiple, disabled: node.matches(':disabled'), accept: node.accept } : {}),
     };
   };
   if (mode === 'element') {
@@ -295,6 +298,9 @@ function buildProbe(result) {
     text: result.fullText,
     value: result.element.value,
     choice: result.choice ?? null,
+    ...(result.element.inputType === 'file' ? { tag: result.element.tag, inputType: 'file',
+      files: result.element.files, multiple: result.element.multiple, disabled: result.element.disabled,
+      accept: result.element.accept } : {}),
   };
 }
 

@@ -7,6 +7,7 @@ import { generationForCredential, credentialMatches } from './authority.js';
 import { validateConditions } from './conditions.js';
 import { REJECTION_CODES, workspaceError } from './errors.js';
 import { ACTION_STATUS, OUTCOMES, latestReconciliation } from './state.js';
+import { validateUploadParams } from './uploads.js';
 
 const URL_TARGET_KINDS = Object.freeze(['navigate']);
 const VALUE_KINDS = Object.freeze(['fill', 'select']);
@@ -117,6 +118,10 @@ function validateActionShape(command, config) {
     requireString(command.target?.digest, 'target.digest');
   }
   if (VALUE_KINDS.includes(command.kind)) requireString(command.params?.value, 'params.value');
+  if (command.kind === 'upload') {
+    validateUploadParams(command.params, config);
+    if (command.effect?.external !== true) reject(REJECTION_CODES.INVALID_COMMAND, 'Upload discloses file bytes; declare an external effect and effectKey');
+  }
   if (!Number.isInteger(command.observationVersion)) {
     reject(REJECTION_CODES.INVALID_COMMAND, 'observationVersion: expected integer', {
       path: 'observationVersion',
@@ -194,7 +199,9 @@ function grantsForIntent(workspace, command, nowMs) {
 function authorize(forIntent, command, cited) {
   const origins = touchedOrigins(command, cited);
   const grant = forIntent.find((candidate) => candidate.actionKinds.includes(command.kind)
+    && (!command.grantId || command.grantId === candidate.grantId)
     && (!candidate.pageIds || candidate.pageIds.includes(command.pageId ?? 'main'))
+    && (command.kind !== 'upload' || command.params.fileIds.every(id => candidate.uploadFiles?.some(file => file.fileId === id)))
     && origins.every((origin) => origin !== null && candidate.targetOrigins.includes(origin)));
   if (!grant) {
     reject(REJECTION_CODES.UNAUTHORIZED_TARGET, `${command.kind} on ${origins.join(', ')}`, {
