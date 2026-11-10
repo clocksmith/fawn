@@ -12,6 +12,7 @@ process.once('message', async message => {
   const store = new InvestigationStore(join(directory, `run-${process.pid}`));
   const persistent = new WorkflowStore({ directory: join(directory, 'cache'), ownerScope,
     limits: { maxNodes: 32, maxEdges: 32, maxSteps: 8 }, maxBytes: message.maxBytes ?? 100000,
+    attemptMaxBytes: message.attemptMaxBytes ?? 100000,
     lockWaitMs: 200, lockRetryMs: 5, sync: message.sync ? new WorkflowSync({ ...message.sync, ownerScope }) : null });
   let value = '', version = 0, checks = 0;
   const calls = [];

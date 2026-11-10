@@ -7,10 +7,11 @@ import { PrivateJsonFile } from './private-json-file.js';
 import { canonicalJson, sha256Hex } from '../journal.js';
 import { TraceDag } from './trace-dag.js';
 import { runWorkflow } from './workflow-agent.js';
+import { WorkflowAttempts, attemptErrorCode } from './workflow-attempts.js';
 
 const VERSION = 1;
 const HASH = /^[a-f0-9]{64}$/;
-const SOURCE_FILES = ['private-json-file.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'field-group-scope.js', 'controller.js',
+const SOURCE_FILES = ['private-json-file.js', 'workflow-attempts.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'field-group-scope.js', 'controller.js',
   'agent.js', '../adapters/page-query.js', '../service.js'];
 const exactKeys = (value, keys) => value && typeof value === 'object'
   && !Array.isArray(value) && Object.keys(value).sort().join() === [...keys].sort().join();
@@ -29,7 +30,7 @@ const RUN_KEYS = ['runId', 'startedAt', 'completedAt', 'mode', 'completed', 'rev
  * Limits and lock timing are explicit host policy. The whole export, including key, is sensitive.
  */
 export class WorkflowStore {
-  constructor({ directory, ownerScope, limits, maxBytes, lockWaitMs, lockRetryMs, sync = null }) {
+  constructor({ directory, ownerScope, limits, maxBytes, lockWaitMs, lockRetryMs, sync = null, attemptMaxBytes = maxBytes }) {
     if (typeof process.getuid !== 'function') throw Error('Private workflow store requires POSIX permissions');
     if (!identifier(ownerScope) || !identifier(directory)
       || [maxBytes, lockWaitMs, lockRetryMs].some(value => !Number.isSafeInteger(value) || value < 1)) {
@@ -41,6 +42,8 @@ export class WorkflowStore {
     this.lockPath = join(this.directory, 'workflows.lock');
     this.file = new PrivateJsonFile(this.path, { maxBytes, lockWaitMs, lockRetryMs });
     this.file.lockPath = this.lockPath;
+    this.attempts = new WorkflowAttempts(join(this.directory, 'workflow-attempts.private.json'), {
+      maxBytes: attemptMaxBytes, lockWaitMs, lockRetryMs });
     if (sync && sync.ownerScope !== ownerScope) throw Error('Sync owner differs from local owner');
     this.sync = sync;
     this.ownerScope = ownerScope;
@@ -123,6 +126,12 @@ export class WorkflowStore {
     const runs = state.workflowRuns.filter(run => run.workflowId === this.#namespace(scope)).map(run => ({ ...run,
       baseGraph: this.sync.version(scope, state.workflowVersions[run.baseVersion].dag),
       resultGraph: this.sync.version(scope, state.workflowVersions[run.resultVersion].dag) }));
+    runs.push(...this.readAttempts().filter(attempt => attempt.scopeHash === this.#namespace(scope)
+      && attempt.status !== 'pending').map(attempt => ({
+      // Separate deterministic UUID-shaped receipt identity; legacy run IDs remain immutable.
+      runId: sha256Hex(`workflow-attempt/v1:${attempt.runId}`).slice(0, 32)
+        .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5'),
+      schema: 'fawn.workflow-attempt/v1', attempt })));
     const remote = await this.sync.exchange(scope, local.dag, runs, this.limits);
     return this.#transaction(state => {
       const id = this.#namespace(scope), pointer = state.workflows[id];
@@ -163,7 +172,45 @@ export class WorkflowStore {
         versionId: current.currentVersion, receiptStored: true };
     });
   }
-  async run({ accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, ...options }) {
+  readAttempts() { return this.attempts.records(sha256Hex(this.ownerScope)); }
+  async run(input) {
+    const runId = randomUUID(), startedAt = new Date().toISOString();
+    const scopeHash = identifier(input?.accountScope) && identifier(input?.template)
+      ? this.#namespace(input) : null;
+    const accounting = { runId, startedAt, execution: null };
+    // Fail closed if even the start cannot be persisted. No verifier, model or browser is called.
+    try {
+      await this.attempts.begin({ runId, startedAt, ownerHash: sha256Hex(this.ownerScope), scopeHash,
+        mode: ['learn', 'reuse', 'fresh'].includes(input?.mode) ? input.mode : null });
+    } catch (error) {
+      error.attempt = { runId, receiptStored: false, code: attemptErrorCode(error) };
+      throw error;
+    }
+    let result;
+    try { result = await this.#run(input, accounting); }
+    catch (cause) {
+      const error = cause instanceof Error ? cause : Error('Workflow attempt failed');
+      try {
+        await this.attempts.update(runId, { status: 'rejected', stage: 'finished', failureCode: attemptErrorCode(error) });
+        error.attempt = { runId, receiptStored: true };
+      } catch (storageError) { error.attempt = { runId, receiptStored: false, code: attemptErrorCode(storageError) }; }
+      throw error;
+    }
+    let attempt;
+    try {
+      const persistence = result.persistence;
+      await this.attempts.update(runId, { status: 'finished', stage: 'finished', execution: accounting.execution,
+        publication: { status: persistence.status, code: persistence.code ?? null,
+          revision: persistence.revision ?? null, versionId: persistence.versionId ?? null } });
+      attempt = { runId, receiptStored: true };
+    } catch (error) { attempt = { runId, receiptStored: false, code: attemptErrorCode(error) }; }
+    if (this.sync && attempt.receiptStored) {
+      try { result.synchronization = await this.synchronize(input); }
+      catch (error) { result.synchronization = { status: 'pending', code: error.code ?? 'workflow-sync-failed' }; }
+    }
+    return { ...result, attempt };
+  }
+  async #run({ accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, ...options }, accounting) {
     if (typeof verifyAccount !== 'function' || typeof options.verifyReview !== 'function'
       || !identifier(verificationId) || !hashMapValid(taskSourceHashes)) {
       throw Error('Trusted account and review verifiers are required');
@@ -181,6 +228,13 @@ export class WorkflowStore {
       throw Error('Explicit origin, slot-to-field rules and intermediate click policy are required');
     }
     const scope = { accountScope, template: options.template };
+    const sourceHashes = Object.fromEntries(SOURCE_FILES.map(path => [path,
+      sha256Hex(readFileSync(new URL(path, import.meta.url)))]));
+    accounting.context = { verificationId,
+      policyHash: sha256Hex(canonicalJson(fieldGroups ? { disclosure: policy, fieldGroups } : policy)),
+      sourceHashes, taskSourceHashes: frozenTaskSources,
+      planner: { declaredModel: options.planner?.identity?.model ?? null, observedModels: [] } };
+    await this.attempts.update(accounting.runId, { context: accounting.context });
     const identity = { service: options.service, owner: options.owner, pageId: options.pageId };
     const assertContext = async () => {
       options.signal.throwIfAborted();
@@ -196,16 +250,15 @@ export class WorkflowStore {
       }
     }
     const checkout = await this.checkout(scope);
-    const sourceHashes = Object.fromEntries(SOURCE_FILES.map(path => [path,
-      sha256Hex(readFileSync(new URL(path, import.meta.url)))]));
     const observedModels = new Set();
     const planner = { identity: options.planner?.identity, next: async (...args) => {
       const proposal = await options.planner.next(...args);
       for (const model of proposal.usage?.models ?? []) observedModels.add(model);
       return proposal;
     } };
-    const startedAt = new Date().toISOString();
+    const startedAt = accounting.startedAt;
     let learned = null;
+    await this.attempts.update(accounting.runId, { stage: 'executing' });
     const result = await runWorkflow({ ...options, fieldGroups, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
       intermediateClicks: policy.intermediateClicks, assertContext,
       authorizeStep: async step => {
@@ -218,10 +271,16 @@ export class WorkflowStore {
       publishTrace: async trace => { learned = trace; },
     });
     let persistence;
+    accounting.execution = { completed: result.completed, reviewVerified: result.verification?.completed === true,
+      modelCalls: result.modelCalls, cacheSteps: result.cacheSteps, elapsedMs: result.elapsedMs,
+      fallbackReason: result.fallbackReason, interventionRequests: result.interventionRequests };
+    accounting.context.planner.observedModels = [...observedModels];
     try {
+      await this.attempts.update(accounting.runId, { stage: 'execution-settled', execution: accounting.execution,
+        context: accounting.context });
       if (result.completed && learned) await assertContext();
       persistence = await this.#complete(scope, checkout, result.completed ? learned : null, {
-        runId: randomUUID(), startedAt, completedAt: new Date().toISOString(), mode: options.mode,
+        runId: accounting.runId, startedAt, completedAt: new Date().toISOString(), mode: options.mode,
         completed: result.completed, reviewVerified: result.verification?.completed === true,
         verificationId, policyHash: sha256Hex(canonicalJson(fieldGroups ? { disclosure: policy, fieldGroups } : policy)), sourceHashes, taskSourceHashes: frozenTaskSources,
         planner: { declaredModel: options.planner?.identity?.model ?? null, observedModels: [...observedModels] },
@@ -232,10 +291,6 @@ export class WorkflowStore {
       // A verified browser result remains true even if saving fails. Never rerun its effects.
       persistence = { status: 'failed', receiptStored: false,
         code: error.code ?? 'workflow-publication-failed', detail: error.message };
-    }
-    if (this.sync && persistence.receiptStored) {
-      try { synchronization = await this.synchronize(scope); }
-      catch (error) { synchronization = { status: 'pending', code: error.code ?? 'workflow-sync-failed' }; }
     }
     return { ...result, persistence, synchronization };
   }

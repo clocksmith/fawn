@@ -105,11 +105,17 @@ try {
   crashing.child.kill('SIGKILL');
   assert.equal((await crashing.exited).signal, 'SIGKILL');
   assert.equal(bytes(), beforeCrash, 'Interrupted publication preserves exact prior bytes');
+  const incomplete = persistent.readAttempts().filter(attempt => attempt.status === 'pending');
+  assert.equal(incomplete.length, 1);
+  assert.equal(incomplete[0].stage, 'execution-settled');
+  assert.equal(incomplete[0].execution.completed, true,
+    'Crash between execution and publication retains the settled task independently');
   const afterCrash = await run({ mode: 'reuse' });
   assert.equal(afterCrash.result.completed, true); assert.equal(afterCrash.result.modelCalls, 0);
   const locked = await run({ label: 'New branch' });
   assert.equal(locked.result.completed, true, 'Successful task and failed publication are distinct');
   assert.equal(locked.result.persistence.code, 'workflow-store-busy');
+  assert.equal(locked.result.attempt.receiptStored, true);
   assert.equal(bytes(), beforeCrash);
   // Explicit offline recovery: all writers are stopped. Production never guesses or steals locks.
   assert.equal(children.size, 0);

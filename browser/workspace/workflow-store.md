@@ -105,12 +105,57 @@ a provider attestation. Hashes cover persistence/execution modules and task
 sources declared by the trusted host. These are development records, not
 benchmark qualification.
 
+## Complete attempt accounting
+
+`workflow-attempts.private.json` is the independent, owner-only
+[version-1 attempt ledger](workflow-attempts.schema.json). Every `WorkflowStore.run`
+allocates an ID and persists a pending attempt before task validation or the first
+account verifier. Invalid policy and account rejection therefore leave an attempt
+without initializing a reusable graph for an unverified account. Rejections still
+throw, with `{runId, receiptStored, code?}` on `error.attempt`.
+
+The ledger records preflight, execution start, independently verified execution
+settlement, and final publication status. It persists the execution checkpoint
+before the publication transaction. Graph limits, account changes, lock contention
+or write failure cannot erase that checkpoint. Source/policy hashes and declared
+and observed planner identities bind the attempt; error codes are retained without
+raw exception messages, applicant values, observations or credentials.
+
+Successful calls return `attempt` separately from `persistence`. The former says
+whether the final attempt receipt was stored; the latter retains its existing
+meaning for the graph transaction and legacy `workflowRuns` projection. Thus a
+publication failure can return `persistence.receiptStored: false` alongside
+`attempt.receiptStored: true`, while a verified browser result stays completed.
+This is not a claim that recording can succeed when storage fails. Failure to
+persist a start prevents browser work. A later accounting I/O failure is surfaced
+explicitly and cannot cause browser effects to repeat.
+
+Read attempts through `WorkflowStore.readAttempts()`. A pending record may belong
+to a live process or an interrupted run; opening the store does not guess which,
+complete the record, or resume its work. The workspace journal remains the
+authority for dispatched effects. The attempt's last checkpoint is evidence for
+reconciliation, not permission to retry. Each private file uses atomic replacement
+and its own cross-process lock; crashed locks require explicit offline recovery.
+
+`attemptMaxBytes` optionally bounds the attempt file independently; when omitted,
+the caller's `maxBytes` applies separately to each file. At capacity, recording
+refuses rather than evicting unresolved attempts. Existing graph/store version 1
+needs no rewrite; historical attempts are not invented or backfilled.
+
+During authorized synchronization, terminal attempts for that account/template
+are encrypted as `fawn.workflow-attempt/v1` receipts with stable, distinct receipt
+IDs. The registry's opaque version-1 protocol is unchanged. Pending attempts stay
+local until explicitly settled; a preflight rejection does not initiate account
+synchronization. The client investigation activity includes the attempt ID on
+workflow completion or rejection.
+
 Publication takes an exclusive `O_CREAT | O_EXCL` lock, reloads the latest state
 inside it, checks namespace/key lineage and merges only verified records.
 Concurrent traces retain both sets of edges; conflicting actions remain
 ambiguous at replay. A changed graph creates a new immutable version and advances
-the pointer. An identical graph keeps its revision. Each completed attempt adds
-a run receipt in the same transaction.
+the pointer. An identical graph keeps its revision. Each completed graph transaction
+adds its legacy run receipt atomically. The independent attempt ledger also covers
+early rejection and failed publication.
 
 The transaction writes a unique private temporary file, fsyncs it, renames it over
 the current file, then fsyncs the directory. Readers see a complete old or new
@@ -144,6 +189,8 @@ graph and key on the client before upload; row access rules alone do not do that
 
 ```sh
 node browser/workspace/test/unit/workflow-store.test.js
+node browser/workspace/test/unit/workflow-attempts.test.js
+node browser/workspace/test/unit/workflow-sync.test.js
 node browser/workspace/test/browser/workflow-store.test.js
 ```
 

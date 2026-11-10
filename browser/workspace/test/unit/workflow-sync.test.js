@@ -51,6 +51,13 @@ try {
   const other = new WorkflowSync({ ...syncConfig(), token: otherToken, ownerScope: 'person-a' });
   assert.equal((await other.request('GET', id.id)).revision, 0);
   const current = await sync.request('GET', id.id);
+  const namespacePrefix = registry.key(clients[0].workspaceId, id.id) + ':';
+  const sealedAttempts = Object.entries(registry.read().workflowRuns).filter(([key]) => key.startsWith(namespacePrefix))
+    .map(([key, entry]) => sync.open(id, 'run', key.slice(namespacePrefix.length), entry.blob))
+    .filter(receipt => receipt.schema === 'fawn.workflow-attempt/v1');
+  assert.ok(sealedAttempts.length > 0);
+  assert.ok(sealedAttempts.every(receipt => receipt.attempt.status !== 'pending'
+    && receipt.attempt.context.sourceHashes['workflow-attempts.js']));
   const dag = sync.open(id, 'graph', current.versionId, current.blob);
   assert.throws(() => sync.open(id, 'graph', '0'.repeat(64), current.blob));
   assert.throws(() => TraceDag.merge(dag, new TraceDag(limits).export(), limits));

@@ -142,8 +142,12 @@ export class WorkspaceController {
         verifyReview: () => verifyReview({ service: this.service, owner, pageId, inputs: profile }),
       }).then(result => {
         this.store.activity(id, { event: 'personal-workflow-finished', completed: result.completed,
-          persistence: result.persistence, modelCalls: result.modelCalls, cacheSteps: result.cacheSteps });
+          persistence: result.persistence, attempt: result.attempt, modelCalls: result.modelCalls, cacheSteps: result.cacheSteps });
         return result;
+      }).catch(error => {
+        this.store.activity(id, { event: 'personal-workflow-rejected', attempt: error.attempt ?? null,
+          code: error.code ?? 'workflow-attempt-failed' });
+        throw error;
       }).finally(() => this.exclusive(id, async () => {
         await this.service.revokeAuthorization({ ...this.admin(id), grantId });
         if (this.owners.get(id)?.ownerGeneration === owner.ownerGeneration) await this.takeOverNow(id);
