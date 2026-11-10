@@ -62,3 +62,30 @@ repair time are not inferred from source timestamps or replaced with execution
 time. Until separately timed setup/repair and a real participant's repeated use
 exist, the report leaves those measurements absent and product advantage false.
 This experiment does not establish population reliability or universal safety.
+
+## Participant repeat instrument
+
+```sh
+node browser/workspace/qualification/workflow-generalization/participant.js --out bench/out/generalization-participant
+```
+
+Open its private loopback link. A dedicated headless profile hosts four local
+Greenhouse-contact projection tasks: manual teaching, reordered reuse, an added
+question requiring help, and that added-question task again. The controls issue
+effects only through workspace dispatch. No model or final submission runs.
+Each review needs both the independent oracle and the participant's confirmation.
+Stop cancels future work and returns service ownership to the human; it cannot
+undo an effect already dispatched. Restart explicitly abandons the old attempt
+and creates a new isolated workspace, retaining the abandoned record.
+
+`participant.json` records time from first page view to the first task, task
+preparation and confirmation time, human actions, repair requests and repair
+elapsed time. Those are interaction timings, not active-attention estimates or
+script-authoring cost. No identity or personal applicant data is requested.
+Keep the process running: the instrument's learned graph is in memory, while its
+service journal and measurement records are private on disk. It does not test
+product-client restart or real-site retention.
+
+Repaired suffixes are not published by the current implementation. The last
+task deliberately exposes whether the same help is needed again. An automated
+check of this instrument must never be labeled as a participant result.
