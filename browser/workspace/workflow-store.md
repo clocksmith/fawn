@@ -49,7 +49,8 @@ account and review verifiers are not supplied.
 
 ## Verified field groups
 
-An opt-in group is `{id, steps}`. Each nonterminal step declares
+An opt-in group follows the [group schema](field-group-scope.schema.json):
+`{id, steps}`. Each nonterminal step declares
 `{kind: 'fill' | 'select', slot, locators}`; its aliases are reviewed structural
 locator tuples with compatible meanings. The final step is an approved
 `{kind: 'click', locators}` transition. Each group admits one write per field;
