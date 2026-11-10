@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { openWorkspaceApp } from '../../src/client/main.js';
+import { playwrightLaunchOptions } from '../../src/browser-launch.js';
+import { testBrowserSelection } from '../support/browser-selection.js';
 import { sha256Hex } from '../../src/journal.js';
 
 const bytes = Buffer.from('A harmless file selected in the local control UI.\n');
@@ -25,6 +27,7 @@ const fixture = createServer(async (req, res) => {
 await new Promise(resolve => fixture.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${fixture.address().port}`;
 const directory = mkdtempSync(join(tmpdir(), 'fawn-product-uploads-'));
+const selected = testBrowserSelection(directory);
 const base = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
 let turns = 0;
 const planner = { identity: { model: 'controlled-upload-fixture' }, async next(context) {
@@ -43,8 +46,8 @@ const planner = { identity: { model: 'controlled-upload-fixture' }, async next(c
 } };
 let app, browser;
 try {
-  app = await openWorkspaceApp({ stateDir: directory, config: { ...base, pollMs: 50 }, port: 0, headless: true, planner });
-  browser = await chromium.launch({ channel: process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL ?? 'chrome', headless: true });
+  app = await openWorkspaceApp({ stateDir: directory, config: { ...base, pollMs: 50 }, port: 0, headless: true, planner, ...selected.selection });
+  browser = await chromium.launch({ ...playwrightLaunchOptions(selected.config.browser), headless: true });
   const page = await browser.newPage({ viewport: { width: 430, height: 930 } });
   await page.goto(app.loginUrl);
   await page.getByLabel('What are we trying to find out?').fill('Attach this explicitly selected local fixture');

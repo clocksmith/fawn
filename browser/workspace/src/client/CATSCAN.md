@@ -28,6 +28,8 @@ Outputs:
 ## Invariants
 
 - Only the service dispatches browser effects.
+- Product launches require a pinned Fawn browser profile by default, without fallback.
+  Stock Chromium remains an explicitly selected comparison/compatibility route.
 - Delegation inherits no grants or record disclosure.
 - Restart restores human ownership without replay.
 - Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.

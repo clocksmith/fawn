@@ -2,7 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { WorkspaceService } from '../../src/service.js';
-import { loadServiceConfig } from '../../src/config.js';
+import { testBrowserSelection } from './browser-selection.js';
+import { inspectBrowserProcesses } from '../../qualification/identity.js';
 import { createPlaywrightAdapter } from '../../src/adapters/playwright-adapter.js';
 import { WorkflowSync } from '../../src/client/workflow-sync.js';
 import { WorkflowStore } from '../../src/client/workflow-store.js';
@@ -13,8 +14,9 @@ process.once('message', async ({ root, url, mode, accountScope, inputs, sync, sc
   let service, controller, adapter;
   try {
     const config = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
+    const selected = testBrowserSelection(root);
     service = await WorkspaceService.open({ stateDir: join(root, `service-${process.pid}`),
-      config: loadServiceConfig(undefined, { browserChannel: process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL ?? 'chrome', headless: true }),
+      config: selected.config,
       createAdapter: options => adapter = createPlaywrightAdapter(options) });
     const origin = new URL(url).origin;
     const fields = [
@@ -74,6 +76,9 @@ process.once('message', async ({ root, url, mode, accountScope, inputs, sync, sc
     const result = await done;
     const state = await service.inspect(controller.admin(id));
     process.send({ result, rendered, run: controller.store.get(id).run, owner: state.ownerId,
+      browser: selected.config.browser,
+      inspection: selected.config.browser.channel === 'fawn'
+        ? inspectBrowserProcesses(process.pid, join(root, `service-${process.pid}`, 'profiles')) : null,
       activeAgentGrants: state.grants.filter(grant => grant.ownerId === 'agent' && !grant.revokedAt),
       submitted: state.actions.some(action => action.kind === 'submit') });
   } catch (error) { process.send({ error: error.stack }); process.exitCode = 1; }

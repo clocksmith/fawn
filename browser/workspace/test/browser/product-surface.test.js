@@ -6,7 +6,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { openWorkspaceApp } from '../../src/client/main.js';
+import { playwrightLaunchOptions } from '../../src/browser-launch.js';
+import { testBrowserSelection } from '../support/browser-selection.js';
 const directory = mkdtempSync(join(tmpdir(), 'fawn-product-surface-'));
+const selected = testBrowserSelection(directory);
 const config = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
 let submissions = 0;
 const fixture = createServer((req, res) => {
@@ -32,8 +35,8 @@ const planner = { identity: { model: 'controlled-browser-fixture' }, async next(
 let app, browser;
 const receipts = [];
 try {
-  app = await openWorkspaceApp({ stateDir: directory, config, port: 0, headless: true, planner });
-  browser = await chromium.launch({ channel: process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL ?? 'chrome', headless: true });
+  app = await openWorkspaceApp({ stateDir: directory, config, port: 0, headless: true, planner, ...selected.selection });
+  browser = await chromium.launch({ ...playwrightLaunchOptions(selected.config.browser), headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
   await page.goto(app.loginUrl);
   await page.getByLabel('What are we trying to find out?').fill('Why can a checkout create duplicate orders?');
@@ -76,7 +79,7 @@ try {
   receipts.push({ check: 'human correction invalidates conclusions; unknown submission remains single and can be checked', passed: true });
   await browser.close(); browser = null;
   await app.close(); app = null;
-  app = await openWorkspaceApp({ stateDir: directory, config, port: 0, headless: true, planner });
+  app = await openWorkspaceApp({ stateDir: directory, config, port: 0, headless: true, planner, ...selected.selection });
   const restored = await app.controller.status(id);
   assert.equal(restored.selected.workspace.ownerId, 'human');
   assert.ok(restored.selected.workspace.actions.some(action => action.isUncertain));
