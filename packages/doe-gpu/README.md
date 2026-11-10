@@ -562,7 +562,8 @@ C libraries retain their `_c` identity and travel with their compiler sibling an
 is no automatic fallback to a stale Zig build. These are staging defaults, not
 new platform, browser or physical-GPU qualification claims.
 
-`npm run build:browser-compiler` also defaults to the C browser compiler owner;
-`--provider=zig` is an explicit compatibility choice. Browser acceptance uses
+`npm run build:browser-compiler` and `scripts/stage-platform-package.js` also
+build and stage exclusively from the C compiler and C native package stage;
+retired `--provider=zig` staging flags are rejected. Browser acceptance uses
 `runtime/c/compiler/build/doe-emit-wgsl-c` (build it with
 `make -C runtime/c/compiler test-browser`), or `DOE_WGSL_EMITTER` explicitly.

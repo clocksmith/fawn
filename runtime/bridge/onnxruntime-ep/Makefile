@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: MIT
-# C/Make build of the ONNX Runtime plugin EP and its smoke runners: the same
-# C++20 sources runtime/zig/build.zig compiles (ort-plugin-ep, ort-plugin-ep-smoke,
-# ort-plugin-ep-session-smoke, ort-incumbent-session-smoke) with the system C++
-# compiler, without zig build or the Zig anchor modules. The EP computes its
-# narrow slice with CPU kernels and links no WebGPU library (neither
-# libwebgpu_doe nor libwebgpu_doe_c). The Zig build path is unchanged.
+# Standalone C/C++ Make build of the ONNX Runtime plugin EP and its smoke
+# runners (ort-plugin-ep, ort-plugin-ep-smoke, ort-plugin-ep-session-smoke,
+# ort-incumbent-session-smoke) using the host C11/C++20 toolchain. The EP
+# computes its slice with CPU kernels and links no WebGPU library (neither
+# libwebgpu_doe nor libwebgpu_doe_c).
 CXX ?= g++
 CC = gcc
 PYTHON ?= python3
@@ -12,7 +11,7 @@ BUILD ?= $(CURDIR)/build
 ORT_LIB ?= /usr/lib/x86_64-linux-gnu/libonnxruntime.so.1.23.2
 CPPFLAGS += -Ivendor/onnxruntime/include -Isrc
 CXXFLAGS ?= -O2 -g
-# The flags runtime/zig/build.zig passes (-std=c++20); the sources are not warning-clean under -Wall.
+# Compile with C++20 and PIC; the plugin sources are not warning-clean under -Wall.
 CXXFLAGS += -std=c++20 -fPIC
 EP_SOURCES = src/doe_ort_ep_factory.cc src/doe_ort_ep.cc src/doe_ort_ep_exports.cc
 HEADERS = src/doe_ort_ep.h src/doe_ort_ep_factory.h src/doe_ort_ep_api_version.h \
@@ -24,7 +23,7 @@ $(BUILD):
 	mkdir -p $@
 $(BUILD)/libonnxruntime_doe_ep.so: $(EP_SOURCES) $(HEADERS) | $(BUILD)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -shared $(EP_SOURCES) -o $@
-# Each runner links src/smoke_main.c, the entry the Zig anchors provide in zig build.
+# Each smoke runner links src/smoke_main.c parameterized by DOE_SMOKE_ENTRY.
 $(BUILD)/%-main.o: src/smoke_main.c | $(BUILD)
 	$(CC) -O2 -g -std=c11 -Wall -Wextra -Werror -DDOE_SMOKE_ENTRY=$(ENTRY_$*) -c $< -o $@
 ENTRY_doe-ort-ep-smoke = doeOrtEpSmokeMain

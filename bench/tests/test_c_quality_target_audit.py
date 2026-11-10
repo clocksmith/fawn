@@ -106,11 +106,32 @@ class CQualityTargetAuditTest(unittest.TestCase):
         self.assertEqual(hc["fixed_headline_ceiling_lines"], 77949)
         self.assertGreater(hc["charged_production_physical_lines"], 77949)
         self.assertFalse(hc["met"])
-        self.assertIn("test_span_audit_unresolved", report["unmet_claim_conditions"])
+
+        impl_view = report["views"]["baseline_and_final_implementation_only"]
+        self.assertEqual(impl_view["status"], "resolved")
+        self.assertEqual(impl_view["baseline_implementation_only_lines"], 143407)
+        self.assertEqual(impl_view["baseline_excluded_test_only_lines"], 12491)
+        self.assertEqual(impl_view["candidate_excluded_test_only_lines"], 24)
+        self.assertFalse(impl_view["normalized_condition_met"])
+
+        self.assertEqual(
+            report["views"]["transitional_c_zig_adapters"][
+                "zig_references_in_charged_production"
+            ],
+            [],
+        )
+        self.assertNotIn("test_span_audit_unresolved", report["unmet_claim_conditions"])
+        self.assertNotIn(
+            "charged_production_references_zig",
+            report["unmet_claim_conditions"],
+        )
         self.assertEqual(
             report["views"]["tests_and_tooling"]["overlap_with_charged_production_paths"],
             [],
         )
+
+        unresolved = audit.run_audit(REPO_ROOT, test_spans_path=Path("__NONE__"))
+        self.assertIn("test_span_audit_unresolved", unresolved["unmet_claim_conditions"])
 
         # Diagnostic CLI exits 0 when integrity passes; --require-achieved exits 1.
         self.assertEqual(audit.main(["--root", str(REPO_ROOT), "--json"]), 0)

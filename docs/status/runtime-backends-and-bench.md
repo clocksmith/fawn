@@ -168,9 +168,13 @@ unestablished. Doe has promising execution evidence, not the final objective.
   upload/readback bound: 1.022 against 1.02. A side-by-side code read and a
   counting layer record the memory types Doe and Dawn pick and their Vulkan
   calls per submit. Power-sized reruns (M7R-2, M2R-2) and a combined
-  candidate were frozen with a measured contamination gate. All nine windows
-  remain unrun because the host's GPU driver faulted. Retained Zig is
-  unmeasured there. This is diagnostic evidence, not the application win.
+  candidate ran across nine valid post-reboot windows under a measured
+  contamination gate: M7R-2 passed its rule, M2R-2 passed its primary
+  complete-operation rule while missing its separate upload-latency rule, and
+  the combined candidate beat Dawn on warm and complete operation across all
+  three workloads while missing its image teardown allowance (1.107 against
+  1.05) and vector upload rule (1.114), so no patch landed yet. Retained Zig is
+  unsupported there. This is diagnostic evidence, not the application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss

@@ -1,7 +1,7 @@
-// doe-gpu — freshness of a staged platform package against the workspace build.
+// doe-gpu — freshness of a staged platform package against the C workspace build.
 //
 // The clean-install integration tests install packages/doe-gpu-<platform>/bin,
-// a gitignored copy of the workspace addon and Doe library. A copy older than
+// a gitignored copy of the workspace addon and Doe C library. A copy older than
 // the workspace build makes those tests fail with misleading errors, so they
 // compare content hashes first and stop with an actionable message.
 
@@ -45,26 +45,31 @@ function writeAddonSourceStamp(outputDir, packageRoot, workspaceRoot) {
 }
 
 // Problems that make a staged platform package stale, as messages. Staged
-// files are compared by content with the workspace artifacts they were copied
-// from; an artifact the workspace does not have is not compared.
-function stagedPlatformProblems({ platformPackageRoot, packageRoot, workspaceRoot, libraryFilename, provider = 'c' }) {
+// files are compared by content with the workspace C stage artifacts they were
+// copied from; an artifact the workspace does not have is not compared.
+function stagedPlatformProblems({ platformPackageRoot, packageRoot, workspaceRoot, provider = 'c' }) {
+  if (provider !== 'c') {
+    throw new Error(`Unsupported staging provider: ${provider}; platform staging requires provider="c"`);
+  }
   const binRoot = resolve(platformPackageRoot, 'bin');
   const cName = cLibraryName();
-  if (!['c', 'zig'].includes(provider)) throw new Error(`Unsupported staging provider: ${provider}`);
-  const cStage = provider === 'c' ? cStageRoot(workspaceRoot) : resolve(workspaceRoot, 'runtime/zig/zig-out');
+  const cStage = cStageRoot(workspaceRoot);
   const cLibrary = resolve(cStage, cRuntimeDirectory(), cName);
   const pairs = [
     ['addon', 'doe_napi.node', resolve(packageRoot, 'build', 'Release', 'doe_napi.node')],
-    ['library', provider === 'c' ? cName : libraryFilename, provider === 'c' ? cLibrary : resolve(cStage, 'lib', libraryFilename)],
-    ['build metadata', provider === 'c' ? 'doe-c-manifest.json' : 'doe-build-metadata.json',
-      resolve(cStage, provider === 'c' ? 'MANIFEST.json' : 'share/doe-build-metadata.json')],
+    ['library', cName, cLibrary],
+    ['build metadata', 'doe-c-manifest.json', resolve(cStage, 'MANIFEST.json')],
   ];
   const problems = [];
-  if (provider === 'c' && existsSync(cLibrary)) {
+  if (existsSync(cLibrary)) {
     try {
       const { files } = cStageFiles(cLibrary, workspaceRoot);
-      for (const file of files) if (file.source !== cLibrary) pairs.push(['C dependency', file.target, file.source]);
-    } catch (error) { problems.push(error.message); }
+      for (const file of files) {
+        if (file.source !== cLibrary) pairs.push(['C dependency', file.target, file.source]);
+      }
+    } catch (error) {
+      problems.push(error.message);
+    }
   }
   for (const [label, stagedName, workspacePath] of pairs) {
     const stagedPath = resolve(binRoot, stagedName);

@@ -108,7 +108,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--test-spans",
         default="",
-        help="Optional reviewed half-open byte-interval test-span artifact.",
+        help="Optional path to test-span artifact (defaults to docs/c-migration/test-span-audit.json when present).",
+    )
+    parser.add_argument(
+        "--no-test-spans",
+        action="store_true",
+        help="Ignore any default test-span artifact and evaluate unresolved state.",
     )
     parser.add_argument(
         "--stage-dir",
@@ -545,6 +550,13 @@ def run_audit(
             if "zig build" in text or "runtime/zig" in text:
                 zig_refs_in_charged.append(rel_path)
 
+    if test_spans_path is None:
+        default_spans = root / "docs/c-migration/test-span-audit.json"
+        if default_spans.is_file():
+            test_spans_path = default_spans
+    elif test_spans_path == Path("__NONE__"):
+        test_spans_path = None
+
     classification_sha: str | None = None
     impl_only_view: dict[str, Any] = {
         "status": "unresolved",
@@ -561,10 +573,62 @@ def run_audit(
             span_bytes = test_spans_path.read_bytes()
             classification_sha = sha256_bytes(span_bytes)
             span_doc = json.loads(span_bytes.decode("utf-8"))
+            base_map = span_doc.get("baseline_files", {})
             cand_map = span_doc.get("candidate_files", {})
             base_decl = span_doc.get("baseline_implementation_only_lines")
             base_reviewed = span_doc.get("baseline_all_628_files_reviewed") is True
+            human_signoff = span_doc.get("method", {}).get("human_readability_and_span_signoff") is True
             span_errors: list[str] = []
+
+            prod_inv = [
+                f
+                for f in inventory.get("files", [])
+                if f.get("role") == contract.get("baseline", {}).get("headline_role", "production")
+            ]
+            base_impl_total = 0
+            base_excl_total = 0
+            for entry in prod_inv:
+                rel_path = entry["path"]
+                record = base_map.get(rel_path)
+                if not isinstance(record, dict):
+                    span_errors.append(f"missing baseline span record: {rel_path}")
+                    continue
+                if record.get("sha256") != entry.get("sha256"):
+                    span_errors.append(f"baseline sha256 mismatch in span record: {rel_path}")
+                    continue
+                expected_lines = int(entry.get("line_count", 0))
+                impl_l = record.get("implementation_lines")
+                excl_l = record.get("excluded_test_only_lines")
+                if (
+                    not isinstance(impl_l, int)
+                    or not isinstance(excl_l, int)
+                    or impl_l < 0
+                    or excl_l < 0
+                    or impl_l + excl_l != expected_lines
+                ):
+                    span_errors.append(f"baseline line reconciliation mismatch: {rel_path}")
+                    continue
+                max_bytes = int(entry.get("byte_count", 0))
+                for idx, sp in enumerate(record.get("spans", [])):
+                    sb = sp.get("start_byte")
+                    eb = sp.get("end_byte")
+                    if (
+                        not isinstance(sb, int)
+                        or not isinstance(eb, int)
+                        or sb < 0
+                        or eb < sb
+                        or eb > max_bytes
+                        or sp.get("reviewed") is not True
+                    ):
+                        span_errors.append(f"{rel_path}: invalid baseline span[{idx}]")
+                base_impl_total += impl_l
+                base_excl_total += excl_l
+
+            if isinstance(base_decl, int) and base_impl_total != base_decl:
+                span_errors.append(
+                    f"baseline_implementation_only_lines mismatch: {base_impl_total} != {base_decl}"
+                )
+
             cand_impl_total = 0
             cand_excl_total = 0
             for rel_path, (_, _, expected_digest) in sorted(charged_records.items()):
@@ -580,8 +644,13 @@ def run_audit(
                     record.get("spans", []),
                 )
                 span_errors.extend(f"{rel_path}: {e}" for e in errs)
+                if record.get("implementation_lines") not in (None, impl_lines) or record.get(
+                    "excluded_test_only_lines"
+                ) not in (None, excl_lines):
+                    span_errors.append(f"candidate stored line summary drift: {rel_path}")
                 cand_impl_total += impl_lines
                 cand_excl_total += excl_lines
+
             if span_errors or not base_reviewed or not isinstance(base_decl, int):
                 impl_only_view = {
                     "status": "unresolved",
@@ -598,9 +667,12 @@ def run_audit(
                 impl_only_view = {
                     "status": "resolved",
                     "baseline_implementation_only_lines": base_decl,
+                    "baseline_excluded_test_only_lines": base_excl_total,
+                    "normalized_50pct_ceiling_lines": base_decl // 2,
                     "candidate_implementation_only_lines": cand_impl_total,
                     "candidate_excluded_test_only_lines": cand_excl_total,
                     "normalized_condition_met": norm_met,
+                    "human_readability_and_span_signoff": human_signoff,
                 }
 
     receipt_paths = [
@@ -625,7 +697,9 @@ def run_audit(
     if impl_only_view["status"] != "resolved":
         unmet.append("test_span_audit_unresolved")
     elif not impl_only_view["normalized_condition_met"]:
-        unmet.append("normalized_implementation_condition_unmet")
+        twice_cand = 2 * int(impl_only_view["candidate_implementation_only_lines"])
+        base_lim = int(impl_only_view["baseline_implementation_only_lines"])
+        unmet.append(f"normalized_implementation_condition_unmet:{twice_cand}>{base_lim}")
     if dirty_files:
         unmet.append("working_tree_dirty")
     if zig_refs_in_charged:
@@ -715,7 +789,13 @@ def run_audit(
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     root = detect_repo_root(args.root) if args.root else REPO_ROOT
-    spans_path = Path(args.test_spans).resolve() if args.test_spans else None
+    if args.no_test_spans:
+        spans_path: Path | None = Path("__NONE__")
+    elif args.test_spans:
+        cand_span = Path(args.test_spans)
+        spans_path = cand_span.resolve() if cand_span.is_absolute() else (root / cand_span).resolve()
+    else:
+        spans_path = None
     stage_path = Path(args.stage_dir).resolve() if args.stage_dir else None
 
     report = run_audit(

@@ -33,11 +33,11 @@ def copy_symbol_inventories(owner: Path, destination: Path) -> None:
 
 
 def lean_proof_record(source: Path) -> dict[str, object]:
-    """Lean proof provenance of the captured tree, from the inputs
-    runtime/zig/build.zig reads for verification/lean_proof.zig, hashed the same
-    way. No C build step embeds or validates the proof artifact and no C code
-    consults Lean proofs, so the build is not Lean-verified and records no proof
-    artifact digest (doe-zig-runtime's default -Dlean-verified=false is the same)."""
+    """Lean proof provenance of the captured tree from pipeline/lean/Doe and
+    config/lean-proof-patterns.json, hashed in canonical path order. No C build
+    step embeds or validates the proof artifact and no C code consults Lean
+    proofs, so the build is not Lean-verified and records no proof artifact
+    digest."""
     lean_root = source / "pipeline/lean/Doe"
     tree = hashlib.sha256()
     for path in sorted(lean_root.rglob("*.lean"), key=lambda p: p.relative_to(lean_root).as_posix().encode()):

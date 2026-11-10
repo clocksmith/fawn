@@ -1,66 +1,44 @@
 #!/usr/bin/env node
-// Build/stage verified compiler bytes and application-owned trusted metadata.
+// Build/stage verified C browser compiler bytes and application-owned trusted metadata.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { resolve, dirname, relative } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const zigRoot = resolve(root, 'runtime/zig');
 const provider = process.argv.find((arg) => arg.startsWith('--provider='))?.slice(11) ?? 'c';
 const outputDirectory = process.argv.find((arg) => arg.startsWith('--output-dir='))?.slice(13);
-if (!['zig', 'c'].includes(provider) || process.argv.slice(2).some((arg) =>
+if (provider !== 'c' || process.argv.slice(2).some((arg) =>
   !arg.startsWith('--provider=') && !arg.startsWith('--output-dir='))) {
-  throw new Error('usage: build-browser-compiler.js [--provider=zig|c] [--output-dir=PATH]');
+  throw new Error('usage: build-browser-compiler.js [--provider=c] [--output-dir=PATH]');
 }
 const cRoot = resolve(root, 'runtime/c/compiler');
-const cPath = provider === 'c' ? spawnSync('make', ['--no-print-directory', '-s', 'browser-wasm-path'],
-  { cwd: cRoot, encoding: 'utf8' }) : null;
-if (cPath && cPath.status !== 0) throw new Error(cPath.stderr || 'C browser output query failed');
-const wasmPath = provider === 'c' ? resolve(cPath.stdout.trim()) : resolve(zigRoot, 'zig-out/bin/doe-wgsl.wasm');
-const built = provider === 'c'
-  ? spawnSync(process.env.PYTHON ?? 'python3', ['tools/build_browser.py', '--output', wasmPath],
-    { cwd: resolve(root, 'runtime/c/compiler'), stdio: 'inherit' })
-  : spawnSync(process.env.ZIG ?? 'zig',
-    ['build', 'browser-wasm', 'emit-wgsl', '-Doptimize=ReleaseFast', '--summary', 'all'],
-    { cwd: zigRoot, stdio: 'inherit' });
+const cPath = spawnSync('make', ['--no-print-directory', '-s', 'browser-wasm-path'],
+  { cwd: cRoot, encoding: 'utf8' });
+if (cPath.status !== 0) throw new Error(cPath.stderr || 'C browser output query failed');
+const wasmPath = resolve(cPath.stdout.trim());
+const built = spawnSync(process.env.PYTHON ?? 'python3', ['tools/build_browser.py', '--output', wasmPath],
+  { cwd: cRoot, stdio: 'inherit' });
 if (built.status !== 0) process.exit(built.status ?? 1);
 const bytes = readFileSync(wasmPath);
 const sha256 = createHash('sha256').update(bytes).digest('hex');
-const dependencies = new Set();
-function visit(path) {
-  if (dependencies.has(path)) return;
-  dependencies.add(path);
-  const source = readFileSync(path, 'utf8');
-  for (const match of source.matchAll(/@import\("([^"]+\.zig)"\)/g)) {
-    visit(resolve(dirname(path), match[1]));
-  }
-}
-if (provider === 'zig') {
-  visit(resolve(zigRoot, 'src/compiler/wgsl/runtime/browser_wasm.zig'));
-  dependencies.add(resolve(zigRoot, 'src/cli/entrypoints/main_browser_wasm.zig'));
-  dependencies.add(resolve(zigRoot, 'build.zig'));
-}
-const sourceHash = createHash('sha256');
-for (const path of [...dependencies].sort()) {
-  sourceHash.update(relative(root, path)).update('\0').update(readFileSync(path)).update('\0');
-}
 const asset = `doe-wgsl-${sha256.slice(0, 16)}.wasm`;
 const destination = outputDirectory ? resolve(outputDirectory) : resolve(root, 'packages/doe-gpu');
 const assets = resolve(destination, 'assets');
 mkdirSync(assets, { recursive: true });
 writeFileSync(resolve(assets, asset), bytes);
-if (provider === 'c') {
-  writeFileSync(resolve(destination, 'BROWSER_COMPILER_NOTICES.txt'),
-    readFileSync(resolve(cRoot, 'browser/THIRD_PARTY_NOTICES.txt')));
-}
-const cManifest = provider === 'c'
-  ? JSON.parse(readFileSync(wasmPath.replace(/\.wasm$/, '.manifest.json'), 'utf8')) : null;
+writeFileSync(resolve(destination, 'BROWSER_COMPILER_NOTICES.txt'),
+  readFileSync(resolve(cRoot, 'browser/THIRD_PARTY_NOTICES.txt')));
+const cManifest = JSON.parse(readFileSync(wasmPath.replace(/\.wasm$/, '.manifest.json'), 'utf8'));
 const metadata = {
-  schemaVersion: 1, abiVersion: 1, asset, sha256, byteLength: bytes.length,
-  sourceHash: cManifest?.sourceHash ?? sourceHash.digest('hex'),
-  ...(provider === 'c' ? { provider } : {}),
+  schemaVersion: 1,
+  abiVersion: 1,
+  asset,
+  sha256,
+  byteLength: bytes.length,
+  sourceHash: cManifest.sourceHash,
+  provider: 'c',
 };
 mkdirSync(resolve(destination, 'src'), { recursive: true });
 writeFileSync(resolve(destination, 'src/browser-compiler-artifact.js'),
