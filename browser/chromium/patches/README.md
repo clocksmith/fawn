@@ -40,6 +40,26 @@ is a buildable diagnostic route, not acceptance of the contract's direct Doe wir
 ownership or a browser performance claim. The current build and execution state
 belongs in [runtime status](../../../docs/status/runtime-backends-and-bench.md).
 
+Zero-size buffer mappings belong to Dawn's outer buffer. Dawn skips the backend
+unmap for these buffers, so the bridge creates their inner buffers unmapped;
+otherwise an application-level unmap leaves the inner buffer mapped and a legal
+render submission fails. Nonempty mappings and the public C buffer contract are
+unchanged. After rebuilding the patched browser, run the boundary regression
+against each provider:
+
+```bash
+node browser/chromium/tests/zero-size-buffer.mjs \
+  --browser /absolute/fawn/chrome --provider dawn --out /new/output/dawn
+node browser/chromium/tests/zero-size-buffer.mjs \
+  --browser /absolute/fawn/chrome --provider doe \
+  --doe-library /absolute/libwebgpu_doe_c.dylib --out /new/output/doe
+```
+
+The regression checks zero/nonzero mapping state, legal submission and rendered
+pixels, plus rejection of buffers left mapped. It is a diagnostic, not provider
+ownership or performance qualification. A source patch or an emulated descriptor
+handoff does not establish that an existing browser binary contains the repair.
+
 The external connection projects Dawn's private instance, adapter and device
 tuning descriptors at one typed boundary. Dawn retains its outer validation and
 policy; every public or unknown feature requirement, limit, callback and adapter

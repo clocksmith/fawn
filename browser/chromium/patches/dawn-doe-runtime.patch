@@ -961,6 +961,21 @@ index cc71a5ffe..e5213da6b 100644
  }
  
  MaybeError BindGroup::InitializeImpl() {
+diff --git a/src/dawn/native/webgpu/BufferWGPU.cpp b/src/dawn/native/webgpu/BufferWGPU.cpp
+--- a/src/dawn/native/webgpu/BufferWGPU.cpp
++++ b/src/dawn/native/webgpu/BufferWGPU.cpp
+@@ -71,7 +71,10 @@
+     desc.label = ToOutputStringView(descriptor->label);
+     desc.usage = ToAPI(actualUsage);
+     desc.size = descriptor->size;
+-    desc.mappedAtCreation = descriptor->mappedAtCreation;
++    // Dawn owns zero-size mappings and skips the backend UnmapImpl for them.
++    // No inner mapping is needed: otherwise the inner buffer remains mapped
++    // after the application unmaps the outer buffer and submission is rejected.
++    desc.mappedAtCreation = descriptor->mappedAtCreation && descriptor->size != 0;
+
+     WGPUBuffer innerBuffer = device->wgpu->deviceCreateBuffer(device->GetInnerHandle(), &desc);
+     if (innerBuffer == nullptr) {
 diff --git a/src/dawn/native/webgpu/CommandBufferWGPU.cpp b/src/dawn/native/webgpu/CommandBufferWGPU.cpp
 index 5ea1b23d8..d340b7936 100644
 --- a/src/dawn/native/webgpu/CommandBufferWGPU.cpp
