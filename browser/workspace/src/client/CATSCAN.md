@@ -28,19 +28,18 @@ Outputs:
 ## Invariants
 
 - Only the service dispatches browser effects.
-- Product launches require a pinned Fawn browser profile by default, without fallback.
-  Stock Chromium remains an explicitly selected comparison/compatibility route.
+- Launches require pinned Fawn by default; stock Chromium requires explicit selection. No fallback.
 - Delegation inherits no grants or record disclosure.
 - Restart restores human ownership without replay.
 - Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.
 - Models grant no permission; repository reads/symlinks stay under selected roots.
-- Corrections invalidate dependents without mutating earlier revisions.
+- Corrections invalidate dependents; earlier revisions persist.
 - HTTP exposes no handles/credentials.
 - Replay checks accounts/disclosure, preserves service admission and stops before submission.
 - Scoped reuse requires reviewed meanings, unique targets and ordered dependency boundaries.
 - Verified repairs retain the executed prefix; exact-page suffixes require independent review.
-- Shared graphs are encrypted on clients; remote storage grants no browser authority.
-- Cross-process publication preserves independent attempt records.
+- Client-encrypted graphs; remote storage grants no browser authority.
+- Publication preserves independent attempt records.
 
 ## Acceptance
 

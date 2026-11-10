@@ -388,8 +388,22 @@ POSIX signal on Windows.
 
 ## Human workspace client
 
+Normal launches use the Fawn browser, with a pinned executable and dependency
+profile at `~/.local/state/fawn-workspace/browser-profile.json`. Create that
+private profile for the installed build with
+[`qualification/create-browser-profile.js`](qualification/create-browser-profile.js).
+Select the actual executable image (on macOS, `Contents/MacOS/Chromium-real`),
+the explicit `doe-c` or `dawn` runtime, and the build's dependency files, including
+the macOS Chromium framework and the Doe compiler library when applicable.
+See [explicit C browser integration](#explicit-c-browser-integration) for the profile contract.
+Missing or changed artifacts stop startup; the client never falls back to Chrome.
+
 ```bash
 npm --prefix browser/workspace start
+# Use another pinned Fawn installation:
+npm --prefix browser/workspace start -- --browser-config /absolute/browser-profile.json
+# Stock Chrome is an explicit control, not the product default:
+npm --prefix browser/workspace start -- --browser-channel chrome
 # Optional explicit planner configuration:
 FAWN_MODEL=<selected-model> ANTHROPIC_API_KEY=<credential> npm --prefix browser/workspace start
 ```
@@ -403,8 +417,10 @@ complete. **Check result** reads evidence and never repeats an action.
 
 State defaults to `~/.local/state/fawn-workspace`; use `--state-dir` to select
 another directory. Admin credentials stay in its private `client-credentials.json`.
-`--port`, `--adapter playwright|cdp`, `--headless` and `FAWN_BROWSER_CHANNEL` select
-local presentation without changing workspace authority. The planner is disabled
+`--port`, `--adapter playwright|cdp` and `--headless` select local presentation.
+`FAWN_BROWSER_CONFIG` selects a Fawn profile; `FAWN_BROWSER_CHANNEL` explicitly
+selects a stock comparison browser. A profile and a stock channel cannot be
+combined. Browser selection does not change workspace authority. The planner is disabled
 unless both model and credential are configured. No model runs on startup.
 
 Protocol 4 adds page identity and opt-in scoped read grants. Earlier journals replay

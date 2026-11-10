@@ -2,14 +2,17 @@
 // This exercises the real dispatcher and controller against a local synthetic form only.
 import assert from 'node:assert/strict';
 import { fork } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { applicationFixture } from '../support/application-fixture.js';
+import { matchesSelectedBuild } from '../../qualification/browser-profile.js';
+import { resultIdentity, waitForProfileRelease } from '../../qualification/identity.js';
 
 const root = mkdtempSync(join(tmpdir(), 'fawn-repair-browser-'));
 const fixture = await applicationFixture();
 const pids = new Set();
+const runs = [];
 async function run(name, mode, changed, inputs) {
   const child = fork(new URL('../support/workflow-controller-process.js', import.meta.url), [],
     { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
@@ -31,6 +34,15 @@ async function run(name, mode, changed, inputs) {
       ...(changed ? { 'Phone number': inputs.phone } : {}) });
     assert.equal(output.owner, 'human'); assert.equal(output.activeAgentGrants.length, 0);
     assert.equal(output.submitted, false); assert.equal(output.result.attempt.receiptStored, true);
+    if (output.browser.channel === 'fawn') {
+      assert.ok(matchesSelectedBuild({ browser: output.browser }, output.inspection.executables),
+        'The OS-observed browser executable must match the pinned Fawn build');
+      const runtime = output.browser.fawnBuild.runtime.mode === 'doe-c' ? 'doe' : 'dawn';
+      assert.ok(output.inspection.processes.some(process => process.executable === output.browser.fawnBuild.executable.path
+        && process.commandLine.includes(`--use-webgpu-runtime=${runtime}`)),
+      'Selected provider must reach the pinned browser process');
+    }
+    runs.push({ name, ...output });
     return output.result;
   } finally { clearTimeout(timer); }
 }
@@ -58,5 +70,13 @@ try {
   const attempts = JSON.parse(readFileSync(join(root, 'shared-cache/workflow-attempts.private.json')));
   assert.equal(Object.keys(attempts.attempts).length, 4);
   assert.ok(Object.values(attempts.attempts).every(attempt => attempt.status === 'finished' && attempt.execution.reviewVerified));
-  console.log('ok: separate-process Chromium scoped learn -> changed-form repair (5 cached, 3 planner calls) -> disk-restored replay (7 cached, 0 calls); original path retained, new values verified, zero submissions; synthetic only');
-} finally { await fixture.close(); rmSync(root, { recursive: true, force: true }); }
+  console.log(`ok: separate-process ${runs[0].browser.channel} scoped learn -> changed-form repair (5 cached, 3 planner calls) -> disk-restored replay (7 cached, 0 calls); original path retained, new values verified, zero submissions; synthetic only`);
+} finally {
+  await fixture.close();
+  await waitForProfileRelease(root);
+  rmSync(root, { recursive: true, force: true });
+}
+if (process.env.FAWN_WORKFLOW_RECEIPT) writeFileSync(process.env.FAWN_WORKFLOW_RECEIPT, JSON.stringify({
+  classification: 'Focused synthetic workflow development check; not shopping, planner-quality or GPU qualification',
+  identity: resultIdentity(), cleanup: { profilesReleased: true, temporaryStateRemoved: true }, runs,
+}, null, 2), { flag: 'wx', mode: 0o600 });
