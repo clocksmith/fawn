@@ -4,17 +4,17 @@ Parent: [Fawn workspace](../../CATSCAN.md)
 
 ## Target
 
-Human-controlled investigations and workflow reuse.
+Controlled investigations and reusable workflows.
 
 ## Authority
 
-- Owns client planning, investigations and workflow persistence.
-- Consumes service dispatch/reconciliation.
+- Owns planning, investigations and workflow persistence.
+- Consumes dispatch/reconciliation.
 - Excludes model/GPU qualification and product verdicts.
 
 ## Scope
 
-- Loopback client, investigations, workflow reuse and sealed registry.
+- Loopback client, reusable workflows and sealed registry.
 
 ## Contracts
 
@@ -27,8 +27,8 @@ Outputs:
 
 ## Invariants
 
-- Only the service dispatches browser effects.
-- Launches require pinned Fawn by default; stock Chromium requires explicit selection. No fallback.
+- Service dispatches browser effects exclusively.
+- Default: pinned Fawn. Explicit stock Chromium selection; no fallback.
 - Delegation inherits no grants or record disclosure.
 - Restart restores human ownership without replay.
 - Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.
@@ -43,7 +43,7 @@ Outputs:
 
 ## Acceptance
 
-- Evidence: [Client tests](../../test/unit/product-client.test.js): authority/restart.
+- Evidence: [Client tests](../../test/unit/product-client.test.js): authority/restart; [shopping](../../test/unit/shopping.test.js): approval/recovery.
 - [Persistence checks](../../workflow-store.md#focused-checks): isolation, attempt accounting and crash preservation.
 - [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
 - [Scoped replay](../../test/unit/scoped-trace.test.js): aliases, dependencies and safe stops.

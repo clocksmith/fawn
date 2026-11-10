@@ -445,6 +445,11 @@ a person delegates.
 
 ### Investigation comparison
 
+The [controlled shopping comparison](qualification/shopping/README.md) composes
+field-trace reuse with fresh product/quote checks and separately authorized order
+submission. Its local merchant oracle and scripted control test completion,
+repeatability and recovery. It has no live Best Buy adapter or Cerebras comparator.
+
 The optional [trace session prototype](trace-dag.md) records completed
 parameterized paths and replays them through the service without planner calls,
 stopping at an unknown branch or the pre-submit boundary. It is a programmatic
