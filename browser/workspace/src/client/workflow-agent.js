@@ -1,4 +1,5 @@
 // Bounded workflow learning and reuse; all effects stay inside TraceSession/service admission.
+import { randomUUID } from 'node:crypto';
 import { startAgent } from './agent.js';
 import { structuralLocator } from '../adapters/page-query.js';
 
@@ -41,25 +42,58 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
   if (typeof learnRepairs !== 'boolean') throw Error('Explicit boolean repair-learning policy required');
   const started = performance.now();
   const identity = { ...owner, pageId };
-  const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
-    assertContext, authorizeStep, accountScope, fieldGroups };
-  let recorder = dag.session(options), observation, cacheSteps = 0, fallbackReason = null;
-  let canPublish = mode === 'learn', lastResult = null, modelCalls = 0;
-  const finish = (completed, detail, verification = null) => ({
-    mode, status: completed ? 'completed' : 'needs-attention', completed, detail, verification,
-    modelCalls, cacheSteps, fallbackReason, elapsedMs: performance.now() - started,
-    humanInterventions: 0, interventionRequests: completed ? 0 : 1,
-  });
-  const observe = async () => {
+  const runId = randomUUID();
+  let verification = null;
+  store.run(projectId, { id: runId, status: 'running', detail: 'Checking workflow', turns: 0,
+    usage: [], planner: planner?.identity ?? null });
+  const assertCurrent = () => {
     signal.throwIfAborted();
+    if (store.get(projectId).run?.id !== runId) throw Error('Workflow was superseded');
+  };
+  const assertWorkflowContext = async () => {
+    assertCurrent();
     await assertContext();
+    assertCurrent();
+  };
+  const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
+    assertContext: assertWorkflowContext, authorizeStep, accountScope, fieldGroups };
+  let recorder, observation, cacheSteps = 0, fallbackReason = null;
+  let canPublish = mode === 'learn', lastResult = null, modelCalls = 0;
+  const finish = (completed, detail) => {
+    const current = store.get(projectId).run;
+    if (current?.id === runId) store.run(projectId, { ...current,
+      status: completed ? 'completed' : signal.aborted ? 'stopped' : 'needs-attention', detail });
+    return { mode, status: completed ? 'completed' : 'needs-attention', completed, detail, verification,
+      modelCalls, cacheSteps, fallbackReason, elapsedMs: performance.now() - started,
+      humanInterventions: 0, interventionRequests: completed ? 0 : 1 };
+  };
+  const observe = async () => {
+    await assertWorkflowContext();
     const outstanding = await service.outstanding(identity);
     if (outstanding.some(action => action.isUncertain || action.dispatchStatus === 'queued'
       || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Outstanding action needs review; no retry');
     observation = await service.observe(identity);
     if (observation.isTruncated !== false) throw Error('Workflow observation is incomplete');
+    assertCurrent();
+  };
+  const verifyCompletion = async () => {
+    await observe();
+    verification = await verifyReview();
+    // Account/authority, outstanding effects and cancellation can change during review.
+    // A delayed verifier cannot commit a result under a different run or context.
+    await observe();
+    if (verification?.completed !== true) return { completed: false, detail: 'Review verification failed' };
+    if (canPublish) {
+      const published = await recorder.finish({ publish: !publishTrace });
+      if (published.reason !== 'recorded-submit-boundary') return { completed: false, detail: published.reason };
+      if (publishTrace) await publishTrace({ records: structuredClone(recorder.records),
+        terminal: structuredClone(recorder.terminal), repairs: structuredClone(recorder.repairs) });
+    }
+    assertCurrent();
+    return { completed: true, detail: canPublish ? 'Learned verified workflow' : 'Completed verified review' };
   };
   try {
+    recorder = dag.session(options);
     if (mode === 'reuse') {
       let replay, failure;
       try { replay = await recorder.replay(); } catch (error) { failure = error; }
@@ -67,9 +101,8 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       store.activity(projectId, { event: 'workflow-replay', steps: cacheSteps,
         reason: replay?.reason ?? failure?.code ?? failure?.message });
       if (replay?.reason === 'submit-boundary') {
-        await observe();
-        const verification = await verifyReview();
-        return finish(verification.completed, verification.completed ? 'Reused verified workflow' : 'Cached boundary failed review verification', verification);
+        const verified = await verifyCompletion();
+        return finish(verified.completed, verified.completed ? 'Reused verified workflow' : verified.detail);
       }
       fallbackReason = replanCode(replay, failure) ?? (CACHE_MISSES.has(replay?.reason) ? replay.reason : null);
       if (!fallbackReason) return finish(false, failure?.message ?? replay?.reason ?? 'Replay stopped');
@@ -106,26 +139,15 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
     };
     const countedPlanner = { identity: planner.identity, next: (...args) => { modelCalls++; return planner.next(...args); } };
     const run = startAgent({ projectId, store, planner: countedPlanner, execute, config, signal,
-      assertCurrent: () => signal.throwIfAborted(),
+      runId, assertCurrent, verifyCompletion,
       context: () => ({ task, inputs, observation: view(observation), lastResult,
         reuse: { completedSteps: cacheSteps, stoppedBecause: fallbackReason },
         allowedIntermediateClicks: intermediateClicks.map(locator => locator[1]) }),
     });
     await run.done;
+    assertCurrent();
     const result = store.get(projectId).run;
-    if (result.status !== 'completed') return finish(false, result.detail);
-    await observe();
-    const verification = await verifyReview();
-    if (!verification.completed) return finish(false, 'Planner claimed completion but review verification failed', verification);
-    if (canPublish) {
-      // Durable-store callers stage first; their publication/limit failure must not erase
-      // an independently verified execution result in the attempt ledger.
-      const published = await recorder.finish({ publish: !publishTrace });
-      if (published.reason !== 'recorded-submit-boundary') return finish(false, published.reason, verification);
-      if (publishTrace) await publishTrace({ records: structuredClone(recorder.records),
-        terminal: structuredClone(recorder.terminal), repairs: structuredClone(recorder.repairs) });
-    }
-    return finish(true, canPublish ? 'Learned verified workflow' : 'Planner completed verified review', verification);
+    return finish(result.status === 'completed', result.detail);
   } catch (error) {
     return finish(false, error.message);
   }

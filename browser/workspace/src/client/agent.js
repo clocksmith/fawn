@@ -13,8 +13,9 @@ export function investigationContext(project, { task, permissions, initialArtifa
 // A bounded product agent. It owns planning, never browser authority or outcome truth.
 import { randomUUID } from 'node:crypto';
 
-export function startAgent({ projectId, store, planner, execute, config, signal, assertCurrent, context: getContext }) {
-  const id = randomUUID(), usage = [];
+export function startAgent({ projectId, store, planner, execute, config, signal, assertCurrent, context: getContext,
+  runId = randomUUID(), verifyCompletion = null }) {
+  const id = runId, usage = [];
   let turns = 0;
   const save = (status, detail) => {
     if (store.get(projectId).run?.id !== id) return;
@@ -50,6 +51,13 @@ export function startAgent({ projectId, store, planner, execute, config, signal,
         store.activity(projectId, { event: 'tool-requested', callId, tool: proposal.tool, input: proposal.input });
         if (proposal.tool === 'finish' || proposal.tool === 'ask_human') {
           store.activity(projectId, { event: proposal.tool, text: proposal.input.summary ?? proposal.input.reason ?? '' });
+          if (proposal.tool === 'finish' && verifyCompletion) {
+            save('running', 'Checking the completed work');
+            const verified = await verifyCompletion();
+            assertCurrent(); signal.throwIfAborted();
+            save(verified.completed === true ? 'completed' : 'needs-attention', verified.detail);
+            return;
+          }
           save(proposal.tool === 'finish' ? 'completed' : 'needs-attention', proposal.input.summary ?? proposal.input.reason);
           return;
         }

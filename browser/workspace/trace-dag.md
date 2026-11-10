@@ -13,6 +13,13 @@ independent review verifier accepts the actual output. Reuse can hand a structur
 miss or a proven never-dispatched stale action to the planner. Authorization
 failure and uncertainty stop the run; neither causes renewed grants or a retry.
 Both fresh and fallback planning use the same tools and action checks.
+Every invocation creates a fresh client run, including cache-only replay. The
+planner's `finish` proposal leaves it running while the independent review runs.
+The client persists completion only after review acceptance and a new context,
+authority, cancellation and outstanding-action check. Rejected or unavailable
+review records `needs-attention`; cancellation records `stopped`. A superseded
+run cannot overwrite its replacement. These fences do not make website changes
+and verification atomic or reconcile an unknown effect.
 Direct `runWorkflow` callers opt into repair collection with `learnRepairs: true`;
 the personal store enables it by default for installed, independently verified
 tasks. Frozen comparison callers leave it off. Fresh mode never collects.
@@ -138,6 +145,7 @@ observation retain the explicit session API.
 ```sh
 node browser/workspace/test/unit/trace-dag.test.js
 node browser/workspace/test/unit/workflow-repair.test.js
+node browser/workspace/test/unit/workflow-completion.test.js
 node browser/workspace/test/browser/trace-dag.test.js
 node browser/workspace/test/browser/workflow-repair.test.js
 ```

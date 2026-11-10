@@ -25,6 +25,7 @@ async function run(name, mode, changed, inputs) {
     assert.equal(status.code, 0, JSON.stringify(messages));
     const output = messages[0];
     assert.equal(output.result.completed, true, JSON.stringify(output));
+    assert.equal(output.run?.status, 'completed', 'Independent review and persisted client status agree');
     assert.deepEqual(output.rendered.fields, { 'Full name': inputs.fullName, 'Email address': inputs.email,
       'Current city': inputs.location, 'Work arrangement': inputs.workMode,
       ...(changed ? { 'Phone number': inputs.phone } : {}) });

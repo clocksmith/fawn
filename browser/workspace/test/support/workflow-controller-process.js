@@ -73,7 +73,7 @@ process.once('message', async ({ root, url, mode, accountScope, inputs, sync, sc
     const { done } = await controller.runPersonalWorkflow(id, { template, mode, inputs, pageId: 'main' });
     const result = await done;
     const state = await service.inspect(controller.admin(id));
-    process.send({ result, rendered, owner: state.ownerId,
+    process.send({ result, rendered, run: controller.store.get(id).run, owner: state.ownerId,
       activeAgentGrants: state.grants.filter(grant => grant.ownerId === 'agent' && !grant.revokedAt),
       submitted: state.actions.some(action => action.kind === 'submit') });
   } catch (error) { process.send({ error: error.stack }); process.exitCode = 1; }
