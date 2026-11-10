@@ -75,7 +75,10 @@
             ],
             "properties": {
               "version": {
-                "const": 1
+                "enum": [
+                  1,
+                  2
+                ]
               },
               "key": {
                 "type": "string",
@@ -204,6 +207,14 @@
                         },
                         "terminal": {
                           "type": "boolean"
+                        },
+                        "repairs": {
+                          "type": "array",
+                          "uniqueItems": true,
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          }
                         }
                       }
                     }
@@ -213,7 +224,52 @@
                   "maxItems": 2
                 }
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "version": {
+                      "const": 2
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "nodes": {
+                      "items": {
+                        "prefixItems": [
+                          {},
+                          {
+                            "required": [
+                              "repairs"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "nodes": {
+                      "items": {
+                        "prefixItems": [
+                          {},
+                          {
+                            "not": {
+                              "required": [
+                                "repairs"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
           }
         }
       }

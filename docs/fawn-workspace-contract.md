@@ -64,14 +64,19 @@ proven never-dispatched stale actions may return to the planner with a fresh
 observation. Unknown effects, pending actions and authorization failures stop
 instead. Model output cannot grant permission, renew a revoked grant or authorize
 submission. A planner's completion assertion alone does not establish completion.
+Admission errors carry `details.neverDispatched: {code}` only after the service
+persists `COMMAND_REJECTED`. A stale-looking error code alone permits no retry.
 
 Opt-in [personal persistence](../browser/workspace/workflow-store.md) isolates
 owner/account/template namespaces and adds account context to prefix identity.
 Trusted task definitions check account context and slot disclosure before dispatch.
 Verified learning publishes under a cross-process lock after reloading the latest
 revision, retaining immutable versions and separate run receipts. Persistence
-failure never authorizes repeating browser effects. Public imports and automatic
-repair publication are excluded; fixture verifiers establish no general ATS oracle.
+failure never authorizes repeating browser effects. Installed task policy may
+enable independently verified repair publication: retain the executed prefix,
+narrow the repaired suffix to the exact observed structure, then atomically merge
+under the existing account/disclosure rules. Public imports remain excluded;
+fixture verifiers establish no general ATS oracle.
 
 Observations carry workspace identity, a durable version and the owner generation
 under which they were issued. Page changes produce new observations or explicit

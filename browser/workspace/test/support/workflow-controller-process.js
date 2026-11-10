@@ -9,7 +9,7 @@ import { WorkflowStore } from '../../src/client/workflow-store.js';
 import { WorkspaceController } from '../../src/client/controller.js';
 import { sha256Hex } from '../../src/journal.js';
 
-process.once('message', async ({ root, url, mode, accountScope, inputs, sync }) => {
+process.once('message', async ({ root, url, mode, accountScope, inputs, sync, scoped = false, changed = false }) => {
   let service, controller, adapter;
   try {
     const config = JSON.parse(readFileSync(new URL('../../../../config/fawn-workspace-client.json', import.meta.url)));
@@ -22,6 +22,7 @@ process.once('message', async ({ root, url, mode, accountScope, inputs, sync }) 
       { slot: 'email', kind: 'fill', locator: ['textbox', 'Email address', 'input', 'email'] },
       { slot: 'location', kind: 'fill', locator: ['textbox', 'Current city', 'input', 'text'] },
       { slot: 'workMode', kind: 'select', locator: ['combobox', 'Work arrangement', 'select', ''] },
+      ...(scoped ? [{ slot: 'phone', kind: 'fill', locator: ['textbox', 'Phone number', 'input', 'tel'] }] : []),
     ];
     const planner = { identity: { model: 'controlled-browser' }, next: async context => {
       for (const field of fields) {
@@ -42,6 +43,13 @@ process.once('message', async ({ root, url, mode, accountScope, inputs, sync }) 
     controller = new WorkspaceController({ service, stateDir: join(root, `client-${process.pid}`), config,
       workflowStore, workflowTasks: new Map([[template, {
         accountScope, task: 'Complete requested fields and stop at review', planner,
+        fieldGroups: scoped ? [{ id: 'contact', steps: [
+          ...fields.slice(0, 2).map(({ slot, kind, locator }) => ({ slot, kind, locators: [locator] })),
+          { kind: 'click', locators: [['button', 'Continue', 'button', '']] },
+        ] }, { id: 'questions', steps: [
+          ...fields.slice(2, 4).map(({ slot, kind, locator }) => ({ slot, kind, locators: [locator] })),
+          { kind: 'click', locators: [['button', 'Review application', 'button', '']] },
+        ] }] : null,
         disclosurePolicy: { origin, fields,
           intermediateClicks: [['button', 'Continue', 'button', ''], ['button', 'Review application', 'button', '']] },
         verificationId: 'synthetic-application-review-v1',
@@ -55,8 +63,9 @@ process.once('message', async ({ root, url, mode, accountScope, inputs, sync }) 
             fields: Object.fromEntries([...document.querySelectorAll('dl > div')].map(row =>
               [row.querySelector('dt').textContent, row.querySelector('dd').textContent])),
           }));
-          return { completed: rendered.stage === 'review' && Object.keys(rendered.fields).length === fields.length
-            && fields.every(field => rendered.fields[field.locator[1]] === profile[field.slot]) };
+          const expected = fields.filter(field => field.slot !== 'phone' || changed);
+          return { completed: rendered.stage === 'review' && Object.keys(rendered.fields).length === expected.length
+            && expected.every(field => rendered.fields[field.locator[1]] === profile[field.slot]) };
         },
       }]]) });
     const { id } = await controller.create({ goal: 'Personal workflow fixture' });

@@ -155,7 +155,7 @@ export class WorkflowStore {
         fail('workflow-store-lineage', 'Workflow lineage changed; refusing publication');
       }
       const dag = TraceDag.restore(latest.dag, this.limits);
-      if (trace) dag.publish(trace.records, trace.terminal);
+      if (trace) dag.publish(trace.records, trace.terminal, trace.repairs);
       const next = dag.export();
       if (canonicalJson(next) !== canonicalJson(latest.dag)) {
         if (!Number.isSafeInteger(latest.revision + 1)) throw Error('Workflow revision exhausted');
@@ -217,6 +217,8 @@ export class WorkflowStore {
     }
     const frozenTaskSources = structuredClone(taskSourceHashes);
     const fieldGroups = options.fieldGroups ? structuredClone(options.fieldGroups) : null;
+    const learnRepairs = options.learnRepairs ?? true;
+    if (typeof learnRepairs !== 'boolean') throw Error('Explicit boolean repair-learning policy required');
     // Snapshot trusted disclosure rules before any asynchronous work. Models cannot add rules.
     const policy = structuredClone(disclosurePolicy);
     if (!exactKeys(policy, ['origin', 'fields', 'intermediateClicks'])
@@ -230,8 +232,9 @@ export class WorkflowStore {
     const scope = { accountScope, template: options.template };
     const sourceHashes = Object.fromEntries(SOURCE_FILES.map(path => [path,
       sha256Hex(readFileSync(new URL(path, import.meta.url)))]));
+    const policyHash = sha256Hex(canonicalJson({ disclosure: policy, fieldGroups, learnRepairs }));
     accounting.context = { verificationId,
-      policyHash: sha256Hex(canonicalJson(fieldGroups ? { disclosure: policy, fieldGroups } : policy)),
+      policyHash,
       sourceHashes, taskSourceHashes: frozenTaskSources,
       planner: { declaredModel: options.planner?.identity?.model ?? null, observedModels: [] } };
     await this.attempts.update(accounting.runId, { context: accounting.context });
@@ -259,7 +262,8 @@ export class WorkflowStore {
     const startedAt = accounting.startedAt;
     let learned = null;
     await this.attempts.update(accounting.runId, { stage: 'executing' });
-    const result = await runWorkflow({ ...options, fieldGroups, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
+    const result = await runWorkflow({ ...options, learnRepairs,
+      fieldGroups, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
       intermediateClicks: policy.intermediateClicks, assertContext,
       authorizeStep: async step => {
         const permitted = step.origin === policy.origin && (step.kind === 'click'
@@ -282,7 +286,7 @@ export class WorkflowStore {
       persistence = await this.#complete(scope, checkout, result.completed ? learned : null, {
         runId: accounting.runId, startedAt, completedAt: new Date().toISOString(), mode: options.mode,
         completed: result.completed, reviewVerified: result.verification?.completed === true,
-        verificationId, policyHash: sha256Hex(canonicalJson(fieldGroups ? { disclosure: policy, fieldGroups } : policy)), sourceHashes, taskSourceHashes: frozenTaskSources,
+        verificationId, policyHash, sourceHashes, taskSourceHashes: frozenTaskSources,
         planner: { declaredModel: options.planner?.identity?.model ?? null, observedModels: [...observedModels] },
         modelCalls: result.modelCalls, cacheSteps: result.cacheSteps, elapsedMs: result.elapsedMs,
         fallbackReason: result.fallbackReason, interventionRequests: result.interventionRequests,

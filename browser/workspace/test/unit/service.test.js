@@ -90,7 +90,12 @@ async function rejects(promise, code) {
   const first = await openForm(session, 'nav-1');
   const second = await session.observe();
   assert.equal(second.observationVersion, first.observationVersion + 1);
-  await rejects(session.submit(first, navigateSpec('stale')), 'stale-observation');
+  await assert.rejects(session.submit(first, navigateSpec('stale')), error => {
+    assert.equal(error.code, 'stale-observation');
+    assert.deepEqual(error.details.neverDispatched, { code: 'stale-observation' });
+    assert.equal(adapter.executions.includes('stale'), false);
+    return true;
+  });
   clock.advance(config.observation.maxAgeMs);
   await rejects(session.submit(second, navigateSpec('expired')), 'expired-observation');
   const current = await session.observe();

@@ -13,6 +13,9 @@ independent review verifier accepts the actual output. Reuse can hand a structur
 miss or a proven never-dispatched stale action to the planner. Authorization
 failure and uncertainty stop the run; neither causes renewed grants or a retry.
 Both fresh and fallback planning use the same tools and action checks.
+Direct `runWorkflow` callers opt into repair collection with `learnRepairs: true`;
+the personal store enables it by default for installed, independently verified
+tasks. Frozen comparison callers leave it off. Fresh mode never collects.
 
 ```js
 const dag = new TraceDag({ maxNodes: 64, maxEdges: 64, maxSteps: 12 });
@@ -50,9 +53,8 @@ Service ownership is not website account identity. This prototype does not check
 the logged-in account, tenant or session identity; the caller must restrict cache
 reuse accordingly. Matching origin and structure does not prove account
 equivalence. Fixed repeated steps can be unrolled into a trace, but variable-length
-loops and automatic learning from repaired runs are absent. Safe replanning is
-implemented by the workflow agent; uncertain-effect reconciliation remains a
-separate explicit operation.
+loops remain unsupported. Explicit repair learning is described below; safe
+replanning and uncertain-effect reconciliation remain distinct operations.
 
 The opt-in [personal store](workflow-store.md) adds a required account namespace,
 task-specific account checks and pre-dispatch slot disclosure rules. Scoped
@@ -65,6 +67,31 @@ binds its live handle, selector, digest and observation version. Admission,
 dispatch authority and value settling remain in the existing service. Unknown or
 pending actions block a new trace; a failed step stops its session permanently.
 Replay does not reconcile, retry, authorize or submit anything on its own.
+
+## Verified repair suffixes
+
+Replay stages the actual successful actions and their observed result nodes,
+including an action whose resulting structure misses the old edge. On a
+structural miss, `session.repair()` returns a new recorder carrying that ordered
+prefix, action depth and staged records. It re-observes and refuses if the last
+recorded result no longer matches. It cannot resume an uncertain, unauthorized,
+failed, cancelled or stale session. No prefix actions are executed again.
+
+For a scoped group miss, the recorder adds a same-depth bridge from the stopped
+group node to an exact-page node and records the remainder without group-depth
+assumptions. A later replay computes that exact outline from its fresh observation
+before following the bridge. The account, origin, read scope and action prefix
+still participate; every action still checks current slot disclosure and service
+authority. This is narrow reuse of a reviewed variant, not fuzzy field inference.
+Several exact variants can coexist; conflicting actions remain a safe miss.
+
+The independent task oracle must accept the whole result before `finish()`.
+Failed review, uncertainty or interruption leaves the shared graph unchanged.
+`finish({publish: false})` stages a terminal for the personal store; the store
+persists execution accounting before merging all records and bridges under its
+cross-process lock. A publication limit or I/O error therefore does not erase
+the verified execution result. The raw trace API's default finish still publishes
+to its in-memory DAG. No graph is derived automatically from journal files.
 
 Only fill, select and explicitly allowed intermediate clicks are supported.
 Every fill/select references a supplied input slot; even a fixed option must be
@@ -84,8 +111,8 @@ are absent from the structural outline; the full content hash still governs
 service admission. These additive fields are returned live and do not migrate
 the service journal or its existing observation authority.
 
-`dag.export()` returns generated version-1 state:
-`{version, key, limits, nodes: [[nodeHash, {depth, edges, terminal}]]}`.
+`dag.export()` returns generated version-2 state:
+`{version, key, limits, nodes: [[nodeHash, {depth, edges, terminal, repairs}]]}`.
 Each edge is `{step: {kind, locator, slot}, next}`; `locator`, `slot` and `next`
 are keyed fingerprints (`slot` is null for clicks). Raw labels, input values,
 URLs, selectors, handles and owner credentials are never copied into the graph.
@@ -94,20 +121,25 @@ structure permit correlations and candidate matching. Callers persisting an
 export must use private storage; do not add it to the public repository.
 
 `TraceDag.restore(state, limits)` validates version, bounds, edge shape and
-acyclic depth relationships. It does not resume a session. There is no prior
-trace format to migrate, and no offline induction from `journal.jsonl`.
+acyclic depth relationships. `repairs` lists exact-page targets at the same action
+depth; these targets cannot themselves have repair bridges. Bridges count against
+the edge limit. Version-1 nodes restore with an empty repair list; their
+fingerprints are unchanged. Old store snapshots remain immutable, while new
+exports use version 2. Older clients must be upgraded before reading them.
+Restore never resumes a session.
 
 `record(spec, observation)` optionally accepts the exact service observation
 shown to the planner. Its action binds that version; it cannot silently replace
 a stale planner decision with a fresh target. Existing callers omitting the
-observation retain the explicit session API. The generated graph format is
-unchanged.
+observation retain the explicit session API.
 
 ## Development checks
 
 ```sh
 node browser/workspace/test/unit/trace-dag.test.js
+node browser/workspace/test/unit/workflow-repair.test.js
 node browser/workspace/test/browser/trace-dag.test.js
+node browser/workspace/test/browser/workflow-repair.test.js
 ```
 
 The browser check records four steps in a synthetic multi-step ATS-style form,

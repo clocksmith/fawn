@@ -4,18 +4,18 @@ Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Workspace observation, action and recovery above Chromium.
+Workspace observation, actions and recovery.
 
 ## Authority
 
 - Owns workspace identity, authorization, versioned observations, owner generations,
   trusted dispatch and uncertain-outcome recovery.
 - Adapters own task logic; Chromium owns browser semantics/security.
-- Excludes model semantics, GPU qualification and external transaction guarantees.
+- Excludes model/GPU qualification and external transaction guarantees.
 
 ## Scope
 
-- Service, page-bound adapters, human/investigation clients, workflows and qualification/comparison harnesses.
+- Service, adapters, human/investigation clients, workflows and comparison harnesses.
 
 ## Contracts
 
@@ -37,11 +37,11 @@ Outputs:
 - Client-owned planning/records; service-owned authority/effect truth.
 - Persist owner generations; adapters reject stale commands identically.
 - Completed/failed/unknown outcomes survive restart/handoff; missing acknowledgment never authorizes retries.
+- Admission errors attest non-dispatch after durable rejection.
 - Research/form-submission/export behave consistently.
 - Workspace acceptance excludes browser/GPU recovery and artwork receipts.
 - Adapters enforce selected build/runtime closure without fallback; launch proves no GPU ownership.
-- Treatment/control share requested launch configuration; image mismatches prove
-  no comparison advantage.
+- Treatment/control share launch configuration; image mismatches prove no advantage.
 
 ## Acceptance
 

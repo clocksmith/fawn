@@ -74,11 +74,12 @@ try {
   assert.equal((await otherOwner.checkout(scope)).dag.nodes.length, 0);
 
   // Both processes check out revision 1 before either publishes. Both branches must survive.
-  const a = start({ label: 'Full name', barrier: true }), b = start({ label: 'Applicant name', barrier: true });
+  const a = start({ mode: 'reuse', label: 'Full name', barrier: true }), b = start({ mode: 'reuse', label: 'Applicant name', barrier: true });
   await Promise.all([a.next(value => value.phase === 'verified'), b.next(value => value.phase === 'verified')]);
   a.child.send('publish'); b.child.send('publish');
   const concurrent = await Promise.all([a.done(), b.done()]);
   assert.ok(concurrent.every(value => value.result.persistence.status === 'published'));
+  assert.ok(concurrent.every(value => value.result.fallbackReason === 'unseen-branch'), 'Both concurrent repairs must survive the latest-state merge');
   const merged = await persistent.checkout(scope);
   assert.equal(merged.revision, 3); assert.equal(merged.dag.nodes.length, 6);
   assert.equal(merged.dag.key, first.dag.key);
@@ -96,7 +97,7 @@ try {
   assert.equal((await persistent.checkout(scope)).revision, 3, 'Identical verified publication is idempotent');
 
   const beforeCrash = bytes();
-  const crashing = start({ label: 'New branch', pauseWrite: true });
+  const crashing = start({ mode: 'reuse', label: 'New branch', pauseWrite: true });
   const deadline = Date.now() + 10000;
   while (!existsSync(join(root, 'writer-paused'))) {
     assert.ok(Date.now() < deadline, 'Writer must reach fsynced temporary file before rename');

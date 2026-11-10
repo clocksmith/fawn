@@ -58,6 +58,13 @@ try {
   assert.equal(readFileSync(failing.path, 'utf8'), before);
   assert.deepEqual(await failing.checkout(work.options), checkout);
 
+  const tooSmall = create('local-capacity', { limits: { maxNodes: 1, maxEdges: 8, maxSteps: 8 } });
+  const capacity = await tooSmall.run(task().options);
+  assert.equal(capacity.completed, true, 'Local capacity is publication failure, not execution failure');
+  assert.equal(capacity.persistence.status, 'failed');
+  assert.equal(tooSmall.readAttempts()[0].execution.reviewVerified, true);
+  assert.equal(tooSmall.readAttempts()[0].publication.status, 'failed');
+
   // Account changes after verification must block publication without losing the outcome.
   const switched = create('switched'); let account = 'account';
   const changing = task({ verifyAccount: async () => account });

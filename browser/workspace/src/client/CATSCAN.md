@@ -9,8 +9,8 @@ Human-controlled investigations and workflow reuse.
 ## Authority
 
 - Owns client planning, investigations and workflow persistence.
-- Consumes service authority, dispatch and reconciliation.
-- Excludes model semantics, GPU qualification and product-advantage verdicts.
+- Consumes service dispatch/reconciliation.
+- Excludes model/GPU qualification and product verdicts.
 
 ## Scope
 
@@ -28,16 +28,17 @@ Outputs:
 ## Invariants
 
 - Only the service dispatches browser effects.
-- Grants and record disclosure are explicit; delegations inherit no grants.
-- Restart restores human ownership; no model calls or tool replay.
+- Delegation inherits no grants or record disclosure.
+- Restart restores human ownership without replay.
 - Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.
-- Models grant no permission. Repository reads, including symlinks, stay under the selected root.
+- Models grant no permission; repository reads/symlinks stay under selected roots.
 - Corrections invalidate dependents without mutating earlier revisions.
-- HTTP exposes no browser handles or service credentials.
+- HTTP exposes no handles/credentials.
 - Replay checks accounts/disclosure, preserves service admission and stops before submission.
 - Scoped reuse requires reviewed meanings, unique targets and ordered dependency boundaries.
+- Verified repairs retain the executed prefix; exact-page suffixes require independent review.
 - Shared graphs are encrypted on clients; remote storage grants no browser authority.
-- Publication locks across processes; independent attempt records survive publication failure.
+- Cross-process publication preserves independent attempt records.
 
 ## Acceptance
 
@@ -45,8 +46,9 @@ Outputs:
 - [Persistence checks](../../workflow-store.md#focused-checks): isolation, attempt accounting and crash preservation.
 - [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
 - [Scoped replay](../../test/unit/scoped-trace.test.js): aliases, dependencies and safe stops.
-- [Holdout decision](../../../../reports/fawn-workspace/20261109-field-group-reuse/decision.json): bounded reuse, no product verdict.
-- Parent comparison remains mandatory; controlled planners prove no product advantage.
+- [Repair replay](../../test/browser/workflow-repair.test.js): separate-process persistence.
+- [Holdout decision](../../../../reports/fawn-workspace/20261109-field-group-reuse/decision.json): bounded reuse.
+- Parent comparison remains mandatory.
 
 ## Non-goals
 

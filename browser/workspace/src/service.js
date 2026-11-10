@@ -482,6 +482,8 @@ class WorkspaceService {
             stage: 'admission',
             code: error.code,
           });
+          // Only admission can attest this before an action was admitted or dispatched.
+          error.details = { ...error.details, neverDispatched: { code: error.code } };
         }
         throw error;
       }

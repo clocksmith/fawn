@@ -19,7 +19,7 @@ export const WORKFLOW_SYSTEM = 'Complete the requested form through its review s
 const REPLAN_CODES = new Set(['stale-observation', 'expired-observation', 'target-changed', 'unknown-target']);
 const CACHE_MISSES = new Set(['unseen-branch', 'ambiguous-branch', 'missing-locator', 'ambiguous-locator']);
 function replanCode(result, error) {
-  const code = error?.code ?? result?.result?.neverDispatched?.code;
+  const code = error?.details?.neverDispatched?.code ?? result?.result?.neverDispatched?.code;
   return REPLAN_CODES.has(code) ? code : null;
 }
 function view(observation) {
@@ -29,14 +29,16 @@ function view(observation) {
 }
 
 /** Caller owns task/context selection, grants, limits and review verification. This function
- * neither assigns ownership nor grants rights. A successful repair is not silently published.
+ * neither assigns ownership nor grants rights. Repair publication is explicit host policy.
  * Modes: learn publishes one independently verified full trace; fresh ignores cache; reuse
  * replays then asks the same planner on a safe miss. Unknown effects/authority failures stop.
  */
 export async function runWorkflow({ dag, mode, service, owner, pageId, intent, template, inputs,
   intermediateClicks, task, planner, config, store, projectId, verifyReview, signal,
-  assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null, fieldGroups = null }) {
+  assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null, fieldGroups = null,
+  learnRepairs = false }) {
   if (!['learn', 'fresh', 'reuse'].includes(mode)) throw Error('Invalid workflow mode');
+  if (typeof learnRepairs !== 'boolean') throw Error('Explicit boolean repair-learning policy required');
   const started = performance.now();
   const identity = { ...owner, pageId };
   const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
@@ -71,9 +73,10 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       }
       fallbackReason = replanCode(replay, failure) ?? (CACHE_MISSES.has(replay?.reason) ? replay.reason : null);
       if (!fallbackReason) return finish(false, failure?.message ?? replay?.reason ?? 'Replay stopped');
-      // A verified group miss returns the remaining page to ordinary fresh planning. A partial
-      // repaired suffix is neither forced into the first group nor published as a learned path.
-      recorder = dag.session({ ...options, fieldGroups: null });
+      // Only structural misses can teach. Never-dispatched stale actions may replan, but their
+      // changed observation cannot silently be stitched into the recorded prefix.
+      canPublish = learnRepairs && CACHE_MISSES.has(replay?.reason);
+      recorder = canPublish ? await recorder.repair() : dag.session({ ...options, fieldGroups: null });
     }
     await observe();
     const execute = async (tool, input) => {
@@ -96,11 +99,7 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
         return lastResult;
       }
       if (failure) throw failure;
-      if (recorded.status !== 'completed') {
-        lastResult = { serviceError: recorded.reason, outcome: recorded.result?.outcome,
-          isUncertain: recorded.result?.isUncertain ?? false };
-        return lastResult;
-      }
+      if (recorded.status !== 'completed') throw Error(`Workflow stopped: ${recorded.reason}`);
       await observe();
       lastResult = { status: 'completed', kind: input.kind, label: matches[0].label, slot: input.slot ?? null };
       return lastResult;
@@ -119,10 +118,12 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
     const verification = await verifyReview();
     if (!verification.completed) return finish(false, 'Planner claimed completion but review verification failed', verification);
     if (canPublish) {
-      const published = await recorder.finish();
+      // Durable-store callers stage first; their publication/limit failure must not erase
+      // an independently verified execution result in the attempt ledger.
+      const published = await recorder.finish({ publish: !publishTrace });
       if (published.reason !== 'recorded-submit-boundary') return finish(false, published.reason, verification);
       if (publishTrace) await publishTrace({ records: structuredClone(recorder.records),
-        terminal: { id: recorder.records.at(-1).next, depth: recorder.depth } });
+        terminal: structuredClone(recorder.terminal), repairs: structuredClone(recorder.repairs) });
     }
     return finish(true, canPublish ? 'Learned verified workflow' : 'Planner completed verified review', verification);
   } catch (error) {

@@ -121,7 +121,8 @@ export class WorkspaceController {
       if (before.actions.some(action => action.isUncertain || action.dispatchStatus === 'queued'
         || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Review unresolved actions before delegating');
       const grantId = `workflow-${randomUUID()}`, runId = randomUUID();
-      const { disclosurePolicy, accountScope, verifyAccount, verifyReview, verificationId, taskSourceHashes, planner, task, fieldGroups = null } = definition;
+      const { disclosurePolicy, accountScope, verifyAccount, verifyReview, verificationId, taskSourceHashes,
+        planner, task, fieldGroups = null, learnRepairs = true } = definition;
       const profile = structuredClone(inputs);
       await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent',
         intents: ['personal-workflow'], targetOrigins: [disclosurePolicy.origin],
@@ -136,7 +137,7 @@ export class WorkspaceController {
       const controller = new AbortController();
       this.store.activity(id, { event: 'personal-workflow-started', template, mode, grantId });
       const done = this.workflowStore.run({ template, mode, pageId, inputs: profile,
-        accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, fieldGroups, service: this.service, owner,
+        accountScope, verifyAccount, verificationId, taskSourceHashes, disclosurePolicy, fieldGroups, learnRepairs, service: this.service, owner,
         intent: 'personal-workflow', task, planner, config: this.config, store: this.store,
         projectId: id, signal: controller.signal,
         verifyReview: () => verifyReview({ service: this.service, owner, pageId, inputs: profile }),

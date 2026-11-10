@@ -28,6 +28,8 @@ Each entry in the trusted `workflowTasks` Map is keyed by template and supplies:
 - `task` and a workflow-tool-compatible `planner`.
 - Optional `fieldGroups`: reviewed ordered groups described below. They are trusted
   host definitions, never accepted from a model, graph import or HTTP body.
+- Optional `learnRepairs` (default `true`): publish verified structural repairs.
+  Set `false` for frozen evaluation or completion without collecting repairs.
 
 An explicitly requested host call
 `controller.runPersonalWorkflow(projectId, {template, pageId, inputs, mode})`
@@ -68,12 +70,22 @@ Every effect still resolves a unique fresh target, checks account and disclosure
 and passes the workspace service's admission and value-settling checks. Group
 aliases do not widen disclosure: each permitted alias must also be listed in the
 task's slot-to-field disclosure policy. Policy and source hashes bind the new
-scope implementation. Existing unscoped fingerprints and receipt policy hashes
-retain their behavior. Graph exports stay version 1; scoped and unscoped nodes
-have disjoint fingerprints, so changing modes cannot reinterpret an old edge.
+scope implementation. Existing fingerprints retain their behavior. Policy hashes
+now also bind the repair-learning flag; historical receipts remain unchanged.
+Scoped and exact-page nodes have disjoint fingerprints.
 
-A safe miss switches to ordinary fresh planning without publishing its partial
-repair. Unknown effects, ambiguity and authority failures stop. The host still
+A safe structural miss switches to ordinary planning. With repair learning enabled,
+the session retains the actions actually completed in this run, their live result
+nodes, ordered prefix and action depth. At a group miss it stages a same-depth
+bridge into an exact-page suffix, never silently reinterpreting a group index.
+Further reuse takes that bridge only when a fresh exact outline matches its target.
+The unchanged form can continue using the original group path.
+
+Only an independently verified whole result may publish the prefix, bridge and
+suffix together. Failed review, interruption, unknown effects and authority
+failure publish nothing. Stale actions with explicit non-dispatch evidence may
+replan, but do not teach a stitched path. Conflicting actions at one exact node
+remain ambiguous. Targets must stay unique, and the host still
 supplies an independent review oracle: structural matching cannot establish
 real-site semantic correctness. The [frozen comparison](qualification/workflow-generalization/README.md)
 separates that obligation from DOM read-back and comparative product claims.
@@ -89,7 +101,8 @@ scope and does not import legacy exports.
 
 Actions are staged during learning. Only a complete run accepted by the task
 review oracle can submit staged records to the store's private publication
-method. A repaired fallback is not published. The generated
+method. This includes verified repaired fallbacks when installed policy allows.
+Fresh mode deliberately remains non-collecting. The generated
 [version-1 format](workflow-store.schema.json) has three collections:
 
 | Collection | Meaning |
@@ -97,6 +110,14 @@ method. A repaired fallback is not published. The generated
 | `workflows` | Namespace hash → revision and current-version pointer |
 | `workflowVersions` | Immutable snapshot, workflow ID, revision, parent version and private DAG/key |
 | `workflowRuns` | Base/result version IDs, outcome, verification ID, source/policy hashes, declared and observed model identities, calls, elapsed time, intervention requests |
+
+The store envelope remains version 1. New DAG snapshots are version 2, adding
+`repairs: [exactNodeHash]` to each node. Readers admit version-1 DAGs without
+changing their hashes; later publications create a version-2 snapshot while
+retaining the old version bytes. Older clients cannot read version-2 graphs:
+upgrade cooperating clients before sharing these snapshots. Repair bridges count
+toward `maxEdges`, must point to a node at the same action depth and cannot chain
+or cycle. Ordinary action edges still advance exactly one depth.
 
 Receipts exclude applicant values, observations and review text. Full local
 investigation journals retain their existing private behavior. Observed model
@@ -181,7 +202,8 @@ committed cache remains readable before recovery. This protocol is for a local
 filesystem on one host; network filesystems need separate implementation/tests.
 
 Optional [shared synchronization](workflow-registry.md) now adds client-side encryption
-and cross-client merging. Public imports and repair candidates remain separate contracts. Same-key compatibility, graph validation and provenance never authorize
+and cross-client merging. Public imports remain excluded. Same-key compatibility,
+graph validation and provenance never authorize
 disclosure. If a future database operator is outside the trust boundary, encrypt
 graph and key on the client before upload; row access rules alone do not do that.
 
@@ -191,7 +213,9 @@ graph and key on the client before upload; row access rules alone do not do that
 node browser/workspace/test/unit/workflow-store.test.js
 node browser/workspace/test/unit/workflow-attempts.test.js
 node browser/workspace/test/unit/workflow-sync.test.js
+node browser/workspace/test/unit/workflow-repair.test.js
 node browser/workspace/test/browser/workflow-store.test.js
+node browser/workspace/test/browser/workflow-repair.test.js
 ```
 
 Separate-process tests cover verified learning/reuse, concurrent publication and
