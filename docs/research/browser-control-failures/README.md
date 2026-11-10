@@ -1,6 +1,6 @@
 # Browser-control failure catalogue
 
-[catalogue.json](catalogue.json) collects 78 failure cases from 164 sources across
+[catalogue.json](catalogue.json) collects 80 failure cases from 174 sources across
 16 categories. The owner requested collection from local Codex, Claude and Gemini
 histories and the internet on November 9, 2026. This is research for choosing
 reproductions, not a change to Fawn's goals or evidence that Fawn solves them.
@@ -11,8 +11,8 @@ The cases comprise:
 - 45 failure classes from a second public pass over benchmark error analyses,
   vendor limitation documentation, automation-tool documentation and issues
   (21 rest on benchmark analyses, 21 on issues and 3 on documentation alone);
-- 19 cases drawn from inspected local tool outputs, 11 of them added by a second
-  local pass;
+- 21 cases drawn from inspected local tool outputs, 11 added by a second
+  local pass and 2 from a later rich-text editing session;
 - 2 cases resting on an agent's own report: a Gemini browser-subagent note
   corroborated by an exact error string, and an agent's account of a second
   session sharing its browser.
@@ -29,11 +29,11 @@ counts are not incident frequency or failure rates.
 | `launch-configuration` | The browser does not start as requested | 5 |
 | `target-identity` | The action reaches a different tab or element than intended | 3 |
 | `ownership-concurrency` | More than one controller or person drives the same browser | 3 |
-| `input-routing` | Input is intercepted, mis-addressed or never delivered | 6 |
+| `input-routing` | Input is intercepted, mis-addressed or never delivered | 7 |
 | `control-state` | The page does not keep the value or choice the action set | 8 |
 | `observation-freshness` | The agent reads an out-of-date page state | 4 |
 | `action-scope` | An action does more or less than the requested operation | 3 |
-| `outcome-verification` | Success and failure reports disagree with what happened | 5 |
+| `outcome-verification` | Success and failure reports disagree with what happened | 6 |
 | `observation-coverage` | The agent cannot see content or controls on the page | 10 |
 | `native-surface` | A dialog, picker or prompt outside the page blocks the task | 5 |
 | `page-topology` | Tabs, frames, navigations and downloads move work out of view | 5 |
@@ -158,6 +158,15 @@ tool results for both: the disabled confirm button in the native file dialog
 map records which relayed corrections the records contradicted. Repetition in a
 summary still does not corroborate an event, and the older local examples remain
 historical examples, not evidence that separate recent task batches were one run.
+
+A later rich-text editing session adds two cases: a requested selection or
+end-navigation followed by input changed the wrong range, and an HTML anchor
+paste exposed only text until the editor's link dialog was used. Undo and
+readback recovered the task before publication. The agent had not verified the
+selection before mutating; focus, keyboard behavior, clipboard handling and
+observation timing were not isolated. These are control-path observations, not
+proven Chromium defects. Ten source records include recovery evidence and
+corroborating host/window errors; they are not ten independent incidents.
 
 ## Adding a case or turning one into a test
 

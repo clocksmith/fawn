@@ -2997,6 +2997,106 @@
       "signature": "noWindowsAvailable",
       "context": "computer-use-tool",
       "evidenceLimit": "Inspected historical record, not a reproduction now. Raw location stays in the private owner research repository; no private page content is published."
+    },
+    {
+      "id": "local:codex:d78b4499b5205744",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T01:58:43.879Z",
+      "recordSha256": "d78b4499b52057440e90f59bf04c7a4bc2a2dcac93f77782d5ba3e537e5a014b",
+      "signature": "Computer Use server error -10005: noWindowsAvailable",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:dae8e0398907df09",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T01:58:50.240Z",
+      "recordSha256": "dae8e0398907df09364231d297366d95a71d0604e071d41ecfce4ca32d1d0d2f",
+      "signature": "The browser access host is unavailable",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:fb9114efddb65dad",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T01:59:26.762Z",
+      "recordSha256": "fb9114efddb65dadada379ddf219b42b2a71e94cc143a206c0b0c5252c376359",
+      "signature": "Requested footer selection followed by paste changed an earlier paragraph; footer remained unchanged",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:841864de9f6e40dc",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:01:09.444Z",
+      "recordSha256": "841864de9f6e40dc28c8183b94070441bc37805acfa0585f8faad03c901a8baf",
+      "signature": "Readback after undo restored the original paragraph and footer",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:35511ea83d75f913",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:01:20.819Z",
+      "recordSha256": "35511ea83d75f913571c75660a1e41f9bb0d6955f1dcb521f72bfa676639fc7c",
+      "signature": "HTML anchor paste inserted the requested footer label",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:3a4009a9ed4ae8ec",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:01:26.755Z",
+      "recordSha256": "3a4009a9ed4ae8ec211d60c98e7715f9bcfb527600d615e15fcd220bb1a06522",
+      "signature": "Accessibility readback exposed the pasted label as text, without a link role or destination",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:34d27f0de3491ff1",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:01:41.170Z",
+      "recordSha256": "34d27f0de3491ff1bf1c44583f6b298e55a7cc39c51bd9e06c2b074a2cadd8cb",
+      "signature": "Explicit link dialog produced a link role with the intended destination",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:4dbfc86533acc21f",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:07:04.454Z",
+      "recordSha256": "4dbfc86533acc21f53e7fee295591c81097ac5594f7ec085708d33e49dcda028",
+      "signature": "Attempt to append a footer split the closing sentence",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:8ef4f32c3d590d0b",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:07:33.522Z",
+      "recordSha256": "8ef4f32c3d590d0bc8c9cd061941810545ec2c6f45c7a6535e9403977be0156d",
+      "signature": "Readback after undo and caret repositioning placed footer after the complete closing sentence",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
+    },
+    {
+      "id": "local:codex:ced5d09b4a478bd4",
+      "kind": "local-tool-result",
+      "provider": "codex",
+      "observedAt": "2026-11-10T02:08:28.227Z",
+      "recordSha256": "ced5d09b4a478bd4a0bfd6481b12617597d52e85b24343c060c6eed411ecfeaa",
+      "signature": "Published page exposed the intended link and the restored paragraph",
+      "context": "computer-use-tool",
+      "evidenceLimit": "Inspected native Chrome control record from a rich-text editing task. Browser/control package versions were not captured. No controlled reproduction or Fawn execution; raw content and source location remain private."
     }
   ],
   "cases": [
@@ -3295,10 +3395,11 @@
         "local:codex:9a8c18ad9651c7d1",
         "local:codex:56279ace3b1167f5",
         "local:codex:7104ea1ee5e0a14f",
-        "local:codex:e694734e918369d5"
+        "local:codex:e694734e918369d5",
+        "local:codex:dae8e0398907df09"
       ],
       "evidenceLevel": "local-tool-output",
-      "observation": "Computer-use availability calls returned that the browser access host was unavailable; recorded on separate tasks from October 28 to November 9, once together with \"Sky Computer Use native pipe startup failed\".",
+      "observation": "Computer-use availability calls returned that the browser access host was unavailable; recorded on separate tasks from October 28 to November 9, once together with \"Sky Computer Use native pipe startup failed\". A later rich-text editing session also returned this error (November 10 UTC, November 9 local time); this is corroborating evidence, not an additional failure class.",
       "rootCause": {
         "status": "not-established",
         "assessment": "The error identifies the control surface, not a Chrome crash or GPU fault."
@@ -3320,10 +3421,11 @@
       "category": "window-discovery",
       "sourceIds": [
         "local:codex:2fe237b4b67e76d8",
-        "local:codex:c24e6740d43010b7"
+        "local:codex:c24e6740d43010b7",
+        "local:codex:d78b4499b5205744"
       ],
       "evidenceLevel": "local-tool-output",
-      "observation": "Computer-use operations returned server error -10005: noWindowsAvailable, on November 3 while the accessibility tree stayed readable and on November 9.",
+      "observation": "Computer-use operations returned server error -10005: noWindowsAvailable, on November 3 while the accessibility tree stayed readable and on November 9. A later rich-text editing session also returned this error (November 10 UTC, November 9 local time); this is corroborating evidence, not an additional failure class.",
       "rootCause": {
         "status": "not-established",
         "assessment": "The record alone cannot distinguish no window from a discovery, permissions or attachment failure."
@@ -5221,6 +5323,61 @@
         "passCondition": "The navigation fails with the blocked-port reason surfaced to the agent."
       },
       "resolution": "historical-outcome-only; current resolution not checked"
+    },
+    {
+      "id": "BF-local-rich-text-selection-misdirected",
+      "category": "input-routing",
+      "sourceIds": [
+        "local:codex:fb9114efddb65dad",
+        "local:codex:841864de9f6e40dc",
+        "local:codex:4dbfc86533acc21f",
+        "local:codex:8ef4f32c3d590d0b",
+        "local:codex:ced5d09b4a478bd4"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "A native accessibility selectText request for a footer, followed by paste, replaced part of an earlier paragraph while the footer remained unchanged. In another editor, attempting to move to the document end and append text split the final sentence. Readback exposed both misplaced mutations; undo and explicit caret/selection checks preceded the corrected edits and publication.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "The observed edit range differed from the intended range. The agent batched selection/navigation and mutation without first verifying the selected text or caret. Focus, keyboard semantics, tool selection behavior and observation timing were not isolated; this does not establish a Chromium or tool-only defect."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/service.js",
+        "ownerMapping": "research inference: rich-text selection and semantic readback need a separate reproduction; existing fill/choice checks do not establish coverage",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "A synthetic contenteditable article with paragraphs, a code block, source list and linked footer. Begin with the caret in a different paragraph; exercise accessibility selection and end-navigation before replacement or append. Capture selection range and complete document before/after.",
+        "passCondition": "Only the requested range changes; all surrounding text and markup remain unchanged. If selection cannot be verified, refuse mutation. Read back the complete affected block and support verified undo before save."
+      },
+      "resolution": "Observed task recovered by undo and verified edits; underlying control failure not fixed or reproduced in Fawn."
+    },
+    {
+      "id": "BF-local-rich-text-anchor-paste-unverified",
+      "category": "outcome-verification",
+      "sourceIds": [
+        "local:codex:35511ea83d75f913",
+        "local:codex:3a4009a9ed4ae8ec",
+        "local:codex:34d27f0de3491ff1",
+        "local:codex:ced5d09b4a478bd4"
+      ],
+      "evidenceLevel": "local-tool-output",
+      "observation": "Pasting an HTML anchor into a rich-text footer inserted its label, but subsequent accessibility inspection exposed plain text rather than a link with a destination. Using the editor link dialog then exposed the expected link role and URL, which were also visible on the published page.",
+      "rootCause": {
+        "status": "not-established",
+        "assessment": "Clipboard format loss, editor sanitization and accessibility representation were not distinguished. The observation establishes that paste completion and visible text were insufficient to verify the requested hyperlink; no DOM inspection proved where markup was lost."
+      },
+      "fawn": {
+        "candidateOwner": "browser/workspace/src/service.js",
+        "ownerMapping": "research inference: rich-text selection and semantic readback need a separate reproduction; existing fill/choice checks do not establish coverage",
+        "doeRelevance": "No direct GPU evidence in this observation."
+      },
+      "reproduction": {
+        "status": "proposed-not-run",
+        "setup": "Paste a synthetic HTML anchor into a contenteditable editor through native control. Compare clipboard format, resulting DOM anchor/href, accessibility role, saved document and reopened page; include an editor that intentionally strips HTML.",
+        "passCondition": "Report a hyperlink as complete only when its exact destination and semantic link survive save/reopen; detect plain-text-only insertion and repair explicitly or report failure."
+      },
+      "resolution": "Task recovered through explicit link creation and published-page verification; no general paste fix or Fawn qualification."
     }
   ],
   "collectionScope": {
@@ -5230,7 +5387,8 @@
       "geminiConversationStepsScannedForExactErrors": 60525,
       "method": "Literal error-signature discovery followed by manual inspection of selected tool outputs. Search results, code literals, copied conversations and this research session are excluded from admitted local examples. Repeated matching text is not an incident count.",
       "excluded": "Compressed Codex archives, browser profiles/cookies, credentials, encrypted/fully undecoded Gemini trajectories, and unrelated content. Gemini history and readable browser notes were inspected; coverage is not exhaustive.",
-      "secondPass": "November 9 extension: 109 Codex session files and their 109 compressed archives (no primary records in the archives), the Codex log database, 25 Claude project folders and about 120 Gemini conversation databases. Admitted records are tool results located by line and fingerprinted like the first pass; agent narration is labelled local-agent-message. Forked copies and duplicated event/response records are counted once."
+      "secondPass": "November 9 extension: 109 Codex session files and their 109 compressed archives (no primary records in the archives), the Codex log database, 25 Claude project folders and about 120 Gemini conversation databases. Admitted records are tool results located by line and fingerprinted like the first pass; agent narration is labelled local-agent-message. Forked copies and duplicated event/response records are counted once.",
+      "editorSessionPass": "Focused inspection of one existing Codex JSONL session for native rich-text editing failures, November 10 UTC (November 9 local time). Ten request/result pairs admitted: two corroborate existing host/window cases and eight support two new editor cases, including recovery evidence. Counts describe records, not independent incidents. Versions and root causes remain unestablished."
     },
     "public": {
       "method": "Targeted web discovery followed by primary GitHub issue metadata/body reads; selected maintainer/reporter comments checked.",
