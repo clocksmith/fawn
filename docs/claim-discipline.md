@@ -60,7 +60,7 @@ Unsupported captured operations must fail with explicit CSL taxonomy errors.
 Hidden fallbacks do not promote the lane.
 
 The parity contract already exists at
-`/home/x/deco/doe/config/doe-csl-reference-parity.schema.json`. A full
+`/home/x/deco/fawn/config/doe-csl-reference-parity.schema.json`. A full
 `final_logits` tensor receipt is a useful intermediate bring-up check, but it is
 not the portable model-execution proof by itself. The production Doppler export
 should grow from `doppler_int4ple_reference_export.json` into a bounded

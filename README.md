@@ -11,7 +11,8 @@ qualification evidence.
 
 The canonical repository for Fawn and Doe is
 **[clocksmith/fawn](https://github.com/clocksmith/fawn)**. Doe is a component here,
-not a separate current repository. The JavaScript package remains `doe-gpu`.
+not a separate current repository. The checkout is `deco/fawn` on every machine;
+there is no `deco/doe` alias. The JavaScript package remains `doe-gpu`.
 
 | Surface | What it does | Start here |
 | --- | --- | --- |

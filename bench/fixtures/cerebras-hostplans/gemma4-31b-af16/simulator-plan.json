@@ -7,7 +7,7 @@
     "protocol": "doe.csl.simulator/v1",
     "executableEnvVar": "DOE_CSL_SIM_EXECUTABLE",
     "failClosedIfMissing": true,
-    "executablePath": "/home/x/deco/doe/runtime/zig/tools/csl_sdk_driver.py"
+    "executablePath": "/home/x/deco/fawn/runtime/zig/tools/csl_sdk_driver.py"
   },
   "inputs": {
     "hostPlanArtifactPath": "host-plan.json",

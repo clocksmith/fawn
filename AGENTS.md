@@ -1,8 +1,10 @@
-# Doe code agent
+# Fawn code agent
 
 ## Start with the owner
 
-This file routes Doe work; sibling repositories have their own instructions.
+This file routes work in the Fawn repository, including its Doe GPU component.
+The canonical checkout is `deco/fawn`; do not create a `deco/doe` alias.
+Sibling repositories have their own instructions.
 Read [GOALS.md](GOALS.md), [INTENT.md](INTENT.md), and every `CATSCAN.md` from
 root to the files being changed. Find them with `rg --files -g CATSCAN.md` or
 [the component index](docs/component-index.md). Follow the

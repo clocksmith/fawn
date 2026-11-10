@@ -57,7 +57,7 @@ For model-scale Gemma-4 evidence, the `HostPlan` must stay tied back to the
 source manifest, captured graph, weight identity, and input contract so parity
 receipts can distinguish same-program portability from a separate hand-authored
 CSL demo. The binding surface for that evidence is
-`/home/x/deco/doe/config/doe-csl-reference-parity.schema.json`, which already
+`/home/x/deco/fawn/config/doe-csl-reference-parity.schema.json`, which already
 separates `sourceProgram`, `referenceRun`, `cslRun`, `comparison`, and
 `promotionCriteria`. The model-scale proof target is not a single tensor
 snapshot. It is a bounded deterministic prefill+decode transcript: full prefill,

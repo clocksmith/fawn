@@ -545,7 +545,7 @@ hf download clocksmith/rdrr \
 Validate the 31B Doppler artifact before running Doe:
 
 ```bash
-cd /home/x/deco/doe
+cd /home/x/deco/fawn
 python3 - <<'PY'
 import json
 import os

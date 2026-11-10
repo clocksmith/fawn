@@ -27,7 +27,7 @@ Matrix file format (JSON):
         "id": "31b-l1-decode0-size1024",
         "lane": "csl_heavy",
         "cmd": ["cs_python", "bench/runners/.../runner.py", "--num-layers=1", ...],
-        "cwd": "/home/x/deco/doe",                  # optional
+        "cwd": "/home/x/deco/fawn",                  # optional
         "env": {"DOE_FOO": "bar"},                 # optional
         "dependsOn": ["producer-cell"],            # optional, same-lane/order gate
         "timeoutSeconds": 7200,                    # optional, per-cell

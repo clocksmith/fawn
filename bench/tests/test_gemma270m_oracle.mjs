@@ -49,7 +49,7 @@ function receipt(lane) {
     producer: {
       runtime: 'doppler_electron_main_process_webgpu',
       electronVersion: '43.4.0',
-      webgpuProvider: `/home/x/deco/doe/${wrapper}`,
+      webgpuProvider: `/home/x/deco/fawn/${wrapper}`,
     },
   };
 }
@@ -76,7 +76,7 @@ test('qualification identity rejects a mutually matching chat-template transcrip
 test('qualification identity rejects a provider that bypasses its wrapper', () => {
   const w0 = receipt('W0');
   const d0 = receipt('D0');
-  d0.producer.webgpuProvider = '/home/x/deco/doe/packages/doe-gpu/src/index.js';
+  d0.producer.webgpuProvider = '/home/x/deco/fawn/packages/doe-gpu/src/index.js';
   const result = qualificationIdentity(contract, { W0: w0, D0: d0 });
   assert.equal(result.pass, false);
   assert.deepEqual(result.failed, ['D0.provider']);

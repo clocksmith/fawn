@@ -14,14 +14,15 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   gpu,
   providerInfo,
   preflightShaderSource,
   requestAdapter,
-} from '/home/x/deco/doe/packages/doe-gpu/src/index.js';
+} from '../../packages/doe-gpu/src/index.js';
 
-const REPO_ROOT = '/home/x/deco/doe';
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const KERNEL = 'elementwise-double';
 const WGSL_PATH = `${REPO_ROOT}/bench/out/dual-compile-evidence/${KERNEL}/source.wgsl`;
 const OUT_PATH = `${REPO_ROOT}/bench/out/vulkan-runtime-probe/${KERNEL}/probe.json`;
