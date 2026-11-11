@@ -17,7 +17,8 @@ bool sema_valid_name(Source *s, NameSpan name) {
 uint32_t sema_find_constant(const Source *s, NameSpan name) {
     const CompilerWorkspace *c = s->compiler;
     for (uint32_t i = 0u;i<c->constant_decl_count;++i)
-        if (c->constant_decls[i].expression != NO_ID && source_spans_equal(s, name, c->constant_decls[i].name)) return i;
+        if ((c->constant_decls[i].state & DECLARATION_ASSERT) == 0u &&
+            c->constant_decls[i].expression != NO_ID && source_spans_equal(s, name, c->constant_decls[i].name)) return i;
     return NO_ID;
 }
 uint32_t sema_find_type_alias(const Source *s, NameSpan name) {
@@ -102,7 +103,7 @@ bool sema_value_identity(Source *s,const LocalScope *scope,NameSpan name,Uniform
         }
     }
     for (uint32_t i=0u;i<c->constant_decl_count;++i) {
-        if (c->constant_decls[i].expression == NO_ID) continue;
+        if (c->constant_decls[i].expression == NO_ID || (c->constant_decls[i].state & DECLARATION_ASSERT) != 0u) continue;
         if (!identity_name(s,name,c->constant_decls[i].name,budget,&same)) return false;
         if (same) {*out=(ValueIdentity){IDENTITY_CONSTANT,i};return true;}
     }
@@ -364,7 +365,7 @@ static uint32_t declaration_state(const CompilerWorkspace *c, uint32_t kind, uin
 static void enter_declaration(CompilerWorkspace *c, uint32_t kind, uint32_t id, uint32_t parent_kind, uint32_t parent) {
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
-        d->state = (d->state & DECLARATION_OVERRIDE)|1u|(parent_kind<<2u);
+        d->state = (d->state & (DECLARATION_OVERRIDE | DECLARATION_ASSERT))|1u|(parent_kind<<2u);
         d->value.dependency.scan = NO_ID;
         d->value.dependency.parent = parent;
     }
@@ -406,6 +407,19 @@ static bool finish_declaration(Source *s, uint32_t kind, uint32_t id, LocalScope
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
         if ((d->state & DECLARATION_OVERRIDE) != 0u) return override_finish(s, id, scope);
+        if ((d->state & DECLARATION_ASSERT) != 0u) {
+            ExpressionValue value;
+            if (!sema_expression(s, d->expression, scope, true, false, &value)) return false;
+            if (value.runtime || value.overridable || !value.known)
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, d->name.offset, "const_assert requires a const expression");
+            if (value.constant.type != IR_BOOL)
+                return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, d->name.offset, "const_assert condition requires scalar bool");
+            if (value.constant.bits == 0u)
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, d->name.offset, "const_assert failed");
+            d->type = IR_BOOL;
+            d->state = DECLARATION_ASSERT | 2u;
+            return true;
+        }
         if (d->expression == NO_ID) {
             TypeId type;
             if (!sema_type_reference(s, d->annotation, scope, &type)) return false;
@@ -483,10 +497,14 @@ static bool declarations_valid(Source *s) {
     const uint32_t nominal_count = c->type_count;
     const uint64_t count = (uint64_t)c->constant_decl_count+c->function_count+c->resource_count+c->workgroup_count+nominal_count;
     for (uint32_t i = 0u;i<count;++i) {
+        if (i < c->constant_decl_count && (c->constant_decls[i].state & DECLARATION_ASSERT) != 0u) continue;
         const NameSpan name = module_name(c, i, nominal_count);
         if (!sema_valid_name(s, name)) return false;
-        for (uint32_t j = 0u;j<i;++j) if (source_spans_equal(s, name, module_name(c, j, nominal_count)))
+        for (uint32_t j = 0u;j<i;++j) {
+            if (j < c->constant_decl_count && (c->constant_decls[j].state & DECLARATION_ASSERT) != 0u) continue;
+            if (source_spans_equal(s, name, module_name(c, j, nominal_count)))
                 return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_DUPLICATE_SYMBOL, name.offset, "duplicate module declaration");
+        }
     }
     for (uint32_t t = 0u;t<nominal_count;++t) for (uint32_t i = 0u;i<c->types[t].count;++i) {
             const NameSpan name = c->members[c->types[t].element+i].name;
@@ -630,6 +648,7 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         for (uint32_t category = 0u;category<5u;++category) {
             const uint32_t count = category == 0u?c->constant_decl_count:category == 1u?c->function_count:category == 2u?c->resource_count:category == 3u?c->type_count:c->workgroup_count;
             for (uint32_t j = 0u;j<count;++j) {
+                if (category == 0u && (c->constant_decls[j].state & DECLARATION_ASSERT) != 0u) continue;
                 if (category == 3u && c->types[j].kind != TYPE_STRUCT) continue;
                 const NameSpan name = category == 0u?c->constant_decls[j].name:category == 1u?c->functions[j].name:category == 2u?c->resources[j].name:category == 3u?c->types[j].name:c->workgroups[j].name;
                 const bool scalar = input_scalar(p->kind) || p->flags == 0u;

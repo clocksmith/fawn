@@ -643,6 +643,19 @@ static bool entry_parameters(Parser *p, Syntax *s) {
     return parser_punctuation(p, ')', ")");
 }
 
+static bool module_const_assert(Parser *p, Syntax *s) {
+    const uint32_t offset = parser_peek(p)->offset;
+    if (s->constant_decl_count == s->limits.expressions + 1u)
+        return source_pool_error(p->source, DOE_COMPILER_POOL_EXPRESSIONS,
+            (size_t)s->constant_decl_count, offset, "module const_assert capacity exceeded");
+    ConstantSyntax *d = &s->constant_decls[s->constant_decl_count];
+    *d = (ConstantSyntax){.name = {offset, 0u}, .annotation = {NO_ID, NO_ID},
+        .first_expression = s->expression_count, .expression = NO_ID, .state = DECLARATION_ASSERT};
+    if (!parser_word(p, "const_assert") || !expression(p, s, 0u, 0u, &d->expression) ||
+        !parser_punctuation(p, ';', ";")) return false;
+    ++s->constant_decl_count;
+    return true;
+}
 static bool module_constant(Parser *p, Syntax *s, bool first) {
     if (s->constant_decl_count == s->limits.expressions + 1u)
         return source_pool_error(p->source, DOE_COMPILER_POOL_EXPRESSIONS, (size_t)s->constant_decl_count, parser_peek(p)->offset,
@@ -909,6 +922,7 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
              parser_spelled(&p, &s->tokens[p.cursor + 1u], "id")))) {
             if (!parse_override(&p, s)) return false;
         }
+        else if (parser_spelled(&p,parser_peek(&p),"const_assert")) {if (!module_const_assert(&p,s)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"alias")) {if (!module_alias(&p,s)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"struct")) {if (!struct_declaration(&p,s)) return false;}

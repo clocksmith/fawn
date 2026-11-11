@@ -375,6 +375,20 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
                     !marker(source, program, IR_DISCARD, st->source_offset, 0u)) return false;
                 /* Demotion preserves control flow, including continuing. */
                 break;
+            case STATEMENT_CONST_ASSERT: {
+                ExpressionValue value;
+                if (!sema_expression(source, st->value.condition, scope, true, false, &value)) return false;
+                if (value.runtime || value.overridable || !value.known)
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                        "const_assert requires a const expression");
+                if (value.constant.type != IR_BOOL)
+                    return source_error_cause(source, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH,
+                                              st->source_offset, "const_assert condition requires scalar bool");
+                if (value.constant.bits == 0u)
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                        "const_assert failed");
+                break;
+            }
             case STATEMENT_EMPTY: break;
         }
         if (st->kind!=STATEMENT_FOR && st->kind!=STATEMENT_WHILE && st->kind!=STATEMENT_LOOP)

@@ -162,7 +162,7 @@ static bool globals(TsirSourceBridge *b) {
     for (uint32_t i = 0u; i < c->constant_decl_count; ++i) {
         const ConstantSyntax *declaration = &c->constant_decls[i];
         /* Type aliases resolve to canonical types and are not IR globals. */
-        if (declaration->expression == NO_ID) continue;
+        if (declaration->expression == NO_ID || (declaration->state & DECLARATION_ASSERT) != 0u) continue;
         TsirIrGlobal global = {.name = tsir_source_name(b, declaration->name),
             .ty = declaration->type, .class = TSIR_IR_GLOBAL_CONST};
         if ((declaration->state & DECLARATION_OVERRIDE) != 0u) {

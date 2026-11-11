@@ -304,6 +304,7 @@ static uint32_t statement_impl(DxilSourceBridge *b, DxilSourceFunction *f, uint3
             o.kind = DXIL_IR_STMT_EXPR;
             o.expr = dxil_source_native_expr(b, f, s->value.condition, false, 0u);
             break;
+        case STATEMENT_CONST_ASSERT:
         case STATEMENT_EMPTY: return push(b, f, (DxilIrStmt){.kind = DXIL_IR_STMT_BLOCK});
         case STATEMENT_BREAK_IF: {
             uint32_t break_id = push(b, f, (DxilIrStmt){.kind = DXIL_IR_STMT_BREAK});

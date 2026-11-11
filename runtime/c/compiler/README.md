@@ -38,6 +38,14 @@ Uninitialized overrides remain deferred until a pipeline supplies values; earlie
 compiler ABI admission and layouts remain unchanged. Focused host/target controls
 do not establish native pipeline adoption or GPU qualification.
 
+`const_assert` is admitted at module and function scope. Its condition must be a
+known, non-override scalar `bool` const expression; a false, non-bool, override
+or runtime condition rejects at validation with the assertion's location. An
+assertion emits nothing: SPIR-V, MSL and HLSL output equal the same source
+without it, and the DXIL and TSIR source bridges skip it. Module assertions take
+no declaration name. `make test` runs `build/test_const_assert`. The retained
+Zig reference still rejects `const_assert`.
+
 Core `select` supports scalar/vector numeric and boolean values, scalar or
 matching vector boolean masks, eager ordered arguments, and const/override/runtime
 stages through one semantic owner. `make test-select sanitize-select` exercises

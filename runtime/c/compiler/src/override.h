@@ -5,7 +5,7 @@
 #include "sampling_internal.h"
 #include "../include/doe_compiler_module_specialization.h"
 #include "../include/doe_compiler_metal_pipeline.h"
-enum { DECLARATION_OVERRIDE = 32u, DECLARATION_KNOWN = 64u };
+enum { DECLARATION_OVERRIDE = 32u, DECLARATION_KNOWN = 64u, DECLARATION_ASSERT = 128u };
 #define OVERRIDE_NO_INITIALIZER (UINT32_MAX - 1u)
 typedef struct {
     uint32_t declaration, id_expression, id, flags;

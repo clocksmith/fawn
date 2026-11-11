@@ -205,6 +205,7 @@ static uint32_t statement(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
             o.kind = TSIR_IR_STMT_EXPR;
             o.expr = tsir_source_expr(b, f, s->value.condition, false, 0u);
             break;
+        case STATEMENT_CONST_ASSERT:
         case STATEMENT_EMPTY: return push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_BLOCK});
         case STATEMENT_BREAK_IF: {
             uint32_t break_id = push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_BREAK});

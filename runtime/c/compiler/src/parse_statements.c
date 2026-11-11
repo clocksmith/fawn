@@ -15,6 +15,7 @@ static bool statement_slot(Parser *p, Syntax *s, uint32_t *id) {
     return true;
 }
 static bool simple_statement(Parser *p, Syntax *s, bool declaration, unsigned terminator, uint32_t *id) {
+    if (parser_spelled(p, parser_peek(p), "const_assert")) return parser_reject(p, "simple statement");
     if (!statement_slot(p, s, id)) return false;
     Statement *st = &s->statements[*id];
     if (declaration && (parser_spelled(p, parser_peek(p), "let") || parser_spelled(p, parser_peek(p), "var") || parser_spelled(p, parser_peek(p), "const"))) {
@@ -111,6 +112,7 @@ static bool statement_inner(Parser *p, Syntax *s, unsigned depth) {
     if (parser_spelled(p, token, "let") || parser_spelled(p, token, "var") || parser_spelled(p, token, "const"))
         return simple_statement(p, s, true, ';', &id);
     if (!is_if && !is_switch && !is_for && !is_while && !is_loop && !is_block && !is_continuing &&
+        !parser_spelled(p, token, "const_assert") &&
         !parser_spelled(p, token, "return") && !parser_spelled(p, token, "discard") && !((parser_spelled(p, token, "break") || parser_spelled(p, token, "continue") || token->kind == ';')))
         return simple_statement(p, s, false, ';', &id);
     if (!statement_slot(p, s, &id)) return false;
@@ -166,6 +168,9 @@ static bool statement_inner(Parser *p, Syntax *s, unsigned depth) {
             if (!expression(p, s, 0u, 0u, &st->value.condition)) return false;
         }
         if (!parser_punctuation(p, ';', ";")) return false;
+    } else if (parser_spelled(p, token, "const_assert")) {
+        st->kind = STATEMENT_CONST_ASSERT;
+        if (!expression(p, s, 0u, 0u, &st->value.condition) || !parser_punctuation(p, ';', ";")) return false;
     } else if (parser_spelled(p, token, "discard")) {
         st->kind = STATEMENT_DISCARD;
         if (!parser_punctuation(p, ';', ";")) return false;

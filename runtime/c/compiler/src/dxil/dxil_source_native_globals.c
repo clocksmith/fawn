@@ -62,7 +62,7 @@ bool dxil_source_native_globals(DxilSourceBridge *b) {
     CompilerWorkspace *c = b->compiler;
     uint32_t count = c->resource_count + c->workgroup_count;
     for (uint32_t i = 0u; i < c->constant_decl_count; ++i)
-        if (c->constant_decls[i].expression != NO_ID) ++count;
+        if (c->constant_decls[i].expression != NO_ID && (c->constant_decls[i].state & DECLARATION_ASSERT) == 0u) ++count;
     if (count > DXIL_IR_MAX_GLOBALS)
         return dxil_source_native_fail(b, 0u, DXIL_OUTPUT_TOO_LARGE, "native DXIL global capacity exceeded");
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
@@ -89,7 +89,7 @@ bool dxil_source_native_globals(DxilSourceBridge *b) {
     }
     for (uint32_t i = 0u; i < c->constant_decl_count; ++i) {
         const ConstantSyntax *declaration = &c->constant_decls[i];
-        if (declaration->expression == NO_ID) continue;
+        if (declaration->expression == NO_ID || (declaration->state & DECLARATION_ASSERT) != 0u) continue;
         DxilIrGlobal *g = &b->module->globals[b->module->global_count++];
         *g = (DxilIrGlobal){.name = dxil_source_native_name(b, declaration->name),
             .ty = declaration->type, .class = DXIL_IR_GLOBAL_CONST};
