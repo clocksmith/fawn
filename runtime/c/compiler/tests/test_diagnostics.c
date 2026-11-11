@@ -194,12 +194,121 @@ static void grammar(void)
         "@compute @workgroup_size(1) fn main(){}",NULL,&result)==DOE_COMPILER_OK);
     assert(result.required_notices==1);
 }
+static void scoped_attributes(void)
+{
+    DoeCompilerModuleEntryV13 entries[8];
+    char names[512];
+    DoeCompilerNoticeV18 notices[8];
+    DoeCompilerDiagnosticOutputsV18 outputs={.metadata={.entries=entries,.entry_capacity=8,
+        .entry_record_size=sizeof(*entries),.override_record_size=sizeof(DoeCompilerOverrideV13),
+        .names=names,.name_capacity=sizeof(names)},.notices=notices,.notice_capacity=8,.notice_record_size=sizeof(*notices)};
+    DoeCompilerDiagnosticResultV18 result;
+
+    const char *severities[]={"off","error","warning","info"};
+    for(size_t i=0;i<4;++i){
+        char src[1024];
+        assert(snprintf(src,sizeof(src),
+            "@fragment @diagnostic(%s,derivative_uniformity,) fn main(@location(0) x:f32)->@location(0) f32{"
+            "if(x>0.0){return dpdx(x);}return 0.0;}",severities[i])>0);
+        DoeCompilerStatus status=validate(src,&outputs,&result);
+        assert((status==DOE_COMPILER_OK)==(i!=1));
+        if(i!=1) assert(result.published_notices==(i>=2?1u:0u));
+        if(i>=2) assert(notices[0].severity==i && notices[0].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY);
+    }
+
+    /* Nested lexical overrides across function, compound, if/else, switch, for, while and loop/continuing. */
+    const char *nested=
+        "enable subgroups;"
+        "diagnostic(error,derivative_uniformity);"
+        "@diagnostic(off,derivative_uniformity) @must_use fn helper_off(x:f32)->f32{return dpdx(x);}"
+        "@must_use @diagnostic(info,derivative_uniformity) fn helper_info(x:f32)->f32{return dpdx(x);}"
+        "@fragment fn frag(@location(0) x:f32)->@location(0) f32 @diagnostic(off,derivative_uniformity) {"
+        "  var acc = 0.0;"
+        "  if (x > 0.0) { acc += dpdx(x); }"
+        "  @diagnostic(warning,derivative_uniformity) if (x > 1.0) { acc += dpdy(x); }"
+        "  else @diagnostic(off,derivative_uniformity) { acc += fwidth(x); }"
+        "  @diagnostic(off,derivative_uniformity) switch (i32(x)) {"
+        "    case 0: @diagnostic(info,derivative_uniformity) { acc += dpdxFine(x); }"
+        "    default: { acc += dpdyFine(x); }"
+        "  }"
+        "  @diagnostic(off,derivative_uniformity) for (var i = 0; i < i32(x); i = i + i32(dpdxCoarse(x))) { acc += dpdyCoarse(x); }"
+        "  @diagnostic(off,derivative_uniformity) while (x > 2.0 && fwidthCoarse(x) > 0.0) { acc += 1.0; break; }"
+        "  loop @diagnostic(off,derivative_uniformity) {"
+        "    acc += fwidthFine(x);"
+        "    continuing @diagnostic(warning,derivative_uniformity) {"
+        "      acc += dpdx(x);"
+        "      break if x > 0.0;"
+        "    }"
+        "  }"
+        "  if (x > 3.0) { acc += helper_off(x) + helper_info(x); }"
+        "  return acc;"
+        "}"
+        "@compute @diagnostic(info,subgroup_uniformity) @workgroup_size(4) "
+        "fn comp(@builtin(local_invocation_index) x:u32) {"
+        "  if (x > 0u) {"
+        "    @diagnostic(off,subgroup_uniformity) { let a = subgroupAdd(x); }"
+        "    let b = subgroupMul(x);"
+        "  }"
+        "}";
+    DoeCompilerStatus status=validate(nested,&outputs,&result);
+    if(status!=DOE_COMPILER_OK) fprintf(stderr,"nested scoped diagnostics failed: %s\n",result.validation.diagnostic.message);
+    assert(status==DOE_COMPILER_OK);
+    assert(result.published_notices==5);
+    assert(notices[0].severity==DOE_COMPILER_DIAGNOSTIC_INFO && notices[0].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY);
+    assert(notices[1].severity==DOE_COMPILER_DIAGNOSTIC_WARNING && notices[1].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY);
+    assert(notices[2].severity==DOE_COMPILER_DIAGNOSTIC_INFO && notices[2].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY);
+    assert(notices[3].severity==DOE_COMPILER_DIAGNOSTIC_WARNING && notices[3].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY);
+    assert(notices[4].severity==DOE_COMPILER_DIAGNOSTIC_INFO && notices[4].rule==DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY);
+
+    /* Caller @diagnostic(off) does not descend into an unfiltered callee; derivative return stays non-uniform. */
+    assert(validate(
+        "fn callee(x:f32)->f32{return dpdx(x);}"
+        "@diagnostic(off,derivative_uniformity) @fragment fn main(@location(0) x:f32)->@location(0) f32{"
+        "if(x>0.0){return callee(x);}return 0.0;}",NULL,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+    assert(validate(
+        "@fragment fn main()->@location(0) f32{"
+        "var v:f32; @diagnostic(off,derivative_uniformity){v=dpdx(1.0);}"
+        "if(v>0.0){return dpdy(1.0);}return 0.0;}",NULL,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+
+    /* Inner error overrides outer off; mandatory barrier remains fatal under scoped off. */
+    assert(validate(
+        "@diagnostic(off,derivative_uniformity) @fragment fn main(@location(0) x:f32)->@location(0) f32{"
+        "if(x>0.0){ @diagnostic(error,derivative_uniformity){return dpdx(x);} } return 0.0;}",
+        NULL,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+    assert(validate(
+        "@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) x:u32){"
+        "@diagnostic(off,derivative_uniformity) @diagnostic(off,subgroup_uniformity) if(x>0u){workgroupBarrier();}}",
+        NULL,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+
+    /* Unknown rule in scoped attribute emits one unrecognized-rule warning; duplicate or misplaced attributes reject. */
+    assert(validate("@diagnostic(off,vendor.custom_rule) @compute @workgroup_size(1) fn main(){}",
+        &outputs,&result)==DOE_COMPILER_OK && result.published_notices==1 &&
+        notices[0].rule==DOE_COMPILER_RULE_UNRECOGNIZED);
+
+    const char *bad_scoped[]={
+        "@diagnostic(off,derivative_uniformity) @diagnostic(off,derivative_uniformity) @compute @workgroup_size(1) fn main(){}",
+        "@diagnostic(off,vendor.r) @diagnostic(off,vendor.r) @compute @workgroup_size(1) fn main(){}",
+        "@must_use @compute @workgroup_size(1) fn main(){}",
+        "@diagnostic(off,derivative_uniformity) struct S{a:u32} @compute @workgroup_size(1) fn main(){}",
+        "@diagnostic(off,derivative_uniformity) const C:u32=1u; @compute @workgroup_size(1) fn main(){}",
+        "@diagnostic(off,derivative_uniformity) var<private> V:u32=1u; @compute @workgroup_size(1) fn main(){}",
+        "@compute @workgroup_size(1) fn main(){ @diagnostic(off,derivative_uniformity) let x=1u; }",
+        "@compute @workgroup_size(1) fn main(){ @diagnostic(off,derivative_uniformity) var x=1u; }",
+        "@compute @workgroup_size(1) fn main(){ @diagnostic(off,derivative_uniformity) return; }",
+        "@compute @workgroup_size(1) fn main(){ var x=0u; @diagnostic(off,derivative_uniformity) x=1u; }",
+        "@compute @workgroup_size(1) fn main(){ loop { @diagnostic(off,derivative_uniformity) break; } }",
+        "@compute @workgroup_size(1) fn main(){ loop { @diagnostic(off,derivative_uniformity) continuing { break if true; } } }",
+        "@compute @workgroup_size(1) fn main(){ @diagnostic(off,derivative_uniformity) ; }"};
+    for(size_t i=0;i<sizeof(bad_scoped)/sizeof(bad_scoped[0]);++i)
+        assert(validate(bad_scoped[i],NULL,&result)!=DOE_COMPILER_OK);
+}
 int main(void)
 {
     previous_versions();
     mixed_and_pointer_rules();
     exact_locations_and_atomicity();
     grammar();
+    scoped_attributes();
     policy("derivative_uniformity",derivative);
     policy("subgroup_uniformity",subgroup);
     DoeCompilerDiagnosticResultV18 result;

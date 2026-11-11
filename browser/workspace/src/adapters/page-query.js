@@ -48,34 +48,6 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     return matches[0];
   });
   const permitted = node => permissionRoots === null || permissionRoots.some(root => root === node || root.contains(node));
-  const isUnique = (candidate) => {
-    try {
-      return document.querySelectorAll(candidate).length === 1;
-    } catch {
-      return false;
-    }
-  };
-  const pathSelector = (node) => {
-    const parts = [];
-    for (let current = node; current && current !== document.documentElement; current = current.parentElement) {
-      const tag = current.tagName.toLowerCase();
-      const siblings = current.parentElement
-        ? [...current.parentElement.children].filter((child) => child.tagName === current.tagName)
-        : [current];
-      parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${siblings.indexOf(current) + 1})` : tag);
-    }
-    return `html > ${parts.join(' > ')}`;
-  };
-  const stableSelector = (node) => {
-    const tag = node.tagName.toLowerCase();
-    const candidates = [];
-    if (node.id) candidates.push(`#${CSS.escape(node.id)}`);
-    const name = node.getAttribute('name');
-    if (name) candidates.push(`${tag}[name="${CSS.escape(name)}"]`);
-    const href = node.getAttribute('href');
-    if (href) candidates.push(`${tag}[href="${CSS.escape(href)}"]`);
-    return candidates.find(isUnique) ?? pathSelector(node);
-  };
   // FNV-1a over the full text, so identity covers text beyond the displayed prefix.
   const fingerprint = (text) => {
     let hash = 0x811c9dc5;
@@ -112,6 +84,86 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     if (nodes.length !== 1) return { count: nodes.length, element: null, fullText: null, choice: null };
     return { count: 1, element: describe(nodes[0]), fullText: fullText(nodes[0]), choice: choiceOf(nodes[0]) };
   }
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  const standardsMode = document.compatMode === 'CSS1Compat';
+  const idCounts = new Map();
+  const idFoldCounts = standardsMode ? null : new Map();
+  const nameCounts = new Map();
+  const hrefCounts = new Map();
+  const selectorTagOf = (el) => (el.namespaceURI === HTML_NS
+    ? el.tagName.toLowerCase()
+    : (el.localName === el.localName?.toLowerCase() ? el.localName : null));
+  for (const el of document.querySelectorAll('[id], [name], [href]')) {
+    if (el.id) {
+      idCounts.set(el.id, (idCounts.get(el.id) ?? 0) + 1);
+      if (idFoldCounts) {
+        const folded = el.id.toLowerCase();
+        idFoldCounts.set(folded, (idFoldCounts.get(folded) ?? 0) + 1);
+      }
+    }
+    const matchTag = selectorTagOf(el);
+    if (!matchTag) continue;
+    const name = el.getAttribute('name');
+    if (name) {
+      const key = `${matchTag}\0${name}`;
+      nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
+    }
+    const href = el.getAttribute('href');
+    if (href) {
+      const key = `${matchTag}\0${href}`;
+      hrefCounts.set(key, (hrefCounts.get(key) ?? 0) + 1);
+    }
+  }
+  const isUnique = (candidate) => {
+    try {
+      return document.querySelectorAll(candidate).length === 1;
+    } catch {
+      return false;
+    }
+  };
+  const pathSelector = (node) => {
+    const parts = [];
+    for (let current = node; current && current !== document.documentElement; current = current.parentElement) {
+      const tag = current.tagName.toLowerCase();
+      const siblings = current.parentElement
+        ? [...current.parentElement.children].filter((child) => child.tagName === current.tagName)
+        : [current];
+      parts.unshift(siblings.length > 1 ? `${tag}:nth-of-type(${siblings.indexOf(current) + 1})` : tag);
+    }
+    return `html > ${parts.join(' > ')}`;
+  };
+  const selectors = new Map();
+  const stableSelector = (node) => {
+    const cached = selectors.get(node);
+    if (cached !== undefined) return cached;
+    const tag = node.tagName.toLowerCase();
+    const fastTag = selectorTagOf(node) === tag && CSS.escape(tag) === tag;
+    let chosen = null;
+    if (node.id) {
+      const candidate = `#${CSS.escape(node.id)}`;
+      const unique = standardsMode
+        ? idCounts.get(node.id) === 1
+        : (idFoldCounts.get(node.id.toLowerCase()) === 1 || (idCounts.get(node.id) === 1 && isUnique(candidate)));
+      if (unique) chosen = candidate;
+    }
+    if (!chosen) {
+      const name = node.getAttribute('name');
+      if (name) {
+        const candidate = `${tag}[name="${CSS.escape(name)}"]`;
+        if (fastTag ? nameCounts.get(`${tag}\0${name}`) === 1 : isUnique(candidate)) chosen = candidate;
+      }
+    }
+    if (!chosen) {
+      const href = node.getAttribute('href');
+      if (href) {
+        const candidate = `${tag}[href="${CSS.escape(href)}"]`;
+        if (fastTag ? hrefCounts.get(`${tag}\0${href}`) === 1 : isUnique(candidate)) chosen = candidate;
+      }
+    }
+    chosen ??= pathSelector(node);
+    selectors.set(node, chosen);
+    return chosen;
+  };
   const CONTROLS = 'input, select, textarea';
   const VALUE_TAGS = ['INPUT', 'SELECT', 'TEXTAREA'];
   const SKIPPED_TAGS = ['SCRIPT', 'STYLE', 'TEMPLATE'];
@@ -123,9 +175,13 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
   const handleFor = (stable) => `h${fingerprint(stable).split(':')[1]}`;
   const handles = new Map();
   const issued = new Set();
-  for (const node of nodes) {
-    let handle = handleFor(stableSelector(node));
-    for (let suffix = 2; issued.has(handle); suffix += 1) handle = `${handleFor(stableSelector(node))}-${suffix}`;
+  const handleNodes = outline && (regions.length > 0 || regionGroups.length > 0)
+    ? nodes
+    : nodes.slice(0, maxElements);
+  for (const node of handleNodes) {
+    const base = handleFor(stableSelector(node));
+    let handle = base;
+    for (let suffix = 2; issued.has(handle); suffix += 1) handle = `${base}-${suffix}`;
     issued.add(handle);
     handles.set(node, handle);
   }

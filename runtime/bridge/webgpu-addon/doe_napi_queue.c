@@ -6,29 +6,23 @@
  */
 #include "doe_napi_internal.h"
 
-#define BATCH_STACK_DISPATCHES 64
+#define BATCH_STACK_DISPATCHES 64u
 #define QUEUE_WRITE_BATCH_STACK_MAX 64u
 
 static int submit_breakdown_enabled(void);
 
 static uint32_t read_bind_group_value(napi_env env, napi_value value, void** bind_groups, uint32_t max_count) {
-    if (!value || max_count == 0) {
-        return 0;
-    }
+    if (!value || max_count == 0) return 0;
     napi_valuetype value_type;
-    if (napi_typeof(env, value, &value_type) != napi_ok) {
-        return 0;
-    }
-    if (value_type == napi_null || value_type == napi_undefined) {
+    if (napi_typeof(env, value, &value_type) != napi_ok ||
+        value_type == napi_null || value_type == napi_undefined) {
         return 0;
     }
     bool is_array = false;
     napi_is_array(env, value, &is_array);
     if (!is_array) {
         void* bg = unwrap_ptr(env, value);
-        if (!bg) {
-            return 0;
-        }
+        if (!bg) return 0;
         bind_groups[0] = bg;
         return 1;
     }
@@ -47,38 +41,47 @@ static uint32_t read_command_bind_groups(napi_env env, napi_value cmd, void** bi
     napi_value compact_bind_groups = get_prop(env, cmd, "b");
     napi_valuetype compact_type;
     if (napi_typeof(env, compact_bind_groups, &compact_type) == napi_ok &&
-        compact_type != napi_undefined &&
-        compact_type != napi_null) {
-        bool compact_is_array = false;
-        napi_is_array(env, compact_bind_groups, &compact_is_array);
-        if (!compact_is_array) {
-            void* bg = unwrap_ptr(env, compact_bind_groups);
-            if (!bg || max_count == 0) return 0;
-            bind_groups[0] = bg;
-            return 1;
-        }
+        compact_type != napi_undefined && compact_type != napi_null) {
         return read_bind_group_value(env, compact_bind_groups, bind_groups, max_count);
     }
     return read_bind_group_value(env, get_prop(env, cmd, "bg"), bind_groups, max_count);
 }
 
-static uint32_t get_command_u32(napi_env env, napi_value cmd, const char* key, uint32_t index) {
-    (void)index;
-    return get_uint32_prop(env, cmd, key);
-}
-
-static int64_t get_command_i64(napi_env env, napi_value cmd, const char* key, uint32_t index) {
-    (void)index;
-    return get_int64_prop(env, cmd, key);
-}
-
-static void* get_command_ptr(napi_env env, napi_value cmd, const char* key, uint32_t index) {
-    (void)index;
+static inline void* get_command_ptr_prop(napi_env env, napi_value cmd, const char* key) {
     return unwrap_ptr(env, get_prop(env, cmd, key));
 }
 
-static uint32_t get_command_type(napi_env env, napi_value cmd) {
+static inline uint32_t get_command_type(napi_env env, napi_value cmd) {
     return get_uint32_prop(env, cmd, "t");
+}
+
+static void read_texel_copy_buffer_args(napi_env env, const napi_value* args, WGPUTexelCopyBufferInfo* out) {
+    memset(out, 0, sizeof(*out));
+    out->buffer = unwrap_ptr(env, args[0]);
+    int64_t offset = 0;
+    napi_get_value_int64(env, args[1], &offset);
+    out->layout.offset = (uint64_t)offset;
+    napi_get_value_uint32(env, args[2], &out->layout.bytesPerRow);
+    napi_get_value_uint32(env, args[3], &out->layout.rowsPerImage);
+}
+
+static void read_texel_copy_texture_args(napi_env env, const napi_value* args, WGPUTexelCopyTextureInfo* out) {
+    memset(out, 0, sizeof(*out));
+    out->texture = unwrap_ptr(env, args[0]);
+    napi_get_value_uint32(env, args[1], &out->mipLevel);
+    napi_get_value_uint32(env, args[2], &out->origin.x);
+    napi_get_value_uint32(env, args[3], &out->origin.y);
+    napi_get_value_uint32(env, args[4], &out->origin.z);
+    napi_get_value_uint32(env, args[5], &out->aspect);
+}
+
+static void read_extent_3d_args(napi_env env, const napi_value* args, WGPUExtent3D* out) {
+    out->width = 1;
+    out->height = 1;
+    out->depthOrArrayLayers = 1;
+    napi_get_value_uint32(env, args[0], &out->width);
+    napi_get_value_uint32(env, args[1], &out->height);
+    napi_get_value_uint32(env, args[2], &out->depthOrArrayLayers);
 }
 
 /* ================================================================
@@ -91,11 +94,11 @@ napi_value doe_create_command_encoder(napi_env env, napi_callback_info info) {
     WGPUDevice device = unwrap_ptr(env, _args[0]);
     if (!device) NAPI_THROW(env, "Invalid device");
 
-    /* Read label (2nd arg) */
     WGPUStringView label_view = { .data = NULL, .length = 0 };
     char label_buf[256] = {0};
     if (_argc > 1) {
-        napi_valuetype lt; napi_typeof(env, _args[1], &lt);
+        napi_valuetype lt;
+        napi_typeof(env, _args[1], &lt);
         if (lt == napi_string) {
             size_t label_len = 0;
             napi_get_value_string_utf8(env, _args[1], label_buf, sizeof(label_buf), &label_len);
@@ -104,9 +107,7 @@ napi_value doe_create_command_encoder(napi_env env, napi_callback_info info) {
         }
     }
 
-    WGPUCommandEncoderDescriptor desc = {
-        .nextInChain = NULL, .label = label_view,
-    };
+    WGPUCommandEncoderDescriptor desc = { .nextInChain = NULL, .label = label_view };
     WGPUCommandEncoder enc = pfn_wgpuDeviceCreateCommandEncoder(device, &desc);
     if (!enc) NAPI_THROW(env, "createCommandEncoder failed");
     return wrap_ptr(env, enc);
@@ -124,12 +125,13 @@ napi_value doe_command_encoder_copy_buffer_to_buffer(napi_env env, napi_callback
     CHECK_LIB_LOADED(env);
     WGPUCommandEncoder enc = unwrap_ptr(env, _args[0]);
     WGPUBuffer src = unwrap_ptr(env, _args[1]);
-    int64_t src_offset; napi_get_value_int64(env, _args[2], &src_offset);
+    int64_t src_offset, dst_offset, size;
+    napi_get_value_int64(env, _args[2], &src_offset);
     WGPUBuffer dst = unwrap_ptr(env, _args[3]);
-    int64_t dst_offset; napi_get_value_int64(env, _args[4], &dst_offset);
-    int64_t size; napi_get_value_int64(env, _args[5], &size);
-    pfn_wgpuCommandEncoderCopyBufferToBuffer(enc, src, (uint64_t)src_offset,
-        dst, (uint64_t)dst_offset, (uint64_t)size);
+    napi_get_value_int64(env, _args[4], &dst_offset);
+    napi_get_value_int64(env, _args[5], &size);
+    pfn_wgpuCommandEncoderCopyBufferToBuffer(
+        enc, src, (uint64_t)src_offset, dst, (uint64_t)dst_offset, (uint64_t)size);
     return NULL;
 }
 
@@ -137,26 +139,14 @@ napi_value doe_command_encoder_copy_buffer_to_texture(napi_env env, napi_callbac
     NAPI_ASSERT_ARGC(env, info, 14);
     CHECK_LIB_LOADED(env);
     WGPUCommandEncoder enc = unwrap_ptr(env, _args[0]);
-    WGPUBuffer src_buffer = unwrap_ptr(env, _args[1]);
-    if (!enc || !src_buffer) NAPI_THROW(env, "commandEncoderCopyBufferToTexture requires encoder and buffer");
-    WGPUTexelCopyBufferInfo src; memset(&src, 0, sizeof(src));
-    src.buffer = src_buffer;
-    int64_t src_offset = 0; napi_get_value_int64(env, _args[2], &src_offset);
-    src.layout.offset = (uint64_t)src_offset;
-    napi_get_value_uint32(env, _args[3], &src.layout.bytesPerRow);
-    napi_get_value_uint32(env, _args[4], &src.layout.rowsPerImage);
-    WGPUTexelCopyTextureInfo dst; memset(&dst, 0, sizeof(dst));
-    dst.texture = unwrap_ptr(env, _args[5]);
+    WGPUTexelCopyBufferInfo src;
+    read_texel_copy_buffer_args(env, &_args[1], &src);
+    if (!enc || !src.buffer) NAPI_THROW(env, "commandEncoderCopyBufferToTexture requires encoder and buffer");
+    WGPUTexelCopyTextureInfo dst;
+    read_texel_copy_texture_args(env, &_args[5], &dst);
     if (!dst.texture) NAPI_THROW(env, "commandEncoderCopyBufferToTexture requires destination texture");
-    napi_get_value_uint32(env, _args[6], &dst.mipLevel);
-    napi_get_value_uint32(env, _args[7], &dst.origin.x);
-    napi_get_value_uint32(env, _args[8], &dst.origin.y);
-    napi_get_value_uint32(env, _args[9], &dst.origin.z);
-    napi_get_value_uint32(env, _args[10], &dst.aspect);
     WGPUExtent3D size;
-    napi_get_value_uint32(env, _args[11], &size.width);
-    napi_get_value_uint32(env, _args[12], &size.height);
-    napi_get_value_uint32(env, _args[13], &size.depthOrArrayLayers);
+    read_extent_3d_args(env, &_args[11], &size);
     if (pfn_wgpuCommandEncoderCopyBufferToTexture) {
         pfn_wgpuCommandEncoderCopyBufferToTexture(enc, &src, &dst, &size);
     } else if (pfn_doeNativeCommandEncoderCopyBufferToTexture) {
@@ -164,8 +154,7 @@ napi_value doe_command_encoder_copy_buffer_to_texture(napi_env env, napi_callbac
             NAPI_THROW(env, "commandEncoderCopyBufferToTexture: legacy native entry requires zero origin and all aspects");
         pfn_doeNativeCommandEncoderCopyBufferToTexture(enc, src.buffer,
             src.layout.offset, src.layout.bytesPerRow, src.layout.rowsPerImage,
-            dst.texture, dst.mipLevel,
-            size.width, size.height, size.depthOrArrayLayers);
+            dst.texture, dst.mipLevel, size.width, size.height, size.depthOrArrayLayers);
     } else {
         NAPI_THROW(env, "commandEncoderCopyBufferToTexture: no implementation available in loaded library");
     }
@@ -176,26 +165,14 @@ napi_value doe_command_encoder_copy_texture_to_buffer(napi_env env, napi_callbac
     NAPI_ASSERT_ARGC(env, info, 14);
     CHECK_LIB_LOADED(env);
     WGPUCommandEncoder enc = unwrap_ptr(env, _args[0]);
-    WGPUTexture src_texture = unwrap_ptr(env, _args[1]);
-    if (!enc || !src_texture) NAPI_THROW(env, "commandEncoderCopyTextureToBuffer requires encoder and texture");
-    WGPUTexelCopyTextureInfo src; memset(&src, 0, sizeof(src));
-    src.texture = src_texture;
-    napi_get_value_uint32(env, _args[2], &src.mipLevel);
-    napi_get_value_uint32(env, _args[3], &src.origin.x);
-    napi_get_value_uint32(env, _args[4], &src.origin.y);
-    napi_get_value_uint32(env, _args[5], &src.origin.z);
-    napi_get_value_uint32(env, _args[6], &src.aspect);
-    WGPUTexelCopyBufferInfo dst; memset(&dst, 0, sizeof(dst));
-    dst.buffer = unwrap_ptr(env, _args[7]);
+    WGPUTexelCopyTextureInfo src;
+    read_texel_copy_texture_args(env, &_args[1], &src);
+    if (!enc || !src.texture) NAPI_THROW(env, "commandEncoderCopyTextureToBuffer requires encoder and texture");
+    WGPUTexelCopyBufferInfo dst;
+    read_texel_copy_buffer_args(env, &_args[7], &dst);
     if (!dst.buffer) NAPI_THROW(env, "commandEncoderCopyTextureToBuffer requires destination buffer");
-    int64_t dst_offset = 0; napi_get_value_int64(env, _args[8], &dst_offset);
-    dst.layout.offset = (uint64_t)dst_offset;
-    napi_get_value_uint32(env, _args[9], &dst.layout.bytesPerRow);
-    napi_get_value_uint32(env, _args[10], &dst.layout.rowsPerImage);
     WGPUExtent3D size;
-    napi_get_value_uint32(env, _args[11], &size.width);
-    napi_get_value_uint32(env, _args[12], &size.height);
-    napi_get_value_uint32(env, _args[13], &size.depthOrArrayLayers);
+    read_extent_3d_args(env, &_args[11], &size);
     if (pfn_wgpuCommandEncoderCopyTextureToBuffer) {
         pfn_wgpuCommandEncoderCopyTextureToBuffer(enc, &src, &dst, &size);
     } else if (pfn_doeNativeCommandEncoderCopyTextureToBuffer) {
@@ -224,18 +201,21 @@ napi_value doe_command_encoder_clear_buffer(napi_env env, napi_callback_info inf
     uint64_t offset = 0;
     uint64_t size = WGPU_WHOLE_SIZE;
     if (argc >= 3) {
-        napi_valuetype vt; napi_typeof(env, argv[2], &vt);
+        napi_valuetype vt;
+        napi_typeof(env, argv[2], &vt);
         if (vt == napi_number || vt == napi_bigint) {
-            int64_t v = 0; napi_get_value_int64(env, argv[2], &v);
+            int64_t v = 0;
+            napi_get_value_int64(env, argv[2], &v);
             if (v > 0) offset = (uint64_t)v;
         }
     }
     if (argc >= 4) {
-        napi_valuetype vt; napi_typeof(env, argv[3], &vt);
+        napi_valuetype vt;
+        napi_typeof(env, argv[3], &vt);
         if (vt == napi_number || vt == napi_bigint) {
-            int64_t v = 0; napi_get_value_int64(env, argv[3], &v);
-            if (v > 0) size = (uint64_t)v;
-            else if (v == 0) size = 0;
+            int64_t v = 0;
+            napi_get_value_int64(env, argv[3], &v);
+            if (v >= 0) size = (uint64_t)v;
         }
     }
     if (pfn_doeNativeCommandEncoderClearBuffer) pfn_doeNativeCommandEncoderClearBuffer(enc, buffer, offset, size);
@@ -248,47 +228,23 @@ napi_value doe_command_encoder_copy_texture_to_texture(napi_env env, napi_callba
     napi_value argv[16];
     napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     CHECK_LIB_LOADED(env);
-    if (argc != 16)
-        NAPI_THROW(env, "commandEncoderCopyTextureToTexture requires 16 arguments");
-    WGPUCommandEncoder enc    = unwrap_ptr(env, argv[0]);
-    WGPUTexture src_texture   = unwrap_ptr(env, argv[1]);
-    WGPUTexture dst_texture   = unwrap_ptr(env, argv[7]);
-    if (!enc || !src_texture || !dst_texture)
+    if (argc != 16) NAPI_THROW(env, "commandEncoderCopyTextureToTexture requires 16 arguments");
+    WGPUCommandEncoder enc = unwrap_ptr(env, argv[0]);
+    WGPUTexelCopyTextureInfo src, dst;
+    WGPUExtent3D size;
+    read_texel_copy_texture_args(env, &argv[1], &src);
+    read_texel_copy_texture_args(env, &argv[7], &dst);
+    read_extent_3d_args(env, &argv[13], &size);
+    if (!enc || !src.texture || !dst.texture)
         NAPI_THROW(env, "commandEncoderCopyTextureToTexture requires encoder and textures");
-    uint32_t src_mip = 0, src_x = 0, src_y = 0, src_z = 0;
-    uint32_t dst_mip = 0, dst_x = 0, dst_y = 0, dst_z = 0;
-    uint32_t src_aspect = 0, dst_aspect = 0;
-    uint32_t width = 1, height = 1, depth_or_layers = 1;
-    napi_get_value_uint32(env, argv[2], &src_mip);
-    napi_get_value_uint32(env, argv[3], &src_x);
-    napi_get_value_uint32(env, argv[4], &src_y);
-    napi_get_value_uint32(env, argv[5], &src_z);
-    napi_get_value_uint32(env, argv[6], &src_aspect);
-    napi_get_value_uint32(env, argv[8], &dst_mip);
-    napi_get_value_uint32(env, argv[9], &dst_x);
-    napi_get_value_uint32(env, argv[10], &dst_y);
-    napi_get_value_uint32(env, argv[11], &dst_z);
-    napi_get_value_uint32(env, argv[12], &dst_aspect);
-    napi_get_value_uint32(env, argv[13], &width);
-    napi_get_value_uint32(env, argv[14], &height);
-    napi_get_value_uint32(env, argv[15], &depth_or_layers);
     /* doeNative has no aspect parameter: only Undefined (0) or All (1) may use it. */
     if (pfn_wgpuCommandEncoderCopyTextureToTexture) {
-        WGPUTexelCopyTextureInfo s, d; WGPUExtent3D sz;
-        memset(&s, 0, sizeof(s)); memset(&d, 0, sizeof(d));
-        s.texture = src_texture; s.mipLevel = src_mip;
-        s.origin.x = src_x; s.origin.y = src_y; s.origin.z = src_z;
-        s.aspect = src_aspect;
-        d.texture = dst_texture; d.mipLevel = dst_mip;
-        d.origin.x = dst_x; d.origin.y = dst_y; d.origin.z = dst_z;
-        d.aspect = dst_aspect;
-        sz.width = width; sz.height = height; sz.depthOrArrayLayers = depth_or_layers;
-        pfn_wgpuCommandEncoderCopyTextureToTexture(enc, &s, &d, &sz);
-    } else if (pfn_doeNativeCommandEncoderCopyTextureToTexture && src_aspect <= 1u && dst_aspect <= 1u) {
+        pfn_wgpuCommandEncoderCopyTextureToTexture(enc, &src, &dst, &size);
+    } else if (pfn_doeNativeCommandEncoderCopyTextureToTexture && src.aspect <= 1u && dst.aspect <= 1u) {
         pfn_doeNativeCommandEncoderCopyTextureToTexture(enc,
-            src_texture, src_mip, 0, src_x, src_y, src_z,
-            dst_texture, dst_mip, 0, dst_x, dst_y, dst_z,
-            width, height, depth_or_layers);
+            src.texture, src.mipLevel, 0, src.origin.x, src.origin.y, src.origin.z,
+            dst.texture, dst.mipLevel, 0, dst.origin.x, dst.origin.y, dst.origin.z,
+            size.width, size.height, size.depthOrArrayLayers);
     } else {
         NAPI_THROW(env, "commandEncoderCopyTextureToTexture: no implementation for these aspects in loaded library");
     }
@@ -313,7 +269,8 @@ napi_value doe_begin_compute_pass(napi_env env, napi_callback_info info) {
     WGPUComputePassTimestampWrites ts_writes = {0};
     WGPUComputePassTimestampWrites* ts_writes_ptr = NULL;
     if (argc > 1) {
-        napi_valuetype desc_vt; napi_typeof(env, argv[1], &desc_vt);
+        napi_valuetype desc_vt;
+        napi_typeof(env, argv[1], &desc_vt);
         if (desc_vt == napi_object) {
             if (has_prop(env, argv[1], "label") && prop_type(env, argv[1], "label") == napi_string) {
                 label = dup_string_value(env, get_prop(env, argv[1], "label"), &label_len);
@@ -331,7 +288,8 @@ napi_value doe_begin_compute_pass(napi_env env, napi_callback_info info) {
     }
 
     WGPUComputePassDescriptor desc = {
-        .nextInChain = NULL, .label = { .data = label, .length = label ? label_len : 0 },
+        .nextInChain = NULL,
+        .label = { .data = label, .length = label ? label_len : 0 },
         .timestampWrites = ts_writes_ptr,
     };
     WGPUComputePassEncoder pass = pfn_wgpuCommandEncoderBeginComputePass(enc, &desc);
@@ -348,14 +306,19 @@ napi_value doe_compute_pass_set_pipeline(napi_env env, napi_callback_info info) 
 
 napi_value doe_compute_pass_set_immediates(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
-    if (!pfn_doeNativeComputePassSetImmediates && !pfn_wgpuComputePassEncoderSetImmediates) NAPI_THROW(env, "computePassSetImmediates not available");
+    if (!pfn_doeNativeComputePassSetImmediates && !pfn_wgpuComputePassEncoderSetImmediates)
+        NAPI_THROW(env, "computePassSetImmediates not available");
     WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
     if (!pass) NAPI_THROW(env, "Invalid compute pass");
-    uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
-    void* data_ptr = NULL; size_t data_len = 0;
+    uint32_t index = 0;
+    napi_get_value_uint32(env, _args[1], &index);
+    void* data_ptr = NULL;
+    size_t data_len = 0;
     extract_buffer_data(env, _args[2], &data_ptr, &data_len);
-    if (pfn_doeNativeComputePassSetImmediates) pfn_doeNativeComputePassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
-    else pfn_wgpuComputePassEncoderSetImmediates(pass, index, data_ptr, data_len);
+    if (pfn_doeNativeComputePassSetImmediates)
+        pfn_doeNativeComputePassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
+    else
+        pfn_wgpuComputePassEncoderSetImmediates(pass, index, data_ptr, data_len);
     return NULL;
 }
 
@@ -389,12 +352,12 @@ napi_value doe_compute_pass_dispatch_bound(napi_env env, napi_callback_info info
     return NULL;
 }
 
-/* computePassDispatchWorkgroupsIndirect(pass, buffer, offset) */
 napi_value doe_compute_pass_dispatch_indirect(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
     WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    int64_t offset; napi_get_value_int64(env, _args[2], &offset);
+    int64_t offset;
+    napi_get_value_int64(env, _args[2], &offset);
     if (pfn_doeNativeComputePassDispatchIndirect)
         pfn_doeNativeComputePassDispatchIndirect(pass, buffer, (uint64_t)offset);
     else
@@ -420,25 +383,68 @@ napi_value doe_command_encoder_finish(napi_env env, napi_callback_info info) {
     CHECK_LIB_LOADED(env);
     WGPUCommandEncoder enc = unwrap_ptr(env, _args[0]);
     if (!enc) NAPI_THROW(env, "Invalid encoder");
-    WGPUCommandBufferDescriptor desc = {
-        .nextInChain = NULL, .label = { .data = NULL, .length = 0 },
-    };
+    WGPUCommandBufferDescriptor desc = { .nextInChain = NULL, .label = { .data = NULL, .length = 0 } };
     WGPUCommandBuffer cmd = pfn_wgpuCommandEncoderFinish(enc, &desc);
     if (!cmd) NAPI_THROW(env, "commandEncoderFinish failed");
     return wrap_ptr(env, cmd);
 }
 
+static WGPUCommandBuffer record_single_dispatch_copy_command_buffer(
+    napi_env env,
+    const char* create_err,
+    const char* pass_err,
+    const char* finish_err,
+    WGPUDevice device,
+    WGPUComputePipeline pipeline,
+    void** bind_groups,
+    uint32_t bg_count,
+    uint32_t dx,
+    uint32_t dy,
+    uint32_t dz,
+    WGPUBuffer copy_src,
+    uint64_t copy_src_off,
+    WGPUBuffer copy_dst,
+    uint64_t copy_dst_off,
+    uint64_t copy_size
+) {
+    WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, NULL);
+    if (!encoder) {
+        napi_throw_error(env, "DOE_ERROR", create_err);
+        return NULL;
+    }
+    WGPUComputePassEncoder pass = pfn_wgpuCommandEncoderBeginComputePass(encoder, NULL);
+    if (!pass) {
+        pfn_wgpuCommandEncoderRelease(encoder);
+        napi_throw_error(env, "DOE_ERROR", pass_err);
+        return NULL;
+    }
+    pfn_wgpuComputePassEncoderSetPipeline(pass, pipeline);
+    for (uint32_t j = 0; j < bg_count; j++) {
+        if (bind_groups[j]) pfn_wgpuComputePassEncoderSetBindGroup(pass, j, bind_groups[j], 0, NULL);
+    }
+    pfn_wgpuComputePassEncoderDispatchWorkgroups(pass, dx, dy, dz);
+    pfn_wgpuComputePassEncoderEnd(pass);
+    pfn_wgpuComputePassEncoderRelease(pass);
+    pfn_wgpuCommandEncoderCopyBufferToBuffer(encoder, copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size);
+    WGPUCommandBufferDescriptor desc = { .nextInChain = NULL, .label = { .data = NULL, .length = 0 } };
+    WGPUCommandBuffer cmd = pfn_wgpuCommandEncoderFinish(encoder, &desc);
+    pfn_wgpuCommandEncoderRelease(encoder);
+    if (!cmd) {
+        napi_throw_error(env, "DOE_ERROR", finish_err);
+        return NULL;
+    }
+    return cmd;
+}
+
 napi_value doe_create_compute_dispatch_copy_command_buffer(napi_env env, napi_callback_info info) {
     size_t argc = 11;
     napi_value args[11];
-    napi_status status = napi_get_cb_info(env, info, &argc, args, NULL, NULL);
-    if (status != napi_ok || argc != 11) {
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok || argc != 11) {
         NAPI_THROW(env, "createComputeDispatchCopyCommandBuffer requires 11 arguments");
     }
     CHECK_LIB_LOADED(env);
     WGPUDevice device = unwrap_ptr(env, args[0]);
     WGPUComputePipeline pipeline = unwrap_ptr(env, args[1]);
-    napi_value bgs = args[2];
     uint32_t dx = 0, dy = 0, dz = 0;
     int64_t copy_src_off_i = 0, copy_dst_off_i = 0, copy_size_i = 0;
     napi_get_value_uint32(env, args[3], &dx);
@@ -453,52 +459,35 @@ napi_value doe_create_compute_dispatch_copy_command_buffer(napi_env env, napi_ca
         NAPI_THROW(env, "createComputeDispatchCopyCommandBuffer requires device, pipeline, and buffers");
     }
     void* bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
-    uint32_t bg_count = read_bind_group_value(env, bgs, bind_groups, BATCH_MAX_BIND_GROUPS);
-    WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, NULL);
-    if (!encoder) NAPI_THROW(env, "createComputeDispatchCopyCommandBuffer: createCommandEncoder failed");
-    WGPUComputePassEncoder pass = pfn_wgpuCommandEncoderBeginComputePass(encoder, NULL);
-    if (!pass) {
-        pfn_wgpuCommandEncoderRelease(encoder);
-        NAPI_THROW(env, "createComputeDispatchCopyCommandBuffer: beginComputePass failed");
-    }
-    pfn_wgpuComputePassEncoderSetPipeline(pass, pipeline);
-    for (uint32_t j = 0; j < bg_count; j++) {
-        if (bind_groups[j]) {
-            pfn_wgpuComputePassEncoderSetBindGroup(pass, j, bind_groups[j], 0, NULL);
-        }
-    }
-    pfn_wgpuComputePassEncoderDispatchWorkgroups(pass, dx, dy, dz);
-    pfn_wgpuComputePassEncoderEnd(pass);
-    pfn_wgpuComputePassEncoderRelease(pass);
-    pfn_wgpuCommandEncoderCopyBufferToBuffer(
-        encoder,
-        copy_src,
-        (uint64_t)copy_src_off_i,
-        copy_dst,
-        (uint64_t)copy_dst_off_i,
-        (uint64_t)copy_size_i
-    );
-    WGPUCommandBufferDescriptor desc = {
-        .nextInChain = NULL, .label = { .data = NULL, .length = 0 },
-    };
-    WGPUCommandBuffer cmd = pfn_wgpuCommandEncoderFinish(encoder, &desc);
-    pfn_wgpuCommandEncoderRelease(encoder);
-    if (!cmd) NAPI_THROW(env, "createComputeDispatchCopyCommandBuffer: finish failed");
-    return wrap_ptr(env, cmd);
+    uint32_t bg_count = read_bind_group_value(env, args[2], bind_groups, BATCH_MAX_BIND_GROUPS);
+    WGPUCommandBuffer cmd = record_single_dispatch_copy_command_buffer(
+        env,
+        "createComputeDispatchCopyCommandBuffer: createCommandEncoder failed",
+        "createComputeDispatchCopyCommandBuffer: beginComputePass failed",
+        "createComputeDispatchCopyCommandBuffer: finish failed",
+        device, pipeline, bind_groups, bg_count, dx, dy, dz,
+        copy_src, (uint64_t)copy_src_off_i, copy_dst, (uint64_t)copy_dst_off_i, (uint64_t)copy_size_i);
+    return cmd ? wrap_ptr(env, cmd) : NULL;
+}
+
+static napi_value throw_batch_cmd_buf_error(
+    napi_env env, WGPUComputePassEncoder pass, WGPUCommandEncoder encoder, const char* message
+) {
+    if (pass) pfn_wgpuComputePassEncoderRelease(pass);
+    if (encoder) pfn_wgpuCommandEncoderRelease(encoder);
+    napi_throw_error(env, "DOE_ERROR", message);
+    return NULL;
 }
 
 napi_value doe_create_compute_dispatch_batch_copy_command_buffer(napi_env env, napi_callback_info info) {
     size_t argc = 2;
     napi_value args[2];
-    napi_status status = napi_get_cb_info(env, info, &argc, args, NULL, NULL);
-    if (status != napi_ok || argc != 2) {
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok || argc != 2) {
         NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires 2 arguments");
     }
     CHECK_LIB_LOADED(env);
     WGPUDevice device = unwrap_ptr(env, args[0]);
-    if (!device) {
-        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires a device");
-    }
+    if (!device) NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires a device");
 
     napi_value commands = args[1];
     uint32_t cmd_count = 0;
@@ -514,47 +503,34 @@ napi_value doe_create_compute_dispatch_batch_copy_command_buffer(napi_env env, n
     }
 
     WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, NULL);
-    if (!encoder) {
-        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer: createCommandEncoder failed");
-    }
+    if (!encoder) NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer: createCommandEncoder failed");
     WGPUComputePassEncoder pass = pfn_wgpuCommandEncoderBeginComputePass(encoder, NULL);
     if (!pass) {
         pfn_wgpuCommandEncoderRelease(encoder);
         NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer: beginComputePass failed");
     }
 
-#define THROW_BATCH_COMMAND_BUFFER_ERROR(message) do { \
-        if (pass) pfn_wgpuComputePassEncoderRelease(pass); \
-        if (encoder) pfn_wgpuCommandEncoderRelease(encoder); \
-        napi_throw_error(env, "DOE_ERROR", message); \
-        return NULL; \
-    } while (0)
-
     void* current_pipeline = NULL;
     void* current_bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
     for (uint32_t i = 0; i + 1 < cmd_count; i++) {
         napi_value cmd;
         napi_get_element(env, commands, i, &cmd);
-        void* bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
-        uint32_t command_type = get_uint32_prop(env, cmd, "t");
-        void* pipeline = unwrap_ptr(env, get_prop(env, cmd, "p"));
-        uint32_t bg_count = read_command_bind_groups(env, cmd, bind_groups, BATCH_MAX_BIND_GROUPS);
-        uint32_t dx = get_uint32_prop(env, cmd, "x");
-        uint32_t dy = get_uint32_prop(env, cmd, "y");
-        uint32_t dz = get_uint32_prop(env, cmd, "z");
-        if (command_type != 0) {
-            THROW_BATCH_COMMAND_BUFFER_ERROR("createComputeDispatchBatchCopyCommandBuffer requires only dispatch commands before the copy");
+        if (get_command_type(env, cmd) != 0) {
+            return throw_batch_cmd_buf_error(env, pass, encoder,
+                "createComputeDispatchBatchCopyCommandBuffer requires only dispatch commands before the copy");
         }
-
+        void* pipeline = get_command_ptr_prop(env, cmd, "p");
         if (!pipeline) {
-            THROW_BATCH_COMMAND_BUFFER_ERROR("createComputeDispatchBatchCopyCommandBuffer requires dispatch pipelines");
+            return throw_batch_cmd_buf_error(env, pass, encoder,
+                "createComputeDispatchBatchCopyCommandBuffer requires dispatch pipelines");
         }
         if (pipeline != current_pipeline) {
             pfn_wgpuComputePassEncoderSetPipeline(pass, pipeline);
             current_pipeline = pipeline;
             memset(current_bind_groups, 0, sizeof(current_bind_groups));
         }
-
+        void* bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
+        uint32_t bg_count = read_command_bind_groups(env, cmd, bind_groups, BATCH_MAX_BIND_GROUPS);
         for (uint32_t j = 0; j < bg_count; j++) {
             void* bg = bind_groups[j];
             if (bg && bg != current_bind_groups[j]) {
@@ -562,40 +538,31 @@ napi_value doe_create_compute_dispatch_batch_copy_command_buffer(napi_env env, n
                 current_bind_groups[j] = bg;
             }
         }
-
-        pfn_wgpuComputePassEncoderDispatchWorkgroups(pass, dx, dy, dz);
+        pfn_wgpuComputePassEncoderDispatchWorkgroups(
+            pass, get_uint32_prop(env, cmd, "x"), get_uint32_prop(env, cmd, "y"), get_uint32_prop(env, cmd, "z"));
     }
 
-    WGPUBuffer copy_src = unwrap_ptr(env, get_prop(env, copy_cmd, "s"));
-    WGPUBuffer copy_dst = unwrap_ptr(env, get_prop(env, copy_cmd, "d"));
-    uint64_t copy_src_offset = (uint64_t)get_int64_prop(env, copy_cmd, "so");
-    uint64_t copy_dst_offset = (uint64_t)get_int64_prop(env, copy_cmd, "do");
-    uint64_t copy_size = (uint64_t)get_int64_prop(env, copy_cmd, "sz");
+    WGPUBuffer copy_src = get_command_ptr_prop(env, copy_cmd, "s");
+    WGPUBuffer copy_dst = get_command_ptr_prop(env, copy_cmd, "d");
     if (!copy_src || !copy_dst) {
-        THROW_BATCH_COMMAND_BUFFER_ERROR("createComputeDispatchBatchCopyCommandBuffer requires copy buffers");
+        return throw_batch_cmd_buf_error(env, pass, encoder,
+            "createComputeDispatchBatchCopyCommandBuffer requires copy buffers");
     }
 
     pfn_wgpuComputePassEncoderEnd(pass);
     pfn_wgpuComputePassEncoderRelease(pass);
-    pass = NULL;
     pfn_wgpuCommandEncoderCopyBufferToBuffer(
         encoder,
-        copy_src,
-        copy_src_offset,
-        copy_dst,
-        copy_dst_offset,
-        copy_size
-    );
-    WGPUCommandBufferDescriptor desc = {
-        .nextInChain = NULL, .label = { .data = NULL, .length = 0 },
-    };
+        copy_src, (uint64_t)get_int64_prop(env, copy_cmd, "so"),
+        copy_dst, (uint64_t)get_int64_prop(env, copy_cmd, "do"),
+        (uint64_t)get_int64_prop(env, copy_cmd, "sz"));
+    WGPUCommandBufferDescriptor desc = { .nextInChain = NULL, .label = { .data = NULL, .length = 0 } };
     WGPUCommandBuffer cmd = pfn_wgpuCommandEncoderFinish(encoder, &desc);
     pfn_wgpuCommandEncoderRelease(encoder);
-    encoder = NULL;
     if (!cmd) {
-        THROW_BATCH_COMMAND_BUFFER_ERROR("createComputeDispatchBatchCopyCommandBuffer: finish failed");
+        return throw_batch_cmd_buf_error(env, NULL, NULL,
+            "createComputeDispatchBatchCopyCommandBuffer: finish failed");
     }
-#undef THROW_BATCH_COMMAND_BUFFER_ERROR
     return wrap_ptr(env, cmd);
 }
 
@@ -610,44 +577,26 @@ napi_value doe_command_buffer_release(napi_env env, napi_callback_info info) {
  * Queue
  * ================================================================ */
 
-static napi_value make_submit_breakdown_full(
-    napi_env env,
-    uint64_t command_replay_ns,
-    uint64_t queue_submit_ns,
-    uint64_t flush_ns,
-    uint64_t wait_completed_ns,
-    uint64_t deferred_copy_ns,
-    uint64_t deferred_resolve_ns,
-    uint64_t command_buffer_end_ns,
-    uint64_t sync_prepare_ns,
-    uint64_t driver_submit_ns,
-    uint64_t command_replay_prepare_ns,
-    uint64_t command_replay_record_ns,
-    uint64_t command_replay_copy_ns
-);
-static napi_value make_submit_completion_hint(
-    napi_env env,
-    uint64_t flush_ns,
-    uint64_t wait_completed_ns,
-    uint64_t deferred_copy_ns,
-    uint64_t deferred_resolve_ns
-);
+static void set_bool_property(napi_env env, napi_value obj, const char* name, bool value) {
+    napi_value js_value;
+    napi_get_boolean(env, value, &js_value);
+    napi_set_named_property(env, obj, name, js_value);
+}
 
-static napi_value make_submit_breakdown(
-    napi_env env,
-    uint64_t command_replay_ns,
-    uint64_t queue_submit_ns,
-    uint64_t flush_ns
-) {
-    if (!submit_breakdown_enabled()) return make_submit_completion_hint(env, flush_ns, 0, 0, 0);
-    return make_submit_breakdown_full(env, command_replay_ns, queue_submit_ns, flush_ns, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+static void set_string_property(napi_env env, napi_value obj, const char* name, const char* value) {
+    napi_value js_value;
+    napi_create_string_utf8(env, value, NAPI_AUTO_LENGTH, &js_value);
+    napi_set_named_property(env, obj, name, js_value);
+}
+
+static void set_u64_property(napi_env env, napi_value obj, const char* name, uint64_t value) {
+    napi_value js_value;
+    napi_create_double(env, (double)value, &js_value);
+    napi_set_named_property(env, obj, name, js_value);
 }
 
 static void maybe_set_submit_breakdown_u64(napi_env env, napi_value result, const char* name, uint64_t value) {
-    if (value == 0) return;
-    napi_value js_value;
-    napi_create_double(env, (double)value, &js_value);
-    napi_set_named_property(env, result, name, js_value);
+    if (value != 0) set_u64_property(env, result, name, value);
 }
 
 static napi_value make_submit_completion_hint(
@@ -669,60 +618,62 @@ static napi_value make_submit_completion_hint(
     return result;
 }
 
-static napi_value make_submit_breakdown_full(
-    napi_env env,
-    uint64_t command_replay_ns,
-    uint64_t queue_submit_ns,
-    uint64_t flush_ns,
-    uint64_t wait_completed_ns,
-    uint64_t deferred_copy_ns,
-    uint64_t deferred_resolve_ns,
-    uint64_t command_buffer_end_ns,
-    uint64_t sync_prepare_ns,
-    uint64_t driver_submit_ns,
-    uint64_t command_replay_prepare_ns,
-    uint64_t command_replay_record_ns,
-    uint64_t command_replay_copy_ns
+static const char* const kSubmitBreakdownFieldNames[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {
+    "commandReplayNs",
+    "queueSubmitNs",
+    "flushNs",
+    "waitCompletedNs",
+    "deferredCopyNs",
+    "deferredResolveNs",
+    "commandBufferEndNs",
+    "syncPrepareNs",
+    "driverSubmitNs",
+    "commandReplayPrepareNs",
+    "commandReplayRecordNs",
+    "commandReplayCopyNs",
+};
+
+static napi_value make_submit_breakdown_object(
+    napi_env env, const uint64_t fields[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT]
 ) {
     napi_value result;
-    napi_value replay_value;
-    napi_value submit_value;
-    napi_value flush_value;
-    napi_value wait_value;
-    napi_value copy_value;
-    napi_value resolve_value;
-    napi_value command_buffer_end_value;
-    napi_value sync_prepare_value;
-    napi_value driver_submit_value;
-    napi_value command_replay_prepare_value;
-    napi_value command_replay_record_value;
-    napi_value command_replay_copy_value;
     napi_create_object(env, &result);
-    napi_create_double(env, (double)command_replay_ns, &replay_value);
-    napi_create_double(env, (double)queue_submit_ns, &submit_value);
-    napi_create_double(env, (double)flush_ns, &flush_value);
-    napi_create_double(env, (double)wait_completed_ns, &wait_value);
-    napi_create_double(env, (double)deferred_copy_ns, &copy_value);
-    napi_create_double(env, (double)deferred_resolve_ns, &resolve_value);
-    napi_create_double(env, (double)command_buffer_end_ns, &command_buffer_end_value);
-    napi_create_double(env, (double)sync_prepare_ns, &sync_prepare_value);
-    napi_create_double(env, (double)driver_submit_ns, &driver_submit_value);
-    napi_create_double(env, (double)command_replay_prepare_ns, &command_replay_prepare_value);
-    napi_create_double(env, (double)command_replay_record_ns, &command_replay_record_value);
-    napi_create_double(env, (double)command_replay_copy_ns, &command_replay_copy_value);
-    napi_set_named_property(env, result, "commandReplayNs", replay_value);
-    napi_set_named_property(env, result, "queueSubmitNs", submit_value);
-    napi_set_named_property(env, result, "flushNs", flush_value);
-    napi_set_named_property(env, result, "waitCompletedNs", wait_value);
-    napi_set_named_property(env, result, "deferredCopyNs", copy_value);
-    napi_set_named_property(env, result, "deferredResolveNs", resolve_value);
-    napi_set_named_property(env, result, "commandBufferEndNs", command_buffer_end_value);
-    napi_set_named_property(env, result, "syncPrepareNs", sync_prepare_value);
-    napi_set_named_property(env, result, "driverSubmitNs", driver_submit_value);
-    napi_set_named_property(env, result, "commandReplayPrepareNs", command_replay_prepare_value);
-    napi_set_named_property(env, result, "commandReplayRecordNs", command_replay_record_value);
-    napi_set_named_property(env, result, "commandReplayCopyNs", command_replay_copy_value);
+    for (size_t i = 0; i < DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT; i++) {
+        set_u64_property(env, result, kSubmitBreakdownFieldNames[i], fields[i]);
+    }
     return result;
+}
+
+static napi_value make_submit_breakdown_from_native(
+    napi_env env,
+    uint64_t extra_replay_ns,
+    const uint64_t raw[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT],
+    bool include_deferred_wait_fields
+) {
+    uint64_t fields[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {0};
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY] =
+        extra_replay_ns + raw[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY];
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT] = raw[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT];
+    if (include_deferred_wait_fields) {
+        fields[DOE_DISPATCH_FLUSH_BREAKDOWN_WAIT_COMPLETED] = raw[DOE_DISPATCH_FLUSH_BREAKDOWN_WAIT_COMPLETED];
+        fields[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_COPY] = raw[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_COPY];
+        fields[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_RESOLVE] = raw[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_RESOLVE];
+    }
+    for (size_t i = DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_BUFFER_END; i < DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT; i++) {
+        fields[i] = raw[i];
+    }
+    return make_submit_breakdown_object(env, fields);
+}
+
+static napi_value make_submit_breakdown(
+    napi_env env, uint64_t command_replay_ns, uint64_t queue_submit_ns, uint64_t flush_ns
+) {
+    if (!submit_breakdown_enabled()) return make_submit_completion_hint(env, flush_ns, 0, 0, 0);
+    uint64_t fields[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {0};
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY] = command_replay_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT] = queue_submit_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_FLUSH] = flush_ns;
+    return make_submit_breakdown_object(env, fields);
 }
 
 static uint64_t flush_queue_after_submit(
@@ -734,9 +685,7 @@ static uint64_t flush_queue_after_submit(
     if (!queue) return 0;
     const uint64_t flush_started_ns = monotonic_now_ns();
     if (pfn_doeNativeQueueFlushBreakdown) {
-        uint64_t wait_ns = 0;
-        uint64_t copy_ns = 0;
-        uint64_t resolve_ns = 0;
+        uint64_t wait_ns = 0, copy_ns = 0, resolve_ns = 0;
         pfn_doeNativeQueueFlushBreakdown(queue, &wait_ns, &copy_ns, &resolve_ns);
         if (wait_completed_ns) *wait_completed_ns += wait_ns;
         if (deferred_copy_ns) *deferred_copy_ns += copy_ns;
@@ -756,9 +705,10 @@ static int submit_breakdown_enabled(void) {
     static int cached = -1;
     if (cached >= 0) return cached;
     const char* value = getenv("DOE_WEBGPU_SUBMIT_BREAKDOWN");
-    if (!value || value[0] == '\0') return cached = 0;
-    if (strcmp(value, "0") == 0) return cached = 0;
-    if (strcmp(value, "false") == 0 || strcmp(value, "False") == 0 || strcmp(value, "FALSE") == 0) return cached = 0;
+    if (!value || value[0] == '\0' || strcmp(value, "0") == 0 ||
+        strcmp(value, "false") == 0 || strcmp(value, "False") == 0 || strcmp(value, "FALSE") == 0) {
+        return cached = 0;
+    }
     return cached = 1;
 }
 
@@ -779,24 +729,6 @@ static int submit_breakdown_enabled(void) {
 #define DOE_DEFERRED_SYNC_POLICY_PREFER_TIMELINE_SEMAPHORE 0u
 #define DOE_DEFERRED_SYNC_POLICY_REQUIRE_FENCE_POOL 1u
 
-static void set_bool_property(napi_env env, napi_value obj, const char* name, bool value) {
-    napi_value js_value;
-    napi_get_boolean(env, value, &js_value);
-    napi_set_named_property(env, obj, name, js_value);
-}
-
-static void set_string_property(napi_env env, napi_value obj, const char* name, const char* value) {
-    napi_value js_value;
-    napi_create_string_utf8(env, value, NAPI_AUTO_LENGTH, &js_value);
-    napi_set_named_property(env, obj, name, js_value);
-}
-
-static void set_u64_property(napi_env env, napi_value obj, const char* name, uint64_t value) {
-    napi_value js_value;
-    napi_create_double(env, (double)value, &js_value);
-    napi_set_named_property(env, obj, name, js_value);
-}
-
 static void set_optional_u32_property(napi_env env, napi_value obj, const char* name, uint32_t value) {
     if (value == DOE_QUEUE_FAMILY_UNAVAILABLE) return;
     napi_value js_value;
@@ -805,50 +737,36 @@ static void set_optional_u32_property(napi_env env, napi_value obj, const char* 
 }
 
 static void set_optional_bool_code_property(napi_env env, napi_value obj, const char* name, uint32_t value) {
-    if (value == DOE_QUEUE_FAMILY_UNAVAILABLE) return;
-    set_bool_property(env, obj, name, value != 0);
+    if (value != DOE_QUEUE_FAMILY_UNAVAILABLE) set_bool_property(env, obj, name, value != 0);
+}
+
+static void set_optional_string_property(napi_env env, napi_value obj, const char* name, const char* value) {
+    if (value) set_string_property(env, obj, name, value);
 }
 
 static const char* queue_family_policy_name(uint32_t value) {
     switch (value) {
-        case DOE_QUEUE_FAMILY_POLICY_PREFER_GRAPHICS_COMPUTE:
-            return "prefer_graphics_compute";
-        case DOE_QUEUE_FAMILY_POLICY_PREFER_COMPUTE_ONLY:
-            return "prefer_compute_only";
-        case DOE_QUEUE_FAMILY_POLICY_REQUIRE_COMPUTE_ONLY:
-            return "require_compute_only";
-        default:
-            return NULL;
+        case DOE_QUEUE_FAMILY_POLICY_PREFER_GRAPHICS_COMPUTE: return "prefer_graphics_compute";
+        case DOE_QUEUE_FAMILY_POLICY_PREFER_COMPUTE_ONLY: return "prefer_compute_only";
+        case DOE_QUEUE_FAMILY_POLICY_REQUIRE_COMPUTE_ONLY: return "require_compute_only";
+        default: return NULL;
     }
 }
 
 static const char* queue_family_kind_name(uint32_t value) {
     switch (value) {
-        case DOE_QUEUE_FAMILY_KIND_GRAPHICS_COMPUTE:
-            return "graphics_compute";
-        case DOE_QUEUE_FAMILY_KIND_COMPUTE_ONLY:
-            return "compute_only";
-        default:
-            return NULL;
+        case DOE_QUEUE_FAMILY_KIND_GRAPHICS_COMPUTE: return "graphics_compute";
+        case DOE_QUEUE_FAMILY_KIND_COMPUTE_ONLY: return "compute_only";
+        default: return NULL;
     }
 }
 
 static const char* deferred_sync_policy_name(uint32_t value) {
     switch (value) {
-        case DOE_DEFERRED_SYNC_POLICY_PREFER_TIMELINE_SEMAPHORE:
-            return "prefer_timeline_semaphore";
-        case DOE_DEFERRED_SYNC_POLICY_REQUIRE_FENCE_POOL:
-            return "require_fence_pool";
-        default:
-            return NULL;
+        case DOE_DEFERRED_SYNC_POLICY_PREFER_TIMELINE_SEMAPHORE: return "prefer_timeline_semaphore";
+        case DOE_DEFERRED_SYNC_POLICY_REQUIRE_FENCE_POOL: return "require_fence_pool";
+        default: return NULL;
     }
-}
-
-static void set_optional_string_property(napi_env env, napi_value obj, const char* name, const char* value) {
-    if (!value) return;
-    napi_value js_value;
-    napi_create_string_utf8(env, value, NAPI_AUTO_LENGTH, &js_value);
-    napi_set_named_property(env, obj, name, js_value);
 }
 
 napi_value doe_native_fast_path_info(napi_env env, napi_callback_info info) {
@@ -892,27 +810,20 @@ napi_value doe_queue_sync_info(napi_env env, napi_callback_info info) {
     set_bool_property(env, result, "timelineSemaphore", (bits & DOE_QUEUE_SYNC_INFO_TIMELINE_SEMAPHORE) != 0);
     set_bool_property(env, result, "fencePool", (bits & DOE_QUEUE_SYNC_INFO_FENCE_POOL) != 0);
     set_bool_property(env, result, "deferredSubmissions", (bits & DOE_QUEUE_SYNC_INFO_DEFERRED_SUBMISSIONS) != 0);
-    if (pfn_doeNativeQueueFamilyPolicyCode) {
+    if (pfn_doeNativeQueueFamilyPolicyCode)
         set_optional_string_property(env, result, "queueFamilyPolicy", queue_family_policy_name(pfn_doeNativeQueueFamilyPolicyCode(queue)));
-    }
-    if (pfn_doeNativeQueueDeferredSubmissionSyncPolicyCode) {
+    if (pfn_doeNativeQueueDeferredSubmissionSyncPolicyCode)
         set_optional_string_property(env, result, "deferredSubmissionSyncPolicy", deferred_sync_policy_name(pfn_doeNativeQueueDeferredSubmissionSyncPolicyCode(queue)));
-    }
-    if (pfn_doeNativeQueueFamilyKindCode) {
+    if (pfn_doeNativeQueueFamilyKindCode)
         set_optional_string_property(env, result, "queueFamilyKind", queue_family_kind_name(pfn_doeNativeQueueFamilyKindCode(queue)));
-    }
-    if (pfn_doeNativeQueueFamilyIndex) {
+    if (pfn_doeNativeQueueFamilyIndex)
         set_optional_u32_property(env, result, "queueFamilyIndex", pfn_doeNativeQueueFamilyIndex(queue));
-    }
-    if (pfn_doeNativeQueueFamilyQueueCount) {
+    if (pfn_doeNativeQueueFamilyQueueCount)
         set_optional_u32_property(env, result, "queueFamilyQueueCount", pfn_doeNativeQueueFamilyQueueCount(queue));
-    }
-    if (pfn_doeNativeQueueFamilyTimestampValidBits) {
+    if (pfn_doeNativeQueueFamilyTimestampValidBits)
         set_optional_u32_property(env, result, "queueFamilyTimestampValidBits", pfn_doeNativeQueueFamilyTimestampValidBits(queue));
-    }
-    if (pfn_doeNativeQueueFamilySupportsGraphics) {
+    if (pfn_doeNativeQueueFamilySupportsGraphics)
         set_optional_bool_code_property(env, result, "queueFamilySupportsGraphics", pfn_doeNativeQueueFamilySupportsGraphics(queue));
-    }
     return result;
 }
 
@@ -935,30 +846,14 @@ napi_value doe_queue_pipeline_cache_info(napi_env env, napi_callback_info info) 
     const bool active = (bits & DOE_QUEUE_PIPELINE_CACHE_INFO_ACTIVE) != 0;
     const bool disabled = (bits & DOE_QUEUE_PIPELINE_CACHE_INFO_DISABLED) != 0;
     const bool supported = (bits & DOE_QUEUE_PIPELINE_CACHE_INFO_SUPPORTED) != 0;
-    const char* reason = !supported
-        ? "platform-unsupported"
-        : disabled
-            ? "cli-flag"
-            : active
-                ? "default"
-                : "non-doe-backend";
+    const char* reason = !supported ? "platform-unsupported" : disabled ? "cli-flag" : active ? "default" : "non-doe-backend";
     napi_value result;
     napi_create_object(env, &result);
     set_string_property(env, result, "backend", "vulkan");
     set_string_property(env, result, "state", active ? "enabled" : "disabled");
     set_string_property(env, result, "reason", reason);
-    set_u64_property(
-        env,
-        result,
-        "warmupCount",
-        pfn_doeNativeQueuePipelineCacheWarmupCount ? pfn_doeNativeQueuePipelineCacheWarmupCount(queue) : 0
-    );
-    set_u64_property(
-        env,
-        result,
-        "warmupNs",
-        pfn_doeNativeQueuePipelineCacheWarmupNs ? pfn_doeNativeQueuePipelineCacheWarmupNs(queue) : 0
-    );
+    set_u64_property(env, result, "warmupCount", pfn_doeNativeQueuePipelineCacheWarmupCount ? pfn_doeNativeQueuePipelineCacheWarmupCount(queue) : 0);
+    set_u64_property(env, result, "warmupNs", pfn_doeNativeQueuePipelineCacheWarmupNs ? pfn_doeNativeQueuePipelineCacheWarmupNs(queue) : 0);
     return result;
 }
 
@@ -967,9 +862,7 @@ napi_value doe_queue_pipeline_cache_flush(napi_env env, napi_callback_info info)
     CHECK_LIB_LOADED(env);
     WGPUQueue queue = unwrap_ptr(env, _args[0]);
     if (!queue) NAPI_THROW(env, "queuePipelineCacheFlush requires queue");
-    if (pfn_doeNativeQueuePipelineCacheFlush) {
-        pfn_doeNativeQueuePipelineCacheFlush(queue);
-    }
+    if (pfn_doeNativeQueuePipelineCacheFlush) pfn_doeNativeQueuePipelineCacheFlush(queue);
     return NULL;
 }
 
@@ -1022,51 +915,89 @@ napi_value doe_queue_submit_one(napi_env env, napi_callback_info info) {
     return wants_submit_breakdown ? make_submit_breakdown(env, 0, queue_submit_ns, 0) : NULL;
 }
 
-/* queueWriteBuffer(queue, buffer, offset, typedArray) */
+static bool extract_buffer_data_checked(napi_env env, napi_value val, void** out_ptr, size_t* out_len) {
+    bool is_ta = false, is_ab = false, is_buf = false;
+    napi_is_typedarray(env, val, &is_ta);
+    if (!is_ta) napi_is_arraybuffer(env, val, &is_ab);
+    if (!is_ta && !is_ab) napi_is_buffer(env, val, &is_buf);
+    if (!is_ta && !is_ab && !is_buf) return false;
+    extract_buffer_data(env, val, out_ptr, out_len);
+    return true;
+}
+
+static inline void write_queue_buffer_single(
+    WGPUQueue queue, WGPUBuffer buf, uint64_t offset, const void* data, size_t byte_length
+) {
+    if (pfn_doeNativeQueueWriteBuffer)
+        pfn_doeNativeQueueWriteBuffer(queue, buf, offset, data, byte_length);
+    else
+        pfn_wgpuQueueWriteBuffer(queue, buf, offset, data, byte_length);
+}
+
 napi_value doe_queue_write_buffer(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 4);
     CHECK_LIB_LOADED(env);
     WGPUQueue queue = unwrap_ptr(env, _args[0]);
     WGPUBuffer buf = unwrap_ptr(env, _args[1]);
     if (!queue || !buf) NAPI_THROW(env, "queueWriteBuffer requires queue and buffer");
-    int64_t offset; napi_get_value_int64(env, _args[2], &offset);
+    int64_t offset;
+    napi_get_value_int64(env, _args[2], &offset);
     void* data = NULL;
     size_t byte_length = 0;
-    bool is_typedarray = false;
-    napi_is_typedarray(env, _args[3], &is_typedarray);
-    if (is_typedarray) {
-        napi_typedarray_type ta_type; size_t ta_length; napi_value ab; size_t byte_offset;
-        napi_get_typedarray_info(env, _args[3], &ta_type, &ta_length, &data, &ab, &byte_offset);
-        size_t elem_size = 1;
-        switch (ta_type) {
-            case napi_int8_array: case napi_uint8_array: case napi_uint8_clamped_array: elem_size = 1; break;
-            case napi_int16_array: case napi_uint16_array: elem_size = 2; break;
-            case napi_int32_array: case napi_uint32_array: case napi_float32_array: elem_size = 4; break;
-            case napi_float64_array: case napi_bigint64_array: case napi_biguint64_array: elem_size = 8; break;
-            default: elem_size = 1; break;
-        }
-        byte_length = ta_length * elem_size;
-    } else {
-        bool is_ab = false;
-        napi_is_arraybuffer(env, _args[3], &is_ab);
-        if (is_ab) {
-            napi_get_arraybuffer_info(env, _args[3], &data, &byte_length);
-        } else {
-            bool is_buffer = false;
-            napi_is_buffer(env, _args[3], &is_buffer);
-            if (is_buffer) napi_get_buffer_info(env, _args[3], &data, &byte_length);
-            else NAPI_THROW(env, "queueWriteBuffer: data must be TypedArray, ArrayBuffer, or Buffer");
-        }
+    if (!extract_buffer_data_checked(env, _args[3], &data, &byte_length)) {
+        NAPI_THROW(env, "queueWriteBuffer: data must be TypedArray, ArrayBuffer, or Buffer");
     }
-    if (pfn_doeNativeQueueWriteBuffer) {
-        pfn_doeNativeQueueWriteBuffer(queue, buf, (uint64_t)offset, data, byte_length);
-    } else {
-        pfn_wgpuQueueWriteBuffer(queue, buf, (uint64_t)offset, data, byte_length);
-    }
+    write_queue_buffer_single(queue, buf, (uint64_t)offset, data, byte_length);
     return NULL;
 }
 
-/* queueWriteBufferBatch(queue, buffers, offsets, sizes, data) */
+typedef struct {
+    bool heap_allocated;
+    WGPUBuffer stack_buffers[QUEUE_WRITE_BATCH_STACK_MAX];
+    uint64_t stack_offsets[QUEUE_WRITE_BATCH_STACK_MAX];
+    uint32_t stack_sizes[QUEUE_WRITE_BATCH_STACK_MAX];
+    const void* stack_data_ptrs[QUEUE_WRITE_BATCH_STACK_MAX];
+    WGPUBuffer* buffers;
+    uint64_t* offsets;
+    uint32_t* sizes;
+    const void** data_ptrs;
+} QueueWriteBatchScratch;
+
+static void free_queue_write_batch_scratch(QueueWriteBatchScratch* s) {
+    if (!s->heap_allocated) return;
+    free(s->buffers);
+    free(s->offsets);
+    free(s->sizes);
+    free((void*)s->data_ptrs);
+}
+
+static bool init_queue_write_batch_scratch(QueueWriteBatchScratch* s, uint32_t count, bool need_data_ptrs) {
+    s->heap_allocated = count > QUEUE_WRITE_BATCH_STACK_MAX;
+    if (!s->heap_allocated) {
+        s->buffers = s->stack_buffers;
+        s->offsets = s->stack_offsets;
+        s->sizes = s->stack_sizes;
+        s->data_ptrs = need_data_ptrs ? s->stack_data_ptrs : NULL;
+        return true;
+    }
+    s->buffers = (WGPUBuffer*)malloc((size_t)count * sizeof(*s->buffers));
+    s->offsets = (uint64_t*)malloc((size_t)count * sizeof(*s->offsets));
+    s->sizes = (uint32_t*)malloc((size_t)count * sizeof(*s->sizes));
+    s->data_ptrs = need_data_ptrs ? (const void**)malloc((size_t)count * sizeof(*s->data_ptrs)) : NULL;
+    if (!s->buffers || !s->offsets || !s->sizes || (need_data_ptrs && !s->data_ptrs)) {
+        free_queue_write_batch_scratch(s);
+        return false;
+    }
+    return true;
+}
+
+static void unpack_write_batch_meta(
+    const void* offset_bytes, const void* size_bytes, uint32_t i, uint64_t* offset_out, uint32_t* size_out
+) {
+    memcpy(offset_out, ((const uint8_t*)offset_bytes) + ((size_t)i * sizeof(uint64_t)), sizeof(uint64_t));
+    memcpy(size_out, ((const uint8_t*)size_bytes) + ((size_t)i * sizeof(uint32_t)), sizeof(uint32_t));
+}
+
 napi_value doe_queue_write_buffer_batch(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 5);
     CHECK_LIB_LOADED(env);
@@ -1078,188 +1009,95 @@ napi_value doe_queue_write_buffer_batch(napi_env env, napi_callback_info info) {
     if (!is_array) NAPI_THROW(env, "queueWriteBufferBatch buffers must be an array");
     uint32_t entry_count = 0;
     napi_get_array_length(env, _args[1], &entry_count);
-    if (entry_count == 0) {
-        return NULL;
-    }
+    if (entry_count == 0) return NULL;
 
-    void* offset_bytes = NULL;
-    size_t offset_byte_length = 0;
-    void* size_bytes = NULL;
-    size_t size_byte_length = 0;
-    void* data_bytes = NULL;
-    size_t data_byte_length = 0;
+    void *offset_bytes = NULL, *size_bytes = NULL, *data_bytes = NULL;
+    size_t offset_byte_length = 0, size_byte_length = 0, data_byte_length = 0;
     extract_buffer_data(env, _args[2], &offset_bytes, &offset_byte_length);
     extract_buffer_data(env, _args[3], &size_bytes, &size_byte_length);
     extract_buffer_data(env, _args[4], &data_bytes, &data_byte_length);
-    if (!offset_bytes || offset_byte_length < ((size_t)entry_count * sizeof(uint64_t))) {
+    if (!offset_bytes || offset_byte_length < ((size_t)entry_count * sizeof(uint64_t)))
         NAPI_THROW(env, "queueWriteBufferBatch offsets must be a BigUint64Array");
-    }
-    if (!size_bytes || size_byte_length < ((size_t)entry_count * sizeof(uint32_t))) {
+    if (!size_bytes || size_byte_length < ((size_t)entry_count * sizeof(uint32_t)))
         NAPI_THROW(env, "queueWriteBufferBatch sizes must be a Uint32Array");
-    }
-    if (!data_bytes && data_byte_length > 0) {
+    if (!data_bytes && data_byte_length > 0)
         NAPI_THROW(env, "queueWriteBufferBatch data must be buffer-backed");
-    }
 
     size_t declared_data_byte_length = 0;
     for (uint32_t i = 0; i < entry_count; i++) {
         uint32_t byte_length = 0;
-        memcpy(&byte_length, ((uint8_t*)size_bytes) + ((size_t)i * sizeof(uint32_t)), sizeof(uint32_t));
-        if (declared_data_byte_length > SIZE_MAX - (size_t)byte_length) {
+        memcpy(&byte_length, ((const uint8_t*)size_bytes) + ((size_t)i * sizeof(uint32_t)), sizeof(uint32_t));
+        if (declared_data_byte_length > SIZE_MAX - (size_t)byte_length)
             NAPI_THROW(env, "queueWriteBufferBatch data length overflows size_t");
-        }
         declared_data_byte_length += (size_t)byte_length;
     }
-    if (declared_data_byte_length != data_byte_length) {
+    if (declared_data_byte_length != data_byte_length)
         NAPI_THROW(env, "queueWriteBufferBatch data length must equal declared sizes");
-    }
 
-    WGPUBuffer stack_buffers[QUEUE_WRITE_BATCH_STACK_MAX];
-    uint64_t stack_offsets[QUEUE_WRITE_BATCH_STACK_MAX];
-    uint32_t stack_sizes[QUEUE_WRITE_BATCH_STACK_MAX];
-    WGPUBuffer* batch_buffers = stack_buffers;
-    uint64_t* batch_offsets = stack_offsets;
-    uint32_t* batch_sizes = stack_sizes;
-    const bool heap_batch = entry_count > QUEUE_WRITE_BATCH_STACK_MAX;
-    if (heap_batch) {
-        batch_buffers = (WGPUBuffer*)malloc((size_t)entry_count * sizeof(*batch_buffers));
-        batch_offsets = (uint64_t*)malloc((size_t)entry_count * sizeof(*batch_offsets));
-        batch_sizes = (uint32_t*)malloc((size_t)entry_count * sizeof(*batch_sizes));
-        if (!batch_buffers || !batch_offsets || !batch_sizes) {
-            free(batch_buffers);
-            free(batch_offsets);
-            free(batch_sizes);
-            NAPI_THROW(env, "queueWriteBufferBatch out of memory");
-        }
-    }
+    QueueWriteBatchScratch batch;
+    if (!init_queue_write_batch_scratch(&batch, entry_count, false))
+        NAPI_THROW(env, "queueWriteBufferBatch out of memory");
 
     for (uint32_t i = 0; i < entry_count; i++) {
         napi_value buffer_value;
         napi_get_element(env, _args[1], i, &buffer_value);
         WGPUBuffer buffer = unwrap_ptr(env, buffer_value);
         if (!buffer) {
-            if (heap_batch) {
-                free(batch_buffers);
-                free(batch_offsets);
-                free(batch_sizes);
-            }
-            napi_throw_error(env, "DOE_ERROR", "queueWriteBufferBatch entry requires buffer");
-            return NULL;
+            free_queue_write_batch_scratch(&batch);
+            NAPI_THROW(env, "queueWriteBufferBatch entry requires buffer");
         }
-
-        uint64_t offset = 0;
-        uint32_t byte_length = 0;
-        memcpy(&offset, ((uint8_t*)offset_bytes) + ((size_t)i * sizeof(uint64_t)), sizeof(uint64_t));
-        memcpy(&byte_length, ((uint8_t*)size_bytes) + ((size_t)i * sizeof(uint32_t)), sizeof(uint32_t));
-        batch_buffers[i] = buffer;
-        batch_offsets[i] = offset;
-        batch_sizes[i] = byte_length;
+        batch.buffers[i] = buffer;
+        unpack_write_batch_meta(offset_bytes, size_bytes, i, &batch.offsets[i], &batch.sizes[i]);
     }
 
     const uint8_t empty_batch_data = 0;
     const uint8_t* batch_data = data_bytes ? (const uint8_t*)data_bytes : &empty_batch_data;
     if (pfn_doeNativeQueueWriteBufferBatch) {
         pfn_doeNativeQueueWriteBufferBatch(
-            queue,
-            (size_t)entry_count,
-            batch_buffers,
-            batch_offsets,
-            batch_sizes,
-            batch_data
-        );
+            queue, (size_t)entry_count, batch.buffers, batch.offsets, batch.sizes, batch_data);
     } else {
         size_t data_offset = 0;
         for (uint32_t i = 0; i < entry_count; i++) {
-            const size_t byte_length = (size_t)batch_sizes[i];
-            if (pfn_doeNativeQueueWriteBuffer) {
-                pfn_doeNativeQueueWriteBuffer(
-                    queue,
-                    batch_buffers[i],
-                    batch_offsets[i],
-                    batch_data + data_offset,
-                    byte_length
-                );
-            } else {
-                pfn_wgpuQueueWriteBuffer(
-                    queue,
-                    batch_buffers[i],
-                    batch_offsets[i],
-                    batch_data + data_offset,
-                    byte_length
-                );
-            }
+            const size_t byte_length = (size_t)batch.sizes[i];
+            write_queue_buffer_single(queue, batch.buffers[i], batch.offsets[i], batch_data + data_offset, byte_length);
             data_offset += byte_length;
         }
     }
-    if (heap_batch) {
-        free(batch_buffers);
-        free(batch_offsets);
-        free(batch_sizes);
-    }
+    free_queue_write_batch_scratch(&batch);
     return NULL;
 }
 
-/* queueWriteBufferBatchDataPtrs(queue, buffers, offsets, sizes, data) */
 napi_value doe_queue_write_buffer_batch_data_ptrs(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 5);
     CHECK_LIB_LOADED(env);
     WGPUQueue queue = unwrap_ptr(env, _args[0]);
     if (!queue) NAPI_THROW(env, "queueWriteBufferBatchDataPtrs requires queue");
 
-    bool buffers_is_array = false;
+    bool buffers_is_array = false, data_is_array = false;
     napi_is_array(env, _args[1], &buffers_is_array);
     if (!buffers_is_array) NAPI_THROW(env, "queueWriteBufferBatchDataPtrs buffers must be an array");
-
-    bool data_is_array = false;
     napi_is_array(env, _args[4], &data_is_array);
     if (!data_is_array) NAPI_THROW(env, "queueWriteBufferBatchDataPtrs data must be an array");
 
-    uint32_t entry_count = 0;
+    uint32_t entry_count = 0, data_count = 0;
     napi_get_array_length(env, _args[1], &entry_count);
-    uint32_t data_count = 0;
     napi_get_array_length(env, _args[4], &data_count);
-    if (data_count != entry_count) {
+    if (data_count != entry_count)
         NAPI_THROW(env, "queueWriteBufferBatchDataPtrs data length must match buffers length");
-    }
-    if (entry_count == 0) {
-        return NULL;
-    }
+    if (entry_count == 0) return NULL;
 
-    void* offset_bytes = NULL;
-    size_t offset_byte_length = 0;
-    void* size_bytes = NULL;
-    size_t size_byte_length = 0;
+    void *offset_bytes = NULL, *size_bytes = NULL;
+    size_t offset_byte_length = 0, size_byte_length = 0;
     extract_buffer_data(env, _args[2], &offset_bytes, &offset_byte_length);
     extract_buffer_data(env, _args[3], &size_bytes, &size_byte_length);
-    if (!offset_bytes || offset_byte_length < ((size_t)entry_count * sizeof(uint64_t))) {
+    if (!offset_bytes || offset_byte_length < ((size_t)entry_count * sizeof(uint64_t)))
         NAPI_THROW(env, "queueWriteBufferBatchDataPtrs offsets must be a BigUint64Array");
-    }
-    if (!size_bytes || size_byte_length < ((size_t)entry_count * sizeof(uint32_t))) {
+    if (!size_bytes || size_byte_length < ((size_t)entry_count * sizeof(uint32_t)))
         NAPI_THROW(env, "queueWriteBufferBatchDataPtrs sizes must be a Uint32Array");
-    }
 
-    WGPUBuffer stack_buffers[QUEUE_WRITE_BATCH_STACK_MAX];
-    uint64_t stack_offsets[QUEUE_WRITE_BATCH_STACK_MAX];
-    uint32_t stack_sizes[QUEUE_WRITE_BATCH_STACK_MAX];
-    const void* stack_data_ptrs[QUEUE_WRITE_BATCH_STACK_MAX];
-    WGPUBuffer* batch_buffers = stack_buffers;
-    uint64_t* batch_offsets = stack_offsets;
-    uint32_t* batch_sizes = stack_sizes;
-    const void** batch_data_ptrs = stack_data_ptrs;
-    const bool heap_batch = entry_count > QUEUE_WRITE_BATCH_STACK_MAX;
-    if (heap_batch) {
-        batch_buffers = (WGPUBuffer*)malloc((size_t)entry_count * sizeof(*batch_buffers));
-        batch_offsets = (uint64_t*)malloc((size_t)entry_count * sizeof(*batch_offsets));
-        batch_sizes = (uint32_t*)malloc((size_t)entry_count * sizeof(*batch_sizes));
-        batch_data_ptrs = (const void**)malloc((size_t)entry_count * sizeof(*batch_data_ptrs));
-        if (!batch_buffers || !batch_offsets || !batch_sizes || !batch_data_ptrs) {
-            free(batch_buffers);
-            free(batch_offsets);
-            free(batch_sizes);
-            free((void*)batch_data_ptrs);
-            NAPI_THROW(env, "queueWriteBufferBatchDataPtrs out of memory");
-        }
-    }
+    QueueWriteBatchScratch batch;
+    if (!init_queue_write_batch_scratch(&batch, entry_count, true))
+        NAPI_THROW(env, "queueWriteBufferBatchDataPtrs out of memory");
 
     const uint8_t empty_batch_data = 0;
     for (uint32_t i = 0; i < entry_count; i++) {
@@ -1267,16 +1105,9 @@ napi_value doe_queue_write_buffer_batch_data_ptrs(napi_env env, napi_callback_in
         napi_get_element(env, _args[1], i, &buffer_value);
         WGPUBuffer buffer = unwrap_ptr(env, buffer_value);
         if (!buffer) {
-            if (heap_batch) {
-                free(batch_buffers);
-                free(batch_offsets);
-                free(batch_sizes);
-                free((void*)batch_data_ptrs);
-            }
-            napi_throw_error(env, "DOE_ERROR", "queueWriteBufferBatchDataPtrs entry requires buffer");
-            return NULL;
+            free_queue_write_batch_scratch(&batch);
+            NAPI_THROW(env, "queueWriteBufferBatchDataPtrs entry requires buffer");
         }
-
         napi_value data_value;
         napi_get_element(env, _args[4], i, &data_value);
         void* data_ptr = NULL;
@@ -1285,76 +1116,34 @@ napi_value doe_queue_write_buffer_batch_data_ptrs(napi_env env, napi_callback_in
 
         uint64_t offset = 0;
         uint32_t byte_length = 0;
-        memcpy(&offset, ((uint8_t*)offset_bytes) + ((size_t)i * sizeof(uint64_t)), sizeof(uint64_t));
-        memcpy(&byte_length, ((uint8_t*)size_bytes) + ((size_t)i * sizeof(uint32_t)), sizeof(uint32_t));
+        unpack_write_batch_meta(offset_bytes, size_bytes, i, &offset, &byte_length);
         if ((size_t)byte_length != data_byte_length) {
-            if (heap_batch) {
-                free(batch_buffers);
-                free(batch_offsets);
-                free(batch_sizes);
-                free((void*)batch_data_ptrs);
-            }
-            napi_throw_error(env, "DOE_ERROR", "queueWriteBufferBatchDataPtrs data length must equal declared size");
-            return NULL;
+            free_queue_write_batch_scratch(&batch);
+            NAPI_THROW(env, "queueWriteBufferBatchDataPtrs data length must equal declared size");
         }
         if (!data_ptr && byte_length > 0) {
-            if (heap_batch) {
-                free(batch_buffers);
-                free(batch_offsets);
-                free(batch_sizes);
-                free((void*)batch_data_ptrs);
-            }
-            napi_throw_error(env, "DOE_ERROR", "queueWriteBufferBatchDataPtrs data must be buffer-backed");
-            return NULL;
+            free_queue_write_batch_scratch(&batch);
+            NAPI_THROW(env, "queueWriteBufferBatchDataPtrs data must be buffer-backed");
         }
-
-        batch_buffers[i] = buffer;
-        batch_offsets[i] = offset;
-        batch_sizes[i] = byte_length;
-        batch_data_ptrs[i] = data_ptr ? data_ptr : &empty_batch_data;
+        batch.buffers[i] = buffer;
+        batch.offsets[i] = offset;
+        batch.sizes[i] = byte_length;
+        batch.data_ptrs[i] = data_ptr ? data_ptr : &empty_batch_data;
     }
 
     if (pfn_doeNativeQueueWriteBufferBatchDataPtrs) {
         pfn_doeNativeQueueWriteBufferBatchDataPtrs(
-            queue,
-            (size_t)entry_count,
-            batch_buffers,
-            batch_offsets,
-            batch_sizes,
-            batch_data_ptrs
-        );
+            queue, (size_t)entry_count, batch.buffers, batch.offsets, batch.sizes, batch.data_ptrs);
     } else {
         for (uint32_t i = 0; i < entry_count; i++) {
-            const size_t byte_length = (size_t)batch_sizes[i];
-            if (pfn_doeNativeQueueWriteBuffer) {
-                pfn_doeNativeQueueWriteBuffer(
-                    queue,
-                    batch_buffers[i],
-                    batch_offsets[i],
-                    batch_data_ptrs[i],
-                    byte_length
-                );
-            } else {
-                pfn_wgpuQueueWriteBuffer(
-                    queue,
-                    batch_buffers[i],
-                    batch_offsets[i],
-                    batch_data_ptrs[i],
-                    byte_length
-                );
-            }
+            write_queue_buffer_single(
+                queue, batch.buffers[i], batch.offsets[i], batch.data_ptrs[i], (size_t)batch.sizes[i]);
         }
     }
-    if (heap_batch) {
-        free(batch_buffers);
-        free(batch_offsets);
-        free(batch_sizes);
-        free((void*)batch_data_ptrs);
-    }
+    free_queue_write_batch_scratch(&batch);
     return NULL;
 }
 
-/* queueFlush(instance, queue) — wait for all pending GPU work to complete. */
 napi_value doe_queue_flush(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
     CHECK_LIB_LOADED(env);
@@ -1362,21 +1151,13 @@ napi_value doe_queue_flush(napi_env env, napi_callback_info info) {
     WGPUQueue queue = unwrap_ptr(env, _args[1]);
     if (!queue) NAPI_THROW(env, "queueFlush requires queue");
     if (pfn_doeNativeQueueFlushBreakdown) {
-        uint64_t wait_completed_ns = 0;
-        uint64_t deferred_copy_ns = 0;
-        uint64_t deferred_resolve_ns = 0;
-        napi_value result;
-        napi_value wait_value;
-        napi_value copy_value;
-        napi_value resolve_value;
+        uint64_t wait_completed_ns = 0, deferred_copy_ns = 0, deferred_resolve_ns = 0;
         pfn_doeNativeQueueFlushBreakdown(queue, &wait_completed_ns, &deferred_copy_ns, &deferred_resolve_ns);
+        napi_value result;
         napi_create_object(env, &result);
-        napi_create_double(env, (double)wait_completed_ns, &wait_value);
-        napi_create_double(env, (double)deferred_copy_ns, &copy_value);
-        napi_create_double(env, (double)deferred_resolve_ns, &resolve_value);
-        napi_set_named_property(env, result, "waitCompletedNs", wait_value);
-        napi_set_named_property(env, result, "deferredCopyNs", copy_value);
-        napi_set_named_property(env, result, "deferredResolveNs", resolve_value);
+        set_u64_property(env, result, "waitCompletedNs", wait_completed_ns);
+        set_u64_property(env, result, "deferredCopyNs", deferred_copy_ns);
+        set_u64_property(env, result, "deferredResolveNs", deferred_resolve_ns);
         return result;
     }
     if (pfn_doeNativeQueueFlush) { pfn_doeNativeQueueFlush(queue); return NULL; }
@@ -1416,9 +1197,68 @@ napi_value doe_queue_flush(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-/* prewarmPreparedDispatches(queue, dispatchCommands)
- * Setup-only Vulkan path: prepare pipeline/layout/descriptor state without
- * recording or submitting GPU commands. */
+typedef struct {
+    bool heap_allocated;
+    void* stack_pipelines[BATCH_STACK_DISPATCHES];
+    void* stack_bind_groups[BATCH_STACK_DISPATCHES * BATCH_MAX_BIND_GROUPS];
+    uint32_t stack_bg_counts[BATCH_STACK_DISPATCHES];
+    uint32_t stack_dispatch_dims[BATCH_STACK_DISPATCHES * 3];
+    void** pipelines;
+    void** bind_groups;
+    uint32_t* bg_counts;
+    uint32_t* dispatch_dims;
+} DispatchBatchScratch;
+
+static void free_dispatch_batch_scratch(DispatchBatchScratch* s) {
+    if (!s->heap_allocated) return;
+    free(s->pipelines);
+    free(s->bind_groups);
+    free(s->bg_counts);
+    free(s->dispatch_dims);
+}
+
+static bool init_dispatch_batch_scratch(DispatchBatchScratch* s, size_t count, bool need_dims) {
+    const size_t bg_slots = count * BATCH_MAX_BIND_GROUPS;
+    s->heap_allocated = count > BATCH_STACK_DISPATCHES;
+    if (!s->heap_allocated) {
+        s->pipelines = s->stack_pipelines;
+        s->bind_groups = s->stack_bind_groups;
+        s->bg_counts = s->stack_bg_counts;
+        s->dispatch_dims = need_dims ? s->stack_dispatch_dims : NULL;
+        memset(s->pipelines, 0, count * sizeof(void*));
+        memset(s->bind_groups, 0, bg_slots * sizeof(void*));
+        memset(s->bg_counts, 0, count * sizeof(uint32_t));
+        if (need_dims) memset(s->dispatch_dims, 0, count * 3 * sizeof(uint32_t));
+        return true;
+    }
+    s->pipelines = (void**)calloc(count, sizeof(void*));
+    s->bind_groups = (void**)calloc(bg_slots, sizeof(void*));
+    s->bg_counts = (uint32_t*)calloc(count, sizeof(uint32_t));
+    s->dispatch_dims = need_dims ? (uint32_t*)calloc(count * 3, sizeof(uint32_t)) : NULL;
+    if (!s->pipelines || !s->bind_groups || !s->bg_counts || (need_dims && !s->dispatch_dims)) {
+        free_dispatch_batch_scratch(s);
+        return false;
+    }
+    return true;
+}
+
+static void unpack_dispatch_command_into_scratch(
+    napi_env env, napi_value cmd, size_t index, DispatchBatchScratch* s
+) {
+    s->pipelines[index] = get_command_ptr_prop(env, cmd, "p");
+    void* bg_ptrs[BATCH_MAX_BIND_GROUPS] = {NULL};
+    const uint32_t bg_count = read_command_bind_groups(env, cmd, bg_ptrs, BATCH_MAX_BIND_GROUPS);
+    s->bg_counts[index] = bg_count;
+    for (uint32_t j = 0; j < bg_count; j++) {
+        s->bind_groups[(index * BATCH_MAX_BIND_GROUPS) + j] = bg_ptrs[j];
+    }
+    if (s->dispatch_dims) {
+        s->dispatch_dims[(index * 3)] = get_uint32_prop(env, cmd, "x");
+        s->dispatch_dims[(index * 3) + 1] = get_uint32_prop(env, cmd, "y");
+        s->dispatch_dims[(index * 3) + 2] = get_uint32_prop(env, cmd, "z");
+    }
+}
+
 napi_value doe_prewarm_prepared_dispatches(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
     CHECK_LIB_LOADED(env);
@@ -1441,53 +1281,20 @@ napi_value doe_prewarm_prepared_dispatches(napi_env env, napi_callback_info info
         return zero;
     }
 
-    const size_t bind_group_slots = (size_t)cmd_count * BATCH_MAX_BIND_GROUPS;
-    const int use_stack_batch = cmd_count <= BATCH_STACK_DISPATCHES;
-    void* stack_pipelines[BATCH_STACK_DISPATCHES];
-    void* stack_bind_groups[BATCH_STACK_DISPATCHES * BATCH_MAX_BIND_GROUPS];
-    uint32_t stack_bg_counts[BATCH_STACK_DISPATCHES];
-    void** pipelines = use_stack_batch ? stack_pipelines : (void**)calloc(cmd_count, sizeof(void*));
-    void** bind_groups = use_stack_batch ? stack_bind_groups : (void**)calloc(bind_group_slots, sizeof(void*));
-    uint32_t* bg_counts = use_stack_batch ? stack_bg_counts : (uint32_t*)calloc(cmd_count, sizeof(uint32_t));
-    if (!pipelines || !bind_groups || !bg_counts) {
-        if (!use_stack_batch) {
-            free(pipelines);
-            free(bind_groups);
-            free(bg_counts);
-        }
+    DispatchBatchScratch batch;
+    if (!init_dispatch_batch_scratch(&batch, cmd_count, false))
         NAPI_THROW(env, "prewarmPreparedDispatches: out of memory while packing dispatch bindings");
-    }
-    if (use_stack_batch) {
-        memset(pipelines, 0, cmd_count * sizeof(void*));
-        memset(bind_groups, 0, bind_group_slots * sizeof(void*));
-        memset(bg_counts, 0, cmd_count * sizeof(uint32_t));
-    }
 
     for (uint32_t i = 0; i < cmd_count; i++) {
         napi_value cmd;
         napi_get_element(env, commands, i, &cmd);
         if (get_command_type(env, cmd) != 0) continue;
-        pipelines[i] = get_command_ptr(env, cmd, "p", 1);
-        void* bg_ptrs[BATCH_MAX_BIND_GROUPS] = {NULL};
-        const uint32_t bg_count = read_command_bind_groups(env, cmd, bg_ptrs, BATCH_MAX_BIND_GROUPS);
-        bg_counts[i] = bg_count;
-        for (uint32_t j = 0; j < bg_count; j++) {
-            bind_groups[((size_t)i * BATCH_MAX_BIND_GROUPS) + j] = bg_ptrs[j];
-        }
+        unpack_dispatch_command_into_scratch(env, cmd, i, &batch);
     }
 
     const uint32_t prepared = pfn_doeNativeComputePrewarmDispatchBindings(
-        queue,
-        cmd_count,
-        pipelines,
-        bind_groups,
-        bg_counts
-    );
-    if (!use_stack_batch) {
-        free(pipelines);
-        free(bind_groups);
-        free(bg_counts);
-    }
+        queue, cmd_count, batch.pipelines, batch.bind_groups, batch.bg_counts);
+    free_dispatch_batch_scratch(&batch);
     napi_value result;
     napi_create_uint32(env, prepared, &result);
     return result;
@@ -1511,57 +1318,39 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
 
 #if defined(__APPLE__)
     if (pfn_doeNativeComputeDispatchFlush && (cmd_count == 1 || cmd_count == 2)) {
-        napi_value cmd0; napi_get_element(env, commands, 0, &cmd0);
+        napi_value cmd0, cmd1 = NULL;
+        napi_get_element(env, commands, 0, &cmd0);
         uint32_t t0 = get_command_type(env, cmd0);
         uint32_t t1 = UINT32_MAX;
-        napi_value cmd1 = NULL;
         if (cmd_count == 2) { napi_get_element(env, commands, 1, &cmd1); t1 = get_command_type(env, cmd1); }
         if (t0 == 0 && (cmd_count == 1 || t1 == 1)) {
-            void* pipeline = get_command_ptr(env, cmd0, "p", 1);
+            void* pipeline = get_command_ptr_prop(env, cmd0, "p");
             void* bg_ptrs[BATCH_MAX_BIND_GROUPS] = {NULL};
             uint32_t bg_count = read_command_bind_groups(env, cmd0, bg_ptrs, BATCH_MAX_BIND_GROUPS);
-            uint32_t dx = get_command_u32(env, cmd0, "x", 3);
-            uint32_t dy = get_command_u32(env, cmd0, "y", 4);
-            uint32_t dz = get_command_u32(env, cmd0, "z", 5);
-            void* copy_src = NULL; uint64_t copy_src_off = 0;
-            void* copy_dst = NULL; uint64_t copy_dst_off = 0;
-            uint64_t copy_size = 0;
+            uint32_t dx = get_uint32_prop(env, cmd0, "x");
+            uint32_t dy = get_uint32_prop(env, cmd0, "y");
+            uint32_t dz = get_uint32_prop(env, cmd0, "z");
+            void *copy_src = NULL, *copy_dst = NULL;
+            uint64_t copy_src_off = 0, copy_dst_off = 0, copy_size = 0;
             if (cmd_count == 2) {
-                copy_src     = get_command_ptr(env, cmd1, "s", 1);
-                copy_dst     = get_command_ptr(env, cmd1, "d", 3);
-                copy_src_off = (uint64_t)get_command_i64(env, cmd1, "so", 2);
-                copy_dst_off = (uint64_t)get_command_i64(env, cmd1, "do", 4);
-                copy_size    = (uint64_t)get_command_i64(env, cmd1, "sz", 5);
+                copy_src = get_command_ptr_prop(env, cmd1, "s");
+                copy_dst = get_command_ptr_prop(env, cmd1, "d");
+                copy_src_off = (uint64_t)get_int64_prop(env, cmd1, "so");
+                copy_dst_off = (uint64_t)get_int64_prop(env, cmd1, "do");
+                copy_size = (uint64_t)get_int64_prop(env, cmd1, "sz");
             }
             if (wants_submit_breakdown && pfn_doeNativeComputeDispatchFlushBreakdown) {
                 uint64_t breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {0};
                 pfn_doeNativeComputeDispatchFlushBreakdown(queue, pipeline, (void**)bg_ptrs, bg_count,
                     dx, dy, dz, copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size, breakdown);
-                return make_submit_breakdown_full(
-                    env,
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT],
-                    0,
-                    0,
-                    0,
-                    0,
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_BUFFER_END],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_SYNC_PREPARE],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_DRIVER_SUBMIT],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_PREPARE],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_RECORD],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_COPY]
-                );
+                return make_submit_breakdown_from_native(env, 0, breakdown, false);
             }
-            if (wants_submit_breakdown) {
-                const uint64_t queue_submit_started_ns = monotonic_now_ns();
-                pfn_doeNativeComputeDispatchFlush(queue, pipeline, (void**)bg_ptrs, bg_count,
-                    dx, dy, dz, copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size);
-                const uint64_t queue_submit_ns = monotonic_now_ns() - queue_submit_started_ns;
-                return make_submit_breakdown(env, 0, queue_submit_ns, 0);
-            }
+            const uint64_t queue_submit_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
             pfn_doeNativeComputeDispatchFlush(queue, pipeline, (void**)bg_ptrs, bg_count,
                 dx, dy, dz, copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size);
+            if (wants_submit_breakdown) {
+                return make_submit_breakdown(env, 0, monotonic_now_ns() - queue_submit_started_ns, 0);
+            }
             return NULL;
         }
     }
@@ -1572,185 +1361,73 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
         napi_get_element(env, commands, cmd_count - 1, &copy_cmd);
         if (get_command_type(env, copy_cmd) == 1) {
             const size_t dispatch_count = (size_t)(cmd_count - 1);
-            const size_t bind_group_slots = dispatch_count * BATCH_MAX_BIND_GROUPS;
-            const size_t dispatch_dims_count = dispatch_count * 3;
-            const int use_stack_batch = dispatch_count <= BATCH_STACK_DISPATCHES;
-            void* stack_pipelines[BATCH_STACK_DISPATCHES];
-            void* stack_bind_groups[BATCH_STACK_DISPATCHES * BATCH_MAX_BIND_GROUPS];
-            uint32_t stack_bg_counts[BATCH_STACK_DISPATCHES];
-            uint32_t stack_dispatch_dims[BATCH_STACK_DISPATCHES * 3];
-            void** pipelines = use_stack_batch ? stack_pipelines : (void**)malloc(dispatch_count * sizeof(void*));
-            void** bind_groups = use_stack_batch ? stack_bind_groups : (void**)malloc(bind_group_slots * sizeof(void*));
-            uint32_t* bg_counts = use_stack_batch ? stack_bg_counts : (uint32_t*)malloc(dispatch_count * sizeof(uint32_t));
-            uint32_t* dispatch_dims = use_stack_batch ? stack_dispatch_dims : (uint32_t*)malloc(dispatch_dims_count * sizeof(uint32_t));
-            if (!pipelines || !bind_groups || !bg_counts || !dispatch_dims) {
-                if (!use_stack_batch) {
-                    free(pipelines);
-                    free(bind_groups);
-                    free(bg_counts);
-                    free(dispatch_dims);
-                }
+            DispatchBatchScratch batch;
+            if (!init_dispatch_batch_scratch(&batch, dispatch_count, true))
                 NAPI_THROW(env, "submitBatched: out of memory while packing dispatch-copy batch");
-            }
-            int dispatch_then_copy = 1;
+            bool dispatch_then_copy = true;
             const uint64_t command_replay_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
             for (uint32_t i = 0; i < dispatch_count; i++) {
                 napi_value cmd;
                 napi_get_element(env, commands, i, &cmd);
-                if (get_command_type(env, cmd) != 0) {
-                    dispatch_then_copy = 0;
-                    break;
-                }
-                pipelines[i] = get_command_ptr(env, cmd, "p", 1);
-                void* bg_ptrs[BATCH_MAX_BIND_GROUPS] = {NULL};
-                uint32_t bg_count = read_command_bind_groups(env, cmd, bg_ptrs, BATCH_MAX_BIND_GROUPS);
-                bg_counts[i] = bg_count;
-                for (uint32_t j = 0; j < bg_count; j++) {
-                    bind_groups[(i * BATCH_MAX_BIND_GROUPS) + j] = bg_ptrs[j];
-                }
-                dispatch_dims[(i * 3)] = get_command_u32(env, cmd, "x", 3);
-                dispatch_dims[(i * 3) + 1] = get_command_u32(env, cmd, "y", 4);
-                dispatch_dims[(i * 3) + 2] = get_command_u32(env, cmd, "z", 5);
+                if (get_command_type(env, cmd) != 0) { dispatch_then_copy = false; break; }
+                unpack_dispatch_command_into_scratch(env, cmd, i, &batch);
             }
             if (!dispatch_then_copy) {
-                if (!use_stack_batch) {
-                    free(pipelines);
-                    free(bind_groups);
-                    free(bg_counts);
-                    free(dispatch_dims);
-                }
+                free_dispatch_batch_scratch(&batch);
             } else {
-                void* copy_src = get_command_ptr(env, copy_cmd, "s", 1);
-                void* copy_dst = get_command_ptr(env, copy_cmd, "d", 3);
-                const uint64_t copy_src_off = (uint64_t)get_command_i64(env, copy_cmd, "so", 2);
-                const uint64_t copy_dst_off = (uint64_t)get_command_i64(env, copy_cmd, "do", 4);
-                const uint64_t copy_size = (uint64_t)get_command_i64(env, copy_cmd, "sz", 5);
+                void* copy_src = get_command_ptr_prop(env, copy_cmd, "s");
+                void* copy_dst = get_command_ptr_prop(env, copy_cmd, "d");
+                const uint64_t copy_src_off = (uint64_t)get_int64_prop(env, copy_cmd, "so");
+                const uint64_t copy_dst_off = (uint64_t)get_int64_prop(env, copy_cmd, "do");
+                const uint64_t copy_size = (uint64_t)get_int64_prop(env, copy_cmd, "sz");
                 const uint64_t command_replay_ns = wants_submit_breakdown ? monotonic_now_ns() - command_replay_started_ns : 0;
                 const uint64_t queue_submit_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
                 uint64_t breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {0};
                 if (wants_submit_breakdown && pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown) {
-                    pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown(queue, dispatch_count, pipelines, bind_groups, bg_counts, dispatch_dims,
+                    pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown(queue, dispatch_count,
+                        batch.pipelines, batch.bind_groups, batch.bg_counts, batch.dispatch_dims,
                         copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size, breakdown);
                 } else {
-                    pfn_doeNativeComputeDispatchBatchCopyFlush(queue, dispatch_count, pipelines, bind_groups, bg_counts, dispatch_dims,
+                    pfn_doeNativeComputeDispatchBatchCopyFlush(queue, dispatch_count,
+                        batch.pipelines, batch.bind_groups, batch.bg_counts, batch.dispatch_dims,
                         copy_src, copy_src_off, copy_dst, copy_dst_off, copy_size);
                 }
                 const uint64_t queue_submit_ns = wants_submit_breakdown ? monotonic_now_ns() - queue_submit_started_ns : 0;
-                if (!use_stack_batch) {
-                    free(pipelines);
-                    free(bind_groups);
-                    free(bg_counts);
-                    free(dispatch_dims);
-                }
+                free_dispatch_batch_scratch(&batch);
                 if (wants_submit_breakdown && pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown) {
-                    return make_submit_breakdown_full(
-                        env,
-                        command_replay_ns + breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY],
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT],
-                        0,
-                        0,
-                        0,
-                        0,
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_BUFFER_END],
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_SYNC_PREPARE],
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_DRIVER_SUBMIT],
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_PREPARE],
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_RECORD],
-                        breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_COPY]
-                    );
+                    return make_submit_breakdown_from_native(env, command_replay_ns, breakdown, false);
                 }
-                if (wants_submit_breakdown) {
-                    return make_submit_breakdown(env, command_replay_ns, queue_submit_ns, 0);
-                }
-                return NULL;
+                return wants_submit_breakdown ? make_submit_breakdown(env, command_replay_ns, queue_submit_ns, 0) : NULL;
             }
         }
     }
 
     if (pfn_doeNativeComputeDispatchBatchFlush && cmd_count == 1) {
-        int all_dispatch = 1;
-        for (uint32_t i = 0; i < cmd_count; i++) {
-            napi_value cmd;
-            napi_get_element(env, commands, i, &cmd);
-            if (get_command_type(env, cmd) != 0) {
-                all_dispatch = 0;
-                break;
-            }
-        }
-        if (all_dispatch) {
-            const size_t dispatch_count = (size_t)cmd_count;
-            const size_t bind_group_slots = dispatch_count * BATCH_MAX_BIND_GROUPS;
-            const size_t dispatch_dims_count = dispatch_count * 3;
-            const int use_stack_batch = dispatch_count <= BATCH_STACK_DISPATCHES;
-            void* stack_pipelines[BATCH_STACK_DISPATCHES];
-            void* stack_bind_groups[BATCH_STACK_DISPATCHES * BATCH_MAX_BIND_GROUPS];
-            uint32_t stack_bg_counts[BATCH_STACK_DISPATCHES];
-            uint32_t stack_dispatch_dims[BATCH_STACK_DISPATCHES * 3];
-            void** pipelines = use_stack_batch ? stack_pipelines : (void**)malloc(dispatch_count * sizeof(void*));
-            void** bind_groups = use_stack_batch ? stack_bind_groups : (void**)malloc(bind_group_slots * sizeof(void*));
-            uint32_t* bg_counts = use_stack_batch ? stack_bg_counts : (uint32_t*)malloc(dispatch_count * sizeof(uint32_t));
-            uint32_t* dispatch_dims = use_stack_batch ? stack_dispatch_dims : (uint32_t*)malloc(dispatch_dims_count * sizeof(uint32_t));
-            if (!pipelines || !bind_groups || !bg_counts || !dispatch_dims) {
-                if (!use_stack_batch) {
-                    free(pipelines);
-                    free(bind_groups);
-                    free(bg_counts);
-                    free(dispatch_dims);
-                }
+        napi_value cmd0;
+        napi_get_element(env, commands, 0, &cmd0);
+        if (get_command_type(env, cmd0) == 0) {
+            DispatchBatchScratch batch;
+            if (!init_dispatch_batch_scratch(&batch, 1, true))
                 NAPI_THROW(env, "submitBatched: out of memory while packing dispatch batch");
-            }
             const uint64_t command_replay_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
-            for (uint32_t i = 0; i < cmd_count; i++) {
-                napi_value cmd;
-                napi_get_element(env, commands, i, &cmd);
-                pipelines[i] = get_command_ptr(env, cmd, "p", 1);
-                void* bg_ptrs[BATCH_MAX_BIND_GROUPS] = {NULL};
-                uint32_t bg_count = read_command_bind_groups(env, cmd, bg_ptrs, BATCH_MAX_BIND_GROUPS);
-                bg_counts[i] = bg_count;
-                for (uint32_t j = 0; j < bg_count; j++) {
-                    bind_groups[(i * BATCH_MAX_BIND_GROUPS) + j] = bg_ptrs[j];
-                }
-                dispatch_dims[(i * 3)] = get_command_u32(env, cmd, "x", 3);
-                dispatch_dims[(i * 3) + 1] = get_command_u32(env, cmd, "y", 4);
-                dispatch_dims[(i * 3) + 2] = get_command_u32(env, cmd, "z", 5);
-            }
+            unpack_dispatch_command_into_scratch(env, cmd0, 0, &batch);
             const uint64_t command_replay_ns = wants_submit_breakdown ? monotonic_now_ns() - command_replay_started_ns : 0;
             const uint64_t queue_submit_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
             uint64_t breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {0};
             if (wants_submit_breakdown && pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown) {
-                pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown(queue, dispatch_count, pipelines, bind_groups, bg_counts, dispatch_dims,
+                pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown(queue, 1,
+                    batch.pipelines, batch.bind_groups, batch.bg_counts, batch.dispatch_dims,
                     NULL, 0, NULL, 0, 0, breakdown);
             } else {
-                pfn_doeNativeComputeDispatchBatchFlush(queue, dispatch_count, pipelines, bind_groups, bg_counts, dispatch_dims);
+                pfn_doeNativeComputeDispatchBatchFlush(queue, 1,
+                    batch.pipelines, batch.bind_groups, batch.bg_counts, batch.dispatch_dims);
             }
             const uint64_t queue_submit_ns = wants_submit_breakdown ? monotonic_now_ns() - queue_submit_started_ns : 0;
-            if (!use_stack_batch) {
-                free(pipelines);
-                free(bind_groups);
-                free(bg_counts);
-                free(dispatch_dims);
-            }
+            free_dispatch_batch_scratch(&batch);
             if (wants_submit_breakdown && pfn_doeNativeComputeDispatchBatchCopyFlushBreakdown) {
-                return make_submit_breakdown_full(
-                    env,
-                    command_replay_ns + breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT],
-                    0,
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_WAIT_COMPLETED],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_COPY],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_RESOLVE],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_BUFFER_END],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_SYNC_PREPARE],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_DRIVER_SUBMIT],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_PREPARE],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_RECORD],
-                    breakdown[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY_COPY]
-                );
+                return make_submit_breakdown_from_native(env, command_replay_ns, breakdown, true);
             }
-            if (wants_submit_breakdown) {
-                return make_submit_breakdown(env, command_replay_ns, queue_submit_ns, 0);
-            }
-            return NULL;
+            return wants_submit_breakdown ? make_submit_breakdown(env, command_replay_ns, queue_submit_ns, 0) : NULL;
         }
     }
 
@@ -1759,17 +1436,17 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
         napi_value cmd0, cmd1;
         napi_get_element(env, commands, 0, &cmd0);
         napi_get_element(env, commands, 1, &cmd1);
-        if (get_command_type(env, cmd0) == 0 && get_command_type(env, cmd1) == 1)
-            flush_after_submit = 1;
+        if (get_command_type(env, cmd0) == 0 && get_command_type(env, cmd1) == 1) flush_after_submit = 1;
     }
     const uint64_t command_replay_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
     WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, NULL);
+    if (!encoder) NAPI_THROW(env, "submitBatched: createCommandEncoder failed");
     WGPUComputePassEncoder pass = NULL;
     void* current_pipeline = NULL;
     void* current_bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
-    if (!encoder) NAPI_THROW(env, "submitBatched: createCommandEncoder failed");
     for (uint32_t i = 0; i < cmd_count; i++) {
-        napi_value cmd; napi_get_element(env, commands, i, &cmd);
+        napi_value cmd;
+        napi_get_element(env, commands, i, &cmd);
         uint32_t type = get_command_type(env, cmd);
         if (type == 0) {
             if (!pass) {
@@ -1781,7 +1458,7 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
                 current_pipeline = NULL;
                 memset(current_bind_groups, 0, sizeof(current_bind_groups));
             }
-            void* pipeline = get_command_ptr(env, cmd, "p", 1);
+            void* pipeline = get_command_ptr_prop(env, cmd, "p");
             if (pipeline != current_pipeline) {
                 pfn_wgpuComputePassEncoderSetPipeline(pass, pipeline);
                 current_pipeline = pipeline;
@@ -1796,8 +1473,8 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
                     current_bind_groups[j] = bg;
                 }
             }
-            pfn_wgpuComputePassEncoderDispatchWorkgroups(pass,
-                get_command_u32(env, cmd, "x", 3), get_command_u32(env, cmd, "y", 4), get_command_u32(env, cmd, "z", 5));
+            pfn_wgpuComputePassEncoderDispatchWorkgroups(
+                pass, get_uint32_prop(env, cmd, "x"), get_uint32_prop(env, cmd, "y"), get_uint32_prop(env, cmd, "z"));
         } else if (type == 1) {
             if (pass) {
                 pfn_wgpuComputePassEncoderEnd(pass);
@@ -1806,12 +1483,11 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
                 current_pipeline = NULL;
                 memset(current_bind_groups, 0, sizeof(current_bind_groups));
             }
-            void* src = get_command_ptr(env, cmd, "s", 1);
-            void* dst = get_command_ptr(env, cmd, "d", 3);
-            pfn_wgpuCommandEncoderCopyBufferToBuffer(encoder, src,
-                (uint64_t)get_command_i64(env, cmd, "so", 2), dst,
-                (uint64_t)get_command_i64(env, cmd, "do", 4),
-                (uint64_t)get_command_i64(env, cmd, "sz", 5));
+            pfn_wgpuCommandEncoderCopyBufferToBuffer(
+                encoder,
+                get_command_ptr_prop(env, cmd, "s"), (uint64_t)get_int64_prop(env, cmd, "so"),
+                get_command_ptr_prop(env, cmd, "d"), (uint64_t)get_int64_prop(env, cmd, "do"),
+                (uint64_t)get_int64_prop(env, cmd, "sz"));
         }
     }
     if (pass) {
@@ -1823,10 +1499,7 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
     const uint64_t queue_submit_started_ns = wants_submit_breakdown ? monotonic_now_ns() : 0;
     pfn_wgpuQueueSubmit(queue, 1, &cmd_buf);
     const uint64_t queue_submit_ns = wants_submit_breakdown ? monotonic_now_ns() - queue_submit_started_ns : 0;
-    uint64_t flush_ns = 0;
-    uint64_t wait_completed_ns = 0;
-    uint64_t deferred_copy_ns = 0;
-    uint64_t deferred_resolve_ns = 0;
+    uint64_t flush_ns = 0, wait_completed_ns = 0, deferred_copy_ns = 0, deferred_resolve_ns = 0;
     if (flush_after_submit) {
         flush_ns = flush_queue_after_submit(queue, &wait_completed_ns, &deferred_copy_ns, &deferred_resolve_ns);
     }
@@ -1835,21 +1508,25 @@ napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info) {
     if (!wants_submit_breakdown) {
         return make_submit_completion_hint(env, flush_ns, wait_completed_ns, deferred_copy_ns, deferred_resolve_ns);
     }
-    return make_submit_breakdown_full(env, command_replay_ns, queue_submit_ns, flush_ns, wait_completed_ns, deferred_copy_ns, deferred_resolve_ns, 0, 0, 0, 0, 0, 0);
+    uint64_t fields[DOE_DISPATCH_FLUSH_BREAKDOWN_FIELD_COUNT] = {0};
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_COMMAND_REPLAY] = command_replay_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_QUEUE_SUBMIT] = queue_submit_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_FLUSH] = flush_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_WAIT_COMPLETED] = wait_completed_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_COPY] = deferred_copy_ns;
+    fields[DOE_DISPATCH_FLUSH_BREAKDOWN_DEFERRED_RESOLVE] = deferred_resolve_ns;
+    return make_submit_breakdown_object(env, fields);
 }
 
-/* submitComputeDispatchCopy(device, queue, pipeline, bindGroups, x, y, z,
- *                           src, srcOff, dst, dstOff, size) */
 napi_value doe_queue_submit_compute_dispatch_copy(napi_env env, napi_callback_info info) {
     size_t argc = 12;
     napi_value args[12];
-    napi_status status = napi_get_cb_info(env, info, &argc, args, NULL, NULL);
-    if (status != napi_ok || argc != 12) NAPI_THROW(env, "submitComputeDispatchCopy requires 12 arguments");
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok || argc != 12)
+        NAPI_THROW(env, "submitComputeDispatchCopy requires 12 arguments");
     CHECK_LIB_LOADED(env);
     WGPUDevice device = unwrap_ptr(env, args[0]);
-    WGPUQueue queue   = unwrap_ptr(env, args[1]);
-    void* pipeline    = unwrap_ptr(env, args[2]);
-    napi_value bgs    = args[3];
+    WGPUQueue queue = unwrap_ptr(env, args[1]);
+    void* pipeline = unwrap_ptr(env, args[2]);
     uint32_t dx = 0, dy = 0, dz = 0;
     int64_t copy_src_off_i = 0, copy_dst_off_i = 0, copy_size_i = 0;
     napi_get_value_uint32(env, args[4], &dx);
@@ -1862,7 +1539,7 @@ napi_value doe_queue_submit_compute_dispatch_copy(napi_env env, napi_callback_in
     napi_get_value_int64(env, args[11], &copy_size_i);
     if (!device || !queue || !pipeline) NAPI_THROW(env, "submitComputeDispatchCopy requires device, queue, and pipeline");
     void* bg_ptrs[BATCH_MAX_BIND_GROUPS] = {NULL};
-    uint32_t bg_count = read_bind_group_value(env, bgs, bg_ptrs, BATCH_MAX_BIND_GROUPS);
+    uint32_t bg_count = read_bind_group_value(env, args[3], bg_ptrs, BATCH_MAX_BIND_GROUPS);
 #if defined(__APPLE__)
     if (pfn_doeNativeComputeDispatchFlush) {
         pfn_doeNativeComputeDispatchFlush(queue, pipeline, (void**)bg_ptrs, bg_count, dx, dy, dz,
@@ -1870,42 +1547,35 @@ napi_value doe_queue_submit_compute_dispatch_copy(napi_env env, napi_callback_in
         return NULL;
     }
 #endif
-    WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, NULL);
-    if (!encoder) NAPI_THROW(env, "submitComputeDispatchCopy: createCommandEncoder failed");
-    WGPUComputePassEncoder pass = pfn_wgpuCommandEncoderBeginComputePass(encoder, NULL);
-    if (!pass) { pfn_wgpuCommandEncoderRelease(encoder); NAPI_THROW(env, "submitComputeDispatchCopy: beginComputePass failed"); }
-    pfn_wgpuComputePassEncoderSetPipeline(pass, pipeline);
-    for (uint32_t j = 0; j < bg_count; j++)
-        if (bg_ptrs[j]) pfn_wgpuComputePassEncoderSetBindGroup(pass, j, bg_ptrs[j], 0, NULL);
-    pfn_wgpuComputePassEncoderDispatchWorkgroups(pass, dx, dy, dz);
-    pfn_wgpuComputePassEncoderEnd(pass);
-    pfn_wgpuComputePassEncoderRelease(pass);
-    pfn_wgpuCommandEncoderCopyBufferToBuffer(encoder,
+    WGPUCommandBuffer cmd_buf = record_single_dispatch_copy_command_buffer(
+        env,
+        "submitComputeDispatchCopy: createCommandEncoder failed",
+        "submitComputeDispatchCopy: beginComputePass failed",
+        "submitComputeDispatchCopy: finish failed",
+        device, pipeline, bg_ptrs, bg_count, dx, dy, dz,
         copy_src, (uint64_t)copy_src_off_i, copy_dst, (uint64_t)copy_dst_off_i, (uint64_t)copy_size_i);
-    WGPUCommandBuffer cmd_buf = pfn_wgpuCommandEncoderFinish(encoder, NULL);
-    if (!cmd_buf) { pfn_wgpuCommandEncoderRelease(encoder); NAPI_THROW(env, "submitComputeDispatchCopy: finish failed"); }
+    if (!cmd_buf) return NULL;
     pfn_wgpuQueueSubmit(queue, 1, &cmd_buf);
     pfn_wgpuCommandBufferRelease(cmd_buf);
-    pfn_wgpuCommandEncoderRelease(encoder);
     return NULL;
 }
 
-/* flushAndMapSync(instance, queue, buffer, mode, offset, size) */
 napi_value doe_compute_dispatch_flush_and_map_sync(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 6);
     CHECK_LIB_LOADED(env);
     WGPUInstance inst = unwrap_ptr(env, _args[0]);
-    WGPUQueue queue   = unwrap_ptr(env, _args[1]);
-    WGPUBuffer buf    = unwrap_ptr(env, _args[2]);
-    uint32_t mode; napi_get_value_uint32(env, _args[3], &mode);
+    WGPUQueue queue = unwrap_ptr(env, _args[1]);
+    WGPUBuffer buf = unwrap_ptr(env, _args[2]);
+    uint32_t mode;
+    napi_get_value_uint32(env, _args[3], &mode);
     int64_t offset_i, size_i;
     napi_get_value_int64(env, _args[4], &offset_i);
     napi_get_value_int64(env, _args[5], &size_i);
     if (!queue || !buf) NAPI_THROW(env, "flushAndMapSync requires queue and buffer");
     if (pfn_doeNativeQueueFlush) pfn_doeNativeQueueFlush(queue);
     if (!map_buffer_sync(env, inst, buf, (uint64_t)mode, (size_t)offset_i, (size_t)size_i)) return NULL;
-
-    napi_value ok; napi_get_boolean(env, true, &ok);
+    napi_value ok;
+    napi_get_boolean(env, true, &ok);
     return ok;
 }
 
@@ -1916,7 +1586,6 @@ napi_value doe_queue_release(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-/* queueOnSubmittedWorkDone — immediate async no-op for synchronous Doe runtime. */
 napi_value doe_queue_on_submitted_work_done(napi_env env, napi_callback_info info) {
     (void)info;
     return native_direct_resolved_promise(env, NULL);

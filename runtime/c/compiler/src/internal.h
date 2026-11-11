@@ -53,7 +53,9 @@ typedef struct {
         struct { NameSpan callee; TypeRef type; } call; } value;
     bool grouped;
     unsigned char diagnostic_rule; /* Uses existing syntax padding; no workspace growth. */
+    unsigned char diagnostic_policy;
 } Expression;
+_Static_assert(sizeof(Expression) == 40u, "Expression layout must not grow");
 typedef enum {
     BUILTIN_MIN, BUILTIN_MAX, BUILTIN_CLAMP, BUILTIN_EXP, BUILTIN_TANH,
     BUILTIN_SQRT, BUILTIN_DOT, BUILTIN_LENGTH, BUILTIN_DISTANCE,
@@ -234,6 +236,7 @@ typedef enum { SOURCE_CAUSE_NONE, SOURCE_CAUSE_UNKNOWN_IDENTIFIER,
     SOURCE_CAUSE_UNKNOWN_TYPE, SOURCE_CAUSE_DUPLICATE_SYMBOL,
     SOURCE_CAUSE_TYPE_MISMATCH, SOURCE_CAUSE_INVALID_TYPE,
     SOURCE_CAUSE_INVALID_ATTRIBUTE, SOURCE_CAUSE_UNSUPPORTED_BUILTIN } SourceErrorCause;
+enum { DIAGNOSTIC_SCOPED = 8u };
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
     uint32_t *exhausted_pool; size_t *minimum_pool_capacity; StageWorkspace *stages;

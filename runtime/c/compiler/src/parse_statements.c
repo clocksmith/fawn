@@ -38,40 +38,60 @@ static bool simple_statement(Parser *p, Syntax *s, bool declaration, unsigned te
     return true;
 }
 bool parser_block(Parser *p, Syntax *s, unsigned depth);
+static bool braced_block(Parser *p, Syntax *s, unsigned depth) {
+    const unsigned char saved = p->diagnostic_policy;
+    const bool ok = parser_diagnostic_attributes(p) &&
+        parser_punctuation(p, '{', "{") && parser_block(p, s, depth);
+    p->diagnostic_policy = saved;
+    return ok;
+}
 /* Each selector occupies an ordinary statement slot before its clause body.
  * Clause headers share body_start/end; walking by end visits each clause once. */
 static bool switch_body(Parser *p, Syntax *s, unsigned depth) {
-    if (!parser_punctuation(p, '{', "{")) return false;
+    const unsigned char saved = p->diagnostic_policy;
+    if (!parser_diagnostic_attributes(p) || !parser_punctuation(p, '{', "{")) {
+        p->diagnostic_policy = saved;
+        return false;
+    }
     while (parser_peek(p)->kind != '}') {
         const bool standalone = parser_spelled(p, parser_peek(p), "default");
-        if (!standalone && !parser_spelled(p, parser_peek(p), "case"))
+        if (!standalone && !parser_spelled(p, parser_peek(p), "case")) {
+            p->diagnostic_policy = saved;
             return parser_reject(p, "case or default clause");
+        }
         if (!standalone) ++p->cursor;
         const uint32_t first = (uint32_t)s->statement_count;
         for (;;) {
             uint32_t id;
-            if (!statement_slot(p, s, &id)) return false;
+            if (!statement_slot(p, s, &id)) { p->diagnostic_policy = saved; return false; }
             Statement *selector = &s->statements[id];
             selector->kind = STATEMENT_CASE;
             selector->value.condition = NO_ID;
             if (parser_spelled(p, parser_peek(p), "default")) ++p->cursor;
-            else if (!expression(p, s, 0u, 0u, &selector->value.condition)) return false;
+            else if (!expression(p, s, 0u, 0u, &selector->value.condition)) {
+                p->diagnostic_policy = saved;
+                return false;
+            }
             if (standalone || parser_peek(p)->kind != ',') break;
             ++p->cursor;
-            if (parser_peek(p)->kind == ':' || parser_peek(p)->kind == '{') break;
+            if (parser_peek(p)->kind == ':' || parser_peek(p)->kind == '{' || parser_peek(p)->kind == '@') break;
         }
         if (parser_peek(p)->kind == ':') ++p->cursor;
-        if (!parser_punctuation(p, '{', "{")) return false;
         const uint32_t body = (uint32_t)s->statement_count;
-        if (!parser_block(p, s, depth + 1u)) return false;
+        if (!braced_block(p, s, depth + 1u)) { p->diagnostic_policy = saved; return false; }
         for (uint32_t i = first; i < body; ++i) {
             s->statements[i].body_start = body;
             s->statements[i].end = (uint32_t)s->statement_count;
         }
     }
-    return parser_punctuation(p, '}', "}");
+    const bool ok = parser_punctuation(p, '}', "}");
+    p->diagnostic_policy = saved;
+    return ok;
 }
-static bool statement(Parser *p, Syntax *s, unsigned depth) {
+static bool statement(Parser *p, Syntax *s, unsigned depth);
+static bool statement_inner(Parser *p, Syntax *s, unsigned depth) {
+    const bool attributed = parser_peek(p)->kind == '@';
+    if (attributed && !parser_diagnostic_attributes(p)) return false;
     const Token *token = parser_peek(p);
     const bool is_if = parser_spelled(p, token, "if");
     const bool is_switch = parser_spelled(p, token, "switch");
@@ -80,6 +100,9 @@ static bool statement(Parser *p, Syntax *s, unsigned depth) {
     const bool is_loop = parser_spelled(p, token, "loop");
     const bool is_block = token->kind == '{';
     const bool is_continuing = parser_spelled(p, token, "continuing");
+    if (attributed && !is_if && !is_switch && !is_for && !is_while && !is_loop && !is_block)
+        return source_error(p->source, DOE_COMPILER_PARSE_ERROR, token->offset,
+            "diagnostic attribute requires a compound, if, switch, for, while or loop statement");
     if (is_if || is_switch || is_for || is_while || is_loop || is_block) {
         if (depth >= p->source->limits->control_depth)
             return source_pool_error(p->source, DOE_COMPILER_POOL_CONTROL_DEPTH, (size_t)depth+1u, token->offset, "control depth capacity exceeded");
@@ -95,15 +118,15 @@ static bool statement(Parser *p, Syntax *s, unsigned depth) {
     ++p->cursor;
     if (is_if) {
         st->kind = STATEMENT_IF;
-        if (!parser_condition(p, s, &st->value.condition) || !parser_punctuation(p, '{', "{")) return false;
+        if (!parser_condition(p, s, &st->value.condition)) return false;
         st->body_start = (uint32_t)s->statement_count;
-        if (!parser_block(p, s, depth + 1u)) return false;
+        if (!braced_block(p, s, depth + 1u)) return false;
         st->else_start = (uint32_t)s->statement_count;
         if (parser_spelled(p, parser_peek(p), "else")) {
             ++p->cursor;
             if (parser_spelled(p, parser_peek(p), "if")) {
                 if (!statement(p, s, depth + 1u)) return false;
-            } else if (!parser_punctuation(p, '{', "{") || !parser_block(p, s, depth + 1u)) return false;
+            } else if (!braced_block(p, s, depth + 1u)) return false;
         }
     } else if (is_switch) {
         st->kind = STATEMENT_SWITCH;
@@ -119,17 +142,17 @@ static bool statement(Parser *p, Syntax *s, unsigned depth) {
         if (parser_peek(p)->kind != ';' && !expression(p, s, 0u, 0u, &st->value.condition)) return false;
         if (!parser_punctuation(p, ';', ";")) return false;
         if (parser_peek(p)->kind != ')' && !simple_statement(p, s, false, 0u, &st->update)) return false;
-        if (!parser_punctuation(p, ')', ")") || !parser_punctuation(p, '{', "{")) return false;
+        if (!parser_punctuation(p, ')', ")")) return false;
         st->body_start = (uint32_t)s->statement_count;
-        if (!parser_block(p, s, depth + 1u)) return false;
+        if (!braced_block(p, s, depth + 1u)) return false;
     } else if (is_while || is_loop || is_block || is_continuing) {
         st->kind = is_while ? STATEMENT_WHILE : is_loop ? STATEMENT_LOOP :
                    is_block ? STATEMENT_BLOCK : STATEMENT_CONTINUING;
         st->value.condition = UINT32_MAX;
         if (is_while && !expression(p, s, 0u, 0u, &st->value.condition)) return false;
-        if (!is_block && !parser_punctuation(p, '{', "{")) return false;
         st->body_start = (uint32_t)s->statement_count;
-        if (!parser_block(p, s, depth + (is_continuing ? 0u : 1u))) return false;
+        if (is_block ? !parser_block(p, s, depth + 1u) : !braced_block(p, s, depth + (is_continuing ? 0u : 1u)))
+            return false;
     } else if (parser_spelled(p, token, "return")) {
         st->kind = STATEMENT_RETURN;
         st->value.condition = UINT32_MAX;
@@ -152,6 +175,12 @@ static bool statement(Parser *p, Syntax *s, unsigned depth) {
     } else st->kind = STATEMENT_EMPTY;
     st->end = (uint32_t)s->statement_count;
     return true;
+}
+static bool statement(Parser *p, Syntax *s, unsigned depth) {
+    const unsigned char saved = p->diagnostic_policy;
+    const bool ok = statement_inner(p, s, depth);
+    p->diagnostic_policy = saved;
+    return ok;
 }
 bool parser_block(Parser *p, Syntax *s, unsigned depth) {
     /* Required loop/continuing braces may share one language depth, but even

@@ -11,7 +11,7 @@ static const char *rule_message(uint32_t rule)
 bool compiler_uniformity_notice(Source *source, uint32_t expression, uint32_t rule)
 {
     Expression *trigger=&source->compiler->expressions[expression];
-    const uint32_t severity=source->diagnostic_severity[rule-1u];
+    const uint32_t severity=expression_diagnostic_severity(trigger,rule);
     if(severity==DOE_COMPILER_DIAGNOSTIC_ERROR)
         return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,trigger->source_offset,rule_message(rule));
     if(severity!=DOE_COMPILER_DIAGNOSTIC_OFF) trigger->diagnostic_rule=(unsigned char)rule;
@@ -44,7 +44,7 @@ void compiler_notices_publish(const Source *source, DoeCompilerNoticeV18 *output
     for(uint32_t i=0;i<source->compiler->expression_count;++i){
         const Expression *expression=&source->compiler->expressions[i];
         const uint32_t rule=expression->diagnostic_rule;
-        if(rule) notice(source,&outputs[next++],source->diagnostic_severity[rule-1u],rule,
+        if(rule) notice(source,&outputs[next++],expression_diagnostic_severity(expression,rule),rule,
             source_name_at(source,expression->source_offset),rule_message(rule));
     }
 }

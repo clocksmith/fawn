@@ -7,6 +7,7 @@ typedef struct {
     Source *source; CompilerWorkspace *tokens; size_t cursor;
     unsigned block_nesting, active_expression, active_type, template_count;
     uint32_t exempt_comparison, exempt_literal;
+    unsigned char diagnostic_policy;
 } Parser;
 
 const Token *parser_peek(const Parser *);
@@ -21,6 +22,8 @@ bool parse_interface_attribute(Parser *, Syntax *, uint32_t, uint32_t);
 bool parse_graphics_parameters(Parser *, Syntax *);
 bool parse_override(Parser *, Syntax *);
 bool parser_diagnostic_directive(Parser *);
+bool parser_diagnostic_attribute(Parser *, size_t, uint32_t *);
+bool parser_diagnostic_attributes(Parser *);
 bool parser_single_type_call(const Parser *, size_t);
 bool parser_primary(Parser *, Syntax *, unsigned, uint32_t *);
 bool parser_local_declaration(Parser *, Syntax *, LocalSyntax *, unsigned);

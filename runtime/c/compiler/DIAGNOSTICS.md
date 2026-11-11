@@ -1,20 +1,24 @@
-# Global diagnostic controls and ABI18 notices
+# Global and lexical diagnostic controls and ABI18 notices
 
 The canonical parser admits module-level `diagnostic(severity, rule);` controls
-before declarations. `error`, `warning`, `info`, and `off` apply to
+before declarations and lexical `@diagnostic(severity, rule)` attributes on
+functions, compound statements (`{ ... }`, including function, `switch`, `case`,
+`loop`, and `continuing` bodies), and `if`, `switch`, `for`, `while`, and `loop`
+statements. `error`, `warning`, `info`, and `off` apply to
 `derivative_uniformity` and `subgroup_uniformity`. Matching duplicate global
-controls are permitted; conflicting controls reject. An optional trailing comma
-is accepted. Well-formed unrecognized single-token or vendor-qualified rules do
-not disable another rule. The first unrecognized rule produces one warning for
-the implementation's **unrecognized diagnostic rule** trigger; this is not a
-promise to enumerate every distinct unknown rule.
+controls are permitted; conflicting global controls reject. Duplicate rules
+within a single `@diagnostic` attribute list reject even when severities match.
+An optional trailing comma is accepted. Well-formed unrecognized single-token or
+vendor-qualified rules do not disable another rule. The first unrecognized rule
+produces one warning for the implementation's **unrecognized diagnostic rule**
+trigger; this is not a promise to enumerate every distinct unknown rule.
 
 Semantics follow [WGSL, 21 October 2026, diagnostics](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#diagnostics).
 The retained Zig parser accepted global directives by skipping their contents;
-this C implementation validates their grammar and applies the policies rather
-than reproducing that no-op. Scoped `@diagnostic` attributes are not implemented
-by this change. Retained function-attribute parsing alone did not establish a
-working scoped filter, and retained statement parsing has no attribute branch.
+this C implementation validates both global directives and lexical `@diagnostic`
+attributes, stamps active lexical severities into existing `Expression` tail
+padding without growing any workspace, and applies the rule policy at each
+originating builtin trigger without letting caller filters descend into callees.
 
 ## One analysis owner
 

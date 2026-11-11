@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "parse_internal.h"
+#include "diagnostics_internal.h"
 #include "override.h"
 #include <string.h>
 
@@ -114,33 +115,6 @@ static bool workgroup_dimensions(Parser *p, Syntax *s) {
         ++p->cursor;
     } while (parser_peek(p)->kind != ')');
     return parser_punctuation(p, ')', ")");
-}
-static bool entry_attributes(Parser *p, Syntax *s) {
-    unsigned seen = 0u;
-    while (parser_peek(p)->kind == '@') {
-        ++p->cursor;
-        const Token *t = parser_peek(p);
-        if (t->kind != TOKEN_WORD) return parser_reject(p, "entry-point attribute name");
-        unsigned flag;
-        if (parser_spelled(p, t, "compute")) flag = 1u;
-        else if (parser_spelled(p, t, "workgroup_size")) flag = 2u;
-        else if (parser_spelled(p, t, "vertex")) flag = 4u;
-        else if (parser_spelled(p, t, "fragment")) flag = 8u;
-        else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, t->offset,
-                                 "unsupported entry point attribute");
-        if ((seen & flag) != 0u)
-            return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, t->offset, "duplicate entry-point attribute");
-        seen |= flag;
-        ++p->cursor;
-        if (flag == 2u && !workgroup_dimensions(p, s)) return false;
-    }
-    if (seen == 3u) return true;
-    if (seen != 4u && seen != 8u) return parser_reject(p, "one stage attribute and workgroup_size only for compute");
-    if (p->source->stages == NULL)
-        return source_error(p->source, DOE_COMPILER_UNSUPPORTED, parser_peek(p)->offset,
-            "graphics entry interfaces require ABI7 interface capacities");
-    s->functions[s->function_count].flags |= seen == 4u ? FUNCTION_VERTEX : FUNCTION_FRAGMENT;
-    return true;
 }
 bool type_reference(Parser *,Syntax *,TypeRef *);
 static bool template_close(Parser *p) {
@@ -325,7 +299,9 @@ static bool expression_node(Parser *p, Syntax *s, const Expression *node, bool c
         (charged && s->expression_budget_count == p->source->limits->expressions))
         return source_pool_error(p->source, DOE_COMPILER_POOL_EXPRESSIONS, (size_t)s->expression_budget_count+1u, node->source_offset, "expression node capacity exceeded");
     *id = (uint32_t)s->expression_count;
-    s->expressions[s->expression_count++] = *node;
+    Expression stored = *node;
+    stored.diagnostic_policy = p->diagnostic_policy;
+    s->expressions[s->expression_count++] = stored;
     if (charged) ++s->expression_budget_count;
     return true;
 }
@@ -694,81 +670,152 @@ static bool module_constant(Parser *p, Syntax *s, bool first) {
     ++s->constant_decl_count;
     return true;
 }
+static bool function_attributes(Parser *p, Syntax *s, FunctionRecord *function, bool *out_entry) {
+    unsigned seen = 0u;
+    uint32_t diag_seen = 0u;
+    const size_t list_start = p->cursor;
+    bool entry = false;
+    while (parser_peek(p)->kind == '@') {
+        const uint32_t at_offset = parser_peek(p)->offset;
+        const Token *attr = p->cursor + 1u < p->tokens->token_count ? &p->tokens->tokens[p->cursor + 1u] : parser_peek(p);
+        if (attr->kind == TOKEN_WORD && parser_spelled(p, attr, "diagnostic")) {
+            if (!parser_diagnostic_attribute(p, list_start, &diag_seen)) return false;
+            continue;
+        }
+        if (attr->kind == TOKEN_WORD && parser_spelled(p, attr, "must_use")) {
+            if ((seen & 16u) != 0u)
+                return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, attr->offset, "duplicate function attribute");
+            seen |= 16u;
+            function->flags |= FUNCTION_MUST_USE;
+            p->cursor += 2u;
+            continue;
+        }
+        if (!entry) {
+            if (s->entry_count == s->limits.entries) {
+                if ((s->limits.flags & LIMIT_SINGULAR) == 0u)
+                    return source_pool_error(p->source, DOE_COMPILER_POOL_ENTRIES,
+                        (size_t)s->entry_count + 1u, at_offset, "entry capacity exceeded");
+                /* A singular adapter can parser_reject at the second declaration name
+                 * without storing or accepting its unrepresentable remainder. */
+                while (parser_peek(p)->kind != TOKEN_END && !parser_spelled(p, parser_peek(p), "fn")) ++p->cursor;
+                if (!parser_word(p, "fn") || !parser_name_span(p, &function->name)) return false;
+                return source_error(p->source, DOE_COMPILER_UNSUPPORTED, function->name.offset,
+                    "multiple compute entries cannot use a singular reflection projection");
+            }
+            EntryRecord *record = &s->entries[s->entry_count];
+            memset(record, 0, sizeof(*record));
+            record->function = s->function_count;
+            record->input_first = s->entry_input_count;
+            entry = true;
+        }
+        ++p->cursor;
+        const Token *t = parser_peek(p);
+        if (t->kind != TOKEN_WORD) return parser_reject(p, "entry-point attribute name");
+        unsigned flag;
+        if (parser_spelled(p, t, "compute")) flag = 1u;
+        else if (parser_spelled(p, t, "workgroup_size")) flag = 2u;
+        else if (parser_spelled(p, t, "vertex")) flag = 4u;
+        else if (parser_spelled(p, t, "fragment")) flag = 8u;
+        else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, t->offset, "unsupported entry point attribute");
+        if ((seen & flag) != 0u)
+            return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, t->offset, "duplicate entry-point attribute");
+        seen |= flag;
+        ++p->cursor;
+        if (flag == 2u && !workgroup_dimensions(p, s)) return false;
+    }
+    *out_entry = entry;
+    if (!entry) return true;
+    if ((seen & 16u) != 0u)
+        return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
+            "entry point cannot have must_use attribute");
+    const unsigned stage_bits = seen & 15u;
+    if (stage_bits != 3u) {
+        if (stage_bits != 4u && stage_bits != 8u)
+            return parser_reject(p, "one stage attribute and workgroup_size only for compute");
+        if (p->source->stages == NULL)
+            return source_error(p->source, DOE_COMPILER_UNSUPPORTED, parser_peek(p)->offset,
+                "graphics entry interfaces require ABI7 interface capacities");
+        function->flags |= stage_bits == 4u ? FUNCTION_VERTEX : FUNCTION_FRAGMENT;
+    }
+    function->flags |= FUNCTION_ENTRY;
+    return true;
+}
 static bool function_declaration(Parser *p, Syntax *s) {
     if (s->function_count == s->limits.tokens / 6u)
         return source_pool_error(p->source, DOE_COMPILER_POOL_TOKENS, 6u*((size_t)s->function_count+1u), parser_peek(p)->offset,
                             "function declaration capacity exceeded");
+    const unsigned char saved_policy = p->diagnostic_policy;
     FunctionRecord *function = &s->functions[s->function_count];
     memset(function, 0, sizeof(*function));
     function->result_type = IR_VOID;
     function->annotation=(TypeRef){NO_ID,NO_ID};
-    if (parser_peek(p)->kind == '@' && p->cursor + 1u < p->tokens->token_count &&
-        parser_spelled(p, &p->tokens->tokens[p->cursor + 1u], "must_use")) {
-        function->flags = FUNCTION_MUST_USE;
-        p->cursor += 2u;
+    bool entry = false;
+    if (!function_attributes(p, s, function, &entry) ||
+        !parser_word(p, "fn") || !parser_name_span(p, &function->name)) {
+        p->diagnostic_policy = saved_policy;
+        return false;
     }
-    const bool entry = parser_peek(p)->kind == '@';
-    if (entry) {
-        if (s->entry_count == s->limits.entries) {
-            if ((s->limits.flags&LIMIT_SINGULAR)==0u)
-                return source_pool_error(p->source,DOE_COMPILER_POOL_ENTRIES,
-                    (size_t)s->entry_count+1u,parser_peek(p)->offset,"entry capacity exceeded");
-            /* A singular adapter can parser_reject at the second declaration name
-             * without storing or accepting its unrepresentable remainder. */
-            while (parser_peek(p)->kind!=TOKEN_END && !parser_spelled(p,parser_peek(p),"fn")) ++p->cursor;
-            if (!parser_word(p,"fn") || !parser_name_span(p,&function->name)) return false;
-            return source_error(p->source,DOE_COMPILER_UNSUPPORTED,function->name.offset,
-                "multiple compute entries cannot use a singular reflection projection");
-        }
-        EntryRecord *record=&s->entries[s->entry_count];
-        memset(record,0,sizeof(*record));
-        record->function=s->function_count;
-        record->input_first=s->entry_input_count;
-        if (!entry_attributes(p, s)) return false;
-        function->flags |= FUNCTION_ENTRY;
-    }
-    if (!parser_word(p, "fn") || !parser_name_span(p, &function->name)) return false;
     if (entry) function->entry_index=s->entry_count;
     else function->formal_start = (uint32_t)s->formal_count;
     if (entry) {
-        if (stage_graphics(function) ? !parse_graphics_parameters(p, s) : !entry_parameters(p, s)) return false;
+        if (stage_graphics(function) ? !parse_graphics_parameters(p, s) : !entry_parameters(p, s)) {
+            p->diagnostic_policy = saved_policy;
+            return false;
+        }
     } else {
-        if (!parser_punctuation(p, '(', "(")) return false;
+        if (!parser_punctuation(p, '(', "(")) { p->diagnostic_policy = saved_policy; return false; }
         while (parser_peek(p)->kind != ')') {
             FormalRecord formal;
             if (!parser_name_span(p, &formal.name) || !parser_punctuation(p, ':', ":") ||
-                !type_reference(p,s,&formal.type.annotation)) return false;
-            if (s->formal_count == s->limits.tokens / 4u)
+                !type_reference(p,s,&formal.type.annotation)) {
+                p->diagnostic_policy = saved_policy;
+                return false;
+            }
+            if (s->formal_count == s->limits.tokens / 4u) {
+                p->diagnostic_policy = saved_policy;
                 return source_pool_error(p->source, DOE_COMPILER_POOL_TOKENS, 4u*((size_t)s->formal_count+1u), formal.name.offset,
                                     "formal parameter capacity exceeded");
+            }
             s->formals[s->formal_count++] = formal;
             ++function->formal_count;
             if (parser_peek(p)->kind != ',') break;
             ++p->cursor;
         }
-        if (!parser_punctuation(p, ')', ")")) return false;
+        if (!parser_punctuation(p, ')', ")")) { p->diagnostic_policy = saved_policy; return false; }
     }
     if (parser_peek(p)->kind == TOKEN_ARROW) {
         ++p->cursor;
         while (parser_peek(p)->kind == '@') {
-            if (!entry || !stage_graphics(function))
+            if (!entry || !stage_graphics(function)) {
+                p->diagnostic_policy = saved_policy;
                 return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
                     "result interface attributes require a graphics entry");
-            if (!parse_interface_attribute(p, s, STAGE_ATTRIBUTE_RESULT, s->function_count)) return false;
+            }
+            if (!parse_interface_attribute(p, s, STAGE_ATTRIBUTE_RESULT, s->function_count)) {
+                p->diagnostic_policy = saved_policy;
+                return false;
+            }
         }
-        if (!type_reference(p,s,&function->annotation)) return false;
+        if (!type_reference(p,s,&function->annotation)) { p->diagnostic_policy = saved_policy; return false; }
     }
-    if (!parser_punctuation(p, '{', "{")) return false;
+    if (!parser_diagnostic_attributes(p) || !parser_punctuation(p, '{', "{")) {
+        p->diagnostic_policy = saved_policy;
+        return false;
+    }
     function->statement_start = (uint32_t)s->statement_count;
     function->expression_start = (uint32_t)s->expression_count;
     if (entry && (p->source->limits->flags & LIMIT_LEGACY) != 0u && starts_legacy_alias(p, s)) {
         ++p->cursor;
-
         if (!parser_name_span(p, &s->alias) || !parser_punctuation(p, '=', "=") ||
             !parser_name_span(p, &s->alias_source) || !parser_punctuation(p, '.', ".") ||
-            !parser_word(p, "x") || !parser_punctuation(p, ';', ";")) return false;
+            !parser_word(p, "x") || !parser_punctuation(p, ';', ";")) {
+            p->diagnostic_policy = saved_policy;
+            return false;
+        }
     }
-    if (!parser_block(p, s, 0u)) return false;
+    const bool body_ok = parser_block(p, s, 0u);
+    p->diagnostic_policy = saved_policy;
+    if (!body_ok) return false;
     function->statement_end = (uint32_t)s->statement_count;
     function->expression_end = (uint32_t)s->expression_count;
     ++s->function_count;
@@ -834,7 +881,8 @@ static bool module_directive(Parser *p, bool enable) {
     return parser_punctuation(p, ';', ";");
 }
 bool parse_tokens(Source *source,CompilerWorkspace *s) {
-    Parser p={.source=source,.tokens=s,.exempt_comparison=NO_ID,.exempt_literal=NO_ID};
+    Parser p={.source=source,.tokens=s,.exempt_comparison=NO_ID,.exempt_literal=NO_ID,
+        .diagnostic_policy=diagnostic_policy_pack(1u,1u)};
     source->diagnostic_severity[0]=1u;
     source->diagnostic_severity[1]=1u;
     source->diagnostic_seen=0u;

@@ -313,7 +313,7 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const SourceReference reference=a->compiler->expression_references[id];
     const uint32_t callee=reference.kind==SOURCE_FUNCTION?reference.index+1u:0u;
     *out=cf;
-    if (reference.kind == SOURCE_ATOMIC) *out |= varying(a);
+    if (reference.kind == SOURCE_ATOMIC || reference.kind == SOURCE_DERIVATIVE) *out |= varying(a);
     if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_VARYING) != 0u) *out |= varying(a);
     if ((reference.kind == SOURCE_DERIVATIVE ||
         (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u)) &&
@@ -813,7 +813,8 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     /* Both scope analyses reuse dead scratch, but share the one work budget.
      * A subgroup-uniform result never becomes a workgroup barrier proof. */
     bool ok=true;
-    const bool filtered=source->diagnostic_severity[0]!=DOE_COMPILER_DIAGNOSTIC_ERROR ||
+    const bool filtered=(source->diagnostic_seen&DIAGNOSTIC_SCOPED)!=0u ||
+        source->diagnostic_severity[0]!=DOE_COMPILER_DIAGNOSTIC_ERROR ||
         source->diagnostic_severity[1]!=DOE_COMPILER_DIAGNOSTIC_ERROR;
     if (!filtered) {
         ok=!barrier || module_bits(&a);
@@ -831,7 +832,7 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
             if (ref.kind==SOURCE_DERIVATIVE || (ref.kind==SOURCE_IMAGE && (ref.index&SOURCE_IMAGE_DERIVATIVE)!=0u))
                 rule=DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY;
             else if (ref.kind==SOURCE_SUBGROUP) rule=DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
-            if (!rule || source->diagnostic_severity[rule-1u]==DOE_COMPILER_DIAGNOSTIC_OFF) continue;
+            if (!rule || expression_diagnostic_severity(&c->expressions[i],rule)==DOE_COMPILER_DIAGNOSTIC_OFF) continue;
             a.trigger=i; a.rule=rule; a.subgroup=rule==DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
             ok=module_bits(&a);
             if (ok && ref.kind==SOURCE_SUBGROUP && ref.index>=(uint32_t)BUILTIN_QUAD_BROADCAST) {

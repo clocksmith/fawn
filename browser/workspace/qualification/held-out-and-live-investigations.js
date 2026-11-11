@@ -4,7 +4,7 @@
 // investigation recovery on stock Chrome, strictly separate from Doe GPU claims.
 import { createServer } from 'node:http';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -91,6 +91,7 @@ async function runPairedReadInvestigation({
   outDir,
 }) {
   const scenarioDir = join(outDir, id);
+  rmSync(scenarioDir, { recursive: true, force: true });
   mkdirSync(scenarioDir, { recursive: true });
   const repoDir = join(scenarioDir, 'repo');
   mkdirSync(repoDir, { recursive: true });
@@ -126,6 +127,7 @@ async function runPairedReadInvestigation({
           goal,
           repositoryRoot: repositorySpec ? repoDir : null,
         });
+        const navStart = performance.now();
         await controller.navigate(projectId, { pageId: 'main', url: pagesSpec[0].url });
         for (let idx = 1; idx < pagesSpec.length; idx++) {
           await service.openPage({ ...controller.admin(projectId), pageId: pagesSpec[idx].key });
@@ -134,8 +136,28 @@ async function runPairedReadInvestigation({
           actualPageIds.push(createdId);
           await controller.navigate(projectId, { pageId: createdId, url: pagesSpec[idx].url });
         }
+        const navigationSetupMs = Number((performance.now() - navStart).toFixed(2));
+        for (const pageId of actualPageIds) steps.push(['capture', { pageId }]);
+        if (repositorySpec) steps.push(['repository_read', { path: repositorySpec.path }]);
+        steps.push(
+          (ctx) => ['record', { kind: 'finding', text: findingText, dependsOn: Object.keys(ctx.artifacts) }],
+          ['record', { kind: 'question', text: questionText }],
+          ['finish', { summary: 'Evidence bound and connected.' }],
+        );
+        const delegateStart = performance.now();
+        await controller.delegate(projectId, {
+          pageIds: actualPageIds,
+          origins: allowedOrigins,
+          actionKinds: ['navigate'],
+          task: goal,
+        });
+        await controller.active.get(projectId).done;
+        const delegatedMs = Number((performance.now() - delegateStart).toFixed(2));
+        const completeTaskMs = Number((performance.now() - started).toFixed(2));
         let ungrantedRejected = null;
+        let ungrantedProbeMs = null;
         if (ungrantedUrl) {
+          const probeStart = performance.now();
           await service.openPage({ ...controller.admin(projectId), pageId: 'ungranted-probe' });
           const inspected = await service.inspect(controller.admin(projectId));
           const extraId = inspected.pages.find((page) => !actualPageIds.includes(page.pageId)).pageId;
@@ -164,26 +186,14 @@ async function runPairedReadInvestigation({
           }
           await service.revokeAuthorization({ ...controller.admin(projectId), grantId: 'narrow-origin-probe' });
           await controller.takeOver(projectId);
+          ungrantedProbeMs = Number((performance.now() - probeStart).toFixed(2));
         }
-        for (const pageId of actualPageIds) steps.push(['capture', { pageId }]);
-        if (repositorySpec) steps.push(['repository_read', { path: repositorySpec.path }]);
-        steps.push(
-          (ctx) => ['record', { kind: 'finding', text: findingText, dependsOn: Object.keys(ctx.artifacts) }],
-          ['record', { kind: 'question', text: questionText }],
-          ['finish', { summary: 'Evidence bound and connected.' }],
-        );
-        const delegateStart = performance.now();
-        await controller.delegate(projectId, {
-          pageIds: actualPageIds,
-          origins: allowedOrigins,
-          actionKinds: ['navigate'],
-          task: goal,
-        });
-        await controller.active.get(projectId).done;
         const project = controller.store.get(projectId);
         arms[arm] = {
-          delegatedMs: Number((performance.now() - delegateStart).toFixed(2)),
-          completeTaskMs: Number((performance.now() - started).toFixed(2)),
+          navigationSetupMs,
+          delegatedMs,
+          completeTaskMs,
+          ungrantedProbeMs,
           ungrantedOriginRejected: ungrantedRejected,
           acceptance: summarizeArtifacts(project, requiredEvidence),
           capturedUrls: Object.values(project.artifacts)
@@ -195,12 +205,14 @@ async function runPairedReadInvestigation({
           channel: 'chrome',
           headless: true,
         });
+        const navStart = performance.now();
         const pageMap = new Map();
         for (let idx = 0; idx < pagesSpec.length; idx++) {
           const page = idx === 0 ? (browser.pages()[0] ?? await browser.newPage()) : await browser.newPage();
           await page.goto(pagesSpec[idx].url, { waitUntil: 'domcontentloaded' });
           pageMap.set(pagesSpec[idx].key, page);
         }
+        const navigationSetupMs = Number((performance.now() - navStart).toFixed(2));
         store = new InvestigationStore(join(armDir, 'tracker'));
         const projectId = `${id}-control`;
         store.create({ id: projectId, goal, repositoryRoot: repositorySpec ? repoDir : null });
@@ -262,6 +274,7 @@ async function runPairedReadInvestigation({
         await run.done;
         const project = store.get(projectId);
         arms[arm] = {
+          navigationSetupMs,
           delegatedMs: Number((performance.now() - delegateStart).toFixed(2)),
           completeTaskMs: Number((performance.now() - started).toFixed(2)),
           acceptance: summarizeArtifacts(project, requiredEvidence),
@@ -287,6 +300,7 @@ async function runPairedReadInvestigation({
 
 async function runHeldOutHumanTakeover(origin, outDir) {
   const armDir = join(outDir, 'webhook-replay-human-takeover');
+  rmSync(armDir, { recursive: true, force: true });
   const repoDir = join(armDir, 'repo');
   mkdirSync(repoDir, { recursive: true });
   writeFileSync(
@@ -400,6 +414,7 @@ async function runHeldOutHumanTakeover(origin, outDir) {
 
 async function runHeldOutInterruptionRecovery(origin, serverState, outDir) {
   const armDir = join(outDir, 'db-failover-interruption-recovery');
+  rmSync(armDir, { recursive: true, force: true });
   const stateDir = join(armDir, 'service');
   mkdirSync(stateDir, { recursive: true });
   let dropSubmitResponseOnce = true;
