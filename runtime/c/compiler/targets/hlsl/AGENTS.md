@@ -44,6 +44,11 @@ device/numeric execution remain separate evidence.
   (b2, space7; one uint per canonical resource, the bound range bytes), declared
   only when the entry reads a runtime-tail size or arrayLength (or binds raw
   storage), with entry flag STORAGE_SIZES. Never query GetDimensions on buffers.
+- Workgroup zero initialization is cooperative, as in the Metal target: every
+  typed leaf path flattens its array dimensions into one index domain that the
+  entry's invocations stride over (one writer per element), then one barrier.
+  Never have one invocation assign a whole aggregate: DXC -O3 scalarizes every
+  element (one array<f32,2048> root cost about 0.5 s per pipeline).
 - Workgroup, private, function and value roots keep one guard per access: guard
   signed indices and each indexed subobject before forming the access; loads
   initialize zero and invalid stores discard. Preserve IR value snapshots,

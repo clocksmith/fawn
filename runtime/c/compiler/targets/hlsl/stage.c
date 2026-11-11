@@ -201,6 +201,88 @@ void hlsl_entry_name(HlslEmitter *e, uint32_t function) {
         hlsl_text(e, text);
     }
 }
+/* Workgroup zero initialization is cooperative, as in the Metal target: each
+ * typed leaf path flattens its array dimensions into one index domain that the
+ * workgroup's invocations stride over, so every element has exactly one writer
+ * and the barrier that follows publishes all of them. One invocation assigning
+ * the whole aggregate made DXC scalarize every element of large arrays (an
+ * array<f32,2048> root cost about 0.5 s of DXC -O3 per pipeline). Vectors and
+ * matrices stay typed values; atomic words are stored in place. */
+typedef struct { TypeId type; uint32_t child; } ZeroFrame;
+static bool zero_spend(HlslEmitter *e) {
+    const char *error = NULL;
+    if (target_spend(&e->traversal_left, &error)) return true;
+    hlsl_error(e, error);
+    return false;
+}
+static void workgroup_zero_leaf(HlslEmitter *e, uint32_t root, const ZeroFrame *path, uint32_t depth,
+    TypeId type, uint32_t stride) {
+    const CompilerWorkspace *c = e->module;
+    uint32_t count = 1u;
+    for (uint32_t j = 0u; j < depth && zero_spend(e); ++j) {
+        const TypeRecord *t = &c->types[path[j].type - IR_PRIMITIVE_COUNT];
+        if (t->kind != TYPE_ARRAY) continue;
+        if (!t->count || count > UINT32_MAX / t->count) {
+            hlsl_error(e, "HLSL workgroup initialization extent overflows");
+            return;
+        }
+        count *= t->count;
+    }
+    if (e->failed) return;
+    hlsl_indent(e);
+    hlsl_format(e, "for (uint doe_z = input4; doe_z < %uu;) {\n", count);
+    ++e->indent;
+    hlsl_indent(e);
+    hlsl_format(e, "w%u", root);
+    uint32_t divisor = count;
+    for (uint32_t j = 0u; j < depth; ++j) {
+        const TypeRecord *t = &c->types[path[j].type - IR_PRIMITIVE_COUNT];
+        if (t->kind == TYPE_ARRAY) {
+            divisor /= t->count;
+            hlsl_format(e, ".elements[(doe_z / %uu) %% %uu]", divisor, t->count);
+        } else hlsl_format(e, ".m%u", path[j].child - 1u);
+    }
+    hlsl_text(e, " = ");
+    hlsl_zero(e, type);
+    hlsl_text(e, ";\n");
+    hlsl_indent(e);
+    hlsl_format(e, "if (%uu - doe_z <= %uu) break;\n", count, stride);
+    hlsl_indent(e);
+    hlsl_format(e, "doe_z += %uu;\n", stride);
+    --e->indent;
+    hlsl_line(e, "}");
+}
+static void workgroup_zero(HlslEmitter *e, uint32_t root, TypeId type, uint32_t stride) {
+    const CompilerWorkspace *c = e->module;
+    ZeroFrame path[TARGET_CLOSURE_DEPTH] = {{type, 0u}};
+    uint32_t depth = 0u;
+    for (;;) {
+        if (!zero_spend(e)) return;
+        const TypeId current = path[depth].type;
+        if (current >= IR_PRIMITIVE_COUNT + c->type_count) {
+            hlsl_error(e, "HLSL workgroup zero type identity is invalid");
+            return;
+        }
+        const TypeRecord *t = current >= IR_PRIMITIVE_COUNT ? &c->types[current - IR_PRIMITIVE_COUNT] : NULL;
+        const uint32_t children = t && t->kind == TYPE_ARRAY ? 1u : t && t->kind == TYPE_STRUCT ? t->count : 0u;
+        if (t && t->kind == TYPE_STRUCT && (t->element > c->member_count || t->count > c->member_count - t->element)) {
+            hlsl_error(e, "HLSL workgroup zero member range is invalid");
+            return;
+        }
+        if (!children || path[depth].child == children) {
+            if (!children) workgroup_zero_leaf(e, root, path, depth, current, stride);
+            if (!depth || e->failed) return;
+            --depth;
+            continue;
+        }
+        const TypeId child = type_child(c, current, path[depth].child++);
+        if (depth + 1u == TARGET_CLOSURE_DEPTH) {
+            hlsl_error(e, "HLSL workgroup zero exceeds bounded nesting");
+            return;
+        }
+        path[++depth] = (ZeroFrame){child, 0u};
+    }
+}
 static void entry_wrapper(HlslEmitter *e) {
     static const char *const semantics[] = {"SV_DispatchThreadID", "SV_GroupThreadID", "SV_GroupID",
         NULL, "SV_GroupIndex"};
@@ -246,17 +328,19 @@ static void entry_wrapper(HlslEmitter *e) {
         hlsl_format(e, "    ctx.input%u = doe_wave_count;\n", INPUT_NUM_SUBGROUPS);
     }
     if (entry->state.resolved.workgroup_storage_bytes != 0u) {
-        hlsl_line(e, "if (input4 == 0u) {");
-        ++e->indent;
-        for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-            if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
-            hlsl_indent(e);
-            hlsl_format(e, "w%u = ", i);
-            hlsl_zero(e, c->workgroups[i].type);
-            hlsl_text(e, ";\n");
+        uint32_t stride = 1u;
+        for (unsigned dimension = 0u; dimension < 3u; ++dimension) {
+            const uint32_t size = entry->state.resolved.workgroup_size[dimension];
+            if (!size || stride > UINT32_MAX / size) {
+                hlsl_error(e, "HLSL workgroup initialization stride overflows");
+                return;
+            }
+            stride *= size;
         }
-        --e->indent;
-        hlsl_line(e, "}");
+        for (uint32_t i = 0u; i < c->workgroup_count && !e->failed; ++i) {
+            if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
+            workgroup_zero(e, i, c->workgroups[i].type, stride);
+        }
         hlsl_line(e, "GroupMemoryBarrierWithGroupSync();");
     }
     hlsl_indent(e);

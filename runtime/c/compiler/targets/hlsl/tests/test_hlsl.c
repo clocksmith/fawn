@@ -208,10 +208,32 @@ static void test_workgroup(void) {
     Fixture *f = prepare(source);
     char *text = emit(f, 0u);
     has(text, "groupshared DoeT");
-    has(text, "if (input4 == 0u)");
-    has(text, "GroupMemoryBarrierWithGroupSync()");
+    /* Every invocation zeroes its strided share; no single-writer aggregate. */
+    has(text, "for (uint doe_z = input4; doe_z < 4u;) {\n"
+        "        w0.elements[(doe_z / 1u) % 4u] = (uint)0;\n"
+        "        if (4u - doe_z <= 4u) break;\n"
+        "        doe_z += 4u;\n    }\n    GroupMemoryBarrierWithGroupSync();");
+    assert(strstr(text, "if (input4 == 0u)") == NULL);
     has(text, "w0.elements[uint(");
-    has(text, "w0.elements[uint(");
+    free(text);
+    release(f);
+    /* Nested arrays flatten into one domain; struct members, vectors and
+     * atomics are separate typed leaves; a lone scalar has one writer. */
+    const char *nested = "struct Shared { values:array<array<vec2u,17>,3>,"
+        " counters:array<atomic<i32>,53>, scalar:u32 }"
+        "var<workgroup> tile:Shared;"
+        "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
+        "@compute @workgroup_size(2,3,4) fn group(){"
+        "output[0]=tile.scalar+tile.values[1][2].x+u32(atomicLoad(&tile.counters[5]));}";
+    f = prepare(nested);
+    text = emit(f, 0u);
+    has(text, "for (uint doe_z = input4; doe_z < 51u;) {\n"
+        "        w0.m0.elements[(doe_z / 17u) % 3u].elements[(doe_z / 1u) % 17u] = (uint2)0;\n"
+        "        if (51u - doe_z <= 24u) break;");
+    has(text, "for (uint doe_z = input4; doe_z < 53u;) {\n"
+        "        w0.m1.elements[(doe_z / 1u) % 53u] = (uint)0;");
+    has(text, "for (uint doe_z = input4; doe_z < 1u;) {\n        w0.m2 = (uint)0;\n"
+        "        if (1u - doe_z <= 24u) break;");
     free(text);
     release(f);
 }
