@@ -173,13 +173,18 @@ unestablished. Doe has promising execution evidence, not the final objective.
   when the first `DEVICE_LOCAL | HOST_VISIBLE | HOST_COHERENT` heap is `>= 4 GiB`),
   and commit `952ad3321` verified the `256 MiB` discrete-BAR split on
   [`windows-amd-host`](../../reports/benchmarks/windows-amd-vulkan/20261030-dropin-phase/README.md).
-  Repeating RADV drop-in and unchanged-application (`doppler-generation`) cohorts
-  against current source (`22c6d4113`) on `amd-host` is currently gated on host
-  contention: as checked on `2026-11-10`, two active foreign `amdgpu` DRM
-  processes hold GPU contexts at `8.42%` host CPU, above the `3.0%` quiet-start
-  gate, `5.0%` window-validity ceiling and zero-foreign-DRM-client requirement.
-  Retained Zig is unsupported there. Native phase evidence remains diagnostic,
-  not the unchanged-application win.
+  Opt-in candidate controls (`DOE_VK_RESOURCE_AMD_CANDIDATE` in
+  [`doe_vk.h`](../../runtime/c/backends/vulkan/include/doe_vk.h), exposed through
+  `VK_PROFILE_ADD` / `VK_PROFILE_CLEAR` in
+  [`runtime/c/native/Makefile`](../../runtime/c/native/Makefile) while keeping
+  `doe_vk_resource_profile_select` defaults unchanged) and the matched-Dawn
+  drop-in, Doppler-generation, and graphics sequence in the
+  [AMD Vulkan rerun runbook](../amd-vulkan-rerun-runbook.md) are prepared for
+  physical proof once `amd-host` is free: as checked on `2026-11-10`, two active
+  foreign `amdgpu` DRM processes hold GPU contexts at `8.42%` host CPU, above the
+  `3.0%` quiet-start gate, `5.0%` window-validity ceiling and
+  zero-foreign-DRM-client requirement. Retained Zig is unsupported there. Native
+  phase evidence remains diagnostic, not the unchanged-application win.
 - **Proof 2, current Metal confirmation:** the local Mac is reachable and the
   comparison disposition above records current browser diagnostics. Historical
   upload rows still need fairness audits, and the Node ONNX Runtime tail loss

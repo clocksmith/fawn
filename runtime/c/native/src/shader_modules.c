@@ -16,6 +16,7 @@ static void release_shader(void *userdata, void *handle)
     (void)userdata;
     native_shader *payload = handle;
     free(payload->messages);
+    doe_shader_diagnostics_release(&payload->failure_notices);
     doe_shader_release(payload->module);
     native_shader_import_dispose(&payload->imported);
     free(payload);
@@ -78,15 +79,18 @@ doe_shader_status native_check_shader_module(doe_shader_target target, const cha
     return status;
 }
 
-/* The native ABI projection borrows message text from the immutable module;
- * the ordinary shader resource lease pins both through deferred callbacks. */
-static bool prepare_compilation_messages(native_shader *payload)
+/* The native ABI projection borrows message text from the immutable module or
+ * retained pre-fatal notices; the shader resource lease pins both through callbacks. */
+static bool prepare_compilation_messages(native_shader *payload, doe_shader_status status)
 {
     size_t count = 0;
-    const DoeCompilerNoticeV18 *notices = doe_shader_get_diagnostics(payload->module, &count);
+    const DoeCompilerNoticeV18 *notices = status == DOE_SHADER_OK ?
+        doe_shader_get_diagnostics(payload->module, &count) : payload->failure_notices.notices;
+    if (status != DOE_SHADER_OK) count = payload->failure_notices.count;
     if (!count) return true;
-    if (!notices || count > SIZE_MAX / sizeof(*payload->messages)) return false;
-    payload->messages = calloc(count, sizeof(*payload->messages));
+    const size_t total = status == DOE_SHADER_OK ? count : count + 1u;
+    if (!notices || total < count || total > SIZE_MAX / sizeof(*payload->messages)) return false;
+    payload->messages = calloc(total, sizeof(*payload->messages));
     if (!payload->messages) return false;
     for (size_t i = 0; i < count; i++) {
         const DoeCompilerNoticeV18 *notice = &notices[i];
@@ -96,7 +100,15 @@ static bool prepare_compilation_messages(native_shader *payload)
             .type=type, .lineNum=notice->line, .linePos=notice->column,
             .offset=notice->offset, .length=notice->length};
     }
-    payload->message_count = count;
+    if (status != DOE_SHADER_OK) {
+        if (!payload->error.diagnostic.message[0])
+            memcpy(payload->error.diagnostic.message, "C shader validation failed", sizeof("C shader validation failed"));
+        const DoeCompilerDiagnostic *diagnostic = &payload->error.diagnostic;
+        payload->messages[count] = (WGPUCompilationMessage){.message=native_string(diagnostic->message),
+            .type=WGPUCompilationMessageType_Error, .lineNum=diagnostic->line,
+            .linePos=diagnostic->column, .offset=diagnostic->offset};
+    }
+    payload->message_count = total;
     return true;
 }
 
@@ -170,15 +182,15 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
     payload->module = native_shader_cache_module(&device->shaders,&options,source->code.data,size);
     native_unlock(device);
     doe_shader_status status = payload->module ? DOE_SHADER_OK :
-        doe_shader_create_module(&options,options.capacities.typed.expressions,
-            source->code.data,size,&payload->module,&payload->error);
+        doe_shader_create_module_diagnostics(&options,options.capacities.typed.expressions,
+            source->code.data,size,&payload->module,&payload->error,&payload->failure_notices);
     if (status == DOE_SHADER_OK) {
         native_lock(device);
         doe_shader *displaced = native_shader_cache_insert(&device->shaders,payload->module);
         native_unlock(device);
         doe_shader_release(displaced);
     }
-    if (status == DOE_SHADER_OK && !prepare_compilation_messages(payload)) {
+    if (!prepare_compilation_messages(payload, status)) {
         release_shader(NULL, payload);
         native_error(device, WGPUErrorType_OutOfMemory, "shader compilation messages allocation failed");
         return NULL;

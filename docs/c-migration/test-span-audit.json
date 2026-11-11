@@ -10340,9 +10340,9 @@
     },
     "runtime/bridge/webgpu-addon/doe_napi_caps.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 917,
-      "physical_lines": 917,
-      "sha256": "e258e837e37a78c8e98892db5d7ab701ee9f6f2703030a0a6a6e8d0902df5306",
+      "implementation_lines": 864,
+      "physical_lines": 864,
+      "sha256": "2c0174d0efea4e524082bf6af88d3862b27b90688350de3f87018bbc39b04cdd",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_device_events.c": {
@@ -10417,9 +10417,9 @@
     },
     "runtime/bridge/webgpu-addon/doe_napi_instance.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 584,
-      "physical_lines": 584,
-      "sha256": "2ffa13270956b567c996bcd68856dbc732915116be0da702641f4cfb529e3e65",
+      "implementation_lines": 560,
+      "physical_lines": 560,
+      "sha256": "7ec38a1f5ecc0c85a24e729540adbff726d8c19455fd243e25280cb60b6cd7f2",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_internal.h": {
@@ -10445,30 +10445,30 @@
     },
     "runtime/bridge/webgpu-addon/doe_napi_nd_creators.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 529,
-      "physical_lines": 529,
-      "sha256": "95d1ceefb86cd0aee652a46fd5fca60590c2db10ffdba38e77859ec8b240d5e7",
+      "implementation_lines": 457,
+      "physical_lines": 457,
+      "sha256": "9e1ba0e4dfdd5ea9bd4ace1c0b133bfc95f87f914d179df88d474781b44ba329",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_nd_device.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 486,
-      "physical_lines": 486,
-      "sha256": "f75e0a06b36c7807ff138c878eb6ad2ab51f53115bbb8458fed4352dae356023",
+      "implementation_lines": 339,
+      "physical_lines": 339,
+      "sha256": "3ff9cf30c9d445b86811fd8801d202488901e16c94069d4341d8df96b083669f",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_nd_encoder.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 614,
-      "physical_lines": 614,
-      "sha256": "ecca274e3b8e4d238d9fd1434b43dacc6654d268c70f03e003141756c9a0b4c2",
+      "implementation_lines": 511,
+      "physical_lines": 511,
+      "sha256": "83155d501efbab8bbaf7f2faff6aa936fe4307e273dda290c925a4679fe2e696",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_nd_immediates.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 756,
-      "physical_lines": 756,
-      "sha256": "cd7d00e87695bdb976635339c572dd2f5749ef05c47b214952ad9eae965a3bb2",
+      "implementation_lines": 688,
+      "physical_lines": 688,
+      "sha256": "6944df3d6521cfe6698e8f2bcb511ed55240074777ea6e87975bac9ee7a21870",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_nd_infra.c": {
@@ -10487,9 +10487,9 @@
     },
     "runtime/bridge/webgpu-addon/doe_napi_pipeline.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 696,
-      "physical_lines": 696,
-      "sha256": "c7c5c1a047e62e1625feb67e72dcc67228bd0214445358bba3aa9ead523add28",
+      "implementation_lines": 690,
+      "physical_lines": 690,
+      "sha256": "a333385b3ff71740c75adcbfe8a30f9816fc1bf8913ff99d9113a66bb87a5c48",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_program.c": {
@@ -10515,9 +10515,9 @@
     },
     "runtime/bridge/webgpu-addon/doe_napi_render.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 962,
-      "physical_lines": 962,
-      "sha256": "1ed44b7149e6275790ec366635ba3a2dacceab3723469f2778c79cead9cd3149",
+      "implementation_lines": 910,
+      "physical_lines": 910,
+      "sha256": "201be6c76dcd7457ad4e35529a2c74503d8ddf43098305a6b091bdba73b98594",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_render_procs.h": {
@@ -10529,9 +10529,9 @@
     },
     "runtime/bridge/webgpu-addon/doe_napi_shader.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 525,
-      "physical_lines": 525,
-      "sha256": "2b825f2a346fa0ddbf0651b19c25f19ea0aadff35af7e3d312f66cb4a4d9df46",
+      "implementation_lines": 529,
+      "physical_lines": 529,
+      "sha256": "a6efef154d748dd12787204eed1863a1ca0997650e6505ea80261f02a9539bde",
       "spans": []
     },
     "runtime/bridge/webgpu-addon/doe_napi_surface.c": {
@@ -11565,16 +11565,16 @@
     },
     "runtime/c/backends/vulkan/Makefile": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 255,
-      "physical_lines": 255,
-      "sha256": "c8e53d397183e96c600aafc8083381d5a59c1d4de5dd9cfce2ef57c9231ea958",
+      "implementation_lines": 258,
+      "physical_lines": 258,
+      "sha256": "a4999510af467b631ebb36f6ea6f486d0e56bad2a9893a584177bec621e3fff3",
       "spans": []
     },
     "runtime/c/backends/vulkan/include/doe_vk.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 399,
-      "physical_lines": 399,
-      "sha256": "818d9252ea604e98b747742ee259845769732182008fa7f97b19a879c079f483",
+      "implementation_lines": 411,
+      "physical_lines": 411,
+      "sha256": "359882587a41fbe300122a232b8546f2fce1731fb7a78191c5fa9a7df0fab384",
       "spans": []
     },
     "runtime/c/backends/vulkan/include/doe_vk_bindings.h": {
@@ -11663,9 +11663,9 @@
     },
     "runtime/c/backends/vulkan/src/descriptors.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 359,
-      "physical_lines": 359,
-      "sha256": "3f9775035f80c72ca885523c21ecb291c19c5a4f2316ba5961a3a799cb50f960",
+      "implementation_lines": 490,
+      "physical_lines": 490,
+      "sha256": "c6a3595484556bf006e11388a34a140d454f8df365b470d23570c60db593338f",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/device_features.c": {
@@ -11677,9 +11677,9 @@
     },
     "runtime/c/backends/vulkan/src/device_selection.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 203,
-      "physical_lines": 203,
-      "sha256": "065737cf2a6f0005e2f22277feff54715dcb1be30595da4e6a3c4e40b5d01e63",
+      "implementation_lines": 211,
+      "physical_lines": 211,
+      "sha256": "475903a4989d17e86542bfb2768aa91e8300926d450d70edaad481536c5d84f6",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/draw_indirect.c": {
@@ -11754,30 +11754,30 @@
     },
     "runtime/c/backends/vulkan/src/internal.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 251,
-      "physical_lines": 251,
-      "sha256": "c0e7bde8015b3979c3eb7a464aab3cfde6e57a1768d15c4e842def8cacbed1b9",
+      "implementation_lines": 256,
+      "physical_lines": 256,
+      "sha256": "97353837f5c4f4b3b694fe7bec50abc43f2439e07664a9715e1d5dad23e65c8b",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/loader.c": {
       "excluded_test_only_lines": 0,
       "implementation_lines": 531,
       "physical_lines": 531,
-      "sha256": "d623253081619733cd4ae0f4a67043c39b472c5e64ff64d0ea5b61062999e84d",
+      "sha256": "65c58f5e7ccbf972ddbc19bbc2f5c67e50f1c924a1435683fb5a2a2c3e564b83",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/memory.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 139,
-      "physical_lines": 139,
-      "sha256": "33fecbbef84ed59948e84fbb335e3e17d5aeb81175c30defd69318895757efd5",
+      "implementation_lines": 145,
+      "physical_lines": 145,
+      "sha256": "98dee8b6c33716a054ac7b4799f86512aed76058b8427646013fc4ae8b51f3b4",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/pipeline.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 311,
-      "physical_lines": 311,
-      "sha256": "9dec82feeaf9c44d0590a9aef733ae7085db7876ade48223c5e92d7041972a4f",
+      "implementation_lines": 312,
+      "physical_lines": 312,
+      "sha256": "6fed4f337c1562d62a4233d4d2fecfff4c278c54feea8fb4c43e61795aee1996",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/queries.c": {
@@ -11838,9 +11838,9 @@
     },
     "runtime/c/backends/vulkan/src/resources.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 206,
-      "physical_lines": 206,
-      "sha256": "d333ee63d9c111f293ea0a44d0910275acc526fd0f43f54b457f5af6ae69c10a",
+      "implementation_lines": 233,
+      "physical_lines": 233,
+      "sha256": "7cd65c764ce4e30ad366a3ad7ee1afcc9e3d866938a20bd33a6b3a65660b50b2",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/surface.c": {
@@ -11887,9 +11887,9 @@
     },
     "runtime/c/backends/vulkan/src/textures.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 655,
-      "physical_lines": 655,
-      "sha256": "fa29e46aef198f241ae5a207ce2e93773e1e50913e49b3a2e89afd7b5e127cf6",
+      "implementation_lines": 658,
+      "physical_lines": 658,
+      "sha256": "92dfa7f8e0e4b74549c073cc6c2557420c21943cc58b4f5f088ce0a47540fc5e",
       "spans": []
     },
     "runtime/c/backends/vulkan/src/timeline.c": {
@@ -12188,9 +12188,9 @@
     },
     "runtime/c/compiler/include/doe_compiler_diagnostics.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 50,
-      "physical_lines": 50,
-      "sha256": "fdbf5a9b8dc6ff42f6475224fcd3ae57e7487ed0ee98d1b3b917483ecf0c7594",
+      "implementation_lines": 52,
+      "physical_lines": 52,
+      "sha256": "dcf8f89f13c425db481e6a259f3af904bf003a99bf6e35ff4eb1a373078ef379",
       "spans": []
     },
     "runtime/c/compiler/include/doe_compiler_features.h": {
@@ -12265,9 +12265,9 @@
     },
     "runtime/c/compiler/include/doe_compiler_prepared.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 61,
-      "physical_lines": 61,
-      "sha256": "e7c380abd326f3fbe35f1acc315e12133fb23ce9779e2b3e2d96a751642b7448",
+      "implementation_lines": 64,
+      "physical_lines": 64,
+      "sha256": "627cb8e5d60e0ba9b67ddc8dbf6b17f7fa1fd037bdafbd4f11f997176042d1f0",
       "spans": []
     },
     "runtime/c/compiler/include/doe_compiler_resources.h": {
@@ -13602,9 +13602,9 @@
     },
     "runtime/c/compiler/src/parse.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 927,
-      "physical_lines": 927,
-      "sha256": "032117ba9b9a363d6c8e1f52fd962581deb66d5ac72fcf2623c1a496b275a1e4",
+      "implementation_lines": 928,
+      "physical_lines": 928,
+      "sha256": "fdf3d3480169f848a8e8ae063cf6f9c63fd8dcee03700007bc512dc531c423ee",
       "spans": []
     },
     "runtime/c/compiler/src/parse_diagnostics.c": {
@@ -13672,16 +13672,16 @@
     },
     "runtime/c/compiler/src/prepared.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 241,
-      "physical_lines": 241,
-      "sha256": "5a6187d4c96347472d6ad0148b60795aeaf38c115709dc3d6764cec68eac1470",
+      "implementation_lines": 255,
+      "physical_lines": 255,
+      "sha256": "a51fb0d78d5e7046abf00e5e45afe9ba7891edb91cd659d08e48934fc3dde1ce",
       "spans": []
     },
     "runtime/c/compiler/src/prepared_internal.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 27,
-      "physical_lines": 27,
-      "sha256": "bdf87d7d82a8637d0784454730da72be9c346bfb0560ee8f30e6365230ec91da",
+      "implementation_lines": 28,
+      "physical_lines": 28,
+      "sha256": "4f42520e61e7c17b40e0104e575727a4bae53a37820c752a67f4ee00cc1bd08c",
       "spans": []
     },
     "runtime/c/compiler/src/reflection.c": {
@@ -13847,9 +13847,9 @@
     },
     "runtime/c/compiler/src/specialization.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 323,
-      "physical_lines": 323,
-      "sha256": "26915bd6e515d9c219a16fe0edacf5ffddb4140039067f9b5c06d5d67002658f",
+      "implementation_lines": 339,
+      "physical_lines": 339,
+      "sha256": "d9a952b7d06400e52945f3dcbd7ee9eb566fca794ab8bc6ad87912d797a35ff2",
       "spans": []
     },
     "runtime/c/compiler/src/specialization_compile.c": {
@@ -14428,9 +14428,9 @@
     },
     "runtime/c/compiler/src/uniformity.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 847,
-      "physical_lines": 847,
-      "sha256": "e219d838a80fe1d0f1bab1fd5df02fbb8c6152ee06561212b61fb807adc2f6ce",
+      "implementation_lines": 852,
+      "physical_lines": 852,
+      "sha256": "cf7ce680c8d5a8a270c3eb6ba810287f2b2c3b778b4dc855e60bf9cbd58228c6",
       "spans": []
     },
     "runtime/c/compiler/src/validate.c": {
@@ -15202,9 +15202,9 @@
     },
     "runtime/c/native/Makefile": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 864,
-      "physical_lines": 864,
-      "sha256": "eac744e69436e269144adcddf75d76865c4e77f6dcd9fbe8aff290dab3516390",
+      "implementation_lines": 867,
+      "physical_lines": 867,
+      "sha256": "1642c32cb1c14b1e2d4aa902bd20cad544425eb4587dee833947e8b2661b2b52",
       "spans": []
     },
     "runtime/c/native/SHARED_MEMORY_SYMBOLS.txt": {
@@ -15342,9 +15342,9 @@
     },
     "runtime/c/native/src/backend.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 309,
-      "physical_lines": 309,
-      "sha256": "b53825bd5fec3e2a6869add77b5df231f73b7b7703d642dc23ad2c95469a15a6",
+      "implementation_lines": 318,
+      "physical_lines": 318,
+      "sha256": "44b37f943faa2ecedc25f42d8dac9ef2892d9d2b90d4eac3d079d269a485a883",
       "spans": []
     },
     "runtime/c/native/src/backend.h": {
@@ -15734,9 +15734,9 @@
     },
     "runtime/c/native/src/internal.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 439,
-      "physical_lines": 439,
-      "sha256": "0a63ad66dcc1a06242ad00d3bd2d30b27612756e1779535b74a4944367ad85b0",
+      "implementation_lines": 440,
+      "physical_lines": 440,
+      "sha256": "0eb8d0a6f1abd050faa4bc997000026e4803e8f417d03dcfbc0b43d6d1c88e6d",
       "spans": []
     },
     "runtime/c/native/src/labels.c": {
@@ -16021,9 +16021,9 @@
     },
     "runtime/c/native/src/pipeline_callbacks.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 103,
-      "physical_lines": 103,
-      "sha256": "1098b484995dc711d975f40ea4f24a807d0ec02050e980b5b95b01f5e0296951",
+      "implementation_lines": 102,
+      "physical_lines": 102,
+      "sha256": "043a90b2f6d70176bbacf3e9e85b00f39f7e850a6738c061184541b21233a9bd",
       "spans": []
     },
     "runtime/c/native/src/pipeline_layouts.c": {
@@ -16217,9 +16217,9 @@
     },
     "runtime/c/native/src/shader_modules.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 200,
-      "physical_lines": 200,
-      "sha256": "6af6521972a68ee71845a2ccc8ff59f6366741388723fdf214c5189a8bdb6522",
+      "implementation_lines": 212,
+      "physical_lines": 212,
+      "sha256": "0450f43eb5a663c2eacd761f8cb0fbb6b65194ea8443dd554dc245aa65a5d70e",
       "spans": []
     },
     "runtime/c/native/src/shader_reflection.c": {
@@ -17009,9 +17009,9 @@
     },
     "runtime/c/shader/include/doe_shader.h": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 184,
-      "physical_lines": 184,
-      "sha256": "5b8d393f9e7499282aa2a4b6b5c9efcc55ae8cb6dbee89ae157effd49cf37a47",
+      "implementation_lines": 196,
+      "physical_lines": 196,
+      "sha256": "225c825dc286b9af4fab774d75ba181085e8c28fda1644a1d0398454587cea1d",
       "spans": []
     },
     "runtime/c/shader/include/doe_shader_artifact.h": {
@@ -17072,9 +17072,9 @@
     },
     "runtime/c/shader/src/module.c": {
       "excluded_test_only_lines": 0,
-      "implementation_lines": 145,
-      "physical_lines": 145,
-      "sha256": "e4e2633baad1168fd5c394ffa3c520a7b31f5be3a48d587e2211844edf5a4aaf",
+      "implementation_lines": 190,
+      "physical_lines": 190,
+      "sha256": "e9a25062f6f345bcf1eb64e3b67e8e277994c26404d1fffce2ca807ce8617299",
       "spans": []
     },
     "runtime/c/shader/src/shader.c": {
@@ -17109,8 +17109,8 @@
   "candidate_summary": {
     "excluded_test_only_lines": 24,
     "files": 987,
-    "implementation_only_lines": 171857,
-    "physical_lines": 171881
+    "implementation_only_lines": 171655,
+    "physical_lines": 171679
   },
   "method": {
     "baseline_parser": "std.zig.Ast (.test_decl plus private rootDecls fixpoint reachability and attached // line comments)",

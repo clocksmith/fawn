@@ -109,22 +109,6 @@ napi_value doe_request_adapter(napi_env env, napi_callback_info info) {
                     opts.powerPreference = WGPU_POWER_PREFERENCE_HIGH_PERFORMANCE;
                 }
             }
-            /* featureLevel */
-            napi_value fl_val;
-            napi_valuetype fl_type = napi_undefined;
-            if (napi_get_named_property(env, args[1], "featureLevel", &fl_val) == napi_ok) {
-                napi_typeof(env, fl_val, &fl_type);
-            }
-            if (fl_type == napi_string) {
-                char fl_str[32];
-                size_t fl_len = 0;
-                napi_get_value_string_utf8(env, fl_val, fl_str, sizeof(fl_str), &fl_len);
-                if (strcmp(fl_str, "compatibility") == 0) {
-                    opts.featureLevel = WGPU_FEATURE_LEVEL_COMPATIBILITY;
-                } else if (strcmp(fl_str, "core") == 0) {
-                    opts.featureLevel = WGPU_FEATURE_LEVEL_CORE;
-                }
-            }
             /* forceFallbackAdapter */
             napi_value ffa_val;
             napi_valuetype ffa_type = napi_undefined;
@@ -175,34 +159,42 @@ napi_value doe_adapter_release(napi_env env, napi_callback_info info) {
  * Device (synchronous requestDevice via callback + processEvents)
  * ================================================================ */
 
+static const struct { const char* name; uint32_t value; } kDoeFeatureEntries[] = {
+    { "core-features-and-limits", 0x00000001 },
+    { "depth-clip-control", 0x00000002 },
+    { "depth32float-stencil8", 0x00000003 },
+    { "texture-compression-bc", 0x00000004 },
+    { "texture-compression-bc-sliced-3d", 0x00000005 },
+    { "texture-compression-etc2", 0x00000006 },
+    { "texture-compression-astc", 0x00000007 },
+    { "texture-compression-astc-sliced-3d", 0x00000008 },
+    { "timestamp-query", 0x00000009 },
+    { "indirect-first-instance", 0x0000000A },
+    { "shader-f16", 0x0000000B },
+    { "rg11b10ufloat-renderable", 0x0000000C },
+    { "bgra8unorm-storage", 0x0000000D },
+    { "float32-filterable", 0x0000000E },
+    { "float32-blendable", 0x0000000F },
+    { "clip-distances", 0x00000010 },
+    { "dual-source-blending", 0x00000011 },
+    { "subgroups", 0x00000012 },
+    { "texture-formats-tier1", 0x00000013 },
+    { "texture-formats-tier2", 0x00000014 },
+    { "primitive-index", 0x00000015 },
+    { "texture-component-swizzle", 0x00000016 },
+};
+
+bool doe_feature_entry_at(size_t index, const char** out_name, uint32_t* out_value) {
+    if (index >= sizeof(kDoeFeatureEntries) / sizeof(kDoeFeatureEntries[0])) return false;
+    *out_name = kDoeFeatureEntries[index].name;
+    *out_value = kDoeFeatureEntries[index].value;
+    return true;
+}
+
 static bool doe_feature_name_from_string(const char* feature, uint32_t* out_feature) {
-    static const struct { const char* name; uint32_t value; } entries[] = {
-        { "core-features-and-limits", 0x00000001 },
-        { "depth-clip-control", 0x00000002 },
-        { "depth32float-stencil8", 0x00000003 },
-        { "texture-compression-bc", 0x00000004 },
-        { "texture-compression-bc-sliced-3d", 0x00000005 },
-        { "texture-compression-etc2", 0x00000006 },
-        { "texture-compression-astc", 0x00000007 },
-        { "texture-compression-astc-sliced-3d", 0x00000008 },
-        { "timestamp-query", 0x00000009 },
-        { "indirect-first-instance", 0x0000000A },
-        { "shader-f16", 0x0000000B },
-        { "rg11b10ufloat-renderable", 0x0000000C },
-        { "bgra8unorm-storage", 0x0000000D },
-        { "float32-filterable", 0x0000000E },
-        { "float32-blendable", 0x0000000F },
-        { "clip-distances", 0x00000010 },
-        { "dual-source-blending", 0x00000011 },
-        { "subgroups", 0x00000012 },
-        { "texture-formats-tier1", 0x00000013 },
-        { "texture-formats-tier2", 0x00000014 },
-        { "primitive-index", 0x00000015 },
-        { "texture-component-swizzle", 0x00000016 },
-    };
-    for (size_t i = 0; i < sizeof(entries) / sizeof(entries[0]); i += 1) {
-        if (strcmp(feature, entries[i].name) == 0) {
-            if (out_feature) *out_feature = entries[i].value;
+    for (size_t i = 0; i < sizeof(kDoeFeatureEntries) / sizeof(kDoeFeatureEntries[0]); i += 1) {
+        if (strcmp(feature, kDoeFeatureEntries[i].name) == 0) {
+            if (out_feature) *out_feature = kDoeFeatureEntries[i].value;
             return true;
         }
     }
@@ -459,6 +451,26 @@ bool doe_parse_device_descriptor(
     return true;
 }
 
+void doe_free_device_descriptor_owned(WGPUDeviceDescriptor* desc, WGPUFeatureName* required_features) {
+    free(required_features);
+    if (desc->label.data) free((void*)desc->label.data);
+    if (desc->defaultQueue.label.data) free((void*)desc->defaultQueue.label.data);
+}
+
+void doe_detach_and_release_device(napi_env env, void* device) {
+    DeviceCallbackBinding* lost = binding_take(&doe_env_state(env)->lost_bindings, device);
+    DeviceCallbackBinding* uncaptured = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
+    if (lost && pfn_doeNativeDeviceRegisterLostCallback) {
+        pfn_doeNativeDeviceRegisterLostCallback(device, NULL, NULL);
+    }
+    if (uncaptured && pfn_doeNativeDeviceSetUncapturedErrorCallback) {
+        pfn_doeNativeDeviceSetUncapturedErrorCallback(device, NULL, NULL, NULL);
+    }
+    if (lost) release_binding(lost);
+    if (uncaptured) release_binding(uncaptured);
+    pfn_wgpuDeviceRelease(device);
+}
+
 napi_value doe_request_device(napi_env env, napi_callback_info info) {
     CHECK_LIB_LOADED(env);
     size_t actual_argc = 3;
@@ -478,9 +490,7 @@ napi_value doe_request_device(napi_env env, napi_callback_info info) {
         napi_valuetype vt = napi_undefined;
         if (napi_typeof(env, args[2], &vt) == napi_ok && vt == napi_object) {
             if (!doe_parse_device_descriptor(env, args[2], &descriptor, &required_features, &required_limits)) {
-                free(required_features);
-                if (descriptor.label.data) free((void*)descriptor.label.data);
-                if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
+                doe_free_device_descriptor_owned(&descriptor, required_features);
                 return NULL;
             }
             descriptor_ptr = &descriptor;
@@ -497,45 +507,30 @@ napi_value doe_request_device(napi_env env, napi_callback_info info) {
         .userdata1 = &result,
         .userdata2 = NULL,
     };
-    WGPUFuture future;
-    if (pfn_doeRequestDeviceFlat) {
-        future = pfn_doeRequestDeviceFlat(
-            adapter,
-            descriptor_ptr,
-            WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
-            device_callback,
-            &result,
-            NULL);
-    } else {
-        future = pfn_doeNativeAdapterRequestDevice
+    WGPUFuture future = pfn_doeRequestDeviceFlat
+        ? pfn_doeRequestDeviceFlat(adapter, descriptor_ptr, WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS, device_callback, &result, NULL)
+        : (pfn_doeNativeAdapterRequestDevice
             ? pfn_doeNativeAdapterRequestDevice(adapter, descriptor_ptr, callback_info)
-            : pfn_wgpuAdapterRequestDevice(adapter, descriptor_ptr, callback_info);
-    }
+            : pfn_wgpuAdapterRequestDevice(adapter, descriptor_ptr, callback_info));
     if (future.id == 0) {
-        free(required_features);
-        if (descriptor.label.data) free((void*)descriptor.label.data);
-        if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
+        doe_free_device_descriptor_owned(&descriptor, required_features);
         NAPI_THROW(env, "requestDevice future unavailable");
     }
     if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
-        free(required_features);
-        if (descriptor.label.data) free((void*)descriptor.label.data);
-        if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
+        doe_free_device_descriptor_owned(&descriptor, required_features);
         return throw_status_error(env, "DOE_REQUEST_DEVICE_TIMEOUT", "requestDevice timed out", result.status, result.message);
     }
     if (result.status != WGPU_REQUEST_STATUS_SUCCESS || !result.device) {
-        free(required_features);
-        if (descriptor.label.data) free((void*)descriptor.label.data);
-        if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
+        doe_free_device_descriptor_owned(&descriptor, required_features);
         return throw_status_error(env, "DOE_REQUEST_DEVICE_ERROR", "requestDevice failed", result.status, result.message);
     }
 
     device_events_attach(events, result.device);
-    if (descriptor_ptr) {
-        if (pfn_doeNativeObjectSetLabel && descriptor.label.data && descriptor.label.length > 0) {
+    if (descriptor_ptr && pfn_doeNativeObjectSetLabel) {
+        if (descriptor.label.data && descriptor.label.length > 0) {
             pfn_doeNativeObjectSetLabel(result.device, (const uint8_t*)descriptor.label.data, descriptor.label.length);
         }
-        if (pfn_doeNativeObjectSetLabel && descriptor.defaultQueue.label.data && descriptor.defaultQueue.label.length > 0) {
+        if (descriptor.defaultQueue.label.data && descriptor.defaultQueue.label.length > 0) {
             WGPUQueue queue = pfn_wgpuDeviceGetQueue(result.device);
             if (queue) {
                 pfn_doeNativeObjectSetLabel(queue, (const uint8_t*)descriptor.defaultQueue.label.data, descriptor.defaultQueue.label.length);
@@ -544,33 +539,14 @@ napi_value doe_request_device(napi_env env, napi_callback_info info) {
         }
     }
 
-    free(required_features);
-    if (descriptor.label.data) free((void*)descriptor.label.data);
-    if (descriptor.defaultQueue.label.data) free((void*)descriptor.defaultQueue.label.data);
-
+    doe_free_device_descriptor_owned(&descriptor, required_features);
     return wrap_ptr(env, result.device);
 }
 
 napi_value doe_device_release(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     void* device = unwrap_ptr(env, _args[0]);
-    if (device) {
-        DeviceCallbackBinding* lost = binding_take(&doe_env_state(env)->lost_bindings, device);
-        DeviceCallbackBinding* uncaptured = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
-        if (lost && pfn_doeNativeDeviceRegisterLostCallback) {
-            pfn_doeNativeDeviceRegisterLostCallback(device, NULL, NULL);
-        }
-        if (uncaptured && pfn_doeNativeDeviceSetUncapturedErrorCallback) {
-            pfn_doeNativeDeviceSetUncapturedErrorCallback(device, NULL, NULL, NULL);
-        }
-        if (lost) {
-            release_binding(lost);
-        }
-        if (uncaptured) {
-            release_binding(uncaptured);
-        }
-        pfn_wgpuDeviceRelease(device);
-    }
+    if (device) doe_detach_and_release_device(env, device);
     return NULL;
 }
 

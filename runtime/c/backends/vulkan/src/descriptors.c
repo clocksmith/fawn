@@ -87,7 +87,8 @@ static doe_vk_status validate_resources(doe_vk_commands *commands,
  * fragmented is skipped; a new block is created only when every block refuses.
  * Either way a set is written once by its use and never updated while any
  * recording holds it. */
-enum { DESCRIPTOR_BLOCK_SETS = 256, DESCRIPTOR_BLOCK_PER_TYPE = 1024 };
+enum { DESCRIPTOR_BLOCK_SETS = 256, DESCRIPTOR_BLOCK_PER_TYPE = 1024,
+    REUSE_BLOCK_SETS = 32, REUSE_BLOCK_PER_TYPE = DOE_VK_MAX_BINDINGS };
 enum { VK_ERROR_FRAGMENTED_POOL_VALUE = -12, VK_ERROR_OUT_OF_POOL_MEMORY_VALUE = -1000069000,
     VK_DESCRIPTOR_POOL_FREE_SET = 0x1 };
 struct doe_vk_descriptor_block {
@@ -95,16 +96,30 @@ struct doe_vk_descriptor_block {
     struct doe_vk_descriptor_block *next;
 };
 
+static bool descriptor_reuse_enabled(const doe_vk_context *context) {
+    const uint32_t both = DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS | DOE_VK_RESOURCE_DESCRIPTOR_REUSE;
+    return (context->caps.resource_profile & both) == both;
+}
+
+static void free_dispatch_sets(doe_vk_context *context, doe_vk_dispatch_use *use) {
+    if (use->pool == 0) return;
+    if (context->caps.resource_profile & DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS)
+        (void)context->vk.vkFreeDescriptorSets(context->device, use->pool, use->group_count, use->sets);
+    else context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
+}
+
 static doe_vk_status descriptor_block(doe_vk_context *context, struct doe_vk_descriptor_block **out) {
     struct doe_vk_descriptor_block *block = calloc(1, sizeof(*block));
     if (block == NULL) return DOE_VK_OUT_OF_MEMORY;
+    const bool compact = descriptor_reuse_enabled(context);
+    const uint32_t per_type = compact ? REUSE_BLOCK_PER_TYPE : DESCRIPTOR_BLOCK_PER_TYPE;
     VkDescriptorPoolSize sizes[5];
     for (uint32_t i = 0; i < 5; ++i)
-        sizes[i] = (VkDescriptorPoolSize){ doe_vk_descriptor_type((doe_vk_binding_kind)i), DESCRIPTOR_BLOCK_PER_TYPE };
+        sizes[i] = (VkDescriptorPoolSize){ doe_vk_descriptor_type((doe_vk_binding_kind)i), per_type };
     const VkDescriptorPoolCreateInfo pool = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .flags = VK_DESCRIPTOR_POOL_FREE_SET,
-        .maxSets = DESCRIPTOR_BLOCK_SETS,
+        .maxSets = compact ? REUSE_BLOCK_SETS : DESCRIPTOR_BLOCK_SETS,
         .poolSizeCount = 5,
         .pPoolSizes = sizes
     };
@@ -181,6 +196,9 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
 }
 
 void doe_vk_descriptor_blocks_clear(doe_vk_context *context) {
+    for (uint32_t i = 0; i < context->retained_dispatch_count; ++i)
+        free(context->retained_dispatches[i]);
+    context->retained_dispatch_count = 0;
     while (context->descriptor_blocks != NULL) {
         struct doe_vk_descriptor_block *block = context->descriptor_blocks;
         context->descriptor_blocks = block->next;
@@ -207,17 +225,105 @@ static bool same_use(const doe_vk_dispatch_use *use, const doe_vk_pipeline *pipe
     return true;
 }
 
+static bool dispatch_references_resource(const doe_vk_dispatch_use *use, const void *resource) {
+    if ((const void *)use->pipeline == resource) return true;
+    for (uint32_t i = 0; i < use->binding_count; ++i) {
+        const doe_vk_binding_resource *b = &use->bindings[i];
+        if (b->kind == DOE_VK_BINDING_UNIFORM || b->kind == DOE_VK_BINDING_STORAGE) {
+            if ((const void *)b->value.buffer.buffer == resource) return true;
+        } else if (b->kind == DOE_VK_BINDING_SAMPLER) {
+            if ((const void *)b->value.sampler == resource) return true;
+        } else if ((const void *)b->value.view == resource ||
+                (const void *)b->value.view->texture == resource) return true;
+    }
+    return false;
+}
+
+void doe_vk_descriptor_evict(doe_vk_context *context, const void *resource) {
+    if (context == NULL || resource == NULL || context->retained_dispatch_count == 0) return;
+    uint32_t kept = 0;
+    for (uint32_t i = 0; i < context->retained_dispatch_count; ++i) {
+        doe_vk_dispatch_use *entry = context->retained_dispatches[i];
+        if (dispatch_references_resource(entry, resource)) {
+            free_dispatch_sets(context, entry);
+            free(entry);
+        } else context->retained_dispatches[kept++] = entry;
+    }
+    context->retained_dispatch_count = kept;
+}
+
+static doe_vk_dispatch_use *take_retained_dispatch(doe_vk_context *context,
+    const doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count) {
+    for (uint32_t i = context->retained_dispatch_count; i-- > 0;) {
+        doe_vk_dispatch_use *entry = context->retained_dispatches[i];
+        if (!same_use(entry, pipeline, bindings, count)) continue;
+        const uint32_t tail = context->retained_dispatch_count - i - 1u;
+        if (tail != 0) memmove(&context->retained_dispatches[i],
+            &context->retained_dispatches[i + 1u], tail * sizeof(*context->retained_dispatches));
+        --context->retained_dispatch_count;
+        return entry;
+    }
+    return NULL;
+}
+
+static doe_vk_status lease_dispatch_resources(doe_vk_commands *commands,
+    doe_vk_dispatch_use *use, const doe_vk_binding_resource *bindings, size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        const doe_vk_binding_resource *binding = &bindings[i];
+        doe_vk_status status;
+        if (binding->kind == DOE_VK_BINDING_UNIFORM || binding->kind == DOE_VK_BINDING_STORAGE) {
+            status = doe_vk_use_buffer(commands, binding->value.buffer.buffer);
+            if (status != DOE_VK_OK) return status;
+        } else if (binding->kind == DOE_VK_BINDING_SAMPLER) {
+            status = doe_vk_sampler_retain(binding->value.sampler);
+            if (status != DOE_VK_OK) return status;
+            use->samplers[i] = binding->value.sampler;
+        } else {
+            status = doe_vk_texture_view_retain(binding->value.view);
+            if (status != DOE_VK_OK) return status;
+            use->views[i] = binding->value.view;
+        }
+    }
+    return DOE_VK_OK;
+}
+
 static doe_vk_status prepare_resources(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out,
     bool synchronize) {
     doe_vk_status status = validate_resources(commands, pipeline, bindings, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    doe_vk_context *context = commands->context;
+    const bool reuse = descriptor_reuse_enabled(context);
     doe_vk_dispatch_use *use = commands->dispatches;
     if (same_use(use, pipeline, bindings, count)) goto prepared;
+    if (reuse && use != NULL) {
+        uint32_t scanned = 1;
+        for (doe_vk_dispatch_use *prior = use->next; prior != NULL && scanned < DOE_VK_RETAINED_DISPATCHES;
+                prior = prior->next, ++scanned) {
+            if (same_use(prior, pipeline, bindings, count)) { use = prior; goto prepared; }
+        }
+    }
+    if (reuse) {
+        use = take_retained_dispatch(context, pipeline, bindings, count);
+        if (use != NULL) {
+            status = doe_vk_pipeline_retain(pipeline);
+            if (status != DOE_VK_OK) {
+                free_dispatch_sets(context, use);
+                free(use);
+                return doe_vk_poison(commands, status);
+            }
+            use->next = commands->dispatches;
+            commands->dispatches = use;
+            status = lease_dispatch_resources(commands, use, bindings, count);
+            if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+            goto prepared;
+        }
+    }
     if (count > (SIZE_MAX - sizeof(*use)) / sizeof(*bindings)) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
     use = calloc(1, sizeof(*use) + count * sizeof(*bindings));
     if (!use) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
     use->binding_count = (uint32_t)count;
+    use->group_count = pipeline->group_count;
     for (size_t i = 0; i < count; ++i) use->bindings[i] = bindings[i];
     status = doe_vk_pipeline_retain(pipeline);
     if (status != DOE_VK_OK) {
@@ -228,6 +334,8 @@ static doe_vk_status prepare_resources(doe_vk_commands *commands,
     use->next = commands->dispatches;
     commands->dispatches = use;
     status = descriptor_pool(commands, pipeline, use, use->sets);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    status = lease_dispatch_resources(commands, use, bindings, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     VkDescriptorBufferInfo buffers[DOE_VK_MAX_BINDINGS];
     VkDescriptorImageInfo images[DOE_VK_MAX_BINDINGS];
@@ -242,28 +350,20 @@ static doe_vk_status prepare_resources(doe_vk_commands *commands,
             .descriptorType = doe_vk_descriptor_type(binding->kind)
         };
         if (binding->kind == DOE_VK_BINDING_UNIFORM || binding->kind == DOE_VK_BINDING_STORAGE) {
-            status = doe_vk_use_buffer(commands, binding->value.buffer.buffer);
-            if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
             buffers[i] = (VkDescriptorBufferInfo){ binding->value.buffer.buffer->buffer,
                 binding->value.buffer.offset, binding->value.buffer.size };
             writes[i].pBufferInfo = &buffers[i];
         } else if (binding->kind == DOE_VK_BINDING_SAMPLER) {
-            status = doe_vk_sampler_retain(binding->value.sampler);
-            if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-            use->samplers[i] = binding->value.sampler;
             images[i] = (VkDescriptorImageInfo){ .sampler = binding->value.sampler->sampler };
             writes[i].pImageInfo = &images[i];
         } else {
-            status = doe_vk_texture_view_retain(binding->value.view);
-            if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-            use->views[i] = binding->value.view;
             images[i] = (VkDescriptorImageInfo){ .imageView = binding->value.view->view,
                 .imageLayout = VK_IMAGE_LAYOUT_GENERAL };
             writes[i].pImageInfo = &images[i];
         }
     }
-    doe_vk_context *context = commands->context;
     if (count != 0) context->vk.vkUpdateDescriptorSets(context->device, (uint32_t)count, writes, 0, NULL);
+    use->written = true;
 prepared:
     if (synchronize) doe_vk_barrier(commands);
     for (size_t i = 0; i < count; ++i) {
@@ -346,14 +446,45 @@ doe_vk_status doe_vk_commands_dispatch_resources(doe_vk_commands *commands,
 }
 
 void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use) {
-    if (use->pool != 0 && (context->caps.resource_profile & DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS))
-        /* Freeing never fails for a FREE_DESCRIPTOR_SET pool. */
-        (void)context->vk.vkFreeDescriptorSets(context->device, use->pool, use->pipeline->group_count, use->sets);
-    else if (use->pool != 0) context->vk.vkDestroyDescriptorPool(context->device, use->pool, NULL);
-    for (uint32_t i = 0; i < DOE_VK_MAX_BINDINGS; ++i) {
-        doe_vk_texture_view_release(use->views[i]);
-        doe_vk_sampler_release(use->samplers[i]);
+    doe_vk_pipeline *pipeline = use->pipeline;
+    doe_vk_texture_view *views[DOE_VK_MAX_BINDINGS];
+    doe_vk_sampler *samplers[DOE_VK_MAX_BINDINGS];
+    memcpy(views, use->views, sizeof(views));
+    memcpy(samplers, use->samplers, sizeof(samplers));
+    memset(use->views, 0, sizeof(use->views));
+    memset(use->samplers, 0, sizeof(use->samplers));
+    use->next = NULL;
+    bool cached = false;
+    if (use->pool != 0 && use->written && descriptor_reuse_enabled(context) && !context->lost) {
+        bool duplicate = false;
+        for (uint32_t i = 0; i < context->retained_dispatch_count; ++i) {
+            if (same_use(context->retained_dispatches[i], pipeline, use->bindings, use->binding_count)) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (!duplicate) {
+            if (context->retained_dispatch_count == DOE_VK_RETAINED_DISPATCHES) {
+                doe_vk_dispatch_use *oldest = context->retained_dispatches[0];
+                memmove(&context->retained_dispatches[0], &context->retained_dispatches[1],
+                    (DOE_VK_RETAINED_DISPATCHES - 1u) * sizeof(*context->retained_dispatches));
+                --context->retained_dispatch_count;
+                free_dispatch_sets(context, oldest);
+                free(oldest);
+            }
+            context->retained_dispatches[context->retained_dispatch_count++] = use;
+            cached = true;
+        }
     }
-    doe_vk_pipeline_release(use->pipeline);
-    free(use);
+    if (!cached) {
+        free_dispatch_sets(context, use);
+        free(use);
+    }
+    /* Release references after publishing into retained_dispatches so any
+     * terminal resource destruction evicts the cached entry synchronously. */
+    for (uint32_t i = 0; i < DOE_VK_MAX_BINDINGS; ++i) {
+        doe_vk_texture_view_release(views[i]);
+        doe_vk_sampler_release(samplers[i]);
+    }
+    doe_vk_pipeline_release(pipeline);
 }

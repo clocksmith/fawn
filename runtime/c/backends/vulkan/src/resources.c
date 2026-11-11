@@ -131,6 +131,7 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
         doe_vk_fail(status, "compatible buffer memory", error);
         goto failed;
     }
+    buffer->host_cached = (context->memory.memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0;
     status=doe_vk_buffer_allocate(buffer,&requirements,index,host,queried,
         dedicated.requiresDedicatedAllocation || dedicated.prefersDedicatedAllocation,error);
     if (status!=DOE_VK_OK) goto failed;
@@ -151,6 +152,7 @@ doe_vk_status doe_vk_buffer_retain(doe_vk_buffer *buffer) {
 void doe_vk_buffer_release(doe_vk_buffer *buffer) {
     if (buffer == NULL || --buffer->references != 0) return;
     doe_vk_context *context = buffer->context;
+    doe_vk_descriptor_evict(context, buffer);
     if (buffer->buffer != 0) context->vk.vkDestroyBuffer(context->device, buffer->buffer, NULL);
     doe_vk_buffer_memory_release(buffer);
     free(buffer);
@@ -173,6 +175,25 @@ static doe_vk_status host_access(doe_vk_buffer *buffer, uint64_t offset, size_t 
     return DOE_VK_OK;
 }
 
+/* Pre-staging 8 KiB source windows into L1D before issuing write-combined
+ * stores separates L3 source fills from WC buffer drains when the caller's
+ * source range exceeds L2. */
+static void write_wc_chunked(uint8_t *dst, const uint8_t *src, size_t size) {
+    enum { WC_CHUNK = 8192u };
+    while (size >= WC_CHUNK) {
+        uint64_t warm = 0;
+        for (size_t i = 0; i < WC_CHUNK; i += 256u)
+            warm ^= (uint64_t)src[i] ^ src[i + 64u] ^ src[i + 128u] ^ src[i + 192u];
+        volatile uint64_t gate = warm;
+        const size_t bias = (size_t)(gate - warm);
+        memcpy(dst + bias, src + bias, WC_CHUNK);
+        dst += WC_CHUNK;
+        src += WC_CHUNK;
+        size -= WC_CHUNK;
+    }
+    if (size != 0) memcpy(dst, src, size);
+}
+
 doe_vk_status doe_vk_buffer_write(doe_vk_buffer *buffer, uint64_t offset,
     const void *bytes, size_t size) {
     if (size != 0 && bytes == NULL) return DOE_VK_INVALID_ARGUMENT;
@@ -180,7 +201,13 @@ doe_vk_status doe_vk_buffer_write(doe_vk_buffer *buffer, uint64_t offset,
     if (status != DOE_VK_OK) return status;
     if (buffer->content_status != DOE_VK_OK && (offset != 0 || size != buffer->size))
         return buffer->content_status;
-    if (size != 0) memcpy((uint8_t *)buffer->mapped + (size_t)offset, bytes, size);
+    if (size != 0) {
+        uint8_t *dst = (uint8_t *)buffer->mapped + (size_t)offset;
+        if ((buffer->context->caps.resource_profile & DOE_VK_RESOURCE_CHUNKED_WC_WRITE) != 0 &&
+                !buffer->host_cached && size >= 65536u)
+            write_wc_chunked(dst, (const uint8_t *)bytes, size);
+        else memcpy(dst, bytes, size);
+    }
     if (offset == 0 && size == buffer->size) buffer->content_status = DOE_VK_OK;
     return DOE_VK_OK;
 }

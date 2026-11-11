@@ -416,6 +416,7 @@ void doe_vk_texture_release(doe_vk_texture *texture) {
 
 static void free_image(doe_vk_texture *texture) {
     doe_vk_context *context = texture->context;
+    doe_vk_descriptor_evict(context, texture);
     if (texture->image != 0) context->vk.vkDestroyImage(context->device, texture->image, NULL);
     texture->image = 0;
     if (texture->memory != 0) context->vk.vkFreeMemory(context->device, texture->memory, NULL);
@@ -581,6 +582,7 @@ void doe_vk_texture_view_release(doe_vk_texture_view *view) {
     if (view == NULL || --view->references != 0) return;
     doe_vk_texture *texture = view->texture;
     doe_vk_context *context = texture->context;
+    doe_vk_descriptor_evict(context, view);
     if (view->view != 0) context->vk.vkDestroyImageView(context->device, view->view, NULL);
     free(view);
     doe_vk_texture_release(texture);
@@ -649,6 +651,7 @@ doe_vk_status doe_vk_sampler_retain(doe_vk_sampler *sampler) {
 void doe_vk_sampler_release(doe_vk_sampler *sampler) {
     if (sampler == NULL || --sampler->references != 0) return;
     doe_vk_context *context = sampler->context;
+    doe_vk_descriptor_evict(context, sampler);
     if (sampler->sampler != 0) context->vk.vkDestroySampler(context->device, sampler->sampler, NULL);
     free(sampler);
     doe_vk_context_release(context);

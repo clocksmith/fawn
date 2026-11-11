@@ -106,6 +106,10 @@ typedef struct doe_vk_options {
      * VK_KHR_external_semaphore_fd when caps.external_fd_available; see
      * doe_vk_external.h. Unavailable leaves caps.external_fd false. */
     bool enable_external_fd;
+    /* Explicit DOE_VK_RESOURCE_* overrides applied after
+     * doe_vk_resource_profile_select; zero keeps the adapter default. */
+    uint32_t resource_profile_add;
+    uint32_t resource_profile_clear;
 } doe_vk_options;
 
 /* Per-adapter resource policy bits, chosen once by doe_vk_resource_profile_select
@@ -118,10 +122,18 @@ typedef struct doe_vk_options {
  * device-local heap: the first DEVICE_LOCAL|HOST_VISIBLE|HOST_COHERENT type's
  * heap is at least DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES): buffers the host
  * only writes prefer that device-local type. Owner decision 2026-10-31 and its
- * evidence: the Vulkan backend AGENTS.md. */
+ * evidence: the Vulkan backend AGENTS.md.
+ * DESCRIPTOR_REUSE, SUBALLOCATE_4MB and CHUNKED_WC_WRITE remain opt-in
+ * candidate policy bits until physical qualification promotes them. */
 enum {
     DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS = 1u << 0,
-    DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES = 1u << 1
+    DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES = 1u << 1,
+    DOE_VK_RESOURCE_DESCRIPTOR_REUSE = 1u << 2,
+    DOE_VK_RESOURCE_SUBALLOCATE_4MB = 1u << 3,
+    DOE_VK_RESOURCE_CHUNKED_WC_WRITE = 1u << 4,
+    DOE_VK_RESOURCE_AMD_CANDIDATE = DOE_VK_RESOURCE_DESCRIPTOR_REUSE |
+        DOE_VK_RESOURCE_SUBALLOCATE_4MB | DOE_VK_RESOURCE_CHUNKED_WC_WRITE,
+    DOE_VK_RESOURCE_ALL_BITS = 0x1fu
 };
 #define DOE_VK_DEVICE_LOCAL_HOST_WRITE_HEAP_BYTES (UINT64_C(4) << 30)
 

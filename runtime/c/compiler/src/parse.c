@@ -301,6 +301,7 @@ static bool expression_node(Parser *p, Syntax *s, const Expression *node, bool c
     *id = (uint32_t)s->expression_count;
     Expression stored = *node;
     stored.diagnostic_policy = p->diagnostic_policy;
+    stored.diagnostic_rule = 0u;
     s->expressions[s->expression_count++] = stored;
     if (charged) ++s->expression_budget_count;
     return true;

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define PREPARED_MARKER UINT64_C(0x444f455052455032)
+#define PREPARED_NOTICE_MARKER UINT64_C(0x444f45505245504e)
 static DoeCompilerStatus finish(DoeCompilerStatus status, int saved_errno)
 {
     errno = saved_errno;
@@ -135,6 +136,9 @@ DoeCompilerStatus doe_compiler_prepare(uint32_t version,
     if (status == DOE_COMPILER_OK) {
         prepared->result.publication_bytes = options->kind == DOE_COMPILER_PREPARE_MODULE ? 0u : compiled->required_text_bytes;
         prepared->marker = PREPARED_MARKER;
+    } else if (options->kind == DOE_COMPILER_PREPARE_MODULE &&
+        compiler_source_failure(status) && prepared->result.validation.required_notices) {
+        prepared->marker = PREPARED_NOTICE_MARKER;
     }
     *result = prepared->result;
     return finish(status, saved_errno);
@@ -144,6 +148,15 @@ static CompilerPrepared *ready(void *workspace, size_t size)
     if (!workspace || size < sizeof(CompilerPrepared) || (uintptr_t)workspace % _Alignof(max_align_t)) return NULL;
     CompilerPrepared *prepared = workspace;
     return prepared->marker == PREPARED_MARKER && prepared->total_bytes <= size ? prepared : NULL;
+}
+static CompilerPrepared *ready_module(void *workspace, size_t size, bool *notices_only)
+{
+    if (!workspace || size < sizeof(CompilerPrepared) || (uintptr_t)workspace % _Alignof(max_align_t)) return NULL;
+    CompilerPrepared *prepared = workspace;
+    if ((prepared->marker != PREPARED_MARKER && prepared->marker != PREPARED_NOTICE_MARKER) ||
+        prepared->total_bytes > size) return NULL;
+    *notices_only = prepared->marker == PREPARED_NOTICE_MARKER;
+    return prepared;
 }
 DoeCompilerStatus doe_compiler_publish_module(uint32_t version,
     void *workspace, size_t size, const DoeCompilerDiagnosticOutputsV18 *outputs, size_t outputs_size,
@@ -157,11 +170,12 @@ DoeCompilerStatus doe_compiler_publish_module(uint32_t version,
              outputs->metadata.entry_record_size != sizeof(DoeCompilerModuleEntryV13) ||
              outputs->notice_record_size != sizeof(DoeCompilerNoticeV18))))
         return finish(DOE_COMPILER_ABI_MISMATCH, saved_errno);
-    CompilerPrepared *prepared = ready(workspace, size);
+    bool notices_only = false;
+    CompilerPrepared *prepared = ready_module(workspace, size, &notices_only);
     if (!prepared || prepared->options.kind != DOE_COMPILER_PREPARE_MODULE || !outputs)
         return finish(DOE_COMPILER_INPUT_ERROR, saved_errno);
     const DoeCompilerPreparedResultV20 saved = prepared->result;
-    const DoeCompilerStatus status = compiler_publish_validation(prepared, outputs);
+    const DoeCompilerStatus status = compiler_publish_validation(prepared, outputs, notices_only);
     *result = prepared->result;
     prepared->result = saved;
     return finish(status, saved_errno);

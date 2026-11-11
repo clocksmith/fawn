@@ -315,6 +315,41 @@ uint32_t storage_texture_access_from_string(napi_env env, napi_value val) {
  * entry; it has no members of its own (private mirror, kept by hand). */
 typedef struct { WGPUChainedStruct chain; } WGPUExternalTextureBindingLayout;
 
+void doe_parse_bgl_entry_common(napi_env env, napi_value elem, WGPUBindGroupLayoutEntry* entry) {
+    entry->binding = get_uint32_prop(env, elem, "binding");
+    entry->visibility = (uint64_t)get_int64_prop(env, elem, "visibility");
+
+    if (has_prop(env, elem, "buffer") && prop_type(env, elem, "buffer") == napi_object) {
+        napi_value buf_obj = get_prop(env, elem, "buffer");
+        entry->buffer.type = buffer_binding_type_from_string(env, get_prop(env, buf_obj, "type"));
+        if (has_prop(env, buf_obj, "hasDynamicOffset"))
+            entry->buffer.hasDynamicOffset = get_bool_prop(env, buf_obj, "hasDynamicOffset") ? 1 : 0;
+        if (has_prop(env, buf_obj, "minBindingSize"))
+            entry->buffer.minBindingSize = (uint64_t)get_int64_prop(env, buf_obj, "minBindingSize");
+    }
+    if (has_prop(env, elem, "sampler") && prop_type(env, elem, "sampler") == napi_object) {
+        napi_value sampler_obj = get_prop(env, elem, "sampler");
+        entry->sampler.type = sampler_binding_type_from_string(env, get_prop(env, sampler_obj, "type"));
+    }
+    if (has_prop(env, elem, "texture") && prop_type(env, elem, "texture") == napi_object) {
+        napi_value tex_obj = get_prop(env, elem, "texture");
+        entry->texture.sampleType = texture_sample_type_from_string(env, get_prop(env, tex_obj, "sampleType"));
+        entry->texture.viewDimension = texture_view_dimension_from_string(env, get_prop(env, tex_obj, "viewDimension"));
+        if (has_prop(env, tex_obj, "textureBindingViewDimension")) {
+            uint32_t tbvd = texture_view_dimension_from_string(env, get_prop(env, tex_obj, "textureBindingViewDimension"));
+            if (tbvd != 0) entry->texture.viewDimension = tbvd;
+        }
+        if (has_prop(env, tex_obj, "multisampled"))
+            entry->texture.multisampled = get_bool_prop(env, tex_obj, "multisampled") ? 1 : 0;
+    }
+    if (has_prop(env, elem, "storageTexture") && prop_type(env, elem, "storageTexture") == napi_object) {
+        napi_value st_obj = get_prop(env, elem, "storageTexture");
+        entry->storageTexture.access = storage_texture_access_from_string(env, get_prop(env, st_obj, "access"));
+        entry->storageTexture.format = texture_format_from_string(env, get_prop(env, st_obj, "format"));
+        entry->storageTexture.viewDimension = texture_view_dimension_from_string(env, get_prop(env, st_obj, "viewDimension"));
+    }
+}
+
 napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     CHECK_LIB_LOADED(env);
@@ -341,8 +376,6 @@ napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
     for (uint32_t i = 0; i < entry_count; i++) {
         napi_value elem;
         napi_get_element(env, _args[1], i, &elem);
-
-        entries[i].binding = get_uint32_prop(env, elem, "binding");
         if (has_prop(env, elem, "externalTexture") && prop_type(env, elem, "externalTexture") == napi_object) {
             if (!externals) {
                 externals = (WGPUExternalTextureBindingLayout*)calloc(entry_count, sizeof(WGPUExternalTextureBindingLayout));
@@ -354,46 +387,7 @@ napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
             externals[i].chain.sType = provider_external_texture_binding_layout_stype();
             entries[i].nextInChain = &externals[i].chain;
         }
-        entries[i].visibility = (uint64_t)get_int64_prop(env, elem, "visibility");
-
-        if (has_prop(env, elem, "buffer") && prop_type(env, elem, "buffer") == napi_object) {
-            napi_value buf_obj = get_prop(env, elem, "buffer");
-            entries[i].buffer.type = buffer_binding_type_from_string(
-                env, get_prop(env, buf_obj, "type"));
-            if (has_prop(env, buf_obj, "hasDynamicOffset"))
-                entries[i].buffer.hasDynamicOffset = get_bool_prop(env, buf_obj, "hasDynamicOffset") ? 1 : 0;
-            if (has_prop(env, buf_obj, "minBindingSize"))
-                entries[i].buffer.minBindingSize = (uint64_t)get_int64_prop(env, buf_obj, "minBindingSize");
-        }
-
-        if (has_prop(env, elem, "sampler") && prop_type(env, elem, "sampler") == napi_object) {
-            napi_value sampler_obj = get_prop(env, elem, "sampler");
-            entries[i].sampler.type = sampler_binding_type_from_string(
-                env, get_prop(env, sampler_obj, "type"));
-        }
-
-        if (has_prop(env, elem, "texture") && prop_type(env, elem, "texture") == napi_object) {
-            napi_value tex_obj = get_prop(env, elem, "texture");
-            entries[i].texture.sampleType = texture_sample_type_from_string(
-                env, get_prop(env, tex_obj, "sampleType"));
-            entries[i].texture.viewDimension = texture_view_dimension_from_string(
-                env, get_prop(env, tex_obj, "viewDimension"));
-            if (has_prop(env, tex_obj, "textureBindingViewDimension")) {
-                uint32_t tbvd = texture_view_dimension_from_string(
-                    env, get_prop(env, tex_obj, "textureBindingViewDimension"));
-                if (tbvd != 0)
-                    entries[i].texture.viewDimension = tbvd;
-            }
-            if (has_prop(env, tex_obj, "multisampled"))
-                entries[i].texture.multisampled = get_bool_prop(env, tex_obj, "multisampled") ? 1 : 0;
-        }
-
-        if (has_prop(env, elem, "storageTexture") && prop_type(env, elem, "storageTexture") == napi_object) {
-            napi_value st_obj = get_prop(env, elem, "storageTexture");
-            entries[i].storageTexture.access = storage_texture_access_from_string(env, get_prop(env, st_obj, "access"));
-            entries[i].storageTexture.format = texture_format_from_string(env, get_prop(env, st_obj, "format"));
-            entries[i].storageTexture.viewDimension = texture_view_dimension_from_string(env, get_prop(env, st_obj, "viewDimension"));
-        }
+        doe_parse_bgl_entry_common(env, elem, &entries[i]);
     }
 
     /* Read label (3rd arg) */

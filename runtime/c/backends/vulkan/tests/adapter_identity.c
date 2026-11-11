@@ -131,6 +131,25 @@ int main(void) {
     reject(&options, DOE_VK_UNSUPPORTED, "software adapter not allowed");
     options.adapter_ordinal = 3;
     reject(&options, DOE_VK_UNSUPPORTED, "adapter unavailable");
-    puts("PASS UUID identity across handles/order, ambiguous/missing driver-device identity, explicit CPU selection, hardware-else-software selection and failed enumeration");
+
+    order[0] = 0;
+    order[1] = 1;
+    order[2] = 2;
+    options = (doe_vk_options){.resource_profile_add = DOE_VK_RESOURCE_AMD_CANDIDATE};
+    doe_vk_caps candidate_caps = select(&options, 0, 0);
+    assert((candidate_caps.resource_profile & DOE_VK_RESOURCE_AMD_CANDIDATE) == DOE_VK_RESOURCE_AMD_CANDIDATE);
+    options = (doe_vk_options){.resource_profile_add = DOE_VK_RESOURCE_AMD_CANDIDATE,
+        .resource_profile_clear = DOE_VK_RESOURCE_SUBALLOCATE_4MB | DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS};
+    candidate_caps = select(&options, 0, 0);
+    assert((candidate_caps.resource_profile & DOE_VK_RESOURCE_DESCRIPTOR_BLOCKS) == 0);
+    assert((candidate_caps.resource_profile & DOE_VK_RESOURCE_AMD_CANDIDATE) == DOE_VK_RESOURCE_AMD_CANDIDATE);
+    options = (doe_vk_options){.resource_profile_add = 1u << 5};
+    reject(&options, DOE_VK_INVALID_ARGUMENT, "unknown resource profile bits");
+    doe_vk_error policy_error = {0};
+    assert(doe_vk_validate_queue_policy(&options, &policy_error) == DOE_VK_INVALID_ARGUMENT);
+    options = (doe_vk_options){.resource_profile_clear = 1u << 5};
+    reject(&options, DOE_VK_INVALID_ARGUMENT, "unknown resource profile bits");
+    assert(doe_vk_validate_queue_policy(&options, &policy_error) == DOE_VK_INVALID_ARGUMENT);
+    puts("PASS UUID identity across handles/order, ambiguous/missing driver-device identity, explicit CPU selection, hardware-else-software selection, resource-profile overrides and failed enumeration");
     return 0;
 }

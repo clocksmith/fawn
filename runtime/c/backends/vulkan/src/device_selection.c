@@ -3,6 +3,8 @@
 
 doe_vk_status doe_vk_validate_queue_policy(const doe_vk_options *options, doe_vk_error *error) {
     if (!options) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "queue policy arguments", error);
+    if ((options->resource_profile_add | options->resource_profile_clear) & ~DOE_VK_RESOURCE_ALL_BITS)
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "unknown resource profile bits", error);
     if (options->sync_selection != DOE_VK_SYNC_FENCE_POOL && options->sync_selection != DOE_VK_SYNC_PREFER_TIMELINE)
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "unknown synchronization policy", error);
     switch (options->queue_selection) {
@@ -38,6 +40,10 @@ doe_vk_status doe_vk_select_queue(const VkQueueFamilyProperties *queues, uint32_
 }
 
 static bool valid_selection(const doe_vk_options *options, doe_vk_error *error) {
+    if ((options->resource_profile_add | options->resource_profile_clear) & ~DOE_VK_RESOURCE_ALL_BITS) {
+        (void)doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "unknown resource profile bits", error);
+        return false;
+    }
     switch (options->adapter_selection) {
         case DOE_VK_SELECT_ORDINAL:
         case DOE_VK_SELECT_HARDWARE:
@@ -180,8 +186,10 @@ doe_vk_status doe_vk_choose_device(doe_vk_context *context,
     context->vk.vkGetPhysicalDeviceMemoryProperties(context->physical, &context->memory);
     if (context->memory.memoryTypeCount > 32 || context->memory.memoryHeapCount > 16)
         return doe_vk_fail(DOE_VK_NATIVE_FAILURE, "invalid device memory properties", error);
-    /* The only adapter-dependent resource policy (doe_vk.h). */
-    caps->resource_profile = doe_vk_resource_profile_select(p->vendorID, &context->memory);
+    /* The only adapter-dependent resource policy (doe_vk.h); explicit option
+     * masks adjust that baseline only when requested by the caller. */
+    uint32_t profile = doe_vk_resource_profile_select(p->vendorID, &context->memory);
+    caps->resource_profile = (profile & ~options->resource_profile_clear) | options->resource_profile_add;
     return DOE_VK_OK;
 }
 

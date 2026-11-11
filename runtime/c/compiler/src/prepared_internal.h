@@ -18,9 +18,10 @@ struct CompilerPrepared {
     uint32_t selected, flags;
     size_t closure_offset, closure_bytes, bindings_offset, entries_offset;
 };
+bool compiler_source_failure(DoeCompilerStatus);
 void compiler_prepared_capture(CompilerPrepared *, const Source *, const CompilerMetadata *, uint32_t);
 DoeCompilerStatus compiler_prepare_validation(CompilerPrepared *, void *, size_t, const char *, size_t);
-DoeCompilerStatus compiler_publish_validation(CompilerPrepared *, const DoeCompilerDiagnosticOutputsV18 *);
+DoeCompilerStatus compiler_publish_validation(CompilerPrepared *, const DoeCompilerDiagnosticOutputsV18 *, bool notices_only);
 DoeCompilerStatus compiler_prepare_text(CompilerPrepared *, void *, size_t, const char *, size_t);
 DoeCompilerStatus compiler_publish_text(CompilerPrepared *, const DoeCompilerTranslationOutputsV17 *, void *, size_t);
 DoeCompilerStatus compiler_prepare_translation(CompilerPrepared *, void *, size_t, const char *, size_t);

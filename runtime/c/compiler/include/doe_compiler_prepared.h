@@ -33,6 +33,9 @@ typedef struct {
  * unchanged; no unrelated compiler call may reuse any of it in that interval.
  * The options are captured by value. Wrong ABI/record sizes preserve outputs.
  * Legacy/module modes reject override values; module selection must be NONE.
+ * Module prepare retains nonfatal notices accumulated before a parse/semantic/
+ * unsupported source failure so publish_module can copy those notices without
+ * re-analyzing while preserving the fatal status and leaving metadata untouched.
  * Publication does not parse, validate or specialize source again. It checks all
  * output extents before writing. Text targets need a separate disjoint caller
  * scratch span of publication_bytes; target serialization and FP restoration

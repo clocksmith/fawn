@@ -66,6 +66,8 @@ $(OUT)/descriptor_reuse: tests/descriptor_reuse.c $(OUT)/libdoe_vk.a $(HEADERS) 
 # The same descriptor clients under the AMD resource profile (see doe_vk.h).
 $(OUT)/%_amd: tests/%.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) -DDOE_VK_TEST_PROFILE_AMD $< $(OUT)/libdoe_vk.a -ldl -o $@
+$(OUT)/%_candidate: tests/%.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) -DDOE_VK_TEST_PROFILE_CANDIDATE $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/command_spares: tests/command_spares.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/native_compute: tests/native_compute.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
@@ -110,7 +112,7 @@ $(OUT)/descriptor_contract: tests/descriptor_contract.c $(OUT)/libdoe_vk.a $(HEA
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/texture_contract: tests/texture_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
-check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/depth_copy_contract $(OUT)/block_copy_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/command_spares $(OUT)/descriptor_reuse_amd $(OUT)/indirect_lifetime_amd $(OUT)/timestamp_lifetime_amd
+check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/depth_copy_contract $(OUT)/block_copy_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/command_spares $(OUT)/descriptor_reuse_amd $(OUT)/descriptor_reuse_candidate $(OUT)/indirect_lifetime_amd $(OUT)/timestamp_lifetime_amd
 	$(OUT)/color_targets_contract
 	$(OUT)/surface_features
 	$(OUT)/surface_contract
@@ -137,6 +139,7 @@ check: check-adapter-identity abi $(OUT)/color_targets_contract $(OUT)/surface_f
 	$(OUT)/descriptor_reuse
 	$(OUT)/command_spares
 	$(OUT)/descriptor_reuse_amd
+	$(OUT)/descriptor_reuse_candidate
 	$(OUT)/indirect_lifetime_amd
 	$(OUT)/timestamp_lifetime_amd
 	printf '#include "include/doe_vk.h"\n#include "include/doe_vk_texture.h"\n#include "include/doe_vk_bindings.h"\n#include "include/doe_vk_render.h"\n#include "include/doe_vk_queries.h"\n#include "include/doe_vk_timestamp.h"\n#include "include/doe_vk_indirect.h"\n#include "include/doe_vk_surface.h"\n' | $(CXX) -std=c++17 -Wall -Wextra -Werror -Wpedantic -I. -x c++ -c -o $(OUT)/header-cxx.o -
@@ -199,7 +202,7 @@ sanitize: | $(OUT)
 	ASAN_OPTIONS=detect_leaks=0 $(OUT)/descriptor_contract-sanitize
 clean:
 	rm -f $(OUT)/adapter_identity $(OUT)/adapter_identity-sanitize
-	rm -f $(OUT)/indexed_contract $(OUT)/indexed_contract-sanitize $(OUT)/depth_copy_contract $(OUT)/depth_copy_contract-sanitize $(OUT)/block_copy_contract $(OUT)/surface_contract $(OUT)/surface_contract-sanitize $(OUT)/surface_features $(OUT)/surface_features-sanitize $(OUT)/surface_probe $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/indirect_contract-sanitize $(OUT)/indirect_lifetime-sanitize $(OUT)/depth_pipeline_contract $(OUT)/depth_pipeline_contract-sanitize $(OUT)/image_format_contract $(OUT)/image_format_contract-sanitize $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/descriptor_reuse_amd $(OUT)/indirect_lifetime_amd $(OUT)/timestamp_lifetime_amd $(OUT)/command_spares $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize $(OUT)/native_matrix $(OUT)/feature_contract $(OUT)/native_features $(OUT)/depth_contract $(OUT)/depth_contract-sanitize
+	rm -f $(OUT)/indexed_contract $(OUT)/indexed_contract-sanitize $(OUT)/depth_copy_contract $(OUT)/depth_copy_contract-sanitize $(OUT)/block_copy_contract $(OUT)/surface_contract $(OUT)/surface_contract-sanitize $(OUT)/surface_features $(OUT)/surface_features-sanitize $(OUT)/surface_probe $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/indirect_contract-sanitize $(OUT)/indirect_lifetime-sanitize $(OUT)/depth_pipeline_contract $(OUT)/depth_pipeline_contract-sanitize $(OUT)/image_format_contract $(OUT)/image_format_contract-sanitize $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/pipeline_sharing $(OUT)/descriptor_reuse $(OUT)/descriptor_reuse_amd $(OUT)/descriptor_reuse_candidate $(OUT)/indirect_lifetime_amd $(OUT)/timestamp_lifetime_amd $(OUT)/command_spares $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize $(OUT)/native_matrix $(OUT)/feature_contract $(OUT)/native_features $(OUT)/depth_contract $(OUT)/depth_contract-sanitize
 
 # Compiler/shader dependencies belong only to this optional integration test.
 SHADER_ROOT ?= $(REPO)/runtime/c/shader

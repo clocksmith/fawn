@@ -7,6 +7,7 @@ enum { MEMORY_BLOCK_BYTES=4*1024*1024, MEMORY_BLOCK_LIMIT=8 };
 struct doe_vk_memory_block {
     VkDeviceMemory memory;
     void *mapped;
+    uint64_t capacity;
     uint32_t type;
     doe_vk_memory_slice *slices;
     struct doe_vk_memory_block *next;
@@ -17,7 +18,7 @@ static bool place(struct doe_vk_memory_block *block, const VkMemoryRequirements 
     for (;;) {
         if (offset>UINT64_MAX-(r->alignment-1u)) return false;
         offset=(offset+r->alignment-1u)&~(r->alignment-1u);
-        const uint64_t end=*link ? (*link)->offset : MEMORY_BLOCK_BYTES;
+        const uint64_t end=*link ? (*link)->offset : block->capacity;
         if (offset<=end && r->size<=end-offset) {
             *slice=(doe_vk_memory_slice){block,*link,offset,r->size};
             *link=slice;
@@ -28,17 +29,17 @@ static bool place(struct doe_vk_memory_block *block, const VkMemoryRequirements 
         link=&(*link)->next;
     }
 }
-static doe_vk_status new_block(doe_vk_context *context,uint32_t index,
+static doe_vk_status new_block(doe_vk_context *context,uint32_t index,uint64_t bytes,
     struct doe_vk_memory_block **out,doe_vk_error *error) {
     struct doe_vk_memory_block *block=calloc(1,sizeof(*block));
     if (!block) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY,"memory block owner",error);
     const VkMemoryAllocateInfo allocate={.sType=VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .allocationSize=MEMORY_BLOCK_BYTES,.memoryTypeIndex=index};
+        .allocationSize=bytes,.memoryTypeIndex=index};
     doe_vk_status status=doe_vk_result(context,context->vk.vkAllocateMemory(context->device,&allocate,NULL,&block->memory),
         "vkAllocateMemory buffer block",error);
     const uint32_t visible=VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     if (status==DOE_VK_OK && (context->memory.memoryTypes[index].propertyFlags & visible)==visible) {
-        status=doe_vk_result(context,context->vk.vkMapMemory(context->device,block->memory,0,MEMORY_BLOCK_BYTES,0,&block->mapped),
+        status=doe_vk_result(context,context->vk.vkMapMemory(context->device,block->memory,0,bytes,0,&block->mapped),
             "vkMapMemory buffer block",error);
         if (status==DOE_VK_OK && !block->mapped) status=doe_vk_fail(DOE_VK_NATIVE_FAILURE,"null mapped memory block",error);
     }
@@ -47,7 +48,7 @@ static doe_vk_status new_block(doe_vk_context *context,uint32_t index,
         if (block->memory) context->vk.vkFreeMemory(context->device,block->memory,NULL);
         free(block); return status;
     }
-    block->type=index; block->next=context->memory_blocks;
+    block->capacity=bytes; block->type=index; block->next=context->memory_blocks;
     context->memory_blocks=block; ++context->memory_block_count; *out=block;
     return DOE_VK_OK;
 }
@@ -76,8 +77,13 @@ doe_vk_status doe_vk_buffer_allocate(doe_vk_buffer *buffer,const VkMemoryRequire
     const uint64_t maximum=context->caps.max_memory_allocation_size;
     const uint32_t heap=context->memory.memoryTypes[index].heapIndex;
     const uint64_t heap_bytes=context->memory.memoryHeaps[heap].size;
-    if (!queried || dedicated || r->size>MEMORY_BLOCK_BYTES/2u || r->alignment>MEMORY_BLOCK_BYTES ||
-        (maximum && maximum<MEMORY_BLOCK_BYTES) || (heap_bytes && heap_bytes<MEMORY_BLOCK_BYTES))
+    const bool large_uncached=(context->caps.resource_profile & DOE_VK_RESOURCE_SUBALLOCATE_4MB)!=0 &&
+        !(context->memory.memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    const uint64_t slice_limit=large_uncached ? (uint64_t)MEMORY_BLOCK_BYTES : (uint64_t)MEMORY_BLOCK_BYTES/2u;
+    const uint64_t block_bytes=r->size>(uint64_t)MEMORY_BLOCK_BYTES/2u ?
+        3u*(uint64_t)MEMORY_BLOCK_BYTES : (uint64_t)MEMORY_BLOCK_BYTES;
+    if (!queried || dedicated || r->size>slice_limit || r->alignment>block_bytes ||
+        (maximum && maximum<block_bytes) || (heap_bytes && heap_bytes<block_bytes))
         return exclusive(buffer,r,index,host,dedicated,error);
     if (!r->alignment || (r->alignment & (r->alignment-1u)))
         return doe_vk_fail(DOE_VK_NATIVE_FAILURE,"buffer memory alignment",error);
@@ -86,7 +92,7 @@ doe_vk_status doe_vk_buffer_allocate(doe_vk_buffer *buffer,const VkMemoryRequire
     struct doe_vk_memory_block *block=context->memory_blocks;
     while (block && (block->type!=index || !place(block,&aligned,&buffer->slice))) block=block->next;
     if (!block && context->memory_block_count<MEMORY_BLOCK_LIMIT) {
-        doe_vk_status status=new_block(context,index,&block,error);
+        doe_vk_status status=new_block(context,index,block_bytes,&block,error);
         if (status==DOE_VK_OUT_OF_MEMORY) return exclusive(buffer,r,index,host,false,error);
         if (status!=DOE_VK_OK) return status;
         if (!place(block,&aligned,&buffer->slice)) abort();

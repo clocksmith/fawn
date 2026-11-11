@@ -66,6 +66,37 @@ static void target_case(doe_shader_target target)
         assert(doe_shader_create_module(&policy,0,source,strlen(source),&module,&error)==DOE_SHADER_OUT_OF_MEMORY);
         assert(module==(doe_shader *)(uintptr_t)1 && !state.live);
     }
+
+    char fatal[]="diagnostic(warning,vendor.pre_fatal);\n"
+        "@diagnostic(info,derivative_uniformity) @fragment fn ok(@location(0)x:f32)->@location(0) f32{"
+        "if(x>0.0){return dpdx(x);}return 0.0;}\n"
+        "@compute @workgroup_size(4) fn broken(@builtin(local_invocation_index) i:u32){if(i>0u){workgroupBarrier();}}";
+    state=(allocations){0};
+    module=(doe_shader *)(uintptr_t)1;
+    doe_shader_diagnostics retained={0};
+    assert(doe_shader_create_module_diagnostics(&policy,0,fatal,strlen(fatal),&module,&error,&retained)==DOE_SHADER_COMPILE_FAILED);
+    const size_t fatal_allocs=state.calls;
+    assert(module==(doe_shader *)(uintptr_t)1 && error.compiler_status==DOE_COMPILER_SEMANTIC_ERROR && error.diagnostic.line==3u);
+    assert(state.live==1 && retained.count==2 && retained.notices);
+    const size_t dpdx_off=(size_t)(strstr(fatal,"dpdx")-fatal);
+    memset(fatal,'!',strlen(fatal));
+    assert(retained.notices[0].rule==DOE_COMPILER_RULE_UNRECOGNIZED && retained.notices[0].severity==DOE_COMPILER_DIAGNOSTIC_WARNING);
+    assert(retained.notices[1].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY && retained.notices[1].severity==DOE_COMPILER_DIAGNOSTIC_INFO);
+    assert(retained.notices[1].offset==dpdx_off && retained.notices[1].message[0]);
+    doe_shader_diagnostics_release(&retained);
+    doe_shader_diagnostics_release(&retained);
+    assert(!retained.notices && !retained.count && !state.live);
+    memcpy(fatal,"diagnostic(warning,vendor.pre_fatal);\n"
+        "@diagnostic(info,derivative_uniformity) @fragment fn ok(@location(0)x:f32)->@location(0) f32{"
+        "if(x>0.0){return dpdx(x);}return 0.0;}\n"
+        "@compute @workgroup_size(4) fn broken(@builtin(local_invocation_index) i:u32){if(i>0u){workgroupBarrier();}}",
+        strlen(fatal));
+    for(size_t fail=1;fail<=fatal_allocs;++fail){
+        state=(allocations){.fail=fail};
+        module=(doe_shader *)(uintptr_t)1;
+        assert(doe_shader_create_module_diagnostics(&policy,0,fatal,strlen(fatal),&module,&error,&retained)==DOE_SHADER_OUT_OF_MEMORY);
+        assert(module==(doe_shader *)(uintptr_t)1 && !retained.notices && !retained.count && !state.live);
+    }
 }
 int main(void)
 {

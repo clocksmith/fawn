@@ -67,12 +67,11 @@ static void deliver_compilation(void *context)
     native_shader *shader = doe_resource_shader_native(value.shader);
     WGPUCompilationMessage message = {0};
     WGPUCompilationInfo info = {0};
-    if (shader && shader->module) {
+    /* A module of a lost device has no compilation and reports no messages. */
+    if (shader && (shader->module || shader->messages)) {
         info.messageCount = shader->message_count;
         info.messages = shader->messages;
-    }
-    /* A module of a lost device has no compilation and reports no messages. */
-    if (shader && !shader->module && !shader->imported.data) {
+    } else if (shader && !shader->imported.data) {
         const DoeCompilerDiagnostic *diagnostic = &shader->error.diagnostic;
         message = (WGPUCompilationMessage){.message=native_string(diagnostic->message),
             .type=WGPUCompilationMessageType_Error, .lineNum=diagnostic->line,

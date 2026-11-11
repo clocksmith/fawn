@@ -55,6 +55,25 @@ static void scoped_oom(WGPUPopErrorScopeStatus status, WGPUErrorType type, WGPUS
     assert(status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_OutOfMemory);
     ++*(unsigned *)userdata;
 }
+static void scoped_validation(WGPUPopErrorScopeStatus status, WGPUErrorType type, WGPUStringView message,
+    void *userdata, void *unused)
+{
+    (void)message; (void)unused;
+    assert(status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Validation);
+    ++*(unsigned *)userdata;
+}
+static void fatal_compilation(WGPUCompilationInfoRequestStatus status, const WGPUCompilationInfo *info,
+    void *userdata, void *unused)
+{
+    (void)unused;
+    assert(status == WGPUCompilationInfoRequestStatus_Success && info && info->messageCount == 3);
+    assert(info->messages[0].type == WGPUCompilationMessageType_Warning && info->messages[0].lineNum == 1);
+    assert(info->messages[1].type == WGPUCompilationMessageType_Info && info->messages[1].lineNum == 2);
+    assert(info->messages[2].type == WGPUCompilationMessageType_Error && info->messages[2].lineNum == 3);
+    for (size_t i = 0; i < 3; i++)
+        assert(info->messages[i].message.data && info->messages[i].message.length);
+    ++*(unsigned *)userdata;
+}
 int main(void)
 {
     state s = {0};
@@ -80,6 +99,27 @@ int main(void)
     WGPUPopErrorScopeCallbackInfo scope = {.mode=WGPUCallbackMode_AllowSpontaneous,
         .callback=scoped_oom, .userdata1=&errors};
     assert(wgpuDevicePopErrorScope(s.device, scope).id && errors == 1);
+    char fatal_src[] =
+        "diagnostic(warning, vendor.pre_fatal);\n"
+        "@diagnostic(info, derivative_uniformity) @fragment fn ok(@location(0) v: f32) -> @location(0) f32 { if (v > 0.0) { return dpdx(v); } return 0.0; }\n"
+        "@compute @workgroup_size(4) fn bad(@builtin(local_invocation_index) i: u32) { if (i > 0u) { workgroupBarrier(); } }";
+    WGPUShaderSourceWGSL fatal_wgsl = {.chain={.sType=WGPUSType_ShaderSourceWGSL},
+        .code={fatal_src, sizeof(fatal_src) - 1u}};
+    WGPUShaderModuleDescriptor fatal_desc = {.nextInChain=&fatal_wgsl.chain};
+    unsigned validations = 0, fatal_callbacks = 0;
+    wgpuDevicePushErrorScope(s.device, WGPUErrorFilter_Validation);
+    WGPUShaderModule failed = wgpuDeviceCreateShaderModule(s.device, &fatal_desc);
+    memset(fatal_src, 'x', sizeof(fatal_src) - 1u);
+    assert(failed);
+    WGPUPopErrorScopeCallbackInfo val_scope = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=scoped_validation, .userdata1=&validations};
+    assert(wgpuDevicePopErrorScope(s.device, val_scope).id && validations == 1);
+    WGPUCompilationInfoCallbackInfo fatal_cb = {.mode=WGPUCallbackMode_AllowProcessEvents,
+        .callback=fatal_compilation, .userdata1=&fatal_callbacks};
+    assert(wgpuShaderModuleGetCompilationInfo(failed, fatal_cb).id && !fatal_callbacks);
+    wgpuShaderModuleRelease(failed);
+    wgpuInstanceProcessEvents(s.instance);
+    assert(fatal_callbacks == 1);
     consumer_finish(&s);
     puts("compilation diagnostics: warning/info/off, deferred early release and projection OOM passed");
     return 0;

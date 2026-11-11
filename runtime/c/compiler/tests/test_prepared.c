@@ -118,6 +118,33 @@ static void module_case(void)
         &prepared,sizeof(prepared)) == DOE_COMPILER_OK);
     assert(!memcmp(&data,&saved,sizeof(data)));
     analyses(1u);
+
+    static const char fatal_src[] =
+        "diagnostic(warning,unknown_rule);\n"
+        "@diagnostic(info,derivative_uniformity) @fragment fn ok(@location(0) x:f32)->@location(0) f32{"
+        "if(x>0.0){return dpdx(x);}return 0.0;}\n"
+        "@compute @workgroup_size(4) fn broken(@builtin(local_invocation_index) i:u32){if(i>0u){workgroupBarrier();}}";
+    reset_analysis();
+    assert(doe_compiler_prepare(20u,&policy,sizeof(policy),workspace,requirements.size_bytes,
+        fatal_src,sizeof(fatal_src)-1u,&prepared,sizeof(prepared)) == DOE_COMPILER_SEMANTIC_ERROR);
+    analyses(1u);
+    assert(prepared.validation.required_notices == 2u && !prepared.validation.published_notices);
+    memset(&data,0xa5,sizeof(data)); saved = data;
+    out = (DoeCompilerDiagnosticOutputsV18){.metadata={.override_record_size=sizeof(DoeCompilerOverrideV13),
+        .entry_record_size=sizeof(DoeCompilerModuleEntryV13)},
+        .notices=data.notices,.notice_capacity=1u,.notice_record_size=sizeof(data.notices[0])};
+    assert(doe_compiler_publish_module(20u,workspace,requirements.size_bytes,&out,sizeof(out),
+        &prepared,sizeof(prepared)) == DOE_COMPILER_OUTPUT_TOO_SMALL);
+    assert(!memcmp(&data,&saved,sizeof(data)));
+    out.notice_capacity = 8u;
+    assert(doe_compiler_publish_module(20u,workspace,requirements.size_bytes,&out,sizeof(out),
+        &prepared,sizeof(prepared)) == DOE_COMPILER_SEMANTIC_ERROR);
+    analyses(1u);
+    assert(prepared.validation.published_notices == 2u && prepared.validation.validation.diagnostic.line == 3u);
+    assert(data.notices[0].rule == DOE_COMPILER_RULE_UNRECOGNIZED);
+    assert(data.notices[1].rule == DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY &&
+        data.notices[1].severity == DOE_COMPILER_DIAGNOSTIC_INFO);
+    assert(!memcmp(data.entries,saved.entries,sizeof(data.entries)));
     free(workspace);
 }
 static DoeCompilerStatus reference(const DoeCompilerPrepareOptionsV20 *policy,

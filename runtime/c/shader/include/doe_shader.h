@@ -128,9 +128,21 @@ typedef struct doe_shader_module_view {
     const char *names;
     size_t name_bytes;
 } doe_shader_module_view;
+typedef struct doe_shader_diagnostics {
+    DoeCompilerNoticeV18 *notices;
+    size_t count;
+    doe_shader_allocator allocator;
+} doe_shader_diagnostics;
 doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     size_t override_capacity, const char *source, size_t source_size,
     doe_shader **out, doe_shader_error *error);
+/* Retains nonfatal notices accumulated before a fatal WGSL source failure in
+ * *failure_notices (released via doe_shader_diagnostics_release) while leaving
+ * *out untouched on failure. On DOE_SHADER_OK, notices live on *out as usual. */
+doe_shader_status doe_shader_create_module_diagnostics(const doe_shader_options *options,
+    size_t override_capacity, const char *source, size_t source_size,
+    doe_shader **out, doe_shader_error *error, doe_shader_diagnostics *failure_notices);
+void doe_shader_diagnostics_release(doe_shader_diagnostics *diagnostics);
 doe_shader_status doe_shader_borrow_module(const doe_shader *module, doe_shader_module_view *out);
 /* Immutable module identity, not semantic equivalence. Capacity/allocator policy
  * is not a language key; callers must use one admission policy independently. */

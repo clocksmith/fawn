@@ -302,6 +302,96 @@ static void scoped_attributes(void)
     for(size_t i=0;i<sizeof(bad_scoped)/sizeof(bad_scoped[0]);++i)
         assert(validate(bad_scoped[i],NULL,&result)!=DOE_COMPILER_OK);
 }
+static void notices_before_fatal_errors(void)
+{
+    DoeCompilerOverrideV13 overrides[4];
+    DoeCompilerModuleEntryV13 entries[4];
+    char names[256];
+    DoeCompilerNoticeV18 notices[8];
+    DoeCompilerDiagnosticOutputsV18 outputs={.metadata={.overrides=overrides,.override_capacity=4,
+        .override_record_size=sizeof(*overrides),.entries=entries,.entry_capacity=4,
+        .entry_record_size=sizeof(*entries),.names=names,.name_capacity=sizeof(names)},
+        .notices=notices,.notice_capacity=8,.notice_record_size=sizeof(*notices)};
+    DoeCompilerDiagnosticResultV18 result;
+
+    /* 1. Global unknown-rule warning retained before fatal parse error; metadata stays untouched. */
+    const char *parse_fail="diagnostic(warning,vendor.pre_parse);\n@compute @workgroup_size(1) fn main( {";
+    memset(overrides,0xa5,sizeof(overrides));
+    memset(entries,0xa5,sizeof(entries));
+    memset(names,0xa5,sizeof(names));
+    memset(notices,0xa5,sizeof(notices));
+    assert(validate(parse_fail,NULL,&result)==DOE_COMPILER_PARSE_ERROR);
+    assert(result.required_notices==1u && result.published_notices==0u);
+    assert(validate(parse_fail,&outputs,&result)==DOE_COMPILER_PARSE_ERROR);
+    assert(result.validation.diagnostic.status==DOE_COMPILER_PARSE_ERROR && result.validation.diagnostic.line==2u);
+    assert(result.required_notices==1u && result.published_notices==1u);
+    assert(!result.validation.required_entries && !result.validation.published_entries && !result.validation.required_is_exact);
+    assert(notices[0].severity==DOE_COMPILER_DIAGNOSTIC_WARNING && notices[0].rule==DOE_COMPILER_RULE_UNRECOGNIZED);
+    assert(notices[0].offset==(size_t)(strstr(parse_fail,"vendor.pre_parse")-parse_fail));
+    for(size_t i=0;i<sizeof(entries);++i) assert(((const unsigned char *)entries)[i]==0xa5);
+    for(size_t i=0;i<sizeof(names);++i) assert((unsigned char)names[i]==0xa5);
+    for(size_t i=0;i<sizeof(overrides);++i) assert(((const unsigned char *)overrides)[i]==0xa5);
+
+    /* 2. Scoped unknown-rule warning retained before fatal semantic type error. */
+    const char *sema_fail="@diagnostic(info,vendor.pre_sema) @compute @workgroup_size(1) fn ok(){}\n"
+        "@compute @workgroup_size(1) fn broken(){ let bad: u32 = true; }";
+    assert(validate(sema_fail,&outputs,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+    assert(result.validation.diagnostic.line==2u && result.published_notices==1u);
+    assert(notices[0].rule==DOE_COMPILER_RULE_UNRECOGNIZED);
+
+    /* 3. Nonfatal uniformity warning + helper declared after main retained before mandatory barrier error. */
+    const char *unif_fail=
+        "diagnostic(off,vendor.first_unknown);\n"
+        "@fragment fn main(@location(0) x:f32)->@location(0) f32{\n"
+        "  var v = 0.0;\n"
+        "  if (x > 0.0) { v = late_helper(x); }\n"
+        "  return v;\n"
+        "}\n"
+        "@compute @workgroup_size(4) fn bad_barrier(@builtin(local_invocation_index) i:u32){\n"
+        "  if (i > 0u) { workgroupBarrier(); }\n"
+        "}\n"
+        "@diagnostic(info,derivative_uniformity) fn late_helper(v:f32)->f32 { return dpdx(v); }";
+    memset(notices,0xa5,sizeof(notices));
+    outputs.notice_capacity=1u;
+    assert(validate(unif_fail,&outputs,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+    assert(result.required_notices==2u && result.published_notices==0u);
+    for(size_t i=0;i<sizeof(notices);++i) assert(((const unsigned char *)notices)[i]==0xa5);
+    outputs.notice_capacity=8u;
+    assert(validate(unif_fail,&outputs,&result)==DOE_COMPILER_SEMANTIC_ERROR);
+    assert(result.validation.diagnostic.line==8u && result.published_notices==2u);
+    assert(notices[0].rule==DOE_COMPILER_RULE_UNRECOGNIZED && notices[0].severity==DOE_COMPILER_DIAGNOSTIC_WARNING);
+    assert(notices[1].rule==DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY && notices[1].severity==DOE_COMPILER_DIAGNOSTIC_INFO);
+    assert(notices[1].offset==(size_t)(strstr(unif_fail,"dpdx")-unif_fail));
+
+    /* 4. Reused workspace never leaks stale notices into a subsequent early failure. */
+    DoeCompilerSpecializationCapacities caps = {.target=hlsl_capacities(),.overrides=32};
+    DoeCompilerWorkspaceRequirements requirements;
+    assert(doe_compiler_specialization_requirements(13,0,&caps,sizeof(caps),&requirements,sizeof(requirements)) == DOE_COMPILER_OK);
+    void *workspace=malloc(requirements.size_bytes);
+    assert(workspace);
+    assert(doe_compiler_validate_module_diagnostics(18,&caps,sizeof(caps),workspace,
+        requirements.size_bytes,unif_fail,strlen(unif_fail),DOE_COMPILER_CORE_BINDING_NUMBERS,
+        &outputs,sizeof(outputs),&result,sizeof(result))==DOE_COMPILER_SEMANTIC_ERROR);
+    assert(result.published_notices==2u);
+    const char bad_nul[]={'f','n','\0','x'};
+    assert(doe_compiler_validate_module_diagnostics(18,&caps,sizeof(caps),workspace,
+        requirements.size_bytes,bad_nul,sizeof(bad_nul),DOE_COMPILER_CORE_BINDING_NUMBERS,
+        &outputs,sizeof(outputs),&result,sizeof(result))==DOE_COMPILER_INPUT_ERROR);
+    assert(result.required_notices==0u && result.published_notices==0u);
+    const char lex_fail[]="$$$";
+    assert(doe_compiler_validate_module_diagnostics(18,&caps,sizeof(caps),workspace,
+        requirements.size_bytes,lex_fail,sizeof(lex_fail)-1u,DOE_COMPILER_CORE_BINDING_NUMBERS,
+        &outputs,sizeof(outputs),&result,sizeof(result))==DOE_COMPILER_UNSUPPORTED);
+    assert(result.required_notices==0u && result.published_notices==0u);
+    const char unsupported_after_notice[]="diagnostic(warning,vendor.pre_unsupported);\n"
+        "@vertex fn main(@builtin(not_a_builtin) v:u32)->@builtin(position) vec4f{return vec4f(0.0);}";
+    assert(doe_compiler_validate_module_diagnostics(18,&caps,sizeof(caps),workspace,
+        requirements.size_bytes,unsupported_after_notice,sizeof(unsupported_after_notice)-1u,
+        DOE_COMPILER_CORE_BINDING_NUMBERS,&outputs,sizeof(outputs),&result,sizeof(result))==DOE_COMPILER_UNSUPPORTED);
+    assert(result.required_notices==1u && result.published_notices==1u &&
+        notices[0].rule==DOE_COMPILER_RULE_UNRECOGNIZED);
+    free(workspace);
+}
 int main(void)
 {
     previous_versions();
@@ -309,6 +399,7 @@ int main(void)
     exact_locations_and_atomicity();
     grammar();
     scoped_attributes();
+    notices_before_fatal_errors();
     policy("derivative_uniformity",derivative);
     policy("subgroup_uniformity",subgroup);
     DoeCompilerDiagnosticResultV18 result;

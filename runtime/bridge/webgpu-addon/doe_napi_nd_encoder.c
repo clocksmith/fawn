@@ -1,18 +1,51 @@
 #include "doe_napi_internal.h"
 
+static napi_value nd_enc_undefined(napi_env env) {
+    napi_value v = NULL;
+    napi_get_undefined(env, &v);
+    return v;
+}
 
+static void* nd_unwrap_handle(napi_env env, napi_value obj) {
+    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, obj);
+    return cache ? cache->native : native_direct_unwrap_external_prop(env, obj, DOE_DIRECT_NATIVE);
+}
 
+static WGPUBuffer nd_unwrap_buffer(napi_env env, napi_value obj) {
+    NativeDirectBufferCache* cache = native_direct_get_buffer_cache(env, obj);
+    return cache ? cache->buffer : native_direct_unwrap_external_prop(env, obj, DOE_DIRECT_NATIVE);
+}
 
-
-
+static void parse_nd_texel_copy_side(
+    napi_env env,
+    napi_value side,
+    WGPUTexelCopyTextureInfo* out
+) {
+    memset(out, 0, sizeof(*out));
+    out->texture = native_direct_unwrap_external_prop(env, get_prop(env, side, "texture"), DOE_DIRECT_NATIVE);
+    napi_value tmp;
+    if (napi_get_named_property(env, side, "mipLevel", &tmp) == napi_ok) {
+        napi_get_value_uint32(env, tmp, &out->mipLevel);
+    }
+    napi_value origin_val;
+    napi_valuetype origin_type = napi_undefined;
+    if (napi_get_named_property(env, side, "origin", &origin_val) == napi_ok) {
+        napi_typeof(env, origin_val, &origin_type);
+    }
+    if (origin_type == napi_object) {
+        if (napi_get_named_property(env, origin_val, "x", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &out->origin.x);
+        if (napi_get_named_property(env, origin_val, "y", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &out->origin.y);
+        if (napi_get_named_property(env, origin_val, "z", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &out->origin.z);
+        if (napi_get_named_property(env, origin_val, "aspect", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &out->aspect);
+    }
+}
 
 napi_value native_direct_command_encoder_begin_compute_pass(napi_env env, napi_callback_info info) {
     size_t argc = 2;
     napi_value argv[2];
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    NativeDirectHandleCache* encoder_cache = native_direct_get_handle_cache(env, this_arg);
-    WGPUCommandEncoder encoder = encoder_cache ? (WGPUCommandEncoder)encoder_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    WGPUCommandEncoder encoder = nd_unwrap_handle(env, this_arg);
     if (!encoder) NAPI_THROW(env, "Invalid encoder");
     char* label = NULL;
     size_t label_len = 0;
@@ -51,12 +84,9 @@ napi_value native_direct_command_encoder_copy_buffer_to_buffer(napi_env env, nap
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
     if (argc < 5) NAPI_THROW(env, "copyBufferToBuffer requires source, sourceOffset, target, targetOffset, and size");
-    NativeDirectHandleCache* encoder_cache = native_direct_get_handle_cache(env, this_arg);
-    NativeDirectBufferCache* src_cache = native_direct_get_buffer_cache(env, argv[0]);
-    NativeDirectBufferCache* dst_cache = native_direct_get_buffer_cache(env, argv[2]);
-    WGPUCommandEncoder encoder = encoder_cache ? (WGPUCommandEncoder)encoder_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    WGPUBuffer src = src_cache ? src_cache->buffer : native_direct_unwrap_external_prop(env, argv[0], DOE_DIRECT_NATIVE);
-    WGPUBuffer dst = dst_cache ? dst_cache->buffer : native_direct_unwrap_external_prop(env, argv[2], DOE_DIRECT_NATIVE);
+    WGPUCommandEncoder encoder = nd_unwrap_handle(env, this_arg);
+    WGPUBuffer src = nd_unwrap_buffer(env, argv[0]);
+    WGPUBuffer dst = nd_unwrap_buffer(env, argv[2]);
     int64_t src_offset = 0;
     int64_t dst_offset = 0;
     int64_t size = 0;
@@ -95,10 +125,8 @@ napi_value native_direct_command_encoder_clear_buffer(napi_env env, napi_callbac
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
     if (argc < 1) NAPI_THROW(env, "clearBuffer requires a buffer");
-    NativeDirectHandleCache* enc_cache = native_direct_get_handle_cache(env, this_arg);
-    NativeDirectBufferCache* buf_cache = native_direct_get_buffer_cache(env, argv[0]);
-    void* encoder = enc_cache ? enc_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    void* buffer = buf_cache ? buf_cache->buffer : native_direct_unwrap_external_prop(env, argv[0], DOE_DIRECT_NATIVE);
+    void* encoder = nd_unwrap_handle(env, this_arg);
+    void* buffer = nd_unwrap_buffer(env, argv[0]);
     if (!encoder || !buffer) NAPI_THROW(env, "clearBuffer: invalid encoder or buffer");
     uint64_t offset = 0;
     uint64_t size = UINT64_MAX; /* WGPU_WHOLE_SIZE */
@@ -115,9 +143,7 @@ napi_value native_direct_command_encoder_clear_buffer(napi_env env, napi_callbac
     if (pfn_doeNativeCommandEncoderClearBuffer) pfn_doeNativeCommandEncoderClearBuffer(encoder, buffer, offset, size);
     else if (pfn_wgpuCommandEncoderClearBuffer) pfn_wgpuCommandEncoderClearBuffer(encoder, buffer, offset, size);
     else NAPI_THROW(env, "clearBuffer: no implementation available in loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 /* GPUCommandEncoder.copyTextureToTexture(source, destination, copySize) */
@@ -127,78 +153,35 @@ napi_value native_direct_command_encoder_copy_texture_to_texture(napi_env env, n
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
     if (argc < 3) NAPI_THROW(env, "copyTextureToTexture requires source, destination, and copySize");
-    NativeDirectHandleCache* enc_cache = native_direct_get_handle_cache(env, this_arg);
-    void* encoder = enc_cache ? enc_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    void* encoder = nd_unwrap_handle(env, this_arg);
     if (!encoder) NAPI_THROW(env, "copyTextureToTexture: invalid encoder");
-    napi_value src_tex_obj = get_prop(env, argv[0], "texture");
-    napi_value dst_tex_obj = get_prop(env, argv[1], "texture");
-    void* src_texture = native_direct_unwrap_external_prop(env, src_tex_obj, DOE_DIRECT_NATIVE);
-    void* dst_texture = native_direct_unwrap_external_prop(env, dst_tex_obj, DOE_DIRECT_NATIVE);
-    if (!src_texture || !dst_texture) NAPI_THROW(env, "copyTextureToTexture: invalid source or destination texture");
-    napi_value src_origin_val, dst_origin_val;
-    napi_valuetype src_origin_type, dst_origin_type, size_type;
-    uint32_t src_mip = 0, dst_mip = 0;
-    uint32_t src_x = 0, src_y = 0, src_z = 0;
-    uint32_t dst_x = 0, dst_y = 0, dst_z = 0;
-    uint32_t src_aspect = 0, dst_aspect = 0;
-    uint32_t width = 1, height = 1, depth_or_layers = 1;
-    /* mipLevel */
-    napi_value tmp;
-    if (napi_get_named_property(env, argv[0], "mipLevel", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &src_mip);
-    if (napi_get_named_property(env, argv[1], "mipLevel", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &dst_mip);
-    /* origin */
-    napi_get_named_property(env, argv[0], "origin", &src_origin_val);
-    napi_get_named_property(env, argv[1], "origin", &dst_origin_val);
-    napi_typeof(env, src_origin_val, &src_origin_type);
-    napi_typeof(env, dst_origin_val, &dst_origin_type);
-    if (src_origin_type == napi_object) {
-        napi_value x, y, z;
-        napi_get_named_property(env, src_origin_val, "x", &x); napi_get_value_uint32(env, x, &src_x);
-        napi_get_named_property(env, src_origin_val, "y", &y); napi_get_value_uint32(env, y, &src_y);
-        napi_get_named_property(env, src_origin_val, "z", &z); napi_get_value_uint32(env, z, &src_z);
-        if (napi_get_named_property(env, src_origin_val, "aspect", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &src_aspect);
-    }
-    if (dst_origin_type == napi_object) {
-        napi_value x, y, z;
-        napi_get_named_property(env, dst_origin_val, "x", &x); napi_get_value_uint32(env, x, &dst_x);
-        napi_get_named_property(env, dst_origin_val, "y", &y); napi_get_value_uint32(env, y, &dst_y);
-        napi_get_named_property(env, dst_origin_val, "z", &z); napi_get_value_uint32(env, z, &dst_z);
-        if (napi_get_named_property(env, dst_origin_val, "aspect", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &dst_aspect);
-    }
-    /* copySize */
+    WGPUTexelCopyTextureInfo src;
+    WGPUTexelCopyTextureInfo dst;
+    parse_nd_texel_copy_side(env, argv[0], &src);
+    parse_nd_texel_copy_side(env, argv[1], &dst);
+    if (!src.texture || !dst.texture) NAPI_THROW(env, "copyTextureToTexture: invalid source or destination texture");
+    WGPUExtent3D copy_size = { .width = 1, .height = 1, .depthOrArrayLayers = 1 };
+    napi_valuetype size_type = napi_undefined;
     napi_typeof(env, argv[2], &size_type);
     if (size_type == napi_object) {
-        napi_value w, h, d;
-        napi_get_named_property(env, argv[2], "width", &w); napi_get_value_uint32(env, w, &width);
-        napi_get_named_property(env, argv[2], "height", &h); napi_get_value_uint32(env, h, &height);
-        napi_get_named_property(env, argv[2], "depthOrArrayLayers", &d); napi_get_value_uint32(env, d, &depth_or_layers);
-        if (depth_or_layers == 0) depth_or_layers = 1;
+        napi_value tmp;
+        if (napi_get_named_property(env, argv[2], "width", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &copy_size.width);
+        if (napi_get_named_property(env, argv[2], "height", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &copy_size.height);
+        if (napi_get_named_property(env, argv[2], "depthOrArrayLayers", &tmp) == napi_ok) napi_get_value_uint32(env, tmp, &copy_size.depthOrArrayLayers);
+        if (copy_size.depthOrArrayLayers == 0) copy_size.depthOrArrayLayers = 1;
     }
     if (pfn_wgpuCommandEncoderCopyTextureToTexture) {
-        WGPUTexelCopyTextureInfo src;
-        WGPUTexelCopyTextureInfo dst;
-        WGPUExtent3D copy_size;
-        memset(&src, 0, sizeof(src)); memset(&dst, 0, sizeof(dst));
-        src.texture = src_texture; src.mipLevel = src_mip;
-        src.origin.x = src_x; src.origin.y = src_y; src.origin.z = src_z;
-        src.aspect = src_aspect;
-        dst.texture = dst_texture; dst.mipLevel = dst_mip;
-        dst.origin.x = dst_x; dst.origin.y = dst_y; dst.origin.z = dst_z;
-        dst.aspect = dst_aspect;
-        copy_size.width = width; copy_size.height = height; copy_size.depthOrArrayLayers = depth_or_layers;
         pfn_wgpuCommandEncoderCopyTextureToTexture(encoder, &src, &dst, &copy_size);
     } else if (pfn_doeNativeCommandEncoderCopyTextureToTexture) {
         pfn_doeNativeCommandEncoderCopyTextureToTexture(
             encoder,
-            src_texture, src_mip, 0, src_x, src_y, src_z,
-            dst_texture, dst_mip, 0, dst_x, dst_y, dst_z,
-            width, height, depth_or_layers);
+            src.texture, src.mipLevel, 0, src.origin.x, src.origin.y, src.origin.z,
+            dst.texture, dst.mipLevel, 0, dst.origin.x, dst.origin.y, dst.origin.z,
+            copy_size.width, copy_size.height, copy_size.depthOrArrayLayers);
     } else {
         NAPI_THROW(env, "copyTextureToTexture is not available in the loaded library");
     }
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 napi_value native_direct_compute_pass_set_pipeline(napi_env env, napi_callback_info info) {
@@ -207,10 +190,8 @@ napi_value native_direct_compute_pass_set_pipeline(napi_env env, napi_callback_i
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
     if (argc < 1) NAPI_THROW(env, "setPipeline requires a pipeline");
-    NativeDirectHandleCache* pass_cache = native_direct_get_handle_cache(env, this_arg);
-    NativeDirectHandleCache* pipeline_cache = native_direct_get_handle_cache(env, argv[0]);
-    WGPUComputePassEncoder pass = pass_cache ? (WGPUComputePassEncoder)pass_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    WGPUComputePipeline pipeline = pipeline_cache ? (WGPUComputePipeline)pipeline_cache->native : native_direct_unwrap_external_prop(env, argv[0], DOE_DIRECT_NATIVE);
+    WGPUComputePassEncoder pass = nd_unwrap_handle(env, this_arg);
+    WGPUComputePipeline pipeline = nd_unwrap_handle(env, argv[0]);
     pfn_wgpuComputePassEncoderSetPipeline(pass, pipeline);
     return NULL;
 }
@@ -221,8 +202,7 @@ napi_value native_direct_compute_pass_dispatch_workgroups(napi_env env, napi_cal
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
     if (argc < 1) NAPI_THROW(env, "dispatchWorkgroups requires x");
-    NativeDirectHandleCache* pass_cache = native_direct_get_handle_cache(env, this_arg);
-    WGPUComputePassEncoder pass = pass_cache ? (WGPUComputePassEncoder)pass_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    WGPUComputePassEncoder pass = nd_unwrap_handle(env, this_arg);
     uint32_t x = 1, y = 1, z = 1;
     napi_get_value_uint32(env, argv[0], &x);
     if (argc >= 2 && argv[1]) napi_get_value_uint32(env, argv[1], &y);
@@ -237,10 +217,8 @@ napi_value native_direct_compute_pass_dispatch_workgroups_indirect(napi_env env,
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
     if (argc < 1) NAPI_THROW(env, "dispatchWorkgroupsIndirect requires a buffer");
-    NativeDirectHandleCache* pass_cache = native_direct_get_handle_cache(env, this_arg);
-    NativeDirectBufferCache* buffer_cache = native_direct_get_buffer_cache(env, argv[0]);
-    WGPUComputePassEncoder pass = pass_cache ? (WGPUComputePassEncoder)pass_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    WGPUBuffer buffer = buffer_cache ? buffer_cache->buffer : native_direct_unwrap_external_prop(env, argv[0], DOE_DIRECT_NATIVE);
+    WGPUComputePassEncoder pass = nd_unwrap_handle(env, this_arg);
+    WGPUBuffer buffer = nd_unwrap_buffer(env, argv[0]);
     int64_t offset = 0;
     if (argc >= 2 && argv[1]) napi_get_value_int64(env, argv[1], &offset);
     if (pfn_doeNativeComputePassDispatchIndirect) {
@@ -248,13 +226,17 @@ napi_value native_direct_compute_pass_dispatch_workgroups_indirect(napi_env env,
     } else {
         pfn_wgpuComputePassEncoderDispatchWorkgroupsIndirect(pass, buffer, (uint64_t)offset);
     }
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
-/* GPUBindingCommandsMixin#setImmediates — registered on compute pass encoders */
-napi_value native_direct_compute_pass_set_immediates(napi_env env, napi_callback_info info) {
+static napi_value nd_call_set_immediates(
+    napi_env env,
+    napi_callback_info info,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    void (*doe_fn)(void*, uint32_t, const uint8_t*, size_t),
+    void (*wgpu_fn)(void*, uint32_t, const void*, size_t)
+) {
     size_t argc = 2;
     napi_value argv[2];
     napi_value this_arg;
@@ -265,76 +247,82 @@ napi_value native_direct_compute_pass_set_immediates(napi_env env, napi_callback
     void* data_ptr = NULL;
     size_t data_len = 0;
     extract_buffer_data(env, argv[1], &data_ptr, &data_len);
-    NativeDirectHandleCache* pass_cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = pass_cache ? pass_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!pass) NAPI_THROW(env, "Invalid compute pass");
-    if (pfn_doeNativeComputePassSetImmediates) pfn_doeNativeComputePassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
-    else if (pfn_wgpuComputePassEncoderSetImmediates) pfn_wgpuComputePassEncoderSetImmediates(pass, index, data_ptr, data_len);
-    else NAPI_THROW(env, "computePassSetImmediates is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    void* pass = nd_unwrap_handle(env, this_arg);
+    if (!pass) NAPI_THROW(env, invalid_msg);
+    if (doe_fn) doe_fn(pass, index, (const uint8_t*)data_ptr, data_len);
+    else if (wgpu_fn) wgpu_fn(pass, index, data_ptr, data_len);
+    else NAPI_THROW(env, unavail_msg);
+    return nd_enc_undefined(env);
 }
 
-napi_value native_direct_compute_pass_push_debug_group(napi_env env, napi_callback_info info) {
+static napi_value nd_call_debug_label(
+    napi_env env,
+    napi_callback_info info,
+    const char* missing_arg_msg,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    void (*doe_fn)(void*, const char*, size_t),
+    void (*wgpu_fn)(void*, WGPUStringView)
+) {
     size_t argc = 1;
     napi_value argv[1];
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 1) NAPI_THROW(env, "pushDebugGroup requires groupLabel");
-    FnWgpuComputePassEncoderPushDebugGroup fn = pfn_wgpuComputePassEncoderPushDebugGroup;
-    if (!fn) NAPI_THROW(env, "computePassPushDebugGroup not available");
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    WGPUComputePassEncoder pass = cache ? (WGPUComputePassEncoder)cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!pass) NAPI_THROW(env, "Invalid compute pass");
+    if (argc < 1) NAPI_THROW(env, missing_arg_msg);
+    if (!doe_fn && !wgpu_fn) NAPI_THROW(env, unavail_msg);
+    void* pass = nd_unwrap_handle(env, this_arg);
+    if (!pass) NAPI_THROW(env, invalid_msg);
     size_t label_len = 0;
-    napi_get_value_string_utf8(env, argv[0], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "computePassPushDebugGroup: out of memory");
-    napi_get_value_string_utf8(env, argv[0], label, label_len + 1, &label_len);
-    fn(pass, (WGPUStringView){ .data = label, .length = label_len });
+    char* label = dup_string_value(env, argv[0], &label_len);
+    if (!label) NAPI_THROW(env, "out of memory copying a debug label");
+    if (doe_fn) doe_fn(pass, label, label_len);
+    else wgpu_fn(pass, (WGPUStringView){ .data = label, .length = label_len });
     free(label);
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
-napi_value native_direct_compute_pass_pop_debug_group(napi_env env, napi_callback_info info) {
+static napi_value nd_call_debug_pop(
+    napi_env env,
+    napi_callback_info info,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    void (*doe_fn)(void*),
+    void (*wgpu_fn)(void*)
+) {
     size_t argc = 0;
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, NULL, &this_arg, NULL);
-    FnWgpuComputePassEncoderPopDebugGroup fn = pfn_wgpuComputePassEncoderPopDebugGroup;
-    if (!fn) NAPI_THROW(env, "computePassPopDebugGroup not available");
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    WGPUComputePassEncoder pass = cache ? (WGPUComputePassEncoder)cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!pass) NAPI_THROW(env, "Invalid compute pass");
-    fn(pass);
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    if (!doe_fn && !wgpu_fn) NAPI_THROW(env, unavail_msg);
+    void* pass = nd_unwrap_handle(env, this_arg);
+    if (!pass) NAPI_THROW(env, invalid_msg);
+    if (doe_fn) doe_fn(pass);
+    else wgpu_fn(pass);
+    return nd_enc_undefined(env);
+}
+
+/* GPUBindingCommandsMixin#setImmediates — registered on compute pass encoders */
+napi_value native_direct_compute_pass_set_immediates(napi_env env, napi_callback_info info) {
+    return nd_call_set_immediates(
+        env, info, "Invalid compute pass", "computePassSetImmediates is not available in the loaded library",
+        pfn_doeNativeComputePassSetImmediates, pfn_wgpuComputePassEncoderSetImmediates);
+}
+
+napi_value native_direct_compute_pass_push_debug_group(napi_env env, napi_callback_info info) {
+    return nd_call_debug_label(
+        env, info, "pushDebugGroup requires groupLabel", "Invalid compute pass", "computePassPushDebugGroup not available",
+        NULL, pfn_wgpuComputePassEncoderPushDebugGroup);
+}
+
+napi_value native_direct_compute_pass_pop_debug_group(napi_env env, napi_callback_info info) {
+    return nd_call_debug_pop(
+        env, info, "Invalid compute pass", "computePassPopDebugGroup not available",
+        NULL, pfn_wgpuComputePassEncoderPopDebugGroup);
 }
 
 napi_value native_direct_compute_pass_insert_debug_marker(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value argv[1];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 1) NAPI_THROW(env, "insertDebugMarker requires markerLabel");
-    FnWgpuComputePassEncoderInsertDebugMarker fn = pfn_wgpuComputePassEncoderInsertDebugMarker;
-    if (!fn) NAPI_THROW(env, "computePassInsertDebugMarker not available");
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    WGPUComputePassEncoder pass = cache ? (WGPUComputePassEncoder)cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!pass) NAPI_THROW(env, "Invalid compute pass");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, argv[0], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "computePassInsertDebugMarker: out of memory");
-    napi_get_value_string_utf8(env, argv[0], label, label_len + 1, &label_len);
-    fn(pass, (WGPUStringView){ .data = label, .length = label_len });
-    free(label);
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_debug_label(
+        env, info, "insertDebugMarker requires markerLabel", "Invalid compute pass", "computePassInsertDebugMarker not available",
+        NULL, pfn_wgpuComputePassEncoderInsertDebugMarker);
 }
 
 napi_value native_direct_compute_pass_end(napi_env env, napi_callback_info info) {
@@ -347,55 +335,21 @@ napi_value native_direct_compute_pass_end(napi_env env, napi_callback_info info)
     pfn_wgpuComputePassEncoderRelease(pass);
     native_direct_set_external_prop(env, this_arg, DOE_DIRECT_NATIVE, NULL);
     if (pass_cache) pass_cache->native = NULL;
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 /* GPURenderPassEncoder#setImmediates */
 napi_value native_direct_render_pass_set_immediates(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value argv[2];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 2) NAPI_THROW(env, "setImmediates requires index and data");
-    uint32_t index = 0;
-    napi_get_value_uint32(env, argv[0], &index);
-    void* data_ptr = NULL;
-    size_t data_len = 0;
-    extract_buffer_data(env, argv[1], &data_ptr, &data_len);
-    NativeDirectHandleCache* pass_cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = pass_cache ? pass_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!pass) NAPI_THROW(env, "Invalid render pass");
-    if (pfn_doeNativeRenderPassSetImmediates) pfn_doeNativeRenderPassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
-    else if (pfn_wgpuRenderPassEncoderSetImmediates) pfn_wgpuRenderPassEncoderSetImmediates(pass, index, data_ptr, data_len);
-    else NAPI_THROW(env, "renderPassSetImmediates is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_set_immediates(
+        env, info, "Invalid render pass", "renderPassSetImmediates is not available in the loaded library",
+        pfn_doeNativeRenderPassSetImmediates, pfn_wgpuRenderPassEncoderSetImmediates);
 }
 
 /* GPURenderBundleEncoder#setImmediates */
 napi_value native_direct_render_bundle_encoder_set_immediates(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value argv[2];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 2) NAPI_THROW(env, "setImmediates requires index and data");
-    uint32_t index = 0;
-    napi_get_value_uint32(env, argv[0], &index);
-    void* data_ptr = NULL;
-    size_t data_len = 0;
-    extract_buffer_data(env, argv[1], &data_ptr, &data_len);
-    NativeDirectHandleCache* enc_cache = native_direct_get_handle_cache(env, this_arg);
-    void* enc = enc_cache ? enc_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!enc) NAPI_THROW(env, "Invalid render bundle encoder");
-    if (pfn_doeNativeRenderBundleEncoderSetImmediates) pfn_doeNativeRenderBundleEncoderSetImmediates(enc, index, (const uint8_t*)data_ptr, data_len);
-    else if (pfn_wgpuRenderBundleEncoderSetImmediates) pfn_wgpuRenderBundleEncoderSetImmediates(enc, index, data_ptr, data_len);
-    else NAPI_THROW(env, "renderBundleEncoderSetImmediates is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_set_immediates(
+        env, info, "Invalid render bundle encoder", "renderBundleEncoderSetImmediates is not available in the loaded library",
+        pfn_doeNativeRenderBundleEncoderSetImmediates, pfn_wgpuRenderBundleEncoderSetImmediates);
 }
 
 /* GPURenderPassEncoder#setViewport(x, y, width, height, minDepth, maxDepth) */
@@ -412,16 +366,13 @@ napi_value native_direct_render_pass_set_viewport(napi_env env, napi_callback_in
     napi_get_value_double(env, argv[3], &height);
     napi_get_value_double(env, argv[4], &min_depth);
     napi_get_value_double(env, argv[5], &max_depth);
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    void* pass = nd_unwrap_handle(env, this_arg);
     if (!pass) NAPI_THROW(env, "Invalid render pass");
     if (pfn_doeNativeRenderPassSetViewport) pfn_doeNativeRenderPassSetViewport(pass, x, y, width, height, min_depth, max_depth);
     else if (pfn_wgpuRenderPassEncoderSetViewport) pfn_wgpuRenderPassEncoderSetViewport(pass, (float)x, (float)y, (float)width, (float)height,
         (float)min_depth, (float)max_depth); /* GPUViewport is f32 in the standard ABI. */
     else NAPI_THROW(env, "renderPassSetViewport is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 /* GPURenderPassEncoder#setScissorRect(x, y, width, height) */
@@ -436,15 +387,12 @@ napi_value native_direct_render_pass_set_scissor_rect(napi_env env, napi_callbac
     napi_get_value_uint32(env, argv[1], &y);
     napi_get_value_uint32(env, argv[2], &width);
     napi_get_value_uint32(env, argv[3], &height);
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    void* pass = nd_unwrap_handle(env, this_arg);
     if (!pass) NAPI_THROW(env, "Invalid render pass");
     if (pfn_doeNativeRenderPassSetScissorRect) pfn_doeNativeRenderPassSetScissorRect(pass, x, y, width, height);
     else if (pfn_wgpuRenderPassEncoderSetScissorRect) pfn_wgpuRenderPassEncoderSetScissorRect(pass, x, y, width, height);
     else NAPI_THROW(env, "renderPassSetScissorRect is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 /* GPURenderPassEncoder#setBlendConstant(color) — color: {r,g,b,a} or [r,g,b,a] */
@@ -473,16 +421,13 @@ napi_value native_direct_render_pass_set_blend_constant(napi_env env, napi_callb
             if (napi_get_named_property(env, argv[0], "a", &tmp) == napi_ok) napi_get_value_double(env, tmp, &a);
         }
     }
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    void* pass = nd_unwrap_handle(env, this_arg);
     if (!pass) NAPI_THROW(env, "Invalid render pass");
     const WGPUColor color = {r, g, b, a};
     if (pfn_doeNativeRenderPassSetBlendConstant) pfn_doeNativeRenderPassSetBlendConstant(pass, r, g, b, a);
     else if (pfn_wgpuRenderPassEncoderSetBlendConstant) pfn_wgpuRenderPassEncoderSetBlendConstant(pass, &color);
     else NAPI_THROW(env, "renderPassSetBlendConstant is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 /* GPURenderPassEncoder#setStencilReference(reference) */
@@ -494,121 +439,73 @@ napi_value native_direct_render_pass_set_stencil_reference(napi_env env, napi_ca
     if (argc < 1) NAPI_THROW(env, "setStencilReference requires reference");
     uint32_t reference = 0;
     napi_get_value_uint32(env, argv[0], &reference);
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    void* pass = nd_unwrap_handle(env, this_arg);
     if (!pass) NAPI_THROW(env, "Invalid render pass");
     if (pfn_doeNativeRenderPassSetStencilReference) pfn_doeNativeRenderPassSetStencilReference(pass, reference);
     else if (pfn_wgpuRenderPassEncoderSetStencilReference) pfn_wgpuRenderPassEncoderSetStencilReference(pass, reference);
     else NAPI_THROW(env, "renderPassSetStencilReference is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_enc_undefined(env);
 }
 
 /* GPURenderPassEncoder#pushDebugGroup(groupLabel) */
 napi_value native_direct_render_pass_push_debug_group(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value argv[1];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 1) NAPI_THROW(env, "pushDebugGroup requires groupLabel");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, argv[0], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "out of memory copying a debug label");
-    napi_get_value_string_utf8(env, argv[0], label, label_len + 1, &label_len);
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    bool called = pass && (pfn_doeNativeRenderPassPushDebugGroup || pfn_wgpuRenderPassEncoderPushDebugGroup);
-    if (called && pfn_doeNativeRenderPassPushDebugGroup) pfn_doeNativeRenderPassPushDebugGroup(pass, label, label_len);
-    else if (called) pfn_wgpuRenderPassEncoderPushDebugGroup(pass, (WGPUStringView){label, label_len});
-    free(label);
-    if (!pass) NAPI_THROW(env, "Invalid render pass");
-    if (!called) NAPI_THROW(env, "renderPassPushDebugGroup is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_debug_label(
+        env, info, "pushDebugGroup requires groupLabel", "Invalid render pass",
+        "renderPassPushDebugGroup is not available in the loaded library",
+        pfn_doeNativeRenderPassPushDebugGroup, pfn_wgpuRenderPassEncoderPushDebugGroup);
 }
 
 /* GPURenderPassEncoder#popDebugGroup() */
 napi_value native_direct_render_pass_pop_debug_group(napi_env env, napi_callback_info info) {
-    size_t argc = 0;
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, NULL, &this_arg, NULL);
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    if (!pass) NAPI_THROW(env, "Invalid render pass");
-    if (pfn_doeNativeRenderPassPopDebugGroup) pfn_doeNativeRenderPassPopDebugGroup(pass);
-    else if (pfn_wgpuRenderPassEncoderPopDebugGroup) pfn_wgpuRenderPassEncoderPopDebugGroup(pass);
-    else NAPI_THROW(env, "renderPassPopDebugGroup is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_debug_pop(
+        env, info, "Invalid render pass",
+        "renderPassPopDebugGroup is not available in the loaded library",
+        pfn_doeNativeRenderPassPopDebugGroup, pfn_wgpuRenderPassEncoderPopDebugGroup);
 }
 
 /* GPURenderPassEncoder#insertDebugMarker(markerLabel) */
 napi_value native_direct_render_pass_insert_debug_marker(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value argv[1];
+    return nd_call_debug_label(
+        env, info, "insertDebugMarker requires markerLabel", "Invalid render pass",
+        "renderPassInsertDebugMarker is not available in the loaded library",
+        pfn_doeNativeRenderPassInsertDebugMarker, pfn_wgpuRenderPassEncoderInsertDebugMarker);
+}
+
+static napi_value nd_call_indirect_draw(
+    napi_env env,
+    napi_callback_info info,
+    const char* missing_msg,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    void (*fn)(WGPURenderPassEncoder, WGPUBuffer, uint64_t)
+) {
+    size_t argc = 2;
+    napi_value argv[2];
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 1) NAPI_THROW(env, "insertDebugMarker requires markerLabel");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, argv[0], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "out of memory copying a debug label");
-    napi_get_value_string_utf8(env, argv[0], label, label_len + 1, &label_len);
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    void* pass = cache ? cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    bool called = pass && (pfn_doeNativeRenderPassInsertDebugMarker || pfn_wgpuRenderPassEncoderInsertDebugMarker);
-    if (called && pfn_doeNativeRenderPassInsertDebugMarker) pfn_doeNativeRenderPassInsertDebugMarker(pass, label, label_len);
-    else if (called) pfn_wgpuRenderPassEncoderInsertDebugMarker(pass, (WGPUStringView){label, label_len});
-    free(label);
-    if (!pass) NAPI_THROW(env, "Invalid render pass");
-    if (!called) NAPI_THROW(env, "renderPassInsertDebugMarker is not available in the loaded library");
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    if (argc < 1) NAPI_THROW(env, missing_msg);
+    if (!fn) NAPI_THROW(env, unavail_msg);
+    WGPURenderPassEncoder pass = nd_unwrap_handle(env, this_arg);
+    WGPUBuffer buffer = nd_unwrap_buffer(env, argv[0]);
+    if (!pass || !buffer) NAPI_THROW(env, invalid_msg);
+    int64_t offset = 0;
+    if (argc >= 2 && argv[1]) napi_get_value_int64(env, argv[1], &offset);
+    fn(pass, buffer, (uint64_t)offset);
+    return nd_enc_undefined(env);
 }
 
 napi_value native_direct_render_pass_draw_indirect(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value argv[2];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 1) NAPI_THROW(env, "drawIndirect requires an indirect buffer");
-    FnWgpuRenderPassEncoderDrawIndirect fn = pfn_wgpuRenderPassEncoderDrawIndirect;
-    if (!fn) NAPI_THROW(env, "renderPassDrawIndirect not available");
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    WGPURenderPassEncoder pass = cache ? (WGPURenderPassEncoder)cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    NativeDirectBufferCache* buffer_cache = native_direct_get_buffer_cache(env, argv[0]);
-    WGPUBuffer buffer = buffer_cache ? buffer_cache->buffer : native_direct_unwrap_external_prop(env, argv[0], DOE_DIRECT_NATIVE);
-    if (!pass || !buffer) NAPI_THROW(env, "drawIndirect requires a render pass and indirect buffer");
-    int64_t offset = 0;
-    if (argc >= 2 && argv[1]) napi_get_value_int64(env, argv[1], &offset);
-    fn(pass, buffer, (uint64_t)offset);
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_indirect_draw(
+        env, info, "drawIndirect requires an indirect buffer",
+        "drawIndirect requires a render pass and indirect buffer",
+        "renderPassDrawIndirect not available",
+        pfn_wgpuRenderPassEncoderDrawIndirect);
 }
 
 napi_value native_direct_render_pass_draw_indexed_indirect(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value argv[2];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 1) NAPI_THROW(env, "drawIndexedIndirect requires an indirect buffer");
-    FnWgpuRenderPassEncoderDrawIndexedIndirect fn = pfn_wgpuRenderPassEncoderDrawIndexedIndirect;
-    if (!fn) NAPI_THROW(env, "renderPassDrawIndexedIndirect not available");
-    NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
-    WGPURenderPassEncoder pass = cache ? (WGPURenderPassEncoder)cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    NativeDirectBufferCache* buffer_cache = native_direct_get_buffer_cache(env, argv[0]);
-    WGPUBuffer buffer = buffer_cache ? buffer_cache->buffer : native_direct_unwrap_external_prop(env, argv[0], DOE_DIRECT_NATIVE);
-    if (!pass || !buffer) NAPI_THROW(env, "drawIndexedIndirect requires a render pass and indirect buffer");
-    int64_t offset = 0;
-    if (argc >= 2 && argv[1]) napi_get_value_int64(env, argv[1], &offset);
-    fn(pass, buffer, (uint64_t)offset);
-    napi_value undefined_value;
-    napi_get_undefined(env, &undefined_value);
-    return undefined_value;
+    return nd_call_indirect_draw(
+        env, info, "drawIndexedIndirect requires an indirect buffer",
+        "drawIndexedIndirect requires a render pass and indirect buffer",
+        "renderPassDrawIndexedIndirect not available",
+        pfn_wgpuRenderPassEncoderDrawIndexedIndirect);
 }

@@ -70,14 +70,13 @@ static WGPUBlendComponent parse_blend_component(napi_env env, napi_value obj) {
     return comp;
 }
 
-
-
-
-
-
-
-
-
+static char* dup_stage_entry_point(napi_env env, napi_value stage_obj, size_t* out_len) {
+    if (has_prop(env, stage_obj, "entryPoint")) {
+        return dup_string_value(env, get_prop(env, stage_obj, "entryPoint"), out_len);
+    }
+    *out_len = 4;
+    return dup_c_string("main", 4);
+}
 
 /* Render Pipeline */
 
@@ -114,22 +113,8 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
     if (has_fragment && !fragment_module) NAPI_THROW(env, "createRenderPipeline: descriptor.fragment.module must be a shader module");
 
     size_t vertex_entry_len = 0, fragment_entry_len = 0;
-    char* vertex_entry = has_prop(env, vertex, "entryPoint")
-        ? dup_string_value(env, get_prop(env, vertex, "entryPoint"), &vertex_entry_len)
-        : NULL;
-    if (!has_prop(env, vertex, "entryPoint")) vertex_entry_len = 4;
-    if (!has_prop(env, vertex, "entryPoint")) {
-        vertex_entry = (char*)malloc(vertex_entry_len + 1);
-        if (vertex_entry) memcpy(vertex_entry, "main", vertex_entry_len + 1);
-    }
-    char* fragment_entry = NULL;
-    if (has_fragment && has_prop(env, fragment, "entryPoint")) {
-        fragment_entry = dup_string_value(env, get_prop(env, fragment, "entryPoint"), &fragment_entry_len);
-    } else if (has_fragment) {
-        fragment_entry_len = 4;
-        fragment_entry = (char*)malloc(fragment_entry_len + 1);
-        if (fragment_entry) memcpy(fragment_entry, "main", fragment_entry_len + 1);
-    }
+    char* vertex_entry = dup_stage_entry_point(env, vertex, &vertex_entry_len);
+    char* fragment_entry = has_fragment ? dup_stage_entry_point(env, fragment, &fragment_entry_len) : NULL;
     if (!vertex_entry || (has_fragment && !fragment_entry)) {
         free(vertex_entry); free(fragment_entry);
         NAPI_THROW(env, "createRenderPipeline: out of memory");
@@ -446,19 +431,32 @@ napi_value doe_render_pass_set_pipeline(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-napi_value doe_render_pass_set_immediates(napi_env env, napi_callback_info info) {
+static napi_value call_encoder_set_immediates(
+    napi_env env,
+    napi_callback_info info,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    void (*native_fn)(void*, uint32_t, const uint8_t*, size_t),
+    void (*std_fn)(void*, uint32_t, const void*, size_t)
+) {
     NAPI_ASSERT_ARGC(env, info, 3);
-    if (!pfn_doeNativeRenderPassSetImmediates && !pfn_wgpuRenderPassEncoderSetImmediates)
-        NAPI_THROW(env, "renderPassSetImmediates not available");
-    WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
-    if (!pass) NAPI_THROW(env, "Invalid render pass");
-    uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
+    if (!native_fn && !std_fn) NAPI_THROW(env, unavail_msg);
+    void* encoder = unwrap_ptr(env, _args[0]);
+    if (!encoder) NAPI_THROW(env, invalid_msg);
+    uint32_t index = 0;
+    napi_get_value_uint32(env, _args[1], &index);
     void* data_ptr = NULL;
     size_t data_len = 0;
     extract_buffer_data(env, _args[2], &data_ptr, &data_len);
-    if (pfn_doeNativeRenderPassSetImmediates) pfn_doeNativeRenderPassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
-    else pfn_wgpuRenderPassEncoderSetImmediates(pass, index, data_ptr, data_len);
+    if (native_fn) native_fn(encoder, index, (const uint8_t*)data_ptr, data_len);
+    else std_fn(encoder, index, data_ptr, data_len);
     return NULL;
+}
+
+napi_value doe_render_pass_set_immediates(napi_env env, napi_callback_info info) {
+    return call_encoder_set_immediates(
+        env, info, "Invalid render pass", "renderPassSetImmediates not available",
+        pfn_doeNativeRenderPassSetImmediates, pfn_wgpuRenderPassEncoderSetImmediates);
 }
 
 napi_value doe_render_pass_set_vertex_buffer(napi_env env, napi_callback_info info) {
@@ -626,129 +624,110 @@ napi_value doe_render_pass_end_occlusion_query(napi_env env, napi_callback_info 
 
 /* Debug markers */
 
-napi_value doe_render_pass_push_debug_group(napi_env env, napi_callback_info info) {
+static napi_value call_debug_label_op(
+    napi_env env,
+    napi_callback_info info,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    const char* oom_msg,
+    void (*native_fn)(void*, const char*, size_t),
+    void (*std_fn)(void*, WGPUStringView)
+) {
     NAPI_ASSERT_ARGC(env, info, 2);
-    void* pass = unwrap_ptr(env, _args[0]);
-    if (!pass) NAPI_THROW(env, "pushDebugGroup: invalid render pass");
-    if (!pfn_doeNativeRenderPassPushDebugGroup && !pfn_wgpuRenderPassEncoderPushDebugGroup)
-        NAPI_THROW(env, "pushDebugGroup not available in loaded library");
+    void* target = unwrap_ptr(env, _args[0]);
+    if (!target) NAPI_THROW(env, invalid_msg ? invalid_msg : unavail_msg);
+    if (!native_fn && !std_fn) NAPI_THROW(env, unavail_msg);
     size_t label_len = 0;
-    napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "pushDebugGroup: out of memory");
-    napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    if (pfn_doeNativeRenderPassPushDebugGroup) pfn_doeNativeRenderPassPushDebugGroup(pass, label, label_len);
-    else pfn_wgpuRenderPassEncoderPushDebugGroup(pass, (WGPUStringView){label, label_len});
-    free(label); return NULL;
+    char* label = dup_string_value(env, _args[1], &label_len);
+    if (!label) NAPI_THROW(env, oom_msg);
+    if (native_fn) native_fn(target, label, label_len);
+    else std_fn(target, (WGPUStringView){ .data = label, .length = label_len });
+    free(label);
+    return NULL;
+}
+
+static napi_value call_debug_pop_op(
+    napi_env env,
+    napi_callback_info info,
+    const char* invalid_msg,
+    const char* unavail_msg,
+    void (*native_fn)(void*),
+    void (*std_fn)(void*)
+) {
+    NAPI_ASSERT_ARGC(env, info, 1);
+    void* target = unwrap_ptr(env, _args[0]);
+    if (!target) NAPI_THROW(env, invalid_msg ? invalid_msg : unavail_msg);
+    if (native_fn) native_fn(target);
+    else if (std_fn) std_fn(target);
+    else NAPI_THROW(env, unavail_msg);
+    return NULL;
+}
+
+static napi_value call_indirect_draw_op(
+    napi_env env,
+    napi_callback_info info,
+    void (*fn)(void*, WGPUBuffer, uint64_t),
+    const char* unavail_msg
+) {
+    NAPI_ASSERT_ARGC(env, info, 3);
+    void* target = unwrap_ptr(env, _args[0]);
+    WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
+    if (!target || !buffer || !fn) NAPI_THROW(env, unavail_msg);
+    uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
+    fn(target, buffer, offset);
+    return NULL;
+}
+
+napi_value doe_render_pass_push_debug_group(napi_env env, napi_callback_info info) {
+    return call_debug_label_op(
+        env, info, "pushDebugGroup: invalid render pass", "pushDebugGroup not available in loaded library",
+        "pushDebugGroup: out of memory", pfn_doeNativeRenderPassPushDebugGroup, pfn_wgpuRenderPassEncoderPushDebugGroup);
 }
 
 napi_value doe_render_pass_pop_debug_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 1);
-    void* pass = unwrap_ptr(env, _args[0]);
-    if (!pass) NAPI_THROW(env, "popDebugGroup: invalid render pass");
-    if (pfn_doeNativeRenderPassPopDebugGroup) pfn_doeNativeRenderPassPopDebugGroup(pass);
-    else if (pfn_wgpuRenderPassEncoderPopDebugGroup) pfn_wgpuRenderPassEncoderPopDebugGroup(pass);
-    else NAPI_THROW(env, "popDebugGroup not available in loaded library");
-    return NULL;
+    return call_debug_pop_op(
+        env, info, "popDebugGroup: invalid render pass", "popDebugGroup not available in loaded library",
+        pfn_doeNativeRenderPassPopDebugGroup, pfn_wgpuRenderPassEncoderPopDebugGroup);
 }
 
 napi_value doe_render_pass_insert_debug_marker(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    void* pass = unwrap_ptr(env, _args[0]);
-    if (!pass) NAPI_THROW(env, "insertDebugMarker: invalid render pass");
-    if (!pfn_doeNativeRenderPassInsertDebugMarker && !pfn_wgpuRenderPassEncoderInsertDebugMarker)
-        NAPI_THROW(env, "insertDebugMarker not available in loaded library");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "insertDebugMarker: out of memory");
-    napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    if (pfn_doeNativeRenderPassInsertDebugMarker) pfn_doeNativeRenderPassInsertDebugMarker(pass, label, label_len);
-    else pfn_wgpuRenderPassEncoderInsertDebugMarker(pass, (WGPUStringView){label, label_len});
-    free(label); return NULL;
+    return call_debug_label_op(
+        env, info, "insertDebugMarker: invalid render pass", "insertDebugMarker not available in loaded library",
+        "insertDebugMarker: out of memory", pfn_doeNativeRenderPassInsertDebugMarker, pfn_wgpuRenderPassEncoderInsertDebugMarker);
 }
 
 napi_value doe_compute_pass_push_debug_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    FnWgpuComputePassEncoderPushDebugGroup fn = pfn_wgpuComputePassEncoderPushDebugGroup;
-    if (!pass || !fn) NAPI_THROW(env, "computePassPushDebugGroup not available");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "computePassPushDebugGroup: out of memory");
-    napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    fn(pass, (WGPUStringView){ .data = label, .length = label_len });
-    free(label);
-    return NULL;
+    return call_debug_label_op(
+        env, info, NULL, "computePassPushDebugGroup not available",
+        "computePassPushDebugGroup: out of memory", NULL, pfn_wgpuComputePassEncoderPushDebugGroup);
 }
 
 napi_value doe_compute_pass_pop_debug_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 1);
-    WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    FnWgpuComputePassEncoderPopDebugGroup fn = pfn_wgpuComputePassEncoderPopDebugGroup;
-    if (!pass || !fn) NAPI_THROW(env, "computePassPopDebugGroup not available");
-    fn(pass);
-    return NULL;
+    return call_debug_pop_op(
+        env, info, NULL, "computePassPopDebugGroup not available",
+        NULL, pfn_wgpuComputePassEncoderPopDebugGroup);
 }
 
 napi_value doe_compute_pass_insert_debug_marker(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    FnWgpuComputePassEncoderInsertDebugMarker fn = pfn_wgpuComputePassEncoderInsertDebugMarker;
-    if (!pass || !fn) NAPI_THROW(env, "computePassInsertDebugMarker not available");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "computePassInsertDebugMarker: out of memory");
-    napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    fn(pass, (WGPUStringView){ .data = label, .length = label_len });
-    free(label);
-    return NULL;
+    return call_debug_label_op(
+        env, info, NULL, "computePassInsertDebugMarker not available",
+        "computePassInsertDebugMarker: out of memory", NULL, pfn_wgpuComputePassEncoderInsertDebugMarker);
 }
 
 napi_value doe_render_pass_draw_indirect(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
-    WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderPassEncoderDrawIndirect fn = pfn_wgpuRenderPassEncoderDrawIndirect;
-    if (!pass || !buffer || !fn) NAPI_THROW(env, "renderPassDrawIndirect not available");
-    uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
-    fn(pass, buffer, offset);
-    return NULL;
+    return call_indirect_draw_op(env, info, pfn_wgpuRenderPassEncoderDrawIndirect, "renderPassDrawIndirect not available");
 }
 
 napi_value doe_render_pass_draw_indexed_indirect(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
-    WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderPassEncoderDrawIndexedIndirect fn = pfn_wgpuRenderPassEncoderDrawIndexedIndirect;
-    if (!pass || !buffer || !fn) NAPI_THROW(env, "renderPassDrawIndexedIndirect not available");
-    uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
-    fn(pass, buffer, offset);
-    return NULL;
+    return call_indirect_draw_op(env, info, pfn_wgpuRenderPassEncoderDrawIndexedIndirect, "renderPassDrawIndexedIndirect not available");
 }
 
 napi_value doe_render_bundle_encoder_draw_indirect(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    void* enc = unwrap_ptr(env, _args[0]);
-    WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderBundleEncoderDrawIndirect fn = pfn_wgpuRenderBundleEncoderDrawIndirect;
-    if (!enc || !buffer || !fn) NAPI_THROW(env, "renderBundleEncoderDrawIndirect not available");
-    uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
-    fn(enc, buffer, offset);
-    return NULL;
+    return call_indirect_draw_op(env, info, pfn_wgpuRenderBundleEncoderDrawIndirect, "renderBundleEncoderDrawIndirect not available");
 }
 
 napi_value doe_render_bundle_encoder_draw_indexed_indirect(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    void* enc = unwrap_ptr(env, _args[0]);
-    WGPUBuffer buffer = unwrap_ptr(env, _args[1]);
-    FnWgpuRenderBundleEncoderDrawIndexedIndirect fn = pfn_wgpuRenderBundleEncoderDrawIndexedIndirect;
-    if (!enc || !buffer || !fn) NAPI_THROW(env, "renderBundleEncoderDrawIndexedIndirect not available");
-    uint64_t offset = (uint64_t)get_int64_value(env, _args[2]);
-    fn(enc, buffer, offset);
-    return NULL;
+    return call_indirect_draw_op(env, info, pfn_wgpuRenderBundleEncoderDrawIndexedIndirect, "renderBundleEncoderDrawIndexedIndirect not available");
 }
 
 /* Render Bundle Encoder */
@@ -829,18 +808,9 @@ napi_value doe_render_bundle_encoder_set_pipeline(napi_env env, napi_callback_in
 }
 
 napi_value doe_render_bundle_encoder_set_immediates(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    if (!pfn_doeNativeRenderBundleEncoderSetImmediates && !pfn_wgpuRenderBundleEncoderSetImmediates)
-        NAPI_THROW(env, "renderBundleEncoderSetImmediates not available");
-    void* enc = unwrap_ptr(env, _args[0]); if (!enc) NAPI_THROW(env, "Invalid render bundle encoder");
-    uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
-    void* data_ptr = NULL;
-    size_t data_len = 0;
-    extract_buffer_data(env, _args[2], &data_ptr, &data_len);
-    if (pfn_doeNativeRenderBundleEncoderSetImmediates)
-        pfn_doeNativeRenderBundleEncoderSetImmediates(enc, index, (const uint8_t*)data_ptr, data_len);
-    else pfn_wgpuRenderBundleEncoderSetImmediates(enc, index, data_ptr, data_len);
-    return NULL;
+    return call_encoder_set_immediates(
+        env, info, "Invalid render bundle encoder", "renderBundleEncoderSetImmediates not available",
+        pfn_doeNativeRenderBundleEncoderSetImmediates, pfn_wgpuRenderBundleEncoderSetImmediates);
 }
 
 napi_value doe_render_bundle_encoder_set_vertex_buffer(napi_env env, napi_callback_info info) {
@@ -893,45 +863,23 @@ napi_value doe_render_bundle_encoder_draw_indexed(napi_env env, napi_callback_in
 }
 
 napi_value doe_render_bundle_encoder_push_debug_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    void* enc = unwrap_ptr(env, _args[0]);
-    if (!enc) NAPI_THROW(env, "renderBundleEncoderPushDebugGroup: invalid encoder");
-    if (!pfn_doeNativeRenderBundleEncoderPushDebugGroup && !pfn_wgpuRenderBundleEncoderPushDebugGroup)
-        NAPI_THROW(env, "renderBundleEncoderPushDebugGroup not available");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "renderBundleEncoderPushDebugGroup: out of memory");
-    napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    if (pfn_doeNativeRenderBundleEncoderPushDebugGroup) pfn_doeNativeRenderBundleEncoderPushDebugGroup(enc, label, label_len);
-    else pfn_wgpuRenderBundleEncoderPushDebugGroup(enc, (WGPUStringView){label, label_len});
-    free(label); return NULL;
+    return call_debug_label_op(
+        env, info, "renderBundleEncoderPushDebugGroup: invalid encoder", "renderBundleEncoderPushDebugGroup not available",
+        "renderBundleEncoderPushDebugGroup: out of memory",
+        pfn_doeNativeRenderBundleEncoderPushDebugGroup, pfn_wgpuRenderBundleEncoderPushDebugGroup);
 }
 
 napi_value doe_render_bundle_encoder_pop_debug_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 1);
-    void* enc = unwrap_ptr(env, _args[0]);
-    if (!enc) NAPI_THROW(env, "renderBundleEncoderPopDebugGroup: invalid encoder");
-    if (pfn_doeNativeRenderBundleEncoderPopDebugGroup) pfn_doeNativeRenderBundleEncoderPopDebugGroup(enc);
-    else if (pfn_wgpuRenderBundleEncoderPopDebugGroup) pfn_wgpuRenderBundleEncoderPopDebugGroup(enc);
-    else NAPI_THROW(env, "renderBundleEncoderPopDebugGroup not available");
-    return NULL;
+    return call_debug_pop_op(
+        env, info, "renderBundleEncoderPopDebugGroup: invalid encoder", "renderBundleEncoderPopDebugGroup not available",
+        pfn_doeNativeRenderBundleEncoderPopDebugGroup, pfn_wgpuRenderBundleEncoderPopDebugGroup);
 }
 
 napi_value doe_render_bundle_encoder_insert_debug_marker(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    void* enc = unwrap_ptr(env, _args[0]);
-    if (!enc) NAPI_THROW(env, "renderBundleEncoderInsertDebugMarker: invalid encoder");
-    if (!pfn_doeNativeRenderBundleEncoderInsertDebugMarker && !pfn_wgpuRenderBundleEncoderInsertDebugMarker)
-        NAPI_THROW(env, "renderBundleEncoderInsertDebugMarker not available");
-    size_t label_len = 0;
-    napi_get_value_string_utf8(env, _args[1], NULL, 0, &label_len);
-    char* label = (char*)malloc(label_len + 1);
-    if (!label) NAPI_THROW(env, "renderBundleEncoderInsertDebugMarker: out of memory");
-    napi_get_value_string_utf8(env, _args[1], label, label_len + 1, &label_len);
-    if (pfn_doeNativeRenderBundleEncoderInsertDebugMarker) pfn_doeNativeRenderBundleEncoderInsertDebugMarker(enc, label, label_len);
-    else pfn_wgpuRenderBundleEncoderInsertDebugMarker(enc, (WGPUStringView){label, label_len});
-    free(label); return NULL;
+    return call_debug_label_op(
+        env, info, "renderBundleEncoderInsertDebugMarker: invalid encoder", "renderBundleEncoderInsertDebugMarker not available",
+        "renderBundleEncoderInsertDebugMarker: out of memory",
+        pfn_doeNativeRenderBundleEncoderInsertDebugMarker, pfn_wgpuRenderBundleEncoderInsertDebugMarker);
 }
 
 napi_value doe_render_bundle_encoder_finish(napi_env env, napi_callback_info info) {

@@ -319,11 +319,11 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
         (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u)) &&
         !a->subgroup && (!a->filtered || a->trigger==id) && !require_uniform(a,cf,e->source_offset)) return false;
     if (reference.kind==SOURCE_BARRIER) {
-        if (!a->subgroup && (!a->filtered || a->trigger==NO_ID) && !require_uniform(a,cf,e->source_offset)) return false;
+        if (!a->subgroup && (!a->filtered || a->trigger==id) && !require_uniform(a,cf,e->source_offset)) return false;
         if (e->right != 0u) {
             uint32_t address;
             if (!expression_bit(a,a->compiler->arguments[e->left].expression,cf,&address)) return false;
-            if (!a->subgroup && (!a->filtered || a->trigger==NO_ID) && !require_uniform(a,address,e->source_offset)) return false;
+            if (!a->subgroup && (!a->filtered || a->trigger==id) && !require_uniform(a,address,e->source_offset)) return false;
         }
         return true;
     }
@@ -699,7 +699,7 @@ static bool function_bits(Uniformity *a,uint32_t index) {
         }
         if (run==0u) {
             if (a->required!=0u) {
-                if (a->filtered && a->trigger!=NO_ID) {
+                if (a->filtered && a->rule!=0u) {
                     if (!compiler_uniformity_notice(a->source,a->trigger,a->rule)) return false;
                 } else return source_error(a->source,DOE_COMPILER_SEMANTIC_ERROR,a->required_offset,
                     a->subgroup ? "subgroup uniform control cannot be established" :
@@ -753,13 +753,12 @@ static bool module_bits(Uniformity *a) {
 bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     CompilerWorkspace *c=source->compiler;
     if (used!=NULL) *used=0u;
-    bool barrier=false, subgroup=false, mandatory=false;
+    bool barrier=false, subgroup=false;
     if (source->diagnostic_work>limit)
         return source_error(source,DOE_COMPILER_UNSUPPORTED,0u,"uniformity analysis work limit exceeded");
     for (uint32_t i=0u;i<c->expression_count;++i) {
         c->expressions[i].diagnostic_rule=0u;
         const SourceReference reference=c->expression_references[i];
-        mandatory=mandatory || reference.kind==SOURCE_BARRIER;
         barrier=barrier || reference.kind==SOURCE_BARRIER || reference.kind==SOURCE_DERIVATIVE ||
             (reference.kind == SOURCE_SUBGROUP && reference.index >= (uint32_t)BUILTIN_QUAD_BROADCAST) ||
             (reference.kind==SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE)!=0u);
@@ -820,23 +819,29 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
         ok=!barrier || module_bits(&a);
         if (ok && subgroup) { a.subgroup=true; ok=module_bits(&a); }
     } else {
-        /* Mandatory barriers remain an independent proof. Each filterable
-         * trigger then reuses this exact dependency analysis, so callee summaries
-         * preserve the originating builtin location rather than the caller. */
-        a.filtered=true; a.trigger=NO_ID;
-        ok=!mandatory || module_bits(&a);
-        for (uint32_t i=0u;ok && i<c->expression_count;++i) {
-            if (!charge(&a,1u)) { ok=false; break; }
-            const SourceReference ref=c->expression_references[i];
-            uint32_t rule=0u;
-            if (ref.kind==SOURCE_DERIVATIVE || (ref.kind==SOURCE_IMAGE && (ref.index&SOURCE_IMAGE_DERIVATIVE)!=0u))
-                rule=DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY;
-            else if (ref.kind==SOURCE_SUBGROUP) rule=DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
-            if (!rule || expression_diagnostic_severity(&c->expressions[i],rule)==DOE_COMPILER_DIAGNOSTIC_OFF) continue;
-            a.trigger=i; a.rule=rule; a.subgroup=rule==DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
-            ok=module_bits(&a);
-            if (ok && ref.kind==SOURCE_SUBGROUP && ref.index>=(uint32_t)BUILTIN_QUAD_BROADCAST) {
-                a.subgroup=false; ok=module_bits(&a);
+        /* Record nonfatal warning/info triggers across the validated AST before
+         * checking mandatory barriers and error-severity triggers in source order. */
+        a.filtered=true;
+        for (uint32_t pass=0u;ok && pass<2u;++pass) {
+            for (uint32_t i=0u;ok && i<c->expression_count;++i) {
+                if (pass==1u && !charge(&a,1u)) { ok=false; break; }
+                const SourceReference ref=c->expression_references[i];
+                uint32_t rule=0u;
+                if (ref.kind==SOURCE_DERIVATIVE || (ref.kind==SOURCE_IMAGE && (ref.index&SOURCE_IMAGE_DERIVATIVE)!=0u))
+                    rule=DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY;
+                else if (ref.kind==SOURCE_SUBGROUP) rule=DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
+                else if (ref.kind!=SOURCE_BARRIER) continue;
+                const uint32_t severity=rule ? expression_diagnostic_severity(&c->expressions[i],rule) :
+                    DOE_COMPILER_DIAGNOSTIC_ERROR;
+                if (severity==DOE_COMPILER_DIAGNOSTIC_OFF) continue;
+                const bool nonfatal=severity!=DOE_COMPILER_DIAGNOSTIC_ERROR;
+                if (nonfatal!=(pass==0u)) continue;
+                if (pass==0u && !charge(&a,1u)) { ok=false; break; }
+                a.trigger=i; a.rule=rule; a.subgroup=rule==DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
+                ok=module_bits(&a);
+                if (ok && ref.kind==SOURCE_SUBGROUP && ref.index>=(uint32_t)BUILTIN_QUAD_BROADCAST) {
+                    a.subgroup=false; ok=module_bits(&a);
+                }
             }
         }
     }

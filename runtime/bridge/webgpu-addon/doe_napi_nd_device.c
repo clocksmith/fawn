@@ -1,6 +1,6 @@
 #include "doe_napi_internal.h"
 
-/* Forward declarations for object constructors used here (defined in doe_napi_nd_creators.c) */
+/* Forward declarations for object constructors and shared parsers */
 napi_value create_native_direct_buffer_object(napi_env env, WGPUInstance instance, napi_value queue_obj, WGPUBuffer buffer, uint64_t size, uint64_t usage);
 napi_value create_native_direct_shader_module_object(napi_env env, WGPUShaderModule shader_module);
 napi_value create_native_direct_compute_pipeline_object(napi_env env, WGPUComputePipeline pipeline);
@@ -8,6 +8,38 @@ napi_value create_native_direct_bind_group_layout_object(napi_env env, WGPUBindG
 napi_value create_native_direct_bind_group_object(napi_env env, WGPUBindGroup group);
 napi_value create_native_direct_pipeline_layout_object(napi_env env, WGPUPipelineLayout layout);
 napi_value create_native_direct_command_encoder_object(napi_env env, WGPUCommandEncoder encoder);
+bool doe_parse_compilation_hints(napi_env env, napi_value hints_value, WGPUShaderModuleCompilationHint** out_hints, char*** out_entry_points, size_t* out_count);
+void doe_free_compilation_hints(WGPUShaderModuleCompilationHint* hints, char** entry_points, size_t count);
+void doe_parse_bgl_entry_common(napi_env env, napi_value elem, WGPUBindGroupLayoutEntry* entry);
+void doe_detach_and_release_device(napi_env env, void* device);
+
+static napi_value nd_throw_library_error(napi_env env, const char* code, const char* fallback_msg) {
+    char msg[DOE_ERROR_BUF_CAP];
+    char stage[64];
+    char kind[64];
+    copy_library_error_message(msg, sizeof(msg));
+    copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
+    copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
+    if (msg[0] != '\0') {
+        char full_msg[DOE_ERROR_BUF_CAP];
+        doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
+        napi_throw_error(env, code, full_msg);
+    } else {
+        napi_throw_error(env, code, fallback_msg);
+    }
+    return NULL;
+}
+
+static WGPUStringView nd_read_label_buf(napi_env env, napi_value desc_obj, char* buf, size_t cap) {
+    WGPUStringView view = { .data = NULL, .length = 0 };
+    if (desc_obj && has_prop(env, desc_obj, "label") && prop_type(env, desc_obj, "label") == napi_string) {
+        size_t len = 0;
+        napi_get_value_string_utf8(env, get_prop(env, desc_obj, "label"), buf, cap, &len);
+        view.data = buf;
+        view.length = len;
+    }
+    return view;
+}
 
 napi_value native_direct_device_create_buffer(napi_env env, napi_callback_info info) {
     size_t argc = 1;
@@ -44,73 +76,16 @@ napi_value native_direct_device_create_shader_module(napi_env env, napi_callback
     if (!device) NAPI_THROW(env, "Invalid device");
     napi_value code_value = has_prop(env, argv[0], "code") ? get_prop(env, argv[0], "code") : get_prop(env, argv[0], "source");
     size_t code_len = 0;
-    napi_get_value_string_utf8(env, code_value, NULL, 0, &code_len);
-    char* code = (char*)malloc(code_len + 1);
+    char* code = dup_string_value(env, code_value, &code_len);
     if (!code) NAPI_THROW(env, "createShaderModule: out of memory");
-    napi_get_value_string_utf8(env, code_value, code, code_len + 1, &code_len);
 
     WGPUShaderModuleCompilationHint* hints = NULL;
     char** hint_entry_points = NULL;
     size_t hint_count = 0;
-    if (has_prop(env, argv[0], "compilationHints")) {
-        napi_value hints_value = get_prop(env, argv[0], "compilationHints");
-        napi_valuetype hints_type = napi_undefined;
-        bool is_array = false;
-        napi_typeof(env, hints_value, &hints_type);
-        if (hints_type == napi_object) {
-            napi_is_array(env, hints_value, &is_array);
-        }
-        if (is_array) {
-            uint32_t arr_len = 0;
-            napi_get_array_length(env, hints_value, &arr_len);
-            if (arr_len > 0) {
-                hint_count = arr_len;
-                hints = (WGPUShaderModuleCompilationHint*)calloc(hint_count, sizeof(WGPUShaderModuleCompilationHint));
-                hint_entry_points = (char**)calloc(hint_count, sizeof(char*));
-                if (!hints || !hint_entry_points) {
-                    free(code);
-                    free(hints);
-                    free(hint_entry_points);
-                    NAPI_THROW(env, "createShaderModule: out of memory while parsing compilationHints");
-                }
-                for (uint32_t i = 0; i < arr_len; i++) {
-                    napi_value hint_obj;
-                    napi_get_element(env, hints_value, i, &hint_obj);
-
-                    napi_value entry_point_value;
-                    if (napi_get_named_property(env, hint_obj, "entryPoint", &entry_point_value) == napi_ok) {
-                        napi_valuetype entry_point_type = napi_undefined;
-                        napi_typeof(env, entry_point_value, &entry_point_type);
-                        if (entry_point_type == napi_string) {
-                            size_t entry_len = 0;
-                            napi_get_value_string_utf8(env, entry_point_value, NULL, 0, &entry_len);
-                            hint_entry_points[i] = (char*)malloc(entry_len + 1);
-                            if (!hint_entry_points[i]) {
-                                free(code);
-                                for (uint32_t j = 0; j < i; j++) free(hint_entry_points[j]);
-                                free(hint_entry_points);
-                                free(hints);
-                                NAPI_THROW(env, "createShaderModule: out of memory while parsing compilationHints");
-                            }
-                            napi_get_value_string_utf8(env, entry_point_value, hint_entry_points[i], entry_len + 1, &entry_len);
-                            hints[i].entryPoint.data = hint_entry_points[i];
-                            hints[i].entryPoint.length = entry_len;
-                        }
-                    }
-
-                    napi_value layout_value;
-                    if (napi_get_named_property(env, hint_obj, "layout", &layout_value) == napi_ok) {
-                        napi_valuetype layout_type = napi_undefined;
-                        napi_typeof(env, layout_value, &layout_type);
-                        if (layout_type == napi_string) {
-                            hints[i].layout = NULL;
-                        } else if (layout_type == napi_external || layout_type == napi_object) {
-                            hints[i].layout = unwrap_ptr(env, layout_value);
-                        }
-                    }
-                }
-            }
-        }
+    if (has_prop(env, argv[0], "compilationHints")
+        && !doe_parse_compilation_hints(env, get_prop(env, argv[0], "compilationHints"), &hints, &hint_entry_points, &hint_count)) {
+        free(code);
+        return NULL;
     }
 
     char* label_str = NULL;
@@ -119,9 +94,7 @@ napi_value native_direct_device_create_shader_module(napi_env env, napi_callback
         label_str = dup_string_value(env, get_prop(env, argv[0], "label"), &label_len);
         if (!label_str) {
             free(code);
-            for (size_t i = 0; i < hint_count; i++) free(hint_entry_points[i]);
-            free(hint_entry_points);
-            free(hints);
+            doe_free_compilation_hints(hints, hint_entry_points, hint_count);
             NAPI_THROW(env, "createShaderModule: out of memory while parsing label");
         }
     }
@@ -140,27 +113,8 @@ napi_value native_direct_device_create_shader_module(napi_env env, napi_callback
     WGPUShaderModule mod = pfn_wgpuDeviceCreateShaderModule(device, &desc);
     free(label_str);
     free(code);
-    for (size_t i = 0; i < hint_count; i++) {
-        free(hint_entry_points[i]);
-    }
-    free(hint_entry_points);
-    free(hints);
-    if (!mod) {
-        char msg[DOE_ERROR_BUF_CAP];
-        char stage[64];
-        char kind[64];
-        copy_library_error_message(msg, sizeof(msg));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
-        if (msg[0] != '\0') {
-            char full_msg[DOE_ERROR_BUF_CAP];
-            doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
-            napi_throw_error(env, "DOE_SHADER_MODULE_ERROR", full_msg);
-        } else {
-            napi_throw_error(env, "DOE_SHADER_MODULE_ERROR", "createShaderModule failed");
-        }
-        return NULL;
-    }
+    doe_free_compilation_hints(hints, hint_entry_points, hint_count);
+    if (!mod) return nd_throw_library_error(env, "DOE_SHADER_MODULE_ERROR", "createShaderModule failed");
     return create_native_direct_shader_module_object(env, mod);
 }
 
@@ -185,36 +139,23 @@ napi_value native_direct_device_create_compute_pipeline(napi_env env, napi_callb
     } else {
         entry_len = 4;
         entry_point = (char*)malloc(entry_len + 1);
-        memcpy(entry_point, "main", entry_len + 1);
+        if (entry_point) memcpy(entry_point, "main", entry_len + 1);
     }
     if (!entry_point) NAPI_THROW(env, "createComputePipeline: out of memory");
 
-    WGPUPipelineLayout layout = NULL;
-    if (has_prop(env, argv[0], "layout")) {
-        layout = native_direct_unwrap_external_prop(env, get_prop(env, argv[0], "layout"), DOE_DIRECT_NATIVE);
-    }
+    WGPUPipelineLayout layout = has_prop(env, argv[0], "layout")
+        ? native_direct_unwrap_external_prop(env, get_prop(env, argv[0], "layout"), DOE_DIRECT_NATIVE)
+        : NULL;
 
-    /* Parse optional override constants from descriptor.compute.constants */
     WGPUConstantEntry* override_entries = NULL;
-    size_t override_count = 0;
-    if (has_prop(env, compute, "constants")) {
-        napi_value constants_obj = get_prop(env, compute, "constants");
-        override_count = parse_js_override_constants(env, constants_obj, &override_entries);
-    }
+    size_t override_count = has_prop(env, compute, "constants")
+        ? parse_js_override_constants(env, get_prop(env, compute, "constants"), &override_entries)
+        : 0;
 
-    /* Read label */
-    WGPUStringView label_view = { .data = NULL, .length = 0 };
     char label_buf[256] = {0};
-    if (has_prop(env, argv[0], "label") && prop_type(env, argv[0], "label") == napi_string) {
-        size_t label_len = 0;
-        napi_get_value_string_utf8(env, get_prop(env, argv[0], "label"), label_buf, sizeof(label_buf), &label_len);
-        label_view.data = label_buf;
-        label_view.length = label_len;
-    }
-
     WGPUComputePipelineDescriptor desc;
     memset(&desc, 0, sizeof(desc));
-    desc.label = label_view;
+    desc.label = nd_read_label_buf(env, argv[0], label_buf, sizeof(label_buf));
     desc.layout = layout;
     desc.compute.module = shader;
     desc.compute.entryPoint.data = entry_point;
@@ -225,22 +166,7 @@ napi_value native_direct_device_create_compute_pipeline(napi_env env, napi_callb
     WGPUComputePipeline pipeline = pfn_wgpuDeviceCreateComputePipeline(device, &desc);
     free(entry_point);
     free_override_constants(override_entries, override_count);
-    if (!pipeline) {
-        char msg[DOE_ERROR_BUF_CAP];
-        char stage[64];
-        char kind[64];
-        copy_library_error_message(msg, sizeof(msg));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
-        if (msg[0] != '\0') {
-            char full_msg[DOE_ERROR_BUF_CAP];
-            doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
-            napi_throw_error(env, "DOE_COMPUTE_PIPELINE_ERROR", full_msg);
-        } else {
-            napi_throw_error(env, "DOE_COMPUTE_PIPELINE_ERROR", "createComputePipeline failed");
-        }
-        return NULL;
-    }
+    if (!pipeline) return nd_throw_library_error(env, "DOE_COMPUTE_PIPELINE_ERROR", "createComputePipeline failed");
     return create_native_direct_compute_pipeline_object(env, pipeline);
 }
 
@@ -268,45 +194,13 @@ napi_value native_direct_device_create_bind_group_layout(napi_env env, napi_call
     for (uint32_t i = 0; i < entry_count; i++) {
         napi_value elem;
         napi_get_element(env, entries_array, i, &elem);
-        entries[i].binding = get_uint32_prop(env, elem, "binding");
-        entries[i].visibility = (uint64_t)get_int64_prop(env, elem, "visibility");
-        if (has_prop(env, elem, "buffer") && prop_type(env, elem, "buffer") == napi_object) {
-            napi_value buffer = get_prop(env, elem, "buffer");
-            entries[i].buffer.type = buffer_binding_type_from_string(env, get_prop(env, buffer, "type"));
-            if (has_prop(env, buffer, "hasDynamicOffset")) entries[i].buffer.hasDynamicOffset = get_bool_prop(env, buffer, "hasDynamicOffset") ? 1 : 0;
-            if (has_prop(env, buffer, "minBindingSize")) entries[i].buffer.minBindingSize = (uint64_t)get_int64_prop(env, buffer, "minBindingSize");
-        }
-        if (has_prop(env, elem, "sampler") && prop_type(env, elem, "sampler") == napi_object) {
-            napi_value sampler = get_prop(env, elem, "sampler");
-            entries[i].sampler.type = sampler_binding_type_from_string(env, get_prop(env, sampler, "type"));
-        }
-        if (has_prop(env, elem, "texture") && prop_type(env, elem, "texture") == napi_object) {
-            napi_value texture = get_prop(env, elem, "texture");
-            entries[i].texture.sampleType = texture_sample_type_from_string(env, get_prop(env, texture, "sampleType"));
-            entries[i].texture.viewDimension = texture_view_dimension_from_string(env, get_prop(env, texture, "viewDimension"));
-            if (has_prop(env, texture, "multisampled")) entries[i].texture.multisampled = get_bool_prop(env, texture, "multisampled") ? 1 : 0;
-        }
-        if (has_prop(env, elem, "storageTexture") && prop_type(env, elem, "storageTexture") == napi_object) {
-            napi_value storage_texture = get_prop(env, elem, "storageTexture");
-            entries[i].storageTexture.access = storage_texture_access_from_string(env, get_prop(env, storage_texture, "access"));
-            entries[i].storageTexture.format = texture_format_from_string(env, get_prop(env, storage_texture, "format"));
-            entries[i].storageTexture.viewDimension = texture_view_dimension_from_string(env, get_prop(env, storage_texture, "viewDimension"));
-        }
+        doe_parse_bgl_entry_common(env, elem, &entries[i]);
     }
 
-    /* Read label */
-    WGPUStringView label_view = { .data = NULL, .length = 0 };
     char label_buf[256] = {0};
-    if (has_prop(env, argv[0], "label") && prop_type(env, argv[0], "label") == napi_string) {
-        size_t label_len = 0;
-        napi_get_value_string_utf8(env, get_prop(env, argv[0], "label"), label_buf, sizeof(label_buf), &label_len);
-        label_view.data = label_buf;
-        label_view.length = label_len;
-    }
-
     WGPUBindGroupLayoutDescriptor desc = {
         .nextInChain = NULL,
-        .label = label_view,
+        .label = nd_read_label_buf(env, argv[0], label_buf, sizeof(label_buf)),
         .entryCount = entry_count,
         .entries = entries,
     };
@@ -345,19 +239,10 @@ napi_value native_direct_device_create_bind_group(napi_env env, napi_callback_in
         entries[i].size = has_prop(env, resource, "size") ? (uint64_t)get_int64_prop(env, resource, "size") : WGPU_WHOLE_SIZE;
     }
 
-    /* Read label */
-    WGPUStringView label_view = { .data = NULL, .length = 0 };
     char label_buf[256] = {0};
-    if (has_prop(env, argv[0], "label") && prop_type(env, argv[0], "label") == napi_string) {
-        size_t label_len = 0;
-        napi_get_value_string_utf8(env, get_prop(env, argv[0], "label"), label_buf, sizeof(label_buf), &label_len);
-        label_view.data = label_buf;
-        label_view.length = label_len;
-    }
-
     WGPUBindGroupDescriptor desc = {
         .nextInChain = NULL,
-        .label = label_view,
+        .label = nd_read_label_buf(env, argv[0], label_buf, sizeof(label_buf)),
         .layout = layout,
         .entryCount = entry_count,
         .entries = entries,
@@ -388,23 +273,15 @@ napi_value native_direct_device_create_pipeline_layout(napi_env env, napi_callba
         layouts[i] = native_direct_unwrap_external_prop(env, elem, DOE_DIRECT_NATIVE);
     }
 
-    /* Read label / immediateSize */
-    WGPUStringView label_view = { .data = NULL, .length = 0 };
     char label_buf[256] = {0};
     uint32_t immediate_size = 0;
-    if (has_prop(env, argv[0], "label") && prop_type(env, argv[0], "label") == napi_string) {
-        size_t label_len = 0;
-        napi_get_value_string_utf8(env, get_prop(env, argv[0], "label"), label_buf, sizeof(label_buf), &label_len);
-        label_view.data = label_buf;
-        label_view.length = label_len;
-    }
     if (has_prop(env, argv[0], "immediateSize") && prop_type(env, argv[0], "immediateSize") == napi_number) {
         napi_get_value_uint32(env, get_prop(env, argv[0], "immediateSize"), &immediate_size);
     }
 
     WGPUPipelineLayoutDescriptor desc = {
         .nextInChain = NULL,
-        .label = label_view,
+        .label = nd_read_label_buf(env, argv[0], label_buf, sizeof(label_buf)),
         .bindGroupLayoutCount = layout_count,
         .bindGroupLayouts = layouts,
         .immediateSize = immediate_size,
@@ -424,22 +301,12 @@ napi_value native_direct_device_create_command_encoder(napi_env env, napi_callba
     WGPUDevice device = device_cache ? (WGPUDevice)device_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
     if (!device) NAPI_THROW(env, "Invalid device");
 
-    /* Read label from optional descriptor */
-    WGPUStringView label_view = { .data = NULL, .length = 0 };
     char label_buf[256] = {0};
-    if (argc >= 1) {
-        napi_valuetype desc_vt; napi_typeof(env, argv[0], &desc_vt);
-        if (desc_vt == napi_object && has_prop(env, argv[0], "label") && prop_type(env, argv[0], "label") == napi_string) {
-            size_t label_len = 0;
-            napi_get_value_string_utf8(env, get_prop(env, argv[0], "label"), label_buf, sizeof(label_buf), &label_len);
-            label_view.data = label_buf;
-            label_view.length = label_len;
-        }
-    }
-
+    napi_valuetype desc_vt = napi_undefined;
+    if (argc >= 1) napi_typeof(env, argv[0], &desc_vt);
     WGPUCommandEncoderDescriptor desc = {
         .nextInChain = NULL,
-        .label = label_view,
+        .label = (desc_vt == napi_object) ? nd_read_label_buf(env, argv[0], label_buf, sizeof(label_buf)) : (WGPUStringView){0},
     };
     WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, &desc);
     if (!encoder) NAPI_THROW(env, "createCommandEncoder failed");
@@ -453,21 +320,7 @@ napi_value native_direct_device_destroy(napi_env env, napi_callback_info info) {
     NativeDirectHandleCache* device_cache = native_direct_get_handle_cache(env, this_arg);
     WGPUDevice device = device_cache ? (WGPUDevice)device_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
     if (device) {
-        DeviceCallbackBinding* lost = binding_take(&doe_env_state(env)->lost_bindings, device);
-        DeviceCallbackBinding* uncaptured = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
-        if (lost && pfn_doeNativeDeviceRegisterLostCallback) {
-            pfn_doeNativeDeviceRegisterLostCallback(device, NULL, NULL);
-        }
-        if (uncaptured && pfn_doeNativeDeviceSetUncapturedErrorCallback) {
-            pfn_doeNativeDeviceSetUncapturedErrorCallback(device, NULL, NULL, NULL);
-        }
-        if (lost) {
-            release_binding(lost);
-        }
-        if (uncaptured) {
-            release_binding(uncaptured);
-        }
-        pfn_wgpuDeviceRelease(device);
+        doe_detach_and_release_device(env, device);
         native_direct_set_external_prop(env, this_arg, DOE_DIRECT_NATIVE, NULL);
         if (device_cache) device_cache->native = NULL;
     }

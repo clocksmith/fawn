@@ -15,8 +15,11 @@ PROGRAM_CONTRACT := $(shell python3 -c 'import json,sys; print(json.load(open(sy
 ifeq ($(PROGRAM_CONTRACT),)
 $(error cannot read nativeContractVersion from $(PROGRAM_SCHEMA))
 endif
+VK_PROFILE_ADD ?= 0u
+VK_PROFILE_CLEAR ?= 0u
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -DWGPU_SHARED_LIBRARY -DWGPU_IMPLEMENTATION \
- -DDOE_COMPUTE_PROGRAM_CONTRACT=$(PROGRAM_CONTRACT)u -Iinclude \
+ -DDOE_COMPUTE_PROGRAM_CONTRACT=$(PROGRAM_CONTRACT)u \
+ -DDOE_NATIVE_VK_PROFILE_ADD=$(VK_PROFILE_ADD) -DDOE_NATIVE_VK_PROFILE_CLEAR=$(VK_PROFILE_CLEAR) -Iinclude \
  -I../../vendor/webgpu-headers -I../compiler/include $(addprefix -I,$(addsuffix /include,$(OWNER_DIRS)))
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread $(SANITIZE)

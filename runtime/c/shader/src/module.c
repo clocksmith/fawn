@@ -14,10 +14,11 @@ static bool module_layout(const DoeCompilerValidationResult *result, size_t noti
         shader_reserve(bytes,result->required_name_bytes,1,1,&offsets[4]) &&
         shader_reserve(bytes,notices,sizeof(DoeCompilerNoticeV18),alignof(DoeCompilerNoticeV18),&offsets[5]);
 }
-doe_shader_status doe_shader_create_module(const doe_shader_options *options,
+doe_shader_status doe_shader_create_module_diagnostics(const doe_shader_options *options,
     size_t override_capacity, const char *source, size_t source_size,
-    doe_shader **out, doe_shader_error *error)
+    doe_shader **out, doe_shader_error *error, doe_shader_diagnostics *failure_notices)
 {
+    if (failure_notices) *failure_notices = (doe_shader_diagnostics){0};
     if (!shader_options_valid(options) || !out || (!source && source_size) ||
         options->selection.mode != DOE_COMPILER_SELECT_NONE || options->selection.reserved || options->selection.name || options->selection.name_length)
         return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
@@ -102,10 +103,54 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
         outcome = DOE_SHADER_OK;
     }
 finished:
+    if (outcome == DOE_SHADER_COMPILE_FAILED && status != DOE_COMPILER_OK &&
+        failure_notices && report->required_notices) {
+        const size_t count = report->required_notices;
+        if (count > SIZE_MAX / sizeof(DoeCompilerNoticeV18)) {
+            outcome = DOE_SHADER_OVERFLOW;
+        } else {
+            const size_t notice_bytes = count * sizeof(DoeCompilerNoticeV18);
+            DoeCompilerNoticeV18 *owned = saved.allocator.allocate(saved.allocator.userdata,
+                notice_bytes, alignof(max_align_t));
+            if (!owned) {
+                outcome = DOE_SHADER_OUT_OF_MEMORY;
+            } else {
+                DoeCompilerDiagnosticOutputsV18 out_notices = {
+                    .metadata = {.override_record_size = sizeof(DoeCompilerOverrideV13),
+                        .entry_record_size = sizeof(DoeCompilerModuleEntryV13)},
+                    .notices = owned, .notice_capacity = count,
+                    .notice_record_size = sizeof(DoeCompilerNoticeV18)};
+                DoeCompilerPreparedResultV20 published = {0};
+                (void)doe_compiler_publish_module(DOE_COMPILER_PREPARED_ABI_VERSION,
+                    workspace, requirements.size_bytes, &out_notices, sizeof(out_notices),
+                    &published, sizeof(published));
+                if (published.validation.published_notices == count)
+                    *failure_notices = (doe_shader_diagnostics){owned, count, saved.allocator};
+                else saved.allocator.deallocate(saved.allocator.userdata, owned, notice_bytes, alignof(max_align_t));
+            }
+        }
+    }
     saved.allocator.deallocate(saved.allocator.userdata,workspace,input.bytes,requirements.alignment_bytes);
     if (outcome == DOE_SHADER_OK) *out = module;
     else doe_shader_release(module);
     return shader_fail(error,outcome,status,&result->diagnostic);
+}
+
+doe_shader_status doe_shader_create_module(const doe_shader_options *options,
+    size_t override_capacity, const char *source, size_t source_size,
+    doe_shader **out, doe_shader_error *error)
+{
+    return doe_shader_create_module_diagnostics(options, override_capacity,
+        source, source_size, out, error, NULL);
+}
+
+void doe_shader_diagnostics_release(doe_shader_diagnostics *diagnostics)
+{
+    if (!diagnostics) return;
+    if (diagnostics->notices)
+        diagnostics->allocator.deallocate(diagnostics->allocator.userdata,
+            diagnostics->notices, diagnostics->count * sizeof(DoeCompilerNoticeV18), alignof(max_align_t));
+    *diagnostics = (doe_shader_diagnostics){0};
 }
 
 doe_shader_status doe_shader_borrow_module(const doe_shader *module, doe_shader_module_view *out)

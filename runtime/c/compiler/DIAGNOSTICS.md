@@ -43,13 +43,17 @@ The private fixed workspace sizes and ceiling are unchanged.
 workspace requirements, while preserving every ABI1–17 public structure and
 entrypoint. Measure returns exact metadata/notice requirements. Fill validates
 all capacities before publishing either metadata or notices. Wrong ABI or
-record/descriptor sizes leave the result untouched; failure publishes no bulk
-outputs. A fatal module retains its existing fatal diagnostic, not a partially
-accumulated notice array.
+record/descriptor sizes leave the result untouched; input, capacity, and FP
+restoration failures publish no bulk outputs. On a WGSL parse, semantic, or
+unsupported-feature failure, `validation.diagnostic` retains the fatal error,
+module metadata outputs stay untouched, `required_notices` reports nonfatal
+warning/info notices accumulated before the failure, and callers supplying
+sufficient `notice_capacity` receive those notices (`published_notices == required_notices`).
 
 Notices own severity, rule, source byte offset/length, line/column, and message
-text. They borrow no source pointers. Successful modules report nonfatal
-filterable triggers and the first unknown-rule warning. Older compiler APIs and
+text. They borrow no source pointers. Modules report nonfatal
+filterable triggers and the first unknown-rule warning accumulated before any
+fatal error. Older compiler APIs and
 the current CLI apply policies but have no nonfatal-record output channel; this
 change does **not** claim warning/info stderr reporting for that CLI.
 

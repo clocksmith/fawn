@@ -506,8 +506,8 @@ void doe_vk_context_release(doe_vk_context *context) {
     if (--context->references != 0) return;
     /* Every recording/submission/resource owns a reference, so no native work
      * can exist here. Unknown submissions cannot be released. */
-    doe_vk_pipeline_cache_clear(context);
     doe_vk_descriptor_blocks_clear(context);
+    doe_vk_pipeline_cache_clear(context);
     doe_vk_memory_blocks_clear(context);
     (void)doe_vk_context_pipeline_cache_flush(context, NULL);
     doe_vk_driver_cache_clear(context);

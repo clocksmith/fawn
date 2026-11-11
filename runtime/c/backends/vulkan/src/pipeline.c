@@ -122,6 +122,7 @@ static void unlink_compute(doe_vk_context *context, doe_vk_pipeline *pipeline) {
 }
 
 static void destroy_objects(doe_vk_context *context, doe_vk_pipeline *pipeline) {
+    doe_vk_descriptor_evict(context, pipeline);
     free(pipeline->spirv);
     free(pipeline->entrypoint);
     if (pipeline->pipeline != 0) context->vk.vkDestroyPipeline(context->device, pipeline->pipeline, NULL);

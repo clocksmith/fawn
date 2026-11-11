@@ -71,6 +71,7 @@ of repeated prose does not delete them.
 - [`performance-strategy.md`](performance-strategy.md): measurement and
   comparison contract; not a separate strategy
 - [`operator-runbook.md`](operator-runbook.md)
+- [`amd-vulkan-rerun-runbook.md`](amd-vulkan-rerun-runbook.md): uncontended Strix Halo drop-in phase, unchanged Doppler generation, and graphics rerun sequence
 - [`concurrency-strategy.md`](concurrency-strategy.md)
 - [`numeric-stability.md`](numeric-stability.md)
 - [`metal-macos-proof-bundle-runbook.md`](metal-macos-proof-bundle-runbook.md)

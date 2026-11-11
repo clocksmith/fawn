@@ -306,8 +306,70 @@ static void batch_records(void) {
     doe_vk_buffer_release(arguments); close_context(&c);
 }
 
+static void candidate_uncached_4mb_and_chunked_wc(void) {
+    doe_vk_context c=context();
+    c.memory.memoryTypes[1].propertyFlags|=VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    c.caps.resource_profile=DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES|
+        DOE_VK_RESOURCE_SUBALLOCATE_4MB|DOE_VK_RESOURCE_CHUNKED_WC_WRITE;
+    const unsigned alloc_before=mock.allocations, map_before=mock.maps;
+    const unsigned unmap_before=mock.unmaps, free_before=mock.frees;
+    doe_vk_buffer *in_buf=buffer(&c,4u*1024u*1024u,DOE_VK_MEMORY_HOST_DEVICE_LOCAL);
+    doe_vk_buffer *out_buf=buffer(&c,4u*1024u*1024u,DOE_VK_MEMORY_HOST_DEVICE_LOCAL);
+    doe_vk_buffer *readback=buffer(&c,4u*1024u*1024u,DOE_VK_MEMORY_HOST);
+    doe_vk_buffer *params=buffer(&c,16,DOE_VK_MEMORY_HOST_DEVICE_LOCAL);
+    assert(!in_buf->host_cached && !out_buf->host_cached && !params->host_cached && readback->host_cached);
+    assert(in_buf->slice.block && in_buf->slice.block==out_buf->slice.block && in_buf->slice.block==params->slice.block);
+    assert(!readback->slice.block && c.memory_block_count==1);
+    assert(mock.memories[in_buf->memory].size==12u*1024u*1024u);
+    assert(mock.memories[readback->memory].size==4u*1024u*1024u);
+    assert(mock.allocations==alloc_before+2 && mock.maps==map_before+2);
+
+    /* Unaligned source, non-multiple tail, 1 MiB write and poisoned-content healing. */
+    const size_t raw_len=1024u*1024u+64u;
+    unsigned char *raw=malloc(raw_len);
+    unsigned char *got=malloc(raw_len);
+    assert(raw && got);
+    for (size_t i=0;i<raw_len;++i) raw[i]=(unsigned char)((i*131u+17u)&0xffu);
+    const unsigned char *unaligned=raw+3u;
+    const size_t tail_len=65536u+37u;
+    assert(doe_vk_buffer_write(in_buf,256,unaligned,tail_len)==DOE_VK_OK);
+    assert(doe_vk_buffer_read(in_buf,256,got,tail_len)==DOE_VK_OK);
+    assert(!memcmp(got,unaligned,tail_len));
+    assert(doe_vk_buffer_write(in_buf,0,unaligned,1024u*1024u)==DOE_VK_OK);
+    assert(doe_vk_buffer_read(in_buf,0,got,1024u*1024u)==DOE_VK_OK);
+    assert(!memcmp(got,unaligned,1024u*1024u));
+    in_buf->content_status=DOE_VK_NATIVE_FAILURE;
+    assert(doe_vk_buffer_write(in_buf,0,raw,65536u)==DOE_VK_NATIVE_FAILURE);
+    unsigned char *full=malloc(4u*1024u*1024u);
+    assert(full);
+    for (size_t i=0;i<4u*1024u*1024u;++i) full[i]=(unsigned char)((i*73u+5u)&0xffu);
+    assert(doe_vk_buffer_write(in_buf,0,full,4u*1024u*1024u)==DOE_VK_OK && in_buf->content_status==DOE_VK_OK);
+    assert(!memcmp(in_buf->mapped,full,4u*1024u*1024u));
+    free(full); free(got); free(raw);
+
+    doe_vk_buffer_release(params);
+    doe_vk_buffer_release(out_buf);
+    doe_vk_buffer_release(in_buf);
+    /* All three WC buffers came from the 12 MiB block: zero unmap/free at buffer release. */
+    assert(mock.unmaps==unmap_before && mock.frees==free_before);
+    doe_vk_buffer_release(readback);
+    assert(mock.unmaps==unmap_before+1 && mock.frees==free_before+1);
+    close_context(&c);
+    assert(mock.unmaps==unmap_before+2 && mock.frees==free_before+2);
+
+    /* Uncached allocations <= 2 MiB still size new blocks at 4 MiB. */
+    c=context();
+    c.memory.memoryTypes[1].propertyFlags|=VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    c.caps.resource_profile=DOE_VK_RESOURCE_DEVICE_LOCAL_HOST_WRITES|DOE_VK_RESOURCE_SUBALLOCATE_4MB;
+    doe_vk_buffer *one_mb=buffer(&c,1024u*1024u,DOE_VK_MEMORY_HOST_DEVICE_LOCAL);
+    assert(one_mb->slice.block && mock.memories[one_mb->memory].size==4u*1024u*1024u);
+    doe_vk_buffer_release(one_mb);
+    close_context(&c);
+}
+
 int main(void) {
     placement(); small_native_alignment(); exclusive_and_faults(); bounded_blocks(); zero_and_retirement(); batch_records();
+    candidate_uncached_4mb_and_chunked_wc();
     puts("PASS memory slices: actual-type/aligned nonoverlap, zero reuse/canaries, dedicated and absent-query fallback, allocation/map/bind rollback, private padding, abandoned/accepted/unknown initialization and completion-held reuse; batched/mixed/legacy argument offsets, grouped copies, bounded dispatches and per-record metadata; native procedure controls only");
     return 0;
 }

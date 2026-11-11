@@ -7,6 +7,76 @@
  * Shader Module
  * ================================================================ */
 
+void doe_free_compilation_hints(WGPUShaderModuleCompilationHint* hints, char** entry_points, size_t count) {
+    if (entry_points) {
+        for (size_t i = 0; i < count; i++) free(entry_points[i]);
+        free(entry_points);
+    }
+    free(hints);
+}
+
+bool doe_parse_compilation_hints(
+    napi_env env,
+    napi_value hints_value,
+    WGPUShaderModuleCompilationHint** out_hints,
+    char*** out_entry_points,
+    size_t* out_count
+) {
+    *out_hints = NULL;
+    *out_entry_points = NULL;
+    *out_count = 0;
+    if (!hints_value) return true;
+    napi_valuetype hints_type = napi_undefined;
+    bool is_array = false;
+    napi_typeof(env, hints_value, &hints_type);
+    if (hints_type == napi_object) napi_is_array(env, hints_value, &is_array);
+    if (!is_array) return true;
+    uint32_t arr_len = 0;
+    napi_get_array_length(env, hints_value, &arr_len);
+    if (arr_len == 0) return true;
+
+    WGPUShaderModuleCompilationHint* hints = (WGPUShaderModuleCompilationHint*)calloc(arr_len, sizeof(*hints));
+    char** eps = (char**)calloc(arr_len, sizeof(*eps));
+    if (!hints || !eps) {
+        free(hints);
+        free(eps);
+        NAPI_THROW(env, "createShaderModule: out of memory while parsing compilationHints");
+    }
+    for (uint32_t i = 0; i < arr_len; i++) {
+        napi_value hint_obj;
+        napi_get_element(env, hints_value, i, &hint_obj);
+        napi_value ep_val;
+        if (napi_get_named_property(env, hint_obj, "entryPoint", &ep_val) == napi_ok) {
+            napi_valuetype ep_type = napi_undefined;
+            napi_typeof(env, ep_val, &ep_type);
+            if (ep_type == napi_string) {
+                size_t ep_len = 0;
+                eps[i] = dup_string_value(env, ep_val, &ep_len);
+                if (!eps[i]) {
+                    doe_free_compilation_hints(hints, eps, i);
+                    NAPI_THROW(env, "createShaderModule: out of memory while parsing compilationHints");
+                }
+                hints[i].entryPoint.data = eps[i];
+                hints[i].entryPoint.length = ep_len;
+            }
+        }
+        napi_value layout_val;
+        if (napi_get_named_property(env, hint_obj, "layout", &layout_val) == napi_ok) {
+            napi_valuetype layout_type = napi_undefined;
+            napi_typeof(env, layout_val, &layout_type);
+            if (layout_type == napi_string) {
+                hints[i].layout = NULL;
+            } else if (layout_type == napi_external || layout_type == napi_object) {
+                hints[i].layout = unwrap_ptr(env, layout_val);
+            }
+        }
+    }
+    *out_hints = hints;
+    *out_entry_points = eps;
+    *out_count = arr_len;
+    return true;
+}
+
 napi_value doe_create_shader_module(napi_env env, napi_callback_info info) {
     size_t argc = 4;
     napi_value argv[4];
@@ -27,72 +97,12 @@ napi_value doe_create_shader_module(napi_env env, napi_callback_info info) {
     if (!code) NAPI_THROW(env, "createShaderModule: out of memory");
     napi_get_value_string_utf8(env, argv[1], code, code_len + 1, &code_len);
 
-    /* argv[2] is the optional compilationHints array */
     WGPUShaderModuleCompilationHint* hints = NULL;
     char** hint_entry_points = NULL;
     size_t hint_count = 0;
-
-    if (argc > 2) {
-        napi_valuetype hints_type;
-        napi_typeof(env, argv[2], &hints_type);
-        bool is_array = false;
-        if (hints_type == napi_object) {
-            napi_is_array(env, argv[2], &is_array);
-        }
-        if (is_array) {
-            uint32_t arr_len = 0;
-            napi_get_array_length(env, argv[2], &arr_len);
-            if (arr_len > 0) {
-                hint_count = arr_len;
-                hints = (WGPUShaderModuleCompilationHint*)calloc(hint_count, sizeof(WGPUShaderModuleCompilationHint));
-                hint_entry_points = (char**)calloc(hint_count, sizeof(char*));
-                if (!hints || !hint_entry_points) {
-                    if (code_on_heap) free(code);
-                    free(hints);
-                    free(hint_entry_points);
-                    NAPI_THROW(env, "createShaderModule: out of memory while parsing compilationHints");
-                }
-                for (uint32_t i = 0; i < arr_len; i++) {
-                    napi_value hint_obj;
-                    napi_get_element(env, argv[2], i, &hint_obj);
-
-                    /* Read entryPoint string */
-                    napi_value ep_val;
-                    if (napi_get_named_property(env, hint_obj, "entryPoint", &ep_val) == napi_ok) {
-                        napi_valuetype ep_type;
-                        napi_typeof(env, ep_val, &ep_type);
-                        if (ep_type == napi_string) {
-                            size_t ep_len = 0;
-                            napi_get_value_string_utf8(env, ep_val, NULL, 0, &ep_len);
-                            hint_entry_points[i] = (char*)malloc(ep_len + 1);
-                            if (!hint_entry_points[i]) {
-                                if (code_on_heap) free(code);
-                                for (uint32_t j = 0; j < i; j++) free(hint_entry_points[j]);
-                                free(hint_entry_points);
-                                free(hints);
-                                NAPI_THROW(env, "createShaderModule: out of memory while parsing compilationHints");
-                            }
-                            napi_get_value_string_utf8(env, ep_val, hint_entry_points[i], ep_len + 1, &ep_len);
-                            hints[i].entryPoint.data = hint_entry_points[i];
-                            hints[i].entryPoint.length = ep_len;
-                        }
-                    }
-
-                    /* Read layout — pipeline layout handle or "auto" (NULL) */
-                    napi_value layout_val;
-                    if (napi_get_named_property(env, hint_obj, "layout", &layout_val) == napi_ok) {
-                        napi_valuetype layout_type;
-                        napi_typeof(env, layout_val, &layout_type);
-                        if (layout_type == napi_string) {
-                            /* "auto" → NULL layout */
-                            hints[i].layout = NULL;
-                        } else if (layout_type == napi_external || layout_type == napi_object) {
-                            hints[i].layout = unwrap_ptr(env, layout_val);
-                        }
-                    }
-                }
-            }
-        }
+    if (argc > 2 && !doe_parse_compilation_hints(env, argv[2], &hints, &hint_entry_points, &hint_count)) {
+        if (code_on_heap) free(code);
+        return NULL;
     }
 
     WGPUShaderSourceWGSL wgsl_source = {
@@ -107,9 +117,7 @@ napi_value doe_create_shader_module(napi_env env, napi_callback_info info) {
             label_str = dup_string_value(env, argv[3], &label_len);
             if (!label_str) {
                 if (code_on_heap) free(code);
-                for (size_t i = 0; i < hint_count; i++) free(hint_entry_points[i]);
-                free(hint_entry_points);
-                free(hints);
+                doe_free_compilation_hints(hints, hint_entry_points, hint_count);
                 NAPI_THROW(env, "createShaderModule: out of memory while parsing label");
             }
         }
@@ -124,11 +132,7 @@ napi_value doe_create_shader_module(napi_env env, napi_callback_info info) {
     WGPUShaderModule mod = pfn_wgpuDeviceCreateShaderModule(device, &desc);
     free(label_str);
     if (code_on_heap) free(code);
-    for (size_t i = 0; i < hint_count; i++) {
-        free(hint_entry_points[i]);
-    }
-    free(hint_entry_points);
-    free(hints);
+    doe_free_compilation_hints(hints, hint_entry_points, hint_count);
     if (!mod) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, mod);
 }

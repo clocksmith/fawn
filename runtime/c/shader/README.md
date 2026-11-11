@@ -214,9 +214,12 @@ allocation, alongside source and entry metadata. `doe_shader_get_diagnostics`
 returns a borrowed notice span while the artifact is retained; specialized
 artifacts retain the source module. NULL and direct/nonmodule artifacts report
 zero notices. Fatal validation preserves the existing error and publishes no
-partial module. See the compiler's [diagnostic contract](../compiler/DIAGNOSTICS.md)
-for global policy semantics, source locations, old-ABI transport limitations,
-and the separate unsupported scoped-attribute boundary.
+partial module; `doe_shader_create_module_diagnostics` optionally retains
+allocator-owned warning/info notices accumulated before a fatal source error
+(released via `doe_shader_diagnostics_release`) while still leaving `*out`
+untouched. See the compiler's [diagnostic contract](../compiler/DIAGNOSTICS.md)
+for global and lexical policy semantics, source locations, and old-ABI transport
+limitations.
 
 Selected HLSL specialization now requests the compiler's explicit ABI19 profile
 in the existing measure/fill transaction. `doe_shader_hlsl_profile` borrows that

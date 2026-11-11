@@ -30,7 +30,7 @@ void doe_vk_external_commands_release(doe_vk_commands *commands);
 void doe_vk_external_publish(doe_vk_commands *commands);
 
 enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
-enum { DOE_VK_COMMAND_SPARES = 8 };
+enum { DOE_VK_COMMAND_SPARES = 8, DOE_VK_RETAINED_DISPATCHES = 16 };
 /* One loader handle and VkInstance shared by an adapter context and the device
  * contexts opened from it; the last reference destroys the instance and
  * unloads the loader. Atomic: contexts of different devices release freely. */
@@ -64,6 +64,8 @@ struct doe_vk_context {
     /* Free-able descriptor pools that dispatch uses allocate their sets from;
      * see descriptors.c. Accessed only under the owning device's serialization. */
     struct doe_vk_descriptor_block *descriptor_blocks;
+    struct doe_vk_dispatch_use *retained_dispatches[DOE_VK_RETAINED_DISPATCHES];
+    uint32_t retained_dispatch_count;
     struct doe_vk_memory_block *memory_blocks;
     uint32_t memory_block_count;
     uint32_t retained_pipelines;
@@ -85,6 +87,7 @@ enum { DOE_VK_RETAINED_PIPELINES = 32 };
 void doe_vk_pipeline_cache_clear(doe_vk_context *context);
 /* Destroys every descriptor pool block; the context is releasing its device. */
 void doe_vk_descriptor_blocks_clear(doe_vk_context *context);
+void doe_vk_descriptor_evict(doe_vk_context *context, const void *resource);
 /* DOE_VK_RESOURCE_* bits for an adapter (doe_vk.h); pure, so tests can pin the rule. */
 uint32_t doe_vk_resource_profile_select(uint32_t vendor_id, const VkPhysicalDeviceMemoryProperties *memory);
 void doe_vk_driver_cache_clear(doe_vk_context *context);
@@ -117,7 +120,7 @@ struct doe_vk_buffer {
     void *mapped;
     doe_vk_memory_slice slice;
     uint64_t native_size;
-    bool needs_zero, memory_bound;
+    bool needs_zero, memory_bound, host_cached;
     doe_vk_commands *zero_owner;
 };
 struct doe_vk_pipeline {
@@ -156,6 +159,8 @@ typedef struct doe_vk_buffer_use {
 typedef struct doe_vk_dispatch_use {
     doe_vk_pipeline *pipeline;
     VkDescriptorPool pool;
+    uint32_t group_count;
+    bool written;
     VkDescriptorSet sets[DOE_VK_MAX_GROUPS];
     struct doe_vk_texture_view *views[DOE_VK_MAX_BINDINGS];
     struct doe_vk_sampler *samplers[DOE_VK_MAX_BINDINGS];

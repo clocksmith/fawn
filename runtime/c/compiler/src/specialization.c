@@ -126,6 +126,12 @@ static void validation_publish(const Source *s, const DoeCompilerValidationOutpu
     result->published_entries = result->required_entries;
     result->published_name_bytes = result->required_name_bytes;
 }
+bool compiler_source_failure(DoeCompilerStatus status)
+{
+    return status == DOE_COMPILER_PARSE_ERROR ||
+        status == DOE_COMPILER_UNSUPPORTED ||
+        status == DOE_COMPILER_SEMANTIC_ERROR;
+}
 static DoeCompilerStatus validate_module(uint32_t version,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
     void *workspace, size_t workspace_size, const char *source, size_t length,
@@ -184,13 +190,21 @@ static DoeCompilerStatus validate_module(uint32_t version,
         }
         if (analyzed) analyzed=validation_metadata(&s,outputs,result);
         const bool restored = numeric_environment_end(&s, &environment);
-        if (analyzed && restored && prepared) compiler_prepared_capture(prepared, &s, NULL, NO_ID);
+        const bool failed_with_notices = !analyzed && restored && notice_result != NULL &&
+            compiler_source_failure(result->diagnostic.status);
+        if (failed_with_notices) notice_result->required_notices = compiler_notice_count(&s);
+        if (restored && prepared && (analyzed || (failed_with_notices && notice_result->required_notices)))
+            compiler_prepared_capture(prepared, &s, NULL, NO_ID);
         if (analyzed && restored && outputs != NULL) {
             validation_publish(&s, outputs, result);
             if (notices != NULL) {
-                compiler_notices_publish(&s,notices->notices);
+                if (notice_result->required_notices) compiler_notices_publish(&s,notices->notices);
                 notice_result->published_notices=notice_result->required_notices;
             }
+        } else if (failed_with_notices && notices != NULL &&
+            notice_result->required_notices <= notices->notice_capacity) {
+            if (notice_result->required_notices) compiler_notices_publish(&s, notices->notices);
+            notice_result->published_notices = notice_result->required_notices;
         }
     }
     errno = saved_errno;
@@ -233,26 +247,28 @@ DoeCompilerStatus compiler_prepare_validation(CompilerPrepared *prepared,
         &result->validation, sizeof(result->validation), NULL, result, prepared);
 }
 DoeCompilerStatus compiler_publish_validation(CompilerPrepared *prepared,
-    const DoeCompilerDiagnosticOutputsV18 *outputs)
+    const DoeCompilerDiagnosticOutputsV18 *outputs, bool notices_only)
 {
     Source *source = &prepared->source;
     DoeCompilerDiagnosticResultV18 *report = &prepared->result.validation;
     const DoeCompilerValidationOutputs *metadata = &outputs->metadata;
-    if (!compiler_valid_span(metadata->overrides, metadata->override_capacity,
-            sizeof(DoeCompilerOverrideV13), _Alignof(DoeCompilerOverrideV13), true) ||
-        !compiler_valid_span(metadata->entries, metadata->entry_capacity,
-            sizeof(DoeCompilerModuleEntryV13), _Alignof(DoeCompilerModuleEntryV13), true) ||
-        !compiler_valid_span(metadata->names, metadata->name_capacity, 1u, 1u, true) ||
+    if ((!notices_only &&
+            (!compiler_valid_span(metadata->overrides, metadata->override_capacity,
+                sizeof(DoeCompilerOverrideV13), _Alignof(DoeCompilerOverrideV13), true) ||
+             !compiler_valid_span(metadata->entries, metadata->entry_capacity,
+                sizeof(DoeCompilerModuleEntryV13), _Alignof(DoeCompilerModuleEntryV13), true) ||
+             !compiler_valid_span(metadata->names, metadata->name_capacity, 1u, 1u, true))) ||
         !compiler_valid_span(outputs->notices, outputs->notice_capacity,
             sizeof(DoeCompilerNoticeV18), _Alignof(DoeCompilerNoticeV18), true))
         (void)source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, "invalid retained validation output spans");
-    else if (metadata->override_capacity < report->validation.required_overrides ||
-        metadata->entry_capacity < report->validation.required_entries ||
-        metadata->name_capacity < report->validation.required_name_bytes ||
+    else if ((!notices_only &&
+            (metadata->override_capacity < report->validation.required_overrides ||
+             metadata->entry_capacity < report->validation.required_entries ||
+             metadata->name_capacity < report->validation.required_name_bytes)) ||
         outputs->notice_capacity < report->required_notices)
         (void)source_error(source, DOE_COMPILER_OUTPUT_TOO_SMALL, source->length, "retained validation output capacity is too small");
     else {
-        validation_publish(source, metadata, &report->validation);
+        if (!notices_only) validation_publish(source, metadata, &report->validation);
         if (report->required_notices) compiler_notices_publish(source, outputs->notices);
         report->published_notices = report->required_notices;
     }

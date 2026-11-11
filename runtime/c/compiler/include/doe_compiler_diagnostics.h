@@ -32,12 +32,14 @@ typedef struct {
 /* Same workspace query and whole-module semantics as ABI13 validation.
  * NULL outputs measures metadata and notices. Every count is exact on successful
  * validation; any undersized output leaves ALL bulk outputs untouched. Fatal
- * diagnostics remain in validation.diagnostic; notices contain warning/info.
+ * diagnostics remain in validation.diagnostic; notices contain warning/info,
+ * including nonfatal notices accumulated before a parse/semantic/unsupported
+ * failure (while module metadata outputs remain untouched).
  * Each notice owns its text and source location; no borrowed or retained pointers.
  * Unknown rules produce one warning at the first unrecognized rule per module.
  * Old interfaces apply source policy but cannot expose nonfatal records.
  * Exact descriptor sizes, caller-owned aligned/disjoint spans, errno/FP state,
- * failure publication and source immutability follow ABI13.
+ * non-source failure publication and source immutability follow ABI13.
  */
 DoeCompilerStatus doe_compiler_validate_module_diagnostics(
     uint32_t abi_version, const DoeCompilerSpecializationCapacities *, size_t capacities_size,

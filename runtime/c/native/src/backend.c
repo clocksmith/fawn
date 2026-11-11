@@ -7,6 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef DOE_NATIVE_VK_PROFILE_ADD
+#define DOE_NATIVE_VK_PROFILE_ADD 0u
+#endif
+#ifndef DOE_NATIVE_VK_PROFILE_CLEAR
+#define DOE_NATIVE_VK_PROFILE_CLEAR 0u
+#endif
+
 static bool d3d12_surface_supported(uint32_t platforms)
 {
     return !platforms || platforms == NATIVE_SURFACE_WINDOWS_HWND;
@@ -44,7 +51,9 @@ native_result native_backend_open_shared(WGPUBackendType kind, bool fallback, ui
             .adapter_selection=fallback ? DOE_VK_SELECT_SOFTWARE : DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE,
             /* An adapter answers capability and surface queries; each device
              * opens its own native device below. */
-            .adapter_only=true};
+            .adapter_only=true,
+            .resource_profile_add=DOE_NATIVE_VK_PROFILE_ADD,
+            .resource_profile_clear=DOE_NATIVE_VK_PROFILE_CLEAR};
         if (source && source->kind == WGPUBackendType_Vulkan &&
                 source->value.vulkan.options.surface_platforms == surface_platforms)
             result.value.vulkan.options.share_instance = source->value.vulkan.context;

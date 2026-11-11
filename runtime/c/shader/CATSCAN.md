@@ -27,9 +27,9 @@ their envelope preserves legacy bytes. Legacy imports remain uncertified.
 No parser, substitution, equivalence engine, cache or device owner.
 Snapshot keys/double representations before measure/fill; never equate different
 ordered values. Artifacts retain modules and own code/value spans.
-Release workspaces/temporary inputs before publication. Failures preserve outputs/existing artifacts; legacy creation retains its contract.
+Release workspaces/temporaries before publication. Failures preserve outputs; `doe_shader_create_module_diagnostics` retains allocator-owned pre-fatal notices without publishing a module; legacy creation stays unchanged.
 Import validates identity, integrity, bounded spans, acyclic types and profile/artifact
-consistency. It neither authenticates local files nor validates source through text.
+consistency without authenticating files or re-validating source text.
 
 ## Acceptance
 [Owner tests](Makefile) cover C/C++, targets, copied policy/source, module/executable

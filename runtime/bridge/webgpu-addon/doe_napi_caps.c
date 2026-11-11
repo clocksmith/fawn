@@ -14,147 +14,142 @@ napi_value doe_compute_program_contract_version(napi_env env, napi_callback_info
  * Device capabilities: limits, features
  * ================================================================ */
 
+typedef struct {
+    const char* name;
+    size_t offset;
+} LimitFieldSpec;
+
+static void set_obj_u32(napi_env env, napi_value obj, const char* name, uint32_t value) {
+    napi_value v;
+    napi_create_uint32(env, value, &v);
+    napi_set_named_property(env, obj, name, v);
+}
+
+static void set_obj_bool(napi_env env, napi_value obj, const char* name, bool value) {
+    napi_value v;
+    napi_get_boolean(env, value, &v);
+    napi_set_named_property(env, obj, name, v);
+}
+
+static void set_obj_utf8(napi_env env, napi_value obj, const char* name, const char* value) {
+    napi_value v;
+    napi_create_string_utf8(env, value ? value : "", NAPI_AUTO_LENGTH, &v);
+    napi_set_named_property(env, obj, name, v);
+}
+
 napi_value create_limits_object(napi_env env, const WGPULimits* limits) {
+    static const LimitFieldSpec u32_fields[] = {
+        { "maxTextureDimension1D", offsetof(WGPULimits, maxTextureDimension1D) },
+        { "maxTextureDimension2D", offsetof(WGPULimits, maxTextureDimension2D) },
+        { "maxTextureDimension3D", offsetof(WGPULimits, maxTextureDimension3D) },
+        { "maxTextureArrayLayers", offsetof(WGPULimits, maxTextureArrayLayers) },
+        { "maxBindGroups", offsetof(WGPULimits, maxBindGroups) },
+        { "maxBindGroupsPlusVertexBuffers", offsetof(WGPULimits, maxBindGroupsPlusVertexBuffers) },
+        { "maxBindingsPerBindGroup", offsetof(WGPULimits, maxBindingsPerBindGroup) },
+        { "maxDynamicUniformBuffersPerPipelineLayout", offsetof(WGPULimits, maxDynamicUniformBuffersPerPipelineLayout) },
+        { "maxDynamicStorageBuffersPerPipelineLayout", offsetof(WGPULimits, maxDynamicStorageBuffersPerPipelineLayout) },
+        { "maxSampledTexturesPerShaderStage", offsetof(WGPULimits, maxSampledTexturesPerShaderStage) },
+        { "maxSamplersPerShaderStage", offsetof(WGPULimits, maxSamplersPerShaderStage) },
+        { "maxStorageBuffersPerShaderStage", offsetof(WGPULimits, maxStorageBuffersPerShaderStage) },
+        { "maxStorageTexturesPerShaderStage", offsetof(WGPULimits, maxStorageTexturesPerShaderStage) },
+        { "maxUniformBuffersPerShaderStage", offsetof(WGPULimits, maxUniformBuffersPerShaderStage) },
+        { "minUniformBufferOffsetAlignment", offsetof(WGPULimits, minUniformBufferOffsetAlignment) },
+        { "minStorageBufferOffsetAlignment", offsetof(WGPULimits, minStorageBufferOffsetAlignment) },
+        { "maxVertexBuffers", offsetof(WGPULimits, maxVertexBuffers) },
+        { "maxVertexAttributes", offsetof(WGPULimits, maxVertexAttributes) },
+        { "maxVertexBufferArrayStride", offsetof(WGPULimits, maxVertexBufferArrayStride) },
+        { "maxInterStageShaderVariables", offsetof(WGPULimits, maxInterStageShaderVariables) },
+        { "maxColorAttachments", offsetof(WGPULimits, maxColorAttachments) },
+        { "maxColorAttachmentBytesPerSample", offsetof(WGPULimits, maxColorAttachmentBytesPerSample) },
+        { "maxComputeWorkgroupStorageSize", offsetof(WGPULimits, maxComputeWorkgroupStorageSize) },
+        { "maxComputeInvocationsPerWorkgroup", offsetof(WGPULimits, maxComputeInvocationsPerWorkgroup) },
+        { "maxComputeWorkgroupSizeX", offsetof(WGPULimits, maxComputeWorkgroupSizeX) },
+        { "maxComputeWorkgroupSizeY", offsetof(WGPULimits, maxComputeWorkgroupSizeY) },
+        { "maxComputeWorkgroupSizeZ", offsetof(WGPULimits, maxComputeWorkgroupSizeZ) },
+        { "maxComputeWorkgroupsPerDimension", offsetof(WGPULimits, maxComputeWorkgroupsPerDimension) },
+        { "maxImmediateSize", offsetof(WGPULimits, maxImmediateSize) },
+        { "maxStorageBuffersInVertexStage", offsetof(WGPULimits, maxStorageBuffersPerShaderStage) },
+        { "maxStorageBuffersInFragmentStage", offsetof(WGPULimits, maxStorageBuffersPerShaderStage) },
+        { "maxStorageTexturesInVertexStage", offsetof(WGPULimits, maxStorageTexturesPerShaderStage) },
+        { "maxStorageTexturesInFragmentStage", offsetof(WGPULimits, maxStorageTexturesPerShaderStage) },
+    };
+    static const LimitFieldSpec u64_fields[] = {
+        { "maxUniformBufferBindingSize", offsetof(WGPULimits, maxUniformBufferBindingSize) },
+        { "maxStorageBufferBindingSize", offsetof(WGPULimits, maxStorageBufferBindingSize) },
+        { "maxBufferSize", offsetof(WGPULimits, maxBufferSize) },
+    };
+
     napi_value obj;
     napi_create_object(env, &obj);
-
-#define SET_U32(name) do { napi_value v; napi_create_uint32(env, limits->name, &v); napi_set_named_property(env, obj, #name, v); } while(0)
-#define SET_U64(name) do { napi_value v; napi_create_double(env, (double)limits->name, &v); napi_set_named_property(env, obj, #name, v); } while(0)
-
-    SET_U32(maxTextureDimension1D);
-    SET_U32(maxTextureDimension2D);
-    SET_U32(maxTextureDimension3D);
-    SET_U32(maxTextureArrayLayers);
-    SET_U32(maxBindGroups);
-    SET_U32(maxBindGroupsPlusVertexBuffers);
-    SET_U32(maxBindingsPerBindGroup);
-    SET_U32(maxDynamicUniformBuffersPerPipelineLayout);
-    SET_U32(maxDynamicStorageBuffersPerPipelineLayout);
-    SET_U32(maxSampledTexturesPerShaderStage);
-    SET_U32(maxSamplersPerShaderStage);
-    SET_U32(maxStorageBuffersPerShaderStage);
-    SET_U32(maxStorageTexturesPerShaderStage);
-    SET_U32(maxUniformBuffersPerShaderStage);
-    SET_U64(maxUniformBufferBindingSize);
-    SET_U64(maxStorageBufferBindingSize);
-    SET_U32(minUniformBufferOffsetAlignment);
-    SET_U32(minStorageBufferOffsetAlignment);
-    SET_U32(maxVertexBuffers);
-    SET_U64(maxBufferSize);
-    SET_U32(maxVertexAttributes);
-    SET_U32(maxVertexBufferArrayStride);
-    SET_U32(maxInterStageShaderVariables);
-    SET_U32(maxColorAttachments);
-    SET_U32(maxColorAttachmentBytesPerSample);
-    SET_U32(maxComputeWorkgroupStorageSize);
-    SET_U32(maxComputeInvocationsPerWorkgroup);
-    SET_U32(maxComputeWorkgroupSizeX);
-    SET_U32(maxComputeWorkgroupSizeY);
-    SET_U32(maxComputeWorkgroupSizeZ);
-    SET_U32(maxComputeWorkgroupsPerDimension);
-    SET_U32(maxImmediateSize);
-
-#undef SET_U32
-#undef SET_U64
-
-    napi_value max_storage_buffers_in_vertex_stage;
-    napi_value max_storage_buffers_in_fragment_stage;
-    napi_value max_storage_textures_in_vertex_stage;
-    napi_value max_storage_textures_in_fragment_stage;
-    napi_create_uint32(env, limits->maxStorageBuffersPerShaderStage, &max_storage_buffers_in_vertex_stage);
-    napi_create_uint32(env, limits->maxStorageBuffersPerShaderStage, &max_storage_buffers_in_fragment_stage);
-    napi_create_uint32(env, limits->maxStorageTexturesPerShaderStage, &max_storage_textures_in_vertex_stage);
-    napi_create_uint32(env, limits->maxStorageTexturesPerShaderStage, &max_storage_textures_in_fragment_stage);
-    napi_set_named_property(env, obj, "maxStorageBuffersInVertexStage", max_storage_buffers_in_vertex_stage);
-    napi_set_named_property(env, obj, "maxStorageBuffersInFragmentStage", max_storage_buffers_in_fragment_stage);
-    napi_set_named_property(env, obj, "maxStorageTexturesInVertexStage", max_storage_textures_in_vertex_stage);
-    napi_set_named_property(env, obj, "maxStorageTexturesInFragmentStage", max_storage_textures_in_fragment_stage);
-
+    const char* base = (const char*)limits;
+    for (size_t i = 0; i < sizeof(u32_fields) / sizeof(u32_fields[0]); i++) {
+        uint32_t value = 0;
+        memcpy(&value, base + u32_fields[i].offset, sizeof(value));
+        set_obj_u32(env, obj, u32_fields[i].name, value);
+    }
+    for (size_t i = 0; i < sizeof(u64_fields) / sizeof(u64_fields[0]); i++) {
+        uint64_t value = 0;
+        napi_value v;
+        memcpy(&value, base + u64_fields[i].offset, sizeof(value));
+        napi_create_double(env, (double)value, &v);
+        napi_set_named_property(env, obj, u64_fields[i].name, v);
+    }
     return obj;
 }
 
-napi_value doe_device_get_limits(napi_env env, napi_callback_info info) {
+static napi_value query_handle_limits_object(
+    napi_env env,
+    napi_callback_info info,
+    const char* null_msg,
+    uint32_t (*fn)(void*, void*)
+) {
     NAPI_ASSERT_ARGC(env, info, 1);
     CHECK_LIB_LOADED(env);
-    WGPUDevice device = unwrap_ptr(env, _args[0]);
-    if (!device) NAPI_THROW(env, "deviceGetLimits: null device");
-    uint32_t (*fn)(WGPUDevice, void*) = pfn_doeNativeDeviceGetLimits ? pfn_doeNativeDeviceGetLimits : pfn_wgpuDeviceGetLimits;
-    if (!fn) {
-        napi_value ret;
-        napi_get_null(env, &ret);
-        return ret;
-    }
-
+    void* handle = unwrap_ptr(env, _args[0]);
+    if (!handle) NAPI_THROW(env, null_msg);
     WGPULimits limits;
     memset(&limits, 0, sizeof(limits));
-    uint32_t status = fn(device, &limits);
-    if (status != WGPU_STATUS_SUCCESS) {
+    if (!fn || fn(handle, &limits) != WGPU_STATUS_SUCCESS) {
         napi_value ret;
         napi_get_null(env, &ret);
         return ret;
     }
-
     return create_limits_object(env, &limits);
+}
+
+napi_value doe_device_get_limits(napi_env env, napi_callback_info info) {
+    uint32_t (*fn)(WGPUDevice, void*) = pfn_doeNativeDeviceGetLimits ? pfn_doeNativeDeviceGetLimits : pfn_wgpuDeviceGetLimits;
+    return query_handle_limits_object(env, info, "deviceGetLimits: null device", fn);
 }
 
 napi_value doe_adapter_get_limits(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 1);
-    CHECK_LIB_LOADED(env);
-    WGPUAdapter adapter = unwrap_ptr(env, _args[0]);
-    if (!adapter) NAPI_THROW(env, "adapterGetLimits: null adapter");
     uint32_t (*fn)(WGPUAdapter, void*) = pfn_doeNativeAdapterGetLimits ? pfn_doeNativeAdapterGetLimits : pfn_wgpuAdapterGetLimits;
-    if (!fn) {
-        napi_value ret;
-        napi_get_null(env, &ret);
-        return ret;
-    }
+    return query_handle_limits_object(env, info, "adapterGetLimits: null adapter", fn);
+}
 
-    WGPULimits limits;
-    memset(&limits, 0, sizeof(limits));
-    uint32_t status = fn(adapter, &limits);
-    if (status != WGPU_STATUS_SUCCESS) {
-        napi_value ret;
-        napi_get_null(env, &ret);
-        return ret;
-    }
-
-    return create_limits_object(env, &limits);
+static napi_value query_handle_has_feature(
+    napi_env env,
+    napi_callback_info info,
+    uint32_t (*fn)(void*, uint32_t)
+) {
+    NAPI_ASSERT_ARGC(env, info, 2);
+    CHECK_LIB_LOADED(env);
+    void* handle = unwrap_ptr(env, _args[0]);
+    uint32_t feature = 0;
+    napi_get_value_uint32(env, _args[1], &feature);
+    napi_value ret;
+    napi_get_boolean(env, fn != NULL && fn(handle, feature) != 0, &ret);
+    return ret;
 }
 
 napi_value doe_device_has_feature(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    CHECK_LIB_LOADED(env);
-    WGPUDevice device = unwrap_ptr(env, _args[0]);
     uint32_t (*fn)(WGPUDevice, uint32_t) = pfn_doeNativeDeviceHasFeature ? pfn_doeNativeDeviceHasFeature : pfn_wgpuDeviceHasFeature;
-    if (!fn) {
-        napi_value ret;
-        napi_get_boolean(env, false, &ret);
-        return ret;
-    }
-    uint32_t feature;
-    napi_get_value_uint32(env, _args[1], &feature);
-    uint32_t result = fn(device, feature);
-    napi_value ret;
-    napi_get_boolean(env, result != 0, &ret);
-    return ret;
+    return query_handle_has_feature(env, info, fn);
 }
 
 napi_value doe_adapter_has_feature(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    CHECK_LIB_LOADED(env);
-    WGPUAdapter adapter = unwrap_ptr(env, _args[0]);
     uint32_t (*fn)(WGPUAdapter, uint32_t) = pfn_doeNativeAdapterHasFeature ? pfn_doeNativeAdapterHasFeature : pfn_wgpuAdapterHasFeature;
-    if (!fn) {
-        napi_value ret;
-        napi_get_boolean(env, false, &ret);
-        return ret;
-    }
-    uint32_t feature;
-    napi_get_value_uint32(env, _args[1], &feature);
-    uint32_t result = fn(adapter, feature);
-    napi_value ret;
-    napi_get_boolean(env, result != 0, &ret);
-    return ret;
+    return query_handle_has_feature(env, info, fn);
 }
 
 /* Instance-level WGSL language feature query. Both providers export the
@@ -293,12 +288,12 @@ napi_value doe_device_set_uncaptured_error_callback(napi_env env, napi_callback_
         NAPI_THROW(env, "deviceSetUncapturedErrorCallback requires a function or null");
     }
 
-    DeviceCallbackBinding* binding = (DeviceCallbackBinding*)calloc(1, sizeof(DeviceCallbackBinding));
+    DeviceCallbackBinding* binding = create_device_callback_binding(
+        env, device, _args[1], "doeDeviceUncapturedError", js_call_uncaptured_error, NULL);
     if (!binding) {
         provider_error_log_free(pending);
-        NAPI_THROW(env, "Out of memory");
+        NAPI_THROW(env, "Failed to create uncaptured-error callback bridge");
     }
-    binding->device = device;
     /* A replaced binding hands over the errors JS has not taken yet. */
     for (ProviderErrorEntry* entry = pending; entry;) {
         ProviderErrorEntry* next = entry->next;
@@ -306,15 +301,6 @@ napi_value doe_device_set_uncaptured_error_callback(napi_env env, napi_callback_
         provider_error_log_append(&binding->log, entry);
         entry = next;
     }
-    napi_value resource_name;
-    napi_create_string_utf8(env, "doeDeviceUncapturedError", NAPI_AUTO_LENGTH, &resource_name);
-    if (napi_create_threadsafe_function(
-            env, _args[1], NULL, resource_name, 0, 1,
-            binding, binding_finalize, NULL, js_call_uncaptured_error, &binding->tsfn) != napi_ok) {
-        free(binding);
-        NAPI_THROW(env, "Failed to create uncaptured-error callback bridge");
-    }
-    napi_unref_threadsafe_function(env, binding->tsfn);
     binding_insert(&doe_env_state(env)->uncaptured_bindings, binding);
     pfn_doeNativeDeviceSetUncapturedErrorCallback(device, uncaptured_error_native_callback, binding, NULL);
     napi_value result;
@@ -360,12 +346,10 @@ napi_value doe_device_take_errors(napi_env env, napi_callback_info info) {
     napi_create_array(env, &result);
     uint32_t index = 0;
     for (ProviderErrorEntry* entry = entries; entry; entry = entry->next) {
-        napi_value item, type_val, message_val;
+        napi_value item;
         napi_create_object(env, &item);
-        napi_create_string_utf8(env, error_type_string(entry->type), NAPI_AUTO_LENGTH, &type_val);
-        napi_create_string_utf8(env, entry->message ? entry->message : "", NAPI_AUTO_LENGTH, &message_val);
-        napi_set_named_property(env, item, "type", type_val);
-        napi_set_named_property(env, item, "message", message_val);
+        set_obj_utf8(env, item, "type", error_type_string(entry->type));
+        set_obj_utf8(env, item, "message", entry->message);
         napi_set_element(env, result, index++, item);
     }
     provider_error_log_free(entries);
@@ -384,9 +368,7 @@ napi_value doe_device_register_lost_callback(napi_env env, napi_callback_info in
     if (!device) NAPI_THROW(env, "Invalid device");
 
     DeviceCallbackBinding* old = binding_take(&doe_env_state(env)->lost_bindings, device);
-    if (old) {
-        release_binding(old);
-    }
+    if (old) release_binding(old);
 
     napi_valuetype cb_type;
     napi_typeof(env, _args[1], &cb_type);
@@ -394,18 +376,9 @@ napi_value doe_device_register_lost_callback(napi_env env, napi_callback_info in
         NAPI_THROW(env, "deviceRegisterLostCallback requires a function");
     }
 
-    DeviceCallbackBinding* binding = (DeviceCallbackBinding*)calloc(1, sizeof(DeviceCallbackBinding));
-    if (!binding) NAPI_THROW(env, "Out of memory");
-    binding->device = device;
-    napi_value resource_name;
-    napi_create_string_utf8(env, "doeDeviceLost", NAPI_AUTO_LENGTH, &resource_name);
-    if (napi_create_threadsafe_function(
-            env, _args[1], NULL, resource_name, 0, 1,
-            binding, binding_finalize, NULL, js_call_lost_callback, &binding->tsfn) != napi_ok) {
-        free(binding);
-        NAPI_THROW(env, "Failed to create device-lost callback bridge");
-    }
-    napi_unref_threadsafe_function(env, binding->tsfn);
+    DeviceCallbackBinding* binding = create_device_callback_binding(
+        env, device, _args[1], "doeDeviceLost", js_call_lost_callback, NULL);
+    if (!binding) NAPI_THROW(env, "Failed to create device-lost callback bridge");
     binding_insert(&doe_env_state(env)->lost_bindings, binding);
     pfn_doeNativeDeviceRegisterLostCallback(device, lost_native_callback, binding);
     napi_value result;
@@ -453,10 +426,42 @@ static void set_observed_adapter_backend(napi_env env, napi_value object, void* 
     memset(&standard_info, 0, sizeof(standard_info));
     if (!pfn_wgpuAdapterGetInfo
         || pfn_wgpuAdapterGetInfo(adapter, &standard_info) != WGPU_STATUS_SUCCESS) return;
-    napi_value backend;
-    napi_create_uint32(env, standard_info.backendType, &backend);
-    napi_set_named_property(env, object, "backendType", backend);
+    set_obj_u32(env, object, "backendType", standard_info.backendType);
     if (pfn_wgpuAdapterInfoFreeMembers) pfn_wgpuAdapterInfoFreeMembers(standard_info);
+}
+
+static void set_adapter_info_common(
+    napi_env env,
+    napi_value obj,
+    bool is_fallback,
+    uint32_t sg_min,
+    uint32_t sg_max
+) {
+    set_obj_bool(env, obj, "isFallbackAdapter", is_fallback);
+    set_obj_u32(env, obj, "subgroupMinSize", sg_min);
+    set_obj_u32(env, obj, "subgroupMaxSize", sg_max);
+}
+
+static void set_adapter_pci_identity(
+    napi_env env,
+    napi_value obj,
+    void* adapter,
+    uint32_t vendor_id,
+    uint32_t device_id,
+    bool emit_ids_without_native
+) {
+    uint32_t driver_version = 0;
+    const bool has_native = pfn_doeNativeAdapterGetPciIdentity != NULL;
+    if (has_native) {
+        pfn_doeNativeAdapterGetPciIdentity(adapter, &vendor_id, &device_id, &driver_version);
+    }
+    if (has_native || emit_ids_without_native) {
+        set_obj_u32(env, obj, "vendorID", vendor_id);
+        set_obj_u32(env, obj, "deviceID", device_id);
+    }
+    if (has_native) {
+        set_obj_u32(env, obj, "driverVersion", driver_version);
+    }
 }
 
 napi_value create_adapter_info_object(napi_env env, void* adapter) {
@@ -464,68 +469,27 @@ napi_value create_adapter_info_object(napi_env env, void* adapter) {
     napi_value obj;
     napi_create_object(env, &obj);
     set_observed_adapter_backend(env, obj, adapter);
-
-    napi_value v_vendor, v_arch, v_device, v_desc, v_is_fallback, v_sg_min, v_sg_max;
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_vendor);
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_arch);
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_device);
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_desc);
-    napi_get_boolean(env, false, &v_is_fallback);
-    napi_create_uint32(env, 0, &v_sg_min);
-    napi_create_uint32(env, 0, &v_sg_max);
-    napi_set_named_property(env, obj, "vendor", v_vendor);
-    napi_set_named_property(env, obj, "architecture", v_arch);
-    napi_set_named_property(env, obj, "device", v_device);
-    napi_set_named_property(env, obj, "description", v_desc);
-    napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);
-    napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
-    napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
+    set_obj_utf8(env, obj, "vendor", "");
+    set_obj_utf8(env, obj, "architecture", "");
+    set_obj_utf8(env, obj, "device", "");
+    set_obj_utf8(env, obj, "description", "");
+    set_adapter_info_common(env, obj, false, 0, 0);
 
     const char* vendor = "";
     const char* arch = "";
     const char* device = "";
     const char* desc = "";
     char* block = NULL;
-
-    const bool tried_native_adapter_info =
-        pfn_doeNativeAdapterGetInfo && pfn_doeNativeAdapterFreeInfo;
-
-    if (tried_native_adapter_info) {
+    if (pfn_doeNativeAdapterGetInfo && pfn_doeNativeAdapterFreeInfo) {
         pfn_doeNativeAdapterGetInfo(adapter, &vendor, &arch, &device, &desc, &block);
-        if (!vendor) vendor = "";
-        if (!arch) arch = "";
-        if (!device) device = "";
-        if (!desc) desc = "";
     }
-
     if (block && pfn_doeNativeAdapterFreeInfo) {
-        napi_create_string_utf8(env, vendor, NAPI_AUTO_LENGTH, &v_vendor);
-        napi_create_string_utf8(env, arch, NAPI_AUTO_LENGTH, &v_arch);
-        napi_create_string_utf8(env, device, NAPI_AUTO_LENGTH, &v_device);
-        napi_create_string_utf8(env, desc, NAPI_AUTO_LENGTH, &v_desc);
-        napi_get_boolean(env, adapter_is_cpu(adapter), &v_is_fallback);
-        napi_create_uint32(env, 32, &v_sg_min);
-        napi_create_uint32(env, 32, &v_sg_max);
-        napi_set_named_property(env, obj, "vendor", v_vendor);
-        napi_set_named_property(env, obj, "architecture", v_arch);
-        napi_set_named_property(env, obj, "device", v_device);
-        napi_set_named_property(env, obj, "description", v_desc);
-        napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);
-        napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
-        napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
-        if (pfn_doeNativeAdapterGetPciIdentity) {
-            uint32_t vendor_id = 0;
-            uint32_t device_id = 0;
-            uint32_t driver_version = 0;
-            napi_value v_vendor_id, v_device_id, v_driver_version;
-            pfn_doeNativeAdapterGetPciIdentity(adapter, &vendor_id, &device_id, &driver_version);
-            napi_create_uint32(env, vendor_id, &v_vendor_id);
-            napi_create_uint32(env, device_id, &v_device_id);
-            napi_create_uint32(env, driver_version, &v_driver_version);
-            napi_set_named_property(env, obj, "vendorID", v_vendor_id);
-            napi_set_named_property(env, obj, "deviceID", v_device_id);
-            napi_set_named_property(env, obj, "driverVersion", v_driver_version);
-        }
+        set_obj_utf8(env, obj, "vendor", vendor);
+        set_obj_utf8(env, obj, "architecture", arch);
+        set_obj_utf8(env, obj, "device", device);
+        set_obj_utf8(env, obj, "description", desc);
+        set_adapter_info_common(env, obj, adapter_is_cpu(adapter), 32, 32);
+        set_adapter_pci_identity(env, obj, adapter, 0, 0, false);
         pfn_doeNativeAdapterFreeInfo(block);
         return obj;
     }
@@ -542,30 +506,13 @@ napi_value create_adapter_info_object(napi_env env, void* adapter) {
         set_adapter_info_string_prop(env, obj, "device", info_view.device);
         set_adapter_info_string_prop(env, obj, "description", info_view.description);
         /* WebGPU's fallback adapter is the CPU implementation (WGPUAdapterType_CPU). */
-        napi_get_boolean(env, info_view.adapterType == 0x00000003u, &v_is_fallback);
-        napi_create_uint32(env, info_view.subgroupMinSize, &v_sg_min);
-        napi_create_uint32(env, info_view.subgroupMaxSize, &v_sg_max);
-        napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);
-        napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
-        napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
-
+        set_adapter_info_common(
+            env, obj, info_view.adapterType == 0x00000003u,
+            info_view.subgroupMinSize, info_view.subgroupMaxSize);
         /* PCI identity for providers without the Doe info block: the standard
          * IDs, or the Doe extension when exported, which also reports the
          * driver's version. driverVersion stays absent without it. */
-        uint32_t vendor_id = info_view.vendorID, device_id = info_view.deviceID, driver_version = 0;
-        if (pfn_doeNativeAdapterGetPciIdentity)
-            pfn_doeNativeAdapterGetPciIdentity(adapter, &vendor_id, &device_id, &driver_version);
-        napi_value v_vendor_id, v_device_id;
-        napi_create_uint32(env, vendor_id, &v_vendor_id);
-        napi_create_uint32(env, device_id, &v_device_id);
-        napi_set_named_property(env, obj, "vendorID", v_vendor_id);
-        napi_set_named_property(env, obj, "deviceID", v_device_id);
-        if (pfn_doeNativeAdapterGetPciIdentity) {
-            napi_value v_driver_version;
-            napi_create_uint32(env, driver_version, &v_driver_version);
-            napi_set_named_property(env, obj, "driverVersion", v_driver_version);
-        }
-
+        set_adapter_pci_identity(env, obj, adapter, info_view.vendorID, info_view.deviceID, true);
         if (pfn_wgpuAdapterInfoFreeMembers) {
             pfn_wgpuAdapterInfoFreeMembers(info_view);
         }
