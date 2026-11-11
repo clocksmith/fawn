@@ -354,6 +354,8 @@ native_queue_settlement native_settle_routine(native_device *device);
 native_failure native_settle_for_buffer(native_device *device, const native_buffer *buffer);
 /* Metal: polls completions, then reports whether submitted work still uses the buffer (no wait). */
 native_failure native_poll_metal_buffer_in_flight(native_device *device, const native_buffer *buffer, bool *in_flight);
+/* Vulkan: polls completions, then reports whether accepted work still records the buffer (no wait). */
+native_failure native_poll_vulkan_buffer_in_flight(native_device *device, const native_buffer *buffer, bool *in_flight);
 /* Caller owns the device mutex at depth one and its ordinary call lease. */
 native_failure native_metal_wait_owner(native_device *, doe_mtl_commands *, const struct timespec *);
 /* Metal completion notification: attach before any submission, detach before

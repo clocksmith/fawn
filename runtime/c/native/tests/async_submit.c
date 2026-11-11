@@ -210,6 +210,14 @@ static void first_error_kept(void)
     track(1, DOE_VK_NATIVE_FAILURE);
     wgpuQueueSubmit(s.queue, 1, &commands[1]);
     assert(!s.errors && linked(device));
+    /* A write to a busy buffer is queue ordered and never waits, so both real
+     * copies finish first; the write's poll then observes them oldest first. */
+    native_lock(device);
+    for (int i = 0; i < TRACKED; ++i) {
+        doe_vk_commands *running = atomic_load(&tracked[i]);
+        assert(running && doe_vk_commands_block(running, UINT64_MAX) == DOE_VK_OK);
+    }
+    native_unlock(device);
     atomic_store(&hold, false);
     wgpuDevicePushErrorScope(s.device, WGPUErrorFilter_Internal);
     uint64_t value = 7;
@@ -538,8 +546,9 @@ static void refused_submission_does_not_strand_later_work(void)
 
 /* Host access waits only for work that uses the buffer (phase C):
  * a write or map of an unrelated buffer neither waits nor observes running
- * work; a write to a buffer an in-flight copy reads waits for that copy
- * first; work done waits each record's own fence, never queue idle. */
+ * work; a write to a buffer an in-flight copy reads becomes a queue-ordered
+ * staged copy after it, without a wait; work done waits each record's own
+ * fence, never queue idle. */
 static void targeted_host_access(void)
 {
     state s = {0};
@@ -565,9 +574,10 @@ static void targeted_host_access(void)
     assert(!memcmp(map(&s, unrelated, sizeof(after)), after, sizeof(after)));
     wgpuBufferUnmap(unrelated);
     assert(atomic_load(&waits) == 0 && atomic_load(&recovers) == 0 && linked(device) && !s.errors);
-    /* The copy reads source: writing source waits for it, so the copy saw the old bytes. */
+    /* The copy reads source: the write is queued after it without waiting,
+     * so the copy still sees the old bytes (checked below). */
     wgpuQueueWriteBuffer(s.queue, source, 0, after, sizeof(after));
-    assert(atomic_load(&waits) >= 1 && atomic_load(&recovers) == 0 && !s.errors);
+    assert(atomic_load(&waits) == 0 && atomic_load(&recovers) == 0 && linked(device) && !s.errors);
     atomic_store(&first_unobserved, false);
     atomic_store(&hold, false);
     atomic_store(&recovers, 0);

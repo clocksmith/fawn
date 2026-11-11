@@ -294,8 +294,12 @@ static native_failure staged_metal_write(native_buffer *destination, uint64_t of
     return failure;
 }
 
+/* wait keeps the explicit STAGED_COPY policy synchronous. Otherwise the copy is
+ * accepted in queue order and the pending owner keeps both buffers until it
+ * retires. doe_vk_commands_copy barriers against earlier submissions and every
+ * later dispatch, copy or pass barriers first, so no CPU wait is needed. */
 static native_failure staged_queue_write(native_buffer *destination, uint64_t offset,
-    const void *bytes, size_t size)
+    const void *bytes, size_t size, bool wait)
 {
     if (!size) return native_failure_status(NATIVE_OK);
     native_device *device = destination->device;
@@ -314,7 +318,10 @@ static native_failure staged_queue_write(native_buffer *destination, uint64_t of
         if (commands && doe_vk_commands_release(commands) != DOE_VK_OK) abort();
         return native_failure_vulkan(status, &error);
     }
-    return native_submit_commands(device, commands); /* Always adopts, even on failure. */
+    /* Both submissions always adopt, even on failure. */
+    if (wait) return native_submit_commands(device, commands);
+    return native_submit_backend_commands_async(device,
+        (native_command_handle){.kind = WGPUBackendType_Vulkan, .value.vulkan = commands});
 }
 
 void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
@@ -336,11 +343,14 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
         /* Metal: a write to a buffer that submitted work still uses becomes a
          * queue-ordered staged copy instead of a CPU wait for that work, so
          * per-token uniform writes never serialize the CPU behind the GPU.
-         * An idle buffer keeps the direct CPU write. */
-        bool metal_in_flight = false;
+         * An idle buffer keeps the direct CPU write. Vulkan does the same with
+         * one queue-ordered staged copy submission per such write. */
+        bool metal_in_flight = false, vulkan_in_flight = false;
         if (device->backend.kind == WGPUBackendType_D3D12) failure = native_settle_routine(device).failure;
         else if (device->backend.kind == WGPUBackendType_Metal && device->backend.upload_policy == DOE_NATIVE_UPLOAD_DEFAULT) {
             failure = native_poll_metal_buffer_in_flight(device, payload, &metal_in_flight);
+        } else if (device->backend.kind == WGPUBackendType_Vulkan && device->backend.upload_policy == DOE_NATIVE_UPLOAD_DEFAULT) {
+            failure = native_poll_vulkan_buffer_in_flight(device, payload, &vulkan_in_flight);
         } else failure = native_settle_for_buffer(device, payload);
         /* A Metal resource wait drops the mutex. A concurrent map/destroy must
          * be admitted by the same resource owner before any CPU write. */
@@ -348,7 +358,8 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
             status = doe_resource_buffer_write_validate(buffer, device, offset, size);
         if (failure.status == NATIVE_OK && status == DOE_RESOURCE_OK) {
             if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Vulkan)
-                failure = staged_queue_write(payload, offset, bytes, size);
+                failure = staged_queue_write(payload, offset, bytes, size, true);
+            else if (vulkan_in_flight) failure = staged_queue_write(payload, offset, bytes, size, false);
             else if (metal_in_flight) failure = native_metal_write_record(device, payload, offset, bytes, size);
             else if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Metal)
                 failure = staged_metal_write(payload, offset, bytes, size);

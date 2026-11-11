@@ -264,6 +264,14 @@ native_failure native_poll_metal_buffer_in_flight(native_device *device, const n
     return result.failure.status == NATIVE_PENDING ? native_failure_status(NATIVE_OK) : result.failure;
 }
 
+native_failure native_poll_vulkan_buffer_in_flight(native_device *device, const native_buffer *buffer, bool *in_flight)
+{
+    /* Same first poll as native_settle_for_buffer; running work is not a failure. */
+    native_failure failure = native_poll_pending(device).failure;
+    *in_flight = failure.status == NATIVE_OK && doe_vk_buffer_busy(buffer->handle.vulkan);
+    return failure;
+}
+
 /* Host access waits only while this buffer has an accepted native owner.
  * Vulkan visits older fences; Metal waits the exact conflicting native handle.
  * Unrelated running work is polled, never waited for. Errors are consumed once. */
