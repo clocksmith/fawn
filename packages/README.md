@@ -8,7 +8,7 @@
 Repo-only operator tooling lives outside `packages/` and is documented in
 [`docs/internal-tooling.md`](../docs/internal-tooling.md). The public package
 contract is the package exports plus
-[`packages/doe-gpu/README.md`](./doe-gpu/README.md), not the scripts under
+[`packages/doe-gpu/README.md`](./doe-gpu/README.md) (with [REFERENCE.md](./doe-gpu/REFERENCE.md)), not the scripts under
 `bench/`, `browser/`, or `pipeline/`.
 
 Within `doe-gpu`, subpaths such as `api`, `native`, `node-webgpu`,

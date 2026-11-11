@@ -1,45 +1,75 @@
 # doe-gpu
 
-`doe-gpu` provides JavaScript access to Doe's native WebGPU implementation.
-Doe is the compiler/runtime component within
-[Fawn](https://github.com/clocksmith/fawn); there is no separate current Doe
-repository. The package can be used independently of Fawn's browser workspace.
+`doe-gpu` runs WebGPU outside the browser with **Doe**, a native WebGPU
+implementation written in C. One package gives Node, Bun and Electron (Deno is
+experimental) the standard WebGPU API, plus a WGSL compiler that targets
+SPIR-V, Metal and HLSL/DXIL.
 
-That implementation includes a WGSL compiler and runtime machinery. The compiler
-translates shader programs; the runtime manages GPU objects, pipelines, commands,
-synchronization, and cleanup. These are cooperating subsystems of Doe, not two
-providers that applications must install separately.
+Doe is the GPU component of [Fawn](https://github.com/clocksmith/fawn). It does
+not need the Fawn browser.
 
-The compiler can also be used independently through its documented integrations.
-This package's available interfaces are listed under [Entry points](#entry-points).
+## Goals
 
-Support is limited to the runtime, operating system, architecture, backend, and
-workload combinations declared in the
-[Doe support matrix](https://github.com/clocksmith/fawn/blob/main/docs/doe-support-matrix.md).
+- **Faster than Dawn on unchanged WebGPU code.** Same application, same
+  shaders, lower latency, at p50 and p95.
+- **One runtime everywhere JavaScript runs.** Node, Bun, Deno and Electron get
+  the same API and the same behavior.
+- **Portable, inspectable GPU programs.** The WGSL compiler is usable on its
+  own, and every run can report exactly which runtime and backend executed it.
 
-## Install and verify
+## What it does well
+
+- **Drop-in for the `webgpu` npm package.** `doe-gpu/node-webgpu-loader`
+  substitutes Doe under existing `webgpu` imports without code changes.
+- **Never falls back silently.** If the requested GPU provider isn't there, it
+  says so. It doesn't quietly run on another GPU or the CPU.
+- **Small, explicit compute helper.** `gpu.bind(device).compute(...)` runs a
+  kernel and cleans up its own buffers.
+- **Receipts.** A run can emit the exact runtime, backend and output identity,
+  so results are reproducible and comparable.
+
+## Performance highlights
+
+Selected results from Fawn's indexed benchmark reports. Each one compares
+Doe with Dawn on the same workload and machine. "Less time" is the median (p50)
+reduction. These were measured with the earlier Zig-based Doe runtime; the
+package now ships the C runtime, and these workloads have not yet been re-run
+on it.
+
+| Workload | Host | Compared with | p50 time |
+| --- | --- | --- | --- |
+| Gemma 3 270M inference (64 + 64 tokens), Node | AMD, Vulkan | `webgpu` npm package (Dawn) | **13.8% less** |
+| Same, Bun | AMD, Vulkan | `webgpu` npm package (Dawn) | **14.0% less** |
+| Same, Node | Apple, Metal | `webgpu` npm package (Dawn) | 3.6% less |
+| Stable-fluids simulation, 256² grid | AMD, Vulkan | Dawn, native | **84% less (6.4×)** |
+| Monte Carlo path tracing, 131k paths | AMD, Vulkan | Dawn, native | **63% less (2.7×)** |
+| Matrix-vector, 32768 × 2048 f32 | AMD, Vulkan | Dawn, native | 45% less (1.8×) |
+| Buffer-to-texture copy | Apple, Metal | Dawn, native | 78% less (4.6×) |
+
+Doe isn't faster on every workload, and these are single-machine results. Every
+row comes from a claim-indexed report (with p95 and per-run samples) listed in
+[`reports/claim-index.json`](https://github.com/clocksmith/fawn/blob/main/reports/claim-index.json);
+rows marked diagnostic there are not quoted here.
+
+## Install
 
 ```bash
 npm install doe-gpu
 node node_modules/doe-gpu/examples/node-first-kernel.mjs
-node node_modules/doe-gpu/examples/node-governed-first-kernel.mjs
 ```
 
-On a supported tuple, the first-kernel example loads the packaged native
-runtime, executes WGSL, validates output, and emits runtime identity and a
-receipt. Unsupported tuples must fail with an actionable cause; they must not
-select another GPU or CPU provider silently.
+Prebuilt native libraries install automatically on supported platforms. See the
+[support matrix](https://github.com/clocksmith/fawn/blob/main/docs/doe-support-matrix.md)
+for exact operating system, architecture and backend coverage.
 
-## Basic use
+## Quick start
 
 ```js
 import { gpu, requestAdapter } from "doe-gpu/native";
 
 const adapter = await requestAdapter();
-if (!adapter) throw new Error("Doe native provider returned no adapter");
-let device;
+const device = await adapter.requestDevice();
 try {
-  device = await adapter.requestDevice();
   const output = await gpu.bind(device).compute({
     code: `@group(0) @binding(0) var<storage, read> input: array<f32>;
            @group(0) @binding(1) var<storage, read_write> output: array<f32>;
@@ -53,517 +83,34 @@ try {
   });
   console.log(output); // Float32Array [2, 4, 6, 8]
 } finally {
-  device?.destroy();
-  adapter.destroy?.();
+  device.destroy();
 }
 ```
 
-The one-shot `gpu.bind(device).compute()` helper releases its temporary buffers,
-shader, pipeline, bindings, and commands after completion or failure. Buffers
-supplied by the caller remain caller-owned. Concurrent one-shot calls retain
-their own temporary commands and resources.
-
-While an error scope is pushed or an `uncapturederror` handler or listener is
-registered, a synchronous creation that fails validation reports one
-`GPUValidationError` there and returns an invalid object, as WebGPU specifies.
-Every later use of that object is a validation error; an encoder that used one
-reports at `finish()` and returns an invalid command buffer. With no scope and
-no handler, the creation throws instead; a missing descriptor or an argument
-of the wrong type always throws `TypeError`. `createComputePipelineAsync` and
-`createRenderPipelineAsync` reject with `GPUPipelineError` and report nothing.
-
-## Repeated computation
-
-For explicitly declared repeated buffer compute, import
-`prepareComputeProgram` from `doe-gpu/compute-program`. Supply a device, the
-shipped `assets/compute-program.schema.json` declaration, and an explicit
-execution mode (`gpu-recorded`, `native-recorded`, or `webgpu`). The program
-retains private buffers, shaders, pipelines, and bindings. By default, each run
-uploads exact-size input snapshots and clears scratch/output buffers. Descriptor
-version 2 can declare `lifetime: 'program'` to retain buffer contents between
-runs; resident inputs may be omitted after initialization. Use `readback: 'none'`
-to keep output on the GPU and `program.output()` to pass an opaque, generation-checked
-reference to another program on the same device. A cancelled submitted run
-invalidates a program with resident buffers. `update()` reuses identical resources
-and invalidates the prior recording only after replacement preparation succeeds.
-Always `await program.close()` before releasing its device.
-
-Descriptor version 3 requires `stateFormat` on every program-lifetime buffer.
-The application owns that format's meaning. A changed format, even at the same
-byte size, requires an explicit reset. `program.assessUpdate(next)` lists
-retained, replaced, discarded, and newly created state without changing it.
-Approve a particular reset with
-`program.update(next, { assessment, reset: 'approve' })`. The assessment expires
-when the program runs again; copied assessments and approvals for other edits
-are rejected. Declined resets and failed preparation preserve the old program.
-Versions 1 and 2 retain their existing update behavior. Shader edits that keep
-the declared state format promise compatible interpretation; Doe cannot infer
-the scientific meaning of bytes from WGSL.
-
-The recorded modes use the Node addon provider exported by `doe-gpu/native`,
-including Bun's Node addon support. `gpu-recorded` retains compiled Vulkan
-commands and their native pipeline/descriptor ownership. `native-recorded`
-replays host commands in Zig. Unsupported GPU recording fails explicitly.
-The standard WebGPU mode
-is an explicit persistent-resource control. See `examples/compute-program.js`
-and `examples/compute-programs.js` for grayscale image processing and heat
-diffusion. This additive API does not establish an application speed claim.
-
-The Node terminal example `examples/live-simulation.js` keeps a heat field
-resident while checking edited shaders in a separate process. Generate a shader
-with `node examples/live-simulation.js --write-shader heat.wgsl`, then start with
-`node examples/live-simulation.js --backend vulkan --execution gpu-recorded`.
-Enter `view` for a heat-field snapshot of the checked GPU output (with its
-relative intensity scale), `edit heat.wgsl` after editing, or `rate 0.1` to change
-parameters. `close` releases the worker; `reopen` explicitly initializes fresh
-state with the last accepted shader, format, and rate. It does not resume GPU
-state or recover a failed computation. `quit` closes the terminal and its worker.
-`format new-format` proposes a state reset requiring `approve id` or
-`decline id`. Candidate tests and every active frame use an independent CPU
-reference. Initial and replacement preparation durations are visible. Activation
-pauses at an iteration boundary and reports that pause;
-candidate process cancellation does not preempt a GPU kernel. This application
-example is qualified separately from provider support on other hosts.
-
-Pass `gpuTiming: 'timestamp-query'` to opt into compute-pass GPU timing on a
-device with `timestamp-query` enabled. Current Doe calibration supports Vulkan
-with a matching addon and runtime. Vulkan query results are normalized on the
-GPU to nanoseconds. Receipts identify resolved units and compute-pass duration separately from complete invocation
-latency. Timing is off by default; enabled timing adds retained query resources
-and readback work. Requested allocation accounting includes public timing buffers;
-it does not measure internal scratch or peak GPU memory.
-
-## Provider sessions and evaluation
-
-`providerInfo()` reports the selected library path and flavor separately from
-build metadata. Node and Bun read legacy drop-in build/proof sidecars only for
-the selected drop-in library, using its adjacent or workspace metadata (or an
-explicit `DOE_BUILD_METADATA` sidecar). An external override never inherits the
-package's prebuild metadata.
-
-The C runtime (`libraryFlavor: "doe-c"`) reads only its package-stage manifest
-(`runtime/c/tools/build-native-package.py`), never drop-in metadata or
-`DOE_BUILD_METADATA`:
-
-| Library layout | Manifest read | `buildMetadataSource` |
-| --- | --- | --- |
-| Platform package (`bin/libwebgpu_doe_c.*`) | `bin/doe-c-manifest.json` | `c-package` |
-| runtime/c stage (`<stage>/lib/libwebgpu_doe_c.*`) | `<stage>/MANIFEST.json` | `c-stage` |
-
-A manifest counts only when its `artifacts["lib/<library name>"]` digest equals
-the selected library's sha256; otherwise the fields stay unknown (`none`). It
-maps to `buildIdentity` (`sourceCommit` from `source_commit`, `sourceTree` from
-`source_tree`, `artifactSha256` as verified, `qualification`). `leanVerifiedBuild`
-and `proofArtifactSha256` come from the manifest's `lean_proof` record, which the
-packaging tool derives from the Lean inputs `runtime/zig/build.zig` reads: today
-`false` and `null`, because no C build step embeds or validates the proof
-artifact. A manifest without that record leaves both `null`. `buildIdentity` is
-`null` for every other library. Delegated libraries have no sidecar contract.
-
-Use the strict provider-v1 API when the application owns provider selection and
-global installation:
-
-```js
-import { openNodeWebGPU } from "doe-gpu/node-webgpu";
-
-const session = await openNodeWebGPU({ providers, globals: { mode: "replace" } });
-try {
-  const device = await session.adapter.requestDevice();
-  // Run the application workload.
-} finally {
-  await session.close();
-}
-```
-
-Every provider attempt is represented in the session receipt. `close()`
-restores changed globals.
-
-For a provider-neutral DoeProof execution, bind the workload implementation,
-input, and expected exact output before running either an incumbent or Doe:
-
-```js
-import {
-  runGovernedNodeWebGPU,
-  validateGovernedNodeWebGPUReceipt,
-} from "doe-gpu/node-webgpu";
-
-const result = await runGovernedNodeWebGPU({
-  provider: { providers, adapterOptions: null, globals: { mode: "replace" } },
-  workload: {
-    id: "my-kernel",
-    version: "1",
-    implementationSha256,
-    input,
-    expectedOutputSha256,
-  },
-  observeProgram: { metadata: { application: "my-kernel" } },
-  execute: async ({ adapter, input }) => runApplication(adapter, input),
-  checkpoint: persistReceipt,
-});
-
-const validation = validateGovernedNodeWebGPUReceipt(result.receipt);
-```
-
-The exact-output oracle fails closed. The checkpoint receives an
-`inference-complete-release-pending` receipt before teardown and a final
-`release-complete` receipt afterward. Stable workload and execution hashes let
-the same contract compare a governed incumbent (`W0`) with Doe (`D0`) without
-assigning runtime credit to evidence supplied by the wrapper.
-Validation recomputes both replay identities and rejects incoherent oracle,
-provider, adapter-observation, error, or lifecycle state.
-
-`observeProgram` is opt-in. When enabled, the terminal receipt embeds a
-hash-bound `doe.transparent-webgpu-observation/v1` artifact containing attempted
-WGSL, returned `getCompilationInfo()` messages bound to their shader modules,
-pipeline and resource descriptors, writes, encoded command kinds, dispatches,
-draws, submissions, synchronization, and mapped-readback digests.
-The same provider-neutral observer is available directly from
-`doe-gpu/observe`; its schema is exported as
-`doe-gpu/transparent-webgpu-observation.schema.json`. A synchronous checkpoint
-can persist an observation when compilation information returns or throws and
-when a mapped readback completes. The governed unchanged-process path also
-retains a final snapshot before normal exit or an uncaught exception. This
-observes the public JavaScript WebGPU surface, not native-driver calls,
-filesystem access, network activity, or operating-system dependency closure.
-
-An unchanged Node application that imports the exact `webgpu` specifier can use
-the public fail-closed loader:
-
-```bash
-DOE_NODE_WEBGPU_PROVIDER_ID=pinned-incumbent \
-DOE_NODE_WEBGPU_PROVIDER_MODULE=/absolute/path/to/provider/index.js \
-node --experimental-loader doe-gpu/node-webgpu-loader application.mjs
-```
-
-The loader redirects only `webgpu`, exposes `__doeProofProviderIdentity`, and
-fails when either declaration is missing or the selected module does not export
-`create()` and `globals`. It does not select a fallback provider.
-
-Use the governed process entrypoint when the unchanged application must also
-produce durable parent-side execution evidence:
-
-```js
-import {
-  runGovernedNodeWebGPUProcess,
-  validateGovernedNodeWebGPUProcessReceipt,
-} from "doe-gpu/node-webgpu-process";
-
-const run = await runGovernedNodeWebGPUProcess({
-  provider: { id: "pinned-incumbent", module: providerModule },
-  workload: { id, version, implementationSha256, input, expectedOutputSha256 },
-  observeProgram: { metadata: { application: "unchanged-app" } },
-  process: {
-    entrypoint: applicationPath,
-    environment: { mode: "sealed", values: applicationEnvironment },
-    filesystem: {
-      mode: "node-permission-read-only",
-      readPaths: declaredRuntimePaths,
-    },
-    timeoutMs,
-    maxOutputBytes,
-  },
-  evaluate: parseApplicationOutput,
-  signal: abortController.signal,
-});
-
-const validation = validateGovernedNodeWebGPUProcessReceipt(run.receipt);
-```
-
-The evaluator must return the exact output bytes, the loader-exported effective
-provider identity, and optional application evidence. The runner invokes Node
-without a shell, bounds execution and captured output, applies the frozen
-SHA-256 oracle, and records hashes of the effective environment without
-publishing its values. The application contract still owns the independence of
-the oracle and the meaning of the evidence. Pre-aborted signals prevent spawn.
-An active abort, timeout, or output-limit violation terminates the governed
-process group on POSIX and the direct child on Windows; the receipt records the
-actual termination scope. Callers must not infer Windows descendant cleanup
-from a child-process receipt.
-
-When `observeProgram` is requested, the fail-closed loader wraps the declared
-provider and sends validated observation checkpoints to the parent over the
-governed IPC channel. The parent binds the final observation and checkpoint
-count into `programEvidence`; a clean execution that produces no observation
-fails. This path works with the Node permission profile without granting a
-filesystem write. Direct loader use cannot request program observation because
-it lacks that governed parent channel.
-
-`node-permission-read-only` enables Node's permission model, removes
-`NODE_OPTIONS`, denies Node filesystem writes and child-process creation, and
-allows reads only for the loader, application entrypoint, provider entrypoint,
-and declared `readPaths`. Node implements a custom ESM loader with an internal
-worker, so the runner necessarily enables workers and records
-`workerThreads: "allowed-for-loader"`. WebGPU providers require native addons,
-so addon loading is also enabled and recorded as
-`nativeAddons: "allowed-for-provider"`. This is a Node API filesystem boundary,
-not an operating-system sandbox: addon syscalls, network access, and other host
-interfaces require separate isolation. An executable without compatible Node
-permission flags fails closed as a process error.
-
-## DoeProof CLI and CI
-
-The package installs `doe-proof-node` for declarative unchanged-process runs:
-
-```bash
-doe-proof-node run doe-proof.contract.json --out run.json
-doe-proof-node verify run.json
-doe-proof-node inspect run.json
-doe-proof-node replay run.json --out replay.json
-doe-proof-node compare run.json replay.json
-```
-
-The JSON contract schema is exported as
-`doe-gpu/governed-node-webgpu-process-contract.schema.json`. A contract
-binds the provider entrypoint, workload entrypoint, input, evaluator module,
-expected output, environment policy, timeout, and output limit. Every referenced
-file has an exact SHA-256. Optional `runtimeFiles` entries bind additional
-runtime data, libraries, manifests, or generated artifacts by unique ID, path,
-and digest. Optional `observeProgram` enables the same loader-to-parent program
-evidence path and may bind JSON metadata. The evaluator exports
-`evaluate(processResult, context)` and returns
-the same `{ output, providerIdentity, evidence }` object as the JavaScript
-process API.
-
-The provider and application entrypoint digests cover those files, not their
-entire transitive dependency closures. `workload.implementationSha256` is the
-caller-declared aggregate identity for that larger closure and must be produced
-by the application’s own build or manifest contract; Doe does not invent it by
-hashing one entry file. `runtimeFiles` makes a declared set verifiable, but it
-does not prove the set is complete or that the process accessed no other files.
-Those stronger claims require a separately enforced filesystem contract.
-When the contract selects `node-permission-read-only`, the CLI automatically
-adds the input and every `runtimeFiles` path to the read allowlist. Provider,
-application, and loader entrypoints are added by the process runner.
-
-The matching receipt and CLI-artifact schemas are exported as
-`doe-gpu/governed-node-webgpu-process-receipt.schema.json` and
-`doe-gpu/governed-node-webgpu-process-artifact.schema.json`. JSON Schema checks
-prove portable shape and types; `verify` remains authoritative for contract
-hashes, dependency rehashing, provider coherence, oracle equality, and replay
-hashes.
-
-`verify` hashes the contract and dependencies and validates the nested process
-receipt without importing or executing the evaluator. `replay` executes the
-bound contract again and requires both semantic workload and provider-specific
-execution identities to match. `compare` requires two independently valid,
-oracle-passing artifacts with the same workload and output. It explicitly emits
-`performanceInterpretable: false` and `runtimeOwnershipCredit: false`; those
-claims require the separate application gate. `inspect` and `verify` expose the
-bound dependency identities and effective filesystem declaration so CI does not
-need to parse implementation-private state.
-
-On `SIGINT` or `SIGTERM`, the CLI requests cancellation and writes a terminal
-failed-but-valid evidence artifact when `--out` is present. Verifying that
-artifact succeeds because verification establishes receipt integrity, not a
-passing workload outcome.
+Standard WebGPU code (adapters, devices, pipelines and command encoders) works
+through the same entry points.
 
 ## Entry points
 
-`packages/doe-gpu/package.json` is the authoritative export list.
-
-| Entry point | Purpose |
+| Import | Use it for |
 | --- | --- |
-| `doe-gpu` | Host-aware public runtime surface |
-| `doe-gpu/api` | Provider-neutral helpers and types |
-| `doe-gpu/native` | Explicit native provider |
-| `doe-gpu/node-webgpu` | Strict provider acquisition, governed exact-output execution, and lifecycle |
-| `doe-gpu/node-webgpu-loader` | Fail-closed substitution for unchanged Node `webgpu` imports |
-| `doe-gpu/node-webgpu-process` | Governed unchanged-process execution, exact oracle, and replay receipt |
-| `doe-gpu/program-bundle` | Closed Program Bundle validation and execution |
-| `doe-gpu/plan` | Execution-plan contracts |
-| `doe-gpu/capture` | Record-only WebGPU capture |
-| `doe-gpu/compute` | Compute-oriented helper surface |
-| `doe-gpu/browser` | Browser compatibility wrapper |
-| `doe-gpu/browser-compiler` | Experimental Worker compiler and explicitly injected shader adapter |
-| `doe-gpu/hybrid` | Legacy local/cloud integration helper |
+| `doe-gpu` | The default runtime for the current host |
+| `doe-gpu/native` | Doe's native provider, explicitly |
+| `doe-gpu/node-webgpu-loader` | Running unchanged `webgpu`-package code on Doe |
+| `doe-gpu/compute` | The compute helper |
+| `doe-gpu/capture` | Recording WebGPU calls without executing them |
+| `doe-gpu/browser` | Browser use; forwards to the browser's existing WebGPU, not Doe |
+| `doe-gpu/browser-compiler` | Doe's WGSL compiler in a browser Worker (experimental) |
 
-The public `doe-proof-node` executable is the CLI/CI front door for the
-governed process contract. It is not a benchmark or release-promotion command.
+The complete list, the governed-execution and receipt APIs, the `doe-proof-node`
+CLI, and build-from-source instructions are in
+[REFERENCE.md](https://github.com/clocksmith/fawn/blob/main/packages/doe-gpu/REFERENCE.md).
 
-The hybrid helper has an explicit fallback-oriented contract and is not the
-strict native-runtime path. New runtime integrations should use an explicit
-provider list and consume its receipt.
+## Choosing a native library
 
-## Runtime resolution
+`DOE_WEBGPU_LIB` points at a specific Doe library. If it names a missing file,
+nothing loads; there is no fallback.
 
-The package may resolve a matching optional platform package, a workspace
-build, or an explicitly configured native library path. The selected binary
-and provider must appear in diagnostics. A supported installation must not
-require a local Zig build.
+## License
 
-For a workspace addon build, run `npm run build:addon`. POSIX uses `CC` or `cc`.
-Windows uses LLVM's `clang` driver (`CC` may name its full executable path) in an
-actual Visual Studio/Windows SDK developer environment, with an explicit MSVC
-target and DLL CRT. It does not invoke Zig. Supply `NODE_INCLUDE_DIR` with the
-matching official Node headers and `NODE_LIB` with that release/architecture's
-`node.lib`, or use the existing node-gyp header/import-library cache. The build
-retains the `binding.gyp` source inventory and executes the real ABI mirror checks
-against the pinned WebGPU header before linking. Compiler availability alone does
-not establish Windows provider execution or installation support. The separate
-[Windows C-provider receipt](../../runtime/c/native/DEVELOPER_RECEIPT_NODE_WINDOWS.json)
-binds one actual LLVM addon build and unchanged public first kernel to WARP and
-Miles's AMD GPU in an isolated developer installation; broader package support
-retains its own gates.
-
-The provider loader rejects embedded NULs and truncated path copies. On Windows
-it converts UTF-8 strictly, resolves a relative path once, and uses explicit
-DLL-directory plus System32 dependency search. Keep the C compiler, DXC runtime
-and FXC (`d3dcompiler_47.dll`) DLLs beside the selected provider; no PATH or working-directory change is needed.
-`scripts/check-provider-loader.js` runs the separate CPU-only loader controls:
-Windows builds a real sibling-import fixture with Unicode/relative paths and an
-ambient-directory rejection case; POSIX checks explicitly supplied C and retained
-Zig provider libraries without invoking a device. Its output directory must be new.
-
-The explicit developer control
-`node test/integration/test-c-provider-warp.js` requires actual Windows and an
-absolute `DOE_WEBGPU_LIB` naming the selected C DLL. It requests the CPU fallback
-adapter, checks the actual Microsoft WARP adapter name and fallback flag, validates
-the unchanged first-kernel output, and records the selected DLL path/hash/flavor
-after cleanup. The current JS adapter info omits the numeric native backend enum;
-bind the matching native C WARP control separately. This is CPU developer evidence,
-not a physical-device, performance or full-migration qualification. The control
-fails instead of skipping when its declared inputs or adapter are unavailable.
-
-Release staging must run the native clean-install gate after the platform
-payload is staged:
-
-```bash
-npm run test:integration:native-clean-install
-npm run test:integration:native-clean-install:bun
-DOE_ELECTRON_EXECUTABLE=/absolute/path/to/electron \
-  npm run test:integration:native-clean-install:electron
-npm run test:integration:native-reliability
-npm run test:integration:native-reliability:bun
-DOE_ELECTRON_EXECUTABLE=/absolute/path/to/electron \
-  npm run test:integration:native-reliability:electron
-```
-
-The gate packs the wrapper and matching platform package, installs both into a
-fresh project with lifecycle scripts disabled, executes the runtime-specific
-shipped first kernel, and rejects workspace-library resolution. Each receipt
-binds the selected runtime executable and version. The ordinary integration
-suite skips the Node physical package check when no staged platform payload
-exists; either explicit release command fails instead.
-
-Electron is an explicit main-process, Node-side tuple. Its gate requires an
-absolute `DOE_ELECTRON_EXECUTABLE`, creates no renderer, and launches with the
-frozen headless arguments recorded in the receipt. It grants no Chromium,
-renderer-WebGPU, or browser lifecycle credit.
-
-The separate reliability commands reuse one clean installation across repeated
-fresh processes and overlapping runtime instances, then execute 12 exact
-create/compute/destroy cycles inside one additional process. They require exact
-output, bounded child execution, stderr-free teardown, platform-package
-resolution, and a reported post-warmup RSS span below the frozen diagnostic
-ceiling. Every same-process cycle also registers `GPUDevice.lost` before
-deliberate destruction, requires the `destroyed` reason, and verifies that
-subsequent device use fails closed. This is not a long-soak leak certificate or
-an unexpected hardware-loss recovery test. The commands do not establish
-performance, application promotion, or release readiness.
-
-A native package release candidate is stricter than either diagnostic command.
-From the repository root, run all three hosts from one checkout with no tracked
-or untracked source changes outside the evidence-bundle directory, and on one
-physical tuple:
-
-```bash
-candidate_root=reports/benchmarks/<backend>/<run-id>
-node packages/doe-gpu/test/integration/test-integration-native-clean-install.js \
-  --required --release-candidate --runtime node \
-  --out "$candidate_root/doe-gpu-node-native-release-candidate.json"
-node packages/doe-gpu/test/integration/test-integration-native-clean-install.js \
-  --required --release-candidate --runtime bun \
-  --out "$candidate_root/doe-gpu-bun-native-release-candidate.json"
-DOE_ELECTRON_EXECUTABLE=/absolute/path/to/electron \
-  node packages/doe-gpu/test/integration/test-integration-native-clean-install.js \
-  --required --release-candidate --runtime electron \
-  --out "$candidate_root/doe-gpu-electron-native-release-candidate.json"
-python3 bench/gates/doe_gpu_native_release_candidate_gate.py \
-  --expected-platform <linux-or-darwin> \
-  --expected-arch <x64-or-arm64> \
-  "$candidate_root"/doe-gpu-*-native-release-candidate.json
-```
-
-Schema version 2 retains the exact tested tarballs under
-`$candidate_root/packages/`; those bytes and all reliability reports are part
-of the evidence bundle and must stay together. The runner rejects source
-changes outside that bundle, conflicting retained package bytes, evidence paths
-outside the bundle, and partial runtime sets. Version-1 reports remain readable
-diagnostics but cannot satisfy the retained-package candidate gate.
-
-Node 18 or newer is required for the default entrypoint. Bun and Deno use their
-declared package export conditions. Under Bun the package uses its FFI backend with the Zig
-drop-in and the Node addon (N-API) with other providers such as the C runtime,
-because webgpu.h passes callback structs by value, which Bun FFI cannot. An explicit
-`DOE_BUN_WEBGPU_BACKEND=ffi` with such a provider is refused with that reason rather
-than silently replaced. `DOE_WEBGPU_LIB` (or `DOE_LIB`) selects exactly one provider:
-when it names a missing file nothing loads, and the package never falls back to
-another library. Electron uses the default Node-compatible entrypoint in its main
-process. Actual platform support remains limited to
-the tuples in [`docs/doe-support-matrix.md`](../../docs/doe-support-matrix.md).
-
-## Evidence
-
-Current package and runtime evidence lives in
-[`reports/claim-index.json`](../../reports/claim-index.json):
-
-- `claim-indexed` means a named row has current report and claim sidecars;
-- `diagnostic` means the artifact is useful for engineering but cannot support
-  promoted performance wording.
-
-Do not infer broad compatibility or speed from one indexed row. Read the
-workload, hardware, timing, oracle, and claim state in the referenced artifacts.
-
-## Browser boundary
-
-`doe-gpu/browser` forwards to the browser's existing WebGPU implementation.
-Importing it does not install Doe's native runtime or replace `navigator.gpu`.
-
-Native execution through Doe requires an explicitly supported native integration.
-Browser runtime replacement is a separate experimental integration, not a
-capability supplied by an ordinary webpage import.
-
-### Doe-assisted WebGPU
-
-`doe-gpu/browser-compiler` is an experimental, independently usable compiler
-integration. It runs a compiler in a Worker, returns WGSL and diagnostics, and
-can prepare shader modules through an explicitly injected adapter.
-
-The resulting shaders execute through the browser's existing WebGPU provider.
-This uses Doe's compiler without using Doe's native runtime. It does not
-implement a complete browser WebGPU provider.
-
-See the [browser compiler example](examples/browser-compiler/README.md) for
-setup, trusted artifact metadata, cleanup, and the comparison workflow.
-The retained experiments do not establish a material application-performance
-advantage.
-
-## Release boundary
-
-Platform packages publish before the wrapper version that references them.
-Publication requires package-readiness checks and the complete package test
-suite. An npm package release does not promote native, browser, or hardware
-claims that lack their own evidence.
-
-Legacy `@simulatte/webgpu` and `@simulatte/webgpu-doe` names are migration
-history. The package is licensed under Apache-2.0.
-
-### Native source staging without Zig
-
-Native rebuild/staging scripts now default to the committed C package built by
-`runtime/c/tools/build-native-package.py`. The default stage is
-`.cache/doe-c-packages/<HEAD>`; `DOE_C_STAGE` selects another completed stage.
-The builder requires a fresh destination and uses C/C++ tools (Windows additionally
-requires `DXC_ROOT` and optionally `CLANG_CL`). Commit source changes before
-rebuilding: staging checks the canonical manifest's source inventory and file
-hashes plus both runtime/compiler artifact digests, not a Zig compiler hash.
-C libraries retain their `_c` identity and travel with their compiler sibling and
-`doe-c-manifest.json`. Explicit legacy library overrides remain supported; there
-is no automatic fallback to a stale Zig build. These are staging defaults, not
-new platform, browser or physical-GPU qualification claims.
-
-`npm run build:browser-compiler` and `scripts/stage-platform-package.js` also
-build and stage exclusively from the C compiler and C native package stage;
-retired `--provider=zig` staging flags are rejected. Browser acceptance uses
-`runtime/c/compiler/build/doe-emit-wgsl-c` (build it with
-`make -C runtime/c/compiler test-browser`), or `DOE_WGSL_EMITTER` explicitly.
+Apache-2.0.
