@@ -12,30 +12,118 @@
       "config": "bench/native-compare/compare.config.local.d3d12.gemma64.node-package.ir.json",
       "host": "Windows, AMD integrated GPU, D3D12",
       "sourceCommit": "193b8df9f plus the change committed as d4e23d9d3",
-      "doeP50Ms": [336.3, 336.6],
-      "dawnP50Ms": [659.4, 661.0],
+      "doeP50Ms": [
+        336.3,
+        336.6
+      ],
+      "dawnP50Ms": [
+        659.4,
+        661.0
+      ],
       "lessTimePercent": 49,
-      "breakdown": {"computePipelineCreationP50Ms": {"doe": 121.6, "dawn": 444.5}},
+      "breakdown": {
+        "computePipelineCreationP50Ms": {
+          "doe": 121.6,
+          "dawn": 444.5
+        }
+      },
       "comparisonStatus": "comparable (both pairs)",
       "correctness": "final token 1664 and identical readback sha256 on Doe and Dawn in every run"
     },
     {
       "id": "windows-d3d12-gemma270m-64-64-warm-node",
-      "config": "bench/native-compare/compare.config.local.d3d12.gemma64.node-package.warm.ir.json",
       "host": "Windows, AMD integrated GPU, D3D12",
-      "doeP50Ms": [179.5, 179.7],
-      "dawnP50Ms": [178.9, 180.3],
+      "doeP50Ms": [
+        179.5,
+        179.7
+      ],
+      "dawnP50Ms": [
+        178.9,
+        180.3
+      ],
       "lessTimePercent": 0,
       "comparisonStatus": "comparable (both pairs)",
       "correctness": "final token 1664, identical readback sha256",
-      "note": "parity, not a win"
+      "note": "level, not a win; being worked on"
+    },
+    {
+      "id": "linux-vulkan-gemma270m-64-64-warm-node",
+      "config": "bench/native-compare/compare.config.amd.vulkan.gemma64.node-package.warm.ir.json",
+      "host": "Linux, AMD Radeon 8060S, RADV Vulkan",
+      "sourceCommit": "d2dbbc68e",
+      "doeP50Ms": [
+        99.6,
+        98.9
+      ],
+      "dawnP50Ms": [
+        104.7,
+        103.7
+      ],
+      "lessTimePercent": 5,
+      "comparisonStatus": "comparable (both pairs)",
+      "correctness": "final token 1664 on both in all runs"
+    },
+    {
+      "id": "linux-vulkan-gemma270m-64-64-cold-node",
+      "host": "Linux, AMD Radeon 8060S, RADV Vulkan",
+      "sourceCommit": "d2dbbc68e",
+      "doeP50Ms": [
+        129.4,
+        128.1
+      ],
+      "dawnP50Ms": [
+        131.0,
+        131.1
+      ],
+      "lessTimePercent": 2,
+      "comparisonStatus": "comparable (both pairs)",
+      "correctness": "final token 1664 on both in all runs"
+    },
+    {
+      "id": "macos-metal-gemma270m-64-64-warm-node",
+      "config": "bench/native-compare/compare.config.apple.metal.gemma64.node-package.warm.ir.json",
+      "host": "macOS, Apple M3, Metal",
+      "sourceCommit": "5d2fdb412",
+      "doeP50Ms": [
+        104.6,
+        105.3
+      ],
+      "dawnP50Ms": [
+        111.8,
+        111.2
+      ],
+      "lessTimePercent": 6,
+      "comparisonStatus": "comparable",
+      "correctness": "matching final token, 0 errors",
+      "note": "median of 17 runs; host load 2.9-3.8; weights wired by Doe's prepared-dispatch prewarm during untimed setup"
+    },
+    {
+      "id": "macos-metal-gemma270m-64-64-cold-node",
+      "host": "macOS, Apple M3, Metal",
+      "sourceCommit": "5d2fdb412",
+      "doeP50Ms": [
+        122.4,
+        127.0,
+        127.3,
+        125.0
+      ],
+      "dawnP50Ms": [
+        126.8,
+        126.1,
+        131.4,
+        129.5
+      ],
+      "lessTimePercent": 3,
+      "comparisonStatus": "comparable",
+      "correctness": "matching final token, 0 errors",
+      "note": "noisy: one of four Doe runs slightly slower than Dawn"
     }
   ],
   "notWins": [
-    "Apple M3 Metal, single-token decode with resident weights: Doe 25-30% slower (being fixed)",
-    "Windows D3D12 Gemma 3 1B 64+64 warm: Doe 6-8% slower; cold measured before the d4e23d9d3 compiler fix: 30% slower",
-    "Apple M3 Metal Gemma 270M 64+64 warm: parity to small win, noisy under host load",
-    "AMD Vulkan rows: not yet re-measured on the C runtime"
+    "Apple M3 Metal, single-token decode with resident weights: Doe 8-9% slower",
+    "Windows D3D12 Gemma 3 270M 64+64 warm: level with Dawn",
+    "Windows D3D12 Gemma 3 1B: 6-8% slower warm (being re-measured after d4e23d9d3)",
+    "Bun, Deno, Electron and native (non-JavaScript) comparisons not yet measured on the C runtime"
   ],
   "limits": "Single machine per row. Run receipts stay on the measuring hosts; this file carries no host names or addresses."
 }
