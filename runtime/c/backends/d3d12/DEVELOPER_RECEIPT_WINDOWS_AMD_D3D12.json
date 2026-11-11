@@ -1,10 +1,10 @@
 {
-  "status": "Actual Miles physical D3D12 private-backend compute, indirect, uniform, texture, sampled graphics/timestamps and indexed graphics/depth developer controls passed.",
+  "status": "Actual Windows AMD host physical D3D12 private-backend compute, indirect, uniform, texture, sampled graphics/timestamps and indexed graphics/depth developer controls passed.",
   "recorded_utc": "2026-10-23T23:46:45.502871+00:00",
-  "component": "Private C D3D12 backend physical developer consumers on Miles",
+  "component": "Private C D3D12 backend physical developer consumers on the Windows AMD host",
   "intent": "Preserved backend and production boundaries; exercised retained native fixtures on the explicitly authorized physical adapter.",
   "source_commit": "159b58a18e5466d409209debce807b4aa24f14d9",
-  "source_binding": "43 exact Git blobs/SHA256 inputs at source_commit. Backend executables are the unchanged verified source-bound Windows SDK CI build; shader fixtures are extracted from that same commit. No build from the active Miles checkout.",
+  "source_binding": "43 exact Git blobs/SHA256 inputs at source_commit. Backend executables are the unchanged verified source-bound Windows SDK CI build; shader fixtures are extracted from that same commit. No build from the host's active checkout.",
   "source_inputs": {
     ".github/workflows/c-d3d12-sdk-build.yml": {
       "git_blob": "8e0363ee7eddebc81ab9552bba7aaf26a241f3d1",
@@ -184,7 +184,7 @@
     "workflow_job_id": 120709769580,
     "artifact_id": 12539012010,
     "artifact_zip_sha256": "efe1cc15a9783bc3d31aa2e3ea102a5deb639d0a3802e138858d523b08c22c14",
-    "build": "Actual hosted MSVC 14.51.36231 /std:c11 /W4 /WX and Windows SDK 10.0.26100.0; all 30 build outputs reverified on Miles before execution.",
+    "build": "Actual hosted MSVC 14.51.36231 /std:c11 /W4 /WX and Windows SDK 10.0.26100.0; all 30 build outputs reverified on the Windows AMD host before execution.",
     "clients_sha256": {
       "native_compute.exe": "adbe19e6d5d73b7d19022244eebae04634a9139cd9ae2554e71017bd2932e6e9",
       "native_texture.exe": "5c96c52ffde054e64b51b3801837bbbd857345be3ad7a010dc32423f81e6a9c2",
@@ -194,7 +194,7 @@
     "sdk_receipt": "DEVELOPER_RECEIPT_WARP.json"
   },
   "host": {
-    "machine": "Miles",
+    "machine": "Windows AMD host",
     "os": {
       "Caption": "Microsoft Windows 11 Pro",
       "Version": "10.0.22631",
@@ -216,7 +216,7 @@
       "inventory_status": "OK",
       "inventory_source": "Win32_VideoController; single AMD adapter matches printed name/vendor/device."
     },
-    "authorization": "Owner explicitly authorized Miles installation and D3D12 execution and confirmed fan cooling. No Suby work performed.",
+    "authorization": "Owner explicitly authorized Windows AMD host installation and D3D12 execution and confirmed fan cooling. No other host work performed.",
     "installation": "New isolated per-user LOCALAPPDATA/deco/validation/doe-d3d12-159b58-ki3pcb23. Existing checkout, PATH, SSH configuration, execution policy and machinewide SDK installation remain untouched."
   },
   "shader_tool": {
@@ -225,26 +225,26 @@
     "download": "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/dxc_2026_09_29.zip",
     "asset_id": 596913261,
     "archive_sha256": "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1",
-    "verification": "Downloaded archive equals the sha256 digest published in the primary Microsoft GitHub release asset metadata; verified locally and again on Miles before extraction.",
+    "verification": "Downloaded archive equals the sha256 digest published in the primary Microsoft GitHub release asset metadata; verified locally and again on the Windows AMD host before extraction.",
     "observed_version": "dxcompiler.dll: 1.9(5512-01b62ad4)(1.9.2609.5) - 1.9.2609.5 (01b62ad47)",
     "tool_files": [
       {
-        "path": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe",
+        "path": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe",
         "sha256": "aa7965b3763d9c710baaa5a28cedcc633449962a75d1391d161a85304a41b3e2"
       },
       {
-        "path": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxcompiler.dll",
+        "path": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxcompiler.dll",
         "sha256": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59"
       },
       {
-        "path": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxil.dll",
+        "path": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxil.dll",
         "sha256": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac"
       }
     ],
     "license": "Complete official portable release archive, including its licenses, retained locally; no third-party binary or source added to Git."
   },
   "bounds": {
-    "controller": "run-miles.cjs, Node v22.23.4",
+    "controller": "run-host.cjs, Node v22.23.4",
     "controller_sha256": "d2cf40fd8ebbf7a8b3154d7e3a2b113a07e68a84825064fee0ef92ac7d4edc02",
     "per_child_guard_ms": 120000,
     "timeout_action": "taskkill /PID <child> /T /F; stop on first failure and retain diagnostics.",
@@ -261,8 +261,8 @@
         "-E",
         "main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_compute.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_compute.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "b819a7745affacb2bd3f1b01ba498997ce8b356e92e940e42409f681c0b1523a"
@@ -276,8 +276,8 @@
         "-E",
         "main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\indirect.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_indirect.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\indirect.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_indirect.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "9ccb7afe2353dc287297141653b83648684875b9707359770e7ca8e920e3cc28"
@@ -291,8 +291,8 @@
         "-E",
         "main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\uniform.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_uniform.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\uniform.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_uniform.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "5b4d4d1e0d2860024375c4083dca77956a94b2c68c4c173cfd43de5d8d470be9"
@@ -306,8 +306,8 @@
         "-E",
         "main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\texture.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_texture.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\texture.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_texture.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "0b7fad5eadcc5235d54da4d9255253dc42dacff5ed8fa72d9cf850a47dc75872"
@@ -321,8 +321,8 @@
         "-E",
         "vertex_main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-vs.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_graphics.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-vs.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_graphics.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "ea252dac9cd901616d388bd335e67b8415b4cfaa4bdacaa55b7b78e8de61beec"
@@ -336,8 +336,8 @@
         "-E",
         "fragment_main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-ps.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_graphics.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-ps.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_graphics.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "6d007b5bf468fd636953a761210443136d33173093d9a42507407b80fbca270c"
@@ -351,8 +351,8 @@
         "-E",
         "vertex_main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-vs.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_mesh.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-vs.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_mesh.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "1e83e3817bcde33f9f9e05e8b247a12a1172c3c6e56e2283c8d89a9f3c014b82"
@@ -366,8 +366,8 @@
         "-E",
         "fragment_main",
         "-Fo",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-ps.dxil",
-        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_mesh.hlsl"
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-ps.dxil",
+        "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\source\\runtime\\c\\backends\\d3d12\\tests\\native_mesh.hlsl"
       ],
       "exit_code": 0,
       "shader_sha256": "526c1a163940c778abff9686de48cd0ae4b1052f61993b489ebb7bec3782df4c"
@@ -376,11 +376,11 @@
   "executed_controls": {
     "compute": {
       "command": {
-        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
+        "exe": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
         "args": [
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil"
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil"
         ],
-        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "cwd": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
         "deadline_ms": 120000
       },
       "result": {
@@ -399,12 +399,12 @@
     },
     "indirect": {
       "command": {
-        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
+        "exe": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
         "args": [
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil",
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\indirect.dxil"
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\compute.dxil",
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\indirect.dxil"
         ],
-        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "cwd": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
         "deadline_ms": 120000
       },
       "result": {
@@ -423,12 +423,12 @@
     },
     "uniform": {
       "command": {
-        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
+        "exe": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_compute.exe",
         "args": [
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\uniform.dxil",
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\uniform.dxil",
           "--uniform"
         ],
-        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "cwd": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
         "deadline_ms": 120000
       },
       "result": {
@@ -447,11 +447,11 @@
     },
     "texture": {
       "command": {
-        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_texture.exe",
+        "exe": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_texture.exe",
         "args": [
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\texture.dxil"
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\texture.dxil"
         ],
-        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "cwd": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
         "deadline_ms": 120000
       },
       "result": {
@@ -469,12 +469,12 @@
     },
     "graphics": {
       "command": {
-        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_graphics.exe",
+        "exe": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_graphics.exe",
         "args": [
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-vs.dxil",
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-ps.dxil"
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-vs.dxil",
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\graphics-ps.dxil"
         ],
-        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "cwd": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
         "deadline_ms": 120000
       },
       "result": {
@@ -492,12 +492,12 @@
     },
     "mesh": {
       "command": {
-        "exe": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_mesh.exe",
+        "exe": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\sdk-artifact\\build\\native_mesh.exe",
         "args": [
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-vs.dxil",
-          "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-ps.dxil"
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-vs.dxil",
+          "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\physical-evidence\\shaders\\mesh-ps.dxil"
         ],
-        "cwd": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
+        "cwd": "%LOCALAPPDATA%\\deco\\validation\\doe-d3d12-159b58-ki3pcb23",
         "deadline_ms": 120000
       },
       "result": {
@@ -525,7 +525,7 @@
     "output_retention": "Native clients perform complete expected-versus-actual comparisons and retain pass/error logs, not separate raw readback arrays. These are developer host oracles, not an independent release campaign."
   },
   "evidence": {
-    "retained_bundle": "bench/out/c-d3d12-miles-159b58-20261023T2344/evidence.zip",
+    "retained_bundle": "bench/out/c-d3d12-windows-amd-159b58-20261023T2344/evidence.zip",
     "retained_bundle_sha256": "b8f96dfb7114fb85590bf080ec6034e4d83f3596c52fc26a13d51eab224f071d",
     "physical_manifest_sha256": "5c8532c4aecd294c4b414d0ae3d17fffa9426fe879441cd3040bb564c25bef04",
     "physical_member_count": 97,
@@ -629,8 +629,8 @@
       "video-inventory.stdout.txt": "ac5b47cfbaea44c2a8789dd98fb4102ac720c24627a2d44a873eb92968a25c60"
     },
     "controller_and_bootstrap_sha256": {
-      "run-miles.cjs": "d2cf40fd8ebbf7a8b3154d7e3a2b113a07e68a84825064fee0ef92ac7d4edc02",
-      "run-miles.ps1": "5b6f3ea2730c4f534a53cf67f3960dde5e5c8cef9c57e3b8a17b77c4cbff7770",
+      "run-host.cjs": "d2cf40fd8ebbf7a8b3154d7e3a2b113a07e68a84825064fee0ef92ac7d4edc02",
+      "run-host.ps1": "5b6f3ea2730c4f534a53cf67f3960dde5e5c8cef9c57e3b8a17b77c4cbff7770",
       "ssh-run.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "ssh-run.stderr.txt": "8419d72aeea44942fd20cd82408d2ca9274b6a3273fa4eec2944ba39557721d3",
       "ssh-node.stdout.txt": "be15f20cf11570ba198f3eb5314f7672823d0cace3f221367d1610601a901ee1",
@@ -639,11 +639,11 @@
       "inputs.json": "da74fc6583095511ae4b50ea1424612cc0606455f2828a45b35630e4187f4e41",
       "source-inputs.json": "68d3f451276dd9f35b5fd7f4749e647337a64e7393d5e12771459f03ee4a9bcf"
     },
-    "verification": "All 97 downloaded physical evidence member hashes independently match the remote controller manifest. All 43 source inputs and all 39 original CI build/WARP member hashes verified on Miles before physical tests. Retained ZIP integrity checked locally."
+    "verification": "All 97 downloaded physical evidence member hashes independently match the remote controller manifest. All 43 source inputs and all 39 original CI build/WARP member hashes verified on the Windows AMD host before physical tests. Retained ZIP integrity checked locally."
   },
   "first_infrastructure_failure": {
     "stage": "PowerShell -File controller launch, before staging or any GPU execution.",
-    "outcome": "Miles execution policy rejects unsigned .ps1 files; original SSH exit 1 and stderr retained.",
+    "outcome": "Host execution policy rejects unsigned .ps1 files; original SSH exit 1 and stderr retained.",
     "resolution": "Use the already-installed Node 22 controller; ordinary PowerShell ZIP/CIM commands remain allowed. No execution policy change or bypass, no admin installation. No product failure or suppressed client/compile diagnostic."
   },
   "scope_limits": [
@@ -651,6 +651,7 @@
     "Private C D3D12 API consumes hand-authored HLSL compiled by DXC. Public WGSL compiler-to-native D3D12 frontend, packages, browsers and presentation remain unproven.",
     "No debug-layer/leak audit, device-loss campaign, concurrency matrix, benchmark or matched-Dawn performance comparison.",
     "Actual driver execution qualifies only these tested source bytes/cases. It does not transfer evidence to later source, other hardware or earlier SDK-only/WARP receipts.",
-    "Production remains retained Zig. No Suby device work or existing session/checkout/configuration changes."
-  ]
+    "Production remains retained Zig. No other-host device work or existing session/checkout/configuration changes."
+  ],
+  "redaction": "2026-11-11: host names and the user-profile prefix were replaced with neutral labels (%LOCALAPPDATA%, run-host.*, c-d3d12-windows-amd-*) when the file was renamed from its host-named path. Hashes still bind the original bytes; the retained local bundle and controller files keep their original names."
 }

@@ -33,23 +33,27 @@ try {
   const windowsFiles = {
     'bin/webgpu_doe_c.dll': 'windows-native', 'bin/doe_compiler.dll': 'windows-compiler',
     'bin/dxcompiler.dll': 'dxc', 'bin/dxil.dll': 'dxil', 'bin/d3dcompiler_47.dll': 'fxc',
-    'licenses/DXC/LICENSE.txt': 'license', 'NATIVE_BUILD.json': '{}',
+    'licenses/DXC/LICENSE.txt': 'license', 'licenses/Windows-SDK/sdk_license.rtf': 'sdk terms',
+    'licenses/WINDOWS-REDISTRIBUTABLES.txt': 'notice', 'NATIVE_BUILD.json': '{}',
   };
   const windowsManifest = { ...manifest, artifacts: {} };
   for (const [name, bytes] of Object.entries(windowsFiles)) {
     write(`windows/${name}`, bytes); windowsManifest.artifacts[name] = hash(bytes);
   }
   write('windows/MANIFEST.json', JSON.stringify(windowsManifest));
-  assert.equal(cStageFiles(windowsLibrary, root).files.length, 7);
+  assert.equal(cStageFiles(windowsLibrary, root).files.length, 9);
   write('windows/bin/d3dcompiler_47.dll', 'wrong');
   assert.throws(() => cStageFiles(windowsLibrary, root), /artifact digest mismatch/);
   write('windows/bin/d3dcompiler_47.dll', 'fxc');
   write('windows/bin/dxil.dll', 'wrong');
   assert.throws(() => cStageFiles(windowsLibrary, root), /artifact digest mismatch/);
   write('windows/bin/dxil.dll', 'dxil');
-  delete windowsManifest.artifacts['licenses/DXC/LICENSE.txt'];
-  write('windows/MANIFEST.json', JSON.stringify(windowsManifest));
-  assert.throws(() => cStageFiles(windowsLibrary, root), /license\/build provenance/);
+  for (const name of ['licenses/Windows-SDK/sdk_license.rtf', 'licenses/DXC/LICENSE.txt']) {
+    delete windowsManifest.artifacts[name];
+    write('windows/MANIFEST.json', JSON.stringify(windowsManifest));
+    assert.throws(() => cStageFiles(windowsLibrary, root), /license or build provenance/);
+    windowsManifest.artifacts[name] = hash(windowsFiles[name]);
+  }
   write('runtime/c/new.c', 'new');
   assert.equal(spawnSync('git', ['add', 'runtime/c/new.c'], { cwd: root }).status, 0);
   assert.throws(() => cStageFiles(library, root), /omits current source/);

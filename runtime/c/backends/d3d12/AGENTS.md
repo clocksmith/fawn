@@ -43,7 +43,7 @@
   records actual hosted CPU direct-compute/readback/cleanup at `159b58a18`.
   It does not qualify other fixtures, public D3D12 integration, later source,
   physical hardware or performance. Preserve the earlier SDK-only receipt.
-- The [Miles developer receipt](DEVELOPER_RECEIPT_MILES_D3D12.json) separately
+- The [Windows AMD developer receipt](DEVELOPER_RECEIPT_WINDOWS_AMD_D3D12.json) separately
   records six physical private-backend controls on its named AMD adapter/driver
   at the same source. Do not transfer that evidence to public integration,
   presentation, later source, other devices or performance. Preserve its first

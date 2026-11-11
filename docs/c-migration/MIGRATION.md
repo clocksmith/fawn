@@ -343,7 +343,7 @@ Private D3D12 now has [actual CPU WARP execution evidence](../../runtime/c/backe
 in addition to SDK compilation: explicit software selection, native compute,
 readback, early release and terminal cleanup. The public consumer receipt above
 is separate; broader public APIs, physical coverage and performance remain gates.
-[Miles developer controls](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_MILES_D3D12.json)
+[Windows AMD developer controls](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS_AMD_D3D12.json)
 now bind the SDK-built artifacts to physical AMD compute, indirect dispatch,
 uniforms, textures, sampled graphics/timestamps and indexed geometry/depth.
 The isolated installation and exact driver evidence do not qualify the unfinished

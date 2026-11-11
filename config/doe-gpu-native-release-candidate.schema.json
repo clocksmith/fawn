@@ -300,7 +300,10 @@
       ],
       "properties": {
         "vendor": { "type": "string", "minLength": 1 },
-        "architecture": { "type": "string", "minLength": 1 },
+        "architecture": {
+          "type": "string",
+          "description": "WebGPU permits an empty architecture; the C runtime reports none on Vulkan and D3D12."
+        },
         "device": { "type": "string", "minLength": 1 },
         "description": { "type": "string", "minLength": 1 },
         "isFallbackAdapter": { "type": "boolean" },

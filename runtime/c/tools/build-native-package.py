@@ -21,6 +21,22 @@ import sys
 import tarfile
 
 
+WINDOWS_NOTICE = """Microsoft redistributable files in bin/
+
+These files are not covered by Doe's Apache-2.0 license. Using or
+redistributing them is subject to the Microsoft terms named here.
+
+dxcompiler.dll, dxil.dll
+  DirectX Shader Compiler, official release package.
+  Terms: DXC/LICENSE-MS.txt and DXC/LICENSE-LLVM.txt.
+
+d3dcompiler_47.dll
+  Windows SDK redistributable (Redist/D3D/x64), listed at
+  https://learn.microsoft.com/en-us/legal/windows-sdk/redist
+  Terms: Windows-SDK/sdk_license.rtf and Windows-SDK/sdk_third_party_notices.rtf.
+"""
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -224,6 +240,8 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         shutil.copy2(objects / "webgpu_doe_c.lib", candidate / "lib/webgpu_doe_c.lib")
         shutil.copy2(objects / "compiler/doe_compiler.lib", candidate / "lib/doe_compiler.lib")
         shutil.copytree(objects / "dxc-licenses", candidate / "licenses/DXC")
+        shutil.copytree(objects / "fxc-licenses", candidate / "licenses/Windows-SDK")
+        (candidate / "licenses/WINDOWS-REDISTRIBUTABLES.txt").write_text(WINDOWS_NOTICE, encoding="utf-8")
         shutil.copy2(objects / "native-scope.json", candidate / "NATIVE_BUILD.json")
     for header in sorted((source / "runtime/c/compiler/include").glob("*.h")):
         shutil.copy2(header, candidate / "include" / header.name)

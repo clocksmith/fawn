@@ -15,6 +15,7 @@ import jsonschema
 from bench.gates.doe_gpu_native_release_candidate_gate import (
     EXPECTED_OUTPUT_SHA256,
     library_path_in_package,
+    sha256_json,
     validate_candidate_set,
 )
 
@@ -299,6 +300,39 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 "doe-gpu-node-native-release-candidate.json: reliability: "
                 "bounded process trial failed: sequential-0",
                 failures,
+            )
+
+    def test_empty_adapter_architecture_is_admitted_but_must_stay_a_string(self) -> None:
+        # WebGPU permits an empty architecture; the C runtime reports none on
+        # Vulkan and D3D12. Every receipt and digest stays bound to it.
+        with tempfile.TemporaryDirectory() as temporary:
+            candidates = build_retained_bundle(Path(temporary))
+            for candidate_path in candidates.values():
+                candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+                governed = candidate["governedReplay"]
+                governed["adapterInfo"]["architecture"] = ""
+                governed["adapterInfoSha256"] = sha256_json(governed["adapterInfo"])
+                for name in ("primaryReceipt", "replayReceipt"):
+                    governed[name]["adapterInfo"] = copy.deepcopy(governed["adapterInfo"])
+                    governed[f"{name}Sha256"] = sha256_json(governed[name])
+                write_json(candidate_path, candidate)
+            failures = validate_candidate_set(
+                ROOT, list(candidates.values()), "linux", "x64", ALL_RUNTIMES
+            )
+            self.assertEqual(failures, [])
+
+            node = json.loads(candidates["node"].read_text(encoding="utf-8"))
+            del node["governedReplay"]["adapterInfo"]["architecture"]
+            write_json(candidates["node"], node)
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node",))
+            self.assertTrue(
+                any("'architecture' is a required property" in item for item in failures)
+            )
+            node["governedReplay"]["adapterInfo"]["architecture"] = None
+            write_json(candidates["node"], node)
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node",))
+            self.assertTrue(
+                any("adapterInfo.architecture: None is not of type 'string'" in item for item in failures)
             )
 
     def test_windows_tuple_is_supported_and_schema_admits_win32(self) -> None:

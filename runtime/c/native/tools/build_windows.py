@@ -170,6 +170,9 @@ def main() -> int:
     spec.loader.exec_module(fxc_module)
     fxc = fxc_module.stage_sdk_fxc(out, Path(os.environ.get('WindowsSdkDir', '')),
                                 os.environ.get('WindowsSDKVersion', ''))
+    fxc['license_sha256'] = fxc_module.stage_sdk_licenses(
+        out / 'fxc-licenses', Path(os.environ.get('WindowsSdkDir', '')),
+        os.environ.get('WindowsSDKVersion', ''))
     owners = owner_paths()
     sources = source_paths(owners)
     names = export_names()

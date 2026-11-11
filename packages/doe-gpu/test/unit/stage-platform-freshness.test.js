@@ -83,6 +83,13 @@ function compilerNameFor(libraryName) {
       writeFileSync(path.join(cStage, 'licenses', 'DXC', 'LICENSE.txt'), licenseBytes);
       writeFileSync(path.join(platformRoot, 'bin', 'licenses', 'DXC', 'LICENSE.txt'), licenseBytes);
       artifacts['licenses/DXC/LICENSE.txt'] = sha256Text(licenseBytes);
+      mkdirSync(path.join(cStage, 'licenses', 'Windows-SDK'), { recursive: true });
+      mkdirSync(path.join(platformRoot, 'bin', 'licenses', 'Windows-SDK'), { recursive: true });
+      for (const name of ['Windows-SDK/sdk_license.rtf', 'WINDOWS-REDISTRIBUTABLES.txt']) {
+        writeFileSync(path.join(cStage, 'licenses', name), licenseBytes);
+        writeFileSync(path.join(platformRoot, 'bin', 'licenses', name), licenseBytes);
+        artifacts[`licenses/${name}`] = sha256Text(licenseBytes);
+      }
       writeFileSync(path.join(cStage, 'NATIVE_BUILD.json'), '{}');
       writeFileSync(path.join(platformRoot, 'bin', 'NATIVE_BUILD.json'), '{}');
       artifacts['NATIVE_BUILD.json'] = sha256Text('{}');

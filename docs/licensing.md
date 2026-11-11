@@ -120,3 +120,23 @@ from Zig 0.15.2 `lib/compiler_rt/exp.zig` and `lib/std/math/{expm1,tanh}.zig`,
 derived from musl/fdlibm. The file preserves MIT permission and warranty text,
 Zig/musl attribution, and the Sun Microsystems fdlibm permission notice.
 This narrow compatibility port does not vendor the Zig compiler or SDK.
+
+## Microsoft redistributables in the Windows package
+
+`doe-gpu-win32-x64` ships Microsoft DLLs beside `webgpu_doe_c.dll`, because the
+D3D12 backend loads its shader compilers only from the provider's directory.
+They are not covered by Doe's Apache-2.0 license; each travels with its terms
+under `bin/licenses/`, indexed by `WINDOWS-REDISTRIBUTABLES.txt`:
+
+- `dxcompiler.dll` and `dxil.dll` come from the official DirectX Shader
+  Compiler release package. Its `LICENSE-MS.txt` and `LICENSE-LLVM.txt` are
+  copied to `licenses/DXC/`.
+- `d3dcompiler_47.dll` (FXC) comes from the selected Windows SDK's
+  `Redist/D3D/x64` directory, the copy named on Microsoft's
+  [Windows SDK REDIST list](https://learn.microsoft.com/en-us/legal/windows-sdk/redist).
+  The tool copy under `bin/<version>/x64` is not on that list and is not
+  packaged. That SDK version's `sdk_license.rtf` and
+  `sdk_third_party_notices.rtf` are copied to `licenses/Windows-SDK/`.
+
+`runtime/c/runtime-cli/tools/sdk_fxc.py` owns both selections, and package
+staging refuses a Windows C stage that lacks either license directory.

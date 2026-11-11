@@ -91,7 +91,7 @@ class ProducerContract(unittest.TestCase):
             root = Path(directory)
             sdk, products = root / 'sdk', root / 'products'
             products.mkdir()
-            source = sdk / 'bin/10.0.28000.0/x64/d3dcompiler_47.dll'
+            source = sdk / 'Redist/D3D/x64/d3dcompiler_47.dll'
             source.parent.mkdir(parents=True)
             source.write_bytes(b'selected SDK x64 FXC')
             headers, exports = '8664 machine (x64)', 'D3DCompile\nD3DDisassemble'
@@ -119,12 +119,33 @@ class ProducerContract(unittest.TestCase):
                 stage_sdk_fxc(products, root / 'sdk', '10.0.28000.0')
             self.assertEqual(list(products.iterdir()), [])
 
+    def test_fxc_license_terms_come_from_the_selected_sdk_version(self):
+        from sdk_fxc import stage_sdk_licenses
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sdk = root / 'sdk'
+            terms = sdk / 'Licenses/10.0.28000.0'
+            terms.mkdir(parents=True)
+            (terms / 'sdk_license.rtf').write_bytes(b'selected terms')
+            with self.assertRaisesRegex(ValueError, 'license terms missing'):
+                stage_sdk_licenses(root / 'missing', sdk, '10.0.28000.0')
+            self.assertFalse((root / 'missing').exists())
+            (terms / 'sdk_third_party_notices.rtf').write_bytes(b'selected notices')
+            (sdk / 'Licenses/10.0.26100.0').mkdir()
+            evidence = stage_sdk_licenses(root / 'licenses', sdk, '10.0.28000.0\\')
+            self.assertEqual((root / 'licenses/sdk_license.rtf').read_bytes(), b'selected terms')
+            self.assertEqual(evidence, {
+                'sdk_license.rtf': hashlib.sha256(b'selected terms').hexdigest(),
+                'sdk_third_party_notices.rtf': hashlib.sha256(b'selected notices').hexdigest()})
+            with self.assertRaisesRegex(ValueError, 'selected Windows SDK root and version'):
+                stage_sdk_licenses(root / 'other', sdk, '')
+
     def test_wrong_architecture_or_compiler_exports_do_not_stage_fxc(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             sdk, products = root / 'sdk', root / 'products'
             products.mkdir()
-            source = sdk / 'bin/10.0.28000.0/x64/d3dcompiler_47.dll'
+            source = sdk / 'Redist/D3D/x64/d3dcompiler_47.dll'
             source.parent.mkdir(parents=True)
             source.write_bytes(b'wrong dependency')
             for headers, exports, error in [

@@ -52,8 +52,11 @@ function cStageFiles(libraryPath, workspaceRoot) {
   for (const key of Object.keys(manifest.artifacts)) {
     if (key.startsWith('licenses/') || key === 'NATIVE_BUILD.json') files.push({ source: resolve(stage, key), target: key, key });
   }
-  if (windows && (!files.some((file) => file.key.startsWith('licenses/DXC/')) || !manifest.artifacts['NATIVE_BUILD.json'])) {
-    throw new Error(`Missing Windows DXC license/build provenance: ${manifestPath}`);
+  // Microsoft redistributables travel with their terms (DXC, Windows SDK FXC).
+  const windowsLicenses = ['licenses/DXC/', 'licenses/Windows-SDK/', 'licenses/WINDOWS-REDISTRIBUTABLES.txt'];
+  if (windows && (!windowsLicenses.every((prefix) => files.some((file) => file.key.startsWith(prefix)))
+      || !manifest.artifacts['NATIVE_BUILD.json'])) {
+    throw new Error(`Missing Windows DXC/SDK license or build provenance: ${manifestPath}`);
   }
   for (const file of files) {
     if (!file.source.startsWith(stage + sep) || !existsSync(file.source) || manifest.artifacts[file.key] !== fileHash(file.source)) {

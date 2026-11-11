@@ -426,7 +426,7 @@ by the client and are not retained separately. This is CPU driver correctness
 evidence for that direct fixture; it does not establish physical GPU, indirect,
 uniform, graphics, public D3D12 frontend, performance or release qualification.
 
-[Miles physical developer execution](DEVELOPER_RECEIPT_MILES_D3D12.json) runs the
+[Windows AMD physical developer execution](DEVELOPER_RECEIPT_WINDOWS_AMD_D3D12.json) runs the
 unchanged source `159b58a18` SDK-built clients on AMD Radeon(TM) Graphics,
 vendor 4098/device 5761, driver 32.0.21030.2001, Windows 11 build 22631. Every
 client reports software flag 0 and exact ordinal 0. All six controls pass:
