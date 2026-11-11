@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "classification": "held-out local and live public HTTPS read-only workspace diagnostic; release promotion rejected",
   "consumer": "docs/status/fawn-workspace.md; review of held-out workspace authority/recovery and live public HTTPS read-only execution separate from Doe GPU claims",
-  "baseSourceCommit": "22c6d4113ba98a933fb338584012db960203548a",
+  "baseSourceCommit": "d6e8fa805d58b62c6ab00bf614b0858380b41eb3",
+  "sourceDirty": false,
   "requiresNativeRuntimeWins": false,
   "gpuClaimsIncluded": false,
   "browserIdentity": {
@@ -26,8 +27,13 @@
   "heldOutOutcomes": [
     {
       "id": "cdn-stale-cache-investigation",
-      "fawnCompleteTaskMs": 1199.84,
-      "controlCompleteTaskMs": 839.15,
+      "fawnNavigationSetupMs": 772.22,
+      "fawnDelegatedMs": 187.79,
+      "fawnCompleteTaskMs": 989.48,
+      "fawnUngrantedProbeMs": 110.87,
+      "controlNavigationSetupMs": 123.36,
+      "controlDelegatedMs": 150.69,
+      "controlCompleteTaskMs": 923.63,
       "ungrantedOriginRejected": true,
       "sourcesBound": true,
       "findingConnected": true
@@ -60,10 +66,13 @@
       ],
       "ungrantedUrlTested": "https://www.rfc-editor.org/rfc/rfc9110.html",
       "ungrantedOriginRejected": true,
-      "fawnDelegatedMs": 5007.54,
-      "controlDelegatedMs": 5097.39,
-      "fawnCompleteTaskMs": 22626.82,
-      "controlCompleteTaskMs": 8114.99,
+      "fawnNavigationSetupMs": 3005.31,
+      "fawnDelegatedMs": 694.21,
+      "fawnCompleteTaskMs": 3724.85,
+      "fawnUngrantedProbeMs": 1201.74,
+      "controlNavigationSetupMs": 1359.71,
+      "controlDelegatedMs": 499.18,
+      "controlCompleteTaskMs": 2674.55,
       "sourcesBound": true,
       "findingConnected": true
     },
@@ -72,18 +81,20 @@
       "urls": [
         "https://www.rfc-editor.org/rfc/rfc9110.html"
       ],
-      "fawnDelegatedMs": 1428.02,
-      "controlDelegatedMs": 1444.24,
-      "fawnCompleteTaskMs": 4889.23,
-      "controlCompleteTaskMs": 3201.09,
+      "fawnNavigationSetupMs": 1393.84,
+      "fawnDelegatedMs": 239.92,
+      "fawnCompleteTaskMs": 1660.09,
+      "controlNavigationSetupMs": 506.88,
+      "controlDelegatedMs": 392.69,
+      "controlCompleteTaskMs": 1457.16,
       "sourcesBound": true,
       "findingConnected": true
     }
   ],
   "limits": [
-    "Runs on stock Google Chrome and establishes no Doe WebGPU runtime or Chromium patch claim.",
+    "Both arms run on stock Google Chrome (WorkspaceService on stock Chrome versus stock Chrome plus a local tracker); this diagnostic establishes no Doe WebGPU runtime or Fawn browser speed claim.",
     "Deterministic step drivers verify authority boundaries, owner-generation handoff, interruption reconciliation and live HTTPS DOM SHA-256 capture; billed model-driven differentiation and blind human preference studies remain unstarted.",
     "Live public HTTPS checks are read-only GET observations with zero external form submissions, credentials or merchant/ATS mutations.",
-    "On read-only capture without interruption or authority handoff, stock Chrome plus a local tracker completes in less total wall-clock time than WorkspaceService setup and mediation."
+    "Ungranted-origin rejection probes are timed separately in fawnUngrantedProbeMs; on read-only capture without interruption or authority handoff, stock Chrome plus a local tracker still completes in less total wall-clock time than WorkspaceService navigation setup and mediation."
   ]
 }

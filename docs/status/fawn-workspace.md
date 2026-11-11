@@ -52,16 +52,23 @@ revalidating Playwright control. In addition, the
 [held-out and live-site runner](../../browser/workspace/qualification/held-out-and-live-investigations.js)
 ([browser check](../../browser/workspace/test/browser/held-out-investigations.test.js),
 [diagnostic receipt](../../reports/fawn-workspace/20261110-heldout-and-live-investigations/decision.json))
-evaluates the workspace on stock Chrome across three held-out local investigations
-(multi-page cache bleed with ungranted-origin rejection, mid-run human takeover
-with stale-generation rejection, and interrupted failover POST reconciliation
-with zero duplicate commits versus one duplicate on unguarded retry) and two
-read-only live public HTTPS investigations (`w3.org` + `developer.mozilla.org`
-with live ungranted-origin rejection, and `rfc-editor.org` paired with local code
-evidence), strictly separate from Doe GPU claims. On read-only multi-page capture
-without interruption or authority handoff, stock Chrome plus a local tracker
-completes in less wall-clock time than `WorkspaceService` mediation. Together with
-the controlled [shopping comparison](../../browser/workspace/qualification/shopping/README.md),
+evaluates `WorkspaceService` on stock Chrome against stock Chrome plus a local
+tracker across three held-out local investigations (multi-page cache bleed with
+ungranted-origin rejection, mid-run human takeover with stale-generation
+rejection, and interrupted failover POST reconciliation with zero duplicate
+commits versus one duplicate on unguarded retry) and two read-only live public
+HTTPS investigations (`w3.org` + `developer.mozilla.org` with live
+ungranted-origin rejection, and `rfc-editor.org` paired with local code
+evidence), strictly separate from Doe GPU and Fawn browser runtime claims.
+Pre-indexing DOM selector uniqueness in `page-query.js` and separating
+ungranted-origin probe time from task timing (`d6e8fa805`) brought live
+`completeTaskMs` to `3724.85ms` versus `2674.55ms` on `w3.org` + `developer.mozilla.org`
+(`delegatedMs`: `694.21ms` vs `499.18ms`) and `1660.09ms` versus `1457.16ms` on
+`rfc-editor.org` (`delegatedMs`: `239.92ms` vs `392.69ms`). On read-only
+multi-page capture without interruption or authority handoff, stock Chrome plus
+a local tracker still completes in less total wall-clock time than
+`WorkspaceService` navigation setup and mediation (`productReleaseQualified:
+false`). Together with the controlled [shopping comparison](../../browser/workspace/qualification/shopping/README.md),
 these checks do not establish live-site merchant or ATS mutation support.
 
 ## Active blockers
