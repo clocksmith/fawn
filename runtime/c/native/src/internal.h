@@ -92,6 +92,10 @@ typedef struct native_device {
      * recording and keeps this source until proven acceptance. */
     native_command_handle access_batch;
     const void *access_batch_memory;
+    /* Metal: one open command of staged queue writes (metal_writes.c). */
+    native_command_handle metal_writes;
+    uint32_t metal_write_count;
+    uint64_t metal_write_bytes;
 } native_device;
 
 /* Native payloads have no independent reference count. Their resource owner
@@ -348,6 +352,8 @@ native_queue_settlement native_poll_pending(native_device *device);
 native_queue_settlement native_settle_routine(native_device *device);
 /* Caller holds the device mutex. Settles before host access to buffer. */
 native_failure native_settle_for_buffer(native_device *device, const native_buffer *buffer);
+/* Metal: polls completions, then reports whether submitted work still uses the buffer (no wait). */
+native_failure native_poll_metal_buffer_in_flight(native_device *device, const native_buffer *buffer, bool *in_flight);
 /* Caller owns the device mutex at depth one and its ordinary call lease. */
 native_failure native_metal_wait_owner(native_device *, doe_mtl_commands *, const struct timespec *);
 /* Metal completion notification: attach before any submission, detach before
@@ -403,6 +409,10 @@ void native_release_initialization(native_device *device);
  * release, discards the unsubmitted shared-memory acquire. Taking it hands the
  * recording to the caller, who records after the acquire and submits it. */
 native_failure native_flush_access_batch(native_device *device);
+/* Metal staged queue writes (metal_writes.c); caller holds the device mutex. */
+native_failure native_metal_write_record(native_device *, native_buffer *, uint64_t, const void *, size_t);
+native_failure native_flush_metal_writes(native_device *device);
+void native_release_metal_writes(native_device *device);
 native_command_handle native_take_access_batch(native_device *device);
 void native_release_access_batch(native_device *device);
 native_failure native_metal_access_batch_accepted(native_device *device);

@@ -201,6 +201,9 @@ native_failure native_metal_record_batch(native_device *device, native_command_h
     if (doe_monotonic_now(&started).status != DOE_HOST_OK ||
         doe_time_add(&started,UINT64_C(5000000000),&deadline).status != DOE_HOST_OK)
         return native_failure_status(NATIVE_FAILURE);
+    /* Open queue writes commit first: an uncommitted owner is never a waitable conflict. */
+    native_failure flushed = native_flush_metal_writes(device);
+    if (flushed.status != NATIVE_OK) return flushed;
     for (;;) {
         for (size_t i = 0; i < count; ++i)
             if (doe_resource_commands_validate_submission(resources[i]) != DOE_RESOURCE_OK)

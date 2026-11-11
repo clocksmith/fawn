@@ -242,7 +242,8 @@ static void record_adapter(doe_runtime *runtime)
     runtime->info.device_id = info.deviceID;
 #if defined(_WIN32) && !defined(DOE_RUNTIME_DAWN)
     doeNativeAdapterGetPciIdentity(runtime->adapter, NULL, NULL, &runtime->info.driver_version);
-#elif !defined(_WIN32)
+#elif !defined(_WIN32) && !defined(DOE_RUNTIME_DAWN)
+    /* Dawn has no Doe extension; Mach-O ld rejects the undefined weak reference. */
     if (doeNativeAdapterGetPciIdentity) doeNativeAdapterGetPciIdentity(runtime->adapter, NULL, NULL, &runtime->info.driver_version);
 #endif
     switch (info.adapterType) {

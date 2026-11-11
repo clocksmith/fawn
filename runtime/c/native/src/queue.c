@@ -227,7 +227,10 @@ static native_queue_settlement settle_pending(native_device *device, bool poll)
 
 static native_queue_settlement consume_settlement(native_device *device, bool poll)
 {
+    /* Open Metal writes join the pending list before anything settles or waits. */
+    native_failure flushed = native_flush_metal_writes(device);
     native_queue_settlement result = settle_pending(device, poll);
+    if (flushed.status != NATIVE_OK && result.failure.status == NATIVE_OK) result.failure = flushed;
     if (device->retired_failure.status != NATIVE_OK) {
         result.failure = device->retired_failure;
         result.failure_serial = device->retired_failure_serial;
@@ -251,6 +254,14 @@ native_queue_settlement native_settle_routine(native_device *device)
 {
     return consume_settlement(device, device->backend.kind == WGPUBackendType_Vulkan ||
         device->backend.kind == WGPUBackendType_Metal || device->backend.kind == WGPUBackendType_D3D12);
+}
+
+native_failure native_poll_metal_buffer_in_flight(native_device *device, const native_buffer *buffer, bool *in_flight)
+{
+    /* Retires finished work without committing open writes, which may be the owner. */
+    native_queue_settlement result = settle_pending(device, true);
+    *in_flight = result.failure.status == NATIVE_OK && doe_mtl_buffer_owner(buffer->handle.metal) != NULL;
+    return result.failure.status == NATIVE_PENDING ? native_failure_status(NATIVE_OK) : result.failure;
 }
 
 /* Host access waits only while this buffer has an accepted native owner.
@@ -387,6 +398,14 @@ static native_failure submit_pending(native_device *device, native_pending *pend
     /* Other native submissions may already be encoded, but their commit must
      * follow every admitted producer dependency. Main batches replay waits at
      * their beginning; their original recording stays owned until acceptance. */
+    if (device->metal_writes.kind) {
+        native_failure failure = native_flush_metal_writes(device);
+        if (failure.status != NATIVE_OK) {
+            if (native_command_release(&pending->native) != NATIVE_OK) abort();
+            settle_resources(pending, false);
+            return failure;
+        }
+    }
     if (!access_waits && device->access_batch.kind == WGPUBackendType_Metal) {
         native_failure failure = native_flush_access_batch(device);
         if (failure.status != NATIVE_OK) {

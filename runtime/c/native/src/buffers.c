@@ -333,8 +333,15 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
         /* D3D12 snapshots writes into retained upload staging, then copies on
          * its ordered queue. It never CPU-writes the destination allocation.
          * CPU read/map below still waits for that buffer's accepted owner. */
-        failure = device->backend.kind == WGPUBackendType_D3D12 ?
-            native_settle_routine(device).failure : native_settle_for_buffer(device, payload);
+        /* Metal: a write to a buffer that submitted work still uses becomes a
+         * queue-ordered staged copy instead of a CPU wait for that work, so
+         * per-token uniform writes never serialize the CPU behind the GPU.
+         * An idle buffer keeps the direct CPU write. */
+        bool metal_in_flight = false;
+        if (device->backend.kind == WGPUBackendType_D3D12) failure = native_settle_routine(device).failure;
+        else if (device->backend.kind == WGPUBackendType_Metal && device->backend.upload_policy == DOE_NATIVE_UPLOAD_DEFAULT) {
+            failure = native_poll_metal_buffer_in_flight(device, payload, &metal_in_flight);
+        } else failure = native_settle_for_buffer(device, payload);
         /* A Metal resource wait drops the mutex. A concurrent map/destroy must
          * be admitted by the same resource owner before any CPU write. */
         if (failure.status == NATIVE_OK)
@@ -342,6 +349,7 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
         if (failure.status == NATIVE_OK && status == DOE_RESOURCE_OK) {
             if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Vulkan)
                 failure = staged_queue_write(payload, offset, bytes, size);
+            else if (metal_in_flight) failure = native_metal_write_record(device, payload, offset, bytes, size);
             else if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Metal)
                 failure = staged_metal_write(payload, offset, bytes, size);
             else failure = native_buffer_write(payload, offset, bytes, size);
