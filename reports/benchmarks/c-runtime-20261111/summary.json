@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "kind": "doe-c-runtime-package-comparison-summary",
+  "date": "2026-11-11",
+  "runtime": "Doe C runtime (doe-gpu package, libwebgpu_doe_c / webgpu_doe_c.dll)",
+  "comparedWith": "webgpu npm package 0.4.0 (Dawn), same machine, same process harness",
+  "harness": "python3 bench/cli.py run-config --side baseline|comparison, then bench/cli.py compare; 16 timed samples + 1 warmup per run; runs interleaved baseline, comparison, comparison, baseline",
+  "metric": "operation time p50 (doe-execution-total-ns), lower is better",
+  "rows": [
+    {
+      "id": "windows-d3d12-gemma270m-64-64-cold-node",
+      "config": "bench/native-compare/compare.config.local.d3d12.gemma64.node-package.ir.json",
+      "host": "Windows, AMD integrated GPU, D3D12",
+      "sourceCommit": "193b8df9f plus the change committed as d4e23d9d3",
+      "doeP50Ms": [336.3, 336.6],
+      "dawnP50Ms": [659.4, 661.0],
+      "lessTimePercent": 49,
+      "breakdown": {"computePipelineCreationP50Ms": {"doe": 121.6, "dawn": 444.5}},
+      "comparisonStatus": "comparable (both pairs)",
+      "correctness": "final token 1664 and identical readback sha256 on Doe and Dawn in every run"
+    },
+    {
+      "id": "windows-d3d12-gemma270m-64-64-warm-node",
+      "config": "bench/native-compare/compare.config.local.d3d12.gemma64.node-package.warm.ir.json",
+      "host": "Windows, AMD integrated GPU, D3D12",
+      "doeP50Ms": [179.5, 179.7],
+      "dawnP50Ms": [178.9, 180.3],
+      "lessTimePercent": 0,
+      "comparisonStatus": "comparable (both pairs)",
+      "correctness": "final token 1664, identical readback sha256",
+      "note": "parity, not a win"
+    }
+  ],
+  "notWins": [
+    "Apple M3 Metal, single-token decode with resident weights: Doe 25-30% slower (being fixed)",
+    "Windows D3D12 Gemma 3 1B 64+64 warm: Doe 6-8% slower; cold measured before the d4e23d9d3 compiler fix: 30% slower",
+    "Apple M3 Metal Gemma 270M 64+64 warm: parity to small win, noisy under host load",
+    "AMD Vulkan rows: not yet re-measured on the C runtime"
+  ],
+  "limits": "Single machine per row. Run receipts stay on the measuring hosts; this file carries no host names or addresses."
+}

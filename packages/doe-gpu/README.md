@@ -30,26 +30,20 @@ not need the Fawn browser.
 
 ## Performance highlights
 
-Selected results from Fawn's indexed benchmark reports. Each one compares
-Doe with Dawn on the same workload and machine. "Less time" is the median (p50)
-reduction. These were measured with the earlier Zig-based Doe runtime; the
-package now ships the C runtime, and these workloads have not yet been re-run
-on it.
+Measured on the C runtime this package ships, against the `webgpu` npm package
+(Dawn) on the same machine. "Less time" is the median (p50) reduction over two
+interleaved pairs of 16 timed runs; both runtimes produced identical output.
 
-| Workload | Host | Compared with | p50 time |
-| --- | --- | --- | --- |
-| Gemma 3 270M inference (64 + 64 tokens), Node | AMD, Vulkan | `webgpu` npm package (Dawn) | **13.8% less** |
-| Same, Bun | AMD, Vulkan | `webgpu` npm package (Dawn) | **14.0% less** |
-| Same, Node | Apple, Metal | `webgpu` npm package (Dawn) | 3.6% less |
-| Stable-fluids simulation, 256² grid | AMD, Vulkan | Dawn, native | **84% less (6.4×)** |
-| Monte Carlo path tracing, 131k paths | AMD, Vulkan | Dawn, native | **63% less (2.7×)** |
-| Matrix-vector, 32768 × 2048 f32 | AMD, Vulkan | Dawn, native | 45% less (1.8×) |
-| Buffer-to-texture copy | Apple, Metal | Dawn, native | 78% less (4.6×) |
+| Workload | Host | p50 time |
+| --- | --- | --- |
+| Gemma 3 270M inference (64 + 64 tokens) from a cold start, Node | Windows, AMD, D3D12 | **49% less** (336 ms vs 660 ms) |
+| Compute-pipeline creation for that model | Windows, AMD, D3D12 | **73% less** (122 ms vs 445 ms) |
 
-Doe isn't faster on every workload, and these are single-machine results. Every
-row comes from a claim-indexed report (with p95 and per-run samples) listed in
-[`reports/claim-index.json`](https://github.com/clocksmith/fawn/blob/main/reports/claim-index.json);
-rows marked diagnostic there are not quoted here.
+Doe is not faster everywhere yet: warm Gemma 270M is level with Dawn on
+Windows and the Mac, and single-token decode on Apple Metal and Gemma 1B on
+Windows are still slower. Earlier results from the Zig-based runtime are not
+quoted here. Method and numbers:
+[`reports/benchmarks/c-runtime-20261111/summary.json`](https://github.com/clocksmith/fawn/blob/main/reports/benchmarks/c-runtime-20261111/summary.json).
 
 ## Install
 
