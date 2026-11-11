@@ -27,11 +27,13 @@ EXPECTED_OUTPUT = [2, 4, 6, 8, 10, 12, 14, 16]
 EXPECTED_OUTPUT_SHA256 = (
     "sha256:9d42cad41af4aaf3ae973e5a48d96f61e4708edc57bf7dd29a497ebd96f506cf"
 )
-# Drop-in (Zig) library names; Windows packages carry only the C runtime.
+# npm package names and drop-in (Zig) library names; Windows packages carry
+# only the C runtime. npm refuses the unscoped Windows name, so it ships under
+# the owner's scope; its workspace directory stays packages/doe-gpu-win32-x64.
 PLATFORM_PACKAGES = {
     ("linux", "x64"): ("doe-gpu-linux-x64", "libwebgpu_doe.so"),
     ("darwin", "arm64"): ("doe-gpu-darwin-arm64", "libwebgpu_doe.dylib"),
-    ("win32", "x64"): ("doe-gpu-win32-x64", None),
+    ("win32", "x64"): ("@clocksmith/doe-gpu-win32-x64", None),
 }
 C_LIBRARY_NAMES = {
     ("linux", "x64"): "libwebgpu_doe_c.so",
@@ -76,6 +78,35 @@ def sha256_json(payload: Any) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return sha256_bytes(encoded)
+
+
+def package_directory(package_name: str) -> str:
+    """Workspace directory under packages/ for an npm package name (scope dropped)."""
+    return package_name.rsplit("/", 1)[-1]
+
+
+def platform_pin_failures(
+    wrapper_manifest: bytes | None,
+    platform_package_name: str,
+    platform_id: object,
+) -> list[str]:
+    """The packed wrapper must pin exactly the installed platform package version.
+
+    Versions may differ: a wrapper-only release pins already published platform
+    packages through its optionalDependencies."""
+    if wrapper_manifest is None:
+        return ["wrapper manifest is unavailable for the platform pin"]
+    try:
+        manifest = json.loads(wrapper_manifest)
+    except (ValueError, UnicodeError):
+        return ["wrapper manifest is not JSON"]
+    dependencies = manifest.get("optionalDependencies") if isinstance(manifest, dict) else None
+    pinned = dependencies.get(platform_package_name) if isinstance(dependencies, dict) else None
+    if not isinstance(pinned, str):
+        return [f"wrapper does not pin {platform_package_name}"]
+    if platform_id != f"{platform_package_name}@{pinned}":
+        return [f"platform package identity is not the wrapper's pinned {platform_package_name}@{pinned}"]
+    return []
 
 
 def library_path_in_package(library_path: object, package_name: str) -> bool:
@@ -492,11 +523,6 @@ def _validate_candidate(
     platform = report["packages"]["platform"]
     if not wrapper["id"].startswith("doe-gpu@"):
         failures.append(f"{label}: wrapper package identity mismatch")
-        version = ""
-    else:
-        version = wrapper["id"].split("@", 1)[1]
-    if platform["id"] != f"{platform_package_name}@{version}":
-        failures.append(f"{label}: platform package identity mismatch")
     wrapper_tarball = _validate_package_artifact(
         report_path, wrapper, f"{label}: wrapper package", failures
     )
@@ -505,15 +531,16 @@ def _validate_candidate(
     )
 
     implementation = report["implementation"]
+    platform_directory = package_directory(platform_package_name)
     expected_paths = {
         "runner": "packages/doe-gpu/test/integration/test-integration-native-clean-install.js",
         "candidateFixture": "packages/doe-gpu/test/fixtures/native-release-candidate.mjs",
         "firstKernel": f"packages/doe-gpu/examples/{runtime}-first-kernel.mjs",
         "wrapperManifest": "packages/doe-gpu/package.json",
-        "platformManifest": f"packages/{platform_package_name}/package.json",
-        "stagedAddon": f"packages/{platform_package_name}/bin/doe_napi.node",
+        "platformManifest": f"packages/{platform_directory}/package.json",
+        "stagedAddon": f"packages/{platform_directory}/bin/doe_napi.node",
         "stagedBuildMetadata": (
-            f"packages/{platform_package_name}/bin/{metadata_name}"
+            f"packages/{platform_directory}/bin/{metadata_name}"
         ),
     }
     for reference_name, expected_path in expected_paths.items():
@@ -534,6 +561,15 @@ def _validate_candidate(
             failures,
         )
 
+    wrapper_manifest = (
+        tarballs.member(wrapper_tarball, "package/package.json", f"{label}: wrapper package", failures)
+        if wrapper_tarball is not None
+        else None
+    )
+    failures.extend(
+        f"{label}: {failure}"
+        for failure in platform_pin_failures(wrapper_manifest, platform_package_name, platform["id"])
+    )
     if wrapper_tarball is not None:
         wrapper_members = {
             "wrapperManifest": "package/package.json",

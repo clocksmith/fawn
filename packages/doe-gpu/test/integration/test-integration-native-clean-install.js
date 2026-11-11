@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { release, tmpdir } from 'node:os';
@@ -8,6 +9,7 @@ import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
 import { nativeInstallPlatform } from '../lib/native-install-platform.js';
 import { npmInvocation } from '../lib/npm-invocation.js';
+import { assertPinnedPlatform, packedPackage, tarballMember } from '../lib/package-tarball.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -59,6 +61,18 @@ const reliabilityPath = requestedReliabilityPath ?? (
     ? outputPath.replace(/\.json$/u, '.reliability.json')
     : null
 );
+// Exact retained tarballs replace packing the workspace, e.g. a published
+// platform package paired with a newer wrapper that pins it.
+function tarballArgument(flag) {
+  const index = process.argv.indexOf(flag);
+  if (index === -1) return null;
+  if (!process.argv[index + 1]) throw new Error(`${flag} requires a path`);
+  const path = resolve(process.argv[index + 1]);
+  if (!existsSync(path)) throw new Error(`${flag} does not exist: ${path}`);
+  return path;
+}
+const wrapperTarball = tarballArgument('--wrapper-tarball');
+const platformTarball = tarballArgument('--platform-tarball');
 const runtimeArgumentIndex = process.argv.indexOf('--runtime');
 if (runtimeArgumentIndex !== -1 && !process.argv[runtimeArgumentIndex + 1]) {
   throw new Error('--runtime requires node, bun, or electron');
@@ -81,16 +95,19 @@ if (!platformPackageName) {
   process.exit(0);
 }
 
-const platformPackageRoot = resolve(packagesRoot, platformPackageName);
+const platformPackageDirectory = platform.packageDirectory;
+const platformPackageRoot = resolve(packagesRoot, platformPackageDirectory);
 const stagedPlatformLibrary = resolve(platformPackageRoot, 'bin', platformLibraryName);
-if (!existsSync(stagedPlatformLibrary)) {
+if (!platformTarball && !existsSync(stagedPlatformLibrary)) {
   if (requireNative) {
     throw new Error(`required staged platform library is missing: ${stagedPlatformLibrary}`);
   }
   console.log(`doe-gpu native clean-install integration: skipped unstaged ${platformPackageName}`);
   process.exit(0);
 }
-assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: repoRoot, libraryFilename: platformLibraryName });
+if (!platformTarball) {
+  assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: repoRoot, libraryFilename: platformLibraryName });
+}
 
 const scratch = await mkdtemp(join(tmpdir(), 'doe-gpu-native-clean-install-'));
 const npm = npmInvocation();
@@ -123,8 +140,7 @@ function pack(directory, label) {
     '--json',
   ], directory);
   requireSuccess(result, `${label} pack`);
-  const manifest = JSON.parse(result.stdout)[0];
-  return { manifest, tarball: resolve(scratch, manifest.filename) };
+  return packedPackage(resolve(scratch, JSON.parse(result.stdout)[0].filename));
 }
 
 function electronExecutable() {
@@ -275,11 +291,22 @@ try {
       runtimeHost,
       '--out',
       reliabilityPath,
+      ...(wrapperTarball ? ['--wrapper-tarball', wrapperTarball] : []),
+      ...(platformTarball ? ['--platform-tarball', platformTarball] : []),
     ], packageRoot);
     requireSuccess(reliability, `native ${runtimeHost} release-candidate reliability`);
   }
-  const wrapper = pack(packageRoot, 'wrapper');
-  const platform = pack(platformPackageRoot, 'platform');
+  const wrapper = wrapperTarball ? packedPackage(wrapperTarball) : pack(packageRoot, 'wrapper');
+  const platform = platformTarball
+    ? packedPackage(platformTarball) : pack(platformPackageRoot, 'platform');
+  if (wrapper.manifest.name !== 'doe-gpu' || platform.manifest.name !== platformPackageName) {
+    throw new Error(`clean install expects doe-gpu and ${platformPackageName}, `
+      + `got ${wrapper.manifest.id} and ${platform.manifest.id}`);
+  }
+  assertPinnedPlatform(wrapper, platform);
+  // Staged payload identity is read from the installed tarball's own members.
+  const platformMemberSha256 = (name) => createHash('sha256')
+    .update(tarballMember(platform.tarball, `package/${name}`)).digest('hex');
   const fixtureManifest = {
     name: 'doe-gpu-native-clean-install-fixture',
     private: true,
@@ -443,7 +470,7 @@ try {
           bytes: platform.manifest.size,
           sha256: platformSha256,
           ...(retainedArtifacts ? { artifactPath: retainedArtifacts.platform } : {}),
-          stagedLibrarySha256: await sha256File(stagedPlatformLibrary),
+          stagedLibrarySha256: platformMemberSha256(`bin/${platformLibraryName}`),
         },
       },
       implementation: {
@@ -460,20 +487,16 @@ try {
           sha256: await sha256File(resolve(packageRoot, 'package.json')),
         },
         platformManifest: {
-          path: `packages/${platformPackageName}/package.json`,
-          sha256: await sha256File(resolve(platformPackageRoot, 'package.json')),
+          path: `packages/${platformPackageDirectory}/package.json`,
+          sha256: platformMemberSha256('package.json'),
         },
         stagedAddon: {
-          path: `packages/${platformPackageName}/bin/doe_napi.node`,
-          sha256: await sha256File(resolve(platformPackageRoot, 'bin', 'doe_napi.node')),
+          path: `packages/${platformPackageDirectory}/bin/doe_napi.node`,
+          sha256: platformMemberSha256('bin/doe_napi.node'),
         },
         stagedBuildMetadata: {
-          path: `packages/${platformPackageName}/bin/${metadataFilename}`,
-          sha256: await sha256File(resolve(
-            platformPackageRoot,
-            'bin',
-            metadataFilename,
-          )),
+          path: `packages/${platformPackageDirectory}/bin/${metadataFilename}`,
+          sha256: platformMemberSha256(`bin/${metadataFilename}`),
         },
       },
       receipt,

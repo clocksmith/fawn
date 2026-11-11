@@ -9,6 +9,7 @@ import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
 import { nativeInstallPlatform } from '../lib/native-install-platform.js';
 import { npmInvocation } from '../lib/npm-invocation.js';
+import { assertPinnedPlatform, packedPackage, tarballMember } from '../lib/package-tarball.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -34,6 +35,17 @@ if (outputIndex !== -1 && !process.argv[outputIndex + 1]) {
   throw new Error('--out requires a path');
 }
 const outputPath = outputIndex === -1 ? null : resolve(process.argv[outputIndex + 1]);
+// Exact retained tarballs replace packing the workspace (see the clean-install runner).
+function tarballArgument(flag) {
+  const index = process.argv.indexOf(flag);
+  if (index === -1) return null;
+  if (!process.argv[index + 1]) throw new Error(`${flag} requires a path`);
+  const path = resolve(process.argv[index + 1]);
+  if (!existsSync(path)) throw new Error(`${flag} does not exist: ${path}`);
+  return path;
+}
+const wrapperTarball = tarballArgument('--wrapper-tarball');
+const platformTarball = tarballArgument('--platform-tarball');
 const platform = nativeInstallPlatform();
 const platformPackageName = platform?.packageName;
 const platformLibraryName = platform?.libraryName;
@@ -45,16 +57,19 @@ if (!platformPackageName) {
   process.exit(0);
 }
 
-const platformPackageRoot = resolve(packagesRoot, platformPackageName);
+const platformPackageDirectory = platform.packageDirectory;
+const platformPackageRoot = resolve(packagesRoot, platformPackageDirectory);
 const stagedPlatformLibrary = resolve(platformPackageRoot, 'bin', platformLibraryName);
-if (!existsSync(stagedPlatformLibrary)) {
+if (!platformTarball && !existsSync(stagedPlatformLibrary)) {
   if (!requireNative) {
     console.log(`doe-gpu native clean-install reliability: skipped unstaged ${platformPackageName}`);
     process.exit(0);
   }
   throw new Error(`required staged platform library is missing: ${stagedPlatformLibrary}`);
 }
-assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: dirname(packagesRoot), libraryFilename: platformLibraryName });
+if (!platformTarball) {
+  assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: dirname(packagesRoot), libraryFilename: platformLibraryName });
+}
 
 const scratch = await mkdtemp(join(tmpdir(), 'doe-gpu-native-reliability-'));
 const npm = npmInvocation();
@@ -95,8 +110,7 @@ function pack(directory, label) {
     '--json',
   ], directory);
   requireSuccess(result, `${label} pack`);
-  const manifest = JSON.parse(result.stdout)[0];
-  return { manifest, tarball: resolve(scratch, manifest.filename) };
+  return packedPackage(resolve(scratch, JSON.parse(result.stdout)[0].filename));
 }
 
 function electronExecutable() {
@@ -358,8 +372,14 @@ function runLifecycleTrial(runtime, fixturePath) {
 
 try {
   const runtime = resolveRuntimeIdentity();
-  const wrapper = pack(packageRoot, 'wrapper');
-  const platform = pack(platformPackageRoot, 'platform');
+  const wrapper = wrapperTarball ? packedPackage(wrapperTarball) : pack(packageRoot, 'wrapper');
+  const platform = platformTarball
+    ? packedPackage(platformTarball) : pack(platformPackageRoot, 'platform');
+  if (wrapper.manifest.name !== 'doe-gpu' || platform.manifest.name !== platformPackageName) {
+    throw new Error(`reliability install expects doe-gpu and ${platformPackageName}, `
+      + `got ${wrapper.manifest.id} and ${platform.manifest.id}`);
+  }
+  assertPinnedPlatform(wrapper, platform);
   const fixtureManifest = {
     name: 'doe-gpu-native-reliability-fixture',
     private: true,
@@ -444,7 +464,9 @@ try {
           id: platform.manifest.id,
           bytes: platform.manifest.size,
           sha256: await sha256File(platform.tarball),
-          stagedLibrarySha256: await sha256File(stagedPlatformLibrary),
+          stagedLibrarySha256: createHash('sha256')
+            .update(tarballMember(platform.tarball, `package/bin/${platformLibraryName}`))
+            .digest('hex'),
         },
       },
       implementation: {
@@ -465,8 +487,9 @@ try {
           sha256: await sha256File(resolve(packageRoot, 'package.json')),
         },
         platformManifest: {
-          path: `packages/${platformPackageName}/package.json`,
-          sha256: await sha256File(resolve(platformPackageRoot, 'package.json')),
+          path: `packages/${platformPackageDirectory}/package.json`,
+          sha256: createHash('sha256')
+            .update(tarballMember(platform.tarball, 'package/package.json')).digest('hex'),
         },
       },
       trials,

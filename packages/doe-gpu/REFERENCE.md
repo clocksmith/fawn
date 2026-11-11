@@ -393,6 +393,17 @@ build, or an explicitly configured native library path. The selected binary
 and provider must appear in diagnostics. A supported installation must not
 require a local Zig build.
 
+Platform packages are named per tuple: `doe-gpu-darwin-arm64`,
+`doe-gpu-linux-x64` and, on Windows x64, `@clocksmith/doe-gpu-win32-x64`.
+npm's spam filter refuses the unscoped Windows name, so the Windows package
+ships under the owner's scope. On Windows the loader tries
+`@clocksmith/doe-gpu-win32-x64` first and then the unscoped
+`doe-gpu-win32-x64`, should that name ever be published; when neither is
+installed it reports no platform package, as for any other missing tuple.
+The wrapper pins each platform package to an exact version in
+`optionalDependencies`; a wrapper-only release (0.5.1) keeps pinning the
+already published 0.5.0 platform packages.
+
 For a workspace addon build, run `npm run build:addon`. POSIX uses `CC` or `cc`.
 Windows uses LLVM's `clang` driver (`CC` may name its full executable path) in an
 actual Visual Studio/Windows SDK developer environment, with an explicit MSVC
@@ -440,8 +451,10 @@ DOE_ELECTRON_EXECUTABLE=/absolute/path/to/electron \
   npm run test:integration:native-reliability:electron
 ```
 
-The gate packs the wrapper and matching platform package, installs both into a
-fresh project with lifecycle scripts disabled, executes the runtime-specific
+The gate packs the wrapper and matching platform package (or installs exact
+retained tarballs given with `--wrapper-tarball` and `--platform-tarball`),
+requires the wrapper's `optionalDependencies` to pin that platform package
+version, installs both into a fresh project with lifecycle scripts disabled, executes the runtime-specific
 shipped first kernel, and rejects workspace-library resolution. Each receipt
 binds the selected runtime executable and version. The ordinary integration
 suite skips the Node physical package check when no staged platform payload
@@ -489,6 +502,12 @@ python3 bench/gates/doe_gpu_native_release_candidate_gate.py \
 Accepted tuples are `linux-x64`, `darwin-arm64` and `win32-x64`. Windows
 packages carry only the C runtime, so a Windows candidate must load
 `webgpu_doe_c.dll`.
+
+To pair a new wrapper with an already published platform package, pass the
+published tarball with `--platform-tarball <path>`; its staged-payload hashes
+are read from the tarball, and the gate accepts the pair only when the packed
+wrapper pins that exact platform version. `--wrapper-tarball <path>` installs
+one exact wrapper tarball on every host.
 
 Schema version 2 retains the exact tested tarballs under
 `$candidate_root/packages/`; those bytes and all reliability reports are part

@@ -14,7 +14,10 @@ import jsonschema
 
 from bench.gates.doe_gpu_native_release_candidate_gate import (
     EXPECTED_OUTPUT_SHA256,
+    PLATFORM_PACKAGES,
     library_path_in_package,
+    package_directory,
+    platform_pin_failures,
     sha256_json,
     validate_candidate_set,
 )
@@ -378,6 +381,61 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
             )
         )
         self.assertFalse(library_path_in_package(None, "doe-gpu-win32-x64"))
+
+    def test_windows_platform_package_is_scoped_in_an_unscoped_directory(self) -> None:
+        name, library = PLATFORM_PACKAGES[("win32", "x64")]
+        self.assertEqual(name, "@clocksmith/doe-gpu-win32-x64")
+        self.assertIsNone(library)
+        self.assertEqual(package_directory(name), "doe-gpu-win32-x64")
+        self.assertEqual(package_directory("doe-gpu-linux-x64"), "doe-gpu-linux-x64")
+        scoped = "C:\\Temp\\x\\node_modules\\@clocksmith\\doe-gpu-win32-x64\\bin\\webgpu_doe_c.dll"
+        self.assertTrue(library_path_in_package(scoped, name))
+        unscoped = "C:\\Temp\\x\\node_modules\\doe-gpu-win32-x64\\bin\\webgpu_doe_c.dll"
+        self.assertFalse(library_path_in_package(unscoped, name))
+
+    def test_platform_pin_admits_a_newer_wrapper_pinning_a_published_platform(self) -> None:
+        wrapper = json.dumps({
+            "name": "doe-gpu",
+            "version": "0.5.1",
+            "optionalDependencies": {
+                "doe-gpu-darwin-arm64": "0.5.0",
+                "doe-gpu-linux-x64": "0.5.0",
+                "@clocksmith/doe-gpu-win32-x64": "0.5.0",
+            },
+        }).encode()
+        self.assertEqual(platform_pin_failures(wrapper, "doe-gpu-linux-x64", "doe-gpu-linux-x64@0.5.0"), [])
+        self.assertEqual(
+            platform_pin_failures(
+                wrapper, "@clocksmith/doe-gpu-win32-x64", "@clocksmith/doe-gpu-win32-x64@0.5.0"
+            ),
+            [],
+        )
+        self.assertEqual(
+            platform_pin_failures(wrapper, "doe-gpu-linux-x64", "doe-gpu-linux-x64@0.5.1"),
+            ["platform package identity is not the wrapper's pinned doe-gpu-linux-x64@0.5.0"],
+        )
+        self.assertEqual(
+            platform_pin_failures(wrapper, "doe-gpu-win32-x64", "doe-gpu-win32-x64@0.5.0"),
+            ["wrapper does not pin doe-gpu-win32-x64"],
+        )
+        self.assertEqual(
+            platform_pin_failures(None, "doe-gpu-linux-x64", "doe-gpu-linux-x64@0.5.0"),
+            ["wrapper manifest is unavailable for the platform pin"],
+        )
+
+    def test_gate_rejects_a_platform_version_the_wrapper_does_not_pin(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            bundle_root = Path(temporary)
+            candidates = build_retained_bundle(bundle_root)
+            node = json.loads(candidates["node"].read_text(encoding="utf-8"))
+            node["packages"]["platform"]["id"] = "doe-gpu-linux-x64@0.4.9"
+            write_json(candidates["node"], node)
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "linux", "x64", ("node",))
+            self.assertIn(
+                "doe-gpu-node-native-release-candidate.json: platform package identity "
+                "is not the wrapper's pinned doe-gpu-linux-x64@0.5.0",
+                failures,
+            )
 
     def test_legacy_candidates_remain_schema_readable_but_lack_custody(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))

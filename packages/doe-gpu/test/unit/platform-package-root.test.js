@@ -48,3 +48,51 @@ try {
   if (oldStage === undefined) delete process.env.DOE_C_STAGE; else process.env.DOE_C_STAGE = oldStage;
   rmSync(directory, { recursive: true, force: true });
 }
+
+// Platform package names resolve in the documented order: the scoped Windows
+// package first, the unscoped name second, and an explicit null when neither
+// is installed. Other tuples keep their single unscoped name.
+const { platformPackageNames, resolveInstalledPlatformPackageRoot } =
+  await import('../../src/vendor/webgpu/platform-package.js');
+assert.deepEqual(platformPackageNames('win32', 'x64'),
+  ['@clocksmith/doe-gpu-win32-x64', 'doe-gpu-win32-x64']);
+assert.deepEqual(platformPackageNames('darwin', 'arm64'), ['doe-gpu-darwin-arm64']);
+assert.deepEqual(platformPackageNames('linux', 'x64'), ['doe-gpu-linux-x64']);
+assert.deepEqual(platformPackageNames('win32', 'arm64'), []);
+function installedOnly(installed) {
+  const requested = [];
+  return {
+    requested,
+    resolve(specifier) {
+      requested.push(specifier);
+      const name = specifier.replace(/\/package\.json$/u, '');
+      if (!installed[name]) throw new Error(`Cannot find module '${specifier}'`);
+      return join(installed[name], 'package.json');
+    },
+  };
+}
+const emptyWorkspace = mkdtempSync(join(tmpdir(), 'doe-no-workspace-'));
+try {
+  const windows = { platform: 'win32', arch: 'x64', workspaceRoot: emptyWorkspace };
+  const both = installedOnly({
+    '@clocksmith/doe-gpu-win32-x64': '/scoped', 'doe-gpu-win32-x64': '/unscoped',
+  });
+  assert.equal(resolveInstalledPlatformPackageRoot({ ...windows, requireFn: both }), '/scoped');
+  const unscoped = installedOnly({ 'doe-gpu-win32-x64': '/unscoped' });
+  assert.equal(resolveInstalledPlatformPackageRoot({ ...windows, requireFn: unscoped }), '/unscoped');
+  assert.deepEqual(unscoped.requested,
+    ['@clocksmith/doe-gpu-win32-x64/package.json', 'doe-gpu-win32-x64/package.json']);
+  assert.equal(resolveInstalledPlatformPackageRoot({ ...windows, requireFn: installedOnly({}) }), null);
+  const linux = installedOnly({ 'doe-gpu-linux-x64': '/linux' });
+  assert.equal(resolveInstalledPlatformPackageRoot({
+    platform: 'linux', arch: 'x64', workspaceRoot: emptyWorkspace, requireFn: linux,
+  }), '/linux');
+  // The workspace fallback is the unscoped tuple directory.
+  mkdirSync(join(emptyWorkspace, 'packages', 'doe-gpu-win32-x64'), { recursive: true });
+  writeFileSync(join(emptyWorkspace, 'packages', 'doe-gpu-win32-x64', 'package.json'), '{}');
+  assert.equal(resolveInstalledPlatformPackageRoot({ ...windows, requireFn: installedOnly({}) }),
+    join(emptyWorkspace, 'packages', 'doe-gpu-win32-x64'));
+} finally {
+  rmSync(emptyWorkspace, { recursive: true, force: true });
+}
+console.log('platform package name order contracts: ok');

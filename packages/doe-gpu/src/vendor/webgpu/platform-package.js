@@ -4,12 +4,15 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// npm names the loader accepts for each tuple, in resolution order. npm's spam
+// filter refuses the unscoped Windows name, so that package ships under the
+// owner's scope; the unscoped name is admitted second should it ever publish.
 const PLATFORM_PACKAGE_NAMES = Object.freeze({
-  'darwin-arm64': 'doe-gpu-darwin-arm64',
-  'darwin-x64': 'doe-gpu-darwin-x64',
-  'linux-arm64': 'doe-gpu-linux-arm64',
-  'linux-x64': 'doe-gpu-linux-x64',
-  'win32-x64': 'doe-gpu-win32-x64',
+  'darwin-arm64': Object.freeze(['doe-gpu-darwin-arm64']),
+  'darwin-x64': Object.freeze(['doe-gpu-darwin-x64']),
+  'linux-arm64': Object.freeze(['doe-gpu-linux-arm64']),
+  'linux-x64': Object.freeze(['doe-gpu-linux-x64']),
+  'win32-x64': Object.freeze(['@clocksmith/doe-gpu-win32-x64', 'doe-gpu-win32-x64']),
 });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -21,8 +24,8 @@ function platformTag(platform = process.platform, arch = process.arch) {
   return `${platform}-${arch}`;
 }
 
-function currentPlatformPackageName(platform = process.platform, arch = process.arch) {
-  return PLATFORM_PACKAGE_NAMES[platformTag(platform, arch)] ?? null;
+function platformPackageNames(platform = process.platform, arch = process.arch) {
+  return PLATFORM_PACKAGE_NAMES[platformTag(platform, arch)] ?? [];
 }
 
 function isInstalledPackageRoot(packageRoot = PACKAGE_ROOT) {
@@ -35,21 +38,22 @@ function resolveInstalledPlatformPackageRoot({
   requireFn = require,
   workspaceRoot = WORKSPACE_ROOT,
 } = {}) {
-  const packageName = currentPlatformPackageName(platform, arch);
-  if (!packageName) {
+  const packageNames = platformPackageNames(platform, arch);
+  if (packageNames.length === 0) {
     return null;
   }
-
-  try {
-    const packageJsonPath = requireFn.resolve(`${packageName}/package.json`);
-    return dirname(packageJsonPath);
-  } catch {
-    const workspacePackageRoot = resolve(workspaceRoot, 'packages', packageName);
-    if (existsSync(resolve(workspacePackageRoot, 'package.json'))) {
-      return workspacePackageRoot;
+  for (const packageName of packageNames) {
+    try {
+      return dirname(requireFn.resolve(`${packageName}/package.json`));
+    } catch {
+      // Not installed under this name; try the next admitted name.
     }
-    return null;
   }
+  // Workspace packages live in unscoped directories named after the tuple.
+  const workspacePackageRoot = resolve(
+    workspaceRoot, 'packages', `doe-gpu-${platformTag(platform, arch)}`,
+  );
+  return existsSync(resolve(workspacePackageRoot, 'package.json')) ? workspacePackageRoot : null;
 }
 
 function libraryBasenamesForPlatform(platform = process.platform) {
@@ -147,6 +151,8 @@ function resolvePlatformPackageLibraryPath(options = {}) {
 
 export {
   PACKAGE_ROOT,
+  PLATFORM_PACKAGE_NAMES,
+  platformPackageNames,
   WORKSPACE_ROOT,
   libraryBasenamesForPlatform,
   cLibraryBasenamesForPlatform,

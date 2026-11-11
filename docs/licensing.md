@@ -123,8 +123,9 @@ This narrow compatibility port does not vendor the Zig compiler or SDK.
 
 ## Microsoft redistributables in the Windows package
 
-`doe-gpu-win32-x64` ships Microsoft DLLs beside `webgpu_doe_c.dll`, because the
-D3D12 backend loads its shader compilers only from the provider's directory.
+`@clocksmith/doe-gpu-win32-x64` ships Microsoft DLLs beside
+`webgpu_doe_c.dll`, because the D3D12 backend loads its shader compilers only
+from the provider's directory.
 They are not covered by Doe's Apache-2.0 license; each travels with its terms
 under `bin/licenses/`, indexed by `WINDOWS-REDISTRIBUTABLES.txt`:
 

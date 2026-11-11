@@ -27,7 +27,7 @@ if (!platformPackageName) {
   process.exit(0);
 }
 
-const platformPackageRoot = resolve(packagesRoot, platformPackageName);
+const platformPackageRoot = resolve(packagesRoot, platform.packageDirectory);
 const platformLibraryName = platform.libraryName;
 if (!existsSync(resolve(platformPackageRoot, 'bin', platformLibraryName))) {
   console.log(`installed native resolution: skipped unstaged ${platformPackageName}`);
