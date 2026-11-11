@@ -33,7 +33,7 @@
       "additionalProperties": false,
       "required": ["platform", "arch"],
       "properties": {
-        "platform": { "enum": ["linux", "darwin"] },
+        "platform": { "enum": ["linux", "darwin", "win32"] },
         "arch": { "enum": ["x64", "arm64"] }
       }
     },
@@ -42,7 +42,7 @@
       "additionalProperties": false,
       "required": ["platform", "arch", "kernelRelease"],
       "properties": {
-        "platform": { "enum": ["linux", "darwin"] },
+        "platform": { "enum": ["linux", "darwin", "win32"] },
         "arch": { "enum": ["x64", "arm64"] },
         "kernelRelease": { "type": "string", "minLength": 1 }
       }

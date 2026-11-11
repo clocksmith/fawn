@@ -14,6 +14,7 @@ import jsonschema
 
 from bench.gates.doe_gpu_native_release_candidate_gate import (
     EXPECTED_OUTPUT_SHA256,
+    library_path_in_package,
     validate_candidate_set,
 )
 
@@ -299,6 +300,50 @@ class DoeGpuNativeReleaseCandidateTests(unittest.TestCase):
                 "bounded process trial failed: sequential-0",
                 failures,
             )
+
+    def test_windows_tuple_is_supported_and_schema_admits_win32(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            candidates = build_retained_bundle(Path(temporary))
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "win32", "x64", ("node",))
+            self.assertFalse(any("unsupported candidate tuple" in item for item in failures))
+            # The retained Linux candidate is not a Windows candidate.
+            self.assertTrue(any("declared tuple does not match" in item for item in failures))
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "win32", "arm64", ("node",))
+            self.assertEqual(failures, ["unsupported candidate tuple: win32-arm64"])
+        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        report = json.loads(REPORTS["node"].read_text(encoding="utf-8"))
+        report["tuple"]["platform"] = "win32"
+        report["host"]["platform"] = "win32"
+        jsonschema.validate(report, schema)
+
+    def test_windows_rejects_the_drop_in_library_flavor(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            bundle = Path(temporary)
+            candidates = build_retained_bundle(bundle)
+            report = json.loads(candidates["node"].read_text(encoding="utf-8"))
+            report["tuple"] = {"platform": "win32", "arch": "x64"}
+            report["host"]["platform"] = "win32"
+            report["host"]["arch"] = "x64"
+            report["receipt"]["provider"]["doeLibraryPath"] = (
+                "C:\\Temp\\install\\node_modules\\doe-gpu-win32-x64\\bin\\webgpu_doe.dll"
+            )
+            write_json(candidates["node"], report)
+            failures = validate_candidate_set(ROOT, [candidates["node"]], "win32", "x64", ("node",))
+            self.assertTrue(any("carry only the C runtime" in item for item in failures))
+
+    def test_library_path_check_accepts_windows_separators(self) -> None:
+        windows = "C:\\Temp\\x\\node_modules\\doe-gpu-win32-x64\\bin\\webgpu_doe_c.dll"
+        self.assertTrue(library_path_in_package(windows, "doe-gpu-win32-x64"))
+        self.assertFalse(library_path_in_package(windows, "doe-gpu-linux-x64"))
+        self.assertFalse(
+            library_path_in_package("C:\\Temp\\other\\webgpu_doe_c.dll", "doe-gpu-win32-x64")
+        )
+        self.assertTrue(
+            library_path_in_package(
+                "/tmp/x/node_modules/doe-gpu-linux-x64/bin/libwebgpu_doe_c.so", "doe-gpu-linux-x64"
+            )
+        )
+        self.assertFalse(library_path_in_package(None, "doe-gpu-win32-x64"))
 
     def test_legacy_candidates_remain_schema_readable_but_lack_custody(self) -> None:
         schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))

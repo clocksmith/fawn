@@ -27,11 +27,17 @@ EXPECTED_OUTPUT = [2, 4, 6, 8, 10, 12, 14, 16]
 EXPECTED_OUTPUT_SHA256 = (
     "sha256:9d42cad41af4aaf3ae973e5a48d96f61e4708edc57bf7dd29a497ebd96f506cf"
 )
+# Drop-in (Zig) library names; Windows packages carry only the C runtime.
 PLATFORM_PACKAGES = {
     ("linux", "x64"): ("doe-gpu-linux-x64", "libwebgpu_doe.so"),
     ("darwin", "arm64"): ("doe-gpu-darwin-arm64", "libwebgpu_doe.dylib"),
+    ("win32", "x64"): ("doe-gpu-win32-x64", None),
 }
-C_LIBRARY_NAMES = {("linux", "x64"): "libwebgpu_doe_c.so", ("darwin", "arm64"): "libwebgpu_doe_c.dylib"}
+C_LIBRARY_NAMES = {
+    ("linux", "x64"): "libwebgpu_doe_c.so",
+    ("darwin", "arm64"): "libwebgpu_doe_c.dylib",
+    ("win32", "x64"): "webgpu_doe_c.dll",
+}
 RELIABILITY_DECISIONS = (
     "boundedCleanProcessReliability",
     "boundedSameProcessLifecycle",
@@ -72,9 +78,21 @@ def sha256_json(payload: Any) -> str:
     return sha256_bytes(encoded)
 
 
+def library_path_in_package(library_path: object, package_name: str) -> bool:
+    """True when an absolute native library path lies inside the installed package.
+
+    Windows reports backslash separators; the check is separator-neutral."""
+    if not isinstance(library_path, str):
+        return False
+    return f"/node_modules/{package_name}/" in library_path.replace("\\", "/")
+
+
 def _safe_relative_path(value: object, label: str, failures: list[str]) -> str | None:
     if not isinstance(value, str) or not value:
         failures.append(f"{label}: path must be a non-empty string")
+        return None
+    if "\\" in value:
+        failures.append(f"{label}: path must use forward slashes")
         return None
     path = PurePosixPath(value)
     if path.is_absolute() or ".." in path.parts:
@@ -449,13 +467,16 @@ def _validate_candidate(
     metadata_name = "doe-c-manifest.json" if is_c else "doe-build-metadata.json"
     if is_c:
         library_name = C_LIBRARY_NAMES[platform_key]
+    elif library_name is None:
+        failures.append(
+            f"{label}: {expected_platform}-{expected_arch} packages carry only the C runtime (doe-c)"
+        )
+        return
     if provider.get("loaded") is not True or provider.get("doeNative") is not True:
         failures.append(f"{label}: first-kernel provider is not Doe native")
     if provider.get("buildMetadataSource") != ("c-package" if is_c else "prebuild"):
         failures.append(f"{label}: first-kernel provider metadata source differs")
-    if f"/node_modules/{platform_package_name}/" not in provider.get(
-        "doeLibraryPath", ""
-    ):
+    if not library_path_in_package(provider.get("doeLibraryPath", ""), platform_package_name):
         failures.append(f"{label}: first-kernel native library escaped the package")
     expected_launch = {
         "node": "node-process",
@@ -701,7 +722,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("candidates", nargs="+", type=Path)
     parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
-    parser.add_argument("--expected-platform", required=True, choices=("linux", "darwin"))
+    parser.add_argument("--expected-platform", required=True, choices=("linux", "darwin", "win32"))
     parser.add_argument("--expected-arch", required=True, choices=("x64", "arm64"))
     parser.add_argument(
         "--runtimes",

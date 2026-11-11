@@ -481,10 +481,14 @@ DOE_ELECTRON_EXECUTABLE=/absolute/path/to/electron \
   --required --release-candidate --runtime electron \
   --out "$candidate_root/doe-gpu-electron-native-release-candidate.json"
 python3 bench/gates/doe_gpu_native_release_candidate_gate.py \
-  --expected-platform <linux-or-darwin> \
+  --expected-platform <linux-darwin-or-win32> \
   --expected-arch <x64-or-arm64> \
   "$candidate_root"/doe-gpu-*-native-release-candidate.json
 ```
+
+Accepted tuples are `linux-x64`, `darwin-arm64` and `win32-x64`. Windows
+packages carry only the C runtime, so a Windows candidate must load
+`webgpu_doe_c.dll`.
 
 Schema version 2 retains the exact tested tarballs under
 `$candidate_root/packages/`; those bytes and all reliability reports are part

@@ -50,6 +50,7 @@ Gate classes:
   runtimes the candidate declares with `--runtimes` (Node mandatory; Bun and
   Electron optional, never waived once declared); verify the declared source commit, package members, receipt
   digests, physical tuple, oracle, replay, lifecycle, and reliability joins.
+  Tuples: linux-x64, darwin-arm64 and win32-x64 (C runtime only on Windows).
 - **Fixture regen** (`cluster_b_fixture_regen_gate.py`) — pin fixture
   freshness for cross-repo bring-up lanes.
 - **C migration 50% quality/size audit** (`c_quality_target_audit.py`) — verify
