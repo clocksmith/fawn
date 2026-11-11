@@ -321,6 +321,9 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
         }
     }
     commands->state = DOE_MTL_SUBMITTED;
+    /* Drops released allocations from the residency set: a removal-only
+     * commit wires nothing, so it adds no latency to this submission. */
+    doe_mtl_context_commit_removals(commands->context);
     native->commit(native->userdata, commands->native);
     commands->context->timeline_committed = commands->timeline_value;
     for (doe_mtl_texture_use *use = commands->textures; use; use = use->next)

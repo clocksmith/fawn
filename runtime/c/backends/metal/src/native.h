@@ -178,6 +178,17 @@ typedef struct doe_mtl_native {
     size_t (*observe)(void *userdata, void *command, bool wait, doe_mtl_error *error);
     /* Optional actual native property. Missing/untracked textures stay exclusive. */
     bool (*texture_hazards_tracked)(void *userdata, void *texture);
+    /* Optional. Returns a +1 residency set already attached to queue, or NULL
+     * when the platform has none. Allocations in it are wired when the set is
+     * committed instead of when a command buffer first uses them. */
+    void *(*residency_create)(void *userdata, void *device, void *queue);
+    /* Stages adding (resident) or removing one allocation; nothing changes
+     * until residency_commit. The set retains what it holds, including an
+     * allocation removed but not yet committed. */
+    void (*residency_update)(void *userdata, void *set, void *allocation, bool resident);
+    /* Applies staged changes: wires additions now (synchronously) and drops
+     * the set's references to removals. */
+    void (*residency_commit)(void *userdata, void *set);
 } doe_mtl_native;
 
 doe_mtl_status doe_mtl_native_open(doe_mtl_native *out, doe_mtl_error *error);

@@ -68,6 +68,10 @@ doe_mtl_status doe_mtl_context_open(doe_mtl_native native,
         doe_mtl_context_release(context);
         return status;
     }
+    /* Optional: without a set, a buffer is wired by its first GPU use. */
+    if (native.residency_create != NULL && native.residency_update != NULL &&
+        native.residency_commit != NULL)
+        context->residency = native.residency_create(native.userdata, context->device, context->queue);
     *out = context;
     return doe_mtl_fail(DOE_MTL_OK, "context create", error);
 }
@@ -93,6 +97,8 @@ void doe_mtl_context_release(doe_mtl_context *context) {
     if (context == NULL || --context->references != 0) return;
     if (context->timeline != NULL)
         context->native.release(context->native.userdata, context->timeline);
+    if (context->residency != NULL)
+        context->native.release(context->native.userdata, context->residency);
     if (context->queue != NULL)
         context->native.release(context->native.userdata, context->queue);
     if (context->device != NULL)

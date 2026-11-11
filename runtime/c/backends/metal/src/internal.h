@@ -14,6 +14,9 @@ struct doe_mtl_context {
     void *device;
     void *queue;
     void *timeline;
+    void *residency; /* Optional queue residency set; NULL keeps first-use residency. */
+    uint64_t residency_removed_bytes; /* Removed but uncommitted: the set still holds them. */
+    bool residency_dirty; /* Staged removals await the next commit. */
     uint64_t timeline_next;
     uint64_t timeline_committed; /* Reserved values are not accepted queue dependencies. */
     doe_mtl_completion_sink completion; /* notify == NULL: none configured. */
@@ -29,6 +32,7 @@ struct doe_mtl_buffer {
     bool initialized;
     bool poisoned;
     bool evict_requested; /* Public destroy(): free native storage once unused. */
+    bool resident; /* Native allocation is in context->residency. */
     doe_mtl_commands *owner; /* Newest use; every use owns its existing reference. */
     doe_mtl_buffer_use *uses;
 };
@@ -93,6 +97,8 @@ doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,
 doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
     doe_mtl_buffer *buffer, doe_mtl_buffer_use **out);
 doe_mtl_status doe_mtl_use_compute_pipeline(doe_mtl_commands *commands, doe_mtl_pipeline *pipeline);
+/* Commits staged residency removals, if any; additions are never staged. */
+void doe_mtl_context_commit_removals(doe_mtl_context *context);
 bool doe_mtl_buffer_initialized(const doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer);
 #endif

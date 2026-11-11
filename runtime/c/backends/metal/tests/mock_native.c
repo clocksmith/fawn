@@ -18,6 +18,7 @@ struct mock_object {
     void (*notify)(void *);
     void *notify_data;
     bool committed;
+    bool resident; /* Buffer currently in the mock residency set. */
 };
 
 static void complete_handler(mock_object *command) {
@@ -73,6 +74,12 @@ static void release_object(void *userdata, void *handle) {
     assert(object != NULL && object->kind < MOCK_KIND_COUNT && mock->live > 0);
     assert(object->references != 0);
     if (--object->references != 0) return;
+    assert(!object->resident);
+    if (object == mock->residency_set) {
+        mock->residency_set = NULL;
+        while (mock->residency_removed_count != 0)
+            release_object(mock, mock->residency_removed[--mock->residency_removed_count]);
+    }
     if (object->kind == MOCK_KIND_COMMAND) {
         assert(object->status != 2 && object->status != 3);
         /* Metal keeps a committed buffer until its handlers have run. */
@@ -512,6 +519,44 @@ static doe_mtl_status block_command(void *userdata, void *handle, void *event, u
         assert(doe_sleep_for(timeout_ns < UINT64_C(1000000) ? timeout_ns : UINT64_C(1000000)).status == DOE_HOST_OK);
     return command->status == 4 || command->status == 5 ? DOE_MTL_OK :
         command->status == 2 || command->status == 3 ? DOE_MTL_PENDING : DOE_MTL_COMPLETION_UNKNOWN;
+}
+
+static void *residency_create(void *userdata, void *device, void *queue) {
+    mock_native *mock = userdata;
+    assert(device != NULL && queue != NULL && mock->residency_set == NULL);
+    ++mock->residency_sets;
+    mock->residency_set = object_create(mock, MOCK_KIND_EVENT);
+    return mock->residency_set;
+}
+
+static void residency_update(void *userdata, void *set, void *allocation, bool resident) {
+    mock_native *mock = userdata;
+    mock_object *object = allocation;
+    assert(set == mock->residency_set && object != NULL && object->kind == MOCK_KIND_BUFFER);
+    assert(object->resident != resident);
+    object->resident = resident;
+    if (resident) {
+        ++object->references;
+        ++mock->residency_adds;
+        return;
+    }
+    assert(mock->residency_removed_count < sizeof(mock->residency_removed) / sizeof(mock->residency_removed[0]));
+    mock->residency_removed[mock->residency_removed_count++] = object;
+    ++mock->residency_removes;
+}
+
+static void residency_commit(void *userdata, void *set) {
+    mock_native *mock = userdata;
+    assert(set == mock->residency_set);
+    ++mock->residency_commits;
+    while (mock->residency_removed_count != 0)
+        release_object(mock, mock->residency_removed[--mock->residency_removed_count]);
+}
+
+void mock_enable_residency(doe_mtl_native *native) {
+    native->residency_create = residency_create;
+    native->residency_update = residency_update;
+    native->residency_commit = residency_commit;
 }
 
 doe_mtl_native mock_driver(mock_native *mock) {

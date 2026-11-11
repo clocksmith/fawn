@@ -51,6 +51,11 @@ typedef struct mock_native {
     void *indirect_pipeline;
     unsigned commits;
     unsigned handlers;
+    unsigned residency_sets, residency_adds, residency_removes, residency_commits;
+    void *residency_set;
+    /* Removed but uncommitted: the set still holds one reference to each. */
+    struct mock_object *residency_removed[8];
+    unsigned residency_removed_count;
     unsigned polls;
     unsigned waits;
     atomic_uint blocks;
@@ -95,6 +100,9 @@ typedef struct mock_native {
 } mock_native;
 
 doe_mtl_native mock_driver(mock_native *mock);
+/* Installs a residency set. Like Metal's, it retains each added buffer and
+ * drops a removed one's reference only at commit or its own release. */
+void mock_enable_residency(doe_mtl_native *native);
 void mock_result(mock_native *mock, size_t status, int64_t code);
 void mock_command_result(void *command, size_t status, int64_t code);
 size_t mock_command_status(void *command);

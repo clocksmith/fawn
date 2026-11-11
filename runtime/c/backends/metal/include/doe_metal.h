@@ -95,6 +95,16 @@ typedef enum doe_mtl_memory { DOE_MTL_SHARED, DOE_MTL_PRIVATE } doe_mtl_memory;
 doe_mtl_status doe_mtl_buffer_create(doe_mtl_context *context, uint64_t size,
     doe_mtl_memory memory, doe_mtl_buffer **out, doe_mtl_error *error);
 doe_mtl_status doe_mtl_buffer_retain(doe_mtl_buffer *buffer);
+/* Where Metal has MTLResidencySet (macOS 15+), puts the live allocations of
+ * buffers into the queue's residency set and commits it once, wiring their
+ * memory now rather than in the host writes that fill them or the first
+ * command buffer that uses them. NULL entries, other contexts' buffers,
+ * evicted and already resident ones are skipped. The commit is synchronous,
+ * so callers use it while preparing work, never on submission. Releasing or
+ * evicting a resident allocation removes it; the next submission (or a large
+ * enough total of removals) commits that. */
+void doe_mtl_context_make_resident(doe_mtl_context *context,
+    doe_mtl_buffer *const *buffers, size_t count);
 void doe_mtl_buffer_release(doe_mtl_buffer *buffer);
 uint64_t doe_mtl_buffer_size(const doe_mtl_buffer *buffer);
 /* WebGPU destroy(): releases the native allocation at once, or when the

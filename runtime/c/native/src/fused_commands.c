@@ -115,3 +115,47 @@ WGPUCommandBuffer doeNativeCreateComputeDispatchBatchCopyCommandBuffer(WGPUDevic
     free(dispatches);
     return commands;
 }
+
+uint32_t doeNativeComputePrewarmDispatchBindings(WGPUQueue handle, size_t dispatch_count,
+    WGPUComputePipeline *pipelines, WGPUBindGroup *groups, const uint32_t *group_counts)
+{
+    (void)pipelines;
+    native_device *device = (native_device *)handle;
+    if (!device || !dispatch_count || !groups || !group_counts ||
+            device->backend.kind != WGPUBackendType_Metal ||
+            dispatch_count > UINT32_MAX || dispatch_count > SIZE_MAX / DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE)
+        return 0;
+    size_t capacity = 0;
+    for (size_t index = 0; index < dispatch_count; ++index) {
+        if (group_counts[index] > DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE) return 0;
+        for (uint32_t slot = 0; slot < group_counts[index]; ++slot) {
+            const doe_resource_bind_group *group =
+                (const doe_resource_bind_group *)groups[index * DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE + slot];
+            size_t count = 0;
+            if (group) (void)doe_resource_bind_group_bindings(group, &count);
+            if (count > SIZE_MAX / sizeof(doe_mtl_buffer *) - capacity) return 0;
+            capacity += count;
+        }
+    }
+    doe_mtl_buffer **buffers = capacity ? malloc(capacity * sizeof(*buffers)) : NULL;
+    if (capacity && !buffers) return 0;
+    size_t used = 0;
+    native_lock(device);
+    for (size_t index = 0; index < dispatch_count; ++index)
+        for (uint32_t slot = 0; slot < group_counts[index]; ++slot) {
+            const doe_resource_bind_group *group =
+                (const doe_resource_bind_group *)groups[index * DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE + slot];
+            size_t count = 0;
+            const doe_resource_binding *bindings = group ? doe_resource_bind_group_bindings(group, &count) : NULL;
+            for (size_t entry = 0; bindings && entry < count && used < capacity; ++entry) {
+                if (bindings[entry].kind != DOE_BIND_BUFFER || !bindings[entry].resource.buffer.buffer) continue;
+                const native_buffer *payload = doe_resource_buffer_native(bindings[entry].resource.buffer.buffer);
+                /* A destroyed buffer has no allocation left to prepare. */
+                if (payload && payload->device == device) buffers[used++] = payload->handle.metal;
+            }
+        }
+    doe_mtl_context_make_resident(device->backend.value.metal.context, buffers, used);
+    native_unlock(device);
+    free(buffers);
+    return (uint32_t)dispatch_count;
+}

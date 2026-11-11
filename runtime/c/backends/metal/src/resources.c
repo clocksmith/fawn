@@ -51,26 +51,64 @@ doe_mtl_status doe_mtl_buffer_retain(doe_mtl_buffer *buffer) {
     return DOE_MTL_OK;
 }
 
+/* Removed allocations stay alive in the set until a commit. Past this many
+ * bytes a release commits its removals at once rather than waiting for the
+ * next submission, bounding what a destroy-only workload keeps alive. */
+enum { RESIDENCY_REMOVED_BYTES_LIMIT = 64u << 20 };
+
+static void residency_commit(doe_mtl_context *context) {
+    context->native.residency_commit(context->native.userdata, context->residency);
+    context->residency_dirty = false;
+    context->residency_removed_bytes = 0;
+}
+
+void doe_mtl_context_make_resident(doe_mtl_context *context,
+    doe_mtl_buffer *const *buffers, size_t count) {
+    bool changed = false;
+    if (context == NULL || context->residency == NULL || (count != 0 && buffers == NULL)) return;
+    for (size_t i = 0; i < count; ++i) {
+        doe_mtl_buffer *buffer = buffers[i];
+        if (buffer == NULL || buffer->context != context || buffer->native == NULL || buffer->resident) continue;
+        context->native.residency_update(context->native.userdata, context->residency, buffer->native, true);
+        buffer->resident = true;
+        changed = true;
+    }
+    if (changed || context->residency_dirty) residency_commit(context);
+}
+
+void doe_mtl_context_commit_removals(doe_mtl_context *context) {
+    if (context->residency != NULL && context->residency_dirty) residency_commit(context);
+}
+
+/* A resident allocation leaves the set first; the set keeps it alive until the
+ * next commit. Callers release only after the last recorded use retired. */
+static void release_native(doe_mtl_buffer *buffer) {
+    doe_mtl_context *context = buffer->context;
+    if (buffer->native == NULL) return;
+    if (buffer->resident) {
+        context->native.residency_update(context->native.userdata, context->residency, buffer->native, false);
+        buffer->resident = false;
+        context->residency_dirty = true;
+        context->residency_removed_bytes += buffer->size;
+    }
+    context->native.release(context->native.userdata, buffer->native);
+    buffer->native = NULL;
+    if (context->residency_removed_bytes >= RESIDENCY_REMOVED_BYTES_LIMIT) residency_commit(context);
+}
+
 void doe_mtl_buffer_release(doe_mtl_buffer *buffer) {
     doe_mtl_context *context;
     if (buffer == NULL || --buffer->references != 0) return;
     context = buffer->context;
-    if (buffer->native != NULL)
-        context->native.release(context->native.userdata, buffer->native);
+    release_native(buffer);
     free(buffer);
     doe_mtl_context_release(context);
-}
-
-static void buffer_evict_now(doe_mtl_buffer *buffer) {
-    doe_mtl_context *context = buffer->context;
-    if (buffer->native != NULL) context->native.release(context->native.userdata, buffer->native);
-    buffer->native = NULL;
 }
 
 doe_mtl_status doe_mtl_buffer_evict(doe_mtl_buffer *buffer) {
     if (buffer == NULL) return DOE_MTL_INVALID_ARGUMENT;
     buffer->evict_requested = true;
-    if (buffer->owner == NULL) buffer_evict_now(buffer);
+    if (buffer->owner == NULL) release_native(buffer);
     return DOE_MTL_OK;
 }
 
@@ -80,7 +118,7 @@ void doe_mtl_buffer_use_retired(doe_mtl_buffer_use *use) {
     if (use->newer) use->newer->older = use->older;
     else buffer->uses = use->older;
     buffer->owner = buffer->uses ? buffer->uses->commands : NULL;
-    if (!buffer->uses && buffer->evict_requested) buffer_evict_now(buffer);
+    if (!buffer->uses && buffer->evict_requested) release_native(buffer);
 }
 
 uint64_t doe_mtl_buffer_size(const doe_mtl_buffer *buffer) {

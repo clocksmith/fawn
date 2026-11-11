@@ -86,6 +86,33 @@ static void batch(state *s)
     release_fixture(&f);
 }
 
+/* Preparing bindings changes no results: the batch that follows still sees the
+ * buffers' contents. Metal (the only backend with something to prepare)
+ * reports every dispatch prepared; invalid arrays prepare none, silently. */
+static void prewarm(state *s)
+{
+    fixture f = create_fixture(s);
+    WGPUComputePipeline pipelines[] = {f.pipeline, f.pipeline};
+    WGPUBindGroup groups[2 * DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE] = {0};
+    groups[0] = f.group;
+    groups[DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE] = f.group;
+    const uint32_t counts[] = {1, 1};
+    const uint32_t expected = adapter_class_backend() == WGPUBackendType_Metal ? 2 : 0;
+    unsigned errors = s->errors;
+    assert(doeNativeComputePrewarmDispatchBindings(s->queue, 2, pipelines, groups, counts) == expected);
+    assert(doeNativeComputePrewarmDispatchBindings(s->queue, 2, pipelines, groups, counts) == expected);
+    const uint32_t too_many[] = {DOE_NATIVE_DISPATCH_BIND_GROUP_STRIDE + 1, 1};
+    assert(doeNativeComputePrewarmDispatchBindings(s->queue, 2, pipelines, groups, too_many) == 0);
+    assert(doeNativeComputePrewarmDispatchBindings(NULL, 2, pipelines, groups, counts) == 0);
+    assert(doeNativeComputePrewarmDispatchBindings(s->queue, 0, pipelines, groups, counts) == 0);
+    assert(s->errors == errors);
+    const uint32_t dimensions[] = {WORDS, 1, 1, WORDS, 1, 1};
+    WGPUCommandBuffer commands = doeNativeCreateComputeDispatchBatchCopyCommandBuffer(s->device, 2, pipelines,
+        groups, counts, dimensions, f.storage, 0, f.readback, 0, BYTES);
+    run(s, &f, commands, 2);
+    release_fixture(&f);
+}
+
 static void rejected(state *s, WGPUCommandBuffer commands)
 {
     assert(!commands);
@@ -139,8 +166,9 @@ int main(void)
     consumer_init(&s);
     single(&s);
     batch(&s);
+    prewarm(&s);
     failures(&s);
     consumer_finish(&s);
-    puts("fused commands: dispatch/copy order, batch, caller release, rejection");
+    puts("fused commands: dispatch/copy order, batch, binding prewarm, caller release, rejection");
     return 0;
 }

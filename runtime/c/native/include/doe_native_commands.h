@@ -41,6 +41,16 @@ DOE_NATIVE_EXTENSION WGPUCommandBuffer doeNativeCreateComputeDispatchBatchCopyCo
     const uint32_t *group_counts, const uint32_t *dimensions, WGPUBuffer source, uint64_t source_offset,
     WGPUBuffer destination, uint64_t destination_offset, uint64_t size);
 
+/* Prepares the bindings of dispatches about to be recorded, with the same
+ * arrays as doeNativeCreateComputeDispatchBatchCopyCommandBuffer (pipelines are
+ * not consulted). On Metal the buffers they bind join the queue residency set
+ * now, so neither the host writes that fill them nor the first command that
+ * uses them pays to make the memory resident. Returns the number of dispatches
+ * prepared; 0 for a NULL queue, invalid arrays or a backend with nothing to
+ * prepare. Reports no error. */
+DOE_NATIVE_EXTENSION uint32_t doeNativeComputePrewarmDispatchBindings(WGPUQueue queue, size_t dispatch_count,
+    WGPUComputePipeline *pipelines, WGPUBindGroup *groups, const uint32_t *group_counts);
+
 #ifdef __cplusplus
 }
 #endif

@@ -164,6 +164,41 @@ static doe_mtl_status create_queue(void *userdata, void *device, void **out,
     return doe_mtl_fail(DOE_MTL_OK, "newCommandQueue", error);
 }
 
+/* newResidencySetWithDescriptor:error: returns +1; the queue retains the set it
+ * attaches. requestResidency once makes every later commit wire its additions.
+ * Any missing class, method or set leaves residency to each command's use. */
+static void *create_residency(void *userdata, void *device, void *queue) {
+    doe_mtl_objc *runtime = userdata;
+    if (runtime->residency_descriptor_class == NULL ||
+        !runtime->responds_call(device, runtime->responds, runtime->new_residency_set) ||
+        !runtime->responds_call(queue, runtime->responds, runtime->add_residency_set)) return NULL;
+    void *pool = doe_mtl_objc_pool(runtime);
+    if (pool == NULL) return NULL;
+    void *descriptor = doe_mtl_objc_object(runtime, runtime->residency_descriptor_class, runtime->new_object);
+    void *native_error = NULL;
+    void *set = descriptor != NULL ? runtime->pipeline_call(device, runtime->new_residency_set,
+        descriptor, &native_error) : NULL;
+    if (descriptor != NULL) doe_mtl_objc_void(runtime, descriptor, runtime->release);
+    if (set != NULL) {
+        runtime->set_object_call(queue, runtime->add_residency_set, set);
+        doe_mtl_objc_void(runtime, set, runtime->request_residency);
+    }
+    doe_mtl_objc_drain(runtime, pool);
+    return set;
+}
+
+static void update_residency(void *userdata, void *set, void *allocation, bool resident) {
+    doe_mtl_objc *runtime = userdata;
+    runtime->set_object_call(set, resident ? runtime->add_allocation : runtime->remove_allocation, allocation);
+}
+
+static void commit_residency(void *userdata, void *set) {
+    doe_mtl_objc *runtime = userdata;
+    void *pool = doe_mtl_objc_pool(runtime);
+    doe_mtl_objc_void(runtime, set, runtime->commit);
+    doe_mtl_objc_drain(runtime, pool);
+}
+
 static doe_mtl_status create_buffer(void *userdata, void *device, size_t length,
     doe_mtl_memory memory, void **out, doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
@@ -257,6 +292,12 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->wait = runtime->selector("waitUntilCompleted");
     runtime->status = runtime->selector("status");
     runtime->error = runtime->selector("error");
+    runtime->residency_descriptor_class = runtime->get_class("MTLResidencySetDescriptor");
+    runtime->new_residency_set = runtime->selector("newResidencySetWithDescriptor:error:");
+    runtime->add_residency_set = runtime->selector("addResidencySet:");
+    runtime->add_allocation = runtime->selector("addAllocation:");
+    runtime->remove_allocation = runtime->selector("removeAllocation:");
+    runtime->request_residency = runtime->selector("requestResidency");
     return runtime->string_class != NULL && runtime->responds != NULL &&
         runtime->new_object != NULL && runtime->alloc != NULL &&
         runtime->retain != NULL && runtime->release != NULL &&
@@ -378,6 +419,9 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.guard_batch = doe_mtl_objc_guard_batch;
     native.texture = doe_mtl_objc_texture;
     native.texture_hazards_tracked = doe_mtl_objc_texture_hazards_tracked;
+    native.residency_create = create_residency;
+    native.residency_update = update_residency;
+    native.residency_commit = commit_residency;
     native.view = doe_mtl_objc_view;
     native.sampler = doe_mtl_objc_sampler;
     native.upload_texture = doe_mtl_objc_upload_image;

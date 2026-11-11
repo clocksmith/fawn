@@ -181,6 +181,10 @@ typedef struct doe_mtl_objc {
     void *buffer_barrier;
     void *commit;
     void *add_completed_handler;
+    /* Optional MTLResidencySet (macOS 15); NULL class keeps first-use residency. */
+    void *residency_descriptor_class;
+    void *new_residency_set, *add_residency_set, *add_allocation, *remove_allocation;
+    void *request_residency;
     /* objc_msgSend, cast at the call to take the block argument. */
     doe_objc_message handler_message;
     void *wait;

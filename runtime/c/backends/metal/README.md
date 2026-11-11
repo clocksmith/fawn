@@ -40,6 +40,13 @@ receipts below apply only to their recorded sources, device and scope.
 native/resource owner to adopt, not a replacement WebGPU API or reference authority:
 
 - Owned default device, queue, shared/private buffers and compute pipelines.
+- Where Metal offers MTLResidencySet (macOS 15+), one set is attached to the
+  queue. Buffers join it only when the host prepares their dispatch bindings
+  (`doeNativeComputePrewarmDispatchBindings`): one synchronous commit wires
+  them there, not in the host writes that fill them or the first command
+  buffer that uses them. Submission commits only removals, which wire nothing;
+  a released buffer leaves the set before its native release. Buffers never
+  prepared (staging, readback, short-lived) never enter the set.
 - Exact-length UTF-8 MSL compilation, named entrypoint and compiler-resolved
   workgroup size; NSError code/message survives native compilation failure.
 - Sparse buffer slots, nonzero offsets and bound byte sizes. The optional

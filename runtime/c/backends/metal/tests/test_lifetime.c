@@ -459,6 +459,89 @@ static void test_host_write_range(void) {
     mock_assert_closed(&mock);
 }
 
+/* Buffers join the queue residency set only when made resident, with one
+ * commit per request; repeats, NULL, evicted and other contexts' buffers are
+ * skipped. A resident buffer leaves the set before its native release, and
+ * the set keeps it until a commit: the next submission (removal only) or the
+ * removed-bytes bound. Buffers never made resident make no residency call. */
+static void test_buffer_residency(void) {
+    mock_native mock, mock_other;
+    doe_mtl_context *context = context_create(&mock);
+    doe_mtl_buffer *buffer = buffer_create(context, DOE_MTL_SHARED);
+    doe_mtl_context_make_resident(context, &buffer, 1); /* No set: first use keeps residency. */
+    assert(mock.residency_adds == 0);
+    doe_mtl_buffer_release(buffer);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+
+    doe_mtl_native native = mock_driver(&mock);
+    mock_enable_residency(&native);
+    mock.buffer_limit = UINT64_C(64) << 20;
+    context = NULL;
+    assert(doe_mtl_context_open(native, &context, NULL) == DOE_MTL_OK);
+    assert(mock.residency_sets == 1 && mock.live == 3);
+    doe_mtl_context *other = context_create(&mock_other);
+    doe_mtl_buffer *foreign = buffer_create(other, DOE_MTL_SHARED);
+
+    /* Churn: buffers never made resident cost no residency call. */
+    doe_mtl_buffer *churn = buffer_create(context, DOE_MTL_SHARED);
+    assert(doe_mtl_buffer_evict(churn) == DOE_MTL_OK);
+    doe_mtl_buffer_release(churn);
+    assert(mock.residency_adds == 0 && mock.residency_removes == 0 && mock.residency_commits == 0);
+
+    doe_mtl_buffer *kept = buffer_create(context, DOE_MTL_SHARED);
+    doe_mtl_buffer *staging = buffer_create(context, DOE_MTL_SHARED);
+    doe_mtl_buffer *destroyed = buffer_create(context, DOE_MTL_SHARED);
+    doe_mtl_buffer *evicted = buffer_create(context, DOE_MTL_SHARED);
+    assert(doe_mtl_buffer_evict(evicted) == DOE_MTL_OK);
+    doe_mtl_buffer *const prepare[] = {kept, NULL, destroyed, kept, evicted, foreign};
+    doe_mtl_context_make_resident(context, prepare, 6);
+    assert(mock.residency_adds == 2 && mock.residency_commits == 1);
+    doe_mtl_context_make_resident(context, prepare, 6); /* Nothing new: no commit. */
+    doe_mtl_context_make_resident(context, NULL, 0);
+    assert(mock.residency_adds == 2 && mock.residency_commits == 1);
+
+    /* Deferred destroy(): removal waits for the recording that uses it. */
+    doe_mtl_commands *commands = command_create(context);
+    assert(doe_mtl_commands_copy(commands, kept, 0, destroyed, 0, 64, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_buffer_evict(destroyed) == DOE_MTL_OK);
+    assert(mock.residency_removes == 0 && doe_mtl_buffer_native(destroyed) != NULL);
+    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+    assert(mock.residency_commits == 1); /* Nothing to remove yet. */
+    mock_result(&mock, 4, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    assert(mock.residency_removes == 1 && doe_mtl_buffer_native(destroyed) == NULL);
+    assert(mock.residency_commits == 1 && mock.residency_removed_count == 1);
+    doe_mtl_context_make_resident(context, &destroyed, 1); /* Evicted: skipped. */
+    assert(mock.residency_adds == 2);
+    /* The next submission commits the removal (and only it). */
+    commands = command_create(context);
+    assert(doe_mtl_commands_copy(commands, kept, 0, staging, 0, 64, NULL) == DOE_MTL_OK);
+    terminal_success(&mock, commands);
+    assert(mock.residency_commits == 2 && mock.residency_removed_count == 0 && mock.residency_adds == 2);
+    doe_mtl_buffer_release(staging);
+    doe_mtl_buffer_release(destroyed);
+    doe_mtl_buffer_release(evicted);
+    assert(mock.residency_removes == 1);
+
+    /* Releasing the bound's worth of resident bytes commits removals at once. */
+    doe_mtl_buffer *large = NULL;
+    assert(doe_mtl_buffer_create(context, UINT64_C(64) << 20, DOE_MTL_PRIVATE, &large, NULL) == DOE_MTL_OK);
+    doe_mtl_context_make_resident(context, &large, 1);
+    assert(mock.residency_adds == 3 && mock.residency_commits == 3);
+    doe_mtl_buffer_release(large);
+    assert(mock.residency_removes == 2 && mock.residency_commits == 4 && mock.residency_removed_count == 0);
+
+    doe_mtl_buffer_release(kept); /* Staged; the set's release drops it. */
+    assert(mock.residency_removes == 3 && mock.residency_removed_count == 1);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+    doe_mtl_buffer_release(foreign);
+    doe_mtl_context_release(other);
+    mock_assert_closed(&mock_other);
+}
+
 int main(void) {
     test_host_write_range();
     test_acquisition_failures();
@@ -471,6 +554,7 @@ int main(void) {
     test_recording_failures();
     test_validation_and_empty_work();
     test_unknown_commit_and_reference_overflow();
-    puts("Metal developer controls: 11 scenario groups passed; mocked calls, no GPU execution");
+    test_buffer_residency();
+    puts("Metal developer controls: 12 scenario groups passed; mocked calls, no GPU execution");
     return 0;
 }
