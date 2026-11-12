@@ -31,19 +31,21 @@ not need the Fawn browser.
 ## Performance highlights
 
 Measured on the C runtime this package ships, against the `webgpu` npm package
-(Dawn) on the same machine: Gemma 3 270M inference (64 prompt + 64 generated
-tokens) in Node. "Less time" is the median (p50) reduction over interleaved
-runs; both runtimes produced the same output.
+(Dawn) on the same machine: Gemma 3 inference (64 prompt + 64 generated tokens)
+in Node, 270M unless noted. "Less time" is the median (p50) reduction over
+interleaved runs; both runtimes produced the same output.
 
 | Host | Cold start | Warm |
 | --- | --- | --- |
-| Windows, AMD, D3D12 | **49% less** (336 ms vs 660 ms) | level (180 ms vs 179 ms) |
+| Windows, AMD, D3D12 | **50% less** (336 ms vs 666 ms) | **3% less** (177 ms vs 183 ms) |
+| Windows, AMD, D3D12, Gemma 3 1B | **30% less** (802 ms vs 1145 ms) | 2% less (622 ms vs 634 ms) |
 | Linux, AMD Radeon 8060S, Vulkan | 2% less (128 ms vs 131 ms) | **5% less** (99 ms vs 104 ms) |
 | macOS, Apple M3, Metal | 3% less (125 ms vs 129 ms) | **6% less** (105 ms vs 111 ms) |
 
-On Windows, creating that model's compute pipelines takes **73% less** time
+On Windows, creating the 270M model's compute pipelines takes **73% less** time
 (122 ms vs 445 ms). Doe is not faster everywhere yet: single-token decode on
-Apple Metal and Gemma 1B on Windows are still slower. Earlier results from the
+Apple Metal is still about 1.5-4% slower, and native (no-JavaScript) runs are
+not yet measured. Earlier results from the
 Zig-based runtime are not quoted here. Method and numbers:
 [`reports/benchmarks/c-runtime-20261111/summary.json`](https://github.com/clocksmith/fawn/blob/main/reports/benchmarks/c-runtime-20261111/summary.json).
 

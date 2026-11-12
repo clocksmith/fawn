@@ -1,6 +1,6 @@
 {
   "name": "doe-gpu",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Native C WebGPU runtime for Node.js, Bun, and Deno",
   "type": "module",
   "main": "./src/index.js",
@@ -111,9 +111,9 @@
     "demo:browser-compiler": "node scripts/serve-browser-compiler.js"
   },
   "optionalDependencies": {
-    "doe-gpu-darwin-arm64": "0.5.0",
-    "doe-gpu-linux-x64": "0.5.0",
-    "@clocksmith/doe-gpu-win32-x64": "0.5.0"
+    "doe-gpu-darwin-arm64": "0.5.2",
+    "doe-gpu-linux-x64": "0.5.2",
+    "@clocksmith/doe-gpu-win32-x64": "0.5.2"
   },
   "keywords": [
     "webgpu",
