@@ -4,19 +4,19 @@
   "workloadId": "compute_matvec_32768x2048_f32",
   "irPath": "bench/ir/compute_governed.json",
   "irScenario": "compute_matvec_32768x2048_f32",
-  "description": "matrix_vector_mul_32768x2048_f32_naive_swizzle0 grid 128x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_commands.json; the final dispatch carries the command-graph CPU oracle.",
+  "description": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl grid 128x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_commands.json; the final dispatch carries the command-graph CPU oracle.",
   "planPath": "bench/plans/generated/compute_matvec_32768x2048_f32.plan.json",
   "commandsPath": "bench/plans/generated/compat/compute_matvec_32768x2048_f32_commands.json",
   "commandCount": 100,
   "bufferWriteCount": 0,
   "bufferLoadCount": 0,
   "dispatchCount": 100,
-  "sourceIrSha256": "b46beb740527766a2eba2ef60f220cbc1329d321bddc12f2c58f8ae45ebed97c",
-  "compatibilityCommandsSha256": "090d7ab919ce382c45bff77d27ed3e84e4972b70af31edb6cb17573ea73e8cd7",
+  "sourceIrSha256": "c2525fb0b99c6531e6c931132d16f6381ca644a3a430725227a28335c5e03145",
+  "compatibilityCommandsSha256": "3685d17e3e12f51eeb1333968b154b6d309eb47338b5114549870dd7f002da85",
   "commands": [
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -53,7 +53,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -90,7 +90,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -127,7 +127,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -164,7 +164,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -201,7 +201,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -238,7 +238,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -275,7 +275,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -312,7 +312,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -349,7 +349,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -386,7 +386,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -423,7 +423,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -460,7 +460,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -497,7 +497,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -534,7 +534,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -571,7 +571,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -608,7 +608,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -645,7 +645,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -682,7 +682,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -719,7 +719,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -756,7 +756,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -793,7 +793,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -830,7 +830,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -867,7 +867,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -904,7 +904,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -941,7 +941,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -978,7 +978,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1015,7 +1015,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1052,7 +1052,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1089,7 +1089,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1126,7 +1126,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1163,7 +1163,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1200,7 +1200,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1237,7 +1237,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1274,7 +1274,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1311,7 +1311,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1348,7 +1348,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1385,7 +1385,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1422,7 +1422,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1459,7 +1459,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1496,7 +1496,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1533,7 +1533,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1570,7 +1570,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1607,7 +1607,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1644,7 +1644,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1681,7 +1681,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1718,7 +1718,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1755,7 +1755,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1792,7 +1792,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1829,7 +1829,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1866,7 +1866,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1903,7 +1903,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1940,7 +1940,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -1977,7 +1977,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2014,7 +2014,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2051,7 +2051,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2088,7 +2088,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2125,7 +2125,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2162,7 +2162,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2199,7 +2199,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2236,7 +2236,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2273,7 +2273,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2310,7 +2310,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2347,7 +2347,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2384,7 +2384,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2421,7 +2421,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2458,7 +2458,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2495,7 +2495,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2532,7 +2532,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2569,7 +2569,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2606,7 +2606,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2643,7 +2643,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2680,7 +2680,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2717,7 +2717,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2754,7 +2754,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2791,7 +2791,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2828,7 +2828,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2865,7 +2865,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2902,7 +2902,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2939,7 +2939,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -2976,7 +2976,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3013,7 +3013,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3050,7 +3050,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3087,7 +3087,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3124,7 +3124,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3161,7 +3161,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3198,7 +3198,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3235,7 +3235,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3272,7 +3272,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3309,7 +3309,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3346,7 +3346,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3383,7 +3383,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3420,7 +3420,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3457,7 +3457,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3494,7 +3494,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3531,7 +3531,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3568,7 +3568,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3605,7 +3605,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3642,7 +3642,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3679,7 +3679,7 @@
     },
     {
       "kind": "kernel_dispatch",
-      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+      "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
       "x": 128,
       "y": 1,
       "z": 1,
@@ -3727,5 +3727,5 @@
       }
     }
   ],
-  "planSha256": "1cd98e353bd37f91afbb4d46c0cdbd50ac291121973f7d1ee05e974df50ad92a"
+  "planSha256": "abdc2892888b289215feb77688fafa6db98a61e5e1d2f5c2f4818f6b76f99e87"
 }

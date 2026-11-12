@@ -1,7 +1,7 @@
 [
   {
     "kind": "kernel_dispatch",
-    "kernel": "concurrent_execution_runsingle_u32",
+    "kernel": "concurrent_execution_runsingle_u32.wgsl",
     "x": 1,
     "y": 1,
     "z": 1,

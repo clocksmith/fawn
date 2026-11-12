@@ -4,19 +4,19 @@
   "workloadId": "compute_concurrent_execution_single",
   "irPath": "bench/ir/compute_governed.json",
   "irScenario": "compute_concurrent_execution_single",
-  "description": "concurrent_execution_runsingle_u32 grid 1x1x1, 1 dependent plan dispatch from examples/concurrent_execution_single_commands.json; the final dispatch carries the command-graph CPU oracle.",
+  "description": "concurrent_execution_runsingle_u32.wgsl grid 1x1x1, 1 dependent plan dispatch from examples/concurrent_execution_single_commands.json; the final dispatch carries the command-graph CPU oracle.",
   "planPath": "bench/plans/generated/compute_concurrent_execution_single.plan.json",
   "commandsPath": "bench/plans/generated/compat/compute_concurrent_execution_single_commands.json",
   "commandCount": 1,
   "bufferWriteCount": 0,
   "bufferLoadCount": 0,
   "dispatchCount": 1,
-  "sourceIrSha256": "b46beb740527766a2eba2ef60f220cbc1329d321bddc12f2c58f8ae45ebed97c",
-  "compatibilityCommandsSha256": "9129b991ffe1556e8563b4229757666a23f56b2746eba89a31952f3869bf6568",
+  "sourceIrSha256": "c2525fb0b99c6531e6c931132d16f6381ca644a3a430725227a28335c5e03145",
+  "compatibilityCommandsSha256": "51a4d6fe6c72b20879ffba7d747b1e31d9bd5766a5f7b48f5bceb308296e8b1a",
   "commands": [
     {
       "kind": "kernel_dispatch",
-      "kernel": "concurrent_execution_runsingle_u32",
+      "kernel": "concurrent_execution_runsingle_u32.wgsl",
       "x": 1,
       "y": 1,
       "z": 1,
@@ -46,5 +46,5 @@
       }
     }
   ],
-  "planSha256": "46471c2d367f913ac8752422e609e23acb8effa234355e085e5e1af8a713e4d9"
+  "planSha256": "e0bbb502d71f14b7884b29d1bf1486f310bdaf86143b9734a16d84776d0c20cb"
 }

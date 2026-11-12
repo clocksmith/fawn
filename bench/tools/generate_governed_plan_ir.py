@@ -75,6 +75,14 @@ def _source_dispatch(path: str) -> tuple[dict[str, Any], int, dict[str, Any]]:
         raise ValueError(f"{path}: invalid repeat")
     dispatch = {key: copy.deepcopy(value) for key, value in source.items() if key not in _DROPPED_FIELDS}
     dispatch["initialize_buffers_on_create"] = True
+    # Plans name the exact WGSL file: package executors resolve kernel files
+    # by name, while the C runtime also accepts the extensionless alias.
+    kernel = str(dispatch["kernel"])
+    if not kernel.endswith(".wgsl"):
+        kernel += ".wgsl"
+    if not (REPO_ROOT / "bench" / "kernels" / kernel).is_file():
+        raise ValueError(f"{path}: kernel {kernel} is not in bench/kernels")
+    dispatch["kernel"] = kernel
     return dispatch, repeat, oracle
 
 

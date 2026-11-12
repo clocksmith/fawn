@@ -101,7 +101,7 @@
     },
     {
       "id": "compute_concurrent_execution_single",
-      "description": "concurrent_execution_runsingle_u32 grid 1x1x1, 1 dependent plan dispatch from examples/concurrent_execution_single_commands.json; the final dispatch carries the command-graph CPU oracle.",
+      "description": "concurrent_execution_runsingle_u32.wgsl grid 1x1x1, 1 dependent plan dispatch from examples/concurrent_execution_single_commands.json; the final dispatch carries the command-graph CPU oracle.",
       "planPath": "bench/plans/generated/compute_concurrent_execution_single.plan.json",
       "commandsPath": "bench/plans/generated/compat/compute_concurrent_execution_single_commands.json",
       "timingScope": "operation",
@@ -120,7 +120,7 @@
       "commands": [
         {
           "kind": "kernel_dispatch",
-          "kernel": "concurrent_execution_runsingle_u32",
+          "kernel": "concurrent_execution_runsingle_u32.wgsl",
           "x": 1,
           "y": 1,
           "z": 1,
@@ -141,7 +141,7 @@
     },
     {
       "id": "compute_matvec_32768x2048_f32",
-      "description": "matrix_vector_mul_32768x2048_f32_naive_swizzle0 grid 128x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_commands.json; the final dispatch carries the command-graph CPU oracle.",
+      "description": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl grid 128x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_commands.json; the final dispatch carries the command-graph CPU oracle.",
       "planPath": "bench/plans/generated/compute_matvec_32768x2048_f32.plan.json",
       "commandsPath": "bench/plans/generated/compat/compute_matvec_32768x2048_f32_commands.json",
       "timingScope": "operation",
@@ -164,7 +164,7 @@
           "commands": [
             {
               "kind": "kernel_dispatch",
-              "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0",
+              "kernel": "matrix_vector_mul_32768x2048_f32_naive_swizzle0.wgsl",
               "x": 128,
               "y": 1,
               "z": 1,
@@ -205,7 +205,7 @@
     },
     {
       "id": "compute_matvec_32768x2048_f32_swizzle1",
-      "description": "matrix_vector_mul_32768x2048_f32_swizzle1 grid 128x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_swizzle1_commands.json; the final dispatch carries the command-graph CPU oracle.",
+      "description": "matrix_vector_mul_32768x2048_f32_swizzle1.wgsl grid 128x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_swizzle1_commands.json; the final dispatch carries the command-graph CPU oracle.",
       "planPath": "bench/plans/generated/compute_matvec_32768x2048_f32_swizzle1.plan.json",
       "commandsPath": "bench/plans/generated/compat/compute_matvec_32768x2048_f32_swizzle1_commands.json",
       "timingScope": "operation",
@@ -228,7 +228,7 @@
           "commands": [
             {
               "kind": "kernel_dispatch",
-              "kernel": "matrix_vector_mul_32768x2048_f32_swizzle1",
+              "kernel": "matrix_vector_mul_32768x2048_f32_swizzle1.wgsl",
               "x": 128,
               "y": 1,
               "z": 1,
@@ -269,7 +269,7 @@
     },
     {
       "id": "compute_matvec_32768x2048_f32_workgroupshared_swizzle1",
-      "description": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1 grid 8192x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_workgroupshared_swizzle1_commands.json; the final dispatch carries the command-graph CPU oracle.",
+      "description": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl grid 8192x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_workgroupshared_swizzle1_commands.json; the final dispatch carries the command-graph CPU oracle.",
       "planPath": "bench/plans/generated/compute_matvec_32768x2048_f32_workgroupshared_swizzle1.plan.json",
       "commandsPath": "bench/plans/generated/compat/compute_matvec_32768x2048_f32_workgroupshared_swizzle1_commands.json",
       "timingScope": "operation",
@@ -292,7 +292,7 @@
           "commands": [
             {
               "kind": "kernel_dispatch",
-              "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+              "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1.wgsl",
               "x": 8192,
               "y": 1,
               "z": 1,
