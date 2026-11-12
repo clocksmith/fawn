@@ -123,6 +123,7 @@ function normalizeBindGroup(bindGroup, path) {
 // internal error is a different error and still reaches its own scope (first
 // of each). Unobserved errors are dropped (WebGPU).
 function reportFinishError(device, errors, invalidMessage) {
+  if (errors.length === 0 && invalidMessage == null) return;
   const reported = new Set();
   for (const { filter, error } of errors) {
     if (reported.has(filter)) continue;
@@ -169,9 +170,16 @@ const DESTROYED_RESOURCE_KINDS = { GPUTexture: 'texture', GPUBuffer: 'buffer', G
 // (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-submit), so the encoder
 // records nothing for it and its command buffer fails at submit
 // (queue.submit reports the error).
+function isDestroyedResourceUse(resource) {
+  return resource != null && (resource._textureDestroyed === true
+    || (DESTROYED_RESOURCE_KINDS[resource._resourceLabel] !== undefined && resource._destroyed && !resource._invalid));
+}
+
 function destroyedResourceUse(encoder, path, resources) {
-  const destroyed = resources.find((resource) => resource != null && (resource._textureDestroyed === true
-    || (DESTROYED_RESOURCE_KINDS[resource._resourceLabel] !== undefined && resource._destroyed && !resource._invalid)));
+  return reportDestroyedResourceUse(encoder, path, resources.find(isDestroyedResourceUse));
+}
+
+function reportDestroyedResourceUse(encoder, path, destroyed) {
   if (destroyed === undefined) {
     return false;
   }
@@ -207,13 +215,13 @@ function objectDevice(object) {
 // An object of another device makes the command invalid ("valid to use
 // with"); lazily recorded commands may never reach the provider's own check.
 function deviceMismatchMessage(encoder, path, first, second) {
-  for (const object of [first, second]) {
-    const device = objectDevice(object);
-    if (device !== null && encoder._device != null && device !== encoder._device) {
-      return `${path}: ${describeResourceLabel(object)} belongs to a different device`;
-    }
-  }
-  return null;
+  const object = isForeignObject(encoder, first) ? first : (isForeignObject(encoder, second) ? second : null);
+  return object === null ? null : `${path}: ${describeResourceLabel(object)} belongs to a different device`;
+}
+
+function isForeignObject(encoder, object) {
+  const device = objectDevice(object);
+  return device !== null && encoder._device != null && device !== encoder._device;
 }
 
 function encoderSkipsUse(encoder, path, first = null, second = null) {
@@ -225,7 +233,8 @@ function encoderSkipsUse(encoder, path, first = null, second = null) {
     invalidateEncoder(encoder, message);
     return true;
   }
-  return destroyedResourceUse(encoder, path, [first, second]);
+  const destroyed = isDestroyedResourceUse(first) ? first : (isDestroyedResourceUse(second) ? second : undefined);
+  return reportDestroyedResourceUse(encoder, path, destroyed);
 }
 
 // True when a binding, draw or dispatch command must record nothing: its pass
@@ -347,10 +356,29 @@ function assertOptionalStride(value, path, label) {
   return value;
 }
 
+// A compute pass command on the common path: the pass is open and valid, its
+// encoder valid and its device live, and each object it names a live, valid
+// object of that device. _assertOpen, passSkipsCommand and assertLiveResource
+// then report nothing, so the command records directly; any other state takes
+// the full checks, which report the error.
+function isPlainComputePass(pass) {
+  const encoder = pass._encoder;
+  const device = encoder._device;
+  return pass._ended === false && pass._invalid === false && !encoder._finished
+    && encoder._invalidMessage == null && encoder._submitError == null
+    && device != null && device._destroyed !== true && (device._lostInfo ?? null) === null;
+}
+
+function isPlainDeviceObject(device, object) {
+  return object != null && object._resourceOwner === device && object._native != null
+    && object._destroyed === false && object._invalid === false && object._textureDestroyed !== true;
+}
+
 function createEncoderClasses(backend) {
   let classes = null;
 
   const _hasComputePassAssertOpen = typeof backend.computePassAssertOpen === 'function';
+  const _hasCommandEncoderAssertOpen = typeof backend.commandEncoderAssertOpen === 'function';
   const commandBufferFinalizer = typeof FinalizationRegistry === 'function' && typeof backend.commandBufferDestroy === 'function'
     ? new FinalizationRegistry((native) => {
       backend.commandBufferDestroy(native);
@@ -372,6 +400,69 @@ function createEncoderClasses(backend) {
     if (native != null && typeof backend.commandBufferDestroy === 'function') {
       backend.commandBufferDestroy(native);
     }
+  }
+
+  function setPipelineChecked(pass, pipeline) {
+    if (pass._assertOpen('GPUComputePassEncoder.setPipeline')) return;
+    if (passSkipsCommand(pass, pass._encoder, 'GPUComputePassEncoder.setPipeline', pipeline)) return;
+    retainCommandObjects(pass._encoder, pipeline);
+    backend.computePassSetPipeline(
+      pass,
+      assertLiveResource(pipeline, 'GPUComputePassEncoder.setPipeline', 'GPUComputePipeline'),
+    );
+  }
+
+  function setBindGroupChecked(pass, argumentCount, index, bindGroup, dynamicOffsets, dataStart, dataLength) {
+    const path = 'GPUComputePassEncoder.setBindGroup';
+    if (pass._assertOpen(path)) return;
+    assertIntegerInRange(index, path, 'index', UINT32_RANGE);
+    const offsets = normalizeDynamicOffsets(
+      path,
+      argumentCount,
+      dynamicOffsets,
+      dataStart,
+      dataLength,
+    );
+    if (bindGroupIndexInvalid(pass, pass._encoder, path, index)) return;
+    if (passSkipsCommand(pass, pass._encoder, path, bindGroup)) return;
+    retainCommandObjects(pass._encoder, bindGroup);
+    backend.computePassSetBindGroup(pass, index, normalizeBindGroup(bindGroup, path), offsets);
+  }
+
+  function dispatchWorkgroupsChecked(pass, x, y, z) {
+    if (pass._assertOpen('GPUComputePassEncoder.dispatchWorkgroups')) return;
+    assertIntegerInRange(x, 'GPUComputePassEncoder.dispatchWorkgroups', 'x', UINT32_RANGE);
+    assertIntegerInRange(y, 'GPUComputePassEncoder.dispatchWorkgroups', 'y', UINT32_RANGE);
+    assertIntegerInRange(z, 'GPUComputePassEncoder.dispatchWorkgroups', 'z', UINT32_RANGE);
+    if (passSkipsCommand(pass, pass._encoder, 'GPUComputePassEncoder.dispatchWorkgroups')) return;
+    backend.computePassDispatchWorkgroups(pass, x, y, z);
+  }
+
+  function copyBufferToBufferChecked(
+    encoder, src, srcOffsetOrDst, dstOrSize, dstOffsetOrUndefined, sizeOrUndefined) {
+    if (encoder._assertOpen('GPUCommandEncoder.copyBufferToBuffer')) return;
+    const srcBuffer = src;
+    const useNewSignature = typeof srcOffsetOrDst === 'object' && srcOffsetOrDst !== null;
+    const srcOffset = useNewSignature ? 0 : srcOffsetOrDst;
+    const dst = useNewSignature ? srcOffsetOrDst : dstOrSize;
+    const dstOffset = useNewSignature ? 0 : dstOffsetOrUndefined;
+    const explicitSize = useNewSignature ? dstOrSize : sizeOrUndefined;
+    assertIntegerInRange(srcOffset, 'GPUCommandEncoder.copyBufferToBuffer', 'srcOffset', NON_NEGATIVE_RANGE);
+    assertIntegerInRange(dstOffset, 'GPUCommandEncoder.copyBufferToBuffer', 'dstOffset', NON_NEGATIVE_RANGE);
+    if (encoderSkipsUse(encoder, 'GPUCommandEncoder.copyBufferToBuffer', srcBuffer, dst)) return;
+    const srcNative = assertLiveResource(srcBuffer, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
+    const dstNative = assertLiveResource(dst, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
+    const size = explicitSize === undefined ? Math.max(0, srcBuffer.size - srcOffset) : explicitSize;
+    assertIntegerInRange(size, 'GPUCommandEncoder.copyBufferToBuffer', 'size', NON_NEGATIVE_RANGE);
+    retainCommandObjects(encoder, srcBuffer, dst);
+    backend.commandEncoderCopyBufferToBuffer(
+      encoder,
+      srcNative,
+      srcOffset,
+      dstNative,
+      dstOffset,
+      size,
+    );
   }
 
   class DoeGPUComputePassEncoder {
@@ -396,30 +487,26 @@ function createEncoderClasses(backend) {
     }
 
     setPipeline(pipeline) {
-      if (this._assertOpen('GPUComputePassEncoder.setPipeline')) return;
-      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.setPipeline', pipeline)) return;
-      retainCommandObjects(this._encoder, pipeline);
-      backend.computePassSetPipeline(
-        this,
-        assertLiveResource(pipeline, 'GPUComputePassEncoder.setPipeline', 'GPUComputePipeline'),
-      );
+      if (!_hasComputePassAssertOpen && isPlainComputePass(this)
+        && isPlainDeviceObject(this._encoder._device, pipeline)) {
+        retainCommandObjects(this._encoder, pipeline);
+        backend.computePassSetPipeline(this, pipeline._native);
+        return;
+      }
+      setPipelineChecked(this, pipeline);
     }
 
     setBindGroup(index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength) {
-      const path = 'GPUComputePassEncoder.setBindGroup';
-      if (this._assertOpen(path)) return;
-      assertIntegerInRange(index, path, 'index', UINT32_RANGE);
-      const offsets = normalizeDynamicOffsets(
-        path,
-        arguments.length,
-        dynamicOffsets,
-        dynamicOffsetsDataStart,
-        dynamicOffsetsDataLength,
-      );
-      if (bindGroupIndexInvalid(this, this._encoder, path, index)) return;
-      if (passSkipsCommand(this, this._encoder, path, bindGroup)) return;
-      retainCommandObjects(this._encoder, bindGroup);
-      backend.computePassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
+      // An index below 4 is below every device's maxBindGroups (spec minimum 4).
+      if (!_hasComputePassAssertOpen && arguments.length <= 3 && dynamicOffsets === undefined
+        && (index >>> 0) === index && index < 4 && isPlainComputePass(this)
+        && isPlainDeviceObject(this._encoder._device, bindGroup)) {
+        retainCommandObjects(this._encoder, bindGroup);
+        backend.computePassSetBindGroup(this, index, bindGroup._native, null);
+        return;
+      }
+      setBindGroupChecked(
+        this, arguments.length, index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
@@ -434,12 +521,12 @@ function createEncoderClasses(backend) {
     }
 
     dispatchWorkgroups(x, y = 1, z = 1) {
-      if (this._assertOpen('GPUComputePassEncoder.dispatchWorkgroups')) return;
-      assertIntegerInRange(x, 'GPUComputePassEncoder.dispatchWorkgroups', 'x', UINT32_RANGE);
-      assertIntegerInRange(y, 'GPUComputePassEncoder.dispatchWorkgroups', 'y', UINT32_RANGE);
-      assertIntegerInRange(z, 'GPUComputePassEncoder.dispatchWorkgroups', 'z', UINT32_RANGE);
-      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.dispatchWorkgroups')) return;
-      backend.computePassDispatchWorkgroups(this, x, y, z);
+      if (!_hasComputePassAssertOpen && (x >>> 0) === x && (y >>> 0) === y && (z >>> 0) === z
+        && isPlainComputePass(this)) {
+        backend.computePassDispatchWorkgroups(this, x, y, z);
+        return;
+      }
+      dispatchWorkgroupsChecked(this, x, y, z);
     }
 
     _dispatchBound(pipeline, bindGroup, x, y = 1, z = 1) {
@@ -934,6 +1021,66 @@ function createEncoderClasses(backend) {
     }
   }
 
+  // An encoder in the state finish() expects: open, not locked by a pass, its
+  // device live. _assertOpen then reports nothing.
+  function isPlainEncoder(encoder) {
+    const device = encoder._device;
+    return !_hasCommandEncoderAssertOpen && !encoder._finished
+      && (encoder._openPass == null || encoder._openPass._ended)
+      && (encoder._activePass == null || encoder._activePass._ended)
+      && device != null && device._destroyed !== true && (device._lostInfo ?? null) === null;
+  }
+
+  function finishCheckedEncoder(encoder, descriptor) {
+    const device = encoder._device;
+    if (encoder._openPass !== null && !encoder._openPass._ended && !encoder._finished && !isDeviceLost(device)) {
+      // A locked encoder (a pass still open) finishes into an invalid
+      // command buffer with a validation error; it records nothing more.
+      encoder._finished = true;
+      deliverDeviceError(device, 'validation', new GPUValidationError('GPUCommandEncoder.finish: the command encoder has an open pass'));
+      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+    }
+    encoder._assertOpen('GPUCommandEncoder.finish');
+    if (isDeviceLost(device)) {
+      // A lost device's encoder finishes into an invalid command buffer
+      // without touching the provider; no error is generated.
+      encoder._finished = true;
+      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+    }
+    const ended = encoder._finished;
+    if (encoder._assertOpen('GPUCommandEncoder.finish')) {
+      // A locked encoder (open pass) is invalid and now ended; an ended one
+      // already generated its error.
+      encoder._finished = true;
+      if (!ended) reportFinishError(device, [], encoder._invalidMessage);
+      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+    }
+    return finishRecordedCommands(encoder, descriptor);
+  }
+
+  // finish() of an open encoder: the provider records its commands, reporting
+  // at most one error, and the result is a command buffer (invalid on error).
+  function finishRecordedCommands(encoder, descriptor) {
+    const device = encoder._device;
+    const { result: state, errors } = collectDeviceErrors(device, () => backend.commandEncoderFinish(encoder));
+    reportFinishError(device, errors, encoder._invalidMessage);
+    if (encoder._invalidMessage == null && errors.length === 0) {
+      const cmdBuf = new classes.DoeGPUCommandBuffer(state, device);
+      cmdBuf._commandObjects = encoder._commandObjects ?? null;
+      encoder._commandObjects = null;
+      cmdBuf.label = descriptor?.label ?? '';
+      if (encoder._submitError != null) cmdBuf._submitError = encoder._submitError;
+      return cmdBuf;
+    }
+    // An encoder that finished with an error, or was invalidated by an
+    // invalid object, yields an invalid command buffer and drops its native
+    // recording.
+    if (state?._native != null && typeof backend.commandBufferDestroy === 'function') {
+      backend.commandBufferDestroy(state._native);
+    }
+    return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+  }
+
   class DoeGPUCommandEncoder {
     constructor(state, device) {
       this._device = device;
@@ -1005,29 +1152,17 @@ function createEncoderClasses(backend) {
     }
 
     copyBufferToBuffer(src, srcOffsetOrDst, dstOrSize, dstOffsetOrUndefined, sizeOrUndefined) {
-      if (this._assertOpen('GPUCommandEncoder.copyBufferToBuffer')) return;
-      const srcBuffer = src;
-      const useNewSignature = typeof srcOffsetOrDst === 'object' && srcOffsetOrDst !== null;
-      const srcOffset = useNewSignature ? 0 : srcOffsetOrDst;
-      const dst = useNewSignature ? srcOffsetOrDst : dstOrSize;
-      const dstOffset = useNewSignature ? 0 : dstOffsetOrUndefined;
-      const explicitSize = useNewSignature ? dstOrSize : sizeOrUndefined;
-      assertIntegerInRange(srcOffset, 'GPUCommandEncoder.copyBufferToBuffer', 'srcOffset', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(dstOffset, 'GPUCommandEncoder.copyBufferToBuffer', 'dstOffset', NON_NEGATIVE_RANGE);
-      if (encoderSkipsUse(this, 'GPUCommandEncoder.copyBufferToBuffer', srcBuffer, dst)) return;
-      const srcNative = assertLiveResource(srcBuffer, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
-      const dstNative = assertLiveResource(dst, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
-      const size = explicitSize === undefined ? Math.max(0, srcBuffer.size - srcOffset) : explicitSize;
-      assertIntegerInRange(size, 'GPUCommandEncoder.copyBufferToBuffer', 'size', NON_NEGATIVE_RANGE);
-      retainCommandObjects(this, srcBuffer, dst);
-      backend.commandEncoderCopyBufferToBuffer(
-        this,
-        srcNative,
-        srcOffset,
-        dstNative,
-        dstOffset,
-        size,
-      );
+      if (Number.isSafeInteger(srcOffsetOrDst) && srcOffsetOrDst >= 0
+        && Number.isSafeInteger(dstOffsetOrUndefined) && dstOffsetOrUndefined >= 0
+        && Number.isSafeInteger(sizeOrUndefined) && sizeOrUndefined >= 0 && isPlainEncoder(this)
+        && isPlainDeviceObject(this._device, src) && isPlainDeviceObject(this._device, dstOrSize)) {
+        assertLiveResource(this._device, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUDevice');
+        retainCommandObjects(this, src, dstOrSize);
+        backend.commandEncoderCopyBufferToBuffer(
+          this, src._native, srcOffsetOrDst, dstOrSize._native, dstOffsetOrUndefined, sizeOrUndefined);
+        return;
+      }
+      copyBufferToBufferChecked(this, src, srcOffsetOrDst, dstOrSize, dstOffsetOrUndefined, sizeOrUndefined);
     }
 
     copyBufferToTexture(source, destination, copySize) {
@@ -1184,46 +1319,11 @@ function createEncoderClasses(backend) {
     }
 
     finish(descriptor) {
-      const device = this._device;
-      if (this._openPass !== null && !this._openPass._ended && !this._finished && !isDeviceLost(device)) {
-        // A locked encoder (a pass still open) finishes into an invalid
-        // command buffer with a validation error; it records nothing more.
-        this._finished = true;
-        deliverDeviceError(device, 'validation', new GPUValidationError('GPUCommandEncoder.finish: the command encoder has an open pass'));
-        return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+      if (isPlainEncoder(this)) {
+        assertLiveResource(this._device, 'GPUCommandEncoder.finish', 'GPUDevice');
+        return finishRecordedCommands(this, descriptor);
       }
-      this._assertOpen('GPUCommandEncoder.finish');
-      if (isDeviceLost(device)) {
-        // A lost device's encoder finishes into an invalid command buffer
-        // without touching the provider; no error is generated.
-        this._finished = true;
-        return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
-      }
-      const ended = this._finished;
-      if (this._assertOpen('GPUCommandEncoder.finish')) {
-        // A locked encoder (open pass) is invalid and now ended; an ended one
-        // already generated its error.
-        this._finished = true;
-        if (!ended) reportFinishError(device, [], this._invalidMessage);
-        return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
-      }
-      const { result: state, errors } = collectDeviceErrors(device, () => backend.commandEncoderFinish(this));
-      reportFinishError(device, errors, this._invalidMessage);
-      if (this._invalidMessage == null && errors.length === 0) {
-        const cmdBuf = new classes.DoeGPUCommandBuffer(state, device);
-        cmdBuf._commandObjects = this._commandObjects ?? null;
-        this._commandObjects = null;
-        cmdBuf.label = descriptor?.label ?? '';
-        if (this._submitError != null) cmdBuf._submitError = this._submitError;
-        return cmdBuf;
-      }
-      // An encoder that finished with an error, or was invalidated by an
-      // invalid object, yields an invalid command buffer and drops its native
-      // recording.
-      if (state?._native != null && typeof backend.commandBufferDestroy === 'function') {
-        backend.commandBufferDestroy(state._native);
-      }
-      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+      return finishCheckedEncoder(this, descriptor);
     }
   }
 

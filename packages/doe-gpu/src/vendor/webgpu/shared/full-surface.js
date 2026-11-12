@@ -1282,6 +1282,55 @@ function createFullSurfaceClasses({
     }
   }
 
+  // One valid command buffer of this live device on a live queue: submit has
+  // nothing to report (submitCommandBuffers would take the same backend call),
+  // so the per-frame path skips the general checks.
+  function isPlainQueueSubmission(queue, buffer) {
+    const device = queue._device;
+    return device != null && device._destroyed !== true && (device._lostInfo ?? null) === null
+      && queue._native != null && queue._destroyed === false && queue._invalid === false
+      && buffer != null && typeof buffer === 'object' && buffer._invalid === false
+      && buffer._submitError == null && buffer._submitted !== true && buffer._resourceOwner === device;
+  }
+
+  function submitCommandBuffers(queue, commandBuffers) {
+    const buffers = assertArray(commandBuffers, 'GPUQueue.submit', 'commandBuffers');
+    if (isDeviceLost(queue._device)) {
+      for (const buffer of buffers) {
+        if (buffer && typeof buffer === 'object') buffer._submitted = true;
+      }
+      return;
+    }
+    const native = assertLiveResource(queue, 'GPUQueue.submit', 'GPUQueue');
+    if (buffers.length === 0) {
+      return;
+    }
+    const invalid = buffers.find(isInvalidResource);
+    // A command buffer that names a destroyed texture fails here (WebGPU
+    // validates destroyed resources at submit).
+    const destroyedUse = buffers.find((buffer) => buffer?._submitError != null);
+    // A submitted command buffer is invalid, and one submit names each
+    // command buffer once (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-submit).
+    const resubmitted = buffers.findIndex((buffer) => buffer?._submitted === true);
+    const foreign = buffers.findIndex((buffer) => buffer?._resourceOwner?._resourceLabel === 'GPUDevice'
+      && buffer._resourceOwner !== queue._device);
+    const duplicated = new Set(buffers).size !== buffers.length;
+    if (invalid !== undefined || destroyedUse !== undefined || resubmitted >= 0 || duplicated || foreign >= 0) {
+      // A failed submit still consumes every command buffer it names.
+      for (const buffer of buffers) {
+        if (buffer?._submitted !== true) buffer?.destroy?.();
+        if (buffer && typeof buffer === 'object') buffer._submitted = true;
+      }
+      if (invalid !== undefined) reportInvalidUse(queue._device, 'GPUQueue.submit', invalid);
+      else if (resubmitted >= 0) reportValidationError(queue._device, `GPUQueue.submit: commandBuffers[${resubmitted}] was already submitted`);
+      else if (duplicated) reportValidationError(queue._device, 'GPUQueue.submit: commandBuffers names a command buffer more than once');
+      else if (foreign >= 0) reportValidationError(queue._device, `GPUQueue.submit: commandBuffers[${foreign}] belongs to a different device`);
+      else reportValidationError(queue._device, `GPUQueue.submit: ${destroyedUse._submitError}`);
+      return;
+    }
+    return backend.queueSubmit(queue, native, buffers);
+  }
+
   class DoeGPUQueue {
     constructor(native, instance, device) {
       this._native = native;
@@ -1327,41 +1376,11 @@ function createFullSurfaceClasses({
     }
 
     submit(commandBuffers) {
-      const buffers = assertArray(commandBuffers, 'GPUQueue.submit', 'commandBuffers');
-      if (isDeviceLost(this._device)) {
-        for (const buffer of buffers) {
-          if (buffer && typeof buffer === 'object') buffer._submitted = true;
-        }
-        return;
+      if (Array.isArray(commandBuffers) && commandBuffers.length === 1
+        && isPlainQueueSubmission(this, commandBuffers[0])) {
+        return backend.queueSubmit(this, this._native, commandBuffers);
       }
-      const native = assertLiveResource(this, 'GPUQueue.submit', 'GPUQueue');
-      if (buffers.length === 0) {
-        return;
-      }
-      const invalid = buffers.find(isInvalidResource);
-      // A command buffer that names a destroyed texture fails here (WebGPU
-      // validates destroyed resources at submit).
-      const destroyedUse = buffers.find((buffer) => buffer?._submitError != null);
-      // A submitted command buffer is invalid, and one submit names each
-      // command buffer once (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-submit).
-      const resubmitted = buffers.findIndex((buffer) => buffer?._submitted === true);
-      const foreign = buffers.findIndex((buffer) => buffer?._resourceOwner?._resourceLabel === 'GPUDevice'
-        && buffer._resourceOwner !== this._device);
-      const duplicated = new Set(buffers).size !== buffers.length;
-      if (invalid !== undefined || destroyedUse !== undefined || resubmitted >= 0 || duplicated || foreign >= 0) {
-        // A failed submit still consumes every command buffer it names.
-        for (const buffer of buffers) {
-          if (buffer?._submitted !== true) buffer?.destroy?.();
-          if (buffer && typeof buffer === 'object') buffer._submitted = true;
-        }
-        if (invalid !== undefined) reportInvalidUse(this._device, 'GPUQueue.submit', invalid);
-        else if (resubmitted >= 0) reportValidationError(this._device, `GPUQueue.submit: commandBuffers[${resubmitted}] was already submitted`);
-        else if (duplicated) reportValidationError(this._device, 'GPUQueue.submit: commandBuffers names a command buffer more than once');
-        else if (foreign >= 0) reportValidationError(this._device, `GPUQueue.submit: commandBuffers[${foreign}] belongs to a different device`);
-        else reportValidationError(this._device, `GPUQueue.submit: ${destroyedUse._submitError}`);
-        return;
-      }
-      return backend.queueSubmit(this, native, buffers);
+      return submitCommandBuffers(this, commandBuffers);
     }
 
     writeBuffer(buffer, bufferOffset, data, dataOffset = 0, size) {

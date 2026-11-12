@@ -479,28 +479,37 @@ static napi_value throw_batch_cmd_buf_error(
     return NULL;
 }
 
+/* (device, objects, dims, slotCount, src, srcOffset, dst, dstOffset, size): dispatch i
+ * names objects[i * (1 + slotCount)] (pipeline) and the next slotCount entries (bind
+ * groups, null unbound) with workgroups dims[3i..3i+2]; one copy follows the pass.
+ * Flat inputs: reading per-command objects cost several named lookups per dispatch. */
 napi_value doe_create_compute_dispatch_batch_copy_command_buffer(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value args[2];
-    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok || argc != 2) {
-        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires 2 arguments");
+    size_t argc = 9;
+    napi_value args[9];
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok || argc != 9) {
+        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires 9 arguments");
     }
     CHECK_LIB_LOADED(env);
     WGPUDevice device = unwrap_ptr(env, args[0]);
     if (!device) NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires a device");
-
-    napi_value commands = args[1];
-    uint32_t cmd_count = 0;
-    napi_get_array_length(env, commands, &cmd_count);
-    if (cmd_count < 2) {
-        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires dispatch commands followed by a copy");
+    uint32_t object_count = 0, slot_count = 0;
+    napi_typedarray_type dims_type = napi_int8_array;
+    size_t dims_length = 0;
+    void* dims_bytes = NULL;
+    bool is_array = false;
+    napi_is_array(env, args[1], &is_array);
+    if (is_array) napi_get_array_length(env, args[1], &object_count);
+    napi_get_value_uint32(env, args[3], &slot_count);
+    if (!is_array || slot_count > BATCH_MAX_BIND_GROUPS ||
+        napi_get_typedarray_info(env, args[2], &dims_type, &dims_length, &dims_bytes, NULL, NULL) != napi_ok ||
+        dims_type != napi_uint32_array || dims_length == 0 || dims_length % 3 != 0 ||
+        object_count != (dims_length / 3) * (1 + slot_count)) {
+        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires matching objects and dims");
     }
-
-    napi_value copy_cmd;
-    napi_get_element(env, commands, cmd_count - 1, &copy_cmd);
-    if (get_command_type(env, copy_cmd) != 1) {
-        NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires a final copy command");
-    }
+    const uint32_t* dims = (const uint32_t*)dims_bytes;
+    WGPUBuffer copy_src = unwrap_ptr(env, args[4]);
+    WGPUBuffer copy_dst = unwrap_ptr(env, args[6]);
+    if (!copy_src || !copy_dst) NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer requires copy buffers");
 
     WGPUCommandEncoder encoder = pfn_wgpuDeviceCreateCommandEncoder(device, NULL);
     if (!encoder) NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer: createCommandEncoder failed");
@@ -509,17 +518,12 @@ napi_value doe_create_compute_dispatch_batch_copy_command_buffer(napi_env env, n
         pfn_wgpuCommandEncoderRelease(encoder);
         NAPI_THROW(env, "createComputeDispatchBatchCopyCommandBuffer: beginComputePass failed");
     }
-
     void* current_pipeline = NULL;
     void* current_bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
-    for (uint32_t i = 0; i + 1 < cmd_count; i++) {
-        napi_value cmd;
-        napi_get_element(env, commands, i, &cmd);
-        if (get_command_type(env, cmd) != 0) {
-            return throw_batch_cmd_buf_error(env, pass, encoder,
-                "createComputeDispatchBatchCopyCommandBuffer requires only dispatch commands before the copy");
-        }
-        void* pipeline = get_command_ptr_prop(env, cmd, "p");
+    for (uint32_t i = 0, object = 0; i < dims_length / 3; i++) {
+        napi_value value;
+        napi_get_element(env, args[1], object++, &value);
+        void* pipeline = unwrap_ptr(env, value);
         if (!pipeline) {
             return throw_batch_cmd_buf_error(env, pass, encoder,
                 "createComputeDispatchBatchCopyCommandBuffer requires dispatch pipelines");
@@ -529,33 +533,20 @@ napi_value doe_create_compute_dispatch_batch_copy_command_buffer(napi_env env, n
             current_pipeline = pipeline;
             memset(current_bind_groups, 0, sizeof(current_bind_groups));
         }
-        void* bind_groups[BATCH_MAX_BIND_GROUPS] = {NULL};
-        uint32_t bg_count = read_command_bind_groups(env, cmd, bind_groups, BATCH_MAX_BIND_GROUPS);
-        for (uint32_t j = 0; j < bg_count; j++) {
-            void* bg = bind_groups[j];
+        for (uint32_t j = 0; j < slot_count; j++) {
+            napi_get_element(env, args[1], object++, &value);
+            void* bg = unwrap_ptr(env, value);
             if (bg && bg != current_bind_groups[j]) {
                 pfn_wgpuComputePassEncoderSetBindGroup(pass, j, bg, 0, NULL);
                 current_bind_groups[j] = bg;
             }
         }
-        pfn_wgpuComputePassEncoderDispatchWorkgroups(
-            pass, get_uint32_prop(env, cmd, "x"), get_uint32_prop(env, cmd, "y"), get_uint32_prop(env, cmd, "z"));
+        pfn_wgpuComputePassEncoderDispatchWorkgroups(pass, dims[3 * i], dims[3 * i + 1], dims[3 * i + 2]);
     }
-
-    WGPUBuffer copy_src = get_command_ptr_prop(env, copy_cmd, "s");
-    WGPUBuffer copy_dst = get_command_ptr_prop(env, copy_cmd, "d");
-    if (!copy_src || !copy_dst) {
-        return throw_batch_cmd_buf_error(env, pass, encoder,
-            "createComputeDispatchBatchCopyCommandBuffer requires copy buffers");
-    }
-
     pfn_wgpuComputePassEncoderEnd(pass);
     pfn_wgpuComputePassEncoderRelease(pass);
-    pfn_wgpuCommandEncoderCopyBufferToBuffer(
-        encoder,
-        copy_src, (uint64_t)get_int64_prop(env, copy_cmd, "so"),
-        copy_dst, (uint64_t)get_int64_prop(env, copy_cmd, "do"),
-        (uint64_t)get_int64_prop(env, copy_cmd, "sz"));
+    pfn_wgpuCommandEncoderCopyBufferToBuffer(encoder, copy_src, (uint64_t)get_int64_value(env, args[5]),
+        copy_dst, (uint64_t)get_int64_value(env, args[7]), (uint64_t)get_int64_value(env, args[8]));
     WGPUCommandBufferDescriptor desc = { .nextInChain = NULL, .label = { .data = NULL, .length = 0 } };
     WGPUCommandBuffer cmd = pfn_wgpuCommandEncoderFinish(encoder, &desc);
     pfn_wgpuCommandEncoderRelease(encoder);
