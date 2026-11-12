@@ -142,6 +142,15 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     return DOE_DX_OK;
 }
 
+doe_dx_status doe_dx_native_staging_create(doe_dx_native_context *context,
+    uint64_t size, doe_dx_native_buffer **out, doe_dx_error *error) {
+    doe_dx_status status = doe_dx_native_buffer_create(context, size, DOE_DX_UPLOAD, out, error);
+    if (status != DOE_DX_OK) return status;
+    (*out)->zeroed = false;
+    mock.staging_creates++;
+    return status;
+}
+
 bool doe_dx_native_buffer_zeroed(const doe_dx_native_buffer *buffer) {
     return buffer->zeroed;
 }

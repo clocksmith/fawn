@@ -200,6 +200,41 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     return doe_dx_fail(DOE_DX_OK, 0, "native.buffer.create", error);
 }
 
+doe_dx_status doe_dx_native_staging_create(doe_dx_native_context *context,
+    uint64_t size, doe_dx_native_buffer **out, doe_dx_error *error) {
+    if (size > context->limits.max_buffer_size || size > context->limits.max_buffer_allocation_bytes)
+        return doe_dx_fail(DOE_DX_RANGE, 0, "native.staging.size", error);
+    doe_dx_native_buffer *buffer = calloc(1, sizeof(*buffer));
+    if (!buffer) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.staging.allocate", error);
+    const D3D12_HEAP_PROPERTIES heap = {.Type = D3D12_HEAP_TYPE_UPLOAD,
+        .CreationNodeMask = 1, .VisibleNodeMask = 1};
+    D3D12_RESOURCE_DESC description = {0};
+    description.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    description.Width = size;
+    description.Height = 1;
+    description.DepthOrArraySize = 1;
+    description.MipLevels = 1;
+    description.SampleDesc.Count = 1;
+    description.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    /* Dawn's staging likewise skips the zero (D3D12CreateNotZeroedHeap). A
+     * runtime that rejects the flag gets the ordinary zeroed resource. */
+    HRESULT result = ID3D12Device_CreateCommittedResource(context->device, &heap,
+        D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, &description, D3D12_RESOURCE_STATE_GENERIC_READ, NULL,
+        &IID_ID3D12Resource, (void **)&buffer->resource);
+    if (result == E_INVALIDARG)
+        result = ID3D12Device_CreateCommittedResource(context->device, &heap, D3D12_HEAP_FLAG_NONE,
+            &description, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, &IID_ID3D12Resource,
+            (void **)&buffer->resource);
+    if (FAILED(result)) {
+        doe_dx_native_buffer_destroy(buffer);
+        return doe_dx_hresult(result, "ID3D12Device.CreateCommittedResource.staging", error);
+    }
+    buffer->size = size;
+    buffer->memory = DOE_DX_UPLOAD;
+    *out = buffer;
+    return doe_dx_fail(DOE_DX_OK, 0, "native.staging.create", error);
+}
+
 bool doe_dx_native_buffer_zeroed(const doe_dx_native_buffer *buffer) {
     return buffer && buffer->zeroed;
 }

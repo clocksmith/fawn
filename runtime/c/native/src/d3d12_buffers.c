@@ -128,11 +128,12 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     native_d3d12_buffer *payload = calloc(1, sizeof(*payload));
     if (!payload) return native_failure_status(NATIVE_OUT_OF_MEMORY);
     doe_dx_error error = {0};
+    bool known_zero = false;
+    doe_dx_context *context = buffer->device->backend.value.d3d12.context;
     doe_dx_status status = direct_readback ?
-        doe_dx_buffer_create_readback_zeroed(buffer->device->backend.value.d3d12.context,
-            physical,&payload->allocation,&error) :
-        doe_dx_buffer_create(buffer->device->backend.value.d3d12.context,
-            physical,direct_upload ? DOE_DX_UPLOAD : DOE_DX_DEFAULT,&payload->allocation,&error);
+        doe_dx_buffer_create_readback_zeroed(context,physical,&payload->allocation,&error) :
+        direct_upload ? doe_dx_buffer_create(context,physical,DOE_DX_UPLOAD,&payload->allocation,&error) :
+        doe_dx_buffer_create_default_known_zero(context,physical,&payload->allocation,&known_zero,&error);
     if (status != DOE_DX_OK) {
         free(payload);
         return native_failure_d3d12(status, &error);
@@ -141,11 +142,14 @@ native_failure native_d3d12_buffer_create(native_buffer *buffer, uint64_t size, 
     payload->memory = direct_readback ? DOE_DX_READBACK : direct_upload ? DOE_DX_UPLOAD : DOE_DX_DEFAULT;
     buffer->handle.d3d12 = payload;
     /* READBACK construction completed its full zero (CPU, or D3D12 at creation).
-     * DEFAULT defers its complete zero copy (native width, CBV padding included)
-     * until the device's next recording, transfer or CPU read, unless a
-     * whole-allocation write initializes it first. Known-fenced acceptance of
+     * DEFAULT memory above 1 MiB that D3D12 zeroed at creation (a new
+     * committed resource) is already initialized: a fill would copy zeros
+     * over zeros (646 MB for Gemma 1B weights, before their own whole writes).
+     * Other DEFAULT defers its complete zero copy (native width, CBV padding
+     * included) until the device's next recording, transfer or CPU read, unless
+     * a whole-allocation write initializes it first. Known-fenced acceptance of
      * either copy protects later GPU uses, never CPU access. */
-    if (!direct_readback && !direct_upload) {
+    if (!direct_readback && !direct_upload && !known_zero) {
         payload->zero_deferred = true;
         payload->next_deferred = buffer->device->backend.value.d3d12.deferred_zero;
         buffer->device->backend.value.d3d12.deferred_zero = payload;

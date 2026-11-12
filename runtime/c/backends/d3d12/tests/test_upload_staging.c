@@ -36,11 +36,17 @@ static void caller_leases_and_independent_zero_cache(void)
     doe_dx_buffer_release(first);
     size_t attempts = mock.allocation_attempts;
     doe_dx_buffer *reused = NULL;
+    size_t staging = mock.staging_creates;
     assert(doe_dx_upload_acquire(context,32,&reused,NULL) == DOE_DX_OK);
     assert(reused == first && reused->references == 2 && mock.allocation_attempts == attempts);
     doe_dx_buffer_release(reused);
+    /* Cached pages keep ordinary zeroed creation; only a one-use request beyond
+     * a page is unspecified-content staging, still readable by copies. */
+    assert(mock.staging_creates == staging);
     assert(doe_dx_upload_acquire(context,PAGE_BYTES+4u,&large,NULL) == DOE_DX_OK);
     assert(large != first && large->size == PAGE_BYTES+4u && large->references == 1);
+    assert(mock.staging_creates == staging + 1 && large->initialized);
+    assert(!doe_dx_native_buffer_zeroed(large->native));
     assert(context->upload_staging == first && first->references == 1);
     doe_dx_buffer_release(large);
     assert(doe_dx_upload_acquire(context,64,&reused,NULL) == DOE_DX_OK);
@@ -252,6 +258,6 @@ int main(void)
     teardown_pending_lease(false);
     teardown_pending_lease(true);
     queued_pages_reuse_after_retirement();
-    puts("PASS D3D12 caller upload-staging owner: caller/recording/pending exclusion, completion/recovery reuse, exact uncached sizes, bounded cache, OOM retry/rollback, zero-cache isolation and terminal leases; no SDK/GPU/data oracle");
+    puts("PASS D3D12 caller upload-staging owner: caller/recording/pending exclusion, completion/recovery reuse, exact uncached sizes as unzeroed staging, bounded cache, OOM retry/rollback, zero-cache isolation and terminal leases; no SDK/GPU/data oracle");
     return 0;
 }

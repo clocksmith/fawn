@@ -115,6 +115,11 @@ doe_dx_status doe_dx_validate_adapter(const doe_dx_options *options,
     const doe_dx_caps *caps, doe_dx_error *error);
 doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     uint64_t size, doe_dx_memory memory, doe_dx_native_buffer **out, doe_dx_error *error);
+/* Caller-data staging only: a committed UPLOAD resource whose contents are
+ * unspecified (D3D12_HEAP_FLAG_CREATE_NOT_ZEROED, no CPU fill). The caller
+ * writes every byte any copy reads. Never reports zeroed memory. */
+doe_dx_status doe_dx_native_staging_create(doe_dx_native_context *context,
+    uint64_t size, doe_dx_native_buffer **out, doe_dx_error *error);
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer);
 doe_dx_status doe_dx_native_zero_readback(doe_dx_native_buffer *buffer, doe_dx_error *error);
 /* True when D3D12 zeroed every byte at creation and nothing has written it since

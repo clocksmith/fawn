@@ -23,6 +23,7 @@ typedef struct control {
     native_result submission;
     doe_dx_status copy_status, zero_status;
     doe_dx_commands *pending;
+    bool default_known_zero; /* D3D12 zeroed the next DEFAULT memory at creation. */
 } control;
 static control seen;
 
@@ -54,6 +55,15 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
     if (seen.zero_status != DOE_DX_OK) return seen.zero_status;
     doe_dx_status status=doe_dx_buffer_create(context,size,DOE_DX_READBACK,out,error);
     if (status == DOE_DX_OK) (*out)->initialized=true;
+    return status;
+}
+doe_dx_status doe_dx_buffer_create_default_known_zero(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, bool *known_zero, doe_dx_error *error)
+{
+    doe_dx_status status=doe_dx_buffer_create(context,size,DOE_DX_DEFAULT,out,error);
+    if (status != DOE_DX_OK) return status;
+    if (seen.default_known_zero) (*out)->initialized=true;
+    *known_zero=seen.default_known_zero;
     return status;
 }
 /* Frontend composition seam only. Cache ownership/reuse is independently
@@ -295,6 +305,19 @@ int main(void)
     assert(seen.copy_size == 16 && seen.pending && seen.pending->count == 1);
     retire_pending(true);
     native_d3d12_buffer_close(&buffer);
+    /* DEFAULT memory D3D12 zeroed at creation is never deferred: neither a
+     * partial write nor a CPU read records a fill for it. */
+    seen.default_known_zero = true;
+    assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
+    seen.default_known_zero = false;
+    assert(!buffer.handle.d3d12->zero_deferred && !device.backend.value.d3d12.deferred_zero);
+    copies = seen.copies;
+    submissions = seen.async_submissions;
+    assert(native_d3d12_buffer_write(&buffer, 0, page, 16).status == NATIVE_OK);
+    assert(native_d3d12_flush_writes(&device).status == NATIVE_OK);
+    assert(seen.async_submissions == submissions + 1 && seen.copies == copies + 1 && seen.copy_size == 16);
+    retire_pending(true);
+    native_d3d12_buffer_close(&buffer);
     /* Release before any observation unlinks without a fill. */
     copies = seen.copies;
     assert(native_d3d12_buffer_create(&buffer, 13, DOE_VK_BUFFER_UNIFORM, NATIVE_BUFFER_GENERAL).status == NATIVE_OK);
@@ -331,6 +354,6 @@ int main(void)
     assert(seen.copies==copies && seen.allocations==allocations+1);
     native_d3d12_buffer_close(&buffer);
     assert(native_d3d12_buffer_create(&buffer,13,DOE_VK_BUFFER_UNIFORM,NATIVE_BUFFER_MAP_WRITE).status==NATIVE_INVALID_ARGUMENT);
-    puts("PASS actual Windows frontend composition: typed READBACK/DEFAULT/UPLOAD placement and direct mutable write lending, full zeroing spans/padding, direct map and lent read range, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write; no GPU");
+    puts("PASS actual Windows frontend composition: typed READBACK/DEFAULT/UPLOAD placement and direct mutable write lending, full zeroing spans/padding, direct map and lent read range, pending rejection and failure retention, deferred whole-width zero fills batched before reads/partial writes, skipped only by a whole-allocation write or D3D12-zeroed DEFAULT memory; no GPU");
     return 0;
 }

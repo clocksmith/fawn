@@ -51,6 +51,13 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
 {
     return doe_dx_buffer_create(context, size, DOE_DX_READBACK, out, error);
 }
+/* These controls exercise deferred fills: no DEFAULT memory is known zero. */
+doe_dx_status doe_dx_buffer_create_default_known_zero(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, bool *known_zero, doe_dx_error *error)
+{
+    *known_zero = false;
+    return doe_dx_buffer_create(context, size, DOE_DX_DEFAULT, out, error);
+}
 doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error)
 {

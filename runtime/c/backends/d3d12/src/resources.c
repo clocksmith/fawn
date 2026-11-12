@@ -1,8 +1,12 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
-doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
-    doe_dx_memory memory, doe_dx_buffer **out, doe_dx_error *error) {
+/* Smallest DEFAULT size published known zero (the placed-buffer bound). */
+#define DOE_DX_KNOWN_ZERO_DEFAULT_MIN (UINT64_C(1) << 20)
+
+/* staging: unspecified-content UPLOAD for caller data (doe_dx_native_staging_create). */
+static doe_dx_status buffer_create(doe_dx_context *context, uint64_t size,
+    doe_dx_memory memory, bool staging, doe_dx_buffer **out, doe_dx_error *error) {
     if (!context || !out || !size || memory < DOE_DX_DEFAULT || memory > DOE_DX_READBACK)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "buffer.create", error);
     if (size > SIZE_MAX || size > context->caps.limits.max_buffer_size || context->objects == SIZE_MAX)
@@ -10,8 +14,9 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "buffer.create", error);
     doe_dx_buffer *buffer = calloc(1, sizeof(*buffer));
     if (!buffer) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "buffer.allocate", error);
-    doe_dx_status status = doe_dx_native_buffer_create(context->native, size, memory,
-        &buffer->native, error);
+    doe_dx_status status = staging ?
+        doe_dx_native_staging_create(context->native, size, &buffer->native, error) :
+        doe_dx_native_buffer_create(context->native, size, memory, &buffer->native, error);
     if (status != DOE_DX_OK) {
         free(buffer);
         return doe_dx_context_result(context, status, error);
@@ -24,6 +29,11 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     context->objects++;
     *out = buffer;
     return doe_dx_fail(DOE_DX_OK, 0, "buffer.create", error);
+}
+
+doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
+    doe_dx_memory memory, doe_dx_buffer **out, doe_dx_error *error) {
+    return buffer_create(context, size, memory, false, out, error);
 }
 
 doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint64_t size,
@@ -41,6 +51,26 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
     buffer->initialized = true; /* Synchronous CPU writes finished before any GPU use. */
     *out = buffer;
     return doe_dx_fail(DOE_DX_OK,0,"readback_zero.create",error);
+}
+
+doe_dx_status doe_dx_buffer_create_default_known_zero(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, bool *known_zero, doe_dx_error *error) {
+    if (!out || !known_zero)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"default_known_zero.create",error);
+    doe_dx_buffer *buffer = NULL;
+    doe_dx_status status = doe_dx_buffer_create(context,size,DOE_DX_DEFAULT,&buffer,error);
+    if (status != DOE_DX_OK) return status;
+    /* D3D12 zeroed the whole allocation at creation and no command has used it.
+     * Only buffers beyond the 1 MiB placement bound (always new committed
+     * resources) are published known zero: small buffers keep their deferred
+     * zero copy, which is the queue's first ExecuteCommandLists. Skipping it
+     * moved that first-submission cost into the first timed submit and map
+     * (prepared host operation 3.83 -> 4.00 ms on bee). */
+    const bool zero = size > DOE_DX_KNOWN_ZERO_DEFAULT_MIN && doe_dx_native_buffer_zeroed(buffer->native);
+    if (zero) buffer->initialized = true;
+    *out = buffer;
+    *known_zero = zero;
+    return doe_dx_fail(DOE_DX_OK,0,"default_known_zero.create",error);
 }
 
 doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
@@ -104,7 +134,10 @@ doe_dx_status doe_dx_upload_acquire(doe_dx_context *context, uint64_t size,
     bool cacheable = slot && size <= limit;
     uint64_t capacity = cacheable ? limit : size;
     doe_dx_buffer *prepared = NULL;
-    doe_dx_status status = doe_dx_buffer_create(context,capacity,DOE_DX_UPLOAD,&prepared,error);
+    /* An uncached request beyond one page is used once for exactly its caller
+     * bytes: skip D3D12's creation zero (the bulk of a large write's staging cost). */
+    doe_dx_status status = buffer_create(context,capacity,DOE_DX_UPLOAD,!cacheable && size > limit,
+        &prepared,error);
     /* A speculative larger page must not turn an otherwise satisfiable small
      * request into OOM. Only that allocation result admits an exact-size retry. */
     if (status == DOE_DX_OUT_OF_MEMORY && capacity > size)

@@ -64,8 +64,9 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   persistent Map, even while earlier ranges are GPU-owned. Only retired prefixes
   wrap; cache overflow and oversized writes allocate independently; immutable zero data stays
   separate. A speculative larger page's OOM alone permits an exact-size retry.
-  Initial allocation zeros its full width; reuse copies only caller bytes and
-  makes no zero-content promise. Teardown drops only each cache's ordinary lease.
+  A cached page's initial allocation zeros its full width; an oversized
+  uncached request is created with `CREATE_NOT_ZEROED`, as Dawn's staging is.
+  Every use copies only caller bytes and makes no zero-content promise. Teardown drops only each cache's ordinary lease.
 - Compute and graphics resource descriptors borrow contiguous ranges of a
   context-owned 4096-entry shader-visible heap instead of creating a heap per
   descriptor use. The first heap is created with the device (device-opening owner,
@@ -94,9 +95,14 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   resources set `D3D12_HEAP_FLAG_CREATE_NOT_ZEROED`, so D3D12 zeroes their memory
   at creation. A heap records which slots were never placed; a buffer entirely in
   such slots, or a new committed resource, is known zero, so UPLOAD and zeroed
-  READBACK construction skip their CPU zero writes. DEFAULT keeps its deferred
-  zero copy: skipping it too removed the queue's first ExecuteCommandLists from
-  the first queue write and the frozen prepared host operation then paid it. Once placed, a slot is never known zero again and
+  READBACK construction skip their CPU zero writes. The additive
+  `doe_dx_buffer_create_default_known_zero` publishes such DEFAULT memory above
+  1 MiB (new committed resources) initialized, so the native frontend defers no
+  zero copy for it; other DEFAULT memory keeps the deferred copy. Small buffers
+  keep it because that copy is the queue's first ExecuteCommandLists; skipping
+  it moved that cost into the frozen prepared host operation (3.83 -> 4.00 ms). (Copying zeros over D3D12-zeroed weight
+  buffers cost Gemma 1B 646 MB of fills and ~78 ms of staging creation before
+  its own whole writes on bee.) Once placed, a slot is never known zero again and
   every later buffer there initializes explicitly (`native/tests/zero_reuse.c`
   dirties and reuses slots; a build that trusts reused slots fails it). Dawn
   creates heaps with CREATE_NOT_ZEROED and clears lazily on first use, leaving

@@ -145,6 +145,13 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
  * General buffer_create READBACK initialization semantics remain unchanged. */
 doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error);
+/* Additive DEFAULT constructor: when size exceeds 1 MiB and D3D12 zeroed the
+ * memory at creation (see doe_dx_buffer_create), the buffer is published
+ * initialized and *known_zero is true; otherwise it is the ordinary uninitialized DEFAULT buffer and the
+ * caller still owns its full initializing copy. No GPU use exists yet. Outputs
+ * are written only on success. General buffer_create semantics are unchanged. */
+doe_dx_status doe_dx_buffer_create_default_known_zero(doe_dx_context *context, uint64_t size,
+    doe_dx_buffer **out, bool *known_zero, doe_dx_error *error);
 /* Retained, immutable zero-filled UPLOAD storage, at least size bytes. Context
  * serialization is required. Up to one MiB is reused/grown on the existing
  * context; larger requests remain uncached. CPU writes reject this buffer.
@@ -153,7 +160,8 @@ doe_dx_status doe_dx_buffer_create_readback_zeroed(doe_dx_context *context, uint
 doe_dx_status doe_dx_zero_upload_acquire(doe_dx_context *context, uint64_t size,
     doe_dx_buffer **out, doe_dx_error *error);
 /* Serialized caller-data staging, at least size bytes; contents unspecified on
- * reuse. Write and copy only caller-provided bytes. Up to eight one-MiB pages
+ * reuse and for uncached requests beyond one page, which skip D3D12's creation
+ * zero. Write and copy only caller-provided bytes. Up to eight one-MiB pages
  * keep ordinary cache leases; reuse requires no caller/recording/pending use.
  * Pool overflow/oversized requests stay uncached. A speculative page's OOM may
  * retry the exact size; all other errors propagate. Release the caller lease. */
