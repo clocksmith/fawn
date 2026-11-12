@@ -399,6 +399,63 @@ class RunnerPlanSupportTests(unittest.TestCase):
         self.assertFalse(sample["timing"]["repeatNormalized"])
         self.assertEqual(sample["timing"]["repeatNormalizationOwner"], "timing-divisor")
 
+    @patch("bench.native_compare_modules.runner.run_once")
+    def test_run_workload_excludes_failed_samples_from_timings(
+        self,
+        mock_run_once,
+    ) -> None:
+        def fake_run_once(_command, **kwargs):
+            kwargs["trace_meta_path"].write_text(
+                json.dumps(
+                    {
+                        "executionErrorCount": 1,
+                        "executionSuccessCount": 0,
+                        "executionTotalNs": 0,
+                        "timingMs": 0.0,
+                        "timingSource": "doe-execution-total-ns",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return 5.0, 0.0, 0, {"processWallMs": 5.0}
+
+        mock_run_once.side_effect = fake_run_once
+        workload = SimpleNamespace(
+            id="alpha", domain="compute", commands_path="", plan_path="",
+            quirks_path="", vendor="", api="", family="", driver="",
+            dawn_filter="", extra_args=[], comparable=True,
+            strict_normalization_unit="",
+        )
+        with tempfile.TemporaryDirectory(prefix="doe-runner-failed-") as tmpdir:
+            result = run_workload(
+                name="sample",
+                template="bun bench/executors/run-bun-webgpu-plan.js --trace-meta {trace_meta}",
+                workload=workload,
+                iterations=2,
+                warmup=0,
+                out_dir=Path(tmpdir),
+                gpu_memory_probe="none",
+                resource_sample_ms=100,
+                resource_sample_target_count=0,
+                timing_divisor=1.0,
+                command_repeat=1,
+                ignore_first_ops=0,
+                upload_buffer_usage="copy-dst-copy-src",
+                upload_submit_every=1,
+                inject_upload_runtime_flags=False,
+                required_timing_class="operation",
+                comparability_mode="directional",
+                benchmark_policy=SimpleNamespace(),
+                emit_shell=False,
+            )
+
+        self.assertEqual(result.get("timingsMs", []), [])
+        self.assertEqual(result["stats"]["count"], 0)
+        self.assertIn(
+            "executionErrorCount=1",
+            result["commandSamples"][0]["executionFailureReasons"],
+        )
+
     def test_preflight_cannot_fill_or_overwrite_timed_output_evidence(self) -> None:
         oracle = {
             "outputOracleCount": 1, "outputOracleMatchedCount": 1,

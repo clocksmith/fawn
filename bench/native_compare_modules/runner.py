@@ -116,6 +116,33 @@ def trace_meta_records_terminal_execution_outcome(trace_meta_path: Path | None) 
         or safe_int(payload.get("executionSkippedCount"), default=0) > 0
     )
 
+def trace_meta_execution_failure_reasons(trace_meta: dict[str, Any]) -> list[str]:
+    """Return why a sample's trace-meta does not record completed work.
+
+    A zero exit status cannot establish success: package wrappers have exited
+    0 after a failed child, and a failed provider load has produced 0 ms
+    receipts. Executors that report no execution counters at all (external
+    perf-test wrappers) are judged by exit status alone.
+    """
+    reasons: list[str] = []
+    error_count = safe_int(trace_meta.get("executionErrorCount"), default=0)
+    if error_count > 0:
+        reasons.append(f"executionErrorCount={error_count}")
+    unsupported_count = safe_int(
+        trace_meta.get("executionUnsupportedCount"), default=0
+    )
+    if unsupported_count > 0:
+        reasons.append(f"executionUnsupportedCount={unsupported_count}")
+    if "executionSuccessCount" in trace_meta:
+        success_count = safe_int(trace_meta.get("executionSuccessCount"), default=0)
+        if success_count <= 0:
+            reasons.append(f"executionSuccessCount={success_count}")
+    provider_failure = str(trace_meta.get("providerFailureReason") or "").strip()
+    if provider_failure:
+        reasons.append(f"providerFailureReason={provider_failure}")
+    return reasons
+
+
 def extract_timing_metrics_ms(
     trace_meta: dict[str, Any],
     *,
@@ -913,7 +940,11 @@ def run_workload(
         measured_meta["uploadSubmitEvery"] = upload_submit_every
         if ignore_meta:
             measured_meta.update(ignore_meta)
-        timings.append(measured_ms)
+        failure_reasons = trace_meta_execution_failure_reasons(sample_meta)
+        if rc != 0 and not failure_reasons:
+            failure_reasons = [f"returnCode={rc}"]
+        if not failure_reasons:
+            timings.append(measured_ms)
         run_records.append(
             {
                 "runIndex": run_idx,
@@ -926,6 +957,7 @@ def run_workload(
                 "traceJsonlPath": str(trace_jsonl),
                 "traceMetaPath": str(trace_meta),
                 "returnCode": rc,
+                "executionFailureReasons": failure_reasons,
                 "resource": resource,
                 "timingMetricsRawMs": timing_metrics_raw_ms,
                 "timingMetricsNormalizedMs": timing_metrics_normalized_ms,

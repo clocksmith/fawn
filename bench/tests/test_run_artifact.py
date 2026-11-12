@@ -215,6 +215,56 @@ class TestRunReceiptRoundTrip(unittest.TestCase):
         self.assertEqual(artifact["execution"]["timedSampleCount"], 0)
         self.assertEqual(artifact["execution"]["returnCodes"], [1])
 
+    def _build_with_trace_meta(self, **trace_meta_fields: object) -> dict:
+        run_result = _make_run_result()
+        run_result["commandSamples"][0]["traceMeta"].update(trace_meta_fields)
+        return build_run_artifact(
+            run_result=run_result,
+            product="doe",
+            executor_id="doe_direct_vulkan",
+            workload_spec=_make_spec(),
+            run_config=_make_run_config(),
+            iterations=1,
+            warmup=0,
+            workload_contract_path=WORKLOAD_MANIFEST_PATH,
+        )
+
+    def test_zero_exit_with_execution_error_is_a_failed_receipt(self) -> None:
+        # The Bun wrapper once exited 0 after its child failed, leaving a
+        # receipt with executionErrorCount 1 and 0 ms timing.
+        artifact = self._build_with_trace_meta(
+            executionErrorCount=1, executionSuccessCount=0, executionTotalNs=0
+        )
+        sample = artifact["samples"][0]
+        self.assertFalse(sample["success"])
+        self.assertIn("executionErrorCount=1", sample["executionFailureReasons"])
+        self.assertFalse(artifact["execution"]["success"])
+        self.assertEqual(artifact["execution"]["timedSampleCount"], 0)
+
+    def test_zero_successful_operations_is_a_failed_receipt(self) -> None:
+        artifact = self._build_with_trace_meta(executionSuccessCount=0)
+        self.assertFalse(artifact["samples"][0]["success"])
+        self.assertFalse(artifact["execution"]["success"])
+
+    def test_provider_failure_reason_is_a_failed_receipt(self) -> None:
+        # A failed library load reports a provider failure, never success.
+        artifact = self._build_with_trace_meta(
+            executionSuccessCount=3, providerFailureReason="library_load_failed"
+        )
+        self.assertFalse(artifact["samples"][0]["success"])
+        self.assertIn(
+            "providerFailureReason=library_load_failed",
+            artifact["samples"][0]["executionFailureReasons"],
+        )
+
+    def test_completed_work_with_zero_exit_is_a_successful_receipt(self) -> None:
+        artifact = self._build_with_trace_meta(
+            executionErrorCount=0, executionSuccessCount=3
+        )
+        self.assertTrue(artifact["samples"][0]["success"])
+        self.assertEqual(artifact["samples"][0]["executionFailureReasons"], [])
+        self.assertTrue(artifact["execution"]["success"])
+
     def test_env_wrapped_command_resolves_runner_binary(self) -> None:
         artifact = build_run_artifact(
             run_result=_with_sample_command_and_backend(

@@ -88,17 +88,37 @@ async function writeArtifacts(traceMetaPath, traceJsonlPath, meta, rows) {
   await writeFile(traceJsonlPath, payload, 'utf8');
 }
 
-async function traceMetaRecordsTerminalOutcome(traceMetaPath) {
-  try {
-    const payload = JSON.parse(await readFile(traceMetaPath, 'utf8'));
-    return (
-      Number(payload.executionErrorCount ?? 0) > 0
-      || Number(payload.executionUnsupportedCount ?? 0) > 0
-      || Number(payload.executionSkippedCount ?? 0) > 0
-    );
-  } catch {
-    return false;
+function traceMetaRecordsTerminalOutcome(payload) {
+  return Boolean(payload) && (
+    Number(payload.executionErrorCount ?? 0) > 0
+    || Number(payload.executionUnsupportedCount ?? 0) > 0
+    || Number(payload.executionSkippedCount ?? 0) > 0
+  );
+}
+
+// A run succeeds only when its trace-meta records completed work: no
+// execution errors, at least one successful operation and no provider
+// failure. Exit status alone cannot establish success, because the worker
+// exits 0 after writing an unsupported or zero-work receipt.
+export function traceMetaExecutionFailureReasons(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return ['trace-meta-missing'];
   }
+  const reasons = [];
+  if (Number(payload.executionErrorCount ?? 0) > 0) {
+    reasons.push(`executionErrorCount=${payload.executionErrorCount}`);
+  }
+  if (Number(payload.executionUnsupportedCount ?? 0) > 0) {
+    reasons.push(`executionUnsupportedCount=${payload.executionUnsupportedCount}`);
+  }
+  if (!(Number(payload.executionSuccessCount ?? 0) > 0)) {
+    reasons.push(`executionSuccessCount=${payload.executionSuccessCount ?? 'missing'}`);
+  }
+  const providerFailureReason = String(payload.providerFailureReason ?? '').trim();
+  if (providerFailureReason) {
+    reasons.push(`providerFailureReason=${providerFailureReason}`);
+  }
+  return reasons;
 }
 
 async function readTraceMeta(traceMetaPath) {
@@ -342,17 +362,31 @@ async function runWithSupervisor(args, {
       process.exitCode = 1;
       return;
     }
+    const failureReasons = traceMetaExecutionFailureReasons(
+      await readTraceMeta(args['trace-meta']),
+    );
+    if (failureReasons.length > 0) {
+      process.stderr.write(
+        `${label} supervisor rejected child run that exited 0 without completed work `
+        + `(${failureReasons.join(', ')})\n`,
+      );
+      process.exitCode = 1;
+    }
     return;
   }
 
-  const trace_meta_complete = await traceMetaRecordsTerminalOutcome(args['trace-meta']);
+  const trace_meta_complete = traceMetaRecordsTerminalOutcome(
+    await readTraceMeta(args['trace-meta']),
+  );
   if (trace_meta_complete) {
+    // Keep the child's terminal receipt, which is more specific than a
+    // supervisor-built one, but never turn its failure into success.
     const signal_suffix = outcome.signal ? `, signal=${outcome.signal}` : '';
     process.stderr.write(
-      `${label} supervisor accepted child teardown failure after complete terminal trace-meta `
+      `${label} supervisor kept child terminal trace-meta after failed exit `
       + `(code=${outcome.code ?? 'null'}${signal_suffix})\n`,
     );
-    process.exitCode = 0;
+    process.exitCode = outcome.code && outcome.code > 0 ? outcome.code : 1;
     return;
   }
   if (!trace_meta_complete) {

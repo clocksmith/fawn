@@ -14,7 +14,10 @@ from bench.lib import doe_runtime_providers
 from bench.lib import metal_pipeline_cache_manifest as metal_cache_manifest
 from native_compare_modules import reporting as reporting_mod
 from native_compare_modules import timing_selection as timing_selection_mod
-from native_compare_modules.runner import file_sha256
+from native_compare_modules.runner import (
+    file_sha256,
+    trace_meta_execution_failure_reasons,
+)
 from native_compare_modules.workload_provenance import workload_manifest_provenance
 from native_compare_modules.workload_spec import ProductRunConfig, WorkloadSpec
 
@@ -115,6 +118,19 @@ def _copy_optional_sample_fields(sample: dict[str, Any]) -> dict[str, Any]:
     return copied
 
 
+def _sample_failure_reasons(
+    return_code: int, trace_meta: dict[str, Any]
+) -> list[str]:
+    reasons = trace_meta_execution_failure_reasons(trace_meta)
+    if return_code != 0:
+        reasons.insert(0, f"returnCode={return_code}")
+    return reasons
+
+
+def _sample_succeeded(return_code: int, trace_meta: dict[str, Any]) -> bool:
+    return not _sample_failure_reasons(return_code, trace_meta)
+
+
 def _receipt_samples(run_result: dict[str, Any]) -> list[dict[str, Any]]:
     samples: list[dict[str, Any]] = []
     for sample in run_result.get("commandSamples", []):
@@ -140,7 +156,10 @@ def _receipt_samples(run_result: dict[str, Any]) -> list[dict[str, Any]]:
                 "subphasesMs": _subphase_ms(trace_meta),
                 "resource": sample.get("resource", {}),
                 "returnCode": return_code,
-                "success": return_code == 0,
+                "success": _sample_succeeded(return_code, trace_meta),
+                "executionFailureReasons": _sample_failure_reasons(
+                    return_code, trace_meta
+                ),
                 "traceMeta": trace_meta,
                 **_copy_optional_sample_fields(sample),
             }
@@ -681,7 +700,10 @@ def _legacy_samples(data: dict[str, Any]) -> list[dict[str, Any]]:
                 "subphasesMs": _subphase_ms(trace_meta),
                 "resource": sample.get("resource", {}),
                 "returnCode": return_code,
-                "success": return_code == 0,
+                "success": _sample_succeeded(return_code, trace_meta),
+                "executionFailureReasons": _sample_failure_reasons(
+                    return_code, trace_meta
+                ),
                 "traceMeta": trace_meta,
                 **_copy_optional_sample_fields(sample),
             }
