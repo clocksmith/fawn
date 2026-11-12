@@ -293,7 +293,35 @@ def _infer_runtime_host(
     return "native"
 
 
-def _package_identity(provider_name: str) -> dict[str, str]:
+def _recorded_package_identity(trace_meta: dict[str, Any]) -> dict[str, str] | None:
+    """Read the package identity an executor recorded from the loaded module."""
+    identity = trace_meta.get("packageProviderIdentity")
+    if not isinstance(identity, dict) or identity.get("loaded") is not True:
+        return None
+    package_name = str(identity.get("packageName", "")).strip()
+    manifest_sha256 = str(identity.get("packageJsonSha256", "")).strip()
+    if not manifest_sha256:
+        # The pinned Dawn route hashes its package.json among its inputs.
+        input_hashes = identity.get("inputHashes")
+        if isinstance(input_hashes, dict):
+            for path, digest in input_hashes.items():
+                if Path(str(path)).name == "package.json":
+                    manifest_sha256 = str(digest).strip()
+        if manifest_sha256 and not package_name:
+            package_name = "webgpu"
+    version = str(identity.get("version", "")).strip()
+    if not (package_name and version and manifest_sha256):
+        return None
+    return {
+        "packageName": package_name,
+        "packageVersion": version,
+        "packageLockHash": manifest_sha256,
+    }
+
+
+def _package_identity(
+    provider_name: str, trace_meta: dict[str, Any] | None = None
+) -> dict[str, str]:
     package_name = provider_name.strip()
     if not package_name:
         return {
@@ -310,6 +338,9 @@ def _package_identity(provider_name: str) -> dict[str, str]:
                 "packageVersion": str(payload.get("version", "")).strip(),
                 "packageLockHash": file_sha256(package_path),
             }
+    recorded = _recorded_package_identity(trace_meta or {})
+    if recorded is not None:
+        return recorded
     return {
         "packageName": package_name,
         "packageVersion": "",
@@ -362,7 +393,7 @@ def _runtime_identity(
     )
     if native_delegate is not None:
         payload["nativeDelegate"] = native_delegate
-    payload.update(_package_identity(provider_name))
+    payload.update(_package_identity(provider_name, trace_meta))
     # Native pipeline cache state + warmup telemetry. The Zig runtime
     # emits a nested `pipelineCache` object in trace_meta containing state
     # (enabled|disabled), reason (default|cli-flag|non-doe-backend|platform-

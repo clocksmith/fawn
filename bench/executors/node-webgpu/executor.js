@@ -19,7 +19,12 @@ import {
   describeUnusableAdapterInfo,
 } from '../adapter_health.js';
 
-import { loadPinnedDawn, providerBackendContract, observedBackendSelection } from './provider-contract.js';
+import {
+  installedPackageIdentity,
+  loadPinnedDawn,
+  observedBackendSelection,
+  providerBackendContract,
+} from './provider-contract.js';
 
 const REPO_ROOT = resolve(fileURLToPath(new URL('../../..', import.meta.url)));
 const FALLBACK_WEBGPU_PATH = join(
@@ -2202,19 +2207,27 @@ function resolveInstalledBunWebGpuModulePath() {
 
 async function resolveBunWebGpuModule() {
   let mod;
+  let moduleUrl = pathToFileURL(FALLBACK_BUN_WEBGPU_PATH).href;
+  let importFallback = false;
   try {
-    mod = await import(pathToFileURL(FALLBACK_BUN_WEBGPU_PATH).href);
+    mod = await import(moduleUrl);
   } catch (_err) {
+    importFallback = true;
     try {
       mod = await import('bun-webgpu');
+      moduleUrl = import.meta.resolve('bun-webgpu');
     } catch (error) {
       const fallbackPath = resolveInstalledBunWebGpuModulePath();
       if (!fallbackPath) {
         throw error;
       }
-      mod = await import(pathToFileURL(fallbackPath).href);
+      moduleUrl = pathToFileURL(fallbackPath).href;
+      mod = await import(moduleUrl);
     }
   }
+  const identity = installedPackageIdentity(REPO_ROOT, {
+    provider: 'bun-webgpu', packageName: 'bun-webgpu', moduleUrl, importFallback,
+  });
   if (typeof mod.setupGlobals !== 'function') {
     throw new Error('bun-webgpu does not export setupGlobals()');
   }
@@ -2225,7 +2238,25 @@ async function resolveBunWebGpuModule() {
   return {
     create: () => navigator.gpu,
     globals: webGpuGlobalsFromGlobalThis(),
+    providerInfo: () => identity,
   };
+}
+
+async function resolveNodeDawnModule() {
+  let moduleUrl = pathToFileURL(FALLBACK_WEBGPU_PATH).href;
+  let importFallback = false;
+  let mod;
+  try {
+    mod = await import(moduleUrl);
+  } catch (_err) {
+    importFallback = true;
+    mod = await import('webgpu');
+    moduleUrl = import.meta.resolve('webgpu');
+  }
+  const identity = installedPackageIdentity(REPO_ROOT, {
+    provider: 'dawn-node-webgpu', packageName: 'webgpu', moduleUrl, importFallback,
+  });
+  return { ...mod, providerInfo: () => identity };
 }
 
 function resolveDenoWebGpuModule() {
@@ -2259,11 +2290,7 @@ async function resolveProviderModule(spec, requireVendoredDawn = false) {
       };
     }
     case 'node-dawn':
-      try {
-        return await import(pathToFileURL(FALLBACK_WEBGPU_PATH).href);
-      } catch (_err) {
-        return await import('webgpu');
-      }
+      return await resolveNodeDawnModule();
     case 'bun-doe':
       return await import(pathToFileURL(DOE_BUN_PACKAGE_PATH).href);
     case 'bun-doe-ffi':

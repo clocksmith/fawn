@@ -265,6 +265,52 @@ class TestRunReceiptRoundTrip(unittest.TestCase):
         self.assertEqual(artifact["samples"][0]["executionFailureReasons"], [])
         self.assertTrue(artifact["execution"]["success"])
 
+    def test_dawn_package_receipt_records_loaded_package_identity(self) -> None:
+        artifact = self._build_with_trace_meta(
+            executionSuccessCount=1,
+            providerName="node-webgpu",
+            executionProviderName="node-webgpu",
+            packageProviderIdentity={
+                "provider": "dawn-node-webgpu",
+                "loaded": True,
+                "packageName": "webgpu",
+                "version": "0.4.0",
+                "packageJsonSha256": "b" * 64,
+            },
+        )
+        identity = artifact["runtimeIdentity"]
+        self.assertEqual(identity["packageName"], "webgpu")
+        self.assertEqual(identity["packageVersion"], "0.4.0")
+        self.assertEqual(identity["packageLockHash"], "b" * 64)
+
+    def test_pinned_dawn_identity_uses_hashed_package_manifest(self) -> None:
+        artifact = self._build_with_trace_meta(
+            executionSuccessCount=1,
+            providerName="node-webgpu",
+            executionProviderName="node-webgpu",
+            packageProviderIdentity={
+                "provider": "dawn-node-webgpu",
+                "loaded": True,
+                "version": "0.4.0",
+                "inputHashes": {
+                    "/v/node-webgpu-package/index.js": "a" * 64,
+                    "/v/node-webgpu-package/package.json": "c" * 64,
+                },
+            },
+        )
+        identity = artifact["runtimeIdentity"]
+        self.assertEqual(identity["packageName"], "webgpu")
+        self.assertEqual(identity["packageLockHash"], "c" * 64)
+
+    def test_unloaded_provider_identity_leaves_package_fields_empty(self) -> None:
+        artifact = self._build_with_trace_meta(
+            providerName="node-webgpu",
+            executionProviderName="node-webgpu",
+            packageProviderIdentity=None,
+        )
+        self.assertEqual(artifact["runtimeIdentity"]["packageVersion"], "")
+        self.assertEqual(artifact["runtimeIdentity"]["packageLockHash"], "")
+
     def test_env_wrapped_command_resolves_runner_binary(self) -> None:
         artifact = build_run_artifact(
             run_result=_with_sample_command_and_backend(

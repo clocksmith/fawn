@@ -1,9 +1,9 @@
 // Optional pinned-provider admission for the three-arm public package baseline.
 import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const BACKEND_TYPES = Object.freeze({ metal: 5, vulkan: 6, d3d12: 4 });
 
@@ -62,4 +62,49 @@ export async function loadPinnedDawn(root) {
     version: files.version, modulePath: files.index, addonPath: files.addon,
     inputHashes: files.inputHashes, importFallback: false,
   }) };
+}
+
+function sha256File(path) {
+  return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
+function findPackageJson(modulePath, packageName) {
+  let directory = dirname(realpathSync(modulePath));
+  for (;;) {
+    const candidate = join(directory, 'package.json');
+    if (existsSync(candidate)) {
+      const payload = JSON.parse(readFileSync(candidate, 'utf8'));
+      if (payload.name === packageName) return { path: realpathSync(candidate), payload };
+    }
+    const parent = dirname(directory);
+    if (parent === directory) {
+      throw new Error(`no ${packageName} package.json above loaded module ${modulePath}`);
+    }
+    directory = parent;
+  }
+}
+
+function lockfileEntry(lockPath, packageName) {
+  if (!existsSync(lockPath)) return null;
+  const entry = JSON.parse(readFileSync(lockPath, 'utf8'))
+    .packages?.[`node_modules/${packageName}`];
+  return entry ? { path: lockPath, sha256: sha256File(lockPath),
+    version: entry.version ?? '', integrity: entry.integrity ?? '' } : null;
+}
+
+// Identity of an installed third-party WebGPU package, read from the module
+// file that was actually imported. packageJsonSha256 is the same manifest
+// hash recorded for doe-gpu; the npm lockfile entry is the pinned install.
+export function installedPackageIdentity(root, { provider, packageName, moduleUrl, importFallback }) {
+  const modulePath = moduleUrl.startsWith('file:') ? fileURLToPath(moduleUrl) : moduleUrl;
+  const manifest = findPackageJson(modulePath, packageName);
+  return Object.freeze({
+    provider, loaded: true, packageName, version: String(manifest.payload.version ?? ''),
+    modulePath: realpathSync(modulePath), packageJsonPath: manifest.path,
+    packageJsonSha256: sha256File(manifest.path), importFallback,
+    // Only an install under bench/node_modules came from the bench lockfile.
+    lockfile: manifest.path.startsWith(join(realpathSync(root), 'bench', 'node_modules'))
+      ? lockfileEntry(join(root, 'bench', 'package-lock.json'), packageName)
+      : null,
+  });
 }
