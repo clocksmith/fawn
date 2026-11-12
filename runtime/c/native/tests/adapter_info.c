@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: MIT
  * Adapter info strings: vendor from the PCI/Khronos vendor ID (lowercase, empty
  * when unknown), Metal's highest supported family as the architecture (Vulkan and
- * D3D12 report none), and the driver's device name as both
+ * D3D12 hardware adapters: the family their PCI IDs map to, "" when unlisted or
+ * software), and the driver's device name as both
  * device and description; adapter and device report the same. Without the
  * "subgroups" feature the subgroup sizes are the spec defaults 4 and 128. The
  * doeNativeAdapterGetPciIdentity extension reports the same vendor and device
@@ -10,6 +11,10 @@
 #include "doe_native_adapter.h"
 #include "doe_native_legacy.h"
 #include <ctype.h>
+#include <stdlib.h>
+/* The mapping is private to the library; compile its one source here to check
+ * listed, neighbouring and unlisted IDs without the hardware. */
+#include "../src/gpu_architecture.c"
 
 static bool same(WGPUStringView a, WGPUStringView b)
 {
@@ -40,12 +45,48 @@ static void check(const WGPUAdapterInfo *info)
         if (contains(info->device, "Apple"))
             assert(info->vendorID == 0x106B && same(info->vendor, (WGPUStringView){"apple", 5}));
     } else {
-        assert(info->architecture.length == 0);
+        /* Vulkan and D3D12 keep the PCI IDs and derive the family from them alone;
+         * software adapters (lavapipe 0x10005, WARP 0x1414) have no table entry. */
+        assert(info->vendorID != 0);
+        const char *expected = native_gpu_architecture(info->vendorID, info->deviceID);
+        assert(same(info->architecture, (WGPUStringView){expected, strlen(expected)}));
     }
     for (size_t i = 0; i < info->vendor.length; ++i)
         assert(islower((unsigned char)info->vendor.data[i]));
     if (info->vendorID == 0x10005) assert(same(info->vendor, (WGPUStringView){"mesa", 4}));
     if (info->vendorID == 0x1002) assert(same(info->vendor, (WGPUStringView){"amd", 3}));
+}
+
+static void expect_architecture(uint32_t vendor_id, uint32_t device_id, const char *family)
+{
+    const char *actual = native_gpu_architecture(vendor_id, device_id);
+    if (strcmp(actual, family)) {
+        fprintf(stderr, "FAIL architecture 0x%x:0x%x is \"%s\", expected \"%s\"\n",
+            vendor_id, device_id, actual, family);
+        abort();
+    }
+}
+
+static void architecture_mapping(void)
+{
+    expect_architecture(0x1002, 0x1586, "rdna-3.5"); /* Strix Halo: RDNA 3.5, not RDNA 3 */
+    expect_architecture(0x1002, 0x150E, "rdna-3.5");
+    expect_architecture(0x1002, 0x744C, "rdna-3");
+    expect_architecture(0x1002, 0x15BF, "rdna-3");
+    expect_architecture(0x1002, 0x73F0, "rdna-3"); /* Navi 33 among Navi 2x IDs */
+    expect_architecture(0x1002, 0x73FF, "rdna-2");
+    expect_architecture(0x1002, 0x1681, "rdna-2");
+    expect_architecture(0x1002, 0x7550, "rdna-4");
+    expect_architecture(0x8086, 0x9A49, "gen-12lp");
+    /* Unlisted: unknown AMD device, a listed device ID under another vendor,
+     * NVIDIA (no table entries), lavapipe and WARP all report unknown. */
+    expect_architecture(0x1002, 0x1587, "");
+    expect_architecture(0x1002, 0x0000, "");
+    expect_architecture(0x8086, 0x1586, "");
+    expect_architecture(0x1022, 0x1586, "");
+    expect_architecture(0x10DE, 0x2684, "");
+    expect_architecture(0x10005, 0x0000, "");
+    expect_architecture(0x1414, 0x008C, "");
 }
 
 static bool offers_subgroups(WGPUAdapter adapter)
@@ -110,6 +151,7 @@ static void required_feature_sets(state *s)
 int main(void)
 {
     state s = {0};
+    architecture_mapping();
     consumer_init(&s);
     required_feature_sets(&s);
     WGPUAdapterInfo adapter = WGPU_ADAPTER_INFO_INIT, device = WGPU_ADAPTER_INFO_INIT;
@@ -130,8 +172,9 @@ int main(void)
     assert(vendor_id == adapter.vendorID && device_id == adapter.deviceID);
     if (adapter.backendType == WGPUBackendType_Vulkan) assert(driver_version != 0);
     doeNativeAdapterGetPciIdentity(s.adapter, NULL, NULL, NULL); /* NULL outputs are skipped */
-    printf("PASS repeated supported required-feature set admission and unknown-member rejection; adapter info vendor \"%.*s\", description \"%.*s\", PCI 0x%x:0x%x driver 0x%x %s\n",
-        (int)adapter.vendor.length, adapter.vendor.data, (int)adapter.description.length, adapter.description.data,
+    printf("PASS architecture mapping; repeated supported required-feature set admission and unknown-member rejection; adapter info vendor \"%.*s\", architecture \"%.*s\", description \"%.*s\", PCI 0x%x:0x%x driver 0x%x %s\n",
+        (int)adapter.vendor.length, adapter.vendor.data, (int)adapter.architecture.length,
+        adapter.architecture.data, (int)adapter.description.length, adapter.description.data,
         vendor_id, device_id, driver_version, adapter_class_scope());
     wgpuAdapterInfoFreeMembers(adapter);
     wgpuAdapterInfoFreeMembers(device);

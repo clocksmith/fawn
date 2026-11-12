@@ -1144,8 +1144,17 @@ since the compiler reflects per-entry closures only. `tests/shader_reflection.c`
 covers buffers, uniforms, textures, samplers and a write-only storage texture.
 
 Adapter info reports the vendor from the PCI/Khronos vendor ID (lowercase, empty
-when unknown, `mesa` for lavapipe), an empty architecture (no family source), and
-the driver's device name as both `device` and `description`; the strings share one
+when unknown, `mesa` for lavapipe), the architecture family, and the driver's
+device name as both `device` and `description`; `vendorID` and `deviceID` stay the
+PCI IDs. Metal names its highest supported family. Vulkan and D3D12 hardware
+adapters name the family that `src/gpu_architecture.c` lists for their exact PCI
+vendor/device ID (`rdna-2`, `rdna-3`, `rdna-3.5`, `rdna-4`, `gen-12lp`), built from
+the public PCI ID database, libdrm `amdgpu.ids` and vendor product pages cited
+there. An unlisted ID or a software adapter reports an empty architecture (WebGPU's
+unknown); the table has no ranges or vendor defaults, so it never names a broader
+or guessed family. Names are the accurate published family (Strix Halo 0x1586 is
+`rdna-3.5`); mapping a family to a consumer's routing profile is the consumer's
+job. The strings share one
 allocation that `wgpuAdapterInfoFreeMembers` releases (`tests/adapter_info.c`).
 No C backend offers the `subgroups` feature, so `subgroupMinSize` and
 `subgroupMaxSize` are the WebGPU defaults 4 and 128, not the driver's subgroup
@@ -1386,7 +1395,8 @@ pixels, public early releases, discard followed by zero readback and packed uplo
 roundtrip. The Metal adapter prints its actual name and its unified-memory
 subtype. Metal reports no PCI vendor ID, so adapter info takes the vendor from the
 device-name trademark and names the highest supported Metal3/Common family as the
-architecture; Vulkan and D3D12 report their PCI vendor and no architecture. These focused developer results do not qualify Metal graphics, broader
+architecture; Vulkan and D3D12 report their PCI vendor and the family their PCI IDs
+map to (empty when unlisted), as described under adapter info above. These focused developer results do not qualify Metal graphics, broader
 platforms, performance or a production provider switch. The host-only
 `metal-bridge` control separately checks native initialization failure detail,
 unknown-work private lifetime and direct-render call identity without GPU emulation.

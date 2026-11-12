@@ -4,6 +4,7 @@
 #include "internal.h"
 #include "surface.h"
 #include "d3d12_frontend.h"
+#include "gpu_architecture.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -265,6 +266,7 @@ WGPUStatus native_backend_info(const native_backend *backend, uint32_t offered_f
         name = caps->device_name;
         result.vendorID = caps->vendor_id;
         result.deviceID = caps->device_id;
+        if (!caps->software_adapter) architecture = native_gpu_architecture(caps->vendor_id, caps->device_id);
         if (caps->software_adapter) result.adapterType = WGPUAdapterType_CPU;
         else if (caps->device_type == 1) result.adapterType = WGPUAdapterType_IntegratedGPU;
         else if (caps->device_type == 2) result.adapterType = WGPUAdapterType_DiscreteGPU;
@@ -289,13 +291,15 @@ WGPUStatus native_backend_info(const native_backend *backend, uint32_t offered_f
         name = caps->name;
         result.vendorID = caps->vendor_id;
         result.deviceID = caps->device_id;
+        if (!caps->software_adapter) architecture = native_gpu_architecture(caps->vendor_id, caps->device_id);
         result.adapterType = caps->software_adapter ? WGPUAdapterType_CPU :
             caps->unified_memory ? WGPUAdapterType_IntegratedGPU : WGPUAdapterType_DiscreteGPU;
     }
     else return WGPUStatus_Error;
     /* One owned block: vendor, architecture, device, description (the driver's
      * device name). Metal names its highest supported family; Vulkan and D3D12
-     * expose no architecture family, so theirs stays empty. */
+     * hardware adapters name the family their PCI IDs map to in gpu_architecture.c,
+     * and report "" (unknown) for unlisted IDs and software adapters. */
     const char *vendor = vendor_name(result.vendorID);
     const size_t vendor_size = strlen(vendor), architecture_size = strlen(architecture);
     const size_t size = strlen(name);

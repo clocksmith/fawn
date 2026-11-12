@@ -53,6 +53,16 @@ that code would carry the BSD 3-Clause attribution requirement. As of this writi
 no Dawn source has been copied -- Doe calls native APIs directly, and the
 dawn_delegate paths link against Dawn as a separate binary.
 
+## GPU architecture family table
+
+`runtime/c/native/src/gpu_architecture.c` maps a few dozen exact PCI
+vendor/device IDs to architecture family names for `WGPUAdapterInfo.architecture`
+on Vulkan and D3D12. It is Doe-authored from public facts: chip codenames from the
+PCI ID Repository (`pci.ids`, GPL-2.0-or-later or BSD-3-Clause; individual IDs and
+names are used as facts, the database itself is not vendored), product names from
+libdrm `amdgpu.ids`, and families from AMD and Intel product documentation. The
+file cites those sources. No Dawn source or Dawn device table was copied or consulted.
+
 ## wgpu
 
 wgpu is referenced as a baseline comparison target. No wgpu source is vendored or
