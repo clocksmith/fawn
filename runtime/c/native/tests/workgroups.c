@@ -63,6 +63,65 @@ static void execute(state *s, uint32_t x, uint32_t y, uint32_t z)
     printf("workgroup %ux%ux%u: %u exact words\n", x, y, z, count);
 }
 
+/* A workgroup vector lane, by component and by dynamic index, read and written
+ * in place: MSL has no address of a vector element, so these cannot go through
+ * &vector[lane]. Lane n of thread i holds 10 * i + n, then .z is rewritten. */
+static void vector_lanes(state *s)
+{
+    static const char source[] =
+        "var<workgroup> w: array<vec4<u32>, 64>;"
+        "@group(0) @binding(0) var<storage,read_write> output: array<u32>;"
+        "@compute @workgroup_size(64) fn main(@builtin(local_invocation_index) i: u32) {"
+        "  w[i] = vec4<u32>(10u * i, 10u * i + 1u, 10u * i + 2u, 10u * i + 3u);"
+        "  w[i].z = 1000u + i;"
+        "  w[i][i % 2u] += 500u;"
+        "  workgroupBarrier();"
+        "  let n = (i + 1u) % 64u;"
+        "  output[2u * i] = w[n].x + w[n].z;"
+        "  output[2u * i + 1u] = w[n][(i + 1u) % 4u];"
+        "}";
+    WGPUShaderSourceWGSL wgsl = WGPU_SHADER_SOURCE_WGSL_INIT;
+    wgsl.code = (WGPUStringView){source, sizeof(source) - 1};
+    WGPUShaderModuleDescriptor module_desc = {.nextInChain=&wgsl.chain};
+    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device, &module_desc);
+    WGPUComputePipelineDescriptor desc = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    desc.compute.module = module;
+    WGPUComputePipeline compute = wgpuDeviceCreateComputePipeline(s->device, &desc);
+    wgpuShaderModuleRelease(module);
+    assert(compute);
+    const uint64_t size = 128 * sizeof(uint32_t);
+    WGPUBuffer output = buffer(s, size, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(s, size, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    WGPUBindGroupLayout layout = wgpuComputePipelineGetBindGroupLayout(compute, 0);
+    WGPUBindGroupEntry entry = {.binding=0,.buffer=output,.size=size};
+    WGPUBindGroupDescriptor group_desc = {.layout=layout,.entryCount=1,.entries=&entry};
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(s->device, &group_desc);
+    assert(group);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
+    wgpuComputePassEncoderSetPipeline(pass, compute);
+    wgpuComputePassEncoderSetBindGroup(pass, 0, group, 0, NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, output, 0, readback, 0, size);
+    submit(s, encoder);
+    const uint32_t *words = map(s, readback, size);
+    for (uint32_t i = 0; i < 64; ++i) {
+        const uint32_t n = (i + 1) % 64, lane = (i + 1) % 4;
+        uint32_t v[4] = {10 * n, 10 * n + 1, 1000 + n, 10 * n + 3};
+        v[n % 2] += 500;
+        assert(words[2 * i] == v[0] + v[2] && words[2 * i + 1] == v[lane]);
+    }
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+    wgpuBindGroupRelease(group);
+    wgpuBindGroupLayoutRelease(layout);
+    wgpuBufferRelease(output);
+    wgpuComputePipelineRelease(compute);
+    printf("workgroup vector lanes: 128 exact words\n");
+}
+
 static void no_error_reply(WGPUPopErrorScopeStatus status, WGPUErrorType type, WGPUStringView message,
     void *userdata, void *unused)
 {
@@ -207,6 +266,7 @@ int main(void)
     printf("adapter compute: invocations=%u dimensions=%ux%ux%u\n", adapter.maxComputeInvocationsPerWorkgroup,
         adapter.maxComputeWorkgroupSizeX, adapter.maxComputeWorkgroupSizeY, adapter.maxComputeWorkgroupSizeZ);
     execute(&raised, 256, 1, 1);
+    vector_lanes(&raised);
     if (adapter.maxComputeInvocationsPerWorkgroup >= 512 && adapter.maxComputeWorkgroupSizeX >= 512)
         execute(&raised, 512, 1, 1);
     if (adapter.maxComputeInvocationsPerWorkgroup >= 1024 && adapter.maxComputeWorkgroupSizeX >= 512 &&
@@ -219,6 +279,6 @@ int main(void)
     check_workgroup_storage(&base, &adapter);
     consumer_finish(&base);
     printf("PASS workgroup adapter/device bounds and exact execution, including workgroup storage at the "
-        "default and adapter limits %s\n", adapter_class_scope());
+        "default and adapter limits, and workgroup vector lanes read and written in place %s\n", adapter_class_scope());
     return 0;
 }

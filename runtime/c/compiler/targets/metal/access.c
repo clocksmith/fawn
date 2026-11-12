@@ -408,6 +408,14 @@ static void resource_access(MetalEmitter *e, const IrInstruction *ir, const Meta
     }
     metal_text(e, ");\n");
 }
+/* A vector lane (component or dynamic index) has no address in MSL, so a
+ * threadgroup lane access reads or writes the lane in place rather than
+ * passing &vector[lane] to a typed helper. */
+static bool workgroup_lane(MetalEmitter *e, const MetalPath *path) {
+    if (path->count == 0u) return false;
+    const TypeRecord *input = path_input(e, &e->module->accesses[path->steps[0]]);
+    return input != NULL && input->kind == TYPE_VECTOR;
+}
 void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     MetalPath path = {0};
     if (!collect_path(e, ir->operands.access.path, &path)) return;
@@ -445,7 +453,8 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
         byte_offset(e,&path,NULL);
         metal_text(e,"));\n");
     } else if (ir->operands.access.category == ROOT_WORKGROUP &&
-               e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_WORKGROUP) {
+               e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_WORKGROUP &&
+               !workgroup_lane(e, &path)) {
         if (store) metal_format(e, "doe_wstore%u(&(", ir->type);
         else {
             metal_value(e, ir->result);
