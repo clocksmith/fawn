@@ -428,9 +428,9 @@ int main(int argc, char **argv)
             return 2;
         }
         if (plan.superseded_count)
-            fprintf(stderr, "doe-c-runtime: %s: %zu kernel_dispatch steps (first: command %zu) carry semantic, capture or "
-                "output_oracle fields of the compatibility stream; the plan step identity replaces them, as in "
-                "doe-plan-executor\n", input, plan.superseded_count, plan.first_superseded);
+            fprintf(stderr, "doe-c-runtime: %s: %zu kernel_dispatch steps (first: command %zu) carry semantic fields of "
+                "the compatibility stream; rows carry the plan step identity instead, as in doe-plan-executor\n",
+                input, plan.superseded_count, plan.first_superseded);
         if (!o.runtime.kernel_root) {
             plan_kernel_root = doe_plan_kernel_root(plan.ir_path);
             o.runtime.kernel_root = plan_kernel_root;
@@ -592,6 +592,14 @@ int main(int argc, char **argv)
                 }
                 ok = matched;
                 execution.ok = matched;
+            }
+            /* A plan dispatch's declared readback is recorded from this execution. */
+            if (ok && o.plan && runtime && plan.captures && plan.captures[i].present &&
+                !doe_plan_proof_capture(&proof, runtime, i, &plan.captures[i], &execution, execution.message,
+                    sizeof(execution.message))) {
+                execution.status_code = "readback_capture_failed";
+                execution.ok = false;
+                ok = false;
             }
             uint64_t seq = t.rows;
             uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),

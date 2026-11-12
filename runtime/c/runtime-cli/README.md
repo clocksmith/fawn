@@ -386,9 +386,16 @@ is the command label, no quirk fields), and the meta adds `hostPlanArtifactPath`
 and `hostPlanArtifactHash` (the plan's `planSha256`) with `quirkMode` `off`.
 Kernels resolve under `--kernel-root`, else the IR's `shared.kernelRoot`, else
 `bench/inference-pipeline/kernels`, and compile inside the rows (no prewarm),
-as doe-plan-executor does. A dispatch's compatibility-stream `semantic*` and
-`capture*` fields are replaced by the plan identity, as in doe-plan-executor,
-and reported on stderr. A dispatch's `output_oracle` must be a schema 2/3
+as doe-plan-executor does. A dispatch's compatibility-stream `semantic*` fields
+are replaced in its row by the plan identity, as in doe-plan-executor, and
+reported on stderr. Its `captureBufferHandle`/`captureOffset`/`captureSize`
+range (a size is required) is read back after that dispatch in the timed run:
+the queue drain is row time, the readback is not. The meta's
+`readbackCaptures` records each one with the package executors' fields (step,
+SHA-256, `decodedU32Le` for 4 bytes, the dispatch's semantic labels) and
+`captureScope` `same-execution`; an unreadable range fails the row and the run.
+Captures are cross-arm evidence, not oracles: the native comparator still
+requires a command-graph oracle. A dispatch's `output_oracle` must be a schema 2/3
 `command_graph` oracle over one dispatch (others are rejected); as in
 doe-plan-executor, the timed run drains the queue after that dispatch (the drain
 is row time), reads the bound range back outside timing, compares it, and the

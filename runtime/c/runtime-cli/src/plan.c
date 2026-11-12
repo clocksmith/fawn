@@ -180,9 +180,39 @@ static bool lower_binding(const doe_json_value *object, doe_kernel_binding *out,
 }
 
 /* Fields of the compatibility command stream that doe-plan-executor reads past:
- * its rows carry the plan step identity, and it takes no captures. */
+ * rows carry the plan step identity instead. A capture's semantic labels still
+ * name its readback record. */
 static const char *const SUPERSEDED[] = {"semanticOpId", "semanticStage", "semanticPhase", "semanticTokenIndex",
-    "semanticLayerIndex", "semanticExecutionPlanHash", "captureBufferHandle", "captureOffset", "captureSize", NULL};
+    "semanticLayerIndex", "semanticExecutionPlanHash", NULL};
+
+/* captureBufferHandle (required with any capture field), captureOffset
+ * (default 0) and a nonzero captureSize: the readback after this dispatch. */
+static bool lower_dispatch_capture(const doe_json_value *object, doe_plan_capture *out, size_t index,
+    doe_stream_error *error)
+{
+    *out = (doe_plan_capture){0};
+    bool any = doe_json_member_value(object, "captureBufferHandle") || doe_json_member_value(object, "captureOffset") ||
+        doe_json_member_value(object, "captureSize");
+    if (!any) return true;
+    uint64_t token = 0;
+    if (!read_u64_of(object, "captureBufferHandle", NULL, NULL, true, 0, &out->handle, index, error) ||
+        !read_u64_of(object, "captureOffset", NULL, NULL, false, 0, &out->offset, index, error) ||
+        !read_u64_of(object, "captureSize", NULL, NULL, true, 0, &out->size, index, error) ||
+        !read_string_of(object, "semanticOpId", NULL, NULL, false, &out->op_id, index, error) ||
+        !read_string_of(object, "semanticStage", NULL, NULL, false, &out->stage, index, error) ||
+        !read_string_of(object, "semanticPhase", NULL, NULL, false, &out->phase, index, error)) return false;
+    if (!out->size || out->size > SIZE_MAX || out->offset > UINT64_MAX - out->size)
+        return stream_reject(error, index, "plan kernel_dispatch capture needs a nonzero in-range captureSize");
+    const doe_json_value *token_value = doe_json_member_value(object, "semanticTokenIndex");
+    if (token_value) {
+        if (!doe_json_as_u64(token_value, UINT32_MAX, &token))
+            return stream_reject(error, index, "\"semanticTokenIndex\" must be a u32");
+        out->has_token_index = true;
+        out->token_index = (uint32_t)token;
+    }
+    out->present = true;
+    return true;
+}
 
 /* doe-plan-executor observes a dispatch's output_oracle in the timed command
  * graph itself (dawn_plan_types.zig), so only a command-graph oracle over one
@@ -205,7 +235,7 @@ static bool lower_dispatch_oracle(const doe_json_value *object, doe_command *com
 }
 
 static bool lower_kernel_dispatch(const doe_json_value *object, doe_command *command, size_t index, bool *superseded,
-    doe_stream_error *error)
+    doe_plan_capture *capture, doe_stream_error *error)
 {
     static const char *const allowed[] = {"kind", "kernel", "kernel_name", "kernelName", "entry_point", "entryPoint",
         "x", "y", "z", "workgroupCount", "workgroups", "initialize_buffers_on_create", "initializeBuffersOnCreate",
@@ -216,7 +246,8 @@ static bool lower_kernel_dispatch(const doe_json_value *object, doe_command *com
     *superseded = false;
     for (const char *const *name = SUPERSEDED; *name; name++)
         if (doe_json_member_value(object, *name)) *superseded = true;
-    if (!lower_dispatch_oracle(object, command, index, error)) return false;
+    if (!lower_dispatch_oracle(object, command, index, error) ||
+        !lower_dispatch_capture(object, capture, index, error)) return false;
     if (!read_string_of(object, "kernel", "kernel_name", "kernelName", true, &command->as.dispatch.kernel, index, error) ||
         !read_string_of(object, "entry_point", "entryPoint", NULL, false, &command->as.dispatch.entry_point, index, error)) return false;
     if (!command->as.dispatch.entry_point) command->as.dispatch.entry_point = "main";
@@ -314,7 +345,14 @@ static bool parse_root(const doe_json_value *root, const char *asset_root, doe_p
         } else if (!doe_host_casecmp(kind, "kernel_dispatch")) {
             command->kind = DOE_COMMAND_KERNEL_DISPATCH;
             command->label = "kernel_dispatch";
-            ok = lower_kernel_dispatch(object, command, i, &superseded, error);
+            doe_plan_capture capture;
+            ok = lower_kernel_dispatch(object, command, i, &superseded, &capture, error);
+            if (ok && capture.present) {
+                if (!plan->captures && !(plan->captures = calloc(list->count, sizeof(*plan->captures))))
+                    return stream_reject(error, i, "out of memory");
+                plan->captures[i] = capture;
+                plan->capture_count++;
+            }
             dispatches++;
         } else {
             return stream_reject(error, i, "plan command kind \"%s\" is not buffer_write, buffer_load or kernel_dispatch", kind);
@@ -368,6 +406,7 @@ void doe_plan_free(doe_plan *plan)
 {
     doe_stream_free(&plan->stream);
     free(plan->op_ids);
+    free(plan->captures);
     *plan = (doe_plan){0};
 }
 

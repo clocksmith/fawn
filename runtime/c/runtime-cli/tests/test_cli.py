@@ -524,7 +524,8 @@ ZIG_PLAN_HASHES = ["0xa404173999673bb2", "0xfcb2c70c64d42c35", "0x2b6f0590e0ed85
 
 def plan_document() -> dict:
     """A buffer_write, a buffer_load from the asset cache and two workgroup_atomic
-    dispatches, the second carrying compatibility-stream fields the plan supersedes."""
+    dispatches, the second carrying a semantic label (superseded in rows) and a
+    16-byte readback capture of its output."""
     atomic = {"kind": "kernel_dispatch", "kernel": "workgroup_atomic.wgsl", "x": 1024, "y": 1, "z": 1,
               "initialize_buffers_on_create": True,
               "bindings": [{"binding": 0, "group": 0, "kind": "buffer", "buffer_type": "storage",
@@ -535,7 +536,7 @@ def plan_document() -> dict:
          "cacheNamespace": "c_parity", "cacheKey": "words16", "assetKey": "c_parity.words16",
          "generator": "splitmix64_f32_nonzero_v1", "seed": 7, "scale": 1.0},
         atomic,
-        dict(atomic, semanticOpId="ignored.by.plan", captureBufferHandle=5001, captureSize=16),
+        dict(atomic, semanticOpId="final.capture", captureBufferHandle=5001, captureSize=16),
     ]
     return {"schemaVersion": 1, "planKind": "c_parity", "workloadId": "c_plan_parity",
             "irPath": "bench/ir/c-plan-parity-missing.json", "irScenario": "c_plan_parity",
@@ -580,6 +581,13 @@ def check_plan(binary: Path, work: Path) -> None:
     check((work / "plan_7001.bin").read_bytes() == asset
           and (work / "plan_5001.bin").read_bytes() == recurrence.expected_output(dispatch_count=2),
           "plan load and dispatches read back as computed on the host")
+    captured = recurrence.expected_output(dispatch_count=2)[:16]
+    check(meta.get("readbackCaptures") == [{
+        "repeatIndex": 0, "stepIndex": 3, "stepId": "step-000003", "bufferId": "capture_3_5001", "byteLength": 16,
+        "sha256": hashlib.sha256(captured).hexdigest(), "semanticOpId": "final.capture",
+        "captureSourceBufferId": "5001", "captureOffset": 0, "captureSize": 16, "captureScope": "same-execution"}],
+        f"plan capture is read back from the same execution: {meta.get('readbackCaptures')}")
+    check_plan_captures(binary, work)
     check_plan_output_proof(binary, work)
     refusals = [
         (plan_document(), ("--quirks", str(EXAMPLES / "quirks" / "intel_gen12_temp_buffer.json")), "c_plan_parity", "takes no"),
@@ -592,6 +600,26 @@ def check_plan(binary: Path, work: Path) -> None:
     for plan, extra, workload, needle in refusals:
         result, _, _ = run_plan(binary, work, plan, *extra, workload=workload)
         check(result.returncode == 2 and needle in result.stderr, f"plan refusal {needle}: {result.returncode} {result.stderr}")
+
+
+def check_plan_captures(binary: Path, work: Path) -> None:
+    """A 4-byte capture records its decoded value; an unreadable range fails the
+    run, and a capture without a size is refused before device work."""
+    plan = plan_document()
+    plan["commands"][3] = {**plan["commands"][3], "captureOffset": 8, "captureSize": 4, "semanticTokenIndex": 7}
+    result, meta, rows = run_plan(binary, work, plan)
+    word = recurrence.expected_output(dispatch_count=2)[8:12]
+    captures = meta.get("readbackCaptures", [])
+    check(result.returncode == 0 and len(captures) == 1 and captures[0]["decodedU32Le"] == int.from_bytes(word, "little")
+          and captures[0]["sha256"] == hashlib.sha256(word).hexdigest() and captures[0]["semanticTokenIndex"] == 7
+          and captures[0]["captureOffset"] == 8, f"plan 4-byte capture: {result.stderr} {captures}")
+    plan["commands"][3]["captureOffset"] = 1048576
+    result, meta, rows = run_plan(binary, work, plan)
+    check(result.returncode != 0 and meta.get("executionErrorCount") == 1 and "readback_capture_failed" in result.stderr
+          and rows[3]["executionStatus"] != "ok", f"unreadable plan capture fails: {result.returncode} {result.stderr}")
+    plan["commands"][3] = {key: value for key, value in plan["commands"][3].items() if key != "captureSize"}
+    result, _, _ = run_plan(binary, work, plan)
+    check(result.returncode == 2 and "captureSize" in result.stderr, f"plan capture needs a size: {result.stderr}")
 
 
 def plan_oracle(expected_sha256: str) -> dict:

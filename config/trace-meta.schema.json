@@ -716,7 +716,11 @@
           "captureSourceBufferId": { "type": "string", "minLength": 1 },
           "captureOffset": { "type": "integer", "minimum": 0 },
           "captureSize": { "type": "integer", "minimum": 1 },
-          "captureDecode": { "type": "string", "minLength": 1 }
+          "captureDecode": { "type": "string", "minLength": 1 },
+          "captureScope": {
+            "description": "Native plan mode: the dispatch's declared capture range read back after that dispatch in the same execution.",
+            "const": "same-execution"
+          }
         }
       }
     },
