@@ -83,7 +83,11 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   descriptor ring (the first ring's is created with the device, like its heap),
   taken and returned with the use's descriptor range, instead of a buffer created
   per descriptor use. A table beyond one arena (more than 16384
-  canonical resources across a use's stages) rejects with RANGE.
+  canonical resources across a use's stages) rejects with RANGE. A one-slot
+  table equal to one this recording already published (or that another use of
+  the same render pass writes, published or released with it) borrows that
+  address and takes no slot, and a root CBV already bound to the same address
+  under the same root signature is not set again.
 - Read mappings of READBACK buffers (`doe_dx_buffer_lend_read`) lend the mapped
   allocation bytes to the caller instead of copying them into a host shadow. The
   Map stays open until `doe_dx_buffer_return_read`; while lent, GPU recording, host
@@ -613,10 +617,29 @@ buffer, or one texture used with two access kinds, keeps the per-draw transition
 The list also records its bound pipeline state, compute/graphics root signatures,
 descriptor heaps and descriptor tables; equal sets are skipped, and a root or heap
 change forgets the bound tables. A dispatch or draw identical in pipeline and
-descriptor-relevant bindings to the previous one in the list or pass borrows its
+descriptor-relevant bindings to the previous one in the list borrows its
 already written descriptor range. Draws skip viewport, scissor, blend factor,
 stencil reference, topology, vertex and index views and root constants equal to
 the previous draw's.
+
+Render passes prepare bindings per binding set, not per draw. The portable
+owner (`src/render_commands.c`) keys a pass-local table on the draw's pipeline
+and the identity of its caller binding arrays (pointers and counts; the arrays
+are const for the call): the first draw of a key validates, reserves and
+prepares one native stage-set pair, later draws only check their immediates
+and borrow it through `doe_dx_native_render_draw.stages` and its
+`binding_set` index. The native layer writes one descriptor range per binding
+set and pass, and the whole-pass state union visits each set once. The public
+frontend (`native/src/d3d12_graphics_commands.c`) keys its own pass-local
+snapshots on pipeline, bind groups and dynamic offsets (bind groups are
+immutable and retained by the command record), so draws that rebind the same
+groups share arrays and therefore one backend set. Per-pass draw rows are kept
+by the context (backend) and device (frontend) between submissions, up to
+16384 rows each, so large passes do not fault in fresh pages every frame.
+Buffer-to-texture and texture-to-buffer copies whose image offsets are 512-byte
+aligned and whose row pitch is a 256-byte multiple are one native
+CopyTextureRegion per image straight to or from the caller's buffer (the native
+copy writes only occupied row bytes); other layouts keep the staged route.
 
 `tests/test_windows_states.c` (official SDK, fake list, no device) checks the
 barrier sequences, settles, untracked fallback, barrier-free Close, stale serials,

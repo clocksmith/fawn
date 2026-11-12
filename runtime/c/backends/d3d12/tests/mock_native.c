@@ -615,12 +615,17 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     for (size_t i=0;i<count;++i) {
         if (draws[i].query) { record_timestamps(commands,draws[i].query); continue; }
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
-            record_resources(commands,draws[i].pipeline,&draws[i].stages[stage]);
+            record_resources(commands,draws[i].pipeline,draws[i].stages[stage]);
         for (size_t slot=0;slot<draws[i].vertex_buffer_count;++slot)
             if (draws[i].vertices[slot].buffer) record_buffer(commands,draws[i].vertices[slot].buffer);
         if (draws[i].indirect.buffer) record_buffer(commands,draws[i].indirect.buffer);
         if (draws[i].indices.buffer) record_buffer(commands,draws[i].indices.buffer);
+        /* The pass owns the stage sets only during this call: keep copies. */
         mock.last_render_draw=draws[i];
+        for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+            mock.last_render_stages[stage]=*draws[i].stages[stage];
+            mock.last_render_draw.stages[stage]=&mock.last_render_stages[stage];
+        }
     }
     if (depth) {
         assert(depth->texture);

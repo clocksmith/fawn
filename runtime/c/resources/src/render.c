@@ -380,6 +380,7 @@ doe_resource_status doe_resource_render_pass_set_pipeline(doe_resource_render_pa
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_render_bundle_desc signature = resource_render_targets_layout(&pass->state.targets);
+    pass->run = NULL; /* Any setter may change the state the next draw records. */
     status = resource_render_set_pipeline(pass->base.config.device.identity, &pass->state, &signature, pipeline);
     return resource_encoder_fail(pass->encoder, status);
 }
@@ -389,6 +390,7 @@ doe_resource_status doe_resource_render_pass_set_immediates(doe_resource_render_
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
+    pass->run = NULL;
     return resource_encoder_fail(pass->encoder,
         resource_immediates_update(&pass->base.config, &pass->state.immediates, offset, data, size));
 }
@@ -398,6 +400,7 @@ doe_resource_status doe_resource_render_pass_set_group(doe_resource_render_pass 
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
+    pass->run = NULL;
     status = resource_render_set_group(&pass->base.config, &pass->scope, &pass->state, index, group);
     return resource_encoder_fail(pass->encoder, status);
 }
@@ -407,6 +410,7 @@ doe_resource_status doe_resource_render_pass_set_vertex(doe_resource_render_pass
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
+    pass->run = NULL;
     status = resource_render_set_vertex(&pass->base.config, &pass->scope, &pass->state, slot, buffer, offset, size);
     return resource_encoder_fail(pass->encoder, status);
 }
@@ -416,6 +420,7 @@ doe_resource_status doe_resource_render_pass_set_index(doe_resource_render_pass 
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;
+    pass->run = NULL;
     status = resource_render_set_index(&pass->base.config, &pass->scope, &pass->state, buffer, format, offset, size);
     return resource_encoder_fail(pass->encoder, status);
 }
@@ -458,6 +463,7 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
         state->scissor[1] > extent[1] || state->scissor[3] > extent[1] - state->scissor[1])
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
     pass->state.state = *state;
+    pass->run = NULL;
     return DOE_RESOURCE_OK;
 }
 
@@ -474,31 +480,63 @@ static doe_resource_status validate_packet(const doe_resource_render_packet *pac
 
 /* Stable command-owned records: finish moves this chain with command storage.
  * Individual borrowed records never own another device/reference-count lease. */
+enum { RESOURCE_RENDER_CHUNK_RECORDS = 8, RESOURCE_RENDER_CHUNK_PACKETS = 8 };
 struct resource_render_chunk {
     resource_render_chunk *next;
     doe_resource_config config;
     size_t used;
-    doe_resource_render_record records[8];
+    doe_resource_render_record records[RESOURCE_RENDER_CHUNK_RECORDS];
+};
+/* Packets that boundary, bundle and draw records borrow. Each stored packet
+ * retains its objects once; chunk release drops them after the commands
+ * released every record that borrows them. */
+struct resource_render_packet_chunk {
+    resource_render_packet_chunk *next;
+    size_t used;
+    doe_resource_render_packet packets[RESOURCE_RENDER_CHUNK_PACKETS];
 };
 
 static doe_resource_render_record *allocate_record(doe_resource_encoder *encoder)
 {
     if (resource_encoder_reserve(encoder) != DOE_RESOURCE_OK) return NULL;
     resource_render_chunk *chunk = encoder->render_chunks;
-    if (!chunk || chunk->used == 8) {
+    if (!chunk || chunk->used == RESOURCE_RENDER_CHUNK_RECORDS) {
         chunk = resource_allocate(&encoder->base.config, sizeof(*chunk), _Alignof(resource_render_chunk));
         if (!chunk) {
             resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
             return NULL;
         }
-        memset(chunk, 0, sizeof(*chunk));
         chunk->config = encoder->base.config;
+        chunk->used = 0;
         chunk->next = encoder->render_chunks;
         encoder->render_chunks = chunk;
     }
     doe_resource_render_record *record = &chunk->records[chunk->used++];
-    record->config = &chunk->config;
+    *record = (doe_resource_render_record){.config = &chunk->config};
     return record;
+}
+
+/* Stores a retained copy of packet; a slot counts as used (and is released
+ * with its chunk) only once its references are taken. */
+static doe_resource_render_packet *store_packet(doe_resource_encoder *encoder,
+    const doe_resource_render_packet *packet)
+{
+    resource_render_packet_chunk *chunk = encoder->render_packets;
+    if (!chunk || chunk->used == RESOURCE_RENDER_CHUNK_PACKETS) {
+        chunk = resource_allocate(&encoder->base.config, sizeof(*chunk), _Alignof(resource_render_packet_chunk));
+        if (!chunk) {
+            resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
+            return NULL;
+        }
+        chunk->used = 0;
+        chunk->next = encoder->render_packets;
+        encoder->render_packets = chunk;
+    }
+    doe_resource_render_packet *stored = &chunk->packets[chunk->used];
+    *stored = *packet;
+    resource_render_packet_retain(stored);
+    chunk->used++;
+    return stored;
 }
 
 void resource_render_chunks_release(const doe_resource_config *config, resource_render_chunk *chunks)
@@ -510,25 +548,63 @@ void resource_render_chunks_release(const doe_resource_config *config, resource_
     }
 }
 
-static doe_resource_status append_packet(doe_resource_render_pass *pass,
-    doe_resource_render_packet packet)
+void resource_render_packets_release(const doe_resource_config *config, resource_render_packet_chunk *chunks)
 {
-    doe_resource_status status = validate_packet(&packet, &pass->base.config, false);
+    while (chunks) {
+        resource_render_packet_chunk *next = chunks->next;
+        for (size_t i = 0; i < chunks->used; i++) resource_render_packet_release(&chunks->packets[i]);
+        resource_free(config, chunks, sizeof(*chunks), _Alignof(resource_render_packet_chunk));
+        chunks = next;
+    }
+}
+
+/* A boundary owns a copy of the pass state. A draw validates its complete
+ * packet, then borrows its run's packet (stored at the run's first draw, with
+ * no draw arguments) and keeps only its own arguments: the per-draw record is
+ * small and references are taken once per run instead of once per draw. */
+static doe_resource_status append_packet(doe_resource_render_pass *pass,
+    const doe_resource_render_packet *packet)
+{
+    doe_resource_status status = validate_packet(packet, &pass->base.config, false);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
-    if (packet.indirect) {
-        status = resource_scope_input(&pass->base.config, &pass->scope, packet.indirect);
+    if (packet->indirect) {
+        status = resource_scope_input(&pass->base.config, &pass->scope, packet->indirect);
         if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
+    }
+    doe_resource_render_packet *stored = packet->boundary_only ? NULL : pass->run;
+    if (!stored) {
+        doe_resource_render_packet copy = *packet;
+        if (!packet->boundary_only) {
+            copy.indexed = false;
+            copy.count = copy.instances = copy.first = copy.first_instance = 0;
+            copy.base_vertex = 0;
+            copy.indirect = NULL;
+            copy.indirect_offset = 0;
+        }
+        stored = store_packet(pass->encoder, &copy);
+        if (!stored) return pass->encoder->status;
+        if (!packet->boundary_only) pass->run = stored;
     }
     doe_resource_render_record *record = allocate_record(pass->encoder);
     if (!record) return pass->encoder->status;
-    record->scope = (resource_usage_scope){0};
-    record->packet = packet;
-    resource_render_packet_retain(&record->packet);
+    record->packet = stored;
+    if (!packet->boundary_only) {
+        record->draw = true;
+        record->indexed = packet->indexed;
+        record->count = packet->count;
+        record->instances = packet->instances;
+        record->first = packet->first;
+        record->base_vertex = packet->base_vertex;
+        record->first_instance = packet->first_instance;
+        record->indirect = packet->indirect;
+        record->indirect_offset = packet->indirect_offset;
+        doe_resource_buffer_retain(record->indirect);
+    }
     doe_resource_command command = {.kind = DOE_COMMAND_RENDER};
     command.value.render = record;
     pass->encoder->commands[pass->encoder->count++] = command;
     pass->last_record = record;
-    if (!packet.boundary_only) pass->draw_count++;
+    if (!packet->boundary_only) pass->draw_count++;
     return DOE_RESOURCE_OK;
 }
 static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boundary_only,
@@ -551,7 +627,7 @@ static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boun
     packet.first_instance = first_instance;
     packet.indirect = arguments;
     packet.indirect_offset = indirect_offset;
-    return append_packet(pass, packet);
+    return append_packet(pass, &packet);
 }
 
 doe_resource_status resource_render_replay_bundle(doe_resource_render_pass *pass,
@@ -559,13 +635,13 @@ doe_resource_status resource_render_replay_bundle(doe_resource_render_pass *pass
 {
     size_t count = resource_bundle_draw_count(bundle);
     if (!count) return DOE_RESOURCE_OK;
+    doe_resource_render_packet packet = {.targets = pass->state.targets, .state = pass->state.state,
+        .occlusion_active = pass->state.occlusion_active, .occlusion_index = pass->state.occlusion_index};
+    doe_resource_render_packet *stored = store_packet(pass->encoder, &packet);
+    if (!stored) return pass->encoder->status;
     doe_resource_render_record *record = allocate_record(pass->encoder);
     if (!record) return pass->encoder->status;
-    record->packet.targets = pass->state.targets;
-    record->packet.state = pass->state.state;
-    record->packet.occlusion_active = pass->state.occlusion_active;
-    record->packet.occlusion_index = pass->state.occlusion_index;
-    resource_render_packet_retain(&record->packet);
+    record->packet = stored;
     record->bundle = bundle;
     doe_resource_render_bundle_retain(bundle);
     doe_resource_command command = {.kind = DOE_COMMAND_RENDER};
@@ -619,6 +695,7 @@ doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render
     pass->occlusion_written[index / 64] |= bit;
     pass->state.occlusion_active = true;
     pass->state.occlusion_index = index;
+    pass->run = NULL;
     return DOE_RESOURCE_OK;
 }
 
@@ -635,6 +712,7 @@ doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_p
     doe_resource_query_set_retain(command.value.timestamp.set);
     pass->encoder->commands[pass->encoder->count++] = command;
     pass->state.occlusion_active = false;
+    pass->run = NULL;
     return DOE_RESOURCE_OK;
 }
 
@@ -674,7 +752,7 @@ static doe_resource_status render_pass_close(doe_resource_render_pass *pass)
      * at the last draw would place an EndQuery event outside its render pass. */
     status = record_draw(pass, true, false, 0, 0, 0, 0, 0, NULL, 0);
     if (status != DOE_RESOURCE_OK) return status;
-    pass->last_record->packet.last_in_pass = true;
+    pass->last_record->packet->last_in_pass = true; /* The end boundary owns its packet. */
     if (pass->timestamps.set && pass->timestamps.end_index != UINT32_MAX) {
         status = resource_record_timestamp(pass->encoder, pass->timestamps.set,
             pass->timestamps.end_index, DOE_TIMESTAMP_PASS_END);
@@ -693,7 +771,7 @@ static doe_resource_status render_pass_close(doe_resource_render_pass *pass)
 void resource_render_record_release(doe_resource_render_record *record)
 {
     if (!record) return;
-    resource_render_packet_release(&record->packet);
+    doe_resource_buffer_release(record->indirect); /* Its packet is released with its chunk. */
     doe_resource_render_bundle_release(record->bundle);
     resource_scope_release(record->config, &record->scope);
 }
@@ -706,20 +784,20 @@ doe_resource_status resource_render_record_validate(const doe_resource_render_re
      * the end record. Structural draw/layout/alias checks ran at construction;
      * only device/resource/map/external/query lifetimes can change afterwards. */
     doe_resource_status status = resource_scope_validate(&record->scope, true);
-    if (status == DOE_RESOURCE_OK && record->packet.last_in_pass &&
-        record->packet.targets.occlusion_queries &&
-        !resource_query_available(record->packet.targets.occlusion_queries)) return DOE_RESOURCE_UNAVAILABLE;
+    if (status == DOE_RESOURCE_OK && record->packet->last_in_pass &&
+        record->packet->targets.occlusion_queries &&
+        !resource_query_available(record->packet->targets.occlusion_queries)) return DOE_RESOURCE_UNAVAILABLE;
     return status;
 }
 
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record)
 {
-    return record ? &record->packet : NULL;
+    return record ? record->packet : NULL;
 }
 
 size_t doe_resource_render_record_draw_count(const doe_resource_render_record *record)
 {
-    if (!record || record->packet.boundary_only) return 0;
+    if (!record || record->packet->boundary_only) return 0;
     return record->bundle ? resource_bundle_draw_count(record->bundle) : 1;
 }
 
@@ -727,14 +805,24 @@ bool doe_resource_render_record_draw(const doe_resource_render_record *record, s
     doe_resource_render_packet *out)
 {
     if (!out || index >= doe_resource_render_record_draw_count(record)) return false;
-    doe_resource_render_packet packet = record->bundle ? *resource_bundle_draw(record->bundle, index) : record->packet;
     if (record->bundle) {
-        packet.targets = record->packet.targets;
-        packet.state = record->packet.state;
-        packet.occlusion_active = record->packet.occlusion_active;
-        packet.occlusion_index = record->packet.occlusion_index;
+        doe_resource_render_packet packet = *resource_bundle_draw(record->bundle, index);
+        packet.targets = record->packet->targets;
+        packet.state = record->packet->state;
+        packet.occlusion_active = record->packet->occlusion_active;
+        packet.occlusion_index = record->packet->occlusion_index;
+        *out = packet;
+        return true;
     }
-    *out = packet;
+    *out = *record->packet;
+    out->indexed = record->indexed;
+    out->count = record->count;
+    out->instances = record->instances;
+    out->first = record->first;
+    out->base_vertex = record->base_vertex;
+    out->first_instance = record->first_instance;
+    out->indirect = record->indirect;
+    out->indirect_offset = record->indirect_offset;
     return true;
 }
 

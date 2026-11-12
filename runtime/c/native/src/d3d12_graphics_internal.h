@@ -12,8 +12,9 @@ typedef struct native_d3d12_graphics {
     size_t stage_count;
     doe_dx_pipeline *draw_normalize, *index_scan; /* Existing pipeline retirement owner. */
 } native_d3d12_graphics;
+/* Per-draw storage the draw's record borrows; stage bindings live in the
+ * pass-local snapshot the draw shares with equal-binding draws. */
 typedef struct native_d3d12_graphics_snapshot {
-    native_d3d12_snapshot stages[DOE_DX_RENDER_STAGES];
     doe_dx_buffer_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
     doe_dx_buffer_binding arguments, indices;
 } native_d3d12_graphics_snapshot;
@@ -30,5 +31,6 @@ bool native_d3d12_graphics_vertices(const WGPUVertexState *,const native_device 
     doe_dx_vertex_attribute [DOE_DX_MAX_VERTEX_ATTRIBUTES]);
 WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *,
     const WGPURenderPipelineDescriptor *,const native_stage *,size_t,native_pipeline_error *);
-native_failure native_d3d12_render(native_command_handle *,const doe_resource_command *,size_t,size_t *);
+/* backend supplies the device's reusable translation rows (device lock held). */
+native_failure native_d3d12_render(native_backend *,native_command_handle *,const doe_resource_command *,size_t,size_t *);
 #endif

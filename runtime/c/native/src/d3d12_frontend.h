@@ -35,6 +35,8 @@ void native_d3d12_writes_recorded(native_device *device);
 void native_d3d12_writes_rejected(native_device *device, native_command_handle *adopted);
 /* Final device release discards a never-observed open command. */
 void native_d3d12_writes_close(native_backend *backend);
+/* Releases the retained render translation rows; final device release only. */
+void native_d3d12_render_rows_close(native_backend *backend);
 /* Read mappings of READBACK buffers borrow the backend's mapped bytes; return
  * unmaps. Both run under the device mutex after the buffer owner settled. */
 native_failure native_d3d12_buffer_lend(native_buffer *buffer, uint64_t offset, size_t size,

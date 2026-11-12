@@ -158,22 +158,34 @@ static void draw_sets(const doe_dx_native_render_draw *draw,doe_dx_resource_set 
 {
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
         const doe_dx_binding_plan *plan=&draw->pipeline->render->stages[stage];
-        sets[stage]=(doe_dx_resource_set){plan->bindings,plan->textures,&draw->stages[stage]};
+        sets[stage]=(doe_dx_resource_set){plan->bindings,plan->textures,draw->stages[stage]};
     }
 }
 static bool same_texture_use(const texture_use *a,const texture_use *b)
 {
     return a->texture==b->texture && a->access==b->access && !memcmp(&a->view,&b->view,sizeof(a->view));
 }
-static bool pass_union(doe_dx_pass_states *pass,const doe_dx_native_render_draw *draws,size_t count)
+/* A draw whose binding set an earlier draw already contributed adds only its
+ * own vertex, index and indirect buffers; owners holds one draw per set. */
+static bool first_of_set(const doe_dx_native_render_draw **owners,const doe_dx_native_render_draw *draw)
+{
+    const doe_dx_native_render_draw *owner=owners[draw->binding_set];
+    if (owner && owner->pipeline==draw->pipeline && owner->stages[0]==draw->stages[0] && owner->stages[1]==draw->stages[1])
+        return false;
+    if (!owner) owners[draw->binding_set]=draw;
+    return true;
+}
+static bool pass_union(doe_dx_pass_states *pass,const doe_dx_native_render_draw *draws,size_t count,
+    const doe_dx_native_render_draw **owners)
 {
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
         if (!recorded_draw(draw)) continue;
         doe_dx_resource_set sets[DOE_DX_RENDER_STAGES];
         draw_sets(draw,sets);
+        const bool resources=first_of_set(owners,draw);
         doe_dx_buffer_state local[DOE_DX_RENDER_DESCRIPTORS];
-        const size_t used=doe_dx_set_buffer_states(sets,DOE_DX_RENDER_STAGES,true,local);
+        const size_t used=resources ? doe_dx_set_buffer_states(sets,DOE_DX_RENDER_STAGES,true,local) : 0;
         for (size_t j=0;j<used;++j)
             pass->buffer_count=doe_dx_add_buffer_state(pass->buffers,pass->buffer_count,local[j].buffer,local[j].state);
         for (size_t j=0;j<draw->vertex_buffer_count;++j) if (draw->vertices[j].buffer)
@@ -186,7 +198,7 @@ static bool pass_union(doe_dx_pass_states *pass,const doe_dx_native_render_draw 
             pass->buffer_count=doe_dx_add_buffer_state(pass->buffers,pass->buffer_count,draw->indirect.buffer,
                 D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
         texture_use textures[DOE_DX_RENDER_DESCRIPTORS];
-        const size_t texture_count=set_textures(sets,DOE_DX_RENDER_STAGES,textures);
+        const size_t texture_count=resources ? set_textures(sets,DOE_DX_RENDER_STAGES,textures) : 0;
         for (size_t j=0;j<texture_count;++j) {
             bool present=false;
             for (size_t k=0;k<pass->texture_count && !present;++k) {
@@ -218,31 +230,43 @@ bool doe_dx_pass_states_begin(doe_dx_native_commands *commands,const doe_dx_nati
     doe_dx_native_texture *attachment_depth,doe_dx_pass_states **out)
 {
     *out=NULL;
+    size_t set_count=0;
+    for (size_t i=0;i<count;++i)
+        if (recorded_draw(&draws[i]) && draws[i].binding_set>=set_count) set_count=draws[i].binding_set+1;
+    const doe_dx_native_render_draw **owners=set_count ? calloc(set_count,sizeof(*owners)) : NULL;
+    if (set_count && !owners) return false;
+    /* Upper bound: each set's stage rows once, plus every draw's own buffers. */
     size_t buffers=0,textures=0;
     for (size_t i=0;i<count;++i) {
-        if (!recorded_draw(&draws[i])) continue;
-        size_t draw_buffers=draws[i].vertex_buffer_count+2u,draw_textures=0;
-        for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
-            draw_buffers+=draws[i].stages[stage].buffer_count;
-            draw_textures+=draws[i].stages[stage].texture_count;
-        }
+        const doe_dx_native_render_draw *draw=&draws[i];
+        if (!recorded_draw(draw)) continue;
+        size_t draw_buffers=(draw->indices.buffer ? 1u : 0u)+(draw->indirect.buffer ? 1u : 0u),draw_textures=0;
+        for (size_t j=0;j<draw->vertex_buffer_count;++j) if (draw->vertices[j].buffer) ++draw_buffers;
+        if (first_of_set(owners,draw))
+            for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+                draw_buffers+=draw->stages[stage]->buffer_count;
+                draw_textures+=draw->stages[stage]->texture_count;
+            }
         if (draw_buffers>SIZE_MAX/sizeof(doe_dx_buffer_state)-buffers ||
-            draw_textures>SIZE_MAX/sizeof(texture_use)-textures) return false;
+            draw_textures>SIZE_MAX/sizeof(texture_use)-textures) { free(owners); return false; }
         buffers+=draw_buffers;
         textures+=draw_textures;
     }
+    if (set_count) memset(owners,0,set_count*sizeof(*owners));
     doe_dx_pass_states *pass=calloc(1,sizeof(*pass));
-    if (!pass) return false;
+    if (!pass) { free(owners); return false; }
     pass->attachment_depth=attachment_depth;
     pass->buffers=buffers ? calloc(buffers,sizeof(*pass->buffers)) : NULL;
     pass->buffer_written=buffers ? calloc(buffers,sizeof(*pass->buffer_written)) : NULL;
     pass->textures=textures ? calloc(textures,sizeof(*pass->textures)) : NULL;
     pass->texture_written=textures ? calloc(textures,sizeof(*pass->texture_written)) : NULL;
     if ((buffers && (!pass->buffers || !pass->buffer_written)) ||
-        (textures && (!pass->textures || !pass->texture_written)) || !pass_union(pass,draws,count)) {
+        (textures && (!pass->textures || !pass->texture_written)) || !pass_union(pass,draws,count,owners)) {
+        free(owners);
         pass_states_free(pass);
         return false;
     }
+    free(owners);
     doe_dx_apply_buffer_states(commands->list,pass->buffers,pass->buffer_count,false);
     transition_textures(commands->list,pass->textures,pass->texture_count,attachment_depth,shader_read(true),false);
     *out=pass;

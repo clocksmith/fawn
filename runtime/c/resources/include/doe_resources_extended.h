@@ -220,8 +220,10 @@ doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_p
 doe_resource_status doe_resource_render_pass_debug(doe_resource_render_pass *pass,
     doe_resource_debug_operation operation);
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass);
-/* Borrowed invocation envelope. Bundle records carry targets/dynamic/query
- * state only here; consume their immutable draws with the bounded accessor.
+/* Borrowed invocation envelope: boundary flags, targets and dynamic/query
+ * state. Draw arguments (counts, firsts, indexed, indirect) are not part of
+ * it; a draw record shares its envelope with the other draws recorded under
+ * the same pass state. Consume draws, bundle or not, with the bounded accessor.
  * Both record and materialized resource pointers live until commands retire. */
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record);
 size_t doe_resource_render_record_draw_count(const doe_resource_render_record *record);

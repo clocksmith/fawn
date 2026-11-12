@@ -80,6 +80,7 @@ typedef struct {
 doe_resource_status resource_encoder_reference_group(doe_resource_encoder *encoder, doe_resource_bind_group *group);
 
 typedef struct resource_render_chunk resource_render_chunk;
+typedef struct resource_render_packet_chunk resource_render_packet_chunk;
 
 struct doe_resource_encoder {
     resource_base base;
@@ -92,6 +93,7 @@ struct doe_resource_encoder {
     doe_resource_command *commands;
     resource_group_references groups;
     resource_render_chunk *render_chunks;
+    resource_render_packet_chunk *render_packets;
 };
 struct doe_resource_commands {
     resource_base base;
@@ -101,6 +103,7 @@ struct doe_resource_commands {
     doe_resource_command *commands;
     resource_group_references groups;
     resource_render_chunk *render_chunks;
+    resource_render_packet_chunk *render_packets;
 };
 
 struct doe_resource_compute_pass {
@@ -157,10 +160,18 @@ struct doe_resource_render_pipeline {
     doe_resource_pipeline_layout *layout;
     doe_resource_render_pipeline_desc desc;
 };
+/* A pass boundary or bundle replay owns its packet. A draw borrows the packet
+ * of its run (consecutive draws recorded under one unchanged pass state) and
+ * keeps only its own arguments; borrowed packets carry no draw arguments. */
 struct doe_resource_render_record {
     const doe_resource_config *config;
     doe_resource_render_bundle *bundle;
-    doe_resource_render_packet packet;
+    doe_resource_render_packet *packet; /* Command-owned packet chunk storage. */
+    bool draw, indexed;
+    uint32_t count, instances, first, first_instance;
+    int32_t base_vertex;
+    doe_resource_buffer *indirect; /* Retained by this record. */
+    uint64_t indirect_offset;
     resource_usage_scope scope;
 };
 struct doe_resource_render_pass {
@@ -168,6 +179,7 @@ struct doe_resource_render_pass {
     doe_resource_encoder *encoder;
     doe_resource_render_packet state;
     doe_resource_render_record *last_record;
+    doe_resource_render_packet *run; /* Packet of the current draw run; NULL after any state change. */
     resource_usage_scope scope;
     uint64_t draw_count;
     uint64_t occlusion_written[DOE_RESOURCE_MAX_QUERIES / 64];
@@ -235,6 +247,8 @@ doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass);
 doe_resource_status resource_render_replay_bundle(doe_resource_render_pass *pass,
     doe_resource_render_bundle *bundle);
 void resource_render_chunks_release(const doe_resource_config *config, resource_render_chunk *chunks);
+/* Releases each stored packet's references once, after every record borrowing it. */
+void resource_render_packets_release(const doe_resource_config *config, resource_render_packet_chunk *chunks);
 size_t resource_bundle_draw_count(const doe_resource_render_bundle *bundle);
 const doe_resource_render_packet *resource_bundle_draw(const doe_resource_render_bundle *bundle, size_t index);
 void resource_render_clear_bindings(doe_resource_render_packet *state);

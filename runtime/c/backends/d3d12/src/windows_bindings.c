@@ -289,11 +289,12 @@ doe_dx_status doe_dx_descriptor_ring_take(doe_dx_native_context *context, UINT c
 }
 
 doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
-    const doe_dx_resource_set *sets,size_t count,doe_dx_descriptor_use **out,doe_dx_error *error) {
+    const doe_dx_resource_set *sets,size_t count,doe_dx_sizes_cache *cache,
+    doe_dx_descriptor_use **out,doe_dx_error *error) {
     if (!sets || !count || count>DOE_DX_RENDER_STAGES)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"descriptors.sets",error);
     size_t resource_count=0,sampler_count=0;
-    UINT slots=0,set_slots[DOE_DX_RENDER_STAGES]={0};
+    UINT slots=0,tables_needed=0,set_slots[DOE_DX_RENDER_STAGES]={0};
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_resources *values=sets[i].resources;
         if (!values || values->texture_count>DOE_DX_MAX_BINDINGS ||
@@ -315,7 +316,25 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
         resource_count+=sets[i].resources->buffer_count+sets[i].resources->texture_count;
         sampler_count+=sets[i].resources->sampler_count;
         set_slots[i]=doe_dx_storage_size_slots(values);
-        slots+=set_slots[i];
+        tables_needed+=set_slots[i];
+    }
+    if (tables_needed && !resource_count)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"descriptors.storage_sizes",error);
+    /* One-slot tables equal to the cache's (a table an earlier use of this
+     * recording owns) or to an earlier stage's here reuse that address and
+     * take no slot: they retire with the same command. */
+    uint8_t tables[DOE_DX_RENDER_STAGES][DOE_DX_DESCRIPTOR_CONSTANT_SLOT];
+    int shares[DOE_DX_RENDER_STAGES]; /* -2 owns a slot, -1 the cache, else an earlier stage. */
+    for (size_t i=0;i<count;++i) {
+        shares[i]=-2;
+        if (cache && set_slots[i]==1) {
+            doe_dx_status status=doe_dx_write_storage_sizes(sets[i].resources,tables[i],sizeof(tables[i]),error);
+            if (status!=DOE_DX_OK) return status;
+            if (cache->address && !memcmp(cache->bytes,tables[i],sizeof(tables[i]))) shares[i]=-1;
+            for (size_t j=0;shares[i]==-2 && j<i;++j)
+                if (shares[j]==-2 && set_slots[j]==1 && !memcmp(tables[j],tables[i],sizeof(tables[i]))) shares[i]=(int)j;
+        }
+        if (shares[i]==-2) slots+=set_slots[i];
     }
     doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
     if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.allocate", error);
@@ -331,10 +350,6 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
             return status;
         }
     }
-    else if (slots) {
-        doe_dx_release_descriptors(use);
-        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"descriptors.storage_sizes",error);
-    }
     if (sampler_count) {
         description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
         description.NumDescriptors = (UINT)sampler_count;
@@ -349,20 +364,30 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
     UINT resource_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     UINT sampler_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     UINT slot=use->constant_first;
+    int latest=-1; /* Last one-slot table written here; becomes the cache on success. */
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_resources *values=sets[i].resources;
-        if (set_slots[i]) {
+        if (set_slots[i] && shares[i]==-1) use->storage_sizes[i]=cache->address;
+        else if (set_slots[i] && shares[i]>=0) use->storage_sizes[i]=use->storage_sizes[shares[i]];
+        else if (set_slots[i]) {
             /* The slots are this use's alone: no live command can read them. */
             uint8_t *table=doe_dx_descriptor_constants(use,slot);
-            doe_dx_status status=doe_dx_write_storage_sizes(values,table,
+            doe_dx_status status=DOE_DX_OK;
+            if (cache && set_slots[i]==1) memcpy(table,tables[i],sizeof(tables[i]));
+            else status=doe_dx_write_storage_sizes(values,table,
                 (size_t)set_slots[i]*DOE_DX_DESCRIPTOR_CONSTANT_SLOT,error);
             if (status!=DOE_DX_OK) { doe_dx_release_descriptors(use); return status; }
             use->storage_sizes[i]=use->ring->constant_address+(UINT64)slot*DOE_DX_DESCRIPTOR_CONSTANT_SLOT;
             slot+=set_slots[i];
+            if (cache && set_slots[i]==1) latest=(int)i;
         }
         write_set(device,&sets[i],handle,samplers);
         handle.ptr+=(values->buffer_count+values->texture_count)*resource_stride;
         samplers.ptr+=values->sampler_count*sampler_stride;
+    }
+    if (latest>=0) {
+        cache->address=use->storage_sizes[latest];
+        memcpy(cache->bytes,tables[latest],sizeof(tables[latest]));
     }
     *out=use;
     return DOE_DX_OK;
@@ -371,6 +396,6 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline,const doe_dx_native_resources *resources,
     doe_dx_descriptor_use **out,doe_dx_error *error) {
     const doe_dx_resource_set set={pipeline->bindings,pipeline->textures,resources};
-    return doe_dx_prepare_sets(commands,&set,1,out,error);
+    return doe_dx_prepare_sets(commands,&set,1,NULL,out,error);
 }
 #endif

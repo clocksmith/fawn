@@ -206,6 +206,7 @@ bool doe_dx_bind_compute_root(doe_dx_native_commands *commands, ID3D12RootSignat
     ID3D12GraphicsCommandList_SetComputeRootSignature(commands->list, root);
     commands->bound.compute_root = root;
     commands->bound.compute_use = NULL;
+    commands->bound.compute_sizes = 0;
     return true;
 }
 
@@ -215,6 +216,7 @@ bool doe_dx_bind_graphics_root(doe_dx_native_commands *commands, ID3D12RootSigna
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(commands->list, root);
     commands->bound.graphics_root = root;
     commands->bound.graphics_use = NULL;
+    for (size_t stage = 0; stage < DOE_DX_RENDER_STAGES; ++stage) commands->bound.graphics_sizes[stage] = 0;
     return true;
 }
 

@@ -166,6 +166,7 @@ void doe_resource_encoder_release(doe_resource_encoder *encoder)
     resource_free(&encoder->base.config, encoder->commands,
         encoder->capacity * sizeof(*encoder->commands), _Alignof(doe_resource_command));
     resource_render_chunks_release(&encoder->base.config, encoder->render_chunks);
+    resource_render_packets_release(&encoder->base.config, encoder->render_packets);
     resource_finalize(&encoder->base, sizeof(*encoder), _Alignof(doe_resource_encoder));
 }
 
@@ -400,6 +401,8 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     commands->groups = encoder->groups;
     commands->render_chunks = encoder->render_chunks;
     encoder->render_chunks = NULL;
+    commands->render_packets = encoder->render_packets;
+    encoder->render_packets = NULL;
     encoder->count = 0;
     encoder->capacity = 0;
     encoder->commands = NULL;
@@ -447,6 +450,7 @@ void doe_resource_commands_release(doe_resource_commands *commands)
     resource_free(&commands->base.config, commands->commands,
         commands->capacity * sizeof(*commands->commands), _Alignof(doe_resource_command));
     resource_render_chunks_release(&commands->base.config, commands->render_chunks);
+    resource_render_packets_release(&commands->base.config, commands->render_packets);
     resource_finalize(&commands->base, sizeof(*commands), _Alignof(doe_resource_commands));
 }
 

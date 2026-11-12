@@ -67,7 +67,164 @@ static doe_dx_status prepare_indirect(doe_dx_commands *commands,const doe_dx_ren
     out->index_format=draw->index_format;
     return DOE_DX_OK;
 }
-static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_draw *draw,
+/* A large pass reuses the context's committed rows instead of faulting in
+ * fresh zero pages each submission. At most RETAINED_ROWS stay allocated; a
+ * larger pass takes temporary rows. Every row is rewritten before use. */
+enum { RETAINED_ROWS = 16384 };
+static doe_dx_native_render_draw *take_rows(doe_dx_context *context,size_t count)
+{
+    if (count<=context->render_row_capacity) return context->render_rows;
+    size_t capacity=count;
+    if (count<=RETAINED_ROWS && context->render_row_capacity>count/2)
+        capacity=context->render_row_capacity*2<RETAINED_ROWS ? context->render_row_capacity*2 : RETAINED_ROWS;
+    doe_dx_native_render_draw *rows=calloc(capacity,sizeof(*rows));
+    if (!rows || capacity>RETAINED_ROWS) return rows;
+    free(context->render_rows);
+    context->render_rows=rows;
+    context->render_row_capacity=capacity;
+    return rows;
+}
+static void return_rows(doe_dx_context *context,doe_dx_native_render_draw *rows)
+{
+    if (rows!=context->render_rows) free(rows);
+}
+
+/* Pass-local prepared stage bindings. Draws naming the same pipeline and the
+ * same caller binding arrays (pointers and counts; the arrays are const for
+ * the call) prepare, validate and reserve once, share one native set pair and
+ * one binding_set index, and so one descriptor range. Immediates stay per draw. */
+typedef struct render_set {
+    const doe_dx_render_draw *first; /* Its pipeline and stage arrays are the key. */
+    doe_dx_native_texture *attachment_depth;
+    size_t index;
+    doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
+} render_set;
+typedef struct render_sets {
+    render_set **slots; /* Open addressing; capacity is a power of two. */
+    size_t capacity;
+    render_set **ordered; /* Insertion order: index i owns binding_set i. */
+    size_t count, ordered_capacity;
+} render_sets;
+static bool same_stage(const doe_dx_dynamic_resources *a,const doe_dx_dynamic_resources *b)
+{
+    return a->texture_views==b->texture_views && a->samplers==b->samplers && a->sampler_count==b->sampler_count &&
+        a->resources.buffers==b->resources.buffers && a->resources.buffer_count==b->resources.buffer_count &&
+        a->resources.textures==b->resources.textures && a->resources.texture_count==b->resources.texture_count;
+}
+static bool same_set(const doe_dx_render_draw *a,const doe_dx_render_draw *b)
+{
+    return a->pipeline==b->pipeline && same_stage(&a->stages[0],&b->stages[0]) && same_stage(&a->stages[1],&b->stages[1]);
+}
+static size_t set_hash(const doe_dx_render_draw *draw)
+{
+    uint64_t hash=(uint64_t)(uintptr_t)draw->pipeline;
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+        const doe_dx_dynamic_resources *values=&draw->stages[stage];
+        const uint64_t words[4]={(uint64_t)(uintptr_t)values->resources.buffers,(uint64_t)(uintptr_t)values->resources.textures,
+            (uint64_t)(uintptr_t)values->texture_views,(uint64_t)(uintptr_t)values->samplers};
+        for (size_t i=0;i<4;++i) hash=(hash^words[i])*UINT64_C(0x9e3779b97f4a7c15);
+    }
+    return (size_t)(hash^(hash>>29));
+}
+static render_set *find_set(const render_sets *sets,const doe_dx_render_draw *draw)
+{
+    if (!sets->capacity) return NULL;
+    for (size_t at=set_hash(draw)&(sets->capacity-1);sets->slots[at];at=(at+1)&(sets->capacity-1))
+        if (same_set(sets->slots[at]->first,draw)) return sets->slots[at];
+    return NULL;
+}
+/* Takes ownership of set only on success. */
+static bool insert_set(render_sets *sets,render_set *set)
+{
+    if (sets->count==sets->ordered_capacity) {
+        size_t capacity=sets->ordered_capacity ? sets->ordered_capacity*2 : 16u;
+        if (capacity>SIZE_MAX/sizeof(*sets->ordered)) return false;
+        render_set **ordered=calloc(capacity,sizeof(*ordered));
+        if (!ordered) return false;
+        if (sets->count) memcpy(ordered,sets->ordered,sets->count*sizeof(*ordered));
+        free(sets->ordered);
+        sets->ordered=ordered;
+        sets->ordered_capacity=capacity;
+    }
+    if ((sets->count+1)*2>sets->capacity) {
+        size_t capacity=sets->capacity ? sets->capacity*2 : 32u;
+        if (capacity>SIZE_MAX/sizeof(*sets->slots)) return false;
+        render_set **slots=calloc(capacity,sizeof(*slots));
+        if (!slots) return false;
+        for (size_t i=0;i<sets->count;++i) {
+            size_t at=set_hash(sets->ordered[i]->first)&(capacity-1);
+            while (slots[at]) at=(at+1)&(capacity-1);
+            slots[at]=sets->ordered[i];
+        }
+        free(sets->slots);
+        sets->slots=slots;
+        sets->capacity=capacity;
+    }
+    size_t at=set_hash(set->first)&(sets->capacity-1);
+    while (sets->slots[at]) at=(at+1)&(sets->capacity-1);
+    sets->slots[at]=set;
+    set->index=sets->count;
+    sets->ordered[sets->count++]=set;
+    return true;
+}
+static void free_sets(render_sets *sets)
+{
+    for (size_t i=0;i<sets->count;++i) free(sets->ordered[i]);
+    free(sets->ordered);
+    free(sets->slots);
+}
+/* Validates and prepares the first draw with a new key; later equal draws only
+ * check their immediates. Resource checks read only the shared arrays and the
+ * pass, which are the same for every draw with the key. */
+static doe_dx_status prepare_set(doe_dx_commands *commands,render_sets *sets,const doe_dx_render_draw *draw,
+    doe_dx_texture *depth,bool depth_read_only,bool stencil_read_only,const doe_dx_render_color *colors,uint32_t color_count,
+    render_set **out,doe_dx_reservation *needed,doe_dx_error *error)
+{
+    doe_dx_pipeline *pipeline=draw->pipeline;
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+        doe_dx_status status=doe_dx_check_immediates(&pipeline->render->stages[stage],&draw->stages[stage],error);
+        if (status!=DOE_DX_OK) return status;
+    }
+    render_set *set=find_set(sets,draw);
+    if (set) { *out=set; return DOE_DX_OK; }
+    set=calloc(1,sizeof(*set));
+    if (!set) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.binding_set",error);
+    set->first=draw;
+    doe_dx_status status=DOE_DX_OK;
+    for (size_t stage=0;status==DOE_DX_OK && stage<DOE_DX_RENDER_STAGES;++stage) {
+        doe_dx_reservation extra;
+        status=doe_dx_prepare_binding_plan(commands,&pipeline->render->stages[stage],
+            &draw->stages[stage],&set->stages[stage],&extra,error);
+        if (status!=DOE_DX_OK) break;
+        for (size_t i=0;status==DOE_DX_OK && i<draw->stages[stage].resources.texture_count;++i) {
+            doe_dx_texture *bound=draw->stages[stage].resources.textures[i];
+            if (bound==depth) {
+                const doe_dx_binding_plan *plan=&pipeline->render->stages[stage];
+                const doe_dx_texture_view_desc *view=&set->stages[stage].texture_views[i];
+                bool read_only=view->aspect==2 ? stencil_read_only : depth_read_only;
+                if (!read_only || plan->textures[i].access!=DOE_DX_READ_ONLY || plan->texture_contracts[i].storage)
+                    status=doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.depth_write_alias",error);
+                else set->attachment_depth=depth->native;
+            }
+            for (uint32_t slot=0;status==DOE_DX_OK && slot<color_count;++slot)
+                if (bound==colors[slot].texture || bound==colors[slot].resolve)
+                    status=doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.attachment_alias",error);
+        }
+        if (status==DOE_DX_OK && (!add(&needed->buffers,extra.buffers) || !add(&needed->textures,extra.textures)))
+            status=doe_dx_fail(DOE_DX_RANGE,0,"render.reservation.range",error);
+    }
+    if (status==DOE_DX_OK) {
+        status=doe_dx_stage_aliases(&pipeline->render->stages[0],&draw->stages[0],
+            &pipeline->render->stages[1],&draw->stages[1]);
+        if (status!=DOE_DX_OK) status=doe_dx_fail(status,0,"render.stage_alias",error);
+    }
+    if (status==DOE_DX_OK && !insert_set(sets,set))
+        status=doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.binding_set",error);
+    if (status!=DOE_DX_OK) { free(set); return status; }
+    *out=set;
+    return DOE_DX_OK;
+}
+static doe_dx_status prepare_draw(doe_dx_commands *commands,render_sets *sets,const doe_dx_render_draw *draw,
     const doe_dx_render_color *colors,uint32_t color_count,doe_dx_texture *depth,const doe_dx_texture_view_desc *depth_view,bool depth_read_only,bool stencil_read_only,doe_dx_native_render_draw *out,doe_dx_reservation *needed,doe_dx_error *error)
 {
     if (draw->query) {
@@ -116,31 +273,16 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
     if (s[0]>width || s[2]>width-s[0] ||
         s[1]>height || s[3]>height-s[1])
         return doe_dx_fail(DOE_DX_RANGE,0,"render.scissor",error);
+    render_set *set=NULL;
+    doe_dx_status status=prepare_set(commands,sets,draw,depth,depth_read_only,stencil_read_only,colors,color_count,
+        &set,needed,error);
+    if (status!=DOE_DX_OK) return status;
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
-        doe_dx_reservation extra;
-        doe_dx_status status=doe_dx_prepare_binding_plan(commands,&pipeline->render->stages[stage],
-            &draw->stages[stage],&out->stages[stage],&extra,error);
-        if (status!=DOE_DX_OK) return status;
-        for (size_t i=0;i<draw->stages[stage].resources.texture_count;++i) {
-            doe_dx_texture *bound=draw->stages[stage].resources.textures[i];
-            if (bound==depth) {
-                const doe_dx_binding_plan *plan=&pipeline->render->stages[stage];
-                const doe_dx_texture_view_desc *view=&out->stages[stage].texture_views[i];
-                bool read_only=view->aspect==2 ? stencil_read_only : depth_read_only;
-                if (!read_only || plan->textures[i].access!=DOE_DX_READ_ONLY || plan->texture_contracts[i].storage)
-                    return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.depth_write_alias",error);
-                out->attachment_depth=depth->native;
-            }
-            for (uint32_t slot=0;slot<color_count;++slot)
-                if (bound==colors[slot].texture || bound==colors[slot].resolve)
-                    return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.attachment_alias",error);
-        }
-        if (!add(&needed->buffers,extra.buffers) || !add(&needed->textures,extra.textures))
-            return doe_dx_fail(DOE_DX_RANGE,0,"render.reservation.range",error);
+        out->stages[stage]=&set->stages[stage];
+        memcpy(out->immediate_words[stage],draw->stages[stage].immediate_words,sizeof(out->immediate_words[stage]));
     }
-    doe_dx_status status=doe_dx_stage_aliases(&pipeline->render->stages[0],&draw->stages[0],
-        &pipeline->render->stages[1],&draw->stages[1]);
-    if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.stage_alias",error);
+    out->binding_set=set->index;
+    out->attachment_depth=set->attachment_depth;
     status=doe_dx_prepare_render_vertices(commands,pipeline,draw,out,needed,error);
     if (status!=DOE_DX_OK) return status;
     status=prepare_indirect(commands,draw,out,needed,error);
@@ -273,8 +415,9 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,const doe_dx_rend
     doe_dx_native_render_color native_colors[DOE_DX_MAX_COLOR_TARGETS]={0};
     status=prepare_targets(commands,pass,colors,color_count,&needed,native_colors,error);
     if (status!=DOE_DX_OK) return status;
-    doe_dx_native_render_draw *draws=pass->draw_count ? calloc(pass->draw_count,sizeof(*draws)) : NULL;
+    doe_dx_native_render_draw *draws=pass->draw_count ? take_rows(commands->context,pass->draw_count) : NULL;
     if (pass->draw_count && !draws) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.draws.allocate",error);
+    render_sets sets={0};
     doe_dx_queries *active_query=NULL;
     uint32_t active_index=0;
     for (size_t i=0;status==DOE_DX_OK && i<pass->draw_count;++i) {
@@ -286,7 +429,8 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,const doe_dx_rend
             active_query=draw->query_begin ? draw->query : NULL;
             active_index=draw->query_index;
         }
-        status=prepare_draw(commands,draw,colors,color_count,pass->depth,&pass->depth_view,pass->depth_read_only,pass->stencil_read_only,&draws[i],&needed,error);
+        draws[i]=(doe_dx_native_render_draw){0};
+        status=prepare_draw(commands,&sets,draw,colors,color_count,pass->depth,&pass->depth_view,pass->depth_read_only,pass->stencil_read_only,&draws[i],&needed,error);
         if (status==DOE_DX_OK && draw->pipeline &&
             ((pass->depth_read_only && draw->pipeline->render->depth_write) ||
              (pass->stencil_read_only && draw->pipeline->render->stencil_write)))
@@ -315,16 +459,18 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,const doe_dx_rend
             pass->depth ? &depth : NULL,draws,pass->draw_count,error);
     }
     if (status==DOE_DX_OK) {
+        /* Every draw of a set binds the same resources: publish them once. */
+        for (size_t i=0;i<sets.count;++i)
+            for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+                const doe_dx_compute_resources *values=&sets.ordered[i]->first->stages[stage].resources;
+                for (size_t j=0;j<values->buffer_count;++j) doe_dx_use_buffer(commands,values->buffers[j].buffer);
+                for (size_t j=0;j<values->texture_count;++j) doe_dx_use_texture(commands,values->textures[j]);
+            }
         for (size_t i=0;i<pass->draw_count;++i) {
             const doe_dx_render_draw *draw=&pass->draws[i];
             if (draw->query) {
                 doe_dx_use_render_query(commands,draw->query,draw->query_index,!draw->query_begin);
                 continue;
-            }
-            for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
-                const doe_dx_compute_resources *values=&draw->stages[stage].resources;
-                for (size_t j=0;j<values->buffer_count;++j) doe_dx_use_buffer(commands,values->buffers[j].buffer);
-                for (size_t j=0;j<values->texture_count;++j) doe_dx_use_texture(commands,values->textures[j]);
             }
             for (size_t slot=0;slot<draw->vertex_buffer_count;++slot)
                 if (draw->vertices[slot].buffer) doe_dx_use_buffer(commands,draw->vertices[slot].buffer);
@@ -344,6 +490,7 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,const doe_dx_rend
             }
         }
     } else for (size_t i=0;i<retained;++i) doe_dx_pipeline_release(pass->draws[i].pipeline);
-    free(draws);
+    if (draws) return_rows(commands->context,draws);
+    free_sets(&sets);
     return status==DOE_DX_OK ? doe_dx_fail(status,0,"render.pass",error) : doe_dx_context_result(commands->context,status,error);
 }

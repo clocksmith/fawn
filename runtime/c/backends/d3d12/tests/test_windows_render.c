@@ -372,12 +372,13 @@ int main(void)
     doe_dx_native_texture color={.resource=&color_resource};
     color.description.Width=color.description.Height=4; color.description.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
     doe_dx_native_buffer buffer={.resource=&buffer_resource};
-    doe_dx_native_render_draw packet={.pipeline=pipeline,.vertex_count=3,.instance_count=1,
+    doe_dx_native_resources stages[2]={0};
+    doe_dx_native_render_draw packet={.pipeline=pipeline,.stages={&stages[0],&stages[1]},.vertex_count=3,.instance_count=1,
         .viewport={0,0,4,4,0,1},.scissor={0,0,4,4},.blend_constant={0.25f,0.5f,0.75f,1}};
     for (size_t stage=0;stage<2;++stage) {
-        packet.stages[stage].buffer_count=64; packet.stages[stage].sampler_count=16;
-        for (size_t i=0;i<64;++i) packet.stages[stage].buffers[i]=(doe_dx_native_binding){&buffer,0,256};
-        for (size_t i=0;i<16;++i) packet.stages[stage].samplers[i]=(doe_dx_sampler_desc){
+        stages[stage].buffer_count=64; stages[stage].sampler_count=16;
+        for (size_t i=0;i<64;++i) stages[stage].buffers[i]=(doe_dx_native_binding){&buffer,0,256};
+        for (size_t i=0;i<16;++i) stages[stage].samplers[i]=(doe_dx_sampler_desc){
             .min_filter=DOE_DX_NEAREST,.mag_filter=DOE_DX_NEAREST,.mip_filter=DOE_DX_NEAREST,
             .address_u=DOE_DX_CLAMP,.address_v=DOE_DX_CLAMP,.address_w=DOE_DX_CLAMP,
             .min_lod=(float)stage,.max_lod=8,.max_anisotropy=1};

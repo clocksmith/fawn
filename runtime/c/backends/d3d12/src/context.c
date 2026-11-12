@@ -123,6 +123,7 @@ doe_dx_status doe_dx_context_destroy(doe_dx_context *context) {
     if (context->objects || context->pending) return DOE_DX_BUSY;
     doe_dx_status status = doe_dx_native_close(context->native);
     if (status != DOE_DX_OK) return status;
+    free(context->render_rows);
     free(context);
     return DOE_DX_OK;
 }

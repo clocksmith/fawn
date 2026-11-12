@@ -13,20 +13,27 @@ static bool texture_overlap(const doe_dx_texture_view_desc *a,const doe_dx_textu
         a->base_layer<b->base_layer+b->layer_count && b->base_layer<a->base_layer+a->layer_count;
 }
 
+/* Every recorded use of a plan initializes the immediate bytes it reads. */
+doe_dx_status doe_dx_check_immediates(const doe_dx_binding_plan *plan,const doe_dx_dynamic_resources *values,
+    doe_dx_error *error) {
+    if ((values->immediate_initialized_bytes & plan->immediate_required_bytes)!=plan->immediate_required_bytes)
+        return doe_dx_fail(DOE_DX_UNINITIALIZED,0,"commands.immediates",error);
+    return DOE_DX_OK;
+}
+
 /* Shared graphics/compute resource rules: validation only, no publication. */
 doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx_binding_plan *plan,
     const doe_dx_dynamic_resources *values, doe_dx_native_resources *native,
     doe_dx_reservation *needed, doe_dx_error *error) {
     if (!plan || !values)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.resources", error);
-    if ((values->immediate_initialized_bytes & plan->immediate_required_bytes)!=plan->immediate_required_bytes)
-        return doe_dx_fail(DOE_DX_UNINITIALIZED,0,"commands.immediates",error);
+    doe_dx_status status=doe_dx_check_immediates(plan,values,error);
+    if (status!=DOE_DX_OK) return status;
     memcpy(native->immediate_words,values->immediate_words,sizeof(native->immediate_words));
     native->logical_size_count=plan->logical_size_count;
     for (size_t i=0;i<plan->binding_count;++i) native->logical_size_indices[i]=
         plan->logical_size_count && doe_dx_buffer_descriptor_kind(&plan->bindings[i])!=DOE_DX_DESCRIPTOR_CBV ? plan->logical_size_indices[i] : UINT32_MAX;
     const doe_dx_compute_resources *resources = &values->resources;
-    doe_dx_status status;
     const doe_dx_buffer_binding *bindings = resources->buffers;
     size_t binding_count = resources->buffer_count;
     if ((binding_count && !bindings) || (resources->texture_count && !resources->textures))

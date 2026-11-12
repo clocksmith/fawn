@@ -215,12 +215,17 @@ static void test_render_recording(void)
     const doe_resource_render_packet *last = doe_resource_render_record_borrow(records[4].value.render);
     assert(begin->first_in_pass && begin->boundary_only && !begin->last_in_pass);
     assert(!first->first_in_pass && !first->last_in_pass && first->occlusion_active && first->occlusion_index == 2);
-    const doe_resource_render_packet *indirect = doe_resource_render_record_borrow(records[5].value.render);
-    assert(indirect->indirect == arguments && !indirect->indexed);
-    indirect = doe_resource_render_record_borrow(records[6].value.render);
-    assert(indirect->indirect == arguments && indirect->indexed);
+    /* Draw arguments come from the draw accessor; the borrowed envelope of a
+     * draw record carries none (draws recorded under one state share it). */
+    doe_resource_render_packet drawn;
+    assert(doe_resource_render_record_draw(records[5].value.render, 0, &drawn));
+    assert(drawn.indirect == arguments && !drawn.indexed);
+    assert(doe_resource_render_record_draw(records[6].value.render, 0, &drawn));
+    assert(drawn.indirect == arguments && drawn.indexed);
+    assert(!doe_resource_render_record_borrow(records[6].value.render)->indirect);
     const doe_resource_render_packet *end = doe_resource_render_record_borrow(records[7].value.render);
-    assert(!last->first_in_pass && !last->last_in_pass && last->indexed && !last->occlusion_active);
+    assert(doe_resource_render_record_draw(records[4].value.render, 0, &drawn) && drawn.indexed && drawn.count == 3);
+    assert(!last->first_in_pass && !last->last_in_pass && !last->occlusion_active);
     assert(end->last_in_pass && end->boundary_only && !end->first_in_pass);
     assert(first->state.blend[0] == 0 && last->state.blend[0] == 0.5);
     doe_resource_view_release(view);

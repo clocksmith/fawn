@@ -18,6 +18,10 @@ struct doe_dx_context {
     doe_dx_buffer *zero_upload; /* One context-owned immutable staging lease. */
     doe_dx_buffer *upload_staging; /* One ordinary reusable caller-data staging lease. */
     doe_dx_buffer *upload_pages[DOE_DX_UPLOAD_PAGES - 1]; /* Same ordinary cache leases. */
+    /* Native draw rows reused by render passes (render_commands.c), borrowed
+     * only during one caller-serialized render call; bounded, freed at destroy. */
+    doe_dx_native_render_draw *render_rows;
+    size_t render_row_capacity;
 };
 struct doe_dx_buffer {
     doe_dx_context *context;
@@ -154,6 +158,7 @@ doe_dx_status doe_dx_reserve_uses(doe_dx_commands *commands,
 doe_dx_status doe_dx_validate_layout(const doe_dx_context *,const doe_dx_resource_pipeline_desc *,
     const doe_dx_dynamic_pipeline_desc *);
 void doe_dx_binding_plan_copy(doe_dx_binding_plan *,const doe_dx_dynamic_pipeline_desc *);
+doe_dx_status doe_dx_check_immediates(const doe_dx_binding_plan *,const doe_dx_dynamic_resources *,doe_dx_error *);
 doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *,const doe_dx_binding_plan *,
     const doe_dx_dynamic_resources *,doe_dx_native_resources *,doe_dx_reservation *,doe_dx_error *);
 doe_dx_status doe_dx_stage_aliases(const doe_dx_binding_plan *,const doe_dx_dynamic_resources *,

@@ -27,6 +27,8 @@ native_failure native_d3d12_record_commands(native_command_handle *commands, doe
 #if defined(_WIN32)
     size_t count = 0;
     const doe_resource_command *records = doe_resource_commands_borrow(resources, &count);
+    native_device *device = doe_resource_commands_device(resources);
+    if (!device) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     for (size_t i = 0; i < count; ++i) {
         const doe_resource_command *record = &records[i];
         native_failure failure;
@@ -59,7 +61,7 @@ native_failure native_d3d12_record_commands(native_command_handle *commands, doe
             break;
         case DOE_COMMAND_RENDER: {
             size_t consumed=0;
-            failure=native_d3d12_render(commands,&records[i],count-i,&consumed);
+            failure=native_d3d12_render(&device->backend,commands,&records[i],count-i,&consumed);
             if (failure.status==NATIVE_OK) {
                 if (!consumed || consumed>count-i) return native_failure_status(NATIVE_INVALID_STATE);
                 i+=consumed-1;

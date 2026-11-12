@@ -507,9 +507,9 @@ int main(void)
     assert(mock.last_render_draw.viewport[0]==-4 && mock.last_render_draw.viewport[3]==16);
     assert(mock.render_clear && mock.render_discard && mock.render_draws==1);
     assert(commands->buffer_count==STAGES*ROWS && commands->pipeline_count==1 && pipeline->references==2);
-    assert(mock.last_render_draw.stages[0].buffer_count==ROWS && mock.last_render_draw.stages[1].sampler_count==SAMPLERS);
+    assert(mock.last_render_draw.stages[0]->buffer_count==ROWS && mock.last_render_draw.stages[1]->sampler_count==SAMPLERS);
     values[0].max_lod=2;
-    assert(mock.last_render_draw.stages[1].samplers[0].max_lod==8);
+    assert(mock.last_render_draw.stages[1]->samplers[0].max_lod==8);
     assert(!color->initialized && doe_dx_find_texture(commands,color)->initialized);
     /* Compatible reads across both stages still take one existing buffer lease. */
     bindings[1][0]=bindings[0][0];

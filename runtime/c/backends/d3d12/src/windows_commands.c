@@ -176,7 +176,9 @@ static doe_dx_status dispatch_descriptors(doe_dx_native_commands *commands,
         return DOE_DX_OK;
     }
     doe_dx_descriptor_use *use = NULL;
-    doe_dx_status status = doe_dx_prepare_descriptors(commands, pipeline, resources, &use, error);
+    /* Published as soon as prepared, so its table may serve later equal ones. */
+    const doe_dx_resource_set set = {pipeline->bindings, pipeline->textures, resources};
+    doe_dx_status status = doe_dx_prepare_sets(commands, &set, 1, &commands->sizes, &use, error);
     if (status != DOE_DX_OK) return status;
     use->next = commands->descriptors;
     commands->descriptors = use;
@@ -208,8 +210,11 @@ static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
             pipeline->immediate_words,resources->immediate_words,0);
     if (use && use != commands->bound.compute_use) {
         doe_dx_bind_descriptors(commands,pipeline,use,false);
-        if (use->storage_sizes[0]) ID3D12GraphicsCommandList_SetComputeRootConstantBufferView(list,
-            pipeline->storage_sizes_root,use->storage_sizes[0]);
+        if (use->storage_sizes[0] && use->storage_sizes[0] != commands->bound.compute_sizes) {
+            ID3D12GraphicsCommandList_SetComputeRootConstantBufferView(list,
+                pipeline->storage_sizes_root,use->storage_sizes[0]);
+            commands->bound.compute_sizes = use->storage_sizes[0];
+        }
         commands->bound.compute_use = use;
     }
     /* Buffers stay in their dispatch state for the next dispatch (windows_states.c);

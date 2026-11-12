@@ -105,12 +105,77 @@ static void empty_buffer_texture_lifetimes(state *s)
         }
 }
 
+/* 512-byte-aligned image offsets with a 256-byte pitch are native placed
+ * footprints (D3D12 copies them directly, one region per layer); a 768-byte
+ * image stride puts the second layer at 1280 and stages instead. Both must
+ * move exactly the texels and leave every other byte as it was. */
+enum { ALIGNED_SIZE = 2560, ALIGNED_OFFSET = 512 };
+static unsigned char aligned_texel(uint32_t layer, uint32_t y, uint32_t x, uint32_t c)
+{
+    return (unsigned char)(1u + layer * 64u + y * 16u + x * 4u + c);
+}
+static size_t aligned_index(uint32_t rows_per_image, uint32_t layer, uint32_t y, uint32_t x, uint32_t c)
+{
+    return ALIGNED_OFFSET + ((size_t)layer * rows_per_image + y) * 256u + x * 4u + c;
+}
+static void aligned_download(state *s, WGPUTexture texture, uint32_t rows_per_image)
+{
+    WGPUBuffer readback = buffer(s, ALIGNED_SIZE, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    unsigned char fill[ALIGNED_SIZE];
+    memset(fill, 0xa7, sizeof(fill));
+    wgpuQueueWriteBuffer(s->queue, readback, 0, fill, sizeof(fill));
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPUTexelCopyTextureInfo from = {.texture=texture};
+    WGPUTexelCopyBufferInfo to = {.buffer=readback,
+        .layout={.offset=ALIGNED_OFFSET,.bytesPerRow=256,.rowsPerImage=rows_per_image}};
+    WGPUExtent3D size = {3,3,2};
+    wgpuCommandEncoderCopyTextureToBuffer(encoder, &from, &to, &size);
+    submit(s, encoder);
+    unsigned char expected[ALIGNED_SIZE];
+    memset(expected, 0xa7, sizeof(expected));
+    for (uint32_t layer = 0; layer < 2; ++layer) for (uint32_t y = 0; y < 3; ++y)
+        for (uint32_t x = 0; x < 3; ++x) for (uint32_t c = 0; c < 4; ++c)
+            expected[aligned_index(rows_per_image, layer, y, x, c)] = aligned_texel(layer, y, x, c);
+    const unsigned char *bytes = map(s, readback, ALIGNED_SIZE);
+    for (size_t i = 0; i < ALIGNED_SIZE; ++i) assert(bytes[i] == expected[i]);
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+}
+static void aligned_transfers(state *s)
+{
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.size = (WGPUExtent3D){3,3,2};
+    descriptor.format = WGPUTextureFormat_RGBA8Uint;
+    descriptor.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+    WGPUTexture texture = wgpuDeviceCreateTexture(s->device, &descriptor);
+    assert(texture);
+    /* Upload from an aligned layout whose padding holds bytes that must not land. */
+    unsigned char source[ALIGNED_SIZE];
+    memset(source, 0xee, sizeof(source));
+    for (uint32_t layer = 0; layer < 2; ++layer) for (uint32_t y = 0; y < 3; ++y)
+        for (uint32_t x = 0; x < 3; ++x) for (uint32_t c = 0; c < 4; ++c)
+            source[aligned_index(4, layer, y, x, c)] = aligned_texel(layer, y, x, c);
+    WGPUBuffer upload = buffer(s, ALIGNED_SIZE, WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue, upload, 0, source, sizeof(source));
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPUTexelCopyBufferInfo from = {.buffer=upload,.layout={.offset=ALIGNED_OFFSET,.bytesPerRow=256,.rowsPerImage=4}};
+    WGPUTexelCopyTextureInfo to = {.texture=texture};
+    WGPUExtent3D size = {3,3,2};
+    wgpuCommandEncoderCopyBufferToTexture(encoder, &from, &to, &size);
+    submit(s, encoder);
+    wgpuBufferRelease(upload);
+    aligned_download(s, texture, 4); /* Layers at 512 and 1536: direct. */
+    aligned_download(s, texture, 3); /* Second layer at 1280: staged. */
+    wgpuTextureRelease(texture);
+}
+
 int main(void)
 {
     state s = {0};
     consumer_init(&s);
     empty_copy_lifetimes(&s);
     empty_buffer_texture_lifetimes(&s);
+    aligned_transfers(&s);
     WGPUTexture source = image(&s), destination = image(&s);
     WGPUTextureView view = wgpuTextureCreateView(source,NULL);
     assert(view);
@@ -182,5 +247,5 @@ int main(void)
     wgpuBufferRelease(first);
     wgpuBufferRelease(second);
     consumer_finish(&s);
-    printf("PASS public texture transfers: zero publication, odd queue layouts, partial GPU buffer/texture/blit copies, preserved padding, immutable view/sampler and early releases %s\n",adapter_class_scope());
+    printf("PASS public texture transfers: zero publication, odd queue layouts, partial GPU buffer/texture/blit copies, preserved padding, aligned placed-footprint and staged two-layer layouts, immutable view/sampler and early releases %s\n",adapter_class_scope());
 }

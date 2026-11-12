@@ -76,7 +76,13 @@ typedef struct doe_dx_native_render_draw {
     uint32_t query_index;
     bool query_begin;
     doe_dx_native_pipeline *pipeline;
-    doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
+    /* Prepared stage bindings, borrowed from the pass: draws with the same
+     * pipeline and caller binding arrays share one set and one binding_set
+     * index (0..set count-1), and so one descriptor range. Each draw carries
+     * its own immediate words; the shared sets' immediate_words are unused. */
+    const doe_dx_native_resources *stages[DOE_DX_RENDER_STAGES];
+    size_t binding_set;
+    uint32_t immediate_words[DOE_DX_RENDER_STAGES][16];
     doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
     doe_dx_native_binding indirect, indices;
     doe_dx_index_format index_format;

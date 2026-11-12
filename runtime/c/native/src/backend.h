@@ -40,6 +40,8 @@ typedef struct native_backend {
             struct native_d3d12_buffer *deferred_zero;
             /* Open queue-write command and its copy log (d3d12_writes.c), device lock. */
             struct native_d3d12_writes *writes;
+            /* Render translation rows reused across submissions (d3d12_graphics_commands.c), device lock. */
+            struct native_d3d12_render_rows *render_rows;
             } d3d12;
     } value;
 } native_backend;

@@ -114,6 +114,14 @@ void doe_dx_descriptor_gpu_start(const doe_dx_descriptor_use *use, D3D12_GPU_DES
 void doe_dx_descriptor_ring_free(doe_dx_descriptor_use *use);
 void doe_dx_descriptor_rings_close(doe_dx_native_context *context);
 #define DOE_DX_DESCRIPTOR_CONSTANT_SLOT 256u /* Root-CBV alignment. */
+/* A storage-size table a published use of the recording owns (address 0:
+ * none). prepare_sets reuses it for an equal one-slot table and records the
+ * last one-slot table it writes; NULL disables sharing. The caller passes a
+ * cache whose owner is published, or retires with the uses it prepares. */
+typedef struct doe_dx_sizes_cache {
+    D3D12_GPU_VIRTUAL_ADDRESS address;
+    uint8_t bytes[DOE_DX_DESCRIPTOR_CONSTANT_SLOT];
+} doe_dx_sizes_cache;
 /* Borrows count contiguous descriptors and slots contiguous 256-byte constant
  * slots (at most 256, needing count>0) from one ring. Slots return with the
  * descriptors; the CPU pointer is the slot's persistently mapped bytes. */
@@ -138,6 +146,8 @@ typedef struct doe_dx_bound_state {
     ID3D12DescriptorHeap *heaps[2];
     UINT heap_count;
     const doe_dx_descriptor_use *compute_use, *graphics_use;
+    /* Storage-size root CBVs set under the current root signatures. */
+    D3D12_GPU_VIRTUAL_ADDRESS compute_sizes, graphics_sizes[DOE_DX_RENDER_STAGES];
 } doe_dx_bound_state;
 /* The descriptor use of the previous compute dispatch and the exact bindings
  * it was written for; an identical next dispatch borrows the same range. */
@@ -158,6 +168,7 @@ struct doe_dx_native_commands {
     bool untracked; /* An operation touched buffers without reporting them. */
     doe_dx_bound_state bound;
     doe_dx_compute_reuse reuse;
+    doe_dx_sizes_cache sizes; /* Owned by a use already in descriptors. */
 };
 typedef struct doe_dx_buffer_state {
     doe_dx_native_buffer *buffer;
@@ -245,7 +256,7 @@ void doe_dx_bind_geometry(doe_dx_native_commands *commands, doe_dx_native_pipeli
     const doe_dx_native_geometry *geometry, const doe_dx_mesh_draw_desc *draw);
 DXGI_FORMAT doe_dx_texture_format(doe_dx_format format);
 doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,
-    doe_dx_descriptor_use **,doe_dx_error *);
+    doe_dx_sizes_cache *,doe_dx_descriptor_use **,doe_dx_error *);
 void doe_dx_transition_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,bool,bool);
 doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *,doe_dx_native_texture *,
     doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);

@@ -72,7 +72,7 @@ static void resource_sets(const doe_dx_native_render_draw *draw,doe_dx_resource_
 {
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
         const doe_dx_binding_plan *plan=&draw->pipeline->render->stages[stage];
-        sets[stage]=(doe_dx_resource_set){plan->bindings,plan->textures,&draw->stages[stage]};
+        sets[stage]=(doe_dx_resource_set){plan->bindings,plan->textures,draw->stages[stage]};
     }
 }
 static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_render_draw *draw,
@@ -87,8 +87,11 @@ static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_ren
     if (commands->bound.graphics_use==use) return;
     commands->bound.graphics_use=use;
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
-        if (use->storage_sizes[stage]) ID3D12GraphicsCommandList_SetGraphicsRootConstantBufferView(commands->list,
-            draw->pipeline->render->storage_sizes_root[stage],use->storage_sizes[stage]);
+        if (use->storage_sizes[stage] && use->storage_sizes[stage]!=commands->bound.graphics_sizes[stage]) {
+            ID3D12GraphicsCommandList_SetGraphicsRootConstantBufferView(commands->list,
+                draw->pipeline->render->storage_sizes_root[stage],use->storage_sizes[stage]);
+            commands->bound.graphics_sizes[stage]=use->storage_sizes[stage];
+        }
     D3D12_GPU_DESCRIPTOR_HANDLE resources={0},samplers={0};
     if (use->heap) doe_dx_descriptor_gpu_start(use,&resources);
     if (use->sampler_heap) use->sampler_heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->sampler_heap,&samplers);
@@ -134,10 +137,10 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
         uint32_t words=layout->stages[stage].immediate_bytes/4;
         if (!words) continue;
         if (same_root && previous->pipeline==draw->pipeline &&
-            !memcmp(previous->stages[stage].immediate_words,draw->stages[stage].immediate_words,words*sizeof(uint32_t)))
+            !memcmp(previous->immediate_words[stage],draw->immediate_words[stage],words*sizeof(uint32_t)))
             continue;
         ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,
-            layout->immediate_root[stage],words,draw->stages[stage].immediate_words,0);
+            layout->immediate_root[stage],words,draw->immediate_words[stage],0);
     }
     if (layout->draw_offsets_root!=UINT32_MAX && !draw->indirect.buffer &&
         !(same_root && !previous->indirect.buffer && previous->pipeline->render->draw_offsets_root==layout->draw_offsets_root &&
@@ -250,10 +253,23 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     const doe_dx_native_render_color *colors,uint32_t color_count,const doe_dx_native_render_depth *depth,
     const doe_dx_native_render_draw *draws,size_t count,doe_dx_error *error)
 {
+    /* One descriptor range per binding set: draws sharing a set (same pipeline
+     * and prepared stage bindings) borrow its range, written once per pass. */
+    size_t set_count=0;
+    for (size_t i=0;i<count;++i)
+        if (!draws[i].query && draws[i].binding_set>=set_count) set_count=draws[i].binding_set+1;
     doe_dx_descriptor_use **bindings=count ? calloc(count,sizeof(*bindings)) : NULL;
-    if (count && !bindings) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.descriptor_indices",error);
+    const doe_dx_native_render_draw **set_owners=set_count ? calloc(set_count,sizeof(*set_owners)) : NULL;
+    doe_dx_descriptor_use **set_uses=set_count ? calloc(set_count,sizeof(*set_uses)) : NULL;
+    if ((count && !bindings) || (set_count && (!set_owners || !set_uses))) {
+        free(bindings); free(set_owners); free(set_uses);
+        return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.descriptor_indices",error);
+    }
     doe_dx_descriptor_use *head=NULL;
     D3D12_CPU_DESCRIPTOR_HANDLE targets[DOE_DX_MAX_COLOR_TARGETS]={0};
+    /* Tables this pass's uses write are published or released together with
+     * them; the recording's published table seeds the sharing. */
+    doe_dx_sizes_cache sizes=commands->sizes;
     exact_clear_view clears[DOE_DX_MAX_COLOR_TARGETS]={0};
     doe_dx_status status=DOE_DX_OK;
     for (uint32_t i=0;i<color_count;++i) {
@@ -277,7 +293,6 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         if (status!=DOE_DX_OK) goto fail;
         dsv->next=head; head=dsv;
     }
-    const doe_dx_native_render_draw *described=NULL;
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
         if (draw->query) continue;
@@ -289,28 +304,36 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         resource_sets(draw,sets);
         size_t descriptors=0;
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
-            descriptors+=draw->stages[stage].buffer_count+draw->stages[stage].texture_count+draw->stages[stage].sampler_count;
+            descriptors+=draw->stages[stage]->buffer_count+draw->stages[stage]->texture_count+draw->stages[stage]->sampler_count;
         if (!descriptors) continue;
-        /* Same pipeline and bindings as the previous described draw: borrow its
-         * range, already written and owned by this pass's descriptor list. */
-        if (described && described->pipeline==draw->pipeline &&
-            doe_dx_same_resources(&described->stages[0],&draw->stages[0]) &&
-            doe_dx_same_resources(&described->stages[1],&draw->stages[1])) {
-            bindings[i]=bindings[described-draws];
+        /* A set already described for the same pipeline and stage bindings:
+         * borrow its range, written and owned by this pass's descriptor list. */
+        const doe_dx_native_render_draw *owner=set_owners[draw->binding_set];
+        if (owner && owner->pipeline==draw->pipeline &&
+            owner->stages[0]==draw->stages[0] && owner->stages[1]==draw->stages[1]) {
+            bindings[i]=set_uses[draw->binding_set];
             continue;
         }
-        status=doe_dx_prepare_sets(commands,sets,DOE_DX_RENDER_STAGES,&bindings[i],error);
+        status=doe_dx_prepare_sets(commands,sets,DOE_DX_RENDER_STAGES,&sizes,&bindings[i],error);
         if (status!=DOE_DX_OK) goto fail;
         bindings[i]->next=head;
         head=bindings[i];
-        described=draw;
+        if (!owner) {
+            set_owners[draw->binding_set]=draw;
+            set_uses[draw->binding_set]=bindings[i];
+        }
     }
+    free(set_owners);
+    free(set_uses);
+    set_owners=NULL;
+    set_uses=NULL;
     /* Every heap/view is prepared. Only now publish descriptor lifetime and
      * record commands, so first failure cannot leave a partially cleared pass. */
     doe_dx_descriptor_use *tail=head;
     while (tail->next) tail=tail->next;
     tail->next=commands->descriptors;
     commands->descriptors=head;
+    commands->sizes=sizes;
     doe_dx_settle_buffers(commands);
     ID3D12GraphicsCommandList *list=commands->list;
     for (uint32_t i=0;i<color_count;++i) if (colors[i].texture) {
@@ -322,9 +345,9 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     if (depth) {
         for (size_t i=0;i<count;++i) if (!draws[i].query)
             for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
-                for (size_t j=0;j<draws[i].stages[stage].texture_count;++j)
-                    if (draws[i].stages[stage].textures[j]==depth->texture)
-                        sampled_planes|=draws[i].stages[stage].texture_views[j].aspect==2 ? 2u : 1u;
+                for (size_t j=0;j<draws[i].stages[stage]->texture_count;++j)
+                    if (draws[i].stages[stage]->textures[j]==depth->texture)
+                        sampled_planes|=draws[i].stages[stage]->texture_views[j].aspect==2 ? 2u : 1u;
         depth_transitions(list,depth,sampled_planes,false);
     }
     ID3D12GraphicsCommandList_OMSetRenderTargets(list,color_count,color_count ? targets : NULL,FALSE,depth ? &depth_handle : NULL);
@@ -388,6 +411,8 @@ fail:
         doe_dx_release_descriptors(head);
         head=next;
     }
+    free(set_owners);
+    free(set_uses);
     free(bindings);
     return status;
 }

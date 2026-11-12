@@ -91,7 +91,12 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.
   Pass timestamps retain delayed end-write pools and name at least one write
-  index; indirect records retain arguments.
+  index; indirect records retain arguments. Each draw is validated as a whole
+  packet, but consecutive draws recorded under unchanged pass state share one
+  stored, once-retained packet (no draw arguments) and keep only their own
+  arguments; any setter, occlusion event or bundle execution starts a new run.
+  `doe_resource_render_record_borrow` returns that envelope; draw arguments come
+  from `doe_resource_render_record_draw`.
 - `bundles.c`: reusable immutable draw snapshots sharing pass state/validation,
   with overflow-checked dynamic draw storage and transactional move on finish.
   State updates have no arbitrary operation-count ceiling; allocation failures

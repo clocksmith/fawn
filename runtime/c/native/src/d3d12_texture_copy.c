@@ -21,6 +21,49 @@ static bool region_span(const doe_resource_texture_desc *texture,uint32_t mip,co
     *out=result;
     return true;
 }
+/* One native CopyTextureRegion per image straight between the caller's buffer
+ * and the texture (Dawn's placed-footprint copy) when the caller layout is a
+ * valid D3D12 placed footprint: each image offset 512-byte aligned and a
+ * 256-byte multiple row pitch (WebGPU already requires 256 for multi-row
+ * copies). The native copy moves only occupied row bytes, so caller padding is
+ * untouched, as through staging. Returns false, recording nothing, when the
+ * layout does not qualify or the destination is not yet initialized. */
+static bool direct_copy(native_command_handle *commands,const doe_resource_command *record,
+    const doe_resource_texture_desc *desc,const doe_dx_texture_footprint *native,native_failure *out)
+{
+    const doe_resource_texture_copy *copy=&record->value.texture.copy;
+    const doe_resource_copy_region *public=&record->value.texture.region;
+    if (public->row_bytes!=native->row_bytes || public->rows!=native->rows) return false;
+    uint32_t pitch=public->rows>1 ? public->pitch : 0;
+    if (pitch%256 || (pitch && pitch<public->row_bytes)) return false;
+    uint64_t image_stride=0;
+    if (copy->depth_or_layers>1) {
+        if (public->image_rows && public->pitch>UINT64_MAX/public->image_rows) return false;
+        image_stride=(uint64_t)public->image_rows*public->pitch;
+        if (image_stride%512 || (copy->depth_or_layers-1)>(UINT64_MAX-copy->offset)/(image_stride ? image_stride : 1))
+            return false;
+    }
+    if (copy->offset%512) return false;
+    native_texture *texture=doe_resource_texture_native(record->value.texture.texture);
+    native_buffer *buffer=doe_resource_buffer_native(record->value.texture.buffer);
+    const bool upload=record->value.texture.direction==DOE_RESOURCE_BUFFER_TO_TEXTURE;
+    doe_dx_error error={0};
+    doe_dx_status status=DOE_DX_OK;
+    for (uint32_t image=0;status==DOE_DX_OK && image<copy->depth_or_layers;++image) {
+        doe_dx_texture_region_ex region;
+        if (!region_span(desc,copy->mip,copy->origin,copy->width,copy->height,public->aspect,image,&region)) {
+            status=DOE_DX_INVALID_ARGUMENT; break;
+        }
+        const doe_dx_texture_layout layout={copy->offset+image*image_stride,pitch};
+        status=doe_dx_commands_texture_region_ex(commands->value.d3d12.commands,buffer->handle.d3d12->allocation,
+            layout,texture->d3d12,region,upload,&error);
+        /* The first image's admission records nothing on failure: an
+         * uninitialized partial destination takes the staging route. */
+        if (status==DOE_DX_UNINITIALIZED && !image) return false;
+    }
+    *out=native_failure_d3d12(status,&error);
+    return true;
+}
 static native_failure buffer_texture(native_command_handle *commands,const doe_resource_command *record)
 {
     const doe_resource_texture_copy *copy = &record->value.texture.copy;
@@ -41,6 +84,8 @@ static native_failure buffer_texture(native_command_handle *commands,const doe_r
         if (status!=DOE_DX_OK) break;
     }
     if (status != DOE_DX_OK) return native_failure_d3d12(status,NULL);
+    native_failure direct;
+    if (direct_copy(commands,record,desc,&footprint,&direct)) return direct;
     if (footprint.span > native_allocation_bound(texture->device)) return native_failure_status(NATIVE_OUT_OF_MEMORY);
     doe_dx_buffer *zero = NULL, *scratch = NULL;
     doe_dx_error error = {0};

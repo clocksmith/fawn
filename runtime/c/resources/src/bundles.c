@@ -288,6 +288,7 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
     /* Logical WebGPU state clears even for an empty list. Backend physical
      * state restoration does not preserve these public binding obligations. */
     resource_render_clear_bindings(&pass->state);
+    pass->run = NULL;
     return DOE_RESOURCE_OK;
 }
 

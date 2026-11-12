@@ -65,7 +65,8 @@ typedef struct mock_state {
     doe_dx_render_pipeline_desc last_render_pipeline;
     doe_dx_native_render_depth render_depth;
     bool render_clear,render_discard;
-    doe_dx_native_render_draw last_render_draw;
+    doe_dx_native_render_draw last_render_draw; /* stages point at last_render_stages. */
+    doe_dx_native_resources last_render_stages[DOE_DX_RENDER_STAGES];
     size_t draws, timestamp_writes, timestamp_resolves;
     doe_dx_native_texture *draw_color;
     doe_dx_draw_desc draw;
