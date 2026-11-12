@@ -328,6 +328,77 @@ class RunnerPlanSupportTests(unittest.TestCase):
         self.assertEqual(result["timingsMs"], [3.0, 4.0, 5.0])
         self.assertEqual(result["stats"]["count"], 3)
 
+    @patch("bench.native_compare_modules.runner.run_once")
+    def test_run_workload_normalizes_repeated_commands_exactly_once(
+        self,
+        mock_run_once,
+    ) -> None:
+        # One sample executes 2000 repeated copy commands in 45.49 ms, so the
+        # per-copy time is 45.49 / 2000 ms, never 45.49 / 2000 / 2000 ms.
+        total_ms = 45.49
+        repeat = 2000
+
+        def fake_run_once(_command, **kwargs):
+            kwargs["trace_meta_path"].write_text(
+                json.dumps(
+                    {
+                        "executionErrorCount": 0,
+                        "executionTotalNs": int(total_ms * 1_000_000),
+                        "executionSetupTotalNs": 0,
+                        "executionEncodeTotalNs": 1_000_000,
+                        "executionSubmitWaitTotalNs": 44_490_000,
+                        "executionDispatchCount": 0,
+                        "executionRowCount": repeat,
+                        "executionSuccessCount": repeat,
+                        "timingMs": total_ms,
+                        "timingSource": "doe-execution-total-ns",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return 60.0, 0.0, 0, {"processWallMs": 60.0}
+
+        mock_run_once.side_effect = fake_run_once
+        workload = SimpleNamespace(
+            id="copy_buffer_to_texture", domain="copy",
+            commands_path="examples/copy_buffer_to_texture_commands.json",
+            plan_path="", quirks_path="", vendor="", api="", family="",
+            driver="", dawn_filter="", extra_args=[], comparable=True,
+            strict_normalization_unit="",
+        )
+        with tempfile.TemporaryDirectory(prefix="doe-runner-repeat-") as tmpdir:
+            result = run_workload(
+                name="sample",
+                template=(
+                    "node bench/executors/sample.js --commands {commands} "
+                    "--trace-meta {trace_meta} --trace-jsonl {trace_jsonl} "
+                    "--command-repeat {command_repeat}"
+                ),
+                workload=workload,
+                iterations=1,
+                warmup=0,
+                out_dir=Path(tmpdir),
+                gpu_memory_probe="none",
+                resource_sample_ms=100,
+                resource_sample_target_count=0,
+                timing_divisor=float(repeat),
+                command_repeat=repeat,
+                ignore_first_ops=0,
+                upload_buffer_usage="copy-dst-copy-src",
+                upload_submit_every=1,
+                inject_upload_runtime_flags=False,
+                required_timing_class="operation",
+                comparability_mode="strict",
+                benchmark_policy=SimpleNamespace(),
+                emit_shell=False,
+            )
+
+        sample = result["commandSamples"][0]
+        self.assertAlmostEqual(result["timingsMs"][0], 45.49 / 2000)
+        self.assertAlmostEqual(sample["measuredRawMs"], 45.49)
+        self.assertFalse(sample["timing"]["repeatNormalized"])
+        self.assertEqual(sample["timing"]["repeatNormalizationOwner"], "timing-divisor")
+
     def test_preflight_cannot_fill_or_overwrite_timed_output_evidence(self) -> None:
         oracle = {
             "outputOracleCount": 1, "outputOracleMatchedCount": 1,

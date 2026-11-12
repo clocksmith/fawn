@@ -241,7 +241,16 @@ def pick_measured_timing_ms(
     benchmark_policy: Any,
     workload_domain: str = "",
     command_repeat: int = 1,
+    timing_divisor: float = 1.0,
 ) -> tuple[float, str, dict[str, Any]]:
+    """Select one sample's timing, normalizing by command repeat at most once.
+
+    A configured ``timing_divisor`` greater than one already counts every
+    repeated operation (the strict divisor lint requires
+    ``divisor == per-stream operations * command repeat``), so the caller
+    divides by it and this function must return the unnormalized total.
+    Only when no such divisor exists does the repeat count normalize here.
+    """
     if required_timing_class == "process-wall":
         timing_meta = {
             "source": "wall-time",
@@ -276,6 +285,7 @@ def pick_measured_timing_ms(
         execution_encode_total_ns=execution_encode_total_ns,
     )
     effective_repeat = command_repeat if command_repeat > 0 else 1
+    repeat_owned_by_divisor = timing_divisor > 1.0
 
     def maybe_normalize_by_repeat(
         measured_ms: float,
@@ -283,6 +293,11 @@ def pick_measured_timing_ms(
         *,
         canonical_source: str,
     ) -> float:
+        if effective_repeat > 1 and repeat_owned_by_divisor:
+            timing_meta["commandRepeat"] = effective_repeat
+            timing_meta["repeatNormalized"] = False
+            timing_meta["repeatNormalizationOwner"] = "timing-divisor"
+            return measured_ms
         if effective_repeat <= 1:
             timing_meta["commandRepeat"] = effective_repeat
             timing_meta["repeatNormalized"] = False

@@ -850,6 +850,11 @@ def run_workload(
                 encoding="utf-8",
             )
 
+        effective_timing_divisor = timing_divisor
+        if required_timing_class == "process-wall":
+            effective_timing_divisor = 1.0
+        # The divisor and the repeat normalization describe the same repeated
+        # operations; pick_measured_timing_ms defers to the divisor when set.
         measured_ms, measured_source, measured_meta = pick_measured_timing_ms(
             wall_ms=elapsed_ms,
             trace_meta=sample_meta,
@@ -858,6 +863,7 @@ def run_workload(
             benchmark_policy=benchmark_policy,
             workload_domain=workload.domain,
             command_repeat=command_repeat,
+            timing_divisor=effective_timing_divisor,
         )
         ignore_meta: dict[str, Any] = {}
         if required_timing_class != "process-wall" and ignore_first_ops > 0:
@@ -868,9 +874,6 @@ def run_workload(
                 ignore_first_ops=ignore_first_ops,
             )
         measured_raw_ms = measured_ms
-        effective_timing_divisor = timing_divisor
-        if required_timing_class == "process-wall":
-            effective_timing_divisor = 1.0
         enforce_strict_counter_derived_normalization(
             workload=workload,
             run_label=f"run {run_idx}",
