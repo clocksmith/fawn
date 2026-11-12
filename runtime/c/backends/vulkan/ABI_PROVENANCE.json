@@ -285,7 +285,9 @@
       "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT": 1,
       "VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS": 1000127000,
       "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2": 1000146000,
-      "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2": 1000146003
+      "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2": 1000146003,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT": 1000286000,
+      "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT": 1000286001
     },
     "additional_sources": [
       "https://docs.vulkan.org/refpages/latest/refpages/source/VkQueryType.html",
@@ -935,6 +937,58 @@
           "VkMemoryRequirements"
         ]
       ]
+    },
+    "VkPhysicalDeviceRobustness2FeaturesEXT": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-11-12",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "robustBufferAccess2",
+          "VkBool32"
+        ],
+        [
+          "robustImageAccess2",
+          "VkBool32"
+        ],
+        [
+          "nullDescriptor",
+          "VkBool32"
+        ]
+      ],
+      "dependencies": "VK_EXT_robustness2 (vk.xml: depends on VK_KHR_get_physical_device_properties2 or VK_VERSION_1_1). Checked 2026-11-12 against the installed vulkan_core.h (VK_HEADER_VERSION 341) on the Linux RADV host, where the EXT names alias the promoted KHR ones with identical values and layout.",
+      "retained_equivalent": null
+    },
+    "VkPhysicalDeviceRobustness2PropertiesEXT": {
+      "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h",
+      "verified_utc": "2026-11-12",
+      "fields": [
+        [
+          "sType",
+          "VkStructureType"
+        ],
+        [
+          "pNext",
+          "pointer"
+        ],
+        [
+          "robustStorageBufferAccessSizeAlignment",
+          "VkDeviceSize"
+        ],
+        [
+          "robustUniformBufferAccessSizeAlignment",
+          "VkDeviceSize"
+        ]
+      ],
+      "scope": "Queried through the retained vkGetPhysicalDeviceProperties2; robustBufferAccess2 is enabled only when the storage alignment is at most 4 (WebGPU binding sizes are multiples of 4).",
+      "retained_equivalent": null
     }
   },
   "retained_functions": {

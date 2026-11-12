@@ -86,6 +86,8 @@ bool spirv_literal_index(const CompilerWorkspace *, uint32_t, uint32_t *);
 bool spirv_index_below(const CompilerWorkspace *, uint32_t, uint32_t);
 /* Storage/uniform resource accesses clamp their indices (spirv_clamp.c). */
 bool spirv_clamped_access(const IrInstruction *);
+/* The consumer bounds buffer accesses: runtime-tail indices are not clamped. */
+bool spirv_bounded_tail(const Emitter *);
 bool spirv_plan_clamps(Emitter *, const IrInstruction *);
 bool spirv_clamp_index(Emitter *, const IrInstruction *, const TypeRecord *, uint32_t, uint32_t *);
 bool spirv_emit_error(Emitter *e, uint32_t offset, const char *message);

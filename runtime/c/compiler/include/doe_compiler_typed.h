@@ -32,6 +32,14 @@ extern "C" {
 #define DOE_COMPILER_DISABLE_CLIP_DISTANCES 128u
 #define DOE_COMPILER_DISABLE_PRIMITIVE_INDEX 256u
 #define DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING 512u
+/* SPIR-V consumers only (prepared and module entry points): the device bounds
+ * every storage and uniform buffer access by its bound range, returning zero
+ * for out-of-range loads and discarding out-of-range stores (Vulkan
+ * robustBufferAccess2 with a range alignment of at most 4). Runtime-array
+ * indices then skip the compiler's OpArrayLength clamp; WGSL permits a zero
+ * load or a discarded store for an out-of-bounds index. Fixed-extent clamps
+ * and every non-resource guard remain. */
+#define DOE_COMPILER_BOUNDED_BUFFER_ACCESS 1024u
 
 #define DOE_COMPILER_TYPE_SCALAR 1u
 #define DOE_COMPILER_TYPE_VECTOR 2u

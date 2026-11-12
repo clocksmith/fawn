@@ -238,6 +238,24 @@ typedef struct VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures {
     uint32_t shaderDemoteToHelperInvocation;
 } VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures;
 
+/* Official VK_EXT_robustness2 declarations, bound in ABI_PROVENANCE.json.
+ * robustBufferAccess2 bounds buffer accesses by the descriptor range (rounded
+ * to robustStorageBufferAccessSizeAlignment): out-of-range loads return zero
+ * and stores are discarded. */
+typedef struct VkPhysicalDeviceRobustness2FeaturesEXT {
+    int32_t sType;
+    void *pNext;
+    uint32_t robustBufferAccess2;
+    uint32_t robustImageAccess2;
+    uint32_t nullDescriptor;
+} VkPhysicalDeviceRobustness2FeaturesEXT;
+typedef struct VkPhysicalDeviceRobustness2PropertiesEXT {
+    int32_t sType;
+    void *pNext;
+    uint64_t robustStorageBufferAccessSizeAlignment;
+    uint64_t robustUniformBufferAccessSizeAlignment;
+} VkPhysicalDeviceRobustness2PropertiesEXT;
+
 /* Official VK_KHR_maintenance5 declaration (Vulkan-Headers v1.3.290), bound in
  * ABI_PROVENANCE.json. Enabled only with its VK_KHR_dynamic_rendering dependency. */
 typedef struct VkPhysicalDeviceMaintenance5FeaturesKHR {

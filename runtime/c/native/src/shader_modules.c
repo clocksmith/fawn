@@ -178,6 +178,11 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
         options.semantic_flags &= ~DOE_COMPILER_DISABLE_PRIMITIVE_INDEX;
     if (native_feature_enabled(device, WGPUFeatureName_DualSourceBlending))
         options.semantic_flags &= ~DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING;
+    /* An enabled robustBufferAccess2 bounds every buffer access by its binding,
+     * so SPIR-V runtime-tail indices need no OpArrayLength clamp (doe_vk.h). */
+    if (target == DOE_SHADER_SPIRV && device->backend.kind == WGPUBackendType_Vulkan &&
+        device->backend.value.vulkan.caps.robust_buffer_access2)
+        options.semantic_flags |= DOE_COMPILER_BOUNDED_BUFFER_ACCESS;
     native_lock(device);
     payload->module = native_shader_cache_module(&device->shaders,&options,source->code.data,size);
     native_unlock(device);

@@ -88,7 +88,9 @@ bool shader_options_valid(const doe_shader_options *options)
     return options && options->allocator.allocate && options->allocator.deallocate &&
         options->compiler_identity && options->compiler_identity_size &&
         (options->semantic_flags & ~(DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS | DOE_COMPILER_DISABLE_CLIP_DISTANCES |
-            DOE_COMPILER_DISABLE_PRIMITIVE_INDEX | DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING)) == 0u &&
+            DOE_COMPILER_DISABLE_PRIMITIVE_INDEX | DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING |
+            DOE_COMPILER_BOUNDED_BUFFER_ACCESS)) == 0u &&
+        (!(options->semantic_flags & DOE_COMPILER_BOUNDED_BUFFER_ACCESS) || options->target == DOE_SHADER_SPIRV) &&
         (options->target == DOE_SHADER_SPIRV || options->target == DOE_SHADER_METAL || options->target == DOE_SHADER_HLSL);
 }
 

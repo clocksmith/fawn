@@ -443,6 +443,14 @@ This is native no-fetch admission only: the public/resource owner still distingu
 an Undefined-step-mode layout hole from an explicit Vertex/Instance slot that
 requires a bound public buffer even when it declares no attributes.
 
+VK_EXT_robustness2 robustBufferAccess2 is enabled when the device lists the
+extension, reports the feature and a robustStorageBufferAccessSizeAlignment of at
+most 4 (WebGPU binding sizes are multiples of 4, so the checked range is the
+binding); `caps.robust_buffer_access2` reports successful enablement only. The
+native frontend then compiles SPIR-V with `DOE_COMPILER_BOUNDED_BUFFER_ACCESS`,
+dropping the per-access OpArrayLength clamp on runtime arrays. RADV (Mesa 26.0.3,
+alignment 4) offers it.
+
 VK_KHR_maintenance5 is enabled by default when the device lists it together with
 its VK_KHR_dynamic_rendering dependency (required with the API 1.2 instance; see
 the vk.xml dependency recorded in ABI_PROVENANCE.json) and reports the feature;

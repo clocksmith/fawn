@@ -16,8 +16,11 @@ static bool options_valid(const DoeCompilerPrepareOptionsV20 *options)
 {
     const uint32_t semantics = DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_CORE_BINDING_NUMBERS |
         DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS | DOE_COMPILER_DISABLE_CLIP_DISTANCES |
-        DOE_COMPILER_DISABLE_PRIMITIVE_INDEX | DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING;
+        DOE_COMPILER_DISABLE_PRIMITIVE_INDEX | DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING |
+        DOE_COMPILER_BOUNDED_BUFFER_ACCESS;
     return options && options->kind <= DOE_COMPILER_PREPARE_SPECIALIZED &&
+        (!(options->semantic_flags & DOE_COMPILER_BOUNDED_BUFFER_ACCESS) ||
+            options->target == DOE_COMPILER_TARGET_SPIRV) &&
         options->target <= DOE_COMPILER_TARGET_HLSL && !options->reserved &&
         !(options->semantic_flags & ~semantics) && options->selection.mode <= DOE_COMPILER_SELECT_NAME &&
         !options->selection.reserved &&

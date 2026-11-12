@@ -120,7 +120,9 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
     const doe_shader_view *view = &stage.view;
     const DoeCompilerEntryV5 *entry = stage.entry;
     /* The C compiler clamps storage and uniform indices to their last element,
-     * reading runtime-tail lengths with OpArrayLength (compiler/src/spirv_clamp.c).
+     * reading runtime-tail lengths with OpArrayLength (compiler/src/spirv_clamp.c),
+     * except runtime tails on a device with robustBufferAccess2, which bounds them
+     * by the binding (DOE_COMPILER_BOUNDED_BUFFER_ACCESS, shader_modules.c).
      * This baseline Vulkan context also requires robustBufferAccess, which bounds a
      * below-minimum empty tail. No TranslationInfo
      * metadata is fabricated; texture bounds use the compiler image guards; subgroup paths remain unprovided. */

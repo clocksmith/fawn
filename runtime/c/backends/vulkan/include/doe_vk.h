@@ -162,6 +162,10 @@ typedef struct doe_vk_caps {
     uint64_t storage_offset_alignment;
     uint64_t uniform_offset_alignment;
     bool robust_buffer_access;
+    /* VK_EXT_robustness2 robustBufferAccess2 enabled, not merely advertised, with a
+     * storage range alignment of at most 4: buffer accesses are bounded by the
+     * bound descriptor range (zero loads, discarded stores out of range). */
+    bool robust_buffer_access2;
     bool variable_pointers_storage, variable_pointers; /* Optional queried/enabled core1.1 features. */
     bool storage_push_constant16; /* Queried and enabled, independent of buffer f16. */
     bool shader_f16; /* Enabled arithmetic and 16-bit storage/uniform buffers. */

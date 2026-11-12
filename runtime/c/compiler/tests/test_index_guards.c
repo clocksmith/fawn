@@ -4,9 +4,12 @@
  * the length emits no guard branch; every other index keeps its guard.
  * Storage and uniform resource indices clamp instead: no guard branch at all,
  * one OpULessThan/OpSelect pair per clamped index (runtime tails add one more
- * for max(length, 1) - 1), and no OpPhi zero merge. */
+ * for max(length, 1) - 1), and no OpPhi zero merge. With
+ * DOE_COMPILER_BOUNDED_BUFFER_ACCESS (module ABI) runtime tails take no clamp
+ * and no OpArrayLength; fixed extents still clamp; the typed ABI rejects it. */
 #include "../include/doe_compiler_v2.h"
 #include "../include/doe_compiler_typed.h"
+#include "../include/doe_compiler_module.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,15 +19,16 @@ static DoeCompilerWorkspaceRequirements requirements;
 static void *workspace;
 static uint32_t words[DOE_COMPILER_MAX_WORDS];
 
-typedef struct { unsigned merges, selects, phis; } Shape;
+typedef struct { unsigned merges, selects, phis, lengths; } Shape;
 static Shape count(size_t word_count) {
-    Shape out = {0u, 0u, 0u};
+    Shape out = {0u, 0u, 0u, 0u};
     for (size_t at = 5u; at < word_count;) {
         const uint32_t size = words[at] >> 16u, opcode = words[at] & 0xffffu;
         assert(size != 0u && at + size <= word_count);
         if (opcode == 247u) ++out.merges; /* OpSelectionMerge */
         if (opcode == 169u) ++out.selects; /* OpSelect */
         if (opcode == 245u) ++out.phis; /* OpPhi */
+        if (opcode == 68u) ++out.lengths; /* OpArrayLength */
         at += size;
     }
     return out;
@@ -77,6 +81,39 @@ static Shape resource(const char *body) {
     free(space);
     return count(result.published.words);
 }
+/* Module ABI: the same kernel with and without bounded buffer access. */
+static const DoeCompilerModuleCapacities module_caps = {.typed = {.source_bytes = 8192u, .tokens = 1024u,
+    .statements = 64u, .expressions = 256u, .types = 32u, .members = 64u, .resources = 8u, .access_steps = 320u,
+    .constants = 64u, .constant_edges = 128u, .ir_instructions = 1600u, .ir_operands = 256u,
+    .target_declarations = 512u, .traversal_items = 97u, .words = 8192u, .expression_depth = 32u,
+    .control_depth = 16u, .type_syntax_depth = 32u}, .entries = 4u, .entry_inputs = 16u, .entry_references = 32u};
+static Shape module_shape(const char *body, uint32_t flags, DoeCompilerStatus expected) {
+    char text[512];
+    const int length = snprintf(text, sizeof(text),
+        "@group(0) @binding(0) var<storage,read_write> o:array<u32>;"
+        "@group(0) @binding(1) var<storage,read> t:array<vec4<u32>>;"
+        "@group(0) @binding(2) var<storage,read_write> f:array<vec4<u32>,8>;"
+        "@compute @workgroup_size(1) fn m(@builtin(local_invocation_index) i:u32){%s}", body);
+    assert(length > 0 && (size_t)length < sizeof(text));
+    DoeCompilerWorkspaceRequirements module;
+    assert(doe_compiler_module_requirements(5u, &module_caps, sizeof(module_caps), &module, sizeof(module)) ==
+        DOE_COMPILER_OK);
+    void *space = malloc(module.size_bytes);
+    assert(space != NULL);
+    const DoeCompilerEntrySelectionV5 selection = {DOE_COMPILER_SELECT_NONE, 0u, NULL, 0u};
+    const DoeCompilerModuleOutputs outputs = {.words = words, .word_capacity = module_caps.typed.words,
+        .type_record_size = sizeof(DoeCompilerTypeV4), .member_record_size = sizeof(DoeCompilerMemberV4),
+        .resource_record_size = sizeof(DoeCompilerResourceV4), .workgroup_record_size = sizeof(DoeCompilerWorkgroupV5),
+        .entry_record_size = sizeof(DoeCompilerEntryV5)};
+    DoeCompilerModuleResult result;
+    const DoeCompilerStatus status = doe_compiler_compile_module(5u, &module_caps, sizeof(module_caps), space,
+        module.size_bytes, text, (size_t)length, &selection, sizeof(selection), DOE_COMPILER_MODULE_WORDS | flags,
+        &outputs, sizeof(outputs), &result, sizeof(result));
+    if (status != expected) fprintf(stderr, "%s: %d %s\n", text, (int)status, result.diagnostic.message);
+    assert(status == expected);
+    free(space);
+    return status == DOE_COMPILER_OK ? count(result.published.words) : (Shape){0u, 0u, 0u, 0u};
+}
 int main(void) {
     assert(doe_compiler_workspace_requirements(2u, &requirements, sizeof(requirements)) == DOE_COMPILER_OK);
     workspace = malloc(requirements.size_bytes);
@@ -100,8 +137,31 @@ int main(void) {
     assert(r.merges == 0u && r.phis == 0u && r.selects == 4u); /* fixed array and vector steps */
     r = resource("f[3][i&3u]=u[1][2];");
     assert(r.merges == 0u && r.phis == 0u && r.selects == 0u); /* provably in range: no clamp */
+    /* Bounded buffer access: runtime tails unclamped, fixed extents still clamped. */
+    const char *tails = "o[i]=t[i*4u+3u].x;";
+    Shape clamped = module_shape(tails, 0u, DOE_COMPILER_OK);
+    assert(clamped.lengths == 2u && clamped.selects == 4u && clamped.merges == 0u);
+    Shape bounded = module_shape(tails, DOE_COMPILER_BOUNDED_BUFFER_ACCESS, DOE_COMPILER_OK);
+    assert(bounded.lengths == 0u && bounded.selects == 0u && bounded.merges == 0u && bounded.phis == 0u);
+    bounded = module_shape("o[i32(i)-1]=f[i][i];", DOE_COMPILER_BOUNDED_BUFFER_ACCESS, DOE_COMPILER_OK);
+    assert(bounded.lengths == 0u && bounded.selects == 2u); /* fixed array and vector steps only */
+    bounded = module_shape("let n=arrayLength(&o);o[0]=n;", DOE_COMPILER_BOUNDED_BUFFER_ACCESS, DOE_COMPILER_OK);
+    assert(bounded.lengths == 1u); /* WGSL arrayLength itself is unchanged */
+    /* The typed ABI has no consumer contract for it and rejects the flag. */
+    DoeCompilerWorkspaceRequirements typed;
+    assert(doe_compiler_typed_requirements(4u, &caps, sizeof(caps), &typed, sizeof(typed)) == DOE_COMPILER_OK);
+    void *space = malloc(typed.size_bytes);
+    assert(space != NULL);
+    const DoeCompilerTypedOutputs typed_outputs = {.words = words, .word_capacity = caps.words,
+        .type_record_size = sizeof(DoeCompilerTypeV4), .member_record_size = sizeof(DoeCompilerMemberV4),
+        .resource_record_size = sizeof(DoeCompilerResourceV4)};
+    DoeCompilerTypedResult typed_result;
+    assert(doe_compiler_compile_typed(4u, &caps, sizeof(caps), space, typed.size_bytes, tails, strlen(tails),
+        DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_BOUNDED_BUFFER_ACCESS, &typed_outputs, sizeof(typed_outputs),
+        &typed_result, sizeof(typed_result)) == DOE_COMPILER_INPUT_ERROR);
+    free(space);
     free(workspace);
     puts("Index guards: literal and masked-below-length indices unguarded; dynamic, wide, negative and OR masks guarded; "
-        "storage/uniform indices clamped branch-free");
+        "storage/uniform indices clamped branch-free; bounded buffer access drops only runtime-tail clamps");
     return 0;
 }

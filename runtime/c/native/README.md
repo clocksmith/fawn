@@ -216,7 +216,9 @@ and exact exports; absent platform loaders remain explicitly unavailable.
 - Compiler `src/spirv.c` owns guarded loads/stores: runtime array bounds use
   `OpArrayLength`, signed indices have a nonnegative check, invalid loads return
   zero and invalid stores do not execute. The Vulkan context also requires and
-  enables robustBufferAccess. The frontend does not recreate source analysis or
+  enables robustBufferAccess. When the context enabled robustBufferAccess2, shader
+  modules compile with `DOE_COMPILER_BOUNDED_BUFFER_ACCESS` and runtime-array
+  indices skip the compiler clamp (shader_modules.c). The frontend does not recreate source analysis or
   fabricate retained TranslationInfo extent/texture metadata. ABI6 owns guarded
   integer image coordinates/layers/mips/samples, with zero loads and discarded
   stores outside bounds. Native admission maps semantic format names, never

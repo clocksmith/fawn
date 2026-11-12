@@ -62,6 +62,9 @@ int main(void)
     assert(view.resources[index].binding==1);
     assert(doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,source,strlen(source),options.compiler_identity,17,&options.selection));
     assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,source,strlen(source),"developer-build-B",17,&options.selection));
+    /* Bounded buffer access changes the emitted SPIR-V: never a cache match. */
+    assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags | DOE_COMPILER_BOUNDED_BUFFER_ACCESS,
+        source,strlen(source),options.compiler_identity,17,&options.selection));
     source[0]='!';
     assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,source,strlen(source),options.compiler_identity,17,&options.selection));
     assert(view.words[0]==0x07230203);
@@ -213,6 +216,11 @@ int main(void)
         assert(doe_shader_create(&options, source, strlen(source), &shader, &error) == DOE_SHADER_OUT_OF_MEMORY);
         assert(shader == sentinel && a.live == 0u);
     }
+    /* Bounded buffer access is a SPIR-V consumer contract; text targets refuse it. */
+    options.semantic_flags |= DOE_COMPILER_BOUNDED_BUFFER_ACCESS;
+    assert(doe_shader_create(&options, source, strlen(source), &shader, &error) == DOE_SHADER_INVALID_ARGUMENT);
+    assert(shader == sentinel);
+    options.semantic_flags &= ~DOE_COMPILER_BOUNDED_BUFFER_ACCESS;
     a = (allocations){0};
     assert(doe_shader_create(&options, source, strlen(source), &shader, &error) == DOE_SHADER_OK);
     assert(a.calls == 3u && a.live == 1u);
@@ -379,7 +387,15 @@ int main(void)
         assert(!a.live);
         a = (allocations){0};
         shader = sentinel;
-        options.semantic_flags = 1024; /* Unassigned semantic option. */
+        /* 1024 is bounded buffer access: a SPIR-V consumer contract only. */
+        options.semantic_flags = DOE_COMPILER_BOUNDED_BUFFER_ACCESS | DOE_COMPILER_CORE_BINDING_NUMBERS;
+        assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) ==
+            (target == DOE_SHADER_SPIRV ? DOE_SHADER_OK : DOE_SHADER_INVALID_ARGUMENT));
+        if (target == DOE_SHADER_SPIRV) doe_shader_release(shader);
+        assert(!a.live);
+        a = (allocations){0};
+        shader = sentinel;
+        options.semantic_flags = 2048; /* Unassigned semantic option. */
         assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_INVALID_ARGUMENT);
         assert(shader == sentinel && !a.calls);
     }

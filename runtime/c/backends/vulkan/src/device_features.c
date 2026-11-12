@@ -157,6 +157,36 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
             selection.maintenance5_enabled = true;
         }
     }
+    /* Optional robustBufferAccess2: buffer accesses are bounded by the bound
+     * descriptor range, out-of-range loads return zero and stores are
+     * discarded, which is WGSL's out-of-bounds contract for a binding. The
+     * compiler then omits its runtime-array index clamps (native
+     * shader_modules.c). Range checks round the range up to the reported
+     * alignment; WebGPU binding sizes are multiples of 4, so only an alignment
+     * of at most 4 keeps the checked range equal to the binding. */
+    const uint8_t *robustness_name = (const uint8_t *)"VK_EXT_robustness2";
+    bool robustness_present = false;
+    doe_vk_status robustness_status = doe_vk_extensions_present(context, true, &robustness_name, 1,
+        &robustness_present, error);
+    if (robustness_status != DOE_VK_OK) return robustness_status;
+    if (robustness_present) {
+        VkPhysicalDeviceRobustness2FeaturesEXT robustness = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT};
+        VkPhysicalDeviceFeatures2 query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+            .pNext = &robustness};
+        context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &query);
+        VkPhysicalDeviceRobustness2PropertiesEXT alignment = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT};
+        VkPhysicalDeviceProperties2 properties = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+            .pNext = &alignment};
+        context->vk.vkGetPhysicalDeviceProperties2(context->physical, &properties);
+        if (robustness.robustBufferAccess2 && alignment.robustStorageBufferAccessSizeAlignment != 0 &&
+            alignment.robustStorageBufferAccessSizeAlignment <= 4) {
+            selection.robustness2 = (VkPhysicalDeviceRobustness2FeaturesEXT){
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT, .robustBufferAccess2 = 1};
+            selection.robustness2_enabled = true;
+        }
+    }
     /* External fd interop is discovered for every context and enabled only on
      * explicit selection; discovery failure leaves it unavailable, not an error. */
     const uint8_t *external_names[] = {(const uint8_t *)"VK_KHR_external_memory_fd",

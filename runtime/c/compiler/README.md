@@ -287,6 +287,11 @@ unconditionally inside the declared extent, with no zero load, dropped store or
 access guard. SPIR-V forms the clamp branch-free with OpULessThan/OpSelect over
 OpArrayLength ([spirv_clamp.c](src/spirv_clamp.c)); Vulkan devices require
 robustBufferAccess, which bounds the empty-tail case below the reflected minimum.
+`DOE_COMPILER_BOUNDED_BUFFER_ACCESS` (SPIR-V module and prepared entry points only;
+the typed ABI and text targets reject it) states that the consumer's device bounds
+every buffer access by its bound range, as Vulkan robustBufferAccess2 does: runtime
+tails are then indexed unclamped and an out-of-range access loads zero or is
+dropped, which WGSL also permits. Fixed extents keep their constant clamps.
 MSL writes min/max over the slot-30 size table ([its charter](targets/metal/AGENTS.md))
 and HLSL reads sizes from a runtime-supplied table ([its charter](targets/hlsl/AGENTS.md)).
 Workgroup, private, function and value roots guard each access step before pointer

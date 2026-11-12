@@ -18,6 +18,10 @@ typedef struct doe_vk_feature_selection {
     VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5;
     bool maintenance5_enabled; /* With VK_KHR_dynamic_rendering, its dependency at API 1.2. */
     bool external_fd; /* Selected and available: both fd extensions are enabled. */
+    /* VK_EXT_robustness2 robustBufferAccess2, selected only when the device
+     * reports it with robustStorageBufferAccessSizeAlignment <= 4. */
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2;
+    bool robustness2_enabled;
 } doe_vk_feature_selection;
 /* Caller-owned immediate device-create data, no retained pointer or handles.
  * Failure leaves output unchanged. Optional unsupported demote stays disabled. */

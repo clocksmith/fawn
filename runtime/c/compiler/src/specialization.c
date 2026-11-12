@@ -155,7 +155,7 @@ static DoeCompilerStatus validate_module(uint32_t version,
     bool valid = specialization_layout(DOE_COMPILER_TARGET_SPIRV, caps, &base, &requirements) &&
         workspace != NULL && workspace_size >= requirements.size_bytes &&
         (uintptr_t)workspace % requirements.alignment_bytes == 0u &&
-        (flags & ~(DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS | DOE_COMPILER_DISABLE_CLIP_DISTANCES | DOE_COMPILER_DISABLE_PRIMITIVE_INDEX | DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING)) == 0u;
+        (flags & ~(DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS | DOE_COMPILER_DISABLE_CLIP_DISTANCES | DOE_COMPILER_DISABLE_PRIMITIVE_INDEX | DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING | DOE_COMPILER_BOUNDED_BUFFER_ACCESS)) == 0u;
     if (valid && outputs != NULL)
         valid = compiler_valid_span(outputs->overrides, outputs->override_capacity, sizeof(DoeCompilerOverrideV13),
                     _Alignof(DoeCompilerOverrideV13), true) &&
@@ -179,7 +179,8 @@ static DoeCompilerStatus validate_module(uint32_t version,
         ((flags & DOE_COMPILER_DISABLE_SUBGROUPS) != 0u ? MODULE_DISABLE_SUBGROUPS : 0u) |
         ((flags & DOE_COMPILER_DISABLE_CLIP_DISTANCES) != 0u ? MODULE_DISABLE_CLIP_DISTANCES : 0u) |
         ((flags & DOE_COMPILER_DISABLE_PRIMITIVE_INDEX) != 0u ? MODULE_DISABLE_PRIMITIVE_INDEX : 0u) |
-        ((flags & DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING) != 0u ? MODULE_DISABLE_DUAL_SOURCE_BLENDING : 0u);
+        ((flags & DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING) != 0u ? MODULE_DISABLE_DUAL_SOURCE_BLENDING : 0u) |
+        ((flags & DOE_COMPILER_BOUNDED_BUFFER_ACCESS) != 0u ? MODULE_BOUNDED_BUFFER_ACCESS : 0u);
         stage_bind(&s, workspace, &caps->target.stages, stage_base);
         NumericEnvironment environment;
         bool analyzed = compiler_analyze(&s, c, &environment) && validation_metadata(&s, NULL, result);

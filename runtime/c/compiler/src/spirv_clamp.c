@@ -11,7 +11,13 @@
  * (0), so it clamps to element 0. The access then runs
  * unconditionally inside the declared extent; WGSL robustness permits any
  * in-bounds element. Workgroup, private, function and value roots keep their
- * guards (spirv.c access_condition). */
+ * guards (spirv.c access_condition).
+ *
+ * With DOE_COMPILER_BOUNDED_BUFFER_ACCESS the consumer's device bounds every
+ * buffer access by its bound range (zero loads, discarded stores), so a
+ * runtime-tail index is used unclamped and out-of-range accesses take that
+ * device behavior, which WGSL also permits. Fixed extents still clamp: their
+ * last element is a constant and needs no length query. */
 #include "spirv_internal.h"
 
 bool spirv_literal_index(const CompilerWorkspace *c, uint32_t semantic, uint32_t *value) {
@@ -34,6 +40,9 @@ bool spirv_index_below(const CompilerWorkspace *c, uint32_t semantic, uint32_t l
     return (spirv_literal_index(c, ir->operands.scalar.left, &value) && value < length) ||
         (spirv_literal_index(c, ir->operands.scalar.right, &value) && value < length);
 }
+bool spirv_bounded_tail(const Emitter *e) {
+    return (e->program->module_flags & MODULE_BOUNDED_BUFFER_ACCESS) != 0u;
+}
 bool spirv_clamped_access(const IrInstruction *ir) {
     return ir->operands.access.category == ROOT_RESOURCE &&
         (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || atomic_opcode(ir->opcode));
@@ -49,7 +58,9 @@ bool spirv_plan_clamps(Emitter *e, const IrInstruction *ir) {
         if (a->kind == ACCESS_MEMBER || a->kind == ACCESS_COMPONENT) continue;
         if (a->input_type < IR_PRIMITIVE_COUNT) return spirv_emit_error(e, a->source_offset, "indexed access has no aggregate type");
         const TypeRecord *input = &c->types[a->input_type - IR_PRIMITIVE_COUNT];
-        if (input->kind == TYPE_RUNTIME_ARRAY) (void)spirv_unsigned_constant(e, 1u);
+        if (input->kind == TYPE_RUNTIME_ARRAY) {
+            if (!spirv_bounded_tail(e)) (void)spirv_unsigned_constant(e, 1u);
+        }
         else if (spirv_index_below(c, a->index, input->count)) continue;
         else if (input->count == 0u) return spirv_emit_error(e, a->source_offset, "indexed access has an empty extent");
         else if (spirv_unsigned_constant(e, input->count - 1u) == 0u) return false;
@@ -60,6 +71,10 @@ bool spirv_plan_clamps(Emitter *e, const IrInstruction *ir) {
  * clamped index for the access chain. */
 bool spirv_clamp_index(Emitter *e, const IrInstruction *ir, const TypeRecord *input, uint32_t index, uint32_t *out) {
     uint32_t last;
+    if (input->kind == TYPE_RUNTIME_ARRAY && spirv_bounded_tail(e)) {
+        *out = index;
+        return !e->failed;
+    }
     if (input->kind == TYPE_RUNTIME_ARRAY) {
         const uint32_t length = spirv_reserve_ids(e, 1u), previous = spirv_reserve_ids(e, 1u);
         const uint32_t below = spirv_reserve_ids(e, 1u);
