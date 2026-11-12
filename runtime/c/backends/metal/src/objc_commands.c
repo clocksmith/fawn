@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
+#include <string.h>
 
 doe_mtl_status doe_mtl_objc_command(void *userdata, void *queue, void **out,
     doe_mtl_error *error) {
@@ -53,9 +54,20 @@ doe_mtl_status doe_mtl_objc_fill(void *userdata, void *command, void *buffer,
     return doe_mtl_fail(DOE_MTL_OK, "fillBuffer:range:value:", error);
 }
 
+_Static_assert(DOE_MTL_IMMEDIATE_OFFSET % 16 == 0 && DOE_MTL_IMMEDIATE_OFFSET >= DOE_MTL_BUFFER_SLOTS * 4,
+    "immediate data follows every buffer size at a 16-byte boundary");
+size_t doe_mtl_objc_size_table(const uint32_t sizes[DOE_MTL_BUFFER_SLOTS], uint32_t sizes_slot,
+    const void *immediates, uint32_t immediate_size, uint32_t out[DOE_MTL_SIZE_TABLE_WORDS]) {
+    memset(out, 0, DOE_MTL_SIZE_TABLE_WORDS * sizeof(uint32_t));
+    memcpy(out, sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t));
+    if (!immediate_size) return ((size_t)sizes_slot + 1) * sizeof(uint32_t);
+    memcpy(out + DOE_MTL_IMMEDIATE_OFFSET / 4, immediates, immediate_size);
+    return (size_t)DOE_MTL_IMMEDIATE_OFFSET + immediate_size;
+}
+
 static void bind_compute(doe_mtl_objc *runtime, void *encoder, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot) {
-    uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0};
+    uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0}, table[DOE_MTL_SIZE_TABLE_WORDS];
     uint32_t i;
     runtime->set_object_call(encoder, runtime->set_pipeline, pipeline);
     for (i = 0; i < DOE_MTL_BUFFER_SLOTS; ++i) {
@@ -66,13 +78,10 @@ static void bind_compute(doe_mtl_objc *runtime, void *encoder, void *pipeline,
                 resources->buffers[i].buffer, resources->buffers[i].offset, i);
         sizes[i] = resources->buffers[i].size;
     }
-    if (sizes_slot != UINT32_MAX) {
-        runtime->bind_bytes_call(encoder, runtime->set_bytes,
-            sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t), sizes_slot);
-    }
-    if (resources->immediate_size)
-        runtime->bind_bytes_call(encoder, runtime->set_bytes, resources->immediate_words,
-            resources->immediate_size, resources->immediate_slot);
+    /* Preflight admits immediates only with a size table to carry them. */
+    if (sizes_slot != UINT32_MAX)
+        runtime->bind_bytes_call(encoder, runtime->set_bytes, table, doe_mtl_objc_size_table(sizes,
+            sizes_slot, resources->immediate_words, resources->immediate_size, table), sizes_slot);
     for (i = 0; i < resources->texture_count; ++i)
         runtime->bind_image_call(encoder, runtime->set_texture, resources->textures[i], i);
     for (i = 0; i < resources->sampler_count; ++i)

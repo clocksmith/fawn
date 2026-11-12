@@ -33,7 +33,7 @@ struct call_fixture {
     char diagnostic[512];
     bool fail_pool, fail_encoder, fail_library, fail_function, fail_pipeline, fail_barrier;
     doe_mtl_native_binding bound[DOE_MTL_BUFFER_SLOTS];
-    uint32_t sizes[DOE_MTL_BUFFER_SLOTS];
+    uint32_t sizes[DOE_MTL_SIZE_TABLE_WORDS];
     size_t bytes_length, bytes_slot;
     doe_mtl_size grid, group;
     size_t source_offset, destination_offset, length;
@@ -452,12 +452,14 @@ static void immediate_controls(void) {
     resources.immediate_words[0] = 0x12345678u;
     resources.immediate_words[3] = 0xabcdef01u;
     resources.immediate_size = 16;
-    resources.immediate_slot = 29;
+    /* Immediates follow the 31 sizes at DOE_MTL_IMMEDIATE_OFFSET in the one table. */
     assert(doe_mtl_objc_dispatch(&fixture.runtime, &fixture.command, &fixture.pipeline,
-        &resources, UINT32_MAX, (doe_mtl_dimensions){1,1,1},
+        &resources, 30, (doe_mtl_dimensions){1,1,1},
         (doe_mtl_dimensions){1,1,1}, 1, NULL, NULL) == DOE_MTL_OK);
-    assert(fixture.bytes_sets == 1 && fixture.bytes_slot == 29 && fixture.bytes_length == 16);
-    assert(fixture.sizes[0] == 0x12345678u && fixture.sizes[3] == 0xabcdef01u);
+    assert(fixture.bytes_sets == 1 && fixture.bytes_slot == 30 && fixture.bytes_length == DOE_MTL_IMMEDIATE_OFFSET + 16);
+    assert(fixture.sizes[30] == 0 && fixture.sizes[31] == 0);
+    assert(fixture.sizes[DOE_MTL_IMMEDIATE_OFFSET / 4] == 0x12345678u &&
+        fixture.sizes[DOE_MTL_IMMEDIATE_OFFSET / 4 + 3] == 0xabcdef01u);
     assert(fixture.dispatches == 1 && fixture.pools == fixture.drains);
 }
 

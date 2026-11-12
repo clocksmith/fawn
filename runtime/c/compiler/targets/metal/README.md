@@ -70,7 +70,11 @@ Semantic/reference owners read during implementation:
   slot 30. The legacy ABI10/private emitter maps group * 16 + binding, with binding <16 and
   slots 0..29; slot 30 remains reserved for byte sizes.
 
-The actual runtime must bind slot 30 whenever `needs_sizes_buffer` is true.
+Immediate data has no buffer slot of its own: it occupies bytes
+`DOE_COMPILER_METAL_IMMEDIATE_OFFSET` (128) onward of the slot-30 table, after
+the 31 uint32 sizes, so all 30 lower slots stay available to resources. An entry
+with immediate data declares the table even without runtime-sized buffers. The
+actual runtime must bind slot 30 whenever `needs_sizes_buffer` is true.
 Legacy ABI10 texture and sampler arguments use their separate native argument tables, with
 slots also group * 16 + binding and binding <16. This target conservatively admits
 texture slots 0..30 and sampler slots 0..15. Texture slot 30 does not collide with

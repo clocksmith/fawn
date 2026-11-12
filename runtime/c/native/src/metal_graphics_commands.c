@@ -60,9 +60,9 @@ static native_failure prepare_draw(const doe_resource_render_packet *packet, dra
     draw->fragment = bindings->fragment;
     memcpy(storage->immediate_words, packet->immediates.words, sizeof(storage->immediate_words));
     draw->vertex.immediates = (doe_mtl_immediate_binding){storage->immediate_words,
-        graphics->stages[0].immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT};
+        graphics->stages[0].immediate_bytes};
     draw->fragment.immediates = (doe_mtl_immediate_binding){storage->immediate_words,
-        graphics->stages[1].immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT};
+        graphics->stages[1].immediate_bytes};
     return native_failure_status(NATIVE_OK);
 }
 

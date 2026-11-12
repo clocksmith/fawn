@@ -2,11 +2,13 @@
  * maxStorageBuffersPerShaderStage is usable exactly as reported. A device can
  * require the adapter value but not one more. On that device a compute stage
  * with every storage buffer, every uniform buffer and immediate data executes
- * with exact readback, and one more storage buffer is refused. A vertex stage
+ * with exact readback, directly and indirectly, and one more storage buffer is
+ * refused. A vertex stage
  * holding every per-stage buffer at once also draws exactly: the storage
  * buffers (with runtime sizes), the uniform buffers, immediate data and
  * maxVertexBuffers vertex streams. On Metal that is the whole 31-entry buffer
- * argument table, so a reported value one higher would not fit. */
+ * argument table (immediates share the size table's slot), so a reported value
+ * one higher would not fit. */
 #include "consumer.h"
 #include <stdlib.h>
 
@@ -159,7 +161,7 @@ static void compute_refused(state *s, unsigned storage)
     assert(!refused);
 }
 
-static void compute_executes(state *s, unsigned storage)
+static void compute_executes(state *s, unsigned storage, bool indirect)
 {
     WGPUComputePipeline compute = compute_pipeline(s, storage);
     assert(compute);
@@ -168,6 +170,9 @@ static void compute_executes(state *s, unsigned storage)
     resources r;
     make_resources(s, &r, layouts, storage, WGPUBufferUsage_Storage);
     WGPUBuffer readback = buffer(s, (uint64_t)storage * 256, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    WGPUBuffer arguments = buffer(s, 12, WGPUBufferUsage_Indirect | WGPUBufferUsage_CopyDst);
+    const uint32_t groups[3] = {1, 1, 1};
+    wgpuQueueWriteBuffer(s->queue, arguments, 0, groups, sizeof(groups));
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
     WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
     wgpuComputePassEncoderSetPipeline(pass, compute);
@@ -175,7 +180,8 @@ static void compute_executes(state *s, unsigned storage)
     wgpuComputePassEncoderSetBindGroup(pass, 1, r.groups[1], 0, NULL);
     const uint32_t immediate = IMMEDIATE;
     wgpuComputePassEncoderSetImmediates(pass, 0, &immediate, sizeof(immediate));
-    wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
+    if (indirect) wgpuComputePassEncoderDispatchWorkgroupsIndirect(pass, arguments, 0);
+    else wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
     wgpuComputePassEncoderEnd(pass);
     wgpuComputePassEncoderRelease(pass);
     for (unsigned i = 0; i < storage; ++i)
@@ -189,11 +195,13 @@ static void compute_executes(state *s, unsigned storage)
     }
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
+    wgpuBufferRelease(arguments);
     release_resources(&r, storage);
     wgpuBindGroupLayoutRelease(layouts[0]);
     wgpuBindGroupLayoutRelease(layouts[1]);
     wgpuComputePipelineRelease(compute);
-    printf("compute stage: %u storage + %u uniform buffers + immediates, exact total %u\n", storage, UNIFORMS, r.total);
+    printf("compute stage (%s): %u storage + %u uniform buffers + immediates, exact total %u\n",
+        indirect ? "indirect" : "direct", storage, UNIFORMS, r.total);
 }
 
 static void vertex_stage_executes(state *s, unsigned storage, unsigned vertex_buffers)
@@ -300,7 +308,7 @@ int main(void)
     printf("adapter maxStorageBuffersPerShaderStage=%u maxUniformBuffersPerShaderStage=%u maxVertexBuffers=%u\n",
         storage, adapter.maxUniformBuffersPerShaderStage, adapter.maxVertexBuffers);
     /* The default device admits exactly the WebGPU default, 8. */
-    compute_executes(&base, 8);
+    compute_executes(&base, 8, false);
     compute_refused(&base, 9);
     /* One above the adapter is refused; the adapter value opens a device. */
     assert(!open_device(&base, storage + 1));
@@ -311,7 +319,8 @@ int main(void)
     WGPULimits resolved = WGPU_LIMITS_INIT;
     assert(wgpuDeviceGetLimits(raised.device, &resolved) == WGPUStatus_Success);
     assert(resolved.maxStorageBuffersPerShaderStage == storage);
-    compute_executes(&raised, storage);
+    compute_executes(&raised, storage, false);
+    compute_executes(&raised, storage, true);
     compute_refused(&raised, storage + 1);
     vertex_stage_executes(&raised, storage, vertex_buffers);
     assert(!raised.errors);

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal12_fixture.h"
+#include "../include/doe_compiler_translation.h"
 #include <assert.h>
 #include <errno.h>
 #include <fenv.h>
@@ -34,9 +35,11 @@ static void append(char *source, size_t capacity, size_t *used, const char *form
     *used += (size_t)length;
 }
 static void namespace_limit(const DoeCompilerTextCapacities *caps, void *workspace, size_t bytes,
-    uint32_t table, unsigned count, bool success) {
+    uint32_t table, unsigned count, bool success, bool immediate) {
     char source[16384];
     size_t used = 0;
+    /* Immediate data rides in the slot-30 size table, never in a buffer slot. */
+    if (immediate) append(source, sizeof(source), &used, "requires immediate_address_space;var<immediate> p:u32;");
     append(source, sizeof(source), &used, "@group(3) @binding(999) var<storage,read_write> out:array<u32>;");
     if (table == DOE_COMPILER_TEXT_TABLE_SAMPLER)
         append(source, sizeof(source), &used, "@group(3) @binding(998) var tex:texture_2d<f32>;");
@@ -45,7 +48,8 @@ static void namespace_limit(const DoeCompilerTextCapacities *caps, void *workspa
             "@group(1) @binding(%u) var<uniform> v%u:u32;" : table == DOE_COMPILER_TEXT_TABLE_TEXTURE ?
             "@group(1) @binding(%u) var v%u:texture_2d<f32>;" :
             "@group(1) @binding(%u) var v%u:sampler;", i, i);
-    append(source, sizeof(source), &used, "@compute @workgroup_size(1) fn main(){out[0]=0u;");
+    append(source, sizeof(source), &used, immediate ? "@compute @workgroup_size(1) fn main(){out[0]=p;" :
+        "@compute @workgroup_size(1) fn main(){out[0]=0u;");
     for (unsigned i = 0; i < count; ++i)
         append(source, sizeof(source), &used, table == DOE_COMPILER_TEXT_TABLE_BUFFER ? "out[0]+=v%u;" :
             table == DOE_COMPILER_TEXT_TABLE_TEXTURE ? "out[0]+=textureDimensions(v%u).x;" :
@@ -59,6 +63,26 @@ static void namespace_limit(const DoeCompilerTextCapacities *caps, void *workspa
         assert(strstr(result.stages.resources.module.diagnostic.message, "namespace capacity"));
         assert(!result.published_text_bytes && !result.published_bindings && !result.stages.resources.module.module.schema_version);
     }
+}
+/* An entry with immediate data and no runtime-sized buffer still declares the
+ * size table, reads its immediates at DOE_COMPILER_METAL_IMMEDIATE_OFFSET and
+ * reports no runtime sizes; no buffer slot is spent on immediates. */
+static void immediate_table(const DoeCompilerTextCapacities *caps, void *workspace, size_t bytes,
+    Metal12Fixture *fixture) {
+    const char *source = "requires immediate_address_space;var<immediate> p:u32;"
+        "@group(0) @binding(0) var<storage,read_write> out:array<u32,4>;"
+        "@compute @workgroup_size(1) fn main(){out[0]=p;}";
+    DoeCompilerMetalOutputs outputs = metal12_outputs(fixture);
+    DoeCompilerTextResult result;
+    require(compile(caps, workspace, bytes, source, NULL, 3, &outputs, &result), &result);
+    char text[8192];
+    assert(result.published_text_bytes < sizeof(text));
+    memcpy(text, fixture->results.text, result.published_text_bytes);
+    text[result.published_text_bytes] = '\0';
+    assert(strstr(text, "constant uint* sizes [[buffer(30)]]") && strstr(text, "(constant uchar*)sizes + 128u"));
+    assert(!strstr(text, "[[buffer(29)]]") && !strstr(text, "[[buffer(1)]]"));
+    assert(fixture->entries[0].buffer_count == 1 && fixture->entries[0].sizes_slot == UINT32_MAX &&
+        fixture->entries[0].sizes_bytes == 0 && DOE_COMPILER_METAL_IMMEDIATE_OFFSET == 128u);
 }
 static void check_rows(const Metal12Fixture *fixture, const DoeCompilerTextResult *result) {
     assert(result->published_bindings == 5 && result->published_entries == 2);
@@ -183,12 +207,15 @@ int main(int argc, char **argv) {
     outputs = metal12_outputs(fixture);
     require(compile(&caps, workspace, requirements.size_bytes, metal12_buffers, NULL, 3, &outputs, &result), &result);
     write_text(directory, "buffers", fixture->results.text, result.published_text_bytes);
-    namespace_limit(&caps, workspace, requirements.size_bytes, 1, 29, true);
-    namespace_limit(&caps, workspace, requirements.size_bytes, 1, 30, false);
-    namespace_limit(&caps, workspace, requirements.size_bytes, 2, 31, true);
-    namespace_limit(&caps, workspace, requirements.size_bytes, 2, 32, false);
-    namespace_limit(&caps, workspace, requirements.size_bytes, 3, 16, true);
-    namespace_limit(&caps, workspace, requirements.size_bytes, 3, 17, false);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 1, 29, true, false);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 1, 30, false, false);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 1, 29, true, true);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 1, 30, false, true);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 2, 31, true, false);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 2, 32, false, false);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 3, 16, true, false);
+    namespace_limit(&caps, workspace, requirements.size_bytes, 3, 17, false, false);
+    immediate_table(&caps, workspace, requirements.size_bytes, fixture);
     core_binding_policy();
     assert(fesetenv(&environment) == 0);
     free(before); free(fixture); free(workspace);

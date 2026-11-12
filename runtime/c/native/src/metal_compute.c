@@ -47,7 +47,7 @@ native_failure native_metal_dispatch_timed(doe_mtl_commands *commands,
         .timestamp_begin=timestamps ? timestamps->begin : UINT32_MAX,
         .timestamp_end=timestamps ? timestamps->end : UINT32_MAX,
         .immediates={record->value.dispatch.immediates.words,
-            pipeline->metal_compute->immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT}};
+            pipeline->metal_compute->immediate_bytes}};
     doe_mtl_status native_status = doe_mtl_commands_compute(commands, &dispatch, &error);
     return native_failure_metal(native_status, &error);
 }

@@ -90,18 +90,21 @@ _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + VK_STORAGE_BUFFERS_
     "pipeline binding storage must hold the Vulkan per-stage limits for two stages");
 /* Metal gives each function one DOE_MTL_BUFFER_SLOTS-entry buffer argument
  * table. One stage's uniform and storage buffers occupy dense compiler slots
- * from 0, immediate data the compiler's slot 29 and the runtime-size table its
- * slot 30; a vertex stage also places every vertex stream with attributes in a
- * free slot. All of these can be live in one vertex stage, so the storage
- * buffers per stage are what remains: 31 - 12 uniform - 8 vertex - 2 = 9.
- * Fragment and compute stages have more room; the limit is per stage. */
+ * from 0 and the runtime-size table its slot 30, which also carries immediate
+ * data at DOE_COMPILER_METAL_IMMEDIATE_OFFSET; a vertex stage also places every
+ * vertex stream with attributes in a free slot. All of these can be live in one
+ * vertex stage, so the storage buffers per stage are what remains:
+ * 31 - 12 uniform - 8 vertex - 1 size table = 10. Fragment and compute stages
+ * have more room; the limit is per stage. */
 enum {
     METAL_VERTEX_BUFFERS = 8,
-    METAL_STORAGE_BUFFERS_PER_STAGE = DOE_MTL_BUFFER_SLOTS - UNIFORM_BUFFERS_PER_STAGE - METAL_VERTEX_BUFFERS - 2
+    METAL_STORAGE_BUFFERS_PER_STAGE = DOE_MTL_BUFFER_SLOTS - UNIFORM_BUFFERS_PER_STAGE - METAL_VERTEX_BUFFERS - 1
 };
-_Static_assert(DOE_COMPILER_METAL_IMMEDIATE_SLOT == DOE_MTL_BUFFER_SLOTS - 2 &&
-    DOE_COMPILER_METAL_SIZES_SLOT == DOE_MTL_BUFFER_SLOTS - 1,
-    "the two reserved Metal buffer slots are the last two table entries");
+_Static_assert(DOE_COMPILER_METAL_SIZES_SLOT == DOE_MTL_BUFFER_SLOTS - 1,
+    "the one reserved Metal buffer slot is the last table entry");
+_Static_assert(DOE_COMPILER_METAL_IMMEDIATE_OFFSET == (unsigned)DOE_MTL_IMMEDIATE_OFFSET &&
+    (int)DOE_RESOURCE_MAX_IMMEDIATE_BYTES <= (int)DOE_MTL_IMMEDIATE_BYTES,
+    "compiler and backend agree where immediate data sits in the size table");
 _Static_assert((int)METAL_VERTEX_BUFFERS <= (int)DOE_RESOURCE_MAX_VERTEX_BUFFERS, "Metal vertex buffers fit frontend storage");
 _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + METAL_STORAGE_BUFFERS_PER_STAGE +
     STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,

@@ -17,7 +17,8 @@ Each record reports the canonical byte extent and an accessible-byte mask for
 bytes 0 through 63. Padding bits are zero. A consumer with a 64-byte limit must
 reject larger extents before using that mask. Zero extent explicitly means no
 immediate data. Target bindings are reserved by the compiler: SPIR-V PushConstant,
-Metal buffer slot 29, and HLSL constant register b1 in space7. Metal transfers and
+bytes from offset 128 of the Metal slot-30 size table (no buffer slot of its
+own), and HLSL constant register b1 in space7. Metal transfers and
 HLSL packed constant reads preserve canonical WGSL offsets rather than relying
 on native structure layout. Native pipeline layouts, initialized-byte validation
 and immutable command snapshots remain consumer responsibilities.

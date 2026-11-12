@@ -36,7 +36,7 @@ static doe_mtl_status fixture_render(void *userdata, void *command,
             const doe_mtl_native_resources *source = stage ? &inputs[i].fragment : &inputs[i].vertex;
             doe_mtl_render_bindings *out = stage ? &draws[i].values.fragment : &draws[i].values.vertex;
             *out = (doe_mtl_render_bindings){.buffers=buffer_bindings[i][stage],.textures=texture_bindings[i][stage],
-                .samplers=sampler_bindings[i][stage],.immediates={source->immediate_words,source->immediate_size,source->immediate_slot}};
+                .samplers=sampler_bindings[i][stage],.immediates={source->immediate_words,source->immediate_size}};
             for (uint32_t slot = 0; slot < DOE_MTL_BUFFER_SLOTS; ++slot) if (source->buffers[slot].buffer) {
                 buffers[i][stage][slot].native = source->buffers[slot].buffer;
                 buffer_bindings[i][stage][out->buffer_count++] = (doe_mtl_buffer_binding){slot,
@@ -83,7 +83,7 @@ typedef struct fixture {
     void *vertex_textures[DOE_MTL_TEXTURE_SLOTS], *fragment_textures[DOE_MTL_TEXTURE_SLOTS];
     void *vertex_samplers[DOE_MTL_SAMPLER_SLOTS], *fragment_samplers[DOE_MTL_SAMPLER_SLOTS];
     doe_mtl_native_binding buffers[2][DOE_MTL_BUFFER_SLOTS];
-    uint32_t sizes[2][DOE_MTL_BUFFER_SLOTS];
+    uint32_t sizes[2][DOE_MTL_SIZE_TABLE_WORDS];
     bool bytes_bound[2][DOE_MTL_BUFFER_SLOTS];
 } fixture;
 static fixture *active;
@@ -475,25 +475,36 @@ static void changed_bindings(void) {
     draws[5] = draws[2];
     draws[5].vertex_sizes_slot = UINT32_MAX;
     draws[5].vertex.buffers[30] = (doe_mtl_native_binding){&f.index_buffer, 8, 12};
-    draws[5].vertex.immediate_size = 4;
-    draws[5].vertex.immediate_slot = 6;
-    draws[5].vertex.immediate_words[0] = 7;
-    draws[6] = draws[5];
-    draws[6].vertex.immediate_words[0] = 8;
+    /* Immediates ride in the size table at DOE_MTL_IMMEDIATE_OFFSET: a buffer
+     * leaving slot 30 for the table is not unbound, the table carries both. */
+    draws[6] = draws[2];
+    draws[6].vertex.immediate_size = 4;
+    draws[6].vertex.immediate_words[0] = 7;
     draws[7] = draws[6];
-    draws[7].vertex.immediate_size = 0;
-    draws[7].vertex.buffers[6] = (doe_mtl_native_binding){&f.buffer, 0, 4};
+    draws[7].vertex.immediate_words[0] = 8;
     draws[8] = draws[7];
-    draws[8].vertex_sizes_slot = 6;
-    draws[8].vertex.buffers[6] = (doe_mtl_native_binding){0};
     draws[9] = draws[7];
+    draws[9].vertex.immediate_size = 0;
+    draws[9].vertex.buffers[6] = (doe_mtl_native_binding){&f.buffer, 0, 4};
+    initialize(&f); pass = pass_new(&f);
+    assert(fixture_render(&f.runtime, &f.command, &pass, draws, 7, NULL) == DOE_MTL_OK);
+    assert(f.draws == 6 && f.buffer_sets[0] == 3 && f.bytes_sets[0] == 3);
+    assert(f.bytes_bound[0][30] && !f.buffers[0][30].buffer);
+    assert(f.sizes[0][4] == 24 && f.sizes[0][30] == 0 && f.sizes[0][DOE_MTL_IMMEDIATE_OFFSET / 4] == 7);
     initialize(&f); pass = pass_new(&f);
     assert(fixture_render(&f.runtime, &f.command, &pass, draws, 10, NULL) == DOE_MTL_OK);
-    assert(f.draws == 9 && f.buffer_sets[0] == 5 && f.bytes_sets[0] == 5);
+    assert(f.draws == 9 && f.buffer_sets[0] == 4 && f.bytes_sets[0] == 5);
     assert(f.texture_sets[0] == 1 && f.sampler_sets[1] == 1);
     assert(f.buffers[0][4].buffer == &f.buffer && f.buffers[0][4].offset == 16);
-    assert(f.buffers[0][6].buffer == &f.buffer && !f.bytes_bound[0][6]);
-    assert(f.buffers[0][30].buffer == &f.index_buffer && !f.bytes_bound[0][30]);
+    assert(f.buffers[0][6].buffer == &f.buffer && !f.bytes_bound[0][6] && f.sizes[0][6] == 4);
+    assert(f.bytes_bound[0][30]);
+    /* Nonempty immediates need a size table to carry them. */
+    doe_mtl_native_resources scratch = {0};
+    const uint32_t word = 9;
+    assert(doe_mtl_immediates_preflight((doe_mtl_immediate_binding){&word, 4}, UINT32_MAX, &scratch) ==
+        DOE_MTL_INVALID_ARGUMENT && !scratch.immediate_size);
+    assert(doe_mtl_immediates_preflight((doe_mtl_immediate_binding){&word, 4}, 30, &scratch) == DOE_MTL_OK &&
+        scratch.immediate_size == 4 && scratch.immediate_words[0] == 9);
 }
 static void timestamp_attachments(void) {
     for (unsigned mode = 0; mode < 5; ++mode) {

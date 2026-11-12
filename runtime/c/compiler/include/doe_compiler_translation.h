@@ -7,7 +7,11 @@ extern "C" {
 #endif
 #define DOE_COMPILER_TRANSLATION_ABI_VERSION 17u
 #define DOE_COMPILER_POOL_TRANSLATION_ENTRIES 28u
-#define DOE_COMPILER_METAL_IMMEDIATE_SLOT 29u
+/* Metal immediate data has no buffer slot of its own: it occupies bytes
+ * [128, 128 + immediate_bytes) of the DOE_COMPILER_METAL_SIZES_SLOT table,
+ * after the 31 uint32 buffer sizes. An entry with immediate data binds that
+ * table whether or not it also has runtime-sized buffers. */
+#define DOE_COMPILER_METAL_IMMEDIATE_OFFSET 128u
 #define DOE_COMPILER_HLSL_IMMEDIATE_REGISTER 1u
 #define DOE_COMPILER_HLSL_IMMEDIATE_SPACE 7u
 

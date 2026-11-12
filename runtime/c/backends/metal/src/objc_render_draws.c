@@ -6,53 +6,46 @@ static uint32_t first_slot(uint64_t mask) {
     while (!(mask & 1)) { mask >>= 1; ++slot; }
     return slot;
 }
-static bool bytes_at(const doe_mtl_render_bindings *resources, uint32_t sizes_slot, uint32_t slot) {
-    return sizes_slot == slot || (resources->immediates.size && resources->immediates.slot == slot);
-}
 static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_bindings *resources,
     uint32_t sizes_slot, doe_mtl_objc_stage_state *state, bool vertex) {
     doe_mtl_objc_graphics *g = &r->graphics;
     doe_mtl_native_resources *old = &state->bindings;
-    uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0}, buffers = 0, samplers = 0;
+    uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0}, table[DOE_MTL_SIZE_TABLE_WORDS], buffers = 0, samplers = 0;
     uint64_t textures[2] = {0};
-    bool sizes_changed = !state->valid || state->sizes_slot != sizes_slot;
+    /* The size table (with any immediates at DOE_MTL_IMMEDIATE_OFFSET) is the
+     * only setBytes slot; a buffer replacing an earlier table rebinds. */
+    const uint32_t old_table = state->valid ? state->sizes_slot : UINT32_MAX;
+    bool table_changed = !state->valid || state->sizes_slot != sizes_slot ||
+        resources->immediates.size != old->immediate_size || (resources->immediates.size &&
+        memcmp(resources->immediates.bytes, old->immediate_words, resources->immediates.size) != 0);
     for (size_t i = 0; i < resources->buffer_count; ++i) {
         const doe_mtl_buffer_binding *binding = &resources->buffers[i];
         uint32_t slot = binding->slot;
         void *native = doe_mtl_buffer_native(binding->buffer);
         buffers |= UINT32_C(1) << slot;
-        if (native != old->buffers[slot].buffer || binding->offset != old->buffers[slot].offset ||
-            (state->valid && (state->sizes_slot == slot || (old->immediate_size && old->immediate_slot == slot))))
+        if (native != old->buffers[slot].buffer || binding->offset != old->buffers[slot].offset || old_table == slot)
             r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer,
                 native, (size_t)binding->offset, slot);
         sizes[slot] = (uint32_t)binding->size;
-        if (slot <= sizes_slot && sizes[slot] != old->buffers[slot].size) sizes_changed = true;
+        if (slot <= sizes_slot && sizes[slot] != old->buffers[slot].size) table_changed = true;
         old->buffers[slot] = (doe_mtl_native_binding){native,(size_t)binding->offset,sizes[slot]};
     }
     uint32_t removed = state->buffer_mask & ~buffers;
     while (removed) {
         uint32_t slot = first_slot(removed); removed &= removed - 1;
-        if (slot <= sizes_slot && old->buffers[slot].size) sizes_changed = true;
+        if (slot <= sizes_slot && old->buffers[slot].size) table_changed = true;
         old->buffers[slot] = (doe_mtl_native_binding){0};
-        if (!bytes_at(resources, sizes_slot, slot))
+        if (slot != sizes_slot)
             r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer, NULL, 0, slot);
     }
-    if (state->valid) {
-        uint32_t old_bytes[2] = {state->sizes_slot, old->immediate_size ? old->immediate_slot : UINT32_MAX};
-        for (size_t i = 0; i < 2; ++i) if (old_bytes[i] != UINT32_MAX &&
-            !bytes_at(resources, sizes_slot, old_bytes[i]) && !(buffers & (UINT32_C(1) << old_bytes[i])))
-            r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer, NULL, 0, old_bytes[i]);
-    }
-    if (sizes_slot != UINT32_MAX && (sizes_changed || (old->immediate_size && old->immediate_slot == sizes_slot)))
-        r->bind_bytes_call(encoder, vertex ? g->set_vertex_bytes : g->set_fragment_bytes,
-            sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t), sizes_slot);
-    if (resources->immediates.size && (!state->valid || resources->immediates.slot != old->immediate_slot ||
-        resources->immediates.size != old->immediate_size ||
-        memcmp(resources->immediates.bytes, old->immediate_words, resources->immediates.size) != 0))
-        r->bind_bytes_call(encoder, vertex ? g->set_vertex_bytes : g->set_fragment_bytes,
-            resources->immediates.bytes, resources->immediates.size, resources->immediates.slot);
+    if (old_table != UINT32_MAX && old_table != sizes_slot && !(buffers & (UINT32_C(1) << old_table)))
+        r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer, NULL, 0, old_table);
+    /* Preflight admits immediates only with a size table to carry them. */
+    if (sizes_slot != UINT32_MAX && table_changed)
+        r->bind_bytes_call(encoder, vertex ? g->set_vertex_bytes : g->set_fragment_bytes, table,
+            doe_mtl_objc_size_table(sizes, sizes_slot, resources->immediates.bytes, resources->immediates.size, table),
+            sizes_slot);
     old->immediate_size = resources->immediates.size;
-    old->immediate_slot = resources->immediates.slot;
     if (old->immediate_size) memcpy(old->immediate_words, resources->immediates.bytes, old->immediate_size);
     for (size_t i = 0; i < resources->texture_count; ++i) {
         uint32_t slot = resources->textures[i].slot;

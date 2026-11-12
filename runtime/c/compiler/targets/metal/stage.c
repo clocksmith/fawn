@@ -220,9 +220,6 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
         const ResourceRecord *r = &c->resources[i];
         uint32_t slot;
         if (!metal_resource_slot(e, r, &slot)) return false;
-        if (!type_handle(c,r->type) && target_immediate_root(c,entry) != NO_ID && slot == DOE_COMPILER_METAL_IMMEDIATE_SLOT) {
-            metal_error(e,"Metal buffer binding collides with immediate data slot29"); return false;
-        }
         for (uint32_t j = 0u; j < i; ++j) {
             if (metal_entry_resource(c, entry, j) && c->resources[j].group == r->group &&
                 c->resources[j].binding == r->binding) {
@@ -241,12 +238,8 @@ void metal_resource_parameters(MetalEmitter *e, const EntryRecord *entry, bool *
         metal_resource_parameter(e, i, true);
         *comma = true;
     }
-    if (target_immediate_root(c,entry) != NO_ID) {
-        if (*comma) metal_text(e,", ");
-        metal_format(e,"constant uchar* doe_immediate [[buffer(%u)]]",DOE_COMPILER_METAL_IMMEDIATE_SLOT);
-        *comma = true;
-    }
-    if (metal_entry_sizes(c, entry)) {
+    /* Immediate data travels inside the size table (DOE_COMPILER_METAL_IMMEDIATE_OFFSET). */
+    if (metal_entry_sizes(c, entry) || target_immediate_root(c,entry) != NO_ID) {
         e->needs_sizes = true;
         if (*comma) metal_text(e, ", ");
         metal_format(e, "constant uint* sizes [[buffer(%u)]]", DOE_METAL_SIZES_SLOT);
@@ -257,7 +250,8 @@ void metal_resource_context(MetalEmitter *e, const EntryRecord *entry) {
     const CompilerWorkspace *c = e->module;
     metal_line(e, "DoeContext ctx{};");
     const uint32_t immediate = target_immediate_root(c,entry);
-    if (immediate != NO_ID) metal_format(e,"    ctx.w%u = doe_immediate;\n",immediate);
+    if (immediate != NO_ID)
+        metal_format(e,"    ctx.w%u = (constant uchar*)sizes + %uu;\n",immediate,DOE_COMPILER_METAL_IMMEDIATE_OFFSET);
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (metal_entry_resource(c, entry, i) && !type_handle(c, c->resources[i].type)) {
             metal_indent(e);

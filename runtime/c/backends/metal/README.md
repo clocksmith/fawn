@@ -50,8 +50,10 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
 - Exact-length UTF-8 MSL compilation, named entrypoint and compiler-resolved
   workgroup size; NSError code/message survives native compilation failure.
 - Sparse buffer slots, nonzero offsets and bound byte sizes. The optional
-  compiler-selected size slot receives packed uint32 bound lengths. Compute
-  encoders start with empty bindings; render encoders clear removed slots.
+  compiler-selected size slot receives packed uint32 bound lengths, then any
+  immediate data at byte `DOE_MTL_IMMEDIATE_OFFSET` of the same setBytes
+  payload; immediates require that table and never take a slot of their own.
+  Compute encoders start with empty bindings; render encoders clear removed slots.
 - Direct/repeated threadgroup dispatch, guarded GPU-generated indirect compute,
   buffer-region copy and byte-pattern fill.
   Every native operation uses the real Metal encoder and ends it before the next.

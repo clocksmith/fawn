@@ -92,8 +92,7 @@ bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_
         uint32_t prefix = table == DOE_COMPILER_TEXT_TABLE_BUFFER ? entry->buffer_count :
             table == DOE_COMPILER_TEXT_TABLE_TEXTURE ? texture_count : sampler_count;
         if (!target || target->table != table || target->slot >= limit || target->slot >= prefix ||
-            (table == DOE_COMPILER_TEXT_TABLE_BUFFER && (target->slot == entry->sizes_slot ||
-                (map->immediate_bytes && target->slot == DOE_COMPILER_METAL_IMMEDIATE_SLOT)))) return false;
+            (table == DOE_COMPILER_TEXT_TABLE_BUFFER && target->slot >= DOE_COMPILER_METAL_SIZES_SLOT)) return false;
         /* Reflection owns runtime-tail identity; the selected compiler row
          * must agree exactly. The private size table uses the physical buffer
          * slot, never a logical binding number or another packed index. */
@@ -112,7 +111,11 @@ bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_
         if (table == DOE_COMPILER_TEXT_TABLE_BUFFER) ++buffers;
     }
     if (buffers != entry->buffer_count || entry->sizes_bytes != required_sizes_bytes ||
-        entry->sizes_slot != (required_sizes_bytes ? DOE_COMPILER_METAL_SIZES_SLOT : UINT32_MAX)) return false;
-    *out = (doe_mtl_shader_stage){view->text, view->text_size, entry->name, entry->sizes_slot};
+        entry->sizes_slot != (required_sizes_bytes ? DOE_COMPILER_METAL_SIZES_SLOT : UINT32_MAX) ||
+        map->immediate_bytes > DOE_MTL_IMMEDIATE_BYTES) return false;
+    /* Immediate data rides in the size table (DOE_COMPILER_METAL_IMMEDIATE_OFFSET),
+     * so an entry with immediates binds that table even without runtime sizes. */
+    const uint32_t table_slot = required_sizes_bytes || map->immediate_bytes ? DOE_COMPILER_METAL_SIZES_SLOT : UINT32_MAX;
+    *out = (doe_mtl_shader_stage){view->text, view->text_size, entry->name, table_slot};
     return true;
 }

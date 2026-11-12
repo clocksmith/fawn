@@ -270,6 +270,11 @@ typedef struct doe_mtl_objc_stage_state {
     uint32_t buffer_mask, sampler_mask, sizes_slot;
     bool valid;
 } doe_mtl_objc_stage_state;
+/* One stage's size-table setBytes payload: sizes[0..sizes_slot] as uint32 words,
+ * then any immediate words at DOE_MTL_IMMEDIATE_OFFSET. Returns its byte length. */
+enum { DOE_MTL_SIZE_TABLE_WORDS = (DOE_MTL_IMMEDIATE_OFFSET + DOE_MTL_IMMEDIATE_BYTES) / 4 };
+size_t doe_mtl_objc_size_table(const uint32_t sizes[DOE_MTL_BUFFER_SLOTS], uint32_t sizes_slot,
+    const void *immediates, uint32_t immediate_size, uint32_t out[DOE_MTL_SIZE_TABLE_WORDS]);
 typedef struct doe_mtl_objc_render_state {
     doe_mtl_objc_stage_state vertex, fragment;
     const doe_mtl_native_render_draw *previous;

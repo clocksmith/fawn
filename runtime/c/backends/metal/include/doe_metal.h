@@ -129,12 +129,16 @@ doe_mtl_status doe_mtl_buffer_host_range(doe_mtl_buffer *buffer, uint64_t offset
 doe_mtl_status doe_mtl_buffer_host_write_range(doe_mtl_buffer *buffer, uint64_t offset,
     size_t size, void **out);
 
-enum { DOE_MTL_BUFFER_SLOTS = 31 };
+/* The size table holds one uint32 bound length per buffer slot; immediate
+ * data, when present, follows it at DOE_MTL_IMMEDIATE_OFFSET in the same
+ * setBytes payload, so immediates never occupy a buffer slot of their own. */
+enum { DOE_MTL_BUFFER_SLOTS = 31, DOE_MTL_IMMEDIATE_OFFSET = 128, DOE_MTL_IMMEDIATE_BYTES = 64 };
 /* Compiler/native validation owns shader meaning, layout, usage and robust
  * access. This primitive consumes validated MSL, never WGSL or source patterns.
  * workgroup is the compiler-resolved size, with no guessed fallback.
  * sizes_slot is UINT32_MAX if unused; otherwise the compiler-selected slot
- * receives uint32_t bound lengths as in the retained checked Metal bridge. */
+ * receives uint32_t bound lengths as in the retained checked Metal bridge,
+ * followed by any immediate data at DOE_MTL_IMMEDIATE_OFFSET. */
 typedef struct doe_mtl_pipeline_desc {
     const char *msl;
     size_t msl_length;
@@ -148,10 +152,12 @@ doe_mtl_status doe_mtl_pipeline_retain(doe_mtl_pipeline *pipeline);
 void doe_mtl_pipeline_release(doe_mtl_pipeline *pipeline);
 void *doe_mtl_pipeline_native(const doe_mtl_pipeline *pipeline);
 
-/* Borrowed only during recording; backend snapshots bytes before native encoding. */
+/* Borrowed only during recording; backend snapshots bytes before native encoding.
+ * Nonempty immediates require the pipeline stage's size table, which carries
+ * them at DOE_MTL_IMMEDIATE_OFFSET. */
 typedef struct doe_mtl_immediate_binding {
     const void *bytes;
-    uint32_t size, slot;
+    uint32_t size;
 } doe_mtl_immediate_binding;
 
 typedef struct doe_mtl_buffer_binding {
