@@ -749,11 +749,7 @@ typedef struct {
 /* State is owned by an addon environment, never shared between Node workers. */
 typedef struct {
     bool library_loaded;
-    uint64_t timeout_ns;
-    /* Set by DOE_TIMEOUT_MS or setNativeTimeoutMs. Without it, waits for
-     * submitted GPU work have no deadline (WebGPU defines none; a long valid
-     * submission is not a failure, and the driver reports real faults). */
-    bool timeout_explicit;
+    uint64_t timeout_ns; /* Explicit DOE_TIMEOUT_MS/setNativeTimeoutMs, or 0 (see doe_napi_timeout.h). */
     DeviceCallbackBinding* uncaptured_bindings;
     DeviceCallbackBinding* lost_bindings;
     napi_ref native_direct_method_gpu_request_adapter_ref;
@@ -854,8 +850,6 @@ napi_valuetype prop_type(napi_env env, napi_value obj, const char* key);
 
 /* Error/string helpers */
 uint64_t current_timeout_ns(napi_env env);
-/* Deadline for waits on submitted GPU work (queue completion, map readback). */
-uint64_t gpu_work_timeout_ns(napi_env env);
 void copy_library_error_message(char* out, size_t out_len);
 void copy_library_error_meta(PFN_doeNativeCopyLastErrorMessage fn, char* out, size_t out_len);
 uint64_t monotonic_now_ns(void);

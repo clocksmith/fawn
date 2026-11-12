@@ -5,6 +5,7 @@
  * encode/dispatch, queue submit/write/flush paths, and batched fast paths.
  */
 #include "doe_napi_internal.h"
+#include "doe_napi_timeout.h"
 
 #define BATCH_STACK_DISPATCHES 64u
 #define QUEUE_WRITE_BATCH_STACK_MAX 64u

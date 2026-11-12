@@ -1,4 +1,5 @@
 #include "doe_napi_internal.h"
+#include "doe_napi_timeout.h"
 
 /* ================================================================
  * Buffer

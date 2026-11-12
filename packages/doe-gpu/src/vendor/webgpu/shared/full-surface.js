@@ -1463,8 +1463,10 @@ function createFullSurfaceClasses({
       }
       const completion = backend.queueOnSubmittedWorkDone(this, native);
       this._submittedWorkDone = completion;
-      await completion;
-      if (!this._device?._destroyed) this.markSubmittedWorkDone();
+      // A backend that resolves to a serial has already marked exactly the
+      // submissions it waited for; later submissions remain pending.
+      const coveredSerial = await completion;
+      if (!this._device?._destroyed && coveredSerial === undefined) this.markSubmittedWorkDone();
     }
 
     copyExternalImageToTexture(source, destination, copySize) {

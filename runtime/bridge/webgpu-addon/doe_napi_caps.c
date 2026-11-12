@@ -841,7 +841,6 @@ napi_value doe_set_timeout_ms(napi_env env, napi_callback_info info) {
     uint32_t timeout_ms = 0;
     napi_get_value_uint32(env, _args[0], &timeout_ms);
     doe_env_state(env)->timeout_ns = (uint64_t)timeout_ms * 1000000ULL;
-    doe_env_state(env)->timeout_explicit = true;
     return NULL;
 }
 

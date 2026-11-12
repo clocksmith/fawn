@@ -1,4 +1,5 @@
 #include "doe_napi_internal.h"
+#include "doe_napi_timeout.h"
 
 #define NATIVE_DIRECT_QUEUE_WRITE_BATCH_STACK_MAX 64u
 

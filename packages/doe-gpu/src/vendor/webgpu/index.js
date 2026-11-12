@@ -2378,9 +2378,22 @@ const fullSurfaceBackend = {
       textureAspectValue(destination.aspect),
     );
   },
+  // Resolves to the submission serial it covers when the addon can poll, so
+  // submissions made while it yields stay pending; undefined after a flush.
   async queueOnSubmittedWorkDone(queue, queueNative) {
     if (!queue.hasPendingSubmissions()) {
       return;
+    }
+    if (typeof addon.queueWorkDoneBegin === 'function' && queue._instance) {
+      const serial = queue._submittedSerial;
+      const pending = addon.queueWorkDoneBegin(queue._instance, queueNative);
+      // Yield to the event loop between polls (as Dawn's Node binding does)
+      // rather than blocking the thread until the GPU finishes.
+      while (!addon.queueWorkDonePoll(pending)) {
+        await new Promise(setImmediate);
+      }
+      if (queue._completedSerial < serial) queue._completedSerial = serial;
+      return serial;
     }
     try {
       const flushStartedAt = submitTimingStart();

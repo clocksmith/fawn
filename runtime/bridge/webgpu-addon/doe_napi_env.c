@@ -33,14 +33,13 @@ static void env_finalize(napi_env env, void* data, void* hint) {
 bool doe_env_init(napi_env env) {
     DoeEnvState* state = (DoeEnvState*)calloc(1, sizeof(DoeEnvState));
     if (!state) return false;
-    state->timeout_ns = DOE_DEFAULT_TIMEOUT_NS;
+    state->timeout_ns = 0;
     const char* timeout = getenv("DOE_TIMEOUT_MS");
     if (timeout && timeout[0] != '\0') {
         char* end = NULL;
         unsigned long parsed = strtoul(timeout, &end, 10);
         if (end && *end == '\0') {
             state->timeout_ns = (uint64_t)parsed * 1000000ULL;
-            state->timeout_explicit = true;
         }
     }
     if (napi_add_env_cleanup_hook(env, env_cleanup, state) != napi_ok) {

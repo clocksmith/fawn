@@ -22,6 +22,8 @@ const OPTIONAL_FAST_PATHS = new Set([
   'queueSubmitOne',
   'queueWriteBufferBatch',
   'queueWriteBufferBatchDataPtrs',
+  // Non-blocking onSubmittedWorkDone; without it the blocking queueFlush runs.
+  'queueWorkDoneBegin',
 ]);
 
 const guards = [...backend.matchAll(/typeof addon\.(\w+) (===|!==) 'function'/g)];

@@ -12,6 +12,7 @@
         "../../runtime/bridge/webgpu-addon/doe_napi_shader.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_pipeline.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_queue.c",
+        "../../runtime/bridge/webgpu-addon/doe_napi_queue_poll.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_queue_texture.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_formats.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_render.c",

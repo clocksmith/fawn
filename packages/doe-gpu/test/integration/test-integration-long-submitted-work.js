@@ -4,7 +4,8 @@
 // prefill) is not a failure. Without DOE_TIMEOUT_MS or setNativeTimeoutMs the
 // addon must not reject after its 2 s request deadline. The queue here holds
 // several submissions whose total GPU time is calibrated to exceed 2.5 s;
-// each command buffer stays short. Results are checked against the CPU.
+// each command buffer stays short. The wait must also yield to the event loop
+// and leave work submitted meanwhile pending. Results are checked on the CPU.
 
 import { requestNativeDeviceOrSkip } from './native-device-test-helper.js';
 
@@ -89,6 +90,29 @@ if (waited < 2100) {
   process.exit(0);
 }
 
+// The wait yields to the event loop, and work submitted while it waits stays
+// pending: the next onSubmittedWorkDone still waits for it.
+device.queue.writeBuffer(iterationsBuffer, 0, new Uint32Array([iterations]));
+submit(SUBMITS / 2);
+let turns = 0;
+let lateSubmitted = false;
+const ticker = setInterval(() => {
+  turns += 1;
+  if (!lateSubmitted) { lateSubmitted = true; submit(SUBMITS / 2); }
+}, 1);
+await device.queue.onSubmittedWorkDone();
+clearInterval(ticker);
+if (!lateSubmitted || turns === 0) {
+  throw new Error(`onSubmittedWorkDone blocked the event loop (${turns} timer turns during a ${(TARGET_MS / 2).toFixed(0)} ms wait)`);
+}
+const lateStarted = performance.now();
+await device.queue.onSubmittedWorkDone();
+const lateWaited = performance.now() - lateStarted;
+if (lateWaited < TARGET_MS / 8) {
+  throw new Error(`work submitted during a wait was marked done early (second wait ${lateWaited.toFixed(0)} ms)`);
+}
+const totalSteps = iterations * SUBMITS * 2;
+
 const readback = device.createBuffer({ size: THREADS * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
 const encoder = device.createCommandEncoder();
 encoder.copyBufferToBuffer(state, 0, readback, 0, THREADS * 4);
@@ -97,11 +121,12 @@ await readback.mapAsync(GPUMapMode.READ);
 const actual = new Uint32Array(readback.getMappedRange().slice(0));
 readback.unmap();
 for (const index of [0, 777, THREADS - 1]) {
-  const expected = xorshift(seeds[index], iterations * SUBMITS);
+  const expected = xorshift(seeds[index], totalSteps);
   if (actual[index] !== expected) {
     throw new Error(`thread ${index}: ${actual[index]} != ${expected}`);
   }
 }
 for (const buffer of [state, iterationsBuffer, readback]) buffer.destroy();
 device.destroy();
-console.log(`ok: ${SUBMITS} submissions of ${iterations} iterations waited ${waited.toFixed(0)} ms with exact results`);
+console.log(`ok: ${SUBMITS} submissions of ${iterations} iterations waited ${waited.toFixed(0)} ms; `
+  + `${turns} timer turns during a later wait, work submitted meanwhile waited ${lateWaited.toFixed(0)} ms; exact results`);

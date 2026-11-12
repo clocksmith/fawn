@@ -140,6 +140,8 @@ napi_value doe_queue_write_buffer_batch(napi_env env, napi_callback_info info);
 napi_value doe_queue_write_buffer_batch_data_ptrs(napi_env env, napi_callback_info info);
 napi_value doe_queue_write_texture(napi_env env, napi_callback_info info);
 napi_value doe_queue_flush(napi_env env, napi_callback_info info);
+napi_value doe_queue_work_done_begin(napi_env env, napi_callback_info info);
+napi_value doe_queue_work_done_poll(napi_env env, napi_callback_info info);
 napi_value doe_queue_submit_batched(napi_env env, napi_callback_info info);
 napi_value doe_prewarm_prepared_dispatches(napi_env env, napi_callback_info info);
 napi_value doe_queue_submit_compute_dispatch_copy(napi_env env, napi_callback_info info);
@@ -320,6 +322,8 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("queueWriteBufferBatchDataPtrs",            doe_queue_write_buffer_batch_data_ptrs),
         EXPORT_FN("queueWriteTexture",                        doe_queue_write_texture),
         EXPORT_FN("queueFlush",                               doe_queue_flush),
+        EXPORT_FN("queueWorkDoneBegin",                       doe_queue_work_done_begin),
+        EXPORT_FN("queueWorkDonePoll",                        doe_queue_work_done_poll),
         EXPORT_FN("submitBatched",                            doe_queue_submit_batched),
         EXPORT_FN("prewarmPreparedDispatches",                 doe_prewarm_prepared_dispatches),
         EXPORT_FN("submitComputeDispatchCopy",                doe_queue_submit_compute_dispatch_copy),

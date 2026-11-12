@@ -3,19 +3,18 @@
  * string/error helpers extracted from doe_napi.c.
  */
 #include "doe_napi_internal.h"
+#include "doe_napi_timeout.h"
 
 /* ================================================================
  * Error/string helpers
  * ================================================================ */
 
+/* Requests (adapter, device) keep the default deadline when none is explicit. */
 uint64_t current_timeout_ns(napi_env env) {
-    return doe_env_state(env)->timeout_ns;
+    const uint64_t explicit_ns = doe_env_state(env)->timeout_ns;
+    return explicit_ns ? explicit_ns : DOE_DEFAULT_TIMEOUT_NS;
 }
 
-uint64_t gpu_work_timeout_ns(napi_env env) {
-    const DoeEnvState* state = doe_env_state(env);
-    return state->timeout_explicit ? state->timeout_ns : UINT64_MAX;
-}
 
 void copy_library_error_message(char* out, size_t out_len) {
     if (!out || out_len == 0) return;
