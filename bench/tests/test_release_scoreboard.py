@@ -151,6 +151,55 @@ class CapabilityIntersectionTest(unittest.TestCase):
         self.assertIsNone(runner.classify_failure("intersection", products, checks))
 
 
+class ProviderOrderAndHostStateTest(unittest.TestCase):
+    PRODUCTS = [("baseline", "doe"), ("comparison", "dawn")]
+
+    def test_first_provider_leads_and_order_alternates_by_workload(self) -> None:
+        order = lambda index, first: [product for _, product in runner.provider_order(self.PRODUCTS, index, first)]
+        self.assertEqual(order(0, ""), ["doe", "dawn"])
+        self.assertEqual(order(1, ""), ["dawn", "doe"])
+        self.assertEqual(order(0, "dawn"), ["dawn", "doe"])
+        self.assertEqual(order(1, "dawn"), ["doe", "dawn"])
+        self.assertEqual(order(0, "doe"), ["doe", "dawn"])
+        self.assertEqual(runner.provider_order(self.PRODUCTS, 0, "dawn")[0], ("comparison", "dawn"))
+
+    def _snapshot(self, load: float, cpu: float) -> dict:
+        return {"loadAverage": [load, load, load],
+                "busiestProcesses": [{"pid": 7, "cpuPercent": cpu, "command": "Google Chrome Helper"}]}
+
+    def test_quiet_wait_polls_until_load_and_processes_settle(self) -> None:
+        states = iter([self._snapshot(5.0, 10.0), self._snapshot(2.0, 90.0), self._snapshot(2.0, 10.0)])
+        now = [0.0]
+        sleeps = []
+
+        def sleep(seconds: float) -> None:
+            sleeps.append(seconds)
+            now[0] += seconds
+
+        result = runner.wait_for_quiet_host(3.0, 50.0, 600.0, clock=lambda: now[0], sleep=sleep,
+                                            snapshot_fn=lambda: next(states))
+        self.assertEqual(len(sleeps), 2)
+        self.assertTrue(result["quiet"])
+        self.assertEqual(result["waitedSeconds"], 30.0)
+        self.assertEqual(result["notQuietReasons"], [])
+
+    def test_quiet_wait_times_out_and_records_why(self) -> None:
+        now = [0.0]
+
+        def sleep(seconds: float) -> None:
+            now[0] += seconds
+
+        result = runner.wait_for_quiet_host(3.0, 50.0, 30.0, clock=lambda: now[0], sleep=sleep,
+                                            snapshot_fn=lambda: self._snapshot(8.0, 10.0))
+        self.assertFalse(result["quiet"])
+        self.assertEqual(result["notQuietReasons"], ["1-min load 8.00 >= 3.0"])
+
+    def test_without_a_limit_the_snapshot_is_only_recorded(self) -> None:
+        result = runner.wait_for_quiet_host(0.0, 50.0, 30.0, sleep=lambda _: self.fail("waited"),
+                                            snapshot_fn=lambda: self._snapshot(8.0, 99.0))
+        self.assertEqual((result["quietRequired"], result["quiet"]), (False, True))
+
+
 class ScoreboardOutputIdentityTest(unittest.TestCase):
     def _sample(self, digest: str, length: int) -> dict:
         return {"traceMeta": {"resultSummary": {"outputSha256": digest, "outputByteLength": length}}}

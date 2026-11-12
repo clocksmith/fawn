@@ -19,6 +19,12 @@ set is recorded in the summary and in every receipt. In intersection mode a
 workload neither provider can execute, with the same error, is recorded as not
 comparable on this host, and one Dawn cannot execute while Doe executes is
 recorded as a Dawn limitation, each with the exact error. Neither is a pass.
+
+Provider order alternates by workload within a row; ``--first-provider``
+chooses who runs first, so separate rounds of a single-workload row can be
+interleaved. Before every provider run the host state (load averages and the
+busiest processes) is recorded beside the result; ``--quiet-load`` first waits
+until the one-minute load and every other process are below the given limits.
 """
 
 from __future__ import annotations
@@ -29,6 +35,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +57,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--rows", default="", help="Comma-separated row ids (functional runs only).")
     parser.add_argument("--iterations", type=int, default=0, help="Override timed samples (functional runs only).")
     parser.add_argument("--warmup", type=int, default=-1, help="Override warmup samples (functional runs only).")
+    parser.add_argument("--first-provider", choices=["doe", "dawn"], default="",
+                        help="Product run first for each row's first workload (default: the baseline).")
+    parser.add_argument("--quiet-load", type=float, default=0.0,
+                        help="Before each provider run, wait until the one-minute load is below this (0: no wait).")
+    parser.add_argument("--quiet-process-cpu", type=float, default=50.0,
+                        help="With --quiet-load, also wait until no other process uses this much CPU (percent).")
+    parser.add_argument("--quiet-timeout", type=float, default=1800.0,
+                        help="Seconds to wait for a quiet host before running anyway (recorded as not quiet).")
     parser.add_argument("--dry-run", action="store_true", help="Print the commands without running them.")
     return parser.parse_args(argv)
 
@@ -132,6 +147,67 @@ def single_receipt(directory: Path) -> Path | None:
     return receipts[0] if receipts else None
 
 
+def busiest_processes(limit: int = 5) -> list[dict[str, Any]]:
+    """Processes with the highest CPU share (ps), excluding this runner; empty without ps."""
+    try:
+        result = subprocess.run(["ps", "-Ao", "pid=,pcpu=,comm="], check=False, capture_output=True,
+                                text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    processes = []
+    for line in result.stdout.splitlines():
+        fields = line.split(None, 2)
+        if len(fields) == 3 and fields[0].isdigit() and int(fields[0]) != os.getpid():
+            try:
+                processes.append({"pid": int(fields[0]), "cpuPercent": float(fields[1]), "command": fields[2]})
+            except ValueError:
+                continue
+    return sorted(processes, key=lambda entry: -entry["cpuPercent"])[:limit]
+
+
+def host_snapshot() -> dict[str, Any]:
+    load = os.getloadavg() if hasattr(os, "getloadavg") else None
+    return {"loadAverage": list(load) if load else None, "busiestProcesses": busiest_processes()}
+
+
+def quiet_reasons(snapshot: dict[str, Any], max_load: float, max_process_cpu: float) -> list[str]:
+    """Why the host is not quiet; empty when it is."""
+    reasons = []
+    load = snapshot["loadAverage"]
+    if load is not None and load[0] >= max_load:
+        reasons.append(f"1-min load {load[0]:.2f} >= {max_load}")
+    reasons.extend(f"{entry['command']} at {entry['cpuPercent']:.0f}% CPU"
+                   for entry in snapshot["busiestProcesses"] if entry["cpuPercent"] >= max_process_cpu)
+    return reasons
+
+
+def wait_for_quiet_host(max_load: float, max_process_cpu: float, timeout: float,
+                        poll_seconds: float = 15.0, clock=time.monotonic, sleep=time.sleep,
+                        snapshot_fn=host_snapshot) -> dict[str, Any]:
+    """Host snapshot before a provider run; waits for quiet when max_load is set."""
+    started = clock()
+    while True:
+        snapshot = snapshot_fn()
+        reasons = quiet_reasons(snapshot, max_load, max_process_cpu) if max_load > 0 else []
+        waited = clock() - started
+        if not reasons or waited >= timeout:
+            snapshot.update(quietRequired=max_load > 0, quiet=not reasons, notQuietReasons=reasons,
+                            waitedSeconds=round(waited, 1))
+            return snapshot
+        print(f"waiting for a quiet host: {'; '.join(reasons)}", flush=True)
+        sleep(poll_seconds)
+
+
+def provider_order(products: list[tuple[str, str]], index: int, first_provider: str) -> list[tuple[str, str]]:
+    """Sides in run order: the first provider leads even-indexed workloads, the other odd ones."""
+    sides = list(products)
+    if first_provider and sides[0][1] != first_provider:
+        sides.reverse()
+    if index % 2:
+        sides.reverse()
+    return sides
+
+
 def run_side(config: dict[str, Any], side: str, product: str, workload_id: str, out: Path,
              iterations: int, warmup: int, dry_run: bool, env: dict[str, str]) -> tuple[Path | None, int]:
     comparability = config["comparability"]
@@ -194,20 +270,24 @@ def classify_failure(mode: str, products: dict[str, str],
 
 def run_workload(config: dict[str, Any], scoreboard: dict[str, Any], workload_id: str, index: int,
                  row_out: Path, iterations: int, warmup: int, dry_run: bool, mode: str,
-                 env: dict[str, str]) -> dict[str, Any]:
+                 env: dict[str, str], first_provider: str = "",
+                 quiet: tuple[float, float, float] = (0.0, 50.0, 1800.0)) -> dict[str, Any]:
     out = row_out / workload_id
-    sides = [("baseline", scoreboard["baselineProduct"]), ("comparison", scoreboard["comparisonProduct"])]
-    if index % 2:
-        sides.reverse()
+    sides = provider_order([("baseline", scoreboard["baselineProduct"]),
+                            ("comparison", scoreboard["comparisonProduct"])], index, first_provider)
     receipts: dict[str, Path | None] = {}
     exit_codes: dict[str, int] = {}
+    host_state: dict[str, Any] = {}
     for side, product in sides:
+        if not dry_run:
+            host_state[side] = wait_for_quiet_host(*quiet)
         receipts[side], exit_codes[side] = run_side(
             config, side, product, workload_id, out / side, iterations, warmup, dry_run, env)
     result: dict[str, Any] = {
         "workloadId": workload_id,
         "providerOrder": [product for _, product in sides],
         "runExitCodes": exit_codes,
+        "hostStateBeforeRun": host_state,
         "runReceipts": {side: (path.relative_to(REPO_ROOT).as_posix() if path and path.is_relative_to(REPO_ROOT)
                                else str(path) if path else None) for side, path in receipts.items()},
     }
@@ -279,7 +359,8 @@ def main(argv: list[str] | None = None) -> int:
         warmup = args.warmup if args.warmup >= 0 else int(config["run"]["warmup"])
         workloads = [
             run_workload(config, scoreboard, workload_id, index, args.out / row["rowId"],
-                         iterations, warmup, args.dry_run, mode, env)
+                         iterations, warmup, args.dry_run, mode, env, args.first_provider,
+                         (args.quiet_load, args.quiet_process_cpu, args.quiet_timeout))
             for index, workload_id in enumerate(row["workloadIds"])
         ]
         statuses = {entry["status"] for entry in workloads}
@@ -300,6 +381,8 @@ def main(argv: list[str] | None = None) -> int:
         "functionalOnly": functional_only,
         "capabilityMode": mode,
         "capability": capability,
+        "firstProvider": args.first_provider or scoreboard["baselineProduct"],
+        "quietLoad": args.quiet_load,
         "rows": rows,
     }
     if args.dry_run:

@@ -93,6 +93,14 @@ python3 bench/gates/release_scoreboard_gate.py --backend <backend> \
   --summary bench/out/release-scoreboard/<run-id>/scoreboard-summary.json
 ```
 
+Provider order alternates by workload within a row, so a single-workload row
+always runs the same provider first. To interleave, repeat the run in separate
+rounds with `--first-provider doe` and `--first-provider dawn`.
+`--quiet-load <1-min load>` waits before each provider run until the load and
+every other process (`--quiet-process-cpu`, default 50%) are below the limits;
+each workload records the host state (load averages, busiest processes, wait)
+before each provider run in `hostStateBeforeRun`, with or without waiting.
+
 `--iterations`, `--warmup` and `--rows` give functional runs that the gate
 always rejects. Each row is also a promoted compare profile
 (`python3 bench/cli.py compare --list-promoted | grep release-scoreboard`).
