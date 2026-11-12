@@ -65,6 +65,11 @@ typedef struct doe_mtl_caps {
     bool float32_filterable, float32_blendable, rg11b10_renderable;
     bool bgra8unorm_storage, texture_formats_tier1, texture_formats_tier2;
     uint32_t sample_count_mask; /* Bit log2(count), native queried counts 1..16. */
+    /* Published family envelope (Metal feature set tables): fragment input
+     * scalar components, total render-target bytes per pixel sample (Mac
+     * families list no limit; 8 targets x 16 bytes is the largest WebGPU cost)
+     * and texture argument-table entries per function. Zero when unknown. */
+    uint32_t max_fragment_input_components, max_color_bytes_per_sample, max_texture_arguments;
     bool depth24_stencil8, separate_depth_stencil;
     bool depth_resolve, stencil_resolve, store_and_resolve, multisample_array;
     uint32_t max_visibility_offset;

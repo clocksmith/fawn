@@ -147,7 +147,11 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     doe_resource_render_pipeline_desc resource = {.samples=descriptor->multisample.count,
         .topology=descriptor->primitive.topology, .strip_index_format=descriptor->primitive.stripIndexFormat,
         .color_count=fragment ? (uint32_t)fragment->targetCount : 0};
-    native_graphics_limits interfaces = {60,60,true};
+    /* The family's fragment-input component budget (limits.c derives the
+     * reported inter-stage variables from it); 60 is the Apple1 floor. */
+    const uint32_t components = device->backend.value.metal.caps.max_fragment_input_components ?
+        device->backend.value.metal.caps.max_fragment_input_components : 60;
+    native_graphics_limits interfaces = {components,components,true};
     if (!native_render_fixed(device->features, descriptor, &fixed) ||
         !native_render_depth(device->features, descriptor->depthStencil, &fixed, &resource) ||
         !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment,
@@ -202,7 +206,7 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     bool automatic = !layout;
     doe_resource_render_pipeline *pipeline = NULL;
     doe_mtl_vertex_layout layouts[DOE_RESOURCE_MAX_VERTEX_BUFFERS];
-    doe_mtl_vertex_attribute attributes[16];
+    doe_mtl_vertex_attribute attributes[DOE_MTL_VERTEX_ATTRIBUTES]; /* At most maxVertexAttributes. */
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
     doe_resource_status status = automatic ? native_automatic_layout(device, stages, stage_count, &layout) : DOE_RESOURCE_OK;

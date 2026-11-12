@@ -161,6 +161,15 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
                 doe_mtl_objc_size(r,device,r->read_write_texture_support) == 2;
 
         caps->counting_visibility = caps->depth_resolve;
+        const bool mac2 = r->family_call(device, r->supports_family, 2002) != 0;
+        const bool apple4 = r->family_call(device, r->supports_family, 1004) != 0;
+        const bool apple6 = r->family_call(device, r->supports_family, 1006) != 0;
+        caps->max_fragment_input_components = mac2 || apple4 ? 124 :
+            r->family_call(device, r->supports_family, 1001) ? 60 : 0;
+        caps->max_color_bytes_per_sample = mac2 ? 128 : apple4 ? 64 :
+            r->family_call(device, r->supports_family, 1002) ? 32 : 0;
+        caps->max_texture_arguments = mac2 || apple6 ? 128 : apple4 ? 96 :
+            r->family_call(device, r->supports_family, 1001) ? 31 : 0;
         caps->multisample_array = r->family_call(device, r->supports_family, 1007) ||
             r->family_call(device, r->supports_family, 2002);
         if (r->family_call(device, r->supports_family, 2002) ||

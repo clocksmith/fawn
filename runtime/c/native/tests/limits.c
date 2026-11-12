@@ -7,6 +7,7 @@
  * layouts. */
 #include "consumer.h"
 #include <stddef.h>
+#include <stdarg.h>
 #include <stdlib.h>
 
 typedef struct limit_row {
@@ -733,6 +734,98 @@ static void raised_vertex_attributes(state *s, uint32_t count)
     wgpuRenderPipelineRelease(render);
 }
 
+/* `count` (<= 32) flat vec4<u32> inter-stage variables at locations 0..count-1;
+ * location i carries (1,2,3,4) * (i + 1), so the r32uint texel is 5 * count * (count + 1). */
+enum { INTERSTAGE_SHADER_BYTES = 8192 };
+static void appendf(char *code, size_t capacity, size_t *used, const char *format, ...)
+{
+    va_list arguments;
+    va_start(arguments, format);
+    int written = vsnprintf(code + *used, capacity - *used, format, arguments);
+    va_end(arguments);
+    assert(written > 0 && (size_t)written < capacity - *used);
+    *used += (size_t)written;
+}
+static void interstage_shader(char *code, size_t capacity, uint32_t count)
+{
+    size_t used = 0;
+    appendf(code, capacity, &used, "struct V {\n  @builtin(position) p: vec4<f32>,\n");
+    for (uint32_t i = 0; i < count; ++i)
+        appendf(code, capacity, &used, "  @location(%u) @interpolate(flat) v%u: vec4<u32>,\n", i, i);
+    appendf(code, capacity, &used, "}\n@vertex fn vs(@builtin(vertex_index) i: u32) -> V {\n  var o: V;\n"
+        "  o.p = vec4<f32>(f32(i == 1u) * 4.0 - 1.0, f32(i == 2u) * 4.0 - 1.0, 0.0, 1.0);\n");
+    for (uint32_t i = 0; i < count; ++i)
+        appendf(code, capacity, &used, "  o.v%u = vec4<u32>(1u, 2u, 3u, 4u) * %uu;\n", i, i + 1);
+    appendf(code, capacity, &used, "  return o;\n}\n@fragment fn fs(v: V) -> @location(0) vec4<u32> {\n  var t = 0u;\n");
+    for (uint32_t i = 0; i < count; ++i) appendf(code, capacity, &used, "  t += dot(v.v%u, vec4<u32>(1u));\n", i);
+    appendf(code, capacity, &used, "  return vec4<u32>(t, 0u, 0u, 1u);\n}\n");
+}
+
+static void raised_interstage(state *s, uint32_t count)
+{
+    char code[INTERSTAGE_SHADER_BYTES];
+    interstage_shader(code, sizeof(code), count);
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = WGPUTextureFormat_R32Uint;
+    WGPURenderPipeline render = raised_render_pipeline(s, code, &target, 1, NULL);
+    assert(render);
+    WGPUBuffer readback = buffer(s, 512, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    draw_and_read(s, render, WGPUTextureFormat_R32Uint, 1, NULL, readback);
+    const uint32_t *texel = map(s, readback, 512);
+    assert(texel[0] == 5 * count * (count + 1));
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+    wgpuRenderPipelineRelease(render);
+}
+
+/* A 128 KiB uniform array, bound whole: its first, middle and last elements
+ * read back exactly when the limit admits it; otherwise creation is refused. */
+static const char *const uniform128k =
+    "@group(0) @binding(0) var<uniform> u: array<vec4<u32>, 8192>;\n"
+    "@group(0) @binding(1) var<storage, read_write> o: array<u32>;\n"
+    "@compute @workgroup_size(1) fn main() { o[0] = u[0].x; o[1] = u[4096].y; o[2] = u[8191].w; }\n";
+static void uniform_binding_size(state *s, bool admitted)
+{
+    enum { BYTES = 8192 * 16 };
+    uint32_t *values = malloc(BYTES);
+    assert(values);
+    for (uint32_t i = 0; i < BYTES / 4; ++i) values[i] = i * 7 + 1;
+    WGPUBuffer uniform = buffer(s, BYTES, WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue, uniform, 0, values, BYTES);
+    WGPUBuffer output = buffer(s, 16, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
+    WGPUBindGroupEntry entries[2] = {{.binding = 0, .buffer = uniform, .size = BYTES},
+        {.binding = 1, .buffer = output, .size = 16}};
+    if (!admitted) wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    WGPUComputePipeline compute = try_compute(s, uniform128k, NULL);
+    if (!admitted) {
+        if (compute) {
+            WGPUBindGroupLayout layout = wgpuComputePipelineGetBindGroupLayout(compute, 0);
+            WGPUBindGroupDescriptor descriptor = {.layout = layout, .entryCount = 2, .entries = entries};
+            WGPUBindGroup refused = wgpuDeviceCreateBindGroup(s->device, &descriptor);
+            if (refused) wgpuBindGroupRelease(refused);
+            wgpuBindGroupLayoutRelease(layout);
+            wgpuComputePipelineRelease(compute);
+        }
+        expect_validation(s);
+    } else {
+        assert(compute);
+        WGPUBindGroup bound = group(s, compute, entries, 2);
+        WGPUBuffer readback = buffer(s, 16, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+        dispatch(encoder, compute, bound);
+        wgpuCommandEncoderCopyBufferToBuffer(encoder, output, 0, readback, 0, 16);
+        submit(s, encoder);
+        const uint32_t expected[3] = {values[0], values[4096 * 4 + 1], values[8191 * 4 + 3]};
+        expect_words(s, readback, 16, 4, expected, 3);
+        wgpuBufferRelease(readback);
+        wgpuBindGroupRelease(bound);
+        wgpuComputePipelineRelease(compute);
+    }
+    wgpuBufferRelease(output);
+    wgpuBufferRelease(uniform);
+    free(values);
+}
+
 static void color_targets(WGPUColorTargetState targets[8])
 {
     for (uint32_t i = 0; i < 8; ++i) {
@@ -770,6 +863,9 @@ static unsigned check_raised_limits(state *s, const WGPULimits *adapter)
     const bool storage_textures = adapter->maxStorageTexturesPerShaderStage >= 8;
     const bool attributes_raised = adapter->maxVertexAttributes > 16;
     const bool color_bytes = adapter->maxColorAttachmentBytesPerSample >= 128;
+    const bool interstage_raised = adapter->maxInterStageShaderVariables > 16;
+    const bool uniform_raised = adapter->maxUniformBufferBindingSize >= 8192 * 16;
+    const uint32_t interstage_count = adapter->maxInterStageShaderVariables < 32 ? adapter->maxInterStageShaderVariables : 32;
     /* Raised vertex attributes use the adapter's own value: above the default 16,
      * at most the 32 these fixtures hold; otherwise 17, one above the default. */
     const uint32_t attribute_count = !attributes_raised ? 17u :
@@ -808,6 +904,7 @@ static unsigned check_raised_limits(state *s, const WGPULimits *adapter)
             assert(!raised_render_pipeline(s, color128, wide, 8, NULL));
             expect_validation(s);
         }
+        if (!raised || !uniform_raised) uniform_binding_size(s, false);
         if (!raised) continue;
         /* Each raised limit executes with exact readback. */
         wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
@@ -815,13 +912,17 @@ static unsigned check_raised_limits(state *s, const WGPULimits *adapter)
         if (storage_textures) raised_storage_textures(s);
         if (attributes_raised) raised_vertex_attributes(s, attribute_count);
         if (color_bytes) raised_color_bytes(s);
+        /* Every inter-stage variable the adapter reports carries exact values. */
+        raised_interstage(s, interstage_raised ? interstage_count : 16);
+        if (uniform_raised) uniform_binding_size(s, true);
         expect_no_error(s);
         wgpuQueueRelease(s->queue);
     }
     s->device = defaults;
     s->queue = default_queue;
     wgpuDeviceRelease(maximal);
-    return (unsigned)storage_buffers + (unsigned)storage_textures + (unsigned)attributes_raised + (unsigned)color_bytes;
+    return (unsigned)storage_buffers + (unsigned)storage_textures + (unsigned)attributes_raised + (unsigned)color_bytes +
+        (unsigned)interstage_raised + (unsigned)uniform_raised;
 }
 
 /* The CTS opens every device with all adapter features and all adapter limits. */
@@ -871,7 +972,8 @@ int main(void)
         "workgroup size/storage, inter-stage location, buffer size, texture size, dispatch count and binding "
         "number, a sparse 0/17/31/500/999 group with binding-ordered dynamic offsets and an automatic layout, "
         "and of 10 storage buffers, 8 storage textures, the adapter's vertex attributes (or 17) and "
-        "8 rgba32float targets (128 color bytes per sample), each refused on the default device, %u of the 4 "
+        "8 rgba32float targets (128 color bytes per sample), a 128 KiB uniform binding, each refused on the default device, "
+        "every reported inter-stage variable, %u of the 6 "
         "raised by this adapter and executed with exact readback, the rest refused on its adapter-limit device; "
         "exact 32 words %s\n",
         sizeof(rows) / sizeof(rows[0]), raised, adapter_class_scope());

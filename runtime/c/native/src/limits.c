@@ -105,6 +105,11 @@ _Static_assert(DOE_COMPILER_METAL_SIZES_SLOT == DOE_MTL_BUFFER_SLOTS - 1,
 _Static_assert(DOE_COMPILER_METAL_IMMEDIATE_OFFSET == (unsigned)DOE_MTL_IMMEDIATE_OFFSET &&
     (int)DOE_RESOURCE_MAX_IMMEDIATE_BYTES <= (int)DOE_MTL_IMMEDIATE_BYTES,
     "compiler and backend agree where immediate data sits in the size table");
+enum { METAL_STORAGE_TEXTURES_PER_STAGE = 8, METAL_VERTEX_ATTRIBUTES = 30 };
+_Static_assert((int)METAL_VERTEX_ATTRIBUTES <= (int)DOE_MTL_VERTEX_ATTRIBUTES, "Metal vertex attributes fit backend storage");
+_Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + METAL_STORAGE_BUFFERS_PER_STAGE +
+    METAL_STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
+    "pipeline binding storage must hold the Metal texture limits for two stages");
 _Static_assert((int)METAL_VERTEX_BUFFERS <= (int)DOE_RESOURCE_MAX_VERTEX_BUFFERS, "Metal vertex buffers fit frontend storage");
 _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + METAL_STORAGE_BUFFERS_PER_STAGE +
     STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
@@ -199,14 +204,23 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         .maxDynamicUniformBuffersPerPipelineLayout=DYNAMIC_UNIFORM,.maxDynamicStorageBuffersPerPipelineLayout=DYNAMIC_STORAGE,
         .maxUniformBuffersPerShaderStage=UNIFORM_BUFFERS_PER_STAGE,.maxStorageBuffersPerShaderStage=METAL_STORAGE_BUFFERS_PER_STAGE,
         .maxSampledTexturesPerShaderStage=SAMPLED_PER_STAGE,.maxSamplersPerShaderStage=SAMPLERS_PER_STAGE,
-        .maxStorageTexturesPerShaderStage=STORAGE_TEXTURES_PER_STAGE,
+        /* 16 sampled + 8 storage textures fit the 31-entry texture table of
+         * every family and the compiler's dense texture namespace. */
+        .maxStorageTexturesPerShaderStage=caps->max_texture_arguments >= SAMPLED_PER_STAGE + METAL_STORAGE_TEXTURES_PER_STAGE ?
+            METAL_STORAGE_TEXTURES_PER_STAGE : STORAGE_TEXTURES_PER_STAGE,
         .maxTextureDimension1D=caps->max_texture_1d,.maxTextureDimension2D=caps->max_texture_2d,
         .maxTextureDimension3D=caps->max_texture_3d,.maxTextureArrayLayers=caps->max_texture_layers,
         /* Conservative frontend graphics envelope; native creation still owns
          * real format/sample/pipeline support. These are not queried maxima. */
-        .maxVertexBuffers=METAL_VERTEX_BUFFERS,.maxVertexAttributes=16,.maxVertexBufferArrayStride=2048,
-        .maxInterStageShaderVariables=15,.maxColorAttachments=8,.maxColorAttachmentBytesPerSample=32,
-        .maxUniformBufferBindingSize=binding_size < 65536 ? binding_size : 65536,
+        /* Metal admits 31 attributes per vertex descriptor; 30 matches Dawn. */
+        .maxVertexBuffers=METAL_VERTEX_BUFFERS,.maxVertexAttributes=METAL_VERTEX_ATTRIBUTES,.maxVertexBufferArrayStride=2048,
+        /* Inter-stage vec4 variables from the family's fragment-input component
+         * budget (124 on Apple4+/Mac2: 31); the Apple1 floor 60 gives 15. */
+        .maxInterStageShaderVariables=(caps->max_fragment_input_components ? caps->max_fragment_input_components : 60) / 4,
+        .maxColorAttachments=8,
+        .maxColorAttachmentBytesPerSample=caps->max_color_bytes_per_sample > 32 ? caps->max_color_bytes_per_sample : 32,
+        /* MSL constant buffers have no documented binding-size limit. */
+        .maxUniformBufferBindingSize=binding_size,
         .maxStorageBufferBindingSize=binding_size,
         .minUniformBufferOffsetAlignment=256,.minStorageBufferOffsetAlignment=256,
         .maxComputeWorkgroupStorageSize=caps->max_threadgroup_memory_length > UINT32_MAX ?

@@ -465,6 +465,13 @@ calls and both syntax branches are not Apple SDK or physical-device qualificatio
 The property's official declaration is documented by Apple at
 https://developer.apple.com/documentation/metal/mtldevice/maxthreadgroupmemorylength?language=objc .
 
+The same family queries publish three envelope facts the native limits use:
+fragment-input components (124 on Apple4+/Mac2, 60 on Apple1-3), render-target
+bytes per sample (Mac2 128, Apple4+ 64, Apple2/3 32) and texture argument
+entries (128 on Apple6+/Mac2, 96 on Apple4/5, 31 earlier), from Apple's
+[feature set tables](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf).
+The native `limits` client executes each raised value on the device.
+
 Texture swizzle capability currently follows the published Apple2 or Mac2 family floor
 ([Apple capabilities table](https://developer.apple.com/metal/capabilities/)).
 Nonidentity backend views reject without that capability; identity views remain
