@@ -906,7 +906,14 @@
               "buffer_size": 16,
               "visibility": "compute"
             }
-          ]
+          ],
+          "captureBufferHandle": 2414,
+          "captureOffset": 0,
+          "captureSize": 16,
+          "semanticOpId": "gemma3_1b_prefill_32tok_logits_prefix",
+          "semanticStage": "inference",
+          "semanticPhase": "prefill_logits",
+          "semanticTokenIndex": 31
         }
       ]
     },
@@ -1755,7 +1762,14 @@
               "buffer_size": 4,
               "visibility": "compute"
             }
-          ]
+          ],
+          "captureBufferHandle": 2228,
+          "captureOffset": 0,
+          "captureSize": 4,
+          "semanticOpId": "gemma3_1b_decode_1tok_sample_token",
+          "semanticStage": "inference",
+          "semanticPhase": "decode_sample_token",
+          "semanticTokenIndex": 0
         }
       ]
     },
@@ -56444,7 +56458,14 @@
               "buffer_size": 4,
               "visibility": "compute"
             }
-          ]
+          ],
+          "captureBufferHandle": 2228,
+          "captureOffset": 0,
+          "captureSize": 4,
+          "semanticOpId": "gemma3_1b_prefill_64tok_decode_64tok_final_sample_token",
+          "semanticStage": "inference",
+          "semanticPhase": "decode_sample_token",
+          "semanticTokenIndex": 63
         }
       ]
     }

@@ -11,8 +11,8 @@
   "bufferWriteCount": 6,
   "bufferLoadCount": 13,
   "dispatchCount": 18,
-  "sourceIrSha256": "d716a5bd8c3687ebeca57d7aa5d3d301b3b99f3ce80a879f1d62bdb0d95fd927",
-  "compatibilityCommandsSha256": "195ac9244c71308d7d5bfc5ef95e89d55414630f5264df831a48aa149070a082",
+  "sourceIrSha256": "90ce8453bd378a044acf04234aa46c5adfd337e021ca359d9f44afe675f1a492",
+  "compatibilityCommandsSha256": "f063734ad4d3ed7f4f0ecd217902d0873aaa3e815ab62282fc35691215b47b4e",
   "commands": [
     {
       "kind": "buffer_write",
@@ -1021,8 +1021,15 @@
           "buffer_size": 4,
           "visibility": "compute"
         }
-      ]
+      ],
+      "captureBufferHandle": 2228,
+      "captureOffset": 0,
+      "captureSize": 4,
+      "semanticOpId": "gemma3_1b_decode_1tok_sample_token",
+      "semanticStage": "inference",
+      "semanticPhase": "decode_sample_token",
+      "semanticTokenIndex": 0
     }
   ],
-  "planSha256": "7c743ebada56bfc91670411715336a18c3870f58fd222b3a20f93bf6a7ea42c0"
+  "planSha256": "42e0b5afe4f4ca70d15b6caaaf62ea302cbfc73ce34751c0294ba48808169c4e"
 }

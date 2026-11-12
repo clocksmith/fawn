@@ -1006,6 +1006,13 @@
         "buffer_size": 4,
         "visibility": "compute"
       }
-    ]
+    ],
+    "captureBufferHandle": 2228,
+    "captureOffset": 0,
+    "captureSize": 4,
+    "semanticOpId": "gemma3_1b_decode_1tok_sample_token",
+    "semanticStage": "inference",
+    "semanticPhase": "decode_sample_token",
+    "semanticTokenIndex": 0
   }
 ]
