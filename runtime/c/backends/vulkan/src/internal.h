@@ -198,6 +198,11 @@ struct doe_vk_commands {
     uint64_t timeline_value;
     doe_vk_buffer_use *buffers;
     doe_vk_dispatch_use *dispatches;
+    /* Last compute immediates pushed (doe_vk_commands_set_immediates). An
+     * indirect dispatch's guard pipeline disturbs push-constant state, so the
+     * target dispatch pushes these again. The pipeline is leased in dispatches. */
+    doe_vk_pipeline *immediate_pipeline;
+    uint32_t immediate_words[16];
     struct doe_vk_render_use *renders;
     struct doe_vk_query_use *queries;
     struct doe_vk_texture_use *textures;

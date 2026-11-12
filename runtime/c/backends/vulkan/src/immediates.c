@@ -27,5 +27,7 @@ doe_vk_status doe_vk_commands_set_immediates(doe_vk_commands *commands,
         use->pipeline=pipeline;use->next=commands->dispatches;commands->dispatches=use;
     }
     doe_vk_push_immediates(commands,pipeline,bytes);
+    commands->immediate_pipeline=pipeline;
+    memcpy(commands->immediate_words,bytes,size);
     return DOE_VK_OK;
 }

@@ -91,6 +91,10 @@ doe_vk_status doe_vk_commands_dispatch_indirect(doe_vk_commands *commands,
     if (status != DOE_VK_OK) return status;
     doe_vk_barrier(commands);
     doe_vk_bind_prepared_resources(commands, target);
+    /* The guard's layout has no push constants, so binding it disturbed the
+     * target's immediates; restore the ones last set for this pipeline. */
+    if (pipeline->immediate_bytes && commands->immediate_pipeline == pipeline)
+        doe_vk_push_immediates(commands, pipeline, commands->immediate_words);
     commands->context->vk.vkCmdDispatchIndirect(commands->command, validator->scratch->buffer, 0);
     return DOE_VK_OK;
 }
