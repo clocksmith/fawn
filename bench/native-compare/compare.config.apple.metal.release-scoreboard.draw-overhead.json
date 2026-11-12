@@ -1,0 +1,50 @@
+{
+  "workloads": "bench/workloads/workloads.release-scoreboard.json",
+  "baseline": {
+    "name": "doe_gpu_node_metal",
+    "executorId": "release_scoreboard_draw_doe_metal"
+  },
+  "comparison": {
+    "name": "webgpu_npm_dawn_node_metal",
+    "executorId": "release_scoreboard_draw_dawn_metal"
+  },
+  "run": {
+    "iterations": 8,
+    "warmup": 1,
+    "out": "bench/out/apple-metal/release-scoreboard.draw-overhead.compare.json",
+    "workspace": "bench/out/apple-metal/release-scoreboard.draw-overhead.workspace",
+    "workloadFilter": "",
+    "emitShell": false
+  },
+  "comparability": {
+    "mode": "strict",
+    "requireTimingClass": "operation",
+    "allowBaselineNoExecution": false
+  },
+  "claimability": {
+    "mode": "local",
+    "minTimedSamples": 7
+  },
+  "resource": {
+    "probe": "none",
+    "sampleMs": 100,
+    "sampleTargetCount": 0
+  },
+  "selector": {
+    "cohorts": [],
+    "benchmarkClass": [
+      "comparable"
+    ],
+    "claimEligibleOnly": false,
+    "domains": [],
+    "ids": [
+      "release_scoreboard_draw_1k_static",
+      "release_scoreboard_draw_1k_state_change",
+      "release_scoreboard_draw_5k_static",
+      "release_scoreboard_draw_5k_state_change",
+      "release_scoreboard_draw_10k_static",
+      "release_scoreboard_draw_10k_state_change"
+    ],
+    "excludeIds": []
+  }
+}

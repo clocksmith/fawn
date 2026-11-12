@@ -1,0 +1,50 @@
+{
+  "kind": "release-scoreboard-three-scene",
+  "schemaVersion": 1,
+  "description": "Upstream three.js WebGPURenderer (pinned npm release) rendering a fixed lit scene of MeshStandardMaterial objects into an offscreen 960x540 rgba8unorm RenderTarget in Node. Fixed camera, frame-indexed object transforms, no MSAA. Frame time is pose + renderer.render() through onSubmittedWorkDone; the final frame digest must equal the recorded reference.",
+  "three": {
+    "package": "three",
+    "version": "0.186.1"
+  },
+  "frames": {
+    "warmup": 10,
+    "measured": 60
+  },
+  "workloads": [
+    {
+      "id": "release_scoreboard_three_lit_scene_48_objects",
+      "scene": {
+        "width": 960,
+        "height": 540,
+        "objects": 48
+      },
+      "minimumDistinctColors": 1000,
+      "references": {
+        "metal": {
+          "framePath": "bench/workloads/release-scoreboard/references/release_scoreboard_three_lit_scene_48_objects.metal.rgba.gz",
+          "frameSha256": "47c440b59c683b76546ea00226c6824ee9e309f45c05a58f0b5461ede5f5af26",
+          "referenceClass": "recorded-single-provider-dawn",
+          "tolerance": {
+            "maxChannelDifference": 2,
+            "maxDifferingPixelFraction": 0.0005
+          },
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "apple-m3",
+            "shaderSourceReceiptsHash": "9ae34df4f116783cbc19b2130fa0cdea1104b57a1f73216b1bbcc57d71474afe",
+            "dopplerCommit": null,
+            "modelManifestSha256": null,
+            "engine": {
+              "packageName": "three",
+              "version": "0.186.1",
+              "packageJsonSha256": "f9c474a27c920b9435353a6235968f4453436bee0444fac7e5fd289c8fa463de",
+              "webgpuBuildSha256": "15cfce5c653541704fd9a3463c39d3e8b854bb6265ccd854d7cfe74090625cc6"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

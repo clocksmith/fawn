@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Doe release scoreboard",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "scoreboardVersion",
+    "description",
+    "workloadsPath",
+    "baselineProduct",
+    "comparisonProduct",
+    "rows",
+    "backends"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "scoreboardVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workloadsPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "baselineProduct": {
+      "type": "string",
+      "const": "doe"
+    },
+    "comparisonProduct": {
+      "type": "string",
+      "const": "dawn"
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rowId",
+          "title",
+          "metric",
+          "outputCheck",
+          "workloadIds",
+          "configSuffix"
+        ],
+        "properties": {
+          "rowId": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metric": {
+            "type": "string",
+            "minLength": 1
+          },
+          "outputCheck": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workloadIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$"
+            }
+          },
+          "configSuffix": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          }
+        }
+      }
+    },
+    "backends": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "backend",
+          "hostClass",
+          "configPrefix"
+        ],
+        "properties": {
+          "backend": {
+            "type": "string",
+            "enum": [
+              "metal",
+              "vulkan",
+              "d3d12"
+            ]
+          },
+          "hostClass": {
+            "type": "string",
+            "minLength": 1
+          },
+          "configPrefix": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

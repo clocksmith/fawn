@@ -2024,6 +2024,10 @@
     {
       "schema": "config/refactor-receipt.schema.json",
       "data": "reports/refactors/benchmark-inventory-ownership-storage-v3.json"
+    },
+    {
+      "schema": "config/release-scoreboard.schema.json",
+      "data": "config/release-scoreboard.json"
     }
   ],
   "globTargets": [

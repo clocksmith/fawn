@@ -3,6 +3,7 @@
   "type": "module",
   "dependencies": {
     "onnxruntime-web": "^1.24.3",
+    "three": "0.186.1",
     "webgpu": "0.4.0"
   }
 }

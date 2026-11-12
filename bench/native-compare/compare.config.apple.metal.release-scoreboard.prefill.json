@@ -1,0 +1,45 @@
+{
+  "workloads": "bench/workloads/workloads.release-scoreboard.json",
+  "baseline": {
+    "name": "doe_gpu_node_metal",
+    "executorId": "release_scoreboard_doppler_doe_metal"
+  },
+  "comparison": {
+    "name": "webgpu_npm_dawn_node_metal",
+    "executorId": "release_scoreboard_doppler_dawn_metal"
+  },
+  "run": {
+    "iterations": 8,
+    "warmup": 1,
+    "out": "bench/out/apple-metal/release-scoreboard.prefill.compare.json",
+    "workspace": "bench/out/apple-metal/release-scoreboard.prefill.workspace",
+    "workloadFilter": "",
+    "emitShell": false
+  },
+  "comparability": {
+    "mode": "strict",
+    "requireTimingClass": "operation",
+    "allowBaselineNoExecution": false
+  },
+  "claimability": {
+    "mode": "local",
+    "minTimedSamples": 7
+  },
+  "resource": {
+    "probe": "none",
+    "sampleMs": 100,
+    "sampleTargetCount": 0
+  },
+  "selector": {
+    "cohorts": [],
+    "benchmarkClass": [
+      "comparable"
+    ],
+    "claimEligibleOnly": false,
+    "domains": [],
+    "ids": [
+      "release_scoreboard_qwen35_2b_prefill2k_warm"
+    ],
+    "excludeIds": []
+  }
+}

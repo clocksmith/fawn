@@ -1,0 +1,47 @@
+{
+  "kind": "release-scoreboard-draw-overhead",
+  "schemaVersion": 1,
+  "description": "N pixel-aligned 4x4 quad draws per frame into a cleared 512x512 rgba8unorm target, with unchanged state or with the pipeline (two fragment entry points) and bind group (64 uniform buffers) changing per draw. Frame time is createCommandEncoder through onSubmittedWorkDone. The final frame must equal a CPU rasterization of the same rectangles and the recorded digest.",
+  "frames": {
+    "warmup": 10,
+    "measured": 60
+  },
+  "workloads": [
+    {
+      "id": "release_scoreboard_draw_1k_static",
+      "drawsPerFrame": 1000,
+      "stateMode": "unchanged",
+      "referenceSha256": "3ad4a2cb7d62247dcdad64192fcf31778a64e12dbea29b15df83f6d00a286c1a"
+    },
+    {
+      "id": "release_scoreboard_draw_1k_state_change",
+      "drawsPerFrame": 1000,
+      "stateMode": "pipeline-and-bind-group-per-draw",
+      "referenceSha256": "79265139dba28cee2e8f453a30f497582751c93e346b4e3f3d0237d3d636fe90"
+    },
+    {
+      "id": "release_scoreboard_draw_5k_static",
+      "drawsPerFrame": 5000,
+      "stateMode": "unchanged",
+      "referenceSha256": "2c9da70fd7ab3a0e8f2110820b85eaef2bc330b8bec319cb33507d7daf17c532"
+    },
+    {
+      "id": "release_scoreboard_draw_5k_state_change",
+      "drawsPerFrame": 5000,
+      "stateMode": "pipeline-and-bind-group-per-draw",
+      "referenceSha256": "e89e21e88f647f7005c442e253dca02e4136f9621f2e56703dff39b2e6772adb"
+    },
+    {
+      "id": "release_scoreboard_draw_10k_static",
+      "drawsPerFrame": 10000,
+      "stateMode": "unchanged",
+      "referenceSha256": "cff43fe4b35cee6c6690d5cfb74ae1853fa7e22e85f1974f425e66cc0519d83f"
+    },
+    {
+      "id": "release_scoreboard_draw_10k_state_change",
+      "drawsPerFrame": 10000,
+      "stateMode": "pipeline-and-bind-group-per-draw",
+      "referenceSha256": "055135cd6f19a54d71d7632f99d78bfb243564816159c24afe34174df1aae5b3"
+    }
+  ]
+}

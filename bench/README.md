@@ -224,6 +224,15 @@ exercises the changed mechanism. Keep its operators, independent full-output
 oracle and disabled CPU fallback. General-compute/render smoke and forced-Doe Chromium
 visuals cannot stand in for a native application speed result.
 
+## Release scoreboard
+
+The required Doe-versus-Dawn release rows (Qwen 3.5 2B decode and prefill,
+cold first token, draw-call overhead, a three.js scene) are listed in
+[`config/release-scoreboard.json`](../config/release-scoreboard.json) and run by
+`bench/runners/run_release_scoreboard.py`; `bench/gates/release_scoreboard_gate.py`
+blocks a backend's release claim while any row is unmeasured or not comparable.
+See the [scoreboard recipe](workloads/release-scoreboard/README.md).
+
 ## Available backend recipes
 
 Use the physical backend runner matching the host. It performs host preflight,

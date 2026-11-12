@@ -1864,6 +1864,486 @@
       "surface": "package",
       "temperature": "warm",
       "workload": "gemma1b"
+    },
+    {
+      "backend": "apple-metal",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.apple.metal.release-scoreboard.decode.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, Qwen 3.5 2B warm decode (64 greedy tokens, resident weights); output checked on both providers.",
+      "id": "apple-metal-release-scoreboard-decode",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_metal",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_metal",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_metal",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_metal",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-decode"
+    },
+    {
+      "backend": "apple-metal",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.apple.metal.release-scoreboard.prefill.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, Qwen 3.5 2B warm 2,018-token prefill; output checked on both providers.",
+      "id": "apple-metal-release-scoreboard-prefill",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_metal",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_metal",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_metal",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_metal",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-prefill"
+    },
+    {
+      "backend": "apple-metal",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.apple.metal.release-scoreboard.cold-first-token.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, cold process start to first token for Gemma 3 270M and Qwen 3.5 2B with API-boundary phases; output checked on both providers.",
+      "id": "apple-metal-release-scoreboard-cold-first-token",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_metal",
+      "mode": "cold",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_metal",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_metal",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_metal",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "cold",
+      "workload": "release-scoreboard-cold-first-token"
+    },
+    {
+      "backend": "apple-metal",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.apple.metal.release-scoreboard.draw-overhead.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, draw-call and encoding overhead, 1k/5k/10k draws with unchanged or changing state; output checked on both providers.",
+      "id": "apple-metal-release-scoreboard-draw-overhead",
+      "baselineExecutorId": "release_scoreboard_draw_doe_metal",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_draw_doe_metal",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_draw_dawn_metal",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_draw_dawn_metal",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-draw-overhead"
+    },
+    {
+      "backend": "apple-metal",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.apple.metal.release-scoreboard.three-scene.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, upstream three.js WebGPURenderer lit scene rendered headless; output checked on both providers.",
+      "id": "apple-metal-release-scoreboard-three-scene",
+      "baselineExecutorId": "release_scoreboard_three_doe_metal",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_three_doe_metal",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_three_dawn_metal",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_three_dawn_metal",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-three-scene"
+    },
+    {
+      "backend": "local-d3d12",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.local.d3d12.release-scoreboard.decode.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, Qwen 3.5 2B warm decode (64 greedy tokens, resident weights); output checked on both providers.",
+      "id": "local-d3d12-release-scoreboard-decode",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_d3d12",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_d3d12",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_d3d12",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_d3d12",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-decode"
+    },
+    {
+      "backend": "local-d3d12",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.local.d3d12.release-scoreboard.prefill.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, Qwen 3.5 2B warm 2,018-token prefill; output checked on both providers.",
+      "id": "local-d3d12-release-scoreboard-prefill",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_d3d12",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_d3d12",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_d3d12",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_d3d12",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-prefill"
+    },
+    {
+      "backend": "local-d3d12",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.local.d3d12.release-scoreboard.cold-first-token.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, cold process start to first token for Gemma 3 270M and Qwen 3.5 2B with API-boundary phases; output checked on both providers.",
+      "id": "local-d3d12-release-scoreboard-cold-first-token",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_d3d12",
+      "mode": "cold",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_d3d12",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_d3d12",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_d3d12",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "cold",
+      "workload": "release-scoreboard-cold-first-token"
+    },
+    {
+      "backend": "local-d3d12",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.local.d3d12.release-scoreboard.draw-overhead.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, draw-call and encoding overhead, 1k/5k/10k draws with unchanged or changing state; output checked on both providers.",
+      "id": "local-d3d12-release-scoreboard-draw-overhead",
+      "baselineExecutorId": "release_scoreboard_draw_doe_d3d12",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_draw_doe_d3d12",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_draw_dawn_d3d12",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_draw_dawn_d3d12",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-draw-overhead"
+    },
+    {
+      "backend": "local-d3d12",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.local.d3d12.release-scoreboard.three-scene.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, upstream three.js WebGPURenderer lit scene rendered headless; output checked on both providers.",
+      "id": "local-d3d12-release-scoreboard-three-scene",
+      "baselineExecutorId": "release_scoreboard_three_doe_d3d12",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_three_doe_d3d12",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_three_dawn_d3d12",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_three_dawn_d3d12",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-three-scene"
+    },
+    {
+      "backend": "amd-vulkan",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard.decode.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, Qwen 3.5 2B warm decode (64 greedy tokens, resident weights); output checked on both providers.",
+      "id": "amd-vulkan-release-scoreboard-decode",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_vulkan",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_vulkan",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_vulkan",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_vulkan",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-decode"
+    },
+    {
+      "backend": "amd-vulkan",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard.prefill.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, Qwen 3.5 2B warm 2,018-token prefill; output checked on both providers.",
+      "id": "amd-vulkan-release-scoreboard-prefill",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_vulkan",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_vulkan",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_vulkan",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_vulkan",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-prefill"
+    },
+    {
+      "backend": "amd-vulkan",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard.cold-first-token.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, cold process start to first token for Gemma 3 270M and Qwen 3.5 2B with API-boundary phases; output checked on both providers.",
+      "id": "amd-vulkan-release-scoreboard-cold-first-token",
+      "baselineExecutorId": "release_scoreboard_doppler_doe_vulkan",
+      "mode": "cold",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_doppler_doe_vulkan",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_doppler_dawn_vulkan",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_doppler_dawn_vulkan",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "cold",
+      "workload": "release-scoreboard-cold-first-token"
+    },
+    {
+      "backend": "amd-vulkan",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard.draw-overhead.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, draw-call and encoding overhead, 1k/5k/10k draws with unchanged or changing state; output checked on both providers.",
+      "id": "amd-vulkan-release-scoreboard-draw-overhead",
+      "baselineExecutorId": "release_scoreboard_draw_doe_vulkan",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_draw_doe_vulkan",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_draw_dawn_vulkan",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_draw_dawn_vulkan",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-draw-overhead"
+    },
+    {
+      "backend": "amd-vulkan",
+      "benchmarkClass": "release-scoreboard",
+      "boundary": "package_surface",
+      "comparisonView": "doe_vs_dawn_node_webgpu_package",
+      "configPath": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard.three-scene.json",
+      "description": "Release scoreboard: doe-gpu vs the webgpu npm package (Dawn) in the same Node harness, upstream three.js WebGPURenderer lit scene rendered headless; output checked on both providers.",
+      "id": "amd-vulkan-release-scoreboard-three-scene",
+      "baselineExecutorId": "release_scoreboard_three_doe_vulkan",
+      "mode": "warm",
+      "packageRuntime": "node",
+      "products": {
+        "baseline": {
+          "executorId": "release_scoreboard_three_doe_vulkan",
+          "product": "doe"
+        },
+        "comparison": {
+          "executorId": "release_scoreboard_three_dawn_vulkan",
+          "product": "node_webgpu_package"
+        }
+      },
+      "providerSet": "package_node_providers",
+      "providers": [
+        "doe",
+        "node-webgpu"
+      ],
+      "comparisonExecutorId": "release_scoreboard_three_dawn_vulkan",
+      "runtimeHost": "node",
+      "surface": "package",
+      "temperature": "warm",
+      "workload": "release-scoreboard-three-scene"
     }
   ],
   "schemaVersion": 4

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "ownership": "standalone",
+  "description": "Release scoreboard rows: Doe (doe-gpu) versus Dawn (webgpu npm package) in the same Node harness. Every row is required for a release performance claim; see config/release-scoreboard.json.",
+  "workloads": [
+    {
+      "id": "release_scoreboard_qwen35_2b_decode64_warm",
+      "name": "Qwen 3.5 2B warm decode, 64 tokens",
+      "description": "Resident-weight decode tokens/s for qwen-3-5-2b-q4k-ehaf16 after one identical warmup generation: 64 greedy tokens after a 17-token prompt. Timing is ms per decoded token over the first-to-last token window.",
+      "domain": "inference",
+      "comparabilityNotes": "Same Node harness, Doppler source, tracked model manifest and verified shards, prompt, greedy sampling and stopping on both providers; the provider module is the only intended difference. Output check: generated token ids equal across providers (comparator result-output equality) and equal to the backend's recorded reference (executor). The WGSL module and pipeline set must match across providers (shader receipt).",
+      "commandsPath": "bench/workloads/release-scoreboard/doppler-generation.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_qwen35_2b_prefill2k_warm",
+      "name": "Qwen 3.5 2B warm prefill, 2,018-token prompt",
+      "description": "Warm long-prompt prefill for qwen-3-5-2b-q4k-ehaf16: generate call to first token for a 2,018-token prompt after one identical warmup prefill. Output check is the first generated token.",
+      "domain": "inference",
+      "comparabilityNotes": "Same Node harness, Doppler source, tracked model manifest and verified shards, prompt, greedy sampling and stopping on both providers; the provider module is the only intended difference. Output check: generated token ids equal across providers (comparator result-output equality) and equal to the backend's recorded reference (executor). The WGSL module and pipeline set must match across providers (shader receipt).",
+      "commandsPath": "bench/workloads/release-scoreboard/doppler-generation.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_gemma3_270m_cold_first_token",
+      "name": "Gemma 3 270M cold first token",
+      "description": "Fresh process start through model load, weight upload, shader module and pipeline creation and the first generated token for gemma-3-270m-it-q4k-ehf16-af32, with per-phase attribution at the WebGPU API boundary.",
+      "domain": "inference",
+      "comparabilityNotes": "Same Node harness, Doppler source, tracked model manifest and verified shards, prompt, greedy sampling and stopping on both providers; the provider module is the only intended difference. Output check: generated token ids equal across providers (comparator result-output equality) and equal to the backend's recorded reference (executor). The WGSL module and pipeline set must match across providers (shader receipt). Driver shader caches and the OS file cache are uncontrolled and identical across providers; no persistent pipeline cache is enabled.",
+      "commandsPath": "bench/workloads/release-scoreboard/doppler-generation.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_qwen35_2b_cold_first_token",
+      "name": "Qwen 3.5 2B cold first token",
+      "description": "Fresh process start through model load, weight upload, shader module and pipeline creation and the first generated token for qwen-3-5-2b-q4k-ehaf16, with per-phase attribution at the WebGPU API boundary.",
+      "domain": "inference",
+      "comparabilityNotes": "Same Node harness, Doppler source, tracked model manifest and verified shards, prompt, greedy sampling and stopping on both providers; the provider module is the only intended difference. Output check: generated token ids equal across providers (comparator result-output equality) and equal to the backend's recorded reference (executor). The WGSL module and pipeline set must match across providers (shader receipt). Driver shader caches and the OS file cache are uncontrolled and identical across providers; no persistent pipeline cache is enabled.",
+      "commandsPath": "bench/workloads/release-scoreboard/doppler-generation.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_draw_1k_static",
+      "name": "Draw overhead 1k draws, unchanged state",
+      "description": "1000 pixel-aligned quad draws per frame into a 512x512 target with unchanged state; frame time p50/p95 from encoder creation through queue completion.",
+      "domain": "graphics-overhead",
+      "comparabilityNotes": "Same harness, WGSL, pipelines, bind groups and draw sequence on both providers. Output check: the final frame equals an independent CPU rasterization and its recorded digest on each provider, and the frame digests are equal across providers.",
+      "commandsPath": "bench/workloads/release-scoreboard/draw-overhead.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_draw_1k_state_change",
+      "name": "Draw overhead 1k draws, pipeline and bind group change per draw",
+      "description": "1000 pixel-aligned quad draws per frame into a 512x512 target with pipeline and bind group change per draw; frame time p50/p95 from encoder creation through queue completion.",
+      "domain": "graphics-overhead",
+      "comparabilityNotes": "Same harness, WGSL, pipelines, bind groups and draw sequence on both providers. Output check: the final frame equals an independent CPU rasterization and its recorded digest on each provider, and the frame digests are equal across providers.",
+      "commandsPath": "bench/workloads/release-scoreboard/draw-overhead.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_draw_5k_static",
+      "name": "Draw overhead 5k draws, unchanged state",
+      "description": "5000 pixel-aligned quad draws per frame into a 512x512 target with unchanged state; frame time p50/p95 from encoder creation through queue completion.",
+      "domain": "graphics-overhead",
+      "comparabilityNotes": "Same harness, WGSL, pipelines, bind groups and draw sequence on both providers. Output check: the final frame equals an independent CPU rasterization and its recorded digest on each provider, and the frame digests are equal across providers.",
+      "commandsPath": "bench/workloads/release-scoreboard/draw-overhead.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_draw_5k_state_change",
+      "name": "Draw overhead 5k draws, pipeline and bind group change per draw",
+      "description": "5000 pixel-aligned quad draws per frame into a 512x512 target with pipeline and bind group change per draw; frame time p50/p95 from encoder creation through queue completion.",
+      "domain": "graphics-overhead",
+      "comparabilityNotes": "Same harness, WGSL, pipelines, bind groups and draw sequence on both providers. Output check: the final frame equals an independent CPU rasterization and its recorded digest on each provider, and the frame digests are equal across providers.",
+      "commandsPath": "bench/workloads/release-scoreboard/draw-overhead.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_draw_10k_static",
+      "name": "Draw overhead 10k draws, unchanged state",
+      "description": "10000 pixel-aligned quad draws per frame into a 512x512 target with unchanged state; frame time p50/p95 from encoder creation through queue completion.",
+      "domain": "graphics-overhead",
+      "comparabilityNotes": "Same harness, WGSL, pipelines, bind groups and draw sequence on both providers. Output check: the final frame equals an independent CPU rasterization and its recorded digest on each provider, and the frame digests are equal across providers.",
+      "commandsPath": "bench/workloads/release-scoreboard/draw-overhead.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_draw_10k_state_change",
+      "name": "Draw overhead 10k draws, pipeline and bind group change per draw",
+      "description": "10000 pixel-aligned quad draws per frame into a 512x512 target with pipeline and bind group change per draw; frame time p50/p95 from encoder creation through queue completion.",
+      "domain": "graphics-overhead",
+      "comparabilityNotes": "Same harness, WGSL, pipelines, bind groups and draw sequence on both providers. Output check: the final frame equals an independent CPU rasterization and its recorded digest on each provider, and the frame digests are equal across providers.",
+      "commandsPath": "bench/workloads/release-scoreboard/draw-overhead.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    },
+    {
+      "id": "release_scoreboard_three_lit_scene_48_objects",
+      "name": "three.js lit scene, 48 objects",
+      "description": "Upstream three.js WebGPURenderer (pinned npm) rendering a fixed lit 48-object scene headless into a 960x540 RenderTarget; frame time p50/p95 from renderer.render() through queue completion.",
+      "domain": "graphics-application",
+      "comparabilityNotes": "Same three.js package, scene, camera and frame-indexed animation on both providers; the generated WGSL and pipeline set must match. Output check: each provider's final frame is compared with the backend's recorded reference frame under a declared tolerance (exact digests are recorded; Doe and Dawn differ by 1 LSB in 1 pixel on Apple M3).",
+      "commandsPath": "bench/workloads/release-scoreboard/three-scene.scenario.json",
+      "api": "webgpu",
+      "extraArgs": [],
+      "dawnFilter": "",
+      "comparable": true,
+      "benchmarkClass": "comparable",
+      "claimEligible": false,
+      "default": true,
+      "cohorts": [
+        "release-scoreboard"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "scoreboardVersion": "2026-11-12-release-scoreboard-v1",
+  "description": "Required Doe-versus-Dawn release scoreboard. A release performance claim for a backend requires every row below to be measured on that backend with every workload comparable (output check passed on both providers, equal shaders and work, operation timing). A missing, failed, rejected or unmeasured row blocks the claim; it is never treated as a pass.",
+  "workloadsPath": "bench/workloads/workloads.release-scoreboard.json",
+  "baselineProduct": "doe",
+  "comparisonProduct": "dawn",
+  "rows": [
+    {
+      "rowId": "qwen35-2b-decode",
+      "title": "Qwen 3.5 2B decode tokens/s (warm, resident weights)",
+      "metric": "ms per decoded token over 64 greedy tokens; tokens/s is reported beside it",
+      "outputCheck": "generated token ids equal across providers and equal to the backend's recorded reference",
+      "workloadIds": [
+        "release_scoreboard_qwen35_2b_decode64_warm"
+      ],
+      "configSuffix": "decode"
+    },
+    {
+      "rowId": "qwen35-2b-prefill-2k",
+      "title": "Qwen 3.5 2B long-prompt prefill (2,018 tokens, warm)",
+      "metric": "generate call to first token; prompt tokens/s is reported beside it",
+      "outputCheck": "first generated token equal across providers and equal to the backend's recorded reference",
+      "workloadIds": [
+        "release_scoreboard_qwen35_2b_prefill2k_warm"
+      ],
+      "configSuffix": "prefill"
+    },
+    {
+      "rowId": "cold-first-token",
+      "title": "Cold time to first token, Gemma 3 270M and Qwen 3.5 2B",
+      "metric": "process start to first generated token, with API-boundary phases: host loading, upload, shader module creation, pipeline creation (translation plus native compilation), first execution",
+      "outputCheck": "first generated token equal across providers and equal to the backend's recorded reference",
+      "workloadIds": [
+        "release_scoreboard_gemma3_270m_cold_first_token",
+        "release_scoreboard_qwen35_2b_cold_first_token"
+      ],
+      "configSuffix": "cold-first-token"
+    },
+    {
+      "rowId": "draw-call-overhead",
+      "title": "Draw-call and encoding overhead (1k/5k/10k draws, static and changing state)",
+      "metric": "frame time p50 (p95 reported), encoder creation through queue completion",
+      "outputCheck": "final frame equals an independent CPU rasterization and its recorded digest; digests equal across providers",
+      "workloadIds": [
+        "release_scoreboard_draw_1k_static",
+        "release_scoreboard_draw_1k_state_change",
+        "release_scoreboard_draw_5k_static",
+        "release_scoreboard_draw_5k_state_change",
+        "release_scoreboard_draw_10k_static",
+        "release_scoreboard_draw_10k_state_change"
+      ],
+      "configSuffix": "draw-overhead"
+    },
+    {
+      "rowId": "three-js-scene",
+      "title": "three.js WebGPURenderer lit scene, headless Node",
+      "metric": "frame time p50 (p95 reported), renderer.render() through queue completion",
+      "outputCheck": "each provider's final frame within the declared tolerance of the backend's recorded reference frame (exact digests recorded)",
+      "workloadIds": [
+        "release_scoreboard_three_lit_scene_48_objects"
+      ],
+      "configSuffix": "three-scene"
+    }
+  ],
+  "backends": [
+    {
+      "backend": "metal",
+      "hostClass": "macOS / Apple Metal",
+      "configPrefix": "bench/native-compare/compare.config.apple.metal.release-scoreboard."
+    },
+    {
+      "backend": "d3d12",
+      "hostClass": "Windows / D3D12",
+      "configPrefix": "bench/native-compare/compare.config.local.d3d12.release-scoreboard."
+    },
+    {
+      "backend": "vulkan",
+      "hostClass": "Linux / Vulkan",
+      "configPrefix": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard."
+    }
+  ]
+}

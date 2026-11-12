@@ -674,6 +674,28 @@ _REGISTRY: dict[str, ExecutorSpec] = {
 }
 
 
+# Release scoreboard: one Node harness per row family, run once per provider
+# with the backend enforced on the adapter (see bench/executors/release-scoreboard).
+_RELEASE_SCOREBOARD_SCRIPTS = {
+    "doppler": "bench/executors/release-scoreboard/doppler-generation.js",
+    "draw": "bench/executors/release-scoreboard/draw-overhead.js",
+    "three": "bench/executors/release-scoreboard/three-scene.js",
+}
+for _lane, _script in _RELEASE_SCOREBOARD_SCRIPTS.items():
+    for _provider in ("doe", "dawn"):
+        for _backend in ("metal", "vulkan", "d3d12"):
+            _executor_id = f"release_scoreboard_{_lane}_{_provider}_{_backend}"
+            _REGISTRY[_executor_id] = ExecutorSpec(
+                executor_id=_executor_id,
+                command_template=(
+                    f"node {_script} --provider {_provider} --backend {_backend} "
+                    "--scenario {commands} --trace-jsonl {trace_jsonl} "
+                    "--trace-meta {trace_meta} --workload {workload}"
+                ),
+                execution_boundary="commands",
+            )
+
+
 def resolve_executor_command_template(executor_id: str) -> str:
     normalized = executor_id.strip()
     if not normalized:

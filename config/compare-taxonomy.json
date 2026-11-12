@@ -224,7 +224,8 @@
       "theoreticalConcreteTargetIds": [
         "gemma64",
         "gemma1b",
-        "gemma270m-literal"
+        "gemma270m-literal",
+        "release-scoreboard-cold-first-token"
       ]
     },
     {
@@ -244,7 +245,11 @@
         "gemma64",
         "gemma1b",
         "gemma270m-literal",
-        "package-developer"
+        "package-developer",
+        "release-scoreboard-decode",
+        "release-scoreboard-prefill",
+        "release-scoreboard-draw-overhead",
+        "release-scoreboard-three-scene"
       ]
     },
     {
@@ -263,7 +268,8 @@
       "theoreticalConcreteTargetIds": [
         "gemma64",
         "gemma1b",
-        "gemma270m-literal"
+        "gemma270m-literal",
+        "release-scoreboard-cold-first-token"
       ]
     },
     {
@@ -283,7 +289,11 @@
         "gemma64",
         "gemma1b",
         "gemma270m-literal",
-        "package-developer"
+        "package-developer",
+        "release-scoreboard-decode",
+        "release-scoreboard-prefill",
+        "release-scoreboard-draw-overhead",
+        "release-scoreboard-three-scene"
       ]
     },
     {
@@ -724,7 +734,8 @@
       "platformLane": "apple-metal",
       "targetIds": [
         "gemma64",
-        "gemma1b"
+        "gemma1b",
+        "release-scoreboard-cold-first-token"
       ]
     },
     {
@@ -732,7 +743,8 @@
       "platformLane": "amd-vulkan",
       "targetIds": [
         "gemma64",
-        "gemma1b"
+        "gemma1b",
+        "release-scoreboard-cold-first-token"
       ]
     },
     {
@@ -740,7 +752,8 @@
       "platformLane": "local-d3d12",
       "targetIds": [
         "gemma64",
-        "gemma1b"
+        "gemma1b",
+        "release-scoreboard-cold-first-token"
       ]
     },
     {
@@ -749,7 +762,11 @@
       "targetIds": [
         "gemma64",
         "gemma1b",
-        "package-developer"
+        "package-developer",
+        "release-scoreboard-decode",
+        "release-scoreboard-prefill",
+        "release-scoreboard-draw-overhead",
+        "release-scoreboard-three-scene"
       ]
     },
     {
@@ -757,7 +774,11 @@
       "platformLane": "amd-vulkan",
       "targetIds": [
         "gemma64",
-        "gemma1b"
+        "gemma1b",
+        "release-scoreboard-decode",
+        "release-scoreboard-prefill",
+        "release-scoreboard-draw-overhead",
+        "release-scoreboard-three-scene"
       ]
     },
     {
@@ -765,7 +786,11 @@
       "platformLane": "local-d3d12",
       "targetIds": [
         "gemma64",
-        "gemma1b"
+        "gemma1b",
+        "release-scoreboard-decode",
+        "release-scoreboard-prefill",
+        "release-scoreboard-draw-overhead",
+        "release-scoreboard-three-scene"
       ]
     },
     {

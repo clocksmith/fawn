@@ -1,0 +1,212 @@
+{
+  "kind": "release-scoreboard-doppler-generation",
+  "schemaVersion": 1,
+  "description": "Unchanged Doppler text generation through doppler-gpu/compat on one WebGPU provider per process. Model files, Doppler source, prompt, greedy sampling and stopping are frozen; the provider module is the only intended difference.",
+  "doppler": {
+    "root": "../doppler",
+    "requireCleanTree": true
+  },
+  "workloads": [
+    {
+      "id": "release_scoreboard_qwen35_2b_decode64_warm",
+      "mode": "decode-warm",
+      "model": {
+        "id": "qwen-3-5-2b-q4k-ehaf16",
+        "manifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d"
+      },
+      "prompt": {
+        "kind": "text",
+        "text": "Write a short story about a lighthouse keeper who finds a message in a bottle."
+      },
+      "useChatTemplate": false,
+      "maxTokens": 64,
+      "warmupGenerations": 1,
+      "references": {
+        "metal": {
+          "tokenIds": [
+            271,
+            248068,
+            271,
+            248069,
+            271,
+            760,
+            11679,
+            22186,
+            383,
+            279,
+            9249,
+            314,
+            279,
+            348,
+            50,
+            44791,
+            9,
+            557,
+            2590,
+            264,
+            8545,
+            11,
+            1363,
+            6239,
+            36781,
+            11,
+            694,
+            364,
+            82697,
+            11,
+            424,
+            6273,
+            1040,
+            264,
+            2018,
+            6574,
+            13,
+            1216,
+            995,
+            978,
+            279,
+            324,
+            55965,
+            51624,
+            364,
+            34227,
+            1578,
+            11,
+            264,
+            3364,
+            421,
+            2483,
+            777,
+            1056,
+            1066,
+            264,
+            23271,
+            1375,
+            321,
+            264,
+            5365,
+            8396,
+            314,
+            279
+          ],
+          "promptTokenCount": 17,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "apple-m3",
+            "shaderSourceReceiptsHash": "fdfd50b5b81a1a0807e9c2ff8287f5d75fb6f15b594e8f916e9c18b40a176e92",
+            "dopplerCommit": "3b94a4ff52d378835123fe81241ed57946c384b6",
+            "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
+            "engine": null
+          }
+        }
+      }
+    },
+    {
+      "id": "release_scoreboard_qwen35_2b_prefill2k_warm",
+      "mode": "prefill-warm",
+      "model": {
+        "id": "qwen-3-5-2b-q4k-ehaf16",
+        "manifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d"
+      },
+      "prompt": {
+        "kind": "repeat",
+        "count": 39,
+        "separator": "\n",
+        "text": "Section {n}. The river delta formed over thousands of years as sediment from the mountains settled near the coast, creating wetlands, sandbars and channels that shift with each flood season; farmers, fishers and birds all depend on this changing landscape."
+      },
+      "useChatTemplate": false,
+      "maxTokens": 1,
+      "warmupGenerations": 1,
+      "references": {
+        "metal": {
+          "tokenIds": [
+            198
+          ],
+          "promptTokenCount": 2018,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "apple-m3",
+            "shaderSourceReceiptsHash": "52ae98b681f97a169e5ba0eda2a1dab3d47ba77255c3a9358e2f0db9ecc4c9f6",
+            "dopplerCommit": "3b94a4ff52d378835123fe81241ed57946c384b6",
+            "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
+            "engine": null
+          }
+        }
+      }
+    },
+    {
+      "id": "release_scoreboard_gemma3_270m_cold_first_token",
+      "mode": "cold-first-token",
+      "model": {
+        "id": "gemma-3-270m-it-q4k-ehf16-af32",
+        "manifestSha256": "87d6131e29534406451562592847007a967cc970e3f9fcd3e4f1556c0b46eece"
+      },
+      "prompt": {
+        "kind": "text",
+        "text": "The capital of France is"
+      },
+      "useChatTemplate": false,
+      "maxTokens": 1,
+      "warmupGenerations": 0,
+      "references": {
+        "metal": {
+          "tokenIds": [
+            9079
+          ],
+          "promptTokenCount": 6,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "apple-m3",
+            "shaderSourceReceiptsHash": "b6e81f839eca3852d5f7fe501741188a66a324a7d17db536127cc9f13643079c",
+            "dopplerCommit": "3b94a4ff52d378835123fe81241ed57946c384b6",
+            "modelManifestSha256": "87d6131e29534406451562592847007a967cc970e3f9fcd3e4f1556c0b46eece",
+            "engine": null
+          }
+        }
+      }
+    },
+    {
+      "id": "release_scoreboard_qwen35_2b_cold_first_token",
+      "mode": "cold-first-token",
+      "model": {
+        "id": "qwen-3-5-2b-q4k-ehaf16",
+        "manifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d"
+      },
+      "prompt": {
+        "kind": "text",
+        "text": "The capital of France is"
+      },
+      "useChatTemplate": false,
+      "maxTokens": 1,
+      "warmupGenerations": 0,
+      "references": {
+        "metal": {
+          "tokenIds": [
+            11751
+          ],
+          "promptTokenCount": 5,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "apple-m3",
+            "shaderSourceReceiptsHash": "7ea8792c7e7fe4a85c13ae3e7805641fe520e4dc63069232bbf83dbdc1c351f5",
+            "dopplerCommit": "3b94a4ff52d378835123fe81241ed57946c384b6",
+            "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
+            "engine": null
+          }
+        }
+      }
+    }
+  ]
+}

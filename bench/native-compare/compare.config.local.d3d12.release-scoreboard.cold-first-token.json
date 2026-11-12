@@ -1,0 +1,46 @@
+{
+  "workloads": "bench/workloads/workloads.release-scoreboard.json",
+  "baseline": {
+    "name": "doe_gpu_node_d3d12",
+    "executorId": "release_scoreboard_doppler_doe_d3d12"
+  },
+  "comparison": {
+    "name": "webgpu_npm_dawn_node_d3d12",
+    "executorId": "release_scoreboard_doppler_dawn_d3d12"
+  },
+  "run": {
+    "iterations": 10,
+    "warmup": 1,
+    "out": "bench/out/local-d3d12/release-scoreboard.cold-first-token.compare.json",
+    "workspace": "bench/out/local-d3d12/release-scoreboard.cold-first-token.workspace",
+    "workloadFilter": "",
+    "emitShell": false
+  },
+  "comparability": {
+    "mode": "strict",
+    "requireTimingClass": "operation",
+    "allowBaselineNoExecution": false
+  },
+  "claimability": {
+    "mode": "local",
+    "minTimedSamples": 9
+  },
+  "resource": {
+    "probe": "none",
+    "sampleMs": 100,
+    "sampleTargetCount": 0
+  },
+  "selector": {
+    "cohorts": [],
+    "benchmarkClass": [
+      "comparable"
+    ],
+    "claimEligibleOnly": false,
+    "domains": [],
+    "ids": [
+      "release_scoreboard_gemma3_270m_cold_first_token",
+      "release_scoreboard_qwen35_2b_cold_first_token"
+    ],
+    "excludeIds": []
+  }
+}

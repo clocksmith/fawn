@@ -11,6 +11,14 @@ from native_compare_modules.reporting import NS_PER_MS, safe_float, safe_int
 
 RENDER_ENCODE_TIMING_DOMAINS = {"render", "p0-render"}
 HOST_KERNEL_PREWARM_TIMING_SUFFIX = "host-kernel-prewarm"
+# Release-scoreboard executors time one declared application interval inside
+# the process (bench/executors/release-scoreboard); each names its boundary.
+RELEASE_SCOREBOARD_TIMING_SOURCES = frozenset({
+    "release-scoreboard-decode-ms-per-token",
+    "release-scoreboard-prefill-first-token-ms",
+    "release-scoreboard-cold-process-first-token-ms",
+    "release-scoreboard-frame-p50-ms",
+})
 
 def _is_render_encode_plausible(
     *,
@@ -226,7 +234,7 @@ def classify_timing_source(source: str) -> str:
         "doe-trace-window",
         "browser-ort-timed-mean-ms",
         "tjs-ort-generation-ms",
-    ):
+    ) or canonical in RELEASE_SCOREBOARD_TIMING_SOURCES:
         return "operation"
     if canonical in ("wall-time", "tjs-ort-process-wall-ms"):
         return "process-wall"

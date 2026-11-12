@@ -66,8 +66,14 @@ def collect_result_output_signatures(
         result_summary = trace_meta.get("resultSummary", {})
         if not isinstance(result_summary, dict):
             continue
-        digest = str(result_summary.get("generatedTextSha256", "")).strip().lower()
-        length = safe_int(result_summary.get("generatedTextLength"), default=-1)
+        # Generated text digests, or a declared output digest (for example the
+        # release scoreboard's token-id sequences and rendered frames).
+        if "outputSha256" in result_summary:
+            digest = str(result_summary.get("outputSha256", "")).strip().lower()
+            length = safe_int(result_summary.get("outputByteLength"), default=-1)
+        else:
+            digest = str(result_summary.get("generatedTextSha256", "")).strip().lower()
+            length = safe_int(result_summary.get("generatedTextLength"), default=-1)
         if len(digest) == 64 and length >= 0:
             signatures.add((digest, length))
     return signatures
