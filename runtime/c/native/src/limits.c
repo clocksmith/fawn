@@ -88,6 +88,24 @@ enum { VK_STORAGE_BUFFERS_PER_STAGE = 10, VK_STORAGE_TEXTURES_PER_STAGE = 8 };
 _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + VK_STORAGE_BUFFERS_PER_STAGE +
     VK_STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
     "pipeline binding storage must hold the Vulkan per-stage limits for two stages");
+/* Metal gives each function one DOE_MTL_BUFFER_SLOTS-entry buffer argument
+ * table. One stage's uniform and storage buffers occupy dense compiler slots
+ * from 0, immediate data the compiler's slot 29 and the runtime-size table its
+ * slot 30; a vertex stage also places every vertex stream with attributes in a
+ * free slot. All of these can be live in one vertex stage, so the storage
+ * buffers per stage are what remains: 31 - 12 uniform - 8 vertex - 2 = 9.
+ * Fragment and compute stages have more room; the limit is per stage. */
+enum {
+    METAL_VERTEX_BUFFERS = 8,
+    METAL_STORAGE_BUFFERS_PER_STAGE = DOE_MTL_BUFFER_SLOTS - UNIFORM_BUFFERS_PER_STAGE - METAL_VERTEX_BUFFERS - 2
+};
+_Static_assert(DOE_COMPILER_METAL_IMMEDIATE_SLOT == DOE_MTL_BUFFER_SLOTS - 2 &&
+    DOE_COMPILER_METAL_SIZES_SLOT == DOE_MTL_BUFFER_SLOTS - 1,
+    "the two reserved Metal buffer slots are the last two table entries");
+_Static_assert((int)METAL_VERTEX_BUFFERS <= (int)DOE_RESOURCE_MAX_VERTEX_BUFFERS, "Metal vertex buffers fit frontend storage");
+_Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + METAL_STORAGE_BUFFERS_PER_STAGE +
+    STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
+    "pipeline binding storage must hold the Metal per-stage limits for two stages");
 /* WebGPU's largest render-target byte cost is 16 (rgba32 formats). Vulkan has
  * no per-sample color byte limit, so every combination of the admitted slots
  * fits: the slot count is the only bound. */
@@ -172,18 +190,18 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
     *out = (WGPULimits){.maxBufferSize=caps->max_buffer_length,
         .maxBindGroups=4,.maxBindGroupsPlusVertexBuffers=GROUP_VERTEX_BUDGET,
         .maxBindingsPerBindGroup=DOE_RESOURCE_MAX_BINDING_NUMBER,
-        /* One shared Metal buffer namespace: twelve uniforms, eight storage
-         * buffers, eight vertex slots and the compiler sizes buffer fit in 31.
-         * Group/vertex counts independently bound every admitted combination. */
+        /* One shared Metal buffer namespace per stage; see
+         * METAL_STORAGE_BUFFERS_PER_STAGE. Group/vertex counts independently
+         * bound every admitted combination. */
         .maxDynamicUniformBuffersPerPipelineLayout=DYNAMIC_UNIFORM,.maxDynamicStorageBuffersPerPipelineLayout=DYNAMIC_STORAGE,
-        .maxUniformBuffersPerShaderStage=UNIFORM_BUFFERS_PER_STAGE,.maxStorageBuffersPerShaderStage=STORAGE_BUFFERS_PER_STAGE,
+        .maxUniformBuffersPerShaderStage=UNIFORM_BUFFERS_PER_STAGE,.maxStorageBuffersPerShaderStage=METAL_STORAGE_BUFFERS_PER_STAGE,
         .maxSampledTexturesPerShaderStage=SAMPLED_PER_STAGE,.maxSamplersPerShaderStage=SAMPLERS_PER_STAGE,
         .maxStorageTexturesPerShaderStage=STORAGE_TEXTURES_PER_STAGE,
         .maxTextureDimension1D=caps->max_texture_1d,.maxTextureDimension2D=caps->max_texture_2d,
         .maxTextureDimension3D=caps->max_texture_3d,.maxTextureArrayLayers=caps->max_texture_layers,
         /* Conservative frontend graphics envelope; native creation still owns
          * real format/sample/pipeline support. These are not queried maxima. */
-        .maxVertexBuffers=8,.maxVertexAttributes=16,.maxVertexBufferArrayStride=2048,
+        .maxVertexBuffers=METAL_VERTEX_BUFFERS,.maxVertexAttributes=16,.maxVertexBufferArrayStride=2048,
         .maxInterStageShaderVariables=15,.maxColorAttachments=8,.maxColorAttachmentBytesPerSample=32,
         .maxUniformBufferBindingSize=binding_size < 65536 ? binding_size : 65536,
         .maxStorageBufferBindingSize=binding_size,
