@@ -222,7 +222,7 @@ int main(void) {
     assert(storage->references[0]==0u && storage->references[1]==1u && storage->references[2]==2u && storage->references[3]==0u);
     require_ok(compile(&capacities,workspace,required.size_bytes,workgroups,(DoeCompilerEntrySelectionV5){0},3u,&out,&result),&result);
     assert(result.published.workgroups==3u && result.published.entry_references==4u);
-    assert(storage->entries[0].workgroup_storage_bytes==8u && storage->entries[1].workgroup_storage_bytes==28u);
+    assert(storage->entries[0].workgroup_storage_bytes==16u && storage->entries[1].workgroup_storage_bytes==32u);
     assert(storage->entries[0].static_builtin_mask==20u && storage->entries[1].static_builtin_mask==20u);
     assert(storage->references[1]==0u && storage->references[3]==1u && instruction_count(storage,result.published.words,224u)==2u);
     require_ok(compile(&capacities,workspace,required.size_bytes,aliases,(DoeCompilerEntrySelectionV5){0},3u,&out,&result),&result);

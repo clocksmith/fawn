@@ -83,7 +83,7 @@ static void executable(doe_shader *artifact, doe_shader_target target, uint32_t 
     assert(doe_shader_borrow(artifact,&view) == DOE_SHADER_OK);
     assert(view.target == target && view.counts.entries == 1 && view.module.selected_entry == 0);
     assert(view.entries[0].stage == DOE_COMPILER_STAGE_COMPUTE && view.entries[0].workgroup_size[0] == width);
-    assert(view.entries[0].workgroup_storage_bytes == width * 4);
+    assert(view.entries[0].workgroup_storage_bytes == (width * 4 + 15) / 16 * 16); /* roundUp(16, size) */
     assert(!strcmp(view.names + view.entries[0].name.offset,"chosen"));
     assert(view.entries[0].resource_reference_count == 1);
     uint32_t resource = view.entry_references[view.entries[0].first_resource_reference];

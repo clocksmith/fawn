@@ -160,9 +160,11 @@ static bool publish_closure(Source *s, EntryRecord *entry, ClosureWork *work,
             }
         }
         if (c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
-        const TypeId type=c->workgroups[i].type;
-        const uint64_t size=type_size(c,type), alignment=type_alignment(c,type);
-        const uint64_t remainder=size%alignment, padding=remainder==0u?0u:alignment-remainder;
+        /* WebGPU compute pipeline creation: the sum of roundUp(16, SizeOf(T))
+         * over each statically used workgroup variable
+         * (https://gpuweb.github.io/gpuweb/#dom-gpudevice-createcomputepipeline). */
+        const uint64_t size=type_size(c,c->workgroups[i].type);
+        const uint64_t remainder=size%16u, padding=remainder==0u?0u:16u-remainder;
         if (size>UINT64_MAX-padding || entry->state.resolved.workgroup_storage_bytes>UINT64_MAX-(size+padding))
             return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,c->workgroups[i].name.offset,
                 "logical entry workgroup storage total overflows uint64");

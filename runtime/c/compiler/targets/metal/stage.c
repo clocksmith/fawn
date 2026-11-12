@@ -207,10 +207,12 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
             }
             invocations *= dimension;
         }
-        if (entry->state.resolved.workgroup_storage_bytes > 16u * 1024u) {
-            metal_error(e, "Metal baseline workgroup storage exceeds 16 KiB");
-            return false;
-        }
+        /* Workgroup storage has no target-fixed bound here. The admitted amount
+         * is the device's maxComputeWorkgroupStorageSize (MTLDevice
+         * maxThreadgroupMemoryLength unless the device requested less), which
+         * pipeline creation enforces against the shared spec-rule total.
+         * MSL packs threadgroup variables by alignment and rounds the total to
+         * 16 bytes, never more than that sum of roundUp(16, size). */
     }
     if (e->metadata != NULL) return true; /* Typed dense plan already validated every row. */
     for (uint32_t i = 0u; i < c->resource_count; ++i) {

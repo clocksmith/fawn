@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
         DoeCompilerTextResult result;
         assert(compile(target,module,"main",values,2u,storage,words,&result,false)==DOE_COMPILER_OK);
         assert(storage->entries[0].workgroup_size[0]==3u && storage->entries[0].workgroup_size[1]==1u);
-        assert(storage->entries[0].workgroup_storage_bytes==12u);
+        assert(storage->entries[0].workgroup_storage_bytes==16u); /* roundUp(16, 12) */
         assert(result.stages.resources.module.published.workgroups==1u);
         assert(storage->workgroups[0].size_bytes==12u);
         assert(storage->types[storage->workgroups[0].type_index].array_count==3u);
@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
             storage->text,result.published_text_bytes);
         values[0].value=7.0;
         assert(compile(target,module,"main",values,2u,storage,words,&result,false)==DOE_COMPILER_OK);
-        assert(storage->entries[0].workgroup_size[0]==7u && storage->entries[0].workgroup_storage_bytes==28u);
+        assert(storage->entries[0].workgroup_size[0]==7u && storage->entries[0].workgroup_storage_bytes==32u);
         assert(storage->workgroups[0].size_bytes==28u);
         values[0].value=3.0;
     }
@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
         assert(strcmp(storage->names+storage->entries[1].name.offset,"color")==0);
         assert(strcmp(storage->names+storage->entries[2].name.offset,"second")==0);
         assert(storage->entries[0].workgroup_size[0]==2u && storage->entries[2].workgroup_size[0]==3u);
-        assert(storage->entries[0].workgroup_storage_bytes==8u && storage->entries[2].workgroup_storage_bytes==12u);
+        assert(storage->entries[0].workgroup_storage_bytes==16u && storage->entries[2].workgroup_storage_bytes==16u);
         assert(storage->entries[1].workgroup_reference_count==0u && storage->entries[1].resource_reference_count==0u);
         assert(result.stages.resources.module.published.workgroups==2u);
         assert(storage->workgroups[0].size_bytes==8u && storage->workgroups[1].size_bytes==12u);

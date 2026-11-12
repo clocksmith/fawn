@@ -52,7 +52,7 @@ static void verify(const char *source, bool shared) {
         assert(result.published.entries == 2u);
         assert(entries[0].resource_reference_count == 1u && entries[1].resource_reference_count == 1u);
         assert(entries[1].workgroup_reference_count == 1u);
-        assert(entries[1].workgroup_storage_bytes == 4u);
+        assert(entries[1].workgroup_storage_bytes == 16u); /* roundUp(16, 4) */
         assert(entries[1].flags == DOE_COMPILER_ENTRY_WORKGROUP_INITIALIZATION);
         assert(references[entries[1].first_workgroup_reference] == 0u);
         assert(workgroups[0].size_bytes == 4u);

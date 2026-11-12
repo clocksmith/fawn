@@ -285,7 +285,36 @@ static void test_pointer_rejection(void) {
         release(f);
     }
 }
+/* Workgroup storage is a device limit that pipeline creation enforces, not a
+ * fixed Metal target cap: 32 KiB (Apple GPUs' maxThreadgroupMemoryLength) and
+ * more emit. The shared total follows WebGPU's sum of roundUp(16, SizeOf(T)):
+ * 4095 + 4097 words occupy 16384 + 16400 bytes, not 32768. */
+static void test_workgroup_storage_total(void) {
+    static const struct { const char *source; uint64_t bytes; } cases[] = {
+        {"var<workgroup> a:array<u32,4095>;var<workgroup> b:array<u32,4097>;"
+         "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
+         "@compute @workgroup_size(64) fn main(@builtin(local_invocation_index) lane:u32){"
+         "a[lane]=lane;b[lane]=lane;workgroupBarrier();output[lane]=a[63u-lane]+b[lane];}", 32784u},
+        {"var<workgroup> tile:array<u32,8192>;"
+         "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
+         "@compute @workgroup_size(64) fn main(@builtin(local_invocation_index) lane:u32){"
+         "tile[lane]=lane;workgroupBarrier();output[lane]=tile[8191u-lane];}", 32768u},
+        {"var<workgroup> tile:array<u32,12288>;"
+         "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
+         "@compute @workgroup_size(1) fn main(){tile[12287]=1u;workgroupBarrier();output[0]=tile[12287];}", 49152u},
+    };
+    for (size_t i = 0u; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        Fixture *f = prepare(cases[i].source);
+        assert(f->module->entry_count == 1u);
+        assert(f->module->entries[0].state.resolved.workgroup_storage_bytes == cases[i].bytes);
+        char *text = emit(f, NO_ID);
+        has(text, "threadgroup array<uint, ");
+        free(text);
+        release(f);
+    }
+}
 int main(int argc, char **argv) {
+    test_workgroup_storage_total();
     test_pointer_rejection();
     test_array_length(argc > 3 ? argv[3] : NULL);
     uint32_t slot = NO_ID;
