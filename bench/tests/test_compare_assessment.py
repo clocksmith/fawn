@@ -49,6 +49,11 @@ def _sample(
             "packageReadbackMode": "native-map-read-copy-unmap",
             "planId": "plan-alpha",
             "planHash": "hash-alpha",
+            "readbackCaptures": [{
+                "repeatIndex": 0, "stepIndex": 2, "stepId": "step-2-capture-read",
+                "bufferId": "capture_2_7", "byteLength": 4, "sha256": "a" * 64,
+                "decodedU32Le": 7, "semanticOpId": "final_sample_token",
+            }],
             "packageStepBreakdownNs": {
                 "submitCommandEncoderFinishTotalNs": encoder_finish_ns,
                 "submitAddonCommandReplayTotalNs": command_replay_ns,
@@ -186,21 +191,70 @@ class CompareAssessmentTests(unittest.TestCase):
                     self.assertIn("baseline_comparison_result_output_match",
                                   result["blockingFailedObligations"])
 
-    def test_timed_native_proof_requirement_leaves_package_and_compiler_paths_alone(self) -> None:
-        for backend in ("doe_node_webgpu", "doe_bun_package", ""):
+    def test_compiler_rows_need_no_gpu_output_verification(self) -> None:
+        left = _sample(backend="", command_replay_ns=0)
+        right = _sample(backend="", command_replay_ns=0)
+        for sample in (left, right):
+            sample["traceMeta"].pop("executionBackend")
+            sample["traceMeta"].pop("readbackCaptures")
+            sample["traceMeta"].update(runnerType="compilation", compiler="doe_wgsl")
+        result = self._output_proof_assessment(left, right, "webgpu")
+        self.assertTrue(result["comparable"], result["reasons"])
+        obligation = next(o for o in result["obligations"]
+                          if o["id"] == "baseline_comparison_result_output_match")
+        self.assertFalse(obligation["applicable"])
+
+    def _package_output_obligation(self, left: dict, right: dict) -> tuple[dict, dict]:
+        result = self._output_proof_assessment(left, right, "webgpu")
+        obligation = next(o for o in result["obligations"]
+                          if o["id"] == "baseline_comparison_result_output_match")
+        return result, obligation
+
+    def test_package_rows_with_nothing_verified_are_not_comparable(self) -> None:
+        # A plan without readback captures or declared oracles verifies no
+        # output, so equal timing shapes alone cannot make it comparable.
+        for backend in ("doe_node_webgpu", "doe_bun_package"):
             with self.subTest(backend=backend):
                 left = _sample(backend=backend, command_replay_ns=0)
                 right = _sample(backend=backend, command_replay_ns=0)
-                if not backend:
-                    for sample in (left, right):
-                        sample["traceMeta"].pop("executionBackend")
-                        sample["traceMeta"].update(runnerType="compilation",
-                                                   compiler="doe_wgsl")
-                result = self._output_proof_assessment(left, right, "webgpu")
-                self.assertTrue(result["comparable"], result["reasons"])
-                obligation = next(o for o in result["obligations"]
-                                  if o["id"] == "baseline_comparison_result_output_match")
-                self.assertFalse(obligation["applicable"])
+                for sample in (left, right):
+                    sample["traceMeta"].pop("readbackCaptures")
+                result, obligation = self._package_output_obligation(left, right)
+                self.assertFalse(result["comparable"])
+                self.assertTrue(obligation["applicable"])
+                self.assertFalse(obligation["passes"])
+                self.assertEqual(obligation["details"]["outputVerification"], "unverified")
+
+    def test_package_rows_verified_by_equal_readback_captures(self) -> None:
+        left = _sample(backend="doe_node_webgpu", command_replay_ns=0)
+        right = _sample(backend="node_webgpu_package", command_replay_ns=0)
+        result, obligation = self._package_output_obligation(left, right)
+        self.assertTrue(obligation["passes"], result["reasons"])
+        self.assertEqual(obligation["details"]["outputVerification"], "readback-capture-equality")
+
+    def test_package_rows_verified_by_same_execution_oracles_on_both_sides(self) -> None:
+        def oracle_sample(backend: str, matched: int) -> dict:
+            sample = _sample(backend=backend, command_replay_ns=0)
+            sample["traceMeta"].pop("readbackCaptures")
+            sample["traceMeta"].update(
+                outputOracleCount=1, outputOracleMatchedCount=matched,
+                outputOracleFailedCount=1 - matched,
+                outputOracleScope="same-execution-readback",
+            )
+            return sample
+
+        _, obligation = self._package_output_obligation(
+            oracle_sample("doe_node_webgpu", 1), oracle_sample("node_webgpu_package", 1))
+        self.assertTrue(obligation["passes"])
+        self.assertEqual(obligation["details"]["outputVerification"], "declared-output-oracles")
+        _, one_sided = self._package_output_obligation(
+            oracle_sample("doe_node_webgpu", 1), oracle_sample("node_webgpu_package", 0))
+        self.assertFalse(one_sided["passes"])
+        isolated = oracle_sample("node_webgpu_package", 1)
+        isolated["traceMeta"]["outputOracleScope"] = "isolated-preflight"
+        _, isolated_only = self._package_output_obligation(
+            oracle_sample("doe_node_webgpu", 1), isolated)
+        self.assertFalse(isolated_only["passes"])
 
     def test_submit_scope_does_not_double_count_rollup_and_children(self) -> None:
         from native_compare_modules.comparability import (

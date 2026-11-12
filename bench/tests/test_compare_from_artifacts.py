@@ -762,6 +762,10 @@ class TestCompareFromArtifacts(unittest.TestCase):
                 sample["command"] = ["node", "fixture.js"]
                 sample["traceMeta"]["executionBackend"] = backend
                 sample["traceMeta"]["shaderSourceReceiptsHash"] = "a" * 64
+                # Equal output captures keep the row output-verified.
+                sample["traceMeta"]["readbackCaptures"] = [
+                    {"stepIndex": 1, "byteLength": 4, "sha256": "b" * 64}
+                ]
         entry = compare_workload_from_artifacts(
             baseline=baseline,
             comparison=comparison,

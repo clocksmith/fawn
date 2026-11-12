@@ -356,6 +356,29 @@ def collect_readback_capture_signatures(samples: list[dict[str, Any]]) -> list[d
     ]
 
 
+def samples_pass_declared_output_oracles(samples: list[dict[str, Any]]) -> bool:
+    """Whether every sample checked all its declared output oracles and passed.
+
+    Only same-execution readback checks count: an isolated validation run
+    describes separate work and never verifies a timed sample's output.
+    """
+    if not samples:
+        return False
+    for sample in samples:
+        trace_meta = sample.get("traceMeta", {}) if isinstance(sample, dict) else {}
+        if not isinstance(trace_meta, dict):
+            return False
+        count = safe_int(trace_meta.get("outputOracleCount"), default=0)
+        if (
+            count <= 0
+            or trace_meta.get("outputOracleScope") != "same-execution-readback"
+            or safe_int(trace_meta.get("outputOracleMatchedCount"), default=-1) != count
+            or safe_int(trace_meta.get("outputOracleFailedCount"), default=-1) != 0
+        ):
+            return False
+    return True
+
+
 def collect_readback_counts(samples: list[dict[str, Any]]) -> set[int]:
     counts: set[int] = set()
     for sample in samples:

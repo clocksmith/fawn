@@ -30,12 +30,14 @@ from native_compare_modules.compare_assessment_helpers import (
     collect_execution_shapes,
     collect_native_runtime_providers,
     collect_result_output_signatures,
+    collect_readback_capture_signatures,
     collect_readback_counts,
     collect_resident_buffer_load_shapes,
     collect_shader_source_receipt_hashes,
     collect_trace_meta_optional_values,
     collect_trace_meta_values,
     collect_upload_ignore_first_violations,
+    samples_pass_declared_output_oracles,
     compare_execution_shapes,
     median_timing_wall_ratio,
     normalize_execution_shapes,
@@ -321,20 +323,47 @@ def compare_assessment(
     native_plan_output_match, native_plan_output_details = assess_plan_output_proof(
         left_measured_samples, right_measured_samples,
     ) if native_timed_output_applies else (False, {})
-    result_output_match_applies = (
-        comparability_mode == "strict"
-        and (
-            native_timed_output_applies
-            or bool(left_result_output_signatures)
-            or bool(right_result_output_signatures)
+    # A strict row is comparable only when its measured output is verified:
+    # native same-execution proof, equal generated results, equal readback
+    # captures on both sides, or every declared output oracle checked on both
+    # sides' own readbacks. Otherwise the row is unverified and rejected.
+    left_readback_capture_signatures = collect_readback_capture_signatures(left_measured_samples)
+    right_readback_capture_signatures = collect_readback_capture_signatures(right_measured_samples)
+    readback_capture_equality = (
+        bool(left_readback_capture_signatures)
+        and left_readback_capture_signatures == right_readback_capture_signatures
+    )
+    declared_output_oracles_checked = (
+        samples_pass_declared_output_oracles(left_measured_samples)
+        and samples_pass_declared_output_oracles(right_measured_samples)
+    )
+    has_result_output_signatures = bool(left_result_output_signatures) or bool(right_result_output_signatures)
+    # Compiler comparisons measure translation, not a GPU output.
+    compilation_only = bool(left_measured_samples) and all(
+        isinstance(sample, dict)
+        and isinstance(sample.get("traceMeta"), dict)
+        and sample["traceMeta"].get("runnerType") == "compilation"
+        for sample in [*left_measured_samples, *right_measured_samples]
+    )
+    result_output_match_applies = comparability_mode == "strict" and not compilation_only
+    if native_timed_output_applies:
+        result_output_match = native_plan_output_match
+        output_verification = "native-same-execution-proof" if result_output_match else "unverified"
+    elif has_result_output_signatures:
+        result_output_match = (
+            len(left_result_output_signatures) == 1
+            and len(right_result_output_signatures) == 1
+            and left_result_output_signatures == right_result_output_signatures
+            and next(iter(left_result_output_signatures))[1] > 0
         )
-    )
-    result_output_match = native_plan_output_match if native_timed_output_applies else (
-        len(left_result_output_signatures) == 1
-        and len(right_result_output_signatures) == 1
-        and left_result_output_signatures == right_result_output_signatures
-        and next(iter(left_result_output_signatures))[1] > 0
-    )
+        output_verification = "result-output-equality" if result_output_match else "unverified"
+    else:
+        result_output_match = readback_capture_equality or declared_output_oracles_checked
+        output_verification = (
+            "readback-capture-equality" if readback_capture_equality
+            else "declared-output-oracles" if declared_output_oracles_checked
+            else "unverified"
+        )
     _record_obligation(
         obligations,
         reasons,
@@ -349,9 +378,15 @@ def compare_assessment(
             "baseline/comparison result output is missing, empty, non-deterministic, or unequal: "
             f"{sorted(left_result_output_signatures)} vs "
             f"{sorted(right_result_output_signatures)}"
+            if has_result_output_signatures else
+            "output unverified: neither equal readback captures nor a same-execution output oracle "
+            "check covers both measured sides"
         ),
         details={
             **native_plan_output_details,
+            "outputVerification": output_verification,
+            "readbackCaptureEquality": readback_capture_equality,
+            "declaredOutputOraclesChecked": declared_output_oracles_checked,
             "nativeTimedOutputBackends": native_timed_output_backends,
             "nativeTimedOutputProviders": native_timed_output_providers,
             "baselineResultOutputSignatures": [

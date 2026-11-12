@@ -12,6 +12,7 @@ import {
   planSummary,
   validateSampleExpectation,
 } from './plan.js';
+import { isOutputOracleExpectation } from './readback-oracles.js';
 import {
   evaluateExecutionDeterminism,
 } from './determinism.js';
@@ -2921,6 +2922,11 @@ async function executeSample(
   let executionDispatchCount = 0;
   let executionSuccessCount = 0;
   let cpuOracleValidationCount = 0;
+  // Declared plan output oracles; each passes or its readBuffer throws.
+  const outputOracleCount = normalizedPlan.steps.filter((step) => (
+    step.kind === 'readBuffer' && isOutputOracleExpectation(step.validate)
+  )).length * commandRepeat;
+  let outputOracleMatchedCount = 0;
   const stepBreakdownNs = zeroPackageStepBreakdown();
   const writeBreakdown = zeroPackageWriteBreakdown();
   const residentBufferLoadBreakdown = zeroPackageResidentBufferLoadBreakdown();
@@ -3412,6 +3418,7 @@ async function executeSample(
       );
       readback.breakdownNs.readbackValidationTotalNs += nsDelta(validationStartedAt);
       if (validationTemplates[index]) cpuOracleValidationCount += 1;
+      if (isOutputOracleExpectation(step.validate)) outputOracleMatchedCount += 1;
       if (!validation.ok) {
         throw new Error(`validation failed for ${step.bufferId}: ${validation.detail}`);
       }
@@ -3615,6 +3622,12 @@ async function executeSample(
     packageSetupBreakdownNs: runtime.setupBreakdownNs,
     packageStepBreakdownNs: stepBreakdownNs,
     packageHostOperation,
+    ...(outputOracleCount > 0 ? {
+      outputOracleCount,
+      outputOracleMatchedCount,
+      outputOracleFailedCount: outputOracleCount - outputOracleMatchedCount,
+      outputOracleScope: 'same-execution-readback',
+    } : {}),
     packageWriteBreakdown: writeBreakdown,
     packageResidentBufferLoads: residentBufferLoads,
     packageResidentBufferLoadBreakdown: residentBufferLoadBreakdown,

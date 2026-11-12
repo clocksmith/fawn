@@ -331,6 +331,10 @@
     "outputOracleCount": { "type": "integer", "minimum": 0 },
     "outputOracleMatchedCount": { "type": "integer", "minimum": 0 },
     "outputOracleFailedCount": { "type": "integer", "minimum": 0 },
+    "outputOracleScope": {
+      "description": "Package executors: declared plan output oracles were checked on bytes read back from this execution.",
+      "const": "same-execution-readback"
+    },
     "outputOracleExpectedSha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"

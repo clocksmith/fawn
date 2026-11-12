@@ -5,7 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { basename, extname, resolve } from 'node:path';
 import { normalizeDeterminismConfig } from './determinism.js';
 import { readSyntheticAssetData } from './synthetic-assets.js';
-import { f32OneOfProblem, validateF32OneOf } from './readback-oracles.js';
+import {
+  f32OneOfProblem,
+  isOutputOracleExpectation,
+  outputOracleExpectation,
+  outputOracleProblem,
+  validateF32OneOf,
+  validateOutputOracle,
+} from './readback-oracles.js';
 
 const ALLOWED_BUFFER_USAGES = new Set([
   'storage',
@@ -253,6 +260,50 @@ function commandPlanToNeutralPlan(plan) {
     }));
   }
 
+  // The declared output_oracle is checked on bytes read back from the timed
+  // run itself, after its dispatch, as the native plan executors observe it.
+  function appendOutputOracleSteps(command, index) {
+    const oracle = command.output_oracle ?? command.outputOracle;
+    if (oracle === undefined) {
+      return;
+    }
+    if (!isPlainObject(oracle)) {
+      throw new Error(`commands[${index}].output_oracle must be an object`);
+    }
+    const group = Number(oracle.binding_group ?? oracle.bindingGroup);
+    const bindingIndex = Number(oracle.binding);
+    const targets = (Array.isArray(command.bindings) ? command.bindings : []).filter((binding) => (
+      Number(binding.group ?? binding.group_index ?? binding.groupIndex ?? 0) === group
+      && Number(binding.binding) === bindingIndex
+    ));
+    if (targets.length !== 1) {
+      throw new Error(`commands[${index}].output_oracle binding ${group}.${bindingIndex} must name exactly one binding`);
+    }
+    const handle = Number(targets[0].resource_handle ?? targets[0].resourceHandle ?? targets[0].handle);
+    const size = Number(targets[0].buffer_size ?? targets[0].bufferSize);
+    const sourceBufferId = ensureBuffer(handle, size, { readableCopySource: true });
+    const readbackBufferId = ensureBuffer(`oracle_${index}_${handle}`, size, { writable: true, readableMap: true });
+    steps.push({
+      id: `step-${index}-oracle-copy`,
+      kind: 'copyBufferToBuffer',
+      srcBufferId: sourceBufferId,
+      dstBufferId: readbackBufferId,
+      srcOffset: 0,
+      dstOffset: 0,
+      sizeBytes: size,
+    });
+    steps.push({
+      id: `step-${index}-oracle-read`,
+      kind: 'readBuffer',
+      bufferId: readbackBufferId,
+      semanticOpId: `output_oracle_step_${index}`,
+      captureSourceBufferId: sourceBufferId,
+      captureOffset: 0,
+      captureSize: size,
+      validate: outputOracleExpectation(oracle, size),
+    });
+  }
+
   commands.forEach((command, index) => {
     if (!isPlainObject(command)) {
       return;
@@ -374,6 +425,7 @@ function commandPlanToNeutralPlan(plan) {
             : undefined,
       });
       appendCaptureSteps(command, index);
+      appendOutputOracleSteps(command, index);
     }
   });
 
@@ -683,6 +735,11 @@ function normalizeReadbackExpectation(expectation, index, problems) {
   }
   if (expectation.kind === 'f32BufferOneOfV1') {
     const problem = f32OneOfProblem(expectation);
+    if (problem) problems.push(`steps[${index}].validate: ${problem}`);
+    return expectation;
+  }
+  if (isOutputOracleExpectation(expectation)) {
+    const problem = outputOracleProblem(expectation);
     if (problem) problems.push(`steps[${index}].validate: ${problem}`);
     return expectation;
   }
@@ -1110,6 +1167,9 @@ export function validateSampleExpectation(view, expectation) {
   }
   if (expectation.kind === 'f32BufferOneOfV1') {
     return validateF32OneOf(view, expectation);
+  }
+  if (isOutputOracleExpectation(expectation)) {
+    return validateOutputOracle(view, expectation, REPO_ROOT);
   }
   if (expectation.kind === 'f32PrefixEquals') {
     const values = Array.isArray(expectation.values) ? expectation.values.map((value) => Number(value)) : [];
