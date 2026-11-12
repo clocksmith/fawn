@@ -277,6 +277,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->new_command = runtime->selector("commandBufferWithUnretainedReferences");
     runtime->blit_encoder = runtime->selector("blitCommandEncoder");
     runtime->compute_encoder = runtime->selector("computeCommandEncoder");
+    runtime->compute_encoder_with_type = runtime->selector("computeCommandEncoderWithDispatchType:");
     runtime->buffer_barrier = runtime->selector("memoryBarrierWithScope:");
     runtime->copy_buffer = runtime->selector("copyFromBuffer:sourceOffset:toBuffer:destinationOffset:size:");
     runtime->fill_buffer = runtime->selector("fillBuffer:range:value:");
@@ -309,7 +310,8 @@ static bool load_selectors(doe_mtl_objc *runtime) {
         runtime->new_function != NULL && runtime->new_pipeline != NULL &&
         runtime->pipeline_max_threads != NULL && runtime->localized_description != NULL &&
         runtime->code != NULL && runtime->new_command != NULL && runtime->blit_encoder != NULL &&
-        runtime->compute_encoder != NULL && runtime->buffer_barrier != NULL && runtime->copy_buffer != NULL &&
+        runtime->compute_encoder != NULL && runtime->compute_encoder_with_type != NULL &&
+        runtime->buffer_barrier != NULL && runtime->copy_buffer != NULL &&
         runtime->fill_buffer != NULL && runtime->end_encoding != NULL &&
         runtime->set_pipeline != NULL && runtime->set_buffer != NULL &&
         runtime->set_bytes != NULL && runtime->dispatch != NULL && runtime->dispatch_indirect != NULL &&
@@ -351,6 +353,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
 #endif
     runtime->responds_call = (doe_objc_responds_call)message;
     runtime->object_call = (doe_objc_object_call)message;
+    runtime->object_size_call = (doe_objc_object_size_call)message;
     runtime->void_call = (doe_objc_void_call)message;
     runtime->size_call = (doe_objc_size_call)message;
     runtime->integer_call = (doe_objc_integer_call)message;

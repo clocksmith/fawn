@@ -116,10 +116,15 @@ bool doe_mtl_objc_render_encode_draw(doe_mtl_objc *r, void *encoder,
         r->set_object_call(encoder, g->set_pipeline, draw->pipeline);
     if (!previous || previous->depth_stencil != draw->depth_stencil)
         r->set_object_call(encoder, g->set_depth_state, draw->depth_stencil);
-    stage_bindings(r, encoder, &draw->values.vertex, draw->vertex_sizes_slot,
-        &state->vertex, true);
-    stage_bindings(r, encoder, &draw->values.fragment, draw->fragment_sizes_slot,
-        &state->fragment, false);
+    /* Identical stage inputs leave the encoder-local binding cache unchanged. */
+    if (!old || draw->vertex_sizes_slot != previous->vertex_sizes_slot ||
+        !doe_mtl_render_bindings_same(&v->vertex, &old->vertex))
+        stage_bindings(r, encoder, &draw->values.vertex, draw->vertex_sizes_slot,
+            &state->vertex, true);
+    if (!old || draw->fragment_sizes_slot != previous->fragment_sizes_slot ||
+        !doe_mtl_render_bindings_same(&v->fragment, &old->fragment))
+        stage_bindings(r, encoder, &draw->values.fragment, draw->fragment_sizes_slot,
+            &state->fragment, false);
     if (!old || !same_viewport(viewport, old_viewport)) g->viewport(encoder, g->set_viewport, viewport);
     if (!old || !same_scissor(scissor, old_scissor)) g->scissor(encoder, g->set_scissor, scissor);
     if (!old || v->winding != old->winding) r->set_size_call(encoder, g->set_winding, v->winding);

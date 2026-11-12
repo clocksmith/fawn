@@ -4,66 +4,103 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct draw_storage {
-    doe_mtl_guarded_draw guarded;
-    uint32_t immediate_words[16];
-} draw_storage;
+/* Binding-cache state of each change of binding packet, in pass order. */
+typedef struct run_states {
+    size_t *values;
+    size_t count, capacity;
+} run_states;
 
-static native_failure prepare_draw(const doe_resource_render_packet *packet, draw_storage *storage, doe_mtl_render_draw *draw,
-    const native_metal_render_binding_view *bindings)
+static bool push_state(run_states *states, size_t value)
 {
-    native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
-    if (!pipeline || !pipeline->metal_graphics) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    if (states->count == states->capacity) {
+        size_t capacity = states->capacity ? states->capacity * 2 : 64;
+        if (capacity < states->capacity || capacity > SIZE_MAX / sizeof(*states->values)) return false;
+        size_t *values = realloc(states->values, capacity * sizeof(*values));
+        if (!values) return false;
+        states->values = values;
+        states->capacity = capacity;
+    }
+    states->values[states->count++] = value;
+    return true;
+}
+
+/* Draws sharing one envelope and binding packet (a draw run, see
+ * doe_resource_render_record_draw_borrow) share every native draw field except
+ * their own arguments: the template is built once per run and copied per draw. */
+typedef struct draw_template {
+    const doe_resource_render_packet *bindings, *envelope;
+    native_device *device;
+    doe_mtl_render_draw draw; /* Arguments, index and guard fields unset. */
+} draw_template;
+
+static native_result template_for(const doe_resource_render_packet *bindings,
+    const doe_resource_render_packet *envelope, const native_metal_render_binding_view *view, draw_template *out)
+{
+    native_pipeline *pipeline = doe_resource_render_pipeline_native(bindings->pipeline);
+    if (!pipeline || !pipeline->metal_graphics) return NATIVE_INVALID_ARGUMENT;
     const native_metal_graphics *graphics = pipeline->metal_graphics;
-    if (!bindings) return native_failure_status(NATIVE_INVALID_STATE);
-    *draw = (doe_mtl_render_draw){.pipeline=pipeline->handle.metal_render,
-        .topology=graphics->topology, .count=packet->count, .instance_count=packet->instances,
-        .first_vertex=packet->indexed ? 0 : packet->first, .first_instance=packet->first_instance,
-        .winding=graphics->winding, .cull=graphics->cull, .viewport_enabled=true, .scissor_enabled=true,
-        .viewport={packet->state.viewport[0],packet->state.viewport[1],packet->state.viewport[2],
-            packet->state.viewport[3],packet->state.viewport[4],packet->state.viewport[5]},
-        .scissor={packet->state.scissor[0],packet->state.scissor[1],packet->state.scissor[2],packet->state.scissor[3]},
+    if (!view) return NATIVE_INVALID_STATE;
+    const doe_resource_render_state *state = &envelope->state;
+    doe_vk_clear_color blend;
+    if (!native_render_clear(WGPUTextureFormat_RGBA32Float, state->blend, &blend)) return NATIVE_INVALID_ARGUMENT;
+    out->bindings = bindings;
+    out->envelope = envelope;
+    out->device = pipeline->device;
+    out->draw = (doe_mtl_render_draw){.pipeline=pipeline->handle.metal_render,
+        .topology=graphics->topology, .winding=graphics->winding, .cull=graphics->cull,
+        .viewport_enabled=true, .scissor_enabled=true,
+        .viewport={state->viewport[0],state->viewport[1],state->viewport[2],
+            state->viewport[3],state->viewport[4],state->viewport[5]},
+        .scissor={state->scissor[0],state->scissor[1],state->scissor[2],state->scissor[3]},
         .depth_bias=graphics->depth_bias, .depth_slope=graphics->depth_slope,
         .depth_clamp=graphics->depth_clamp, .unclipped_depth=graphics->unclipped_depth,
-        .stencil_reference=packet->state.stencil_reference,
-        .visibility_mode=packet->occlusion_active ? 1u : 0u,
-        .visibility_offset=packet->occlusion_active ? (uint64_t)packet->occlusion_index * 8 : 0};
-    if (packet->indexed || packet->indirect) {
-        native_device *device=pipeline->device;
-        if (!device->metal_draw_guard) return native_failure_status(NATIVE_INVALID_STATE);
-        native_buffer *arguments=doe_resource_buffer_native(packet->indirect);
-        storage->guarded=(doe_mtl_guarded_draw){.guard=device->metal_draw_guard,
-            .arguments=arguments ? arguments->handle.metal : NULL,.argument_offset=packet->indirect_offset,
-            .first_index=packet->first,.first_instance_allowed=!packet->indirect ||
-                native_feature_enabled(device,WGPUFeatureName_IndirectFirstInstance)};
-        if (packet->indexed) {
-            native_buffer *index=doe_resource_buffer_native(packet->index.buffer);
-            if (!index) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-            switch (packet->index_format) {
-            case WGPUIndexFormat_Uint16: draw->index_type=0; break;
-            case WGPUIndexFormat_Uint32: draw->index_type=1; break;
-            case WGPUIndexFormat_Undefined:
-            case WGPUIndexFormat_Force32: return native_failure_status(NATIVE_INVALID_ARGUMENT);
-            }
-            draw->index_buffer=index->handle.metal;
-            draw->index_offset=packet->index.offset;
-            draw->base_vertex=packet->base_vertex;
-            storage->guarded.index_size=packet->index.size;
-        }
-        draw->guarded=&storage->guarded;
-    }
-    doe_vk_clear_color blend;
-    if (!native_render_clear(WGPUTextureFormat_RGBA32Float, packet->state.blend, &blend))
-        return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    memcpy(draw->blend_constant, blend.float32, sizeof(draw->blend_constant));
-    draw->vertex = bindings->vertex;
-    draw->fragment = bindings->fragment;
-    memcpy(storage->immediate_words, packet->immediates.words, sizeof(storage->immediate_words));
-    draw->vertex.immediates = (doe_mtl_immediate_binding){storage->immediate_words,
+        .stencil_reference=state->stencil_reference,
+        .visibility_mode=envelope->occlusion_active ? 1u : 0u,
+        .visibility_offset=envelope->occlusion_active ? (uint64_t)envelope->occlusion_index * 8 : 0};
+    memcpy(out->draw.blend_constant, blend.float32, sizeof(out->draw.blend_constant));
+    out->draw.vertex = view->vertex;
+    out->draw.fragment = view->fragment;
+    /* The binding packet lives in command-owned storage until the commands retire. */
+    out->draw.vertex.immediates = (doe_mtl_immediate_binding){bindings->immediates.words,
         graphics->stages[0].immediate_bytes};
-    draw->fragment.immediates = (doe_mtl_immediate_binding){storage->immediate_words,
+    out->draw.fragment.immediates = (doe_mtl_immediate_binding){bindings->immediates.words,
         graphics->stages[1].immediate_bytes};
-    return native_failure_status(NATIVE_OK);
+    return NATIVE_OK;
+}
+
+static native_result prepare_draw(const draw_template *run, const doe_resource_render_draw_args *args,
+    doe_mtl_guarded_draw *guarded, doe_mtl_render_draw *draw)
+{
+    *draw = run->draw;
+    draw->count = args->count;
+    draw->instance_count = args->instances;
+    draw->first_vertex = args->indexed ? 0 : args->first;
+    draw->first_instance = args->first_instance;
+    if (!args->indexed && !args->indirect) return NATIVE_OK;
+    native_device *device = run->device;
+    if (!guarded || !device->metal_draw_guard) return NATIVE_INVALID_STATE;
+    native_buffer *arguments = doe_resource_buffer_native(args->indirect);
+    *guarded = (doe_mtl_guarded_draw){.guard=device->metal_draw_guard,
+        .arguments=arguments ? arguments->handle.metal : NULL,.argument_offset=args->indirect_offset,
+        .first_index=args->first,.first_instance_allowed=!args->indirect ||
+            native_feature_enabled(device,WGPUFeatureName_IndirectFirstInstance)};
+    if (args->indexed) {
+        const doe_resource_render_packet *packet = run->bindings;
+        native_buffer *index = doe_resource_buffer_native(packet->index.buffer);
+        if (!index) return NATIVE_INVALID_ARGUMENT;
+        switch (packet->index_format) {
+        case WGPUIndexFormat_Uint16: draw->index_type = 0; break;
+        case WGPUIndexFormat_Uint32: draw->index_type = 1; break;
+        case WGPUIndexFormat_Undefined:
+        case WGPUIndexFormat_Force32: return NATIVE_INVALID_ARGUMENT;
+        }
+        draw->index_buffer = index->handle.metal;
+        draw->index_offset = packet->index.offset;
+        draw->base_vertex = args->base_vertex;
+        guarded->index_size = packet->index.size;
+    }
+    draw->guarded = guarded;
+    return NATIVE_OK;
 }
 
 static bool clear_color(const doe_resource_color_attachment *source, doe_mtl_clear_color *out)
@@ -97,8 +134,10 @@ native_failure native_metal_render_timed(doe_mtl_commands *commands,
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
     if (!begin || !begin->boundary_only || !begin->first_in_pass || begin->last_in_pass)
         return native_failure_status(NATIVE_UNSUPPORTED);
-    size_t end = 0, draws_count = 0;
+    size_t end = 0, draws_count = 0, guarded_count = 0;
     native_metal_render_binding_cache *bindings = NULL;
+    const doe_resource_render_packet *interned = NULL;
+    run_states states = {0};
     native_failure failure = native_failure_status(NATIVE_OK);
     for (size_t i = 1; failure.status == NATIVE_OK && i < count; ++i) {
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind == DOE_COMMAND_END_OCCLUSION) {
@@ -120,37 +159,65 @@ native_failure native_metal_render_timed(doe_mtl_commands *commands,
         if (draws > SIZE_MAX - draws_count) { failure = native_failure_status(NATIVE_OUT_OF_MEMORY); break; }
         draws_count += draws;
         for (size_t j = 0; failure.status == NATIVE_OK && j < draws; ++j) {
-            doe_resource_render_packet draw;
-            if (!doe_resource_render_record_draw(records[i].value.render, j, &draw))
-                failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
-            else failure = native_failure_status(native_metal_render_bindings_intern(&bindings, &draw));
+            const doe_resource_render_packet *draw = NULL;
+            doe_resource_render_draw_args args;
+            if (!doe_resource_render_record_draw_borrow(records[i].value.render, j, &draw, &args)) {
+                failure = native_failure_status(NATIVE_INVALID_ARGUMENT); break;
+            }
+            if (draw != interned) {
+                size_t state = 0;
+                failure = native_failure_status(native_metal_render_bindings_intern_index(&bindings, draw, &state));
+                if (failure.status == NATIVE_OK && !push_state(&states, state))
+                    failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+                interned = draw;
+            }
+            if (args.indexed || args.indirect) ++guarded_count;
         }
     }
     if (failure.status == NATIVE_OK && !end) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
-    if (draws_count > SIZE_MAX / sizeof(draw_storage) || draws_count > SIZE_MAX / sizeof(doe_mtl_render_draw))
+    if (draws_count > SIZE_MAX / sizeof(doe_mtl_render_draw))
         failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
-    draw_storage *storage = NULL;
+    doe_mtl_guarded_draw *guarded = NULL;
     doe_mtl_render_draw *draws = NULL;
     if (failure.status == NATIVE_OK && draws_count) {
-        storage = calloc(draws_count, sizeof(*storage));
-        draws = calloc(draws_count, sizeof(*draws));
-        if (!storage || !draws) failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+        /* Every row is assigned before use; nothing reads an unassigned row. */
+        draws = malloc(draws_count * sizeof(*draws));
+        guarded = guarded_count ? malloc(guarded_count * sizeof(*guarded)) : NULL;
+        if (!draws || (guarded_count && !guarded)) failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
     }
     if (failure.status == NATIVE_OK) failure = native_metal_render_bindings_prepare(bindings, commands);
-    size_t draw_index = 0;
-    for (size_t i = 1; failure.status == NATIVE_OK && i < end; ++i) {
+    size_t draw_index = 0, guarded_index = 0;
+    draw_template run = {0};
+    const doe_resource_render_packet *viewed = NULL;
+    const native_metal_render_binding_view *view = NULL;
+    size_t state_index = 0;
+    native_result prepared = NATIVE_OK;
+    for (size_t i = 1; failure.status == NATIVE_OK && prepared == NATIVE_OK && i < end; ++i) {
         if (records[i].kind != DOE_COMMAND_RENDER) continue;
-        for (size_t j = 0; failure.status == NATIVE_OK &&
+        const doe_resource_render_packet *envelope = doe_resource_render_record_borrow(records[i].value.render);
+        for (size_t j = 0; prepared == NATIVE_OK &&
                 j < doe_resource_render_record_draw_count(records[i].value.render); ++j) {
-            doe_resource_render_packet packet;
-            if (!doe_resource_render_record_draw(records[i].value.render, j, &packet)) {
-                failure = native_failure_status(NATIVE_INVALID_ARGUMENT); break;
+            const doe_resource_render_packet *packet = NULL;
+            doe_resource_render_draw_args args;
+            if (!doe_resource_render_record_draw_borrow(records[i].value.render, j, &packet, &args)) {
+                prepared = NATIVE_INVALID_ARGUMENT; break;
             }
-            failure = prepare_draw(&packet, &storage[draw_index], &draws[draw_index],
-                native_metal_render_bindings_find(bindings, &packet));
+            /* Binding packets change here exactly where the first loop interned. */
+            if (packet != viewed) {
+                if (state_index >= states.count) { prepared = NATIVE_INVALID_STATE; break; }
+                view = native_metal_render_bindings_view(bindings, states.values[state_index++]);
+                viewed = packet;
+            }
+            if (packet != run.bindings || envelope != run.envelope)
+                prepared = template_for(packet, envelope, view, &run);
+            if (prepared != NATIVE_OK) break;
+            bool guard = args.indexed || args.indirect;
+            if (guard && guarded_index >= guarded_count) { prepared = NATIVE_INVALID_STATE; break; }
+            prepared = prepare_draw(&run, &args, guard ? &guarded[guarded_index++] : NULL, &draws[draw_index]);
             ++draw_index;
         }
     }
+    if (failure.status == NATIVE_OK && prepared != NATIVE_OK) failure = native_failure_status(prepared);
     doe_mtl_render_pass_desc pass = {.color_count=begin->targets.color_count};
     if (timestamps) pass.timestamps = *timestamps;
     doe_mtl_error detail = {0};
@@ -210,7 +277,8 @@ native_failure native_metal_render_timed(doe_mtl_commands *commands,
     }
     native_metal_render_bindings_release(bindings);
     free(draws);
-    free(storage);
+    free(guarded);
+    free(states.values);
     if (failure.status == NATIVE_OK) *consumed = end + 1;
     return failure;
 }

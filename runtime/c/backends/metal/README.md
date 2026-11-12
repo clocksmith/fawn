@@ -233,16 +233,22 @@ call-ledger controls do not establish physical indexed rendering.
 Render lowering interns exact pipeline/group/dynamic-offset/vertex-span states
 within each pass, including materialized bundle draws. Each distinct state owns
 one compact immutable span in call-borrowed storage; per-draw argument and
-immediate values remain separate. Encoder-local state emits changed pipeline,
-raster/depth/stencil and binding values, clearing removed buffer/texture/sampler
-slots and prior `setBytes` slots. Fresh encoders start with fresh state; empty
-raster state and visibility ordering retain their existing semantics.
+immediate values remain separate. Draws of one run borrow their recorded packet
+and copy one prepared template. A draw whose pipeline and binding spans equal the
+previous draw's skips repeated attachment/binding admission and leases (per-draw
+dynamic state, fetch ranges and guards are still checked). Encoder-local state
+emits changed pipeline, raster/depth/stencil and binding values, clearing removed
+buffer/texture/sampler slots and prior `setBytes` slots; equal stage spans skip
+the binding comparison. Fresh encoders start with fresh state; empty raster state
+and visibility ordering retain their existing semantics.
 
 Guarded draws share one command-owned V2 record arena and one scan-parameter
-arena per pass. Adjacent identical guard inputs share a record; distinct records
-carry their own native indirect offsets. Argument copies use one blit encoder,
-then bounded normalization cohorts and ordered index scans share one serial
-compute encoder with explicit buffer barriers. The existing command leases retain
+arena per pass. Guarded draws anywhere in the pass with equal arguments, index
+span and fetch capacities share a record and its scans; distinct records carry
+their own native indirect offsets. Argument copies use one blit encoder, then
+bounded normalization cohorts and index scans share one concurrent compute
+encoder with one buffer barrier between the normalizers and the scans
+(normalizers own disjoint records; scans only cancel their own record atomically). The existing command leases retain
 all arenas, arguments, indices and pipelines through unknown completion.
 
 Prepared texture-transfer entrypoints validate complete ranges/layouts and acquire

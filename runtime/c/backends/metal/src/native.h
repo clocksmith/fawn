@@ -33,6 +33,9 @@ typedef struct doe_mtl_native_guard_copy {
     size_t source_offset, destination_offset, size;
 } doe_mtl_native_guard_copy;
 typedef struct doe_mtl_native_guard_dispatch {
+    /* Waits for every earlier dispatch's buffer writes; dispatches between two
+     * barriers are independent and may run concurrently. */
+    bool barrier;
     void *pipeline;
     doe_mtl_native_binding bindings[3];
     uint32_t slots[3], binding_count, sizes_slot;
@@ -73,6 +76,10 @@ typedef struct doe_mtl_native_render_draw {
     size_t indirect_offset;
     doe_mtl_render_draw values; /* Only scalar/dynamic fields used by adapter. */
 } doe_mtl_native_render_draw;
+/* Same stage resources: the identical borrowed binding arrays and counts and
+ * equal immediate bytes. Arrays are immutable for the whole render call, so
+ * equal identities imply equal native bindings, admission and leases. */
+bool doe_mtl_render_bindings_same(const doe_mtl_render_bindings *a, const doe_mtl_render_bindings *b);
 
 typedef struct doe_mtl_native_timestamps {
     void *buffer;

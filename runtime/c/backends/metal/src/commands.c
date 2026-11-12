@@ -139,6 +139,12 @@ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
     doe_mtl_buffer *buffer, doe_mtl_buffer_use **out) {
     doe_mtl_buffer_use *use;
     doe_mtl_status status;
+    /* A recording holds at most one use per buffer; when it is the buffer's
+     * newest use, no list walk is needed to find it. */
+    if (buffer->uses != NULL && buffer->uses->commands == commands) {
+        *out = buffer->uses;
+        return DOE_MTL_OK;
+    }
     for (use = commands->buffers; use != NULL; use = use->next) {
         if (use->buffer == buffer) {
             *out = use;

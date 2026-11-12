@@ -74,7 +74,8 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     }
     /* Validate the complete pass before the first native encoder mutation. */
     for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
-        status = doe_mtl_render_draw_preflight(commands, pass, &native_pass, &draws[i], &native_draws[i]);
+        status = doe_mtl_render_draw_preflight(commands, pass, &native_pass, &draws[i],
+            i != 0 ? &draws[i - 1] : NULL, &native_draws[i]);
     if (status == DOE_MTL_OK) status = doe_mtl_render_visibility_preflight(commands, pass, draws, draw_count);
     if (status == DOE_MTL_OK && pass->timestamps.set) {
         status = doe_mtl_use_timestamps(commands, pass->timestamps.set, &timestamp_use);
@@ -85,8 +86,12 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
         }
     }
     if (status == DOE_MTL_OK) status = doe_mtl_render_pass_retain(commands, pass);
+    /* Leases are per command: a draw with the previous draw's pipeline, binding
+     * arrays and index buffer already holds every one it needs. */
     for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
-        status = doe_mtl_render_draw_retain(commands, &draws[i]);
+        if (i == 0 || draws[i].index_buffer != draws[i - 1].index_buffer ||
+            !doe_mtl_render_draw_same_inputs(&draws[i - 1], &draws[i]))
+            status = doe_mtl_render_draw_retain(commands, &draws[i]);
     if (status != DOE_MTL_OK) {
         free(native_draws);
         return doe_mtl_poison(commands, status, "render validation/lease", error);

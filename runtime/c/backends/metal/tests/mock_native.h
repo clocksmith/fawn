@@ -39,7 +39,7 @@ typedef struct mock_native {
     unsigned closes;
     unsigned copies;
     unsigned fills;
-    unsigned dispatches, guard_batches, guard_normalizations;
+    unsigned dispatches, guard_batches, guard_normalizations, guard_barriers;
     uint32_t guard_normal_groups[8];
     size_t guard_normal_offsets[8], guard_normal_sizes[8];
     unsigned indirects;

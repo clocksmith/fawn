@@ -36,6 +36,12 @@ static uint64_t hash_packet(const doe_resource_render_packet *packet) {
         hash = mix(hash, (uintptr_t)packet->vertices[i].buffer);
         hash = mix(mix(hash, packet->vertices[i].offset), packet->vertices[i].size);
     }
+    /* FNV multiplication only carries low bits upward, and the table indexes
+     * by low bits: fold the high bits down (MurmurHash3 finalizer) so aligned
+     * pointers differing only above bit 4 do not share one probe chain. */
+    hash ^= hash >> 33;
+    hash *= UINT64_C(0xff51afd7ed558ccd);
+    hash ^= hash >> 33;
     return hash;
 }
 static bool same_state(const binding_state *state, const doe_resource_render_packet *packet) {
@@ -99,6 +105,11 @@ static native_result reserve(native_metal_render_binding_cache *cache) {
 }
 native_result native_metal_render_bindings_intern(native_metal_render_binding_cache **out,
     const doe_resource_render_packet *packet) {
+    size_t index;
+    return native_metal_render_bindings_intern_index(out, packet, &index);
+}
+native_result native_metal_render_bindings_intern_index(native_metal_render_binding_cache **out,
+    const doe_resource_render_packet *packet, size_t *index) {
     if (!out || !packet || !packet->pipeline) return NATIVE_INVALID_ARGUMENT;
     for (size_t i = 0; i < DOE_RESOURCE_MAX_GROUPS; ++i)
         if (packet->offsets.counts[i] > DOE_RESOURCE_MAX_DYNAMIC_OFFSETS) return NATIVE_INVALID_ARGUMENT;
@@ -106,7 +117,10 @@ native_result native_metal_render_bindings_intern(native_metal_render_binding_ca
     if (!cache) { cache = calloc(1, sizeof(*cache)); if (!cache) return NATIVE_OUT_OF_MEMORY; *out = cache; }
     if (cache->prepared) return NATIVE_INVALID_STATE;
     uint64_t hash = hash_packet(packet);
-    if (cache->bucket_capacity && cache->buckets[bucket_for(cache, hash, packet)].index) return NATIVE_OK;
+    if (cache->bucket_capacity) {
+        size_t found = cache->buckets[bucket_for(cache, hash, packet)].index;
+        if (found) { *index = found - 1; return NATIVE_OK; }
+    }
     native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
     binding_counts counts[2], totals = cache->totals;
     for (size_t stage = 0; stage < 2; ++stage) {
@@ -123,6 +137,7 @@ native_result native_metal_render_bindings_intern(native_metal_render_binding_ca
     memcpy(state->vertices, packet->vertices, sizeof(state->vertices));
     cache->buckets[bucket_for(cache, hash, packet)] = (binding_bucket){hash,++cache->count};
     cache->totals = totals;
+    *index = cache->count - 1;
     return NATIVE_OK;
 }
 native_failure native_metal_render_bindings_prepare(native_metal_render_binding_cache *cache, doe_mtl_commands *commands) {
@@ -169,6 +184,10 @@ const native_metal_render_binding_view *native_metal_render_bindings_find(
     if (!cache || !cache->bucket_capacity || !packet) return NULL;
     const binding_bucket *bucket = &cache->buckets[bucket_for(cache, hash_packet(packet), packet)];
     return bucket->index ? &cache->states[bucket->index - 1].view : NULL;
+}
+const native_metal_render_binding_view *native_metal_render_bindings_view(
+    const native_metal_render_binding_cache *cache, size_t index) {
+    return cache && cache->prepared && index < cache->count ? &cache->states[index].view : NULL;
 }
 native_metal_render_binding_stats native_metal_render_bindings_stats(const native_metal_render_binding_cache *cache) {
     return cache ? (native_metal_render_binding_stats){cache->count,cache->totals.buffers,cache->totals.textures,cache->totals.samplers} :

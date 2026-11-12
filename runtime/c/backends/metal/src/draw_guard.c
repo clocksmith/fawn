@@ -85,26 +85,49 @@ doe_mtl_status doe_mtl_draw_guard_preflight(doe_mtl_commands *commands,const doe
     return doe_mtl_draw_guard_capacities(draw,limits);
 }
 
-/* Only within one pass's consecutive preparation phase: no caller buffers are
- * written between these guards, and all guards precede the native render pass.
- * The same immutable pipeline and vertex spans imply the same fetch capacities.
- * Compare fields explicitly; descriptor padding and raster state are irrelevant. */
+/* Hash of a subset of the fields doe_mtl_draw_guard_same_inputs compares:
+ * equal inputs hash equally. */
+static uint64_t mix(uint64_t hash, uint64_t value)
+{
+    hash ^= value;
+    hash *= UINT64_C(0x9e3779b97f4a7c15);
+    return hash ^ (hash >> 29);
+}
+uint64_t doe_mtl_draw_guard_inputs_hash(const doe_mtl_render_draw *draw)
+{
+    const doe_mtl_guarded_draw *input=draw->guarded;
+    uint64_t hash=mix(0,(uintptr_t)draw->index_buffer);
+    hash=mix(hash,draw->index_offset);
+    hash=mix(hash,((uint64_t)draw->count<<32)|draw->instance_count);
+    hash=mix(hash,((uint64_t)draw->first_vertex<<32)|draw->first_instance);
+    hash=mix(hash,(uint32_t)draw->base_vertex);
+    if (input) {
+        hash=mix(hash,(uintptr_t)input->arguments);
+        hash=mix(hash,input->argument_offset);
+        hash=mix(hash,input->index_size);
+        hash=mix(hash,input->first_index);
+    }
+    return hash;
+}
+
+/* Only within one pass's preparation phase: no caller buffers are written
+ * between these guards, and all guards precede the native render pass. A
+ * guard's record, scan windows and verdict depend on its arguments, index span
+ * and the two fetch capacities, never on which buffer or PSO supplies those
+ * capacities: draws equal in all of them share one record. Compare fields
+ * explicitly; descriptor padding and raster state are irrelevant. */
 bool doe_mtl_draw_guard_same_inputs(const doe_mtl_render_draw *left,const doe_mtl_render_draw *right)
 {
     const doe_mtl_guarded_draw *a=left->guarded,*b=right->guarded;
     if (!a || !b || a->guard!=b->guard || a->arguments!=b->arguments ||
         a->argument_offset!=b->argument_offset || a->index_size!=b->index_size ||
         a->first_index!=b->first_index || a->first_instance_allowed!=b->first_instance_allowed ||
-        left->pipeline!=right->pipeline || left->index_buffer!=right->index_buffer ||
+        left->index_buffer!=right->index_buffer ||
         left->index_offset!=right->index_offset || left->index_type!=right->index_type ||
         left->topology!=right->topology || left->count!=right->count ||
         left->instance_count!=right->instance_count || left->first_vertex!=right->first_vertex ||
-        left->base_vertex!=right->base_vertex || left->first_instance!=right->first_instance ||
-        left->vertex.buffer_count!=right->vertex.buffer_count) return false;
-    for (size_t i=0;i<left->vertex.buffer_count;++i) {
-        const doe_mtl_buffer_binding *x=&left->vertex.buffers[i],*y=&right->vertex.buffers[i];
-        if (x->slot!=y->slot || x->buffer!=y->buffer || x->offset!=y->offset || x->size!=y->size)
-            return false;
-    }
-    return true;
+        left->base_vertex!=right->base_vertex || left->first_instance!=right->first_instance) return false;
+    uint64_t x[2],y[2];
+    return doe_mtl_draw_guard_capacities(left,x)==DOE_MTL_OK && doe_mtl_draw_guard_capacities(right,y)==DOE_MTL_OK &&
+        x[0]==y[0] && x[1]==y[1];
 }

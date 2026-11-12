@@ -17,7 +17,7 @@ typedef enum selector_index {
     SELECT_NEW_COMMAND, SELECT_BLIT_ENCODER, SELECT_COMPUTE_ENCODER,
     SELECT_COPY, SELECT_FILL, SELECT_END, SELECT_PIPELINE, SELECT_BUFFER,
     SELECT_BYTES, SELECT_DISPATCH, SELECT_INDIRECT, SELECT_COMMIT, SELECT_WAIT, SELECT_STATUS,
-    SELECT_ERROR, SELECT_BARRIER, SELECT_COUNT
+    SELECT_ERROR, SELECT_BARRIER, SELECT_COMPUTE_ENCODER_TYPED, SELECT_COUNT
 } selector_index;
 struct call_fixture {
     doe_mtl_objc runtime;
@@ -26,7 +26,7 @@ struct call_fixture {
     call_object source, name, library, function, pipeline, encoder, source_buffer,
         destination_buffer, error, description;
     unsigned pools, drains, strings, releases, retain_calls, ends, pipeline_sets;
-    unsigned blit_begins, compute_begins, barriers;
+    unsigned blit_begins, compute_begins, concurrent_begins, barriers;
     unsigned buffer_sets, bytes_sets, dispatches, indirects, copies, fills, commits, waits;
     size_t native_status, wait_status;
     int64_t error_code;
@@ -90,6 +90,16 @@ static void *object_call(void *receiver, void *selector) {
     }
     assert(selector == runtime->error && receiver == &fixture->command);
     return &fixture->error;
+}
+
+/* computeCommandEncoderWithDispatchType: only for the guard batch. */
+static void *object_size_call(void *receiver, void *selector, size_t type) {
+    call_fixture *fixture = owner(receiver);
+    assert(receiver == &fixture->command && selector == fixture->runtime.compute_encoder_with_type);
+    assert(type == 1); /* MTLDispatchTypeConcurrent. */
+    ++fixture->concurrent_begins;
+    if (!fixture->fail_encoder) memset(fixture->bound, 0, sizeof(fixture->bound));
+    return fixture->fail_encoder ? NULL : &fixture->encoder;
 }
 
 static void void_call(void *receiver, void *selector) {
@@ -299,6 +309,8 @@ static void fixture_init(call_fixture *fixture) {
     runtime->status = &fixture->selector[SELECT_STATUS];
     runtime->error = &fixture->selector[SELECT_ERROR];
     runtime->buffer_barrier = &fixture->selector[SELECT_BARRIER];
+    runtime->compute_encoder_with_type = &fixture->selector[SELECT_COMPUTE_ENCODER_TYPED];
+    runtime->object_size_call = object_size_call;
     runtime->responds_call = responds_call;
     runtime->set_size_call = barrier_call;
     runtime->object_call = object_call;
@@ -476,9 +488,10 @@ static void guard_batch_controls(void) {
         steps[i].slots[0] = 5;
         steps[i].bindings[0] = (doe_mtl_native_binding){&fixture.destination_buffer,i == 2 ? 40 : 0,40};
     }
+    steps[2].barrier = true; /* Only a marked dispatch waits; 0 and 1 may overlap. */
     assert(doe_mtl_objc_guard_batch(&fixture.runtime,&fixture.command,copies,2,steps,3,NULL) == DOE_MTL_OK);
-    assert(fixture.blit_begins == 1 && fixture.compute_begins == 1 && fixture.ends == 2);
-    assert(fixture.copies == 2 && fixture.dispatches == 3 && fixture.barriers == 2);
+    assert(fixture.blit_begins == 1 && fixture.concurrent_begins == 1 && !fixture.compute_begins && fixture.ends == 2);
+    assert(fixture.copies == 2 && fixture.dispatches == 3 && fixture.barriers == 1);
     assert(fixture.bound[5].offset == 40 && fixture.sizes[5] == 40 && fixture.pools == fixture.drains);
     fixture.fail_encoder = true;
     assert(doe_mtl_objc_guard_batch(&fixture.runtime,&fixture.command,copies,2,steps,3,NULL) == DOE_MTL_NATIVE_FAILURE);

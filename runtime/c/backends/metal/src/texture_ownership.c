@@ -23,6 +23,11 @@ doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,
     doe_mtl_texture *texture, doe_mtl_texture_use **out) {
     doe_mtl_texture_use *use;
     doe_mtl_status status;
+    /* As for buffers: at most one use per recording, newest first. */
+    if (texture->uses != NULL && texture->uses->commands == commands) {
+        *out = texture->uses;
+        return DOE_MTL_OK;
+    }
     for (use = commands->textures; use != NULL; use = use->next) {
         if (use->texture == texture) {
             *out = use;

@@ -7,6 +7,7 @@ typedef struct guard_plan {
     uint64_t limits[2], count_limit, first, end;
     size_t record, windows, cohort;
     bool cohort_start;
+    bool shared; /* An earlier draw of this pass has the same inputs and owns the record. */
 } guard_plan;
 
 /* Compiler-owned buffer-size tables carry a u32 byte span even where the
@@ -66,18 +67,32 @@ doe_mtl_status doe_mtl_draw_guard_batch(doe_mtl_commands *commands, const doe_mt
     doe_mtl_native *native = &commands->context->native;
     if (!native->guard_batch) return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "draw guard batch boundary", error);
     if (count > SIZE_MAX / sizeof(guard_plan)) return doe_mtl_fail(DOE_MTL_RANGE, "draw guard plan count", error);
+    /* Draws with the same guard inputs anywhere in the pass share one record
+     * and its scans: open addressing over earlier guarded draws (index + 1). */
+    size_t table_capacity = 16;
+    while (table_capacity < unique * 2 && table_capacity <= SIZE_MAX / 4) table_capacity *= 2;
+    if (table_capacity < unique * 2) return doe_mtl_fail(DOE_MTL_RANGE, "draw guard plan count", error);
     guard_plan *plans = calloc(count, sizeof(*plans));
-    if (!plans) return doe_mtl_fail(DOE_MTL_OUT_OF_MEMORY, "draw guard plans", error);
+    size_t *table = calloc(table_capacity, sizeof(*table));
+    if (!plans || !table) {
+        free(plans); free(table);
+        return doe_mtl_fail(DOE_MTL_OUT_OF_MEMORY, "draw guard plans", error);
+    }
     doe_mtl_status status = DOE_MTL_OK;
     unique = 0;
     const doe_mtl_draw_guard *previous_guard = NULL;
     uint32_t cohort_count = 0;
     for (size_t i = 0; i < count && status == DOE_MTL_OK; ++i) {
         if (!draws[i].guarded) continue;
-        if (i && doe_mtl_draw_guard_same_inputs(&draws[i-1], &draws[i])) {
-            plans[i] = plans[i-1];
+        size_t at = (size_t)doe_mtl_draw_guard_inputs_hash(&draws[i]) & (table_capacity - 1);
+        while (table[at] && !doe_mtl_draw_guard_same_inputs(&draws[table[at] - 1], &draws[i]))
+            at = (at + 1) & (table_capacity - 1);
+        if (table[at]) {
+            plans[i] = plans[table[at] - 1];
+            plans[i].shared = true;
             continue;
         }
+        table[at] = i + 1;
         status = plan_draw(&draws[i], &plans[i]);
         plans[i].record = unique++;
         const doe_mtl_draw_guard *guard = draws[i].guarded->guard;
@@ -126,7 +141,7 @@ doe_mtl_status doe_mtl_draw_guard_batch(doe_mtl_commands *commands, const doe_mt
         size_t record_offset = plan->record * DOE_DRAW_GUARD_RECORD_V2_BYTES;
         native_draws[i].indirect_arguments = scratch->native;
         native_draws[i].indirect_offset = record_offset;
-        if (i && doe_mtl_draw_guard_same_inputs(&draws[i-1], draw)) continue;
+        if (plan->shared) continue;
         uint32_t *words = records + plan->record * RECORD_WORDS;
         words[0]=draw->count; words[1]=draw->instance_count;
         words[2]=draw->index_buffer ? input->first_index : draw->first_vertex;
@@ -167,6 +182,10 @@ doe_mtl_status doe_mtl_draw_guard_batch(doe_mtl_commands *commands, const doe_mt
         doe_mtl_buffer_use *use;
         if (status == DOE_MTL_OK && input->arguments) status = doe_mtl_use_buffer(commands, input->arguments, &use);
     }
+    /* Normalizers own disjoint cohort records and scans only cancel their own
+     * draw's record atomically: one barrier, before the scans, orders the only
+     * dependency (a scan reads its normalized record). */
+    if (status == DOE_MTL_OK && steps_count > cohorts && cohorts) steps[cohorts].barrier = true;
     if (status == DOE_MTL_OK) status = doe_mtl_buffer_write(scratch, 0, records, record_bytes);
     if (status == DOE_MTL_OK && parameter_bytes) status = doe_mtl_buffer_write(params, 0, parameters, parameter_bytes);
     doe_mtl_buffer_use *use;
@@ -176,6 +195,6 @@ doe_mtl_status doe_mtl_draw_guard_batch(doe_mtl_commands *commands, const doe_mt
         copies, copies_count, steps, steps_count, error);
     else if (!error || error->status == DOE_MTL_OK) (void)doe_mtl_fail(status, "draw guard batch preparation", error);
     doe_mtl_buffer_release(params); doe_mtl_buffer_release(scratch);
-    free(parameters); free(records); free(steps); free(copies); free(plans);
+    free(parameters); free(records); free(steps); free(copies); free(table); free(plans);
     return status;
 }

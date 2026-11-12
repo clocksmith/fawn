@@ -12,10 +12,26 @@ static bool attachment_alias(const doe_mtl_render_pass_desc *pass, const doe_mtl
         (pass->depth.resolve_view != NULL && pass->depth.resolve_view->texture == texture) ||
         (pass->stencil.resolve_view != NULL && pass->stencil.resolve_view->texture == texture);
 }
+/* The checks below read only the slots these bindings name (duplicate
+ * detection) and the counts: clearing those replaces zeroing every slot. */
+static void clear_named_slots(const doe_mtl_render_bindings *bindings, doe_mtl_native_resources *native) {
+    size_t i;
+    for (i = 0; i < bindings->buffer_count && bindings->buffers != NULL; ++i)
+        if (bindings->buffers[i].slot < DOE_MTL_BUFFER_SLOTS)
+            native->buffers[bindings->buffers[i].slot] = (doe_mtl_native_binding){0};
+    for (i = 0; i < bindings->texture_count && bindings->textures != NULL; ++i)
+        if (bindings->textures[i].slot < DOE_MTL_TEXTURE_SLOTS) native->textures[bindings->textures[i].slot] = NULL;
+    for (i = 0; i < bindings->sampler_count && bindings->samplers != NULL; ++i)
+        if (bindings->samplers[i].slot < DOE_MTL_SAMPLER_SLOTS) native->samplers[bindings->samplers[i].slot] = NULL;
+    native->immediate_size = 0;
+    native->texture_count = 0;
+    native->sampler_count = 0;
+}
 static doe_mtl_status bindings_check(doe_mtl_commands *commands, const doe_mtl_render_pass_desc *pass,
     const doe_mtl_render_bindings *bindings, uint32_t sizes_slot, doe_mtl_native_resources *native) {
     size_t i;
     doe_mtl_status status;
+    clear_named_slots(bindings, native);
     status = doe_mtl_buffer_bindings_preflight(commands, bindings->buffers,
         bindings->buffer_count, sizes_slot, native->buffers);
     if (status != DOE_MTL_OK) return status;
@@ -77,27 +93,43 @@ static doe_mtl_status dynamic_state(const doe_mtl_render_draw *draw, const doe_m
         scissor->y > pass->height || scissor->height > pass->height - scissor->y)) return DOE_MTL_RANGE;
     return DOE_MTL_OK;
 }
+bool doe_mtl_render_bindings_same(const doe_mtl_render_bindings *a, const doe_mtl_render_bindings *b) {
+    return a->buffers == b->buffers && a->buffer_count == b->buffer_count &&
+        a->textures == b->textures && a->texture_count == b->texture_count &&
+        a->samplers == b->samplers && a->sampler_count == b->sampler_count &&
+        a->immediates.size == b->immediates.size && (a->immediates.size == 0 ||
+        a->immediates.bytes == b->immediates.bytes ||
+        memcmp(a->immediates.bytes, b->immediates.bytes, a->immediates.size) == 0);
+}
+bool doe_mtl_render_draw_same_inputs(const doe_mtl_render_draw *a, const doe_mtl_render_draw *b) {
+    return a->pipeline == b->pipeline && doe_mtl_render_bindings_same(&a->vertex, &b->vertex) &&
+        doe_mtl_render_bindings_same(&a->fragment, &b->fragment);
+}
 doe_mtl_status doe_mtl_render_draw_preflight(doe_mtl_commands *commands,
     const doe_mtl_render_pass_desc *pass, const doe_mtl_native_render_pass *native_pass,
-    const doe_mtl_render_draw *draw, doe_mtl_native_render_draw *native) {
+    const doe_mtl_render_draw *draw, const doe_mtl_render_draw *admitted, doe_mtl_native_render_draw *native) {
     const doe_mtl_render_pipeline_desc *pipeline;
     doe_mtl_status status;
     uint32_t i;
     if (draw->pipeline == NULL) return DOE_MTL_INVALID_ARGUMENT;
     if (draw->pipeline->context != commands->context) return DOE_MTL_DEVICE_MISMATCH;
     pipeline = &draw->pipeline->desc;
-    if (pipeline->sample_count != native_pass->samples || pipeline->color_count != pass->color_count ||
+    /* An earlier draw of this pass already admitted the same pipeline and
+     * binding arrays against these attachments; only per-draw state remains. */
+    const bool shared = admitted != NULL && doe_mtl_render_draw_same_inputs(admitted, draw);
+    if (!shared && (pipeline->sample_count != native_pass->samples || pipeline->color_count != pass->color_count ||
         pipeline->depth_stencil.depth_format != (pass->depth.view != NULL ? pass->depth.view->desc.format : 0) ||
-        pipeline->depth_stencil.stencil_format != (pass->stencil.view != NULL ? pass->stencil.view->desc.format : 0))
+        pipeline->depth_stencil.stencil_format != (pass->stencil.view != NULL ? pass->stencil.view->desc.format : 0)))
         return DOE_MTL_INVALID_ARGUMENT;
-    for (i = 0; i < pipeline->color_count; ++i)
+    for (i = 0; !shared && i < pipeline->color_count; ++i)
         if (pipeline->colors[i].format != (pass->colors[i].view != NULL ? pass->colors[i].view->desc.format : 0))
             return DOE_MTL_INVALID_ARGUMENT;
-    doe_mtl_native_resources scratch = {0};
     status = dynamic_state(draw, native_pass, commands->context->caps.max_texture_2d);
-    if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->vertex, pipeline->vertex.sizes_slot, &scratch);
-    memset(&scratch, 0, sizeof(scratch));
-    if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->fragment, pipeline->fragment.sizes_slot, &scratch);
+    if (status == DOE_MTL_OK && !shared) {
+        doe_mtl_native_resources scratch; /* bindings_check clears the slots it reads. */
+        status = bindings_check(commands, pass, &draw->vertex, pipeline->vertex.sizes_slot, &scratch);
+        if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->fragment, pipeline->fragment.sizes_slot, &scratch);
+    }
     if (status == DOE_MTL_OK) status = vertex_fetch(draw);
     if (status == DOE_MTL_OK) status = doe_mtl_draw_guard_preflight(commands, draw);
     if (status != DOE_MTL_OK) return status;

@@ -78,6 +78,7 @@ int main(void)
         return 1;
     }
     assert(mock.renders==1 && mock.render_draw_count==2 && mock.guard_batches==2);
+    assert(mock.guard_barriers==1); /* Normalize, then one barrier before the independent scans. */
     assert(mock.render_draws[0].indirect_arguments==mock.render_draws[1].indirect_arguments);
     assert(mock.copy_sequence<mock.dispatch_sequence && mock.dispatch_sequence<mock.render_sequence);
     assert(mock.last_length==20 && mock.last_source_offset==4);

@@ -230,6 +230,22 @@ size_t doe_resource_render_record_draw_count(const doe_resource_render_record *r
 /* Copies one draw without allocation or retention. False leaves out untouched. */
 bool doe_resource_render_record_draw(const doe_resource_render_record *record, size_t index,
     doe_resource_render_packet *out);
+/* One draw's own arguments, the fields record_draw adds to its binding packet. */
+typedef struct doe_resource_render_draw_args {
+    doe_resource_buffer *indirect;
+    uint64_t indirect_offset;
+    uint32_t count, instances, first, first_instance;
+    int32_t base_vertex;
+    bool indexed;
+} doe_resource_render_draw_args;
+/* The same draw as record_draw without copying a packet. *bindings borrows the
+ * packet holding its pipeline, groups, offsets, vertex/index buffers and
+ * immediates (the envelope itself, or a bundle's stored draw); targets, dynamic
+ * and occlusion state are the envelope's (record_borrow). Its draw-argument
+ * fields are not this draw's: args receives those. Draws sharing one envelope
+ * and binding packet differ only in args. False leaves both outputs untouched. */
+bool doe_resource_render_record_draw_borrow(const doe_resource_render_record *record, size_t index,
+    const doe_resource_render_packet **bindings, doe_resource_render_draw_args *args);
 
 /* Bundles contain self-contained draw snapshots, not synthetic attachments.
  * Finish moves storage. Replay retains one invocation through the same pass owner;

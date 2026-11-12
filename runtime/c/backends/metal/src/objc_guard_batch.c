@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
 
-/* Copies precede guards; dependent normalize/scan dispatches share one serial
- * compute encoder with explicit buffer visibility between each dispatch. */
+/* Copies precede guards; normalize/scan dispatches share one concurrent
+ * compute encoder with a buffer barrier wherever a dispatch requires every
+ * earlier dispatch's writes. A serial encoder would also wait between the
+ * independent dispatches of one phase. */
 doe_mtl_status doe_mtl_objc_guard_batch(void *userdata, void *command,
     const doe_mtl_native_guard_copy *copies, size_t copy_count,
     const doe_mtl_native_guard_dispatch *dispatches, size_t dispatch_count, doe_mtl_error *error) {
@@ -18,7 +20,7 @@ doe_mtl_status doe_mtl_objc_guard_batch(void *userdata, void *command,
         doe_mtl_objc_void(r, encoder, r->end_encoding);
     }
     if (dispatch_count) {
-        encoder = doe_mtl_objc_object(r, command, r->compute_encoder);
+        encoder = r->object_size_call(command, r->compute_encoder_with_type, 1); /* MTLDispatchTypeConcurrent. */
         if (!encoder) goto compute_failure;
         if (!r->responds_call(encoder, r->responds, r->buffer_barrier)) {
             doe_mtl_objc_void(r, encoder, r->end_encoding);
@@ -28,7 +30,7 @@ doe_mtl_status doe_mtl_objc_guard_batch(void *userdata, void *command,
         for (size_t i = 0; i < dispatch_count; ++i) {
             const doe_mtl_native_guard_dispatch *step = &dispatches[i];
             uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0};
-            if (i) r->set_size_call(encoder, r->buffer_barrier, 1); /* MTLBarrierScopeBuffers. */
+            if (step->barrier) r->set_size_call(encoder, r->buffer_barrier, 1); /* MTLBarrierScopeBuffers. */
             r->set_object_call(encoder, r->set_pipeline, step->pipeline);
             for (uint32_t j = 0; j < step->binding_count; ++j) {
                 const doe_mtl_native_binding *binding = &step->bindings[j];

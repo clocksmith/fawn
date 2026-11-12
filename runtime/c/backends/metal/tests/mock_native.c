@@ -265,6 +265,11 @@ static doe_mtl_status guard_batch(void *userdata, void *command,
         status = copy_buffer(userdata, command, copies[i].source, copies[i].source_offset,
             copies[i].destination, copies[i].destination_offset, copies[i].size, error);
     for (size_t i = 0; i < step_count && status == DOE_MTL_OK; ++i) {
+        /* Every normalizer precedes every scan; exactly the first scan after
+         * them waits for earlier writes. */
+        assert(!i || steps[i].binding_count != 1 || steps[i - 1].binding_count == 1);
+        assert(steps[i].barrier == (i && steps[i].binding_count != 1 && steps[i - 1].binding_count == 1));
+        if (steps[i].barrier) ++mock->guard_barriers;
         if (steps[i].binding_count == 1) {
             unsigned at = mock->guard_normalizations++;
             assert(at < 8 && steps[i].bindings[0].size == steps[i].groups.x * 40u);

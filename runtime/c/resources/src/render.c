@@ -826,6 +826,25 @@ bool doe_resource_render_record_draw(const doe_resource_render_record *record, s
     return true;
 }
 
+bool doe_resource_render_record_draw_borrow(const doe_resource_render_record *record, size_t index,
+    const doe_resource_render_packet **bindings, doe_resource_render_draw_args *args)
+{
+    if (!bindings || !args || index >= doe_resource_render_record_draw_count(record)) return false;
+    if (record->bundle) {
+        const doe_resource_render_packet *draw = resource_bundle_draw(record->bundle, index);
+        *args = (doe_resource_render_draw_args){.indirect = draw->indirect, .indirect_offset = draw->indirect_offset,
+            .count = draw->count, .instances = draw->instances, .first = draw->first,
+            .first_instance = draw->first_instance, .base_vertex = draw->base_vertex, .indexed = draw->indexed};
+        *bindings = draw;
+        return true;
+    }
+    *args = (doe_resource_render_draw_args){.indirect = record->indirect, .indirect_offset = record->indirect_offset,
+        .count = record->count, .instances = record->instances, .first = record->first,
+        .first_instance = record->first_instance, .base_vertex = record->base_vertex, .indexed = record->indexed};
+    *bindings = record->packet;
+    return true;
+}
+
 doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass *pass,
     doe_resource_status rejection)
 {

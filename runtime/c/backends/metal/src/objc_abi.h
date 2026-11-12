@@ -47,6 +47,7 @@ typedef signed char doe_objc_bool;
 #include "objc_external_types.h"
 typedef doe_objc_bool (*doe_objc_responds_call)(void *, void *, void *);
 typedef void *(*doe_objc_object_call)(void *, void *);
+typedef void *(*doe_objc_object_size_call)(void *, void *, size_t);
 typedef void (*doe_objc_void_call)(void *, void *);
 typedef size_t (*doe_objc_size_call)(void *, void *);
 typedef intptr_t (*doe_objc_integer_call)(void *, void *);
@@ -104,6 +105,7 @@ typedef struct doe_mtl_objc {
      * private test boundary without an incompatible variadic C mock. */
     doe_objc_responds_call responds_call;
     doe_objc_object_call object_call;
+    doe_objc_object_size_call object_size_call;
     doe_objc_void_call void_call;
     doe_objc_size_call size_call;
     doe_objc_integer_call integer_call;
@@ -170,6 +172,7 @@ typedef struct doe_mtl_objc {
     void *new_command;
     void *blit_encoder;
     void *compute_encoder;
+    void *compute_encoder_with_type; /* computeCommandEncoderWithDispatchType:, NSUInteger type. */
     void *copy_buffer;
     void *fill_buffer;
     void *end_encoding;
