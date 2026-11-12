@@ -404,7 +404,8 @@ The wrapper pins each platform package to an exact version in
 `optionalDependencies`; a wrapper-only release (0.5.1) keeps pinning the
 already published 0.5.0 platform packages.
 
-For a workspace addon build, run `npm run build:addon`. POSIX uses `CC` or `cc`.
+For a workspace addon build, run `npm run build:addon`. POSIX uses `CC` or `cc`;
+`CC` may carry arguments (`zig cc -target x86_64-linux-gnu.2.34`), split on spaces.
 Windows uses LLVM's `clang` driver (`CC` may name its full executable path) in an
 actual Visual Studio/Windows SDK developer environment, with an explicit MSVC
 target and DLL CRT. It does not invoke Zig. Supply `NODE_INCLUDE_DIR` with the
@@ -569,6 +570,24 @@ Platform packages publish before the wrapper version that references them.
 Publication requires package-readiness checks and the complete package test
 suite. An npm package release does not promote native, browser, or hardware
 claims that lack their own evidence.
+
+The `doe-gpu-linux-x64` payload is built at the glibc 2.34 floor with the zig
+pinned in `config/toolchains.json` as the C compiler, at the release commit:
+
+```bash
+T=x86_64-linux-gnu.2.34
+nice -n 19 make -C runtime/c package REVISION=HEAD GLIBC_FLOOR=2.34 \
+  CC="zig cc -target $T" CXX="zig c++ -target $T" BUILD=/tmp/doe-c-build-unique \
+  STAGE="$PWD/.cache/doe-c-packages/$(git rev-parse HEAD)"
+(cd packages/doe-gpu && CC="zig cc -target $T" node scripts/build-addon.js)
+(cd packages/doe-gpu-linux-x64 && node ../doe-gpu/scripts/stage-platform-package.js)
+```
+
+The C package tool and platform staging both refuse a `.so` or `.node` needing a
+GLIBC symbol version above the floor; the
+[Linux release build](../../runtime/c/README.md#linux-release-build-at-the-glibc-234-floor)
+section explains the link recipe. Then run the native release-candidate gate
+from [Runtime resolution](#runtime-resolution).
 
 Legacy `@simulatte/webgpu` and `@simulatte/webgpu-doe` names are migration
 history. The package is licensed under Apache-2.0.

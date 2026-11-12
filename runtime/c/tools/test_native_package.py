@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import sys
@@ -183,12 +184,72 @@ class PackageLoaderTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     PACKAGE.audit_libraries(Path("/build"), "Darwin")
 
-    def test_linux_requires_origin_runpath(self) -> None:
-        with patch.object(PACKAGE, "captured", return_value="Library runpath: [$ORIGIN]"):
-            PACKAGE.audit_libraries(Path("/build"), "Linux")
-        with patch.object(PACKAGE, "captured", return_value="Library runpath: [/build]"):
-            with self.assertRaises(RuntimeError):
+    @staticmethod
+    def elf_output(arguments: list[str], native: str = "", exports: str = "0010 T wgpuCreateInstance\n") -> str:
+        name = Path(arguments[-1]).name
+        if arguments[0] == "nm":
+            return exports
+        if name == "libwebgpu_doe_c.so":
+            return native or ("Library runpath: [$ORIGIN]\nShared library: [libdoe_compiler.so]\n"
+                              "Shared library: [libc.so.6]\nLibrary soname: [libwebgpu_doe_c.so]")
+        return "Shared library: [libm.so.6]\nLibrary soname: [libdoe_compiler.so]"
+
+    def test_linux_requires_origin_runpath_names_and_function_exports(self) -> None:
+        with patch.object(PACKAGE, "captured", side_effect=self.elf_output):
+            self.assertEqual(len(PACKAGE.audit_libraries(Path("/build"), "Linux")), 2)
+        valid = self.elf_output(["readelf", "-d", "libwebgpu_doe_c.so"])
+        for native in (valid.replace("$ORIGIN", "/build"),
+                       valid.replace("Library soname: [libwebgpu_doe_c.so]", ""),
+                       valid.replace("[libdoe_compiler.so]", "[/build/libdoe_compiler.so]")):
+            with self.subTest(native=native), patch.object(
+                    PACKAGE, "captured", side_effect=lambda a, n=native: self.elf_output(a, native=n)):
+                with self.assertRaises(RuntimeError):
+                    PACKAGE.audit_libraries(Path("/build"), "Linux")
+        data = "0010 T wgpuCreateInstance\n0020 D exported_table\n"
+        with patch.object(PACKAGE, "captured", side_effect=lambda a: self.elf_output(a, exports=data)):
+            with self.assertRaisesRegex(RuntimeError, "non-function"):
                 PACKAGE.audit_libraries(Path("/build"), "Linux")
+
+    def test_glibc_floor_refuses_newer_symbol_versions(self) -> None:
+        symbols = {"a.so": "DF *UND* GLIBC_2.2.5 memcpy\nDF *UND* (GLIBC_2.34) dlopen\nGLIBC_PRIVATE\n",
+                   "b.so": "DF *UND* (GLIBC_2.29) exp\n"}
+        with patch.object(PACKAGE, "captured", side_effect=lambda a: symbols[Path(a[-1]).name]):
+            self.assertEqual(PACKAGE.audit_glibc_floor(Path("/build"), ("a.so", "b.so"), "2.34"),
+                             {"a.so": "2.34", "b.so": "2.29"})
+            with self.assertRaisesRegex(RuntimeError, "GLIBC_2.34, above the GLIBC_2.31"):
+                PACKAGE.audit_glibc_floor(Path("/build"), ("a.so",), "2.31")
+        with patch.object(PACKAGE, "captured", return_value="no versions"):
+            with self.assertRaises(RuntimeError):
+                PACKAGE.audit_glibc_floor(Path("/build"), ("a.so",), "2.34")
+
+    def test_glibc_floor_is_linux_major_minor_before_mutation(self) -> None:
+        for system, floor in (("Darwin", "2.34"), ("Linux", "2.34.1"), ("Linux", "latest")):
+            with self.subTest(system=system, floor=floor), tempfile.TemporaryDirectory() as directory, \
+                    patch.object(PACKAGE.platform, "system", return_value=system):
+                root = Path(directory)
+                with self.assertRaisesRegex(ValueError, "glibc-floor"):
+                    PACKAGE.build_package(root, "HEAD", root / "build", root / "stage", "gcc", "g++",
+                                          glibc_floor=floor)
+                self.assertEqual(list(root.iterdir()), [])
+
+    def test_zig_compiler_must_match_pinned_toolchain(self) -> None:
+        source = Path(__file__).resolve().parents[3]
+        pinned = json.loads((source / "config/toolchains.json").read_text())["toolchains"]["zig"]["version"]
+        self.assertIsNone(PACKAGE.zig_version(["gcc"], source))
+        with patch.object(PACKAGE, "captured", return_value=pinned) as call:
+            self.assertEqual(PACKAGE.zig_version(["/opt/zig/zig", "cc", "-target", "x"], source), pinned)
+            self.assertEqual(call.call_args.args[0], ["/opt/zig/zig", "version"])
+        with patch.object(PACKAGE, "captured", return_value="0.0.1"):
+            with self.assertRaisesRegex(RuntimeError, "pinned zig"):
+                PACKAGE.zig_version(["zig", "cc"], source)
+
+    def test_compiler_version_drops_zig_target_arguments(self) -> None:
+        with patch.object(PACKAGE, "captured", return_value="clang version 20\nTarget: x") as call:
+            self.assertEqual(PACKAGE.compiler_version(["zig", "c++", "-target", "x86_64-linux-gnu.2.34"]),
+                             "clang version 20")
+            self.assertEqual(call.call_args.args[0], ["zig", "c++", "--version"])
+            PACKAGE.compiler_version(["gcc-14", "-m64"])
+            self.assertEqual(call.call_args.args[0], ["gcc-14", "-m64", "--version"])
 
 
 if __name__ == "__main__":

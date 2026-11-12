@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -35,6 +36,16 @@ d3dcompiler_47.dll
   https://learn.microsoft.com/en-us/legal/windows-sdk/redist
   Terms: Windows-SDK/sdk_license.rtf and Windows-SDK/sdk_third_party_notices.rtf.
 """
+
+
+GLIBC_VERSION = re.compile(r"\bGLIBC_(\d+(?:\.\d+)+)\b")
+GLIBC_FLOOR = re.compile(r"^\d+\.\d+$")
+# Dynamic symbol types a function-only export table may contain (nm -D).
+FUNCTION_SYMBOL_TYPES = frozenset({"T", "W", "i"})
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
 
 
 def digest(path: Path) -> str:
@@ -129,10 +140,29 @@ def audit_libraries(directory: Path, system: str) -> dict[str, str]:
             records[library.name] = output
         return records
     if system == "Linux":
-        dynamic = captured(["readelf", "-d", str(directory / "libwebgpu_doe_c.so")])
-        if "Library runpath: [$ORIGIN]" not in dynamic:
+        records = {}
+        for name in ("libdoe_compiler.so", "libwebgpu_doe_c.so"):
+            dynamic = captured(["readelf", "-d", str(directory / name)])
+            # A missing SONAME makes lld record the absolute build path in consumers.
+            if f"Library soname: [{name}]" not in dynamic:
+                raise RuntimeError(f"{name}: SONAME is not its file name")
+            needed = re.findall(r"Shared library: \[([^\]]+)\]", dynamic)
+            if any("/" in link for link in needed):
+                raise RuntimeError(f"{name}: path dependency in {needed}")
+            records[name] = dynamic
+        native = records["libwebgpu_doe_c.so"]
+        if "Library runpath: [$ORIGIN]" not in native:
             raise RuntimeError("Native artifact lacks exact $ORIGIN RUNPATH")
-        return {"native_dynamic": dynamic}
+        if "Shared library: [libdoe_compiler.so]" not in native:
+            raise RuntimeError("Native artifact does not depend on libdoe_compiler.so by name")
+        # The native link uses -Bsymbolic, which equals -Bsymbolic-functions only
+        # while every defined dynamic symbol is a function.
+        exports = captured(["nm", "-D", "--defined-only", str(directory / "libwebgpu_doe_c.so")])
+        data = [line for line in exports.splitlines()
+                if len(line.split()) >= 2 and line.split()[-2] not in FUNCTION_SYMBOL_TYPES]
+        if data:
+            raise RuntimeError(f"Native artifact exports non-function symbols: {data[:8]}")
+        return records
     records: dict[str, str] = {}
     for name in ("libwebgpu_doe_c.dylib", "libdoe_compiler.dylib"):
         library = directory / name
@@ -158,6 +188,37 @@ def audit_libraries(directory: Path, system: str) -> dict[str, str]:
     return records
 
 
+def audit_glibc_floor(directory: Path, names: tuple[str, ...], floor: str) -> dict[str, str]:
+    """Refuse a library that needs a GLIBC symbol version above the floor."""
+    required: dict[str, str] = {}
+    for name in names:
+        versions = GLIBC_VERSION.findall(captured(["objdump", "-T", str(directory / name)]))
+        if not versions:
+            raise RuntimeError(f"{name}: objdump -T reports no GLIBC symbol version")
+        highest = max(versions, key=version_key)
+        if version_key(highest) > version_key(floor):
+            raise RuntimeError(f"{name} needs GLIBC_{highest}, above the GLIBC_{floor} floor")
+        required[name] = highest
+    return required
+
+
+def zig_version(compiler: list[str], source: Path) -> str | None:
+    """A zig cc/c++ compiler must be the version config/toolchains.json pins."""
+    if Path(compiler[0]).name not in ("zig", "zig.exe"):
+        return None
+    actual = captured([compiler[0], "version"])
+    pinned = json.loads((source / "config/toolchains.json").read_text(encoding="utf-8"))["toolchains"]["zig"]["version"]
+    if actual != pinned:
+        raise RuntimeError(f"zig {actual} is not the pinned zig {pinned}")
+    return actual
+
+
+def compiler_version(compiler: list[str]) -> str:
+    """First --version line; zig cc/c++ refuses --version after -target."""
+    command = compiler[:2] if Path(compiler[0]).name in ("zig", "zig.exe") else compiler
+    return captured([*command, "--version"]).splitlines()[0]
+
+
 def loader_environment(system: str | None = None) -> dict[str, str]:
     environment = {key: value for key, value in os.environ.items()
             if key not in ("LD_LIBRARY_PATH", "LD_PRELOAD")
@@ -173,14 +234,19 @@ def loader_environment(system: str | None = None) -> dict[str, str]:
 
 def build_package(repo: Path, revision: str, build: Path, destination: Path,
                   cc: str, cxx: str, *, dxc_root: Path | None = None,
-                  clang_cl: str = "clang-cl") -> dict[str, object]:
+                  clang_cl: str = "clang-cl", glibc_floor: str | None = None) -> dict[str, object]:
     system = platform.system()
     if system not in ("Linux", "Darwin", "Windows"):
         raise ValueError(f"Unsupported package host {system}")
+    if glibc_floor is not None and (system != "Linux" or not GLIBC_FLOOR.match(glibc_floor)):
+        raise ValueError("--glibc-floor takes MAJOR.MINOR and applies to Linux only")
     if system == "Windows":
         if dxc_root is None or not (dxc_root / "inc/dxcapi.h").is_file():
             raise ValueError("Windows requires --dxc-root with the official DXC SDK")
         cc = cxx = clang_cl
+    # CC/CXX may carry arguments (zig cc -target ...), split as make splits them.
+    cc_command = [cc] if system == "Windows" else shlex.split(cc)
+    cxx_command = [cxx] if system == "Windows" else shlex.split(cxx)
     if build.exists() or build.is_symlink() or destination.exists() or destination.is_symlink():
         raise FileExistsError("Use fresh build and destination paths; existing work is never replaced")
     build, destination = build.resolve(), destination.resolve()
@@ -210,6 +276,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
                      for p in sorted(source.rglob("*")) if p.is_file()}
     (build / "SOURCE_INPUTS.json").write_text(
         json.dumps(source_hashes, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    zig = zig_version(cc_command, source)
     owner = source / "runtime/c/native"
     objects = build / "objects"
     # Two dollars survive GNU Make expansion as one literal loader token.
@@ -228,6 +295,8 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
                    f"COMPILER_RUNPATH={runpath}"]
     execute(command, build / "build.log")
     loader_records = audit_libraries(objects, system)
+    glibc_required = (audit_glibc_floor(objects, (native_name, compiler_name), glibc_floor)
+                      if glibc_floor else None)
     candidate = build / "package-before-relocation"
     for name in ("lib", "include", "bin", "licenses"):
         (candidate / name).mkdir(parents=True)
@@ -257,7 +326,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     shutil.copy2(owner / "tests/procedures.cpp", candidate / "procedures.cpp")
     consumer_runpath = "@executable_path/../lib" if system == "Darwin" else "$ORIGIN/../lib"
     consumer_name = "procedures.exe" if system == "Windows" else "procedures"
-    consumer_command = [cxx, "-std=c++17", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
+    consumer_command = [*cxx_command, "-std=c++17", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
                         str(candidate / "procedures.cpp"), "-I" + str(candidate / "include"),
                         "-L" + str(candidate / "lib"), "-lwebgpu_doe_c",
                         "-Wl,-rpath," + consumer_runpath, "-o", str(candidate / "bin/procedures")]
@@ -296,13 +365,16 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         "source_archive_sha256": digest(archive), "source_inputs": source_hashes,
         "packaging_tool_sha256": digest(Path(__file__)),
         "build_command": command, "consumer_command": consumer_command,
-        "cc": captured([cc, "--version"]).splitlines()[0],
-        "cxx": captured([cxx, "--version"]).splitlines()[0],
+        "cc": compiler_version(cc_command), "cxx": compiler_version(cxx_command),
+        "zig_version": zig,
+        # The C stage's floor; doe-gpu platform staging enforces it on its bin/.
+        "glibc_floor": glibc_floor, "glibc_required": glibc_required,
         "host": platform.platform(), "artifacts": artifacts,
         "lean_proof": lean_proof_record(source),
         "loader_records": loader_records,
         "checks": ["native C-only source build", "moved C++ consumer with no library-path override",
-                   "exact exported procedure inventory and addresses"],
+                   "exact exported procedure inventory and addresses",
+                   *([f"no GLIBC symbol version above {glibc_floor}"] if glibc_floor else [])],
         "qualification": f"partial {system} developer package; no GPU execution, browser or production cutover qualification",
     }
     (moved / "MANIFEST.json").write_text(
@@ -331,8 +403,10 @@ def main() -> None:
     parser.add_argument("--ref", default="HEAD")
     parser.add_argument("--build", type=Path, required=True)
     parser.add_argument("--destination", type=Path, required=True)
-    parser.add_argument("--cc", default="gcc")
-    parser.add_argument("--cxx", default="g++")
+    parser.add_argument("--cc", default="gcc", help="C compiler command; may carry arguments")
+    parser.add_argument("--cxx", default="g++", help="C++ compiler command; may carry arguments")
+    parser.add_argument("--glibc-floor", metavar="MAJOR.MINOR",
+                        help="Linux: refuse a library needing a newer GLIBC symbol version")
     parser.add_argument("--dxc-root", type=Path,
                         help="official Windows DXC SDK with headers, x64 DLLs and licenses")
     parser.add_argument("--clang-cl", default="clang-cl",
@@ -340,7 +414,8 @@ def main() -> None:
     args = parser.parse_args()
     result = build_package(args.repo.resolve(), args.ref, args.build.absolute(),
                            args.destination.absolute(), args.cc, args.cxx,
-                           dxc_root=args.dxc_root, clang_cl=args.clang_cl)
+                           dxc_root=args.dxc_root, clang_cl=args.clang_cl,
+                           glibc_floor=args.glibc_floor)
     print(f"PASS source-bound relocatable partial C package: {result['source_commit']}")
     print(args.destination / "MANIFEST.json")
 

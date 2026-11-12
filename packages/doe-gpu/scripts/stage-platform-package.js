@@ -11,6 +11,7 @@ import {
   rmSync,
 } from 'node:fs';
 import { cStageRoot, cLibraryName, cRuntimeDirectory, cStageFiles } from './c-native-stage.js';
+import { glibcFloorProblems } from './platform-staging.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -85,7 +86,7 @@ function main() {
 
   const binRoot = resolve(targetPackageRoot, 'bin');
   const libraryDir = dirname(libraryPath);
-  const { files, manifestPath } = cStageFiles(libraryPath, workspaceRoot);
+  const { files, manifestPath, manifest } = cStageFiles(libraryPath, workspaceRoot);
   rmSync(binRoot, { recursive: true, force: true });
   mkdirSync(binRoot, { recursive: true });
   copyFileSync(addonPath, resolve(binRoot, 'doe_napi.node'));
@@ -95,6 +96,13 @@ function main() {
     copyFileSync(file.source, target);
   }
   copyFileSync(manifestPath, resolve(binRoot, 'doe-c-manifest.json'));
+  if (targetPlatform === 'linux' && manifest.glibc_floor) {
+    const problems = glibcFloorProblems(binRoot, manifest.glibc_floor);
+    if (problems.length > 0) {
+      rmSync(binRoot, { recursive: true, force: true });
+      throw new Error(`doe-gpu: ${packageJson.name} exceeds the C stage glibc floor: ${problems.join('; ')}`);
+    }
+  }
   console.log(`doe-gpu: staged ${packageJson.name} with the C runtime from ${dirname(libraryDir)}`);
 }
 

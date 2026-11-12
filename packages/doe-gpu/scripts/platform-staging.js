@@ -6,6 +6,7 @@
 // compare content hashes first and stop with an actionable message.
 
 import { cStageRoot, cLibraryName, cRuntimeDirectory, cStageFiles } from './c-native-stage.js';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -89,6 +90,39 @@ function stagedPlatformProblems({ platformPackageRoot, packageRoot, workspaceRoo
   return problems;
 }
 
+const GLIBC_VERSION = /\bGLIBC_(\d+(?:\.\d+)+)\b/g;
+const ELF_PAYLOAD = /\.(so|node)$/;
+
+function compareVersions(left, right) {
+  const a = left.split('.').map(Number);
+  const b = right.split('.').map(Number);
+  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+    const delta = (a[index] ?? 0) - (b[index] ?? 0);
+    if (delta !== 0) return delta;
+  }
+  return 0;
+}
+
+function readDynamicSymbols(path) {
+  return execFileSync('objdump', ['-T', path], { encoding: 'utf8' });
+}
+
+// Every shipped .so/.node in a Linux bin/ against the C stage's recorded
+// glibc floor (MANIFEST.json glibc_floor), read from `objdump -T`.
+function glibcFloorProblems(binRoot, floor, readSymbols = readDynamicSymbols) {
+  const problems = [];
+  for (const name of readdirSync(binRoot).filter((entry) => ELF_PAYLOAD.test(entry)).sort()) {
+    const versions = [...readSymbols(resolve(binRoot, name)).matchAll(GLIBC_VERSION)].map((match) => match[1]);
+    if (versions.length === 0) {
+      problems.push(`${name} reports no GLIBC symbol version`);
+      continue;
+    }
+    const highest = versions.reduce((best, version) => (compareVersions(version, best) > 0 ? version : best));
+    if (compareVersions(highest, floor) > 0) problems.push(`${name} needs GLIBC_${highest}, above the GLIBC_${floor} floor`);
+  }
+  return problems;
+}
+
 function assertStagedPlatformFresh(options) {
   const problems = stagedPlatformProblems(options);
   if (problems.length > 0) {
@@ -100,6 +134,7 @@ function assertStagedPlatformFresh(options) {
 }
 
 export {
+  glibcFloorProblems,
   addonSourceSha256,
   writeAddonSourceStamp,
   stagedPlatformProblems,

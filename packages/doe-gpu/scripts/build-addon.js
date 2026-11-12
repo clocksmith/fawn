@@ -90,12 +90,16 @@ function compilerCommand(includeDir, {
       ],
     };
   }
-  const compiler = environment.CC || 'cc';
+  // POSIX CC may carry arguments, split as make splits it, e.g. the Linux
+  // release's `zig cc -target x86_64-linux-gnu.2.34` (runtime/c/README.md).
+  const [compiler, ...prefixArgs] = (environment.CC || 'cc').trim().split(/\s+/);
   switch (platform) {
     case 'darwin':
       return {
         compiler,
+        prefixArgs,
         args: [
+          ...prefixArgs,
           '-bundle',
           '-undefined',
           'dynamic_lookup',
@@ -108,7 +112,9 @@ function compilerCommand(includeDir, {
     case 'linux':
       return {
         compiler,
+        prefixArgs,
         args: [
+          ...prefixArgs,
           '-shared',
           '-fPIC',
           ...baseArgs,

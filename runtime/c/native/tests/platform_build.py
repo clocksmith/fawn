@@ -27,8 +27,10 @@ def main() -> None:
         assert "-lcompiler_probe" in darwin and "-exported_symbols_list," in darwin
         assert "--version-script" not in darwin and "-Bsymbolic" not in darwin and "-l:" not in darwin
         linux = subprocess.check_output(command + ["SHARED_PLATFORM=Linux", "all"], text=True)
-        assert "-shared -Wl,-z,defs -Wl,-Bsymbolic-functions" in linux
-        assert "libwebgpu_doe_c.so" in linux and "-l:libcompiler_probe.dylib" in linux
+        # GNU ld and lld (zig cc) spellings: no -Bsymbolic-functions or -l:FILE.
+        assert "-shared -Wl,-z,defs -Wl,-Bsymbolic -Wl,-soname,libwebgpu_doe_c.so" in linux
+        assert "libwebgpu_doe_c.so" in linux and "-lcompiler_probe" in linux
+        assert "-Bsymbolic-functions" not in linux and "-l:" not in linux
         assert "-dynamiclib" not in linux and "-exported_symbols_list" not in linux
         exports_file = Path(directory) / "native.exports"
         subprocess.run(["make", "--no-print-directory", "-s", "-C", str(owner),

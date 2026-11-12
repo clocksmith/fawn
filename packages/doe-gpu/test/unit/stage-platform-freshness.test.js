@@ -12,6 +12,7 @@ import {
   cRuntimeDirectory,
 } from '../../scripts/c-native-stage.js';
 import {
+  glibcFloorProblems,
   stagedPlatformProblems,
   writeAddonSourceStamp,
 } from '../../scripts/platform-staging.js';
@@ -134,6 +135,26 @@ function compilerNameFor(libraryName) {
     );
   } finally {
     rmSync(workspace, { recursive: true, force: true });
+  }
+}
+
+{
+  // glibc floor: every .so/.node is read; other bin files are not.
+  const bin = mkdtempSync(path.join(tmpdir(), 'doe-gpu-glibc-floor-'));
+  try {
+    for (const name of ['libwebgpu_doe_c.so', 'doe_napi.node', 'doe-c-manifest.json']) writeFileSync(path.join(bin, name), '');
+    const symbols = {
+      'libwebgpu_doe_c.so': 'DF *UND* GLIBC_2.2.5 memcpy\nDF *UND* (GLIBC_2.34) dlopen\nGLIBC_PRIVATE',
+      'doe_napi.node': 'DF *UND* (GLIBC_2.29) exp',
+    };
+    const read = (file) => symbols[path.basename(file)];
+    assert.deepEqual(glibcFloorProblems(bin, '2.34', read), []);
+    assert.deepEqual(glibcFloorProblems(bin, '2.31', read),
+      ['libwebgpu_doe_c.so needs GLIBC_2.34, above the GLIBC_2.31 floor']);
+    assert.deepEqual(glibcFloorProblems(bin, '2.34', () => 'none'),
+      ['doe_napi.node reports no GLIBC symbol version', 'libwebgpu_doe_c.so reports no GLIBC symbol version']);
+  } finally {
+    rmSync(bin, { recursive: true, force: true });
   }
 }
 

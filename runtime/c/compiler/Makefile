@@ -11,7 +11,7 @@ ifeq ($(SHARED_PLATFORM),Darwin)
 SHARED_FLAGS = -dynamiclib -Wl,-install_name,$(SHARED_INSTALL_NAME) -Wl,-exported_symbols_list,$(SHARED_LIBRARY).exports
 SHARED_EXPORTS = $(SHARED_LIBRARY).exports
 else
-SHARED_FLAGS = -shared -Wl,--version-script=src/exports.map
+SHARED_FLAGS = -shared -Wl,-soname,$(notdir $(SHARED_LIBRARY)) -Wl,--version-script=src/exports.map
 SHARED_EXPORTS =
 endif
 EXTRA_CFLAGS ?=

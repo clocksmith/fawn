@@ -27,6 +27,35 @@ Linux/Darwin staging performs no Zig build, external shader compilation, install
 package download, GPU work or system configuration change. Vulkan is loaded only by actual
 backend consumers; this packaging check creates an instance but no device.
 
+### Linux release build at the glibc 2.34 floor
+
+The published `doe-gpu-linux-x64` payload needs at most glibc 2.34. Build it
+with the zig release pinned in [toolchains](../../config/toolchains.json)
+(0.15.2), used only as a C/C++ compiler driver with its glibc 2.34 target; no
+Zig source is compiled. From the repository root, at the commit being released:
+
+```sh
+T=x86_64-linux-gnu.2.34
+nice -n 19 make -C runtime/c package REVISION=HEAD GLIBC_FLOOR=2.34 \
+  CC="zig cc -target $T" CXX="zig c++ -target $T" BUILD=/tmp/doe-c-build-unique \
+  STAGE="$PWD/.cache/doe-c-packages/$(git rev-parse HEAD)"
+(cd packages/doe-gpu && CC="zig cc -target $T" node scripts/build-addon.js)
+(cd packages/doe-gpu-linux-x64 && node ../doe-gpu/scripts/stage-platform-package.js)
+```
+
+`GLIBC_FLOOR` makes the package tool refuse either library whose `objdump -T`
+names a GLIBC symbol version above the floor, and records `glibc_floor`,
+`glibc_required` and `zig_version` in MANIFEST.json. A zig other than the pinned
+version is refused. Platform staging checks every `.so` and `.node` in `bin/`
+against the recorded floor, so an addon built by the host compiler fails there.
+GCC and zig builds share one Linux link recipe in spellings GNU ld and LLVM lld
+both accept: `-Bsymbolic`, `-ldoe_compiler`, and each library's file name as
+its SONAME. The native library exports only functions (the package tool refuses
+a defined dynamic data symbol), so `-Bsymbolic` binds exactly what
+`-Bsymbolic-functions` did. The SONAME keeps lld from recording the build path
+as the compiler dependency. The Linux audit also requires both SONAMEs, a
+name-only `libdoe_compiler.so` dependency and the `$ORIGIN` RUNPATH.
+
 Windows uses the existing x64 Windows SDK developer environment and `clang-cl`:
 
 ```powershell

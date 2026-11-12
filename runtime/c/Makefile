@@ -14,8 +14,11 @@ STAGE ?= $(DOE_C_TMP)/package
 OWNERS = futures callbacks instance labels error-scopes dropin-policy shader \
 	resources compiler backends/vulkan backends/metal backends/d3d12 native
 .PHONY: package check check-tools check-style check-build check-globals check-platform check-js check-vulkan
+# Linux release: GLIBC_FLOOR=2.34 with CC/CXX set to the pinned zig cc/c++
+# targeting x86_64-linux-gnu.2.34 (README "Linux release build").
+GLIBC_FLOOR ?=
 package:
-	$(PYTHON) tools/build-native-package.py --ref '$(REVISION)' --build '$(BUILD)' --destination '$(STAGE)' --cc '$(CC)' --cxx '$(CXX)'
+	$(PYTHON) tools/build-native-package.py --ref '$(REVISION)' --build '$(BUILD)' --destination '$(STAGE)' --cc '$(CC)' --cxx '$(CXX)'$(if $(GLIBC_FLOOR), --glibc-floor '$(GLIBC_FLOOR)')
 check: check-style check-tools check-platform check-globals
 check-platform:
 	$(MAKE) --no-print-directory -C platform BUILD='$(abspath $(BUILD))/platform' check

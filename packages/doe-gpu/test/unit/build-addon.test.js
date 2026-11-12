@@ -37,7 +37,14 @@ try {
   const posix = compilerCommand(directory, { platform: 'linux', arch: 'x64', environment: { CC: 'local-cc' } });
   assert.equal(posix.compiler, 'local-cc');
   assert(posix.args.includes('-fPIC') && posix.args.includes('-shared'));
-  console.log('ok: addon command uses explicit LLVM MSVC target, CC, Node import library and canonical sources; no Zig selection');
+  assert.deepEqual(posix.prefixArgs, []);
+  const floor = compilerCommand(directory, {
+    platform: 'linux', arch: 'x64', environment: { CC: ' zig cc -target x86_64-linux-gnu.2.34 ' },
+  });
+  assert.equal(floor.compiler, 'zig');
+  assert.deepEqual(floor.prefixArgs, ['cc', '-target', 'x86_64-linux-gnu.2.34']);
+  assert.deepEqual(floor.args.slice(0, 3), floor.prefixArgs);
+  console.log('ok: addon command uses explicit LLVM MSVC target, CC with its arguments, Node import library and canonical sources; no implicit Zig selection');
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }
