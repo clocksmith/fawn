@@ -74,7 +74,14 @@ def _recorded_with(metas: list[dict[str, Any]]) -> dict[str, Any]:
         "dopplerCommit": (first.get("dopplerSource") or {}).get("dopplerCommit"),
         "modelManifestSha256": (first.get("modelCustody") or {}).get("manifestSha256"),
         "engine": first.get("engine"),
+        "capability": _capability(first),
     }
+
+
+def _capability(meta: dict[str, Any]) -> dict[str, Any]:
+    """The capability mode and exposed set the receipt ran under."""
+    record = meta.get("capability") or {}
+    return {key: record.get(key) for key in ("mode", "exposedFeatures", "exposedLimits")}
 
 
 def _reference_class(metas: list[dict[str, Any]]) -> str:
@@ -91,11 +98,13 @@ def token_reference(metas: list[dict[str, Any]]) -> dict[str, Any]:
             json.dumps(meta["resultSummary"].get("tokenIds")),
             meta["resultSummary"].get("promptTokenCount"),
             meta.get("shaderSourceReceiptsHash"),
+            json.dumps(_capability(meta), sort_keys=True),
         )
         for meta in metas
     }
     if len(signatures) != 1:
-        raise ValueError(f"receipts disagree on tokens, prompt length or shaders: {sorted(signatures)}")
+        raise ValueError("receipts disagree on tokens, prompt length, shaders or capability set: "
+                         f"{sorted(signatures)}")
     summary = metas[0]["resultSummary"]
     if not summary.get("tokenIds"):
         raise ValueError("receipt carries no generated token ids")
@@ -142,7 +151,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"record failed: {exc}", file=sys.stderr)
         return 1
     workload.setdefault("references", {})[args.backend] = reference
-    args.scenario.write_text(json.dumps(scenario, indent=2) + "\n", encoding="utf-8")
+    # LF on every host: Windows text mode would rewrite the tracked file as CRLF.
+    args.scenario.write_text(json.dumps(scenario, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"workload": args.workload, "backend": args.backend,
                       "referenceClass": reference["referenceClass"]}, sort_keys=True))
     return 0

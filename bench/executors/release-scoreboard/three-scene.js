@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
 import {
@@ -176,7 +177,9 @@ async function run(args, onTeardown) {
   // schedules work, so nothing runs between or during timed frames.
   globalThis.requestAnimationFrame ??= () => 0;
   globalThis.cancelAnimationFrame ??= () => {};
-  const THREE = await import(require.resolve('three/webgpu'));
+  // require.resolve returns a filesystem path; on Windows a bare `C:\...` path
+  // is not an ESM specifier, so it becomes a file: URL.
+  const THREE = await import(pathToFileURL(require.resolve('three/webgpu')).href);
   const three = threeIdentity(require);
   if (three.version !== scenario.three.version) {
     throw new Error(`three ${three.version} loaded, scenario pins ${scenario.three.version}`);

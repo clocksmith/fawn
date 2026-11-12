@@ -20,6 +20,9 @@ const VENDORED_DAWN_PATH = join(REPO_ROOT, 'bench/vendor/node-webgpu-package/ind
 export const PROVIDERS = Object.freeze(['doe', 'dawn']);
 export const BACKENDS = Object.freeze(['metal', 'vulkan', 'd3d12']);
 const SOFTWARE_ADAPTER = /swiftshader|llvmpipe|lavapipe|software|warp/i;
+export const CAPABILITY_MODE_ENV = 'FAWN_SCOREBOARD_CAPABILITY_MODE';
+export const CAPABILITY_SET_ENV = 'FAWN_SCOREBOARD_CAPABILITY_SET';
+export const CAPABILITY_MODES = Object.freeze(['full', 'intersection']);
 
 export function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -116,6 +119,108 @@ export async function loadProvider(provider, backend) {
   return { module, identity, contract };
 }
 
+// Capability mode, declared per backend in config/release-scoreboard.json and
+// passed down by the runner. `full` (the default) gives the application every
+// feature and limit the provider's adapter reports. `intersection` exposes only
+// the capability set both providers' adapters support on this host, so an
+// application that selects kernels from adapter features (Doppler) selects the
+// same shaders on both. The set is the runner's probe of both providers; it is
+// never computed by one provider alone.
+export function capabilityPolicy(env = process.env) {
+  const mode = env[CAPABILITY_MODE_ENV]?.trim() || 'full';
+  if (!CAPABILITY_MODES.includes(mode)) {
+    throw new Error(`${CAPABILITY_MODE_ENV} must be one of ${CAPABILITY_MODES.join(', ')}, not ${mode}`);
+  }
+  const raw = env[CAPABILITY_SET_ENV];
+  if (mode === 'full') {
+    if (raw) throw new Error(`${CAPABILITY_SET_ENV} is only valid in intersection mode`);
+    return Object.freeze({ mode, features: null, limits: null });
+  }
+  const set = raw ? JSON.parse(raw) : null;
+  const features = set?.features;
+  const limits = set?.limits;
+  if (!Array.isArray(features) || features.some((name) => typeof name !== 'string')
+      || !limits || typeof limits !== 'object' || Array.isArray(limits)
+      || Object.values(limits).some((value) => !Number.isFinite(value))) {
+    throw new Error(`intersection mode needs ${CAPABILITY_SET_ENV} = {features: [...], limits: {...}}`);
+  }
+  return Object.freeze({
+    mode, features: Object.freeze([...features].sort()), limits: Object.freeze({ ...limits }),
+  });
+}
+
+// Every numeric limit a GPUSupportedLimits object reports, own or inherited.
+export function limitsRecord(limits) {
+  const names = new Set();
+  for (let object = limits; object && object !== Object.prototype; object = Object.getPrototypeOf(object)) {
+    for (const name of Object.getOwnPropertyNames(object)) names.add(name);
+  }
+  const record = {};
+  for (const name of [...names].sort()) {
+    if (name === 'constructor' || name === '__proto__') continue;
+    let value;
+    try {
+      value = limits[name];
+    } catch {
+      continue;
+    }
+    if (typeof value === 'number' || typeof value === 'bigint') record[name] = Number(value);
+  }
+  return record;
+}
+
+// Alignment limits are better when smaller; every other limit when larger.
+export function isAlignmentLimit(name) {
+  return name.startsWith('min');
+}
+
+// What the receipt says about the capability mode: the exposed set, the
+// adapter's own features, and what the application actually requested.
+const capabilityRecord = {
+  mode: null, exposedFeatures: null, exposedLimits: null,
+  adapterFeatures: null, requestedFeatures: [], requestedLimits: [],
+};
+
+export function capabilityReceipt() {
+  return JSON.parse(JSON.stringify(capabilityRecord));
+}
+
+function restrictAdapter(adapter, policy) {
+  const missing = policy.features.filter((name) => !adapter.features.has(name));
+  if (missing.length) {
+    throw new Error(`capability set names features this adapter lacks: ${missing.join(', ')}`);
+  }
+  const actual = limitsRecord(adapter.limits);
+  for (const [name, value] of Object.entries(policy.limits)) {
+    if (!(name in actual)) throw new Error(`capability set names limit ${name} this adapter does not report`);
+    const exceeds = isAlignmentLimit(name) ? value < actual[name] : value > actual[name];
+    if (exceeds) throw new Error(`capability set limit ${name}=${value} exceeds this adapter's ${actual[name]}`);
+  }
+  // Own properties shadow the provider's prototype getters; the provider's
+  // objects are otherwise untouched.
+  Object.defineProperty(adapter, 'features', { value: new Set(policy.features), configurable: true });
+  Object.defineProperty(adapter, 'limits', { value: Object.freeze({ ...policy.limits }), configurable: true });
+}
+
+function admitDeviceRequest(descriptor, policy) {
+  const features = [...(descriptor?.requiredFeatures ?? [])].map(String);
+  const limits = descriptor?.requiredLimits ?? {};
+  capabilityRecord.requestedFeatures.push([...features].sort());
+  capabilityRecord.requestedLimits.push(Object.fromEntries(
+    Object.entries(limits).filter(([, value]) => value !== undefined).sort(([a], [b]) => a.localeCompare(b))));
+  if (policy.mode !== 'intersection') return;
+  const outside = features.filter((name) => !policy.features.includes(name));
+  if (outside.length) {
+    throw new Error(`device requested features outside the capability set: ${outside.join(', ')}`);
+  }
+  for (const [name, value] of Object.entries(limits)) {
+    if (value === undefined) continue;
+    if (!(name in policy.limits)) throw new Error(`device requested limit ${name} outside the capability set`);
+    const exceeds = isAlignmentLimit(name) ? value < policy.limits[name] : value > policy.limits[name];
+    if (exceeds) throw new Error(`device requested ${name}=${value} beyond the capability set's ${policy.limits[name]}`);
+  }
+}
+
 // Installs the provider's WebGPU constants and interface objects (so engine
 // `instanceof GPU...` checks work) and the observed GPU as navigator.gpu.
 // Dawn exports its interfaces in `globals`; doe-gpu installs them through its
@@ -175,11 +280,15 @@ export class ApiObserver {
     return this.phases[this.phase];
   }
 
-  wrapGpu(gpu, contract) {
+  wrapGpu(gpu, contract, policy = capabilityPolicy()) {
+    capabilityRecord.mode = policy.mode;
+    capabilityRecord.exposedFeatures = policy.features;
+    capabilityRecord.exposedLimits = policy.limits;
     const requestAdapter = gpu.requestAdapter.bind(gpu);
     gpu.requestAdapter = async (options = {}) => {
       const adapter = await requestAdapter({ ...options, ...contract.adapterOptions });
       if (!adapter) throw new Error('provider returned no adapter');
+      capabilityRecord.adapterFeatures = [...adapter.features].sort();
       const info = adapter.info ?? {};
       this.backendSelection = observedBackendSelection(contract, info);
       this.adapterInfo = {
@@ -192,8 +301,12 @@ export class ApiObserver {
       if (this.adapterInfo.isFallbackAdapter || SOFTWARE_ADAPTER.test(JSON.stringify(this.adapterInfo))) {
         throw new Error(`software or fallback adapter refused: ${JSON.stringify(this.adapterInfo)}`);
       }
+      if (policy.mode === 'intersection') restrictAdapter(adapter, policy);
       const requestDevice = adapter.requestDevice.bind(adapter);
-      adapter.requestDevice = async (descriptor) => this.wrapDevice(await requestDevice(descriptor));
+      adapter.requestDevice = async (descriptor) => {
+        admitDeviceRequest(descriptor, policy);
+        return this.wrapDevice(await requestDevice(descriptor));
+      };
       return adapter;
     };
     return gpu;
@@ -386,6 +499,7 @@ export async function writeReceipt(args, fields) {
     workloadUnitWallSource: 'trace-meta-process-wall',
     processWallMs: performance.now(),
     nodeVersion: process.version,
+    capability: capabilityReceipt(),
     ...fields,
   };
   await writeJson(args.traceMetaPath, meta);

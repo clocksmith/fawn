@@ -44,6 +44,27 @@ digests are recorded, but a lit scene compiled by two WGSL translators can
 round a pixel differently, so the oracle is the backend's recorded frame under
 the declared tolerance.
 
+Each backend in the scoreboard config declares a capability mode. `full` (Metal,
+Vulkan) gives each provider every feature and limit its adapter reports.
+`intersection` (D3D12) is for a host where the providers' adapters differ in
+features that change the application's kernel selection: on the admitted
+Windows host the pinned Dawn compiles with FXC and reports neither
+`shader-f16` nor `subgroups`, while Doe reports both. The runner first probes
+both providers' adapters in fresh processes
+([`probe-capabilities.js`](../../executors/release-scoreboard/probe-capabilities.js)),
+and each executor then exposes only the features both report and, for every
+limit both report, the less capable value; a device request outside that set
+fails. The set is in the summary, and every receipt records its mode, the
+exposed set, the adapter's own features and what the application requested.
+If both providers then fail to execute a workload with the same error
+(Doppler has no kernels for that model on the shared set), the workload is
+recorded as `not-comparable-on-host` with that error; if Dawn fails to execute
+while Doe executes, it is a `dawn-limitation` with Dawn's exact error. An
+output-check failure (including a missing reference) means the workload
+executed and never earns either label. Both block the claim like any
+other non-comparable row, and the gate rejects a summary whose mode differs
+from the declared one.
+
 References are recorded per backend from executed receipts with
 [`record_release_scoreboard_reference.py`](../../tools/record_release_scoreboard_reference.py);
 draw rows use the independent CPU rasterization. A backend without a recorded

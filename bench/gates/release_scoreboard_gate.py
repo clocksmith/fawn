@@ -60,6 +60,10 @@ def blocking_reasons(scoreboard: dict[str, Any], summary: dict[str, Any], backen
         reasons.append("summary was produced for a different scoreboard version")
     if summary.get("functionalOnly") is not False:
         reasons.append("summary is functional-only (overridden samples or a row subset)")
+    host = next((entry for entry in scoreboard.get("backends", []) if entry.get("backend") == backend), None)
+    if host is not None and summary.get("capabilityMode") != host.get("capabilityMode"):
+        reasons.append(f"summary capability mode {summary.get('capabilityMode')!r} is not the declared "
+                       f"{host.get('capabilityMode')!r} for {backend}")
     rows = {row.get("rowId"): row for row in summary.get("rows", [])}
     for required in scoreboard["rows"]:
         row = rows.get(required["rowId"])
@@ -71,6 +75,9 @@ def blocking_reasons(scoreboard: dict[str, Any], summary: dict[str, Any], backen
             entry = entries.get(workload_id)
             if entry is None:
                 reasons.append(f"{required['rowId']}/{workload_id}: unmeasured")
+            elif entry.get("status") in ("not-comparable-on-host", "dawn-limitation"):
+                detail = (entry.get("reasons") or ["no reason recorded"])[0]
+                reasons.append(f"{required['rowId']}/{workload_id}: {entry.get('status')}: {detail}")
             elif entry.get("status") != "comparable":
                 reasons.append(f"{required['rowId']}/{workload_id}: {entry.get('status')}")
             else:

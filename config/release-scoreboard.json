@@ -67,17 +67,21 @@
     {
       "backend": "metal",
       "hostClass": "macOS / Apple Metal",
-      "configPrefix": "bench/native-compare/compare.config.apple.metal.release-scoreboard."
+      "configPrefix": "bench/native-compare/compare.config.apple.metal.release-scoreboard.",
+      "capabilityMode": "full"
     },
     {
       "backend": "d3d12",
       "hostClass": "Windows / D3D12",
-      "configPrefix": "bench/native-compare/compare.config.local.d3d12.release-scoreboard."
+      "configPrefix": "bench/native-compare/compare.config.local.d3d12.release-scoreboard.",
+      "capabilityMode": "intersection",
+      "capabilityModeReason": "On the admitted Windows host the pinned Dawn compiles HLSL with FXC and its adapter reports neither shader-f16 nor subgroups (forcing DXC is reverted by Dawn), while Doe reports both, so Doppler would select different kernels per provider. Both providers expose only the capability set both adapters support."
     },
     {
       "backend": "vulkan",
       "hostClass": "Linux / Vulkan",
-      "configPrefix": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard."
+      "configPrefix": "bench/native-compare/compare.config.amd.vulkan.release-scoreboard.",
+      "capabilityMode": "full"
     }
   ]
 }

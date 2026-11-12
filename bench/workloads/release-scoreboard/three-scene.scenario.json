@@ -43,6 +43,90 @@
               "webgpuBuildSha256": "15cfce5c653541704fd9a3463c39d3e8b854bb6265ccd854d7cfe74090625cc6"
             }
           }
+        },
+        "d3d12": {
+          "framePath": "bench/workloads/release-scoreboard/references/release_scoreboard_three_lit_scene_48_objects.d3d12.rgba.gz",
+          "frameSha256": "49a8c796c8abc21b9c1aea8b54cc8b6928f415fa8be5503425ccf95dcdc211de",
+          "referenceClass": "recorded-single-provider-dawn",
+          "tolerance": {
+            "maxChannelDifference": 2,
+            "maxDifferingPixelFraction": 0.0005
+          },
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "amd-radeon-tm-graphics",
+            "shaderSourceReceiptsHash": "9ae34df4f116783cbc19b2130fa0cdea1104b57a1f73216b1bbcc57d71474afe",
+            "dopplerCommit": null,
+            "modelManifestSha256": null,
+            "engine": {
+              "packageName": "three",
+              "version": "0.186.1",
+              "packageJsonSha256": "f9c474a27c920b9435353a6235968f4453436bee0444fac7e5fd289c8fa463de",
+              "webgpuBuildSha256": "15cfce5c653541704fd9a3463c39d3e8b854bb6265ccd854d7cfe74090625cc6"
+            },
+            "capability": {
+              "mode": "intersection",
+              "exposedFeatures": [
+                "bgra8unorm-storage",
+                "clip-distances",
+                "core-features-and-limits",
+                "depth-clip-control",
+                "depth32float-stencil8",
+                "dual-source-blending",
+                "float32-blendable",
+                "float32-filterable",
+                "indirect-first-instance",
+                "primitive-index",
+                "rg11b10ufloat-renderable",
+                "texture-component-swizzle",
+                "texture-compression-bc",
+                "texture-compression-bc-sliced-3d",
+                "texture-formats-tier1",
+                "texture-formats-tier2",
+                "timestamp-query"
+              ],
+              "exposedLimits": {
+                "maxBindGroups": 4,
+                "maxBindGroupsPlusVertexBuffers": 24,
+                "maxBindingsPerBindGroup": 1000,
+                "maxBufferSize": 2147483648,
+                "maxColorAttachmentBytesPerSample": 32,
+                "maxColorAttachments": 8,
+                "maxComputeInvocationsPerWorkgroup": 1024,
+                "maxComputeWorkgroupSizeX": 1024,
+                "maxComputeWorkgroupSizeY": 1024,
+                "maxComputeWorkgroupSizeZ": 64,
+                "maxComputeWorkgroupStorageSize": 32768,
+                "maxComputeWorkgroupsPerDimension": 65535,
+                "maxDynamicStorageBuffersPerPipelineLayout": 8,
+                "maxDynamicUniformBuffersPerPipelineLayout": 10,
+                "maxImmediateSize": 0,
+                "maxInterStageShaderVariables": 16,
+                "maxSampledTexturesPerShaderStage": 16,
+                "maxSamplersPerShaderStage": 16,
+                "maxStorageBufferBindingSize": 2147483648,
+                "maxStorageBuffersInFragmentStage": 16,
+                "maxStorageBuffersInVertexStage": 16,
+                "maxStorageBuffersPerShaderStage": 16,
+                "maxStorageTexturesInFragmentStage": 4,
+                "maxStorageTexturesInVertexStage": 4,
+                "maxStorageTexturesPerShaderStage": 4,
+                "maxTextureArrayLayers": 2048,
+                "maxTextureDimension1D": 16384,
+                "maxTextureDimension2D": 16384,
+                "maxTextureDimension3D": 2048,
+                "maxUniformBufferBindingSize": 65536,
+                "maxUniformBuffersPerShaderStage": 12,
+                "maxVertexAttributes": 16,
+                "maxVertexBufferArrayStride": 2048,
+                "maxVertexBuffers": 8,
+                "minStorageBufferOffsetAlignment": 256,
+                "minUniformBufferOffsetAlignment": 256
+              }
+            }
+          }
         }
       }
     }

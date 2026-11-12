@@ -16,6 +16,7 @@ if str(BENCH_ROOT) not in sys.path:
     sys.path.insert(0, str(BENCH_ROOT))
 
 from bench.gates import release_scoreboard_gate as gate  # noqa: E402
+from bench.runners import run_release_scoreboard as runner  # noqa: E402
 from native_compare_modules.compare_assessment_helpers import collect_result_output_signatures  # noqa: E402
 from native_compare_modules.timing_selection import classify_timing_source  # noqa: E402
 from bench.tools import prepare_release_scoreboard_models as prepare  # noqa: E402
@@ -86,6 +87,69 @@ class ReleaseScoreboardGateTest(unittest.TestCase):
         self.assertIn("summary is for backend 'metal', not 'vulkan'",
                       gate.blocking_reasons(SCOREBOARD, summary, "vulkan"))
 
+    def test_capability_mode_must_match_the_declared_mode(self) -> None:
+        scoreboard = {**SCOREBOARD, "backends": [{"backend": "metal", "capabilityMode": "intersection"}]}
+        summary = _summary(self.directory, {"w_a": True, "w_b1": True, "w_b2": True})
+        summary["capabilityMode"] = "full"
+        self.assertEqual(gate.blocking_reasons(scoreboard, summary, "metal"),
+                         ["summary capability mode 'full' is not the declared 'intersection' for metal"])
+        summary["capabilityMode"] = "intersection"
+        self.assertEqual(gate.blocking_reasons(scoreboard, summary, "metal"), [])
+
+    def test_not_comparable_on_host_blocks_with_its_reason(self) -> None:
+        summary = _summary(self.directory, {"w_a": True, "w_b1": True, "w_b2": True})
+        entry = summary["rows"][0]["workloads"][0]
+        entry.update(status="not-comparable-on-host", reasons=["not comparable on this host: needs f16"])
+        self.assertEqual(gate.blocking_reasons(SCOREBOARD, summary, "metal"),
+                         ["row-a/w_a: not-comparable-on-host: not comparable on this host: needs f16"])
+
+
+class CapabilityIntersectionTest(unittest.TestCase):
+    def test_intersection_keeps_shared_features_and_less_capable_limits(self) -> None:
+        probes = {
+            "doe": {"features": ["shader-f16", "subgroups", "timestamp-query"],
+                    "limits": {"maxBufferSize": 2147483648, "minStorageBufferOffsetAlignment": 32,
+                               "maxImmediateSize": 64}},
+            "dawn": {"features": ["timestamp-query", "texture-compression-bc"],
+                     "limits": {"maxBufferSize": 268435456, "minStorageBufferOffsetAlignment": 256}},
+        }
+        self.assertEqual(runner.intersect_capabilities(probes), {
+            "features": ["timestamp-query"],
+            "limits": {"maxBufferSize": 268435456, "minStorageBufferOffsetAlignment": 256},
+        })
+
+    def test_full_mode_carries_no_capability_set(self) -> None:
+        env = runner.capability_environment("full", None)
+        self.assertEqual(env[runner.CAPABILITY_MODE_ENV], "full")
+        self.assertNotIn(runner.CAPABILITY_SET_ENV, env)
+        env = runner.capability_environment("intersection", {"features": ["a"], "limits": {"maxX": 1}})
+        self.assertEqual(json.loads(env[runner.CAPABILITY_SET_ENV]), {"features": ["a"], "limits": {"maxX": 1}})
+
+    def test_failures_are_labeled_only_in_intersection_mode(self) -> None:
+        products = {"baseline": "doe", "comparison": "dawn"}
+
+        def failure(message: str, output_check: bool = False) -> dict:
+            return {"message": message, "outputCheck": output_check}
+
+        same = {"baseline": failure("needs f16"), "comparison": failure("needs f16")}
+        self.assertEqual(runner.classify_failure("intersection", products, same),
+                         ("not-comparable-on-host", ["not comparable on this host: needs f16"]))
+        self.assertIsNone(runner.classify_failure("full", products, same))
+        differ = {"baseline": failure("doe crashed"), "comparison": failure("needs f16")}
+        self.assertIsNone(runner.classify_failure("intersection", products, differ))
+        dawn = {"baseline": None, "comparison": failure("FXC compile failed")}
+        self.assertEqual(runner.classify_failure("intersection", products, dawn),
+                         ("dawn-limitation", ["Dawn limitation on this host: FXC compile failed"]))
+        unreferenced = {"baseline": failure("no recorded reference", True), "comparison": failure("FXC failed")}
+        status, reasons = runner.classify_failure("intersection", products, unreferenced)
+        self.assertEqual(status, "dawn-limitation")
+        self.assertEqual(reasons[1], "doe executed; its output check: no recorded reference")
+        doe = {"baseline": failure("doe failed"), "comparison": None}
+        self.assertIsNone(runner.classify_failure("intersection", products, doe))
+        # Matching output-check failures executed on both sides: not a capability refusal.
+        checks = {"baseline": failure("no reference", True), "comparison": failure("no reference", True)}
+        self.assertIsNone(runner.classify_failure("intersection", products, checks))
+
 
 class ScoreboardOutputIdentityTest(unittest.TestCase):
     def _sample(self, digest: str, length: int) -> dict:
@@ -109,6 +173,13 @@ class ReferenceRecordingTest(unittest.TestCase):
     def test_disagreeing_providers_cannot_record_a_reference(self) -> None:
         with self.assertRaises(ValueError):
             record.token_reference([self._meta("doe", [1, 2]), self._meta("node-webgpu", [1, 3])])
+
+    def test_different_capability_sets_cannot_record_a_reference(self) -> None:
+        full = {**self._meta("doe", [1, 2]), "capability": {"mode": "full"}}
+        shared = {**self._meta("node-webgpu", [1, 2]),
+                  "capability": {"mode": "intersection", "exposedFeatures": [], "exposedLimits": {}}}
+        with self.assertRaises(ValueError):
+            record.token_reference([full, shared])
 
     def test_agreement_is_labeled_consensus(self) -> None:
         reference = record.token_reference([self._meta("doe", [1, 2]), self._meta("node-webgpu", [1, 2])])
