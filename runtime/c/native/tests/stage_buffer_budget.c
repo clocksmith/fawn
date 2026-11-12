@@ -12,7 +12,7 @@
 #include "consumer.h"
 #include <stdlib.h>
 
-enum { MAX_STORAGE = 16, UNIFORMS = 12, VERTEX_BUFFERS = 8, SHADER_BYTES = 8192, IMMEDIATE = 7 };
+enum { MAX_STORAGE = 17, UNIFORMS = 12, VERTEX_BUFFERS = 8, SHADER_BYTES = 8192, IMMEDIATE = 7 };
 
 typedef struct text { char bytes[SHADER_BYTES]; size_t used; } text;
 

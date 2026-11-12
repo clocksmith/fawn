@@ -17,9 +17,15 @@ static doe_dx_status buffer_bound(doe_dx_native_context *context, doe_dx_caps *c
         !caps->gpu_va_bits_per_process || caps->gpu_va_bits_per_process > 64)
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "caps.gpu_va_bits", error);
     uint64_t address_space = bits == 64 ? UINT64_MAX : UINT64_C(1) << bits;
-    /* Deliberate implementation ceiling, not a queried residency budget or a
-     * claim that every resource up to the VA ceiling can be allocated. */
-    uint64_t ceiling = UINT64_C(256) * 1024u * 1024u;
+    /* D3D12's single-resource size ceiling is the C term of the documented
+     * resource-size expression, 2048 MiB; it is also the 2^31-byte range every
+     * device guarantees a raw buffer view can address. It is clamped below by
+     * the queried per-resource/process GPU-VA widths and SIZE_MAX, and the
+     * device must report a valid UAV-buffer allocation at that size. The
+     * expression's A/B terms (128 MiB, a quarter of dedicated memory) are not
+     * applied; see the README for the device evidence. This is not a
+     * residency budget or a promise that an allocation succeeds. */
+    uint64_t ceiling = (uint64_t)D3D12_REQ_RESOURCE_SIZE_IN_MEGABYTES_EXPRESSION_C_TERM * 1024u * 1024u;
     if (ceiling > address_space) ceiling = address_space;
     if (ceiling > SIZE_MAX) ceiling = SIZE_MAX;
     D3D12_RESOURCE_DESC description = {0};

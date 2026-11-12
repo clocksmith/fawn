@@ -69,6 +69,8 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
                 return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.bindings.uniform_alignment", error);
             if (binding->size > commands->context->caps.limits.max_uniform_bytes)
                 return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.uniform_size", error);
+        } else if (binding->size > DOE_DX_MAX_STORAGE_VIEW_BYTES) {
+            return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.storage_view_size", error);
         } else if (layout->view==DOE_DX_RAW) {
             if (binding->offset%4 || binding->size>UINT32_MAX || binding->size>UINT64_MAX-3)
                 return doe_dx_fail(DOE_DX_ALIGNMENT,0,"commands.bindings.raw_alignment",error);

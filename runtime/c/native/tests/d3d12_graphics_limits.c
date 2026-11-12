@@ -127,6 +127,20 @@ int main(void)
     assert(limits.maxColorAttachments==DOE_DX_MAX_COLOR_TARGETS);
     assert(limits.maxColorAttachmentBytesPerSample==32);
     assert(limits.maxImmediateSize==DOE_RESOURCE_MAX_IMMEDIATE_BYTES);
+    /* Storage bindings stop at the largest view the backend creates, below a
+     * larger buffer ceiling; equal to it otherwise. Per-stage storage buffers
+     * are the descriptor-table bound, reduced by the queried UAV tier. */
+    caps.limits.max_buffer_size=UINT64_C(1)<<32;
+    caps.limits.max_srvs=64; caps.limits.max_uavs=64;
+    assert(native_d3d12_limits(&caps,&limits)==WGPUStatus_Success);
+    assert(limits.maxBufferSize==UINT64_C(1)<<32 && limits.maxStorageBufferBindingSize==DOE_DX_MAX_STORAGE_VIEW_BYTES);
+    assert(limits.maxStorageBuffersPerShaderStage==16);
+    caps.limits.max_buffer_size=DOE_DX_MAX_STORAGE_VIEW_BYTES-6;
+    caps.limits.max_uavs=8;
+    assert(native_d3d12_limits(&caps,&limits)==WGPUStatus_Success);
+    assert(limits.maxBufferSize==DOE_DX_MAX_STORAGE_VIEW_BYTES-8 &&
+        limits.maxStorageBufferBindingSize==limits.maxBufferSize);
+    assert(limits.maxStorageBuffersPerShaderStage==4);
     WGPULimits unchanged=limits;
     caps.feature_level=0;
     assert(native_d3d12_limits(&caps,&limits)==WGPUStatus_Error);

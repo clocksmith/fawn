@@ -197,6 +197,11 @@ doe_dx_status doe_dx_buffer_lend_write(doe_dx_buffer *,uint64_t,size_t,void **,d
 void doe_dx_buffer_return_read(doe_dx_buffer *buffer);
 
 enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16 };
+/* Largest storage (SRV/UAV) buffer view this backend creates: 2^31 bytes, the
+ * byte range every D3D12 device guarantees a raw buffer view can address
+ * (HLSL raw and StructuredBuffer<uint> offsets are 32-bit; Dawn's D3D12 backend
+ * relies on the same 2^31 guarantee). Larger storage bindings are refused. */
+#define DOE_DX_MAX_STORAGE_VIEW_BYTES (UINT64_C(1) << 31)
 typedef enum doe_dx_binding_access { DOE_DX_READ_ONLY, DOE_DX_READ_WRITE } doe_dx_binding_access;
 typedef enum doe_dx_buffer_view { DOE_DX_STRUCTURED, DOE_DX_UNIFORM, DOE_DX_RAW } doe_dx_buffer_view;
 typedef struct doe_dx_binding_layout {

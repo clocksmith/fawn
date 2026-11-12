@@ -118,6 +118,18 @@ _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + METAL_STORAGE_BUFFE
  * no per-sample color byte limit, so every combination of the admitted slots
  * fits: the slot count is the only bound. */
 enum { MAX_COLOR_TARGET_BYTES = 16 };
+/* D3D12 gives each stage one CBV/SRV/UAV descriptor table of
+ * DOE_DX_MAX_BINDINGS rows. Sixteen storage buffers fit one stage's table with
+ * every other per-stage binding and the hidden dispatch CBV, and fill the
+ * two-stage binding storage exactly. The queried SRV/UAV binding tier still
+ * bounds the reported value (native_d3d12_limits). */
+enum { D3D12_STORAGE_BUFFERS_PER_STAGE = 16, D3D12_HIDDEN_STAGE_ROWS = 1 };
+_Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + D3D12_STORAGE_BUFFERS_PER_STAGE +
+    STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
+    "pipeline binding storage must hold the D3D12 per-stage limits for two stages");
+_Static_assert(SAMPLED_PER_STAGE + D3D12_STORAGE_BUFFERS_PER_STAGE + STORAGE_TEXTURES_PER_STAGE +
+    UNIFORM_BUFFERS_PER_STAGE + D3D12_HIDDEN_STAGE_ROWS <= DOE_DX_MAX_BINDINGS,
+    "one D3D12 stage descriptor table must hold every per-stage resource binding");
 /* Dynamic offsets are applied by the resource owner; one bind group holds at
  * most DOE_RESOURCE_MAX_DYNAMIC_OFFSETS of them. */
 enum { DYNAMIC_UNIFORM = 16, DYNAMIC_STORAGE = 16 };
@@ -262,14 +274,15 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         .maxUniformBuffersPerShaderStage = min32(UNIFORM_BUFFERS_PER_STAGE, native->max_cbvs),
         /* Reserve the real combined UAV budget for every admitted stage
          * combination, rather than advertising independently incompatible caps. */
-        .maxStorageBuffersPerShaderStage = min32(STORAGE_BUFFERS_PER_STAGE,
+        .maxStorageBuffersPerShaderStage = min32(D3D12_STORAGE_BUFFERS_PER_STAGE,
             min32(native->max_srvs, native->max_uavs > STORAGE_TEXTURES_PER_STAGE ?
                 native->max_uavs - STORAGE_TEXTURES_PER_STAGE : 0)),
         .maxSampledTexturesPerShaderStage = min32(SAMPLED_PER_STAGE,native->max_srvs),
         .maxStorageTexturesPerShaderStage = min32(STORAGE_TEXTURES_PER_STAGE,native->max_uavs),
         .maxSamplersPerShaderStage = DOE_DX_MAX_DYNAMIC_SAMPLERS,
         .maxUniformBufferBindingSize = min64(buffer, native->max_uniform_bytes),
-        .maxStorageBufferBindingSize = buffer,
+        /* The largest SRV/UAV buffer view the backend creates also bounds it. */
+        .maxStorageBufferBindingSize = min64(buffer, DOE_DX_MAX_STORAGE_VIEW_BYTES),
         .minUniformBufferOffsetAlignment = native->uniform_offset_alignment,
         .minStorageBufferOffsetAlignment = 256,
         .maxComputeWorkgroupStorageSize = native->max_compute_shared_bytes,

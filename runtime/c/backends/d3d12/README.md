@@ -484,6 +484,11 @@ UAVs 64; Tier 3 CBVs are clamped to 64. CBV/SRV limits apply per stage to actual
 descriptor tables. Hidden root constants and root CBVs consume the separate root
 signature DWORD budget. UAV descriptors are counted across both actual graphics
 stage tables; a duplicated descriptor really consumes two entries. This is not complete WebGPU graphics admission.
+The native frontend reports 16 storage buffers per stage: with 16 sampled
+textures, 4 storage textures, 12 uniform buffers and the hidden dispatch CBV
+they fill 49 of one stage's 64 table rows, reduced by the UAV tier (4 at Tier 1
+FL11_0). `native/tests/stage_buffer_budget.c` binds the reported count in
+compute and in a full vertex stage and refuses one more.
 
 After actual FL11_0+ admission, SDK guarantees supply compute threads 1024,
 axis sizes 1024/1024/64, dispatch groups 65535 per axis, shared memory 32768 bytes,
@@ -491,8 +496,16 @@ CBV offset alignment 256 and CBV size 65536. They are not separately queried
 optional features or a WebGPU CoreFeatures claim. The compiler/frontend still
 proves workgroup dimensions, total threads, shared memory and indirect counts.
 
-The single-buffer ceiling is an explicit 256 MiB implementation bound clamped by
-actual resource/process GPU-VA widths and SIZE_MAX. A matching UAV-buffer
+The single-buffer ceiling is the 2048 MiB C term of D3D12's resource-size
+expression (`D3D12_REQ_RESOURCE_SIZE_IN_MEGABYTES_EXPRESSION_C_TERM`), clamped by
+actual resource/process GPU-VA widths and SIZE_MAX. The expression's A/B terms
+(128 MiB, a quarter of dedicated memory) are not applied: a 3 GiB-dedicated
+AMD APU creates, writes and reads a 2 GiB UAV buffer through both view kinds
+(`native/tests/large_storage_binding.c`). Storage SRV/UAV views are bounded
+separately by `DOE_DX_MAX_STORAGE_VIEW_BYTES`, the 2^31 bytes every device
+guarantees a raw buffer view can address; the frontend reports
+maxStorageBufferBindingSize as the smaller of the two and the backend refuses a
+larger storage binding. A matching UAV-buffer
 GetResourceAllocationInfo query must return a valid non-sentinel allocation
 size/alignment within that address bound before caps publish. Each real buffer
 allocation rechecks its own queried allocation cost against the admitted ceiling.

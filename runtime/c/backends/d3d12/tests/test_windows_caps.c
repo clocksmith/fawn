@@ -145,7 +145,7 @@ static void caps_controls(void) {
             assert(caps.limits.max_compute_size[0] == 1024 && caps.limits.max_compute_size[2] == 64);
             assert(caps.limits.max_dispatch_groups[1] == 65535);
             assert(caps.limits.uniform_offset_alignment == 256 && caps.limits.max_uniform_bytes == 65536);
-            assert(caps.limits.max_buffer_size == UINT64_C(268435456));
+            assert(caps.limits.max_buffer_size == UINT64_C(2147483648));
             assert(caps.limits.max_buffer_allocation_bytes == caps.limits.max_buffer_size);
             assert(context.limits.max_buffer_size == caps.limits.max_buffer_size && device.allocation_calls == 1);
         }
