@@ -2003,9 +2003,21 @@ export function providerSpec(provider, runtimeHost = 'node') {
   return spec;
 }
 
-export function buildRequestDeviceDescriptor(adapterDescriptor = null) {
+// Buffer-size limits every package run requests at the adapter's maxima, the
+// same two the native C runtime CLI requests (runtime/c/runtime-cli/src/execute.c):
+// governed plans bind more than WebGPU's 128 MiB default (the 256 MiB
+// matrix-vector weights). A plan's own requiredLimits value wins.
+const ADAPTER_MAXIMUM_LIMITS = ['maxStorageBufferBindingSize', 'maxBufferSize'];
+
+export function buildRequestDeviceDescriptor(adapterDescriptor = null, adapterLimits = null) {
   const requiredFeatures = adapterDescriptor?.requiredFeatures ?? [];
-  const requiredLimits = adapterDescriptor?.requiredLimits ?? {};
+  const requiredLimits = { ...(adapterDescriptor?.requiredLimits ?? {}) };
+  for (const name of ADAPTER_MAXIMUM_LIMITS) {
+    const value = adapterLimits?.[name];
+    if (requiredLimits[name] === undefined && Number.isSafeInteger(value) && value > 0) {
+      requiredLimits[name] = value;
+    }
+  }
   const requestDeviceDescriptor = {};
   if (requiredFeatures.length > 0) {
     requestDeviceDescriptor.requiredFeatures = requiredFeatures;
@@ -2014,6 +2026,26 @@ export function buildRequestDeviceDescriptor(adapterDescriptor = null) {
     requestDeviceDescriptor.requiredLimits = requiredLimits;
   }
   return requestDeviceDescriptor;
+}
+
+// A validation or internal error with no error scope is reported to the
+// device's uncapturederror event, not thrown (Dawn's behavior): the work it
+// invalidated never executes, so the run must fail instead of timing nothing.
+function recordUncapturedErrors(device) {
+  const errors = [];
+  if (typeof device?.addEventListener === 'function') {
+    device.addEventListener('uncapturederror', (event) => {
+      errors.push(String(event?.error?.message ?? event?.error ?? 'uncaptured GPU error'));
+    });
+  }
+  return errors;
+}
+
+function throwIfUncapturedErrors(errors) {
+  if (errors.length === 0) return;
+  const error = new Error(`uncaptured GPU error (${errors.length}): ${errors[0].slice(0, 500)}`);
+  error.providerFailureReason = 'runner_error';
+  throw error;
 }
 
 function hostPolicyValueMatches(actual, expected) {
@@ -2542,11 +2574,10 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
   }
 
   const requiredFeatures = normalizedPlan.adapter?.requiredFeatures ?? [];
-  const requiredLimits = normalizedPlan.adapter?.requiredLimits ?? {};
-  const requestDeviceDescriptor = buildRequestDeviceDescriptor(normalizedPlan.adapter);
+  const requestDeviceDescriptor = buildRequestDeviceDescriptor(normalizedPlan.adapter, adapter.limits);
   debugLog('runtime.requestDevice.start', {
     requiredFeatureCount: requiredFeatures.length,
-    requiredLimitCount: Object.keys(requiredLimits).length,
+    requiredLimitCount: Object.keys(requestDeviceDescriptor.requiredLimits ?? {}).length,
   });
   let device;
   try {
@@ -2574,6 +2605,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
     });
   }
   debugLog('runtime.requestDevice.done', {});
+  const uncapturedErrors = recordUncapturedErrors(device);
   const deviceIssue = describeUnusableAdapterInfo(
     device?.adapterInfo ?? selectedAdapterInfo,
     spec.providerName,
@@ -2797,6 +2829,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
     adapter,
     adapterInfo,
     device,
+    uncapturedErrors,
     queue,
     queueWaitMode,
     queueWaitFence: queueWaitMode === NODE_PACKAGE_QUEUE_WAIT_MODE &&
@@ -3922,6 +3955,10 @@ export async function executePlanFile({
       runtimeHost,
     });
     const processWallMs = (performance.now() - executionStartedAt);
+    // Dawn delivers uncaptured errors from ProcessEvents; the sample's queue
+    // drain has run them. One more turn admits any already queued.
+    await new Promise((resolve) => setImmediate(resolve));
+    throwIfUncapturedErrors(runtime.uncapturedErrors);
     const artifactFinalizeStartedAt = performance.now();
     if (traceJsonlPath) {
       debugLog('artifact.write.traceJsonl.start', {

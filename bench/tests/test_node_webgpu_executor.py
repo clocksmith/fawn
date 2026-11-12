@@ -1441,7 +1441,10 @@ const populated = buildRequestDeviceDescriptor({{
   requiredFeatures: ['shader-f16'],
   requiredLimits: {{ maxStorageBuffersPerShaderStage: 8 }},
 }});
-console.log(JSON.stringify({{ empty, populated }}));
+const adapterLimits = {{ maxStorageBufferBindingSize: 4294967292, maxBufferSize: 4294967292, maxBindGroups: 8 }};
+const adapterMaxima = buildRequestDeviceDescriptor({{ requiredFeatures: [], requiredLimits: {{}} }}, adapterLimits);
+const planWins = buildRequestDeviceDescriptor({{ requiredLimits: {{ maxBufferSize: 1024 }} }}, adapterLimits);
+console.log(JSON.stringify({{ empty, populated, adapterMaxima, planWins }}));
 """
         result = subprocess.run(
             ["node", "--input-type=module", "-e", script],
@@ -1458,6 +1461,14 @@ console.log(JSON.stringify({{ empty, populated }}));
             payload["populated"]["requiredLimits"]["maxStorageBuffersPerShaderStage"],
             8,
         )
+        # Only the two buffer-size limits rise to the adapter's maxima, as in
+        # the native C runtime CLI; every other limit stays at the default.
+        self.assertEqual(payload["adapterMaxima"], {
+            "requiredLimits": {"maxStorageBufferBindingSize": 4294967292, "maxBufferSize": 4294967292},
+        })
+        self.assertEqual(payload["planWins"]["requiredLimits"], {
+            "maxBufferSize": 1024, "maxStorageBufferBindingSize": 4294967292,
+        })
 
     def test_command_plan_roundtrip_preserves_capture_semantics_and_determinism(self) -> None:
         script = f"""
