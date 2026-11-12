@@ -180,10 +180,29 @@ static bool lower_binding(const doe_json_value *object, doe_kernel_binding *out,
 }
 
 /* Fields of the compatibility command stream that doe-plan-executor reads past:
- * its rows carry the plan step identity, and it takes no captures or oracles. */
+ * its rows carry the plan step identity, and it takes no captures. */
 static const char *const SUPERSEDED[] = {"semanticOpId", "semanticStage", "semanticPhase", "semanticTokenIndex",
-    "semanticLayerIndex", "semanticExecutionPlanHash", "captureBufferHandle", "captureOffset", "captureSize",
-    "output_oracle", "outputOracle", NULL};
+    "semanticLayerIndex", "semanticExecutionPlanHash", "captureBufferHandle", "captureOffset", "captureSize", NULL};
+
+/* doe-plan-executor observes a dispatch's output_oracle in the timed command
+ * graph itself (dawn_plan_types.zig), so only a command-graph oracle over one
+ * dispatch describes what the plan executes. */
+static bool lower_dispatch_oracle(const doe_json_value *object, doe_command *command, size_t index,
+    doe_stream_error *error)
+{
+    bool ambiguous = false;
+    const doe_json_value *value = stream_one_of(object, "output_oracle", "outputOracle", NULL, &ambiguous);
+    if (ambiguous) return stream_reject(error, index, "\"output_oracle\" is given more than once");
+    command->as.dispatch.oracle = value;
+    if (!value) return true;
+    doe_output_oracle oracle;
+    char message[256];
+    if (!doe_output_oracle_parse(value, &oracle, message, sizeof(message)))
+        return stream_reject(error, index, "plan output_oracle: %s", message);
+    if (oracle.scope != DOE_ORACLE_COMMAND_GRAPH || oracle.dispatch_count != 1)
+        return stream_reject(error, index, "plan output_oracle must be a command_graph oracle over one dispatch");
+    return true;
+}
 
 static bool lower_kernel_dispatch(const doe_json_value *object, doe_command *command, size_t index, bool *superseded,
     doe_stream_error *error)
@@ -197,6 +216,7 @@ static bool lower_kernel_dispatch(const doe_json_value *object, doe_command *com
     *superseded = false;
     for (const char *const *name = SUPERSEDED; *name; name++)
         if (doe_json_member_value(object, *name)) *superseded = true;
+    if (!lower_dispatch_oracle(object, command, index, error)) return false;
     if (!read_string_of(object, "kernel", "kernel_name", "kernelName", true, &command->as.dispatch.kernel, index, error) ||
         !read_string_of(object, "entry_point", "entryPoint", NULL, false, &command->as.dispatch.entry_point, index, error)) return false;
     if (!command->as.dispatch.entry_point) command->as.dispatch.entry_point = "main";

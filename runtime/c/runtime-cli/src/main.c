@@ -12,6 +12,7 @@
 #include "numeric_stability.h"
 #include "operators.h"
 #include "plan.h"
+#include "plan_proof.h"
 #include "quirks.h"
 #include "sha256.h"
 #include "stream.h"
@@ -149,7 +150,7 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime)
 
 static bool encode_meta(FILE *out, const options *o, const totals *t, uint64_t command_count,
     const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256,
-    const doe_runtime *runtime, const doe_ns_recorder *numeric)
+    const doe_runtime *runtime, const doe_ns_recorder *numeric, const doe_plan_proof *proof)
 {
     uint64_t seq_max = t->rows ? t->rows - 1 : 0;
     bool ok = fprintf(out, "{\"traceVersion\":1,\"module\":\"" MODULE_NAME "\",\"seqMax\":%" PRIu64 ",\"rowCount\":%" PRIu64
@@ -210,6 +211,8 @@ static bool encode_meta(FILE *out, const options *o, const totals *t, uint64_t c
             ok = write_optional(out, "outputOracleReferenceSha256", oracle->expected_sha256, true) &&
                 write_optional(out, "outputOracleReferencePath", oracle->reference_path, true);
     }
+    /* doe-plan-executor serializes its proof whenever it executes a plan. */
+    if (ok && proof) ok = doe_plan_proof_write(out, proof, plan_sha256);
     if (ok && runtime) ok = write_shader_receipts(out, runtime);
     if (ok && numeric) ok = doe_ns_write_summary(out, numeric);
     ok = ok && fputs(",\"profile\":{", out) >= 0;
@@ -401,6 +404,9 @@ int main(int argc, char **argv)
         asset_root && doe_plan_parse(text, size, asset_root, &plan, &stream_error)) :
         doe_stream_parse(text, size, &stream, &stream_error);
     bool asset_root_failed = o.plan && !o.dry_run && !asset_root;
+    /* The proof names the exact bytes parsed; it allocates only when observing. */
+    doe_plan_proof proof;
+    doe_plan_proof_init(&proof, text, size);
     free(text);
     free(asset_root);
     t.input_read_ns = parse_start - read_start;
@@ -431,7 +437,10 @@ int main(int argc, char **argv)
         }
     }
     char oracle_message[256] = "";
-    if (!doe_oracle_preflight(&stream, o.validate_oracles, oracle_message, sizeof(oracle_message))) {
+    /* A plan observes its oracles in the timed run, so their reference files are
+     * checked before any device work, as an explicit validation run does. */
+    bool validate_oracle_files = o.validate_oracles || (o.plan && o.execute);
+    if (!doe_oracle_preflight(&stream, validate_oracle_files, oracle_message, sizeof(oracle_message))) {
         fprintf(stderr, "doe-c-runtime: output_oracle: %s\n", oracle_message);
         release_input(&stream, &plan, plan_kernel_root);
         return 2;
@@ -569,6 +578,21 @@ int main(int argc, char **argv)
             if (o.dry_run) execution = (doe_trace_execution){.ok = true, .status_code = "dry_run",
                 .dispatch_count = command->kind == DOE_COMMAND_KERNEL_DISPATCH ? 1 : 0};
             bool ok = !o.execute || doe_runtime_execute(runtime, &applied, &execution);
+            if (ok && o.plan && runtime && command->kind == DOE_COMMAND_KERNEL_DISPATCH && command->as.dispatch.oracle) {
+                bool matched = false;
+                if (!doe_plan_proof_observe(&proof, runtime, (size_t)t.rows, command, &execution, &t.oracle, &matched,
+                        execution.message, sizeof(execution.message))) {
+                    execution.status_code = "output_oracle_failed";
+                    t.oracle.count++;
+                    t.oracle.failed_count++;
+                } else if (!matched) {
+                    execution.status_code = "output_oracle_mismatch";
+                    snprintf(execution.message, sizeof(execution.message), "plan step %" PRIu64 " output differs from its "
+                        "frozen oracle", t.rows);
+                }
+                ok = matched;
+                execution.ok = matched;
+            }
             uint64_t seq = t.rows;
             uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),
                 command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision,
@@ -687,7 +711,7 @@ int main(int argc, char **argv)
     FILE *meta_out = o.trace_meta ? doe_host_output_open(&meta) : NULL;
     bool meta_ok = !o.trace_meta || (meta_out && encode_meta(meta_out, &o, &t, command_count,
         runtime ? doe_runtime_adapter_info(runtime) : NULL, &operators, o.plan ? plan.plan_sha256 : NULL,
-        runtime, ns_enabled ? &ns : NULL));
+        runtime, ns_enabled ? &ns : NULL, o.plan && o.execute ? &proof : NULL));
     bool had_runtime = runtime != NULL;
     bool gpu_unknown = doe_runtime_gpu_completion_unknown(runtime);
     bool closed = doe_runtime_close(runtime);
@@ -709,6 +733,7 @@ int main(int argc, char **argv)
         status = 1;
     }
     doe_operator_recorder_free(&operators);
+    doe_plan_proof_free(&proof);
     if (ns_enabled) {
         if (ns.receipts && fflush(ns.receipts) != 0) status = 1;
         doe_ns_recorder_free(&ns);

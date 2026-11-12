@@ -386,10 +386,17 @@ is the command label, no quirk fields), and the meta adds `hostPlanArtifactPath`
 and `hostPlanArtifactHash` (the plan's `planSha256`) with `quirkMode` `off`.
 Kernels resolve under `--kernel-root`, else the IR's `shared.kernelRoot`, else
 `bench/inference-pipeline/kernels`, and compile inside the rows (no prewarm),
-as doe-plan-executor does. A dispatch's compatibility-stream `semantic*`,
-`capture*` and `output_oracle` fields are replaced by the plan identity, as in
-doe-plan-executor, and reported on stderr. Quirk, repeat, oracle, numeric
-stability and `--trace` arguments are rejected; `--readback-buffer` is admitted.
+as doe-plan-executor does. A dispatch's compatibility-stream `semantic*` and
+`capture*` fields are replaced by the plan identity, as in doe-plan-executor,
+and reported on stderr. A dispatch's `output_oracle` must be a schema 2/3
+`command_graph` oracle over one dispatch (others are rejected); as in
+doe-plan-executor, the timed run drains the queue after that dispatch (the drain
+is row time), reads the bound range back outside timing, compares it, and the
+meta carries `timedOutputProof` (`doe.plan-output-proof/v1`, same-execution,
+with the parsed plan file's SHA-256) plus the `outputOracle*` counters. A
+mismatch fails the row and the run. Reference files are checked before device
+work. Quirk, repeat, oracle, numeric stability and `--trace` arguments are
+rejected; `--readback-buffer` is admitted.
 No operator records are written. Unknown plan fields and kinds are rejected.
 
 `--dry-run` validates and lowers the same plan without reading buffer-load

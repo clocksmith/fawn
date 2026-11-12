@@ -580,6 +580,7 @@ def check_plan(binary: Path, work: Path) -> None:
     check((work / "plan_7001.bin").read_bytes() == asset
           and (work / "plan_5001.bin").read_bytes() == recurrence.expected_output(dispatch_count=2),
           "plan load and dispatches read back as computed on the host")
+    check_plan_output_proof(binary, work)
     refusals = [
         (plan_document(), ("--quirks", str(EXAMPLES / "quirks" / "intel_gen12_temp_buffer.json")), "c_plan_parity", "takes no"),
         (plan_document(), (), "another_workload", "is not --workload"),
@@ -591,6 +592,47 @@ def check_plan(binary: Path, work: Path) -> None:
     for plan, extra, workload, needle in refusals:
         result, _, _ = run_plan(binary, work, plan, *extra, workload=workload)
         check(result.returncode == 2 and needle in result.stderr, f"plan refusal {needle}: {result.returncode} {result.stderr}")
+
+
+def plan_oracle(expected_sha256: str) -> dict:
+    return {"schema_version": 2, "scope": "command_graph", "reference_class": "independent_v1",
+            "kind": "sha256_exact_v1", "initialization": "zero_fill_v1", "binding_group": 0, "binding": 0,
+            "dispatch_count": 1, "expected_sha256": expected_sha256, "reference_id": "workgroup_recurrence_u32_v1"}
+
+
+def check_plan_output_proof(binary: Path, work: Path) -> None:
+    """The first dispatch declares a command-graph oracle: the timed run itself
+    reads that binding after the dispatch and proves it, as doe-plan-executor
+    does; a wrong frozen digest fails the run."""
+    expected = hashlib.sha256(recurrence.expected_output(dispatch_count=1)).hexdigest()
+    plan = plan_document()
+    plan["commands"][2] = {**plan["commands"][2], "output_oracle": plan_oracle(expected)}
+    result, meta, rows = run_plan(binary, work, plan)
+    plan_bytes = (work / "plan.json").read_bytes()
+    proof = meta.get("timedOutputProof", {})
+    observations = proof.get("observations", [])
+    check(result.returncode == 0 and len(observations) == 1, f"plan output proof run: {result.stderr}")
+    observed = observations[0]
+    check(proof["schema"] == "doe.plan-output-proof/v1" and proof["executionScope"] == "same-execution"
+          and proof["planSha256"] == "ab" * 32 and proof["planFileSha256"] == hashlib.sha256(plan_bytes).hexdigest(),
+          "plan output proof identity")
+    check(observed["commandSeq"] == 2 and observed["kernel"] == "workgroup_atomic.wgsl" and observed["entryPoint"] == "main"
+          and observed["resourceHandle"] == 5001 and observed["byteLength"] == 1048576 and observed["dispatchCount"] == 1
+          and observed["actualSha256"] == expected and observed["matched"] is True and observed["mismatchCount"] == 0
+          and observed["oracle"]["expectedSha256"] == expected and observed["oracle"]["kind"] == "sha256_exact_v1",
+          f"plan output observation: {observed}")
+    check(meta["outputOracleCount"] == 1 and meta["outputOracleMatchedCount"] == 1 and meta["outputOracleFailedCount"] == 0
+          and meta["executionErrorCount"] == 0 and rows[2]["executionStatus"] == "ok", "plan output oracle counters")
+    plan["commands"][2]["output_oracle"] = plan_oracle("0" * 64)
+    result, meta, rows = run_plan(binary, work, plan)
+    check(result.returncode != 0 and meta.get("outputOracleFailedCount") == 1 and meta.get("executionErrorCount") == 1
+          and meta["timedOutputProof"]["observations"][0]["matched"] is False
+          and "output_oracle_mismatch" in result.stderr, f"plan output mismatch fails: {result.returncode} {result.stderr}")
+    isolated = {key: value for key, value in plan_oracle(expected).items() if key not in ("scope", "reference_class")}
+    plan["commands"][2]["output_oracle"] = {**isolated, "schema_version": 1}
+    result, _, _ = run_plan(binary, work, plan)
+    check(result.returncode == 2 and "command_graph oracle over one dispatch" in result.stderr,
+          f"plan refuses isolated oracles: {result.returncode} {result.stderr}")
 
 
 # doe-zig-runtime (built from runtime/zig at 58774d6ec, --quirk-mode off, lavapipe,

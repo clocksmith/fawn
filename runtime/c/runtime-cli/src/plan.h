@@ -4,8 +4,9 @@
  * buffer_load (bytes from the synthetic asset cache) and kernel_dispatch with
  * buffer bindings, each carrying the plan's semantic identity (op id
  * step-NNNNNN, stage runtime_plan, the command kind as phase, the plan SHA-256
- * as execution plan hash). Plan fields this runtime does not know are
- * rejected. */
+ * as execution plan hash). A dispatch's command-graph output_oracle stays on
+ * the command for the same-execution proof (plan_proof.h). Plan fields this
+ * runtime does not know are rejected. */
 #ifndef DOE_RUNTIME_PLAN_H
 #define DOE_RUNTIME_PLAN_H
 #include "stream.h"
@@ -18,8 +19,8 @@ typedef struct doe_plan {
     const char *ir_path;
     const char *plan_sha256;
     char (*op_ids)[32];      /* step-NNNNNN per command (Zig formats into 32 bytes). */
-    /* kernel_dispatch commands whose own semantic, capture or output_oracle
-     * fields the plan step identity supersedes, as doe-plan-executor does. */
+    /* kernel_dispatch commands whose own semantic or capture fields the plan
+     * step identity supersedes, as doe-plan-executor does. */
     size_t superseded_count;
     size_t first_superseded;
 } doe_plan;
