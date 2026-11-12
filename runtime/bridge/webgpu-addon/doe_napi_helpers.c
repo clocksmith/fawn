@@ -12,6 +12,11 @@ uint64_t current_timeout_ns(napi_env env) {
     return doe_env_state(env)->timeout_ns;
 }
 
+uint64_t gpu_work_timeout_ns(napi_env env) {
+    const DoeEnvState* state = doe_env_state(env);
+    return state->timeout_explicit ? state->timeout_ns : UINT64_MAX;
+}
+
 void copy_library_error_message(char* out, size_t out_len) {
     if (!out || out_len == 0) return;
     out[0] = '\0';
@@ -532,7 +537,7 @@ int map_buffer_sync(napi_env env, WGPUInstance inst, WGPUBuffer buffer,
         napi_throw_error(env, "DOE_BUFFER_MAP_ERROR", "bufferMapAsync future unavailable");
         return 0;
     }
-    process_events_until(inst, &pending->result.done, current_timeout_ns(env));
+    process_events_until(inst, &pending->result.done, gpu_work_timeout_ns(env));
     if (!pending->result.done) {
         pending->abandoned = true;
         napi_throw_error(env, "DOE_BUFFER_MAP_TIMEOUT", "bufferMapAsync timed out");

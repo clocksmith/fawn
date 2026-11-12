@@ -362,7 +362,7 @@ napi_value native_direct_queue_on_submitted_work_done(napi_env env, napi_callbac
                     if (!result.done) pfn_wgpuInstanceProcessEvents(inst);
                 } else if (wait_status == WGPU_WAIT_STATUS_TIMED_OUT) {
                     pfn_wgpuInstanceProcessEvents(inst);
-                    if (monotonic_now_ns() - start_ns >= current_timeout_ns(env)) {
+                    if (monotonic_now_ns() - start_ns >= gpu_work_timeout_ns(env)) {
                         napi_throw_error(env, "DOE_QUEUE_TIMEOUT", "queue wait timed out");
                         return NULL;
                     }
@@ -428,7 +428,7 @@ napi_value native_direct_buffer_map_async(napi_env env, napi_callback_info info)
             WGPUFuture future = pfn_wgpuQueueOnSubmittedWorkDone(queue, cb_info);
             if (future.id == 0) NAPI_THROW(env, "queue work-done future unavailable");
             const uint64_t flush_started_ns = monotonic_now_ns();
-            if (!process_events_until(inst, &result.done, current_timeout_ns(env))) {
+            if (!process_events_until(inst, &result.done, gpu_work_timeout_ns(env))) {
                 return throw_status_error(env, "DOE_QUEUE_TIMEOUT", "queue wait timed out", result.status, result.message);
             }
             if (result.status != WGPU_QUEUE_WORK_DONE_STATUS_SUCCESS) {
@@ -621,7 +621,7 @@ napi_value native_direct_buffer_map_read_copy_unmap(napi_env env, napi_callback_
             WGPUFuture future = pfn_wgpuQueueOnSubmittedWorkDone(queue, cb_info);
             if (future.id == 0) NAPI_THROW(env, "queue work-done future unavailable");
             const uint64_t wait_started_ns = monotonic_now_ns();
-            if (!process_events_until(inst, &qresult.done, current_timeout_ns(env))) {
+            if (!process_events_until(inst, &qresult.done, gpu_work_timeout_ns(env))) {
                 NAPI_THROW(env, "queue wait timed out in mapReadCopyUnmap");
             }
             diag_ms[DOE_READBACK_BREAKDOWN_WAIT_COMPLETED] = native_direct_elapsed_ms(wait_started_ns);

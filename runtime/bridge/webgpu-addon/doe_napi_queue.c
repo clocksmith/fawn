@@ -1171,7 +1171,7 @@ napi_value doe_queue_flush(napi_env env, napi_callback_info info) {
             if (!result.done) pfn_wgpuInstanceProcessEvents(inst);
         } else if (wait_status == WGPU_WAIT_STATUS_TIMED_OUT) {
             pfn_wgpuInstanceProcessEvents(inst);
-            if (monotonic_now_ns() - start_ns >= current_timeout_ns(env)) {
+            if (monotonic_now_ns() - start_ns >= gpu_work_timeout_ns(env)) {
                 napi_throw_error(env, "DOE_QUEUE_TIMEOUT", "queueFlush: queue wait timed out");
                 return NULL;
             }

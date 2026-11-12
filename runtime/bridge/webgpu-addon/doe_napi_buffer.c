@@ -234,7 +234,7 @@ napi_value doe_buffer_map_read_copy_unmap(napi_env env, napi_callback_info info)
             WGPUFuture future = pfn_wgpuQueueOnSubmittedWorkDone(queue, cb_info);
             if (future.id == 0) NAPI_THROW(env, "bufferMapReadCopyUnmap: queue work-done future unavailable");
             const uint64_t wait_started_ns = monotonic_now_ns();
-            if (!process_events_until(inst, &qresult.done, current_timeout_ns(env))) {
+            if (!process_events_until(inst, &qresult.done, gpu_work_timeout_ns(env))) {
                 NAPI_THROW(env, "bufferMapReadCopyUnmap: queue wait timed out");
             }
             wait_completed_ns = monotonic_now_ns() - wait_started_ns;

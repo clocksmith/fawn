@@ -38,7 +38,10 @@ bool doe_env_init(napi_env env) {
     if (timeout && timeout[0] != '\0') {
         char* end = NULL;
         unsigned long parsed = strtoul(timeout, &end, 10);
-        if (end && *end == '\0') state->timeout_ns = (uint64_t)parsed * 1000000ULL;
+        if (end && *end == '\0') {
+            state->timeout_ns = (uint64_t)parsed * 1000000ULL;
+            state->timeout_explicit = true;
+        }
     }
     if (napi_add_env_cleanup_hook(env, env_cleanup, state) != napi_ok) {
         free(state);
