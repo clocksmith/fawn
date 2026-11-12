@@ -1,0 +1,66 @@
+{
+ "schemaVersion": 1,
+ "kind": "doe-c-runtime-package-comparison-summary",
+ "date": "2026-11-12",
+ "runtime": "Doe C runtime: doe-gpu package over libwebgpu_doe_c (package rows); doe-c-runtime plan mode (native rows)",
+ "comparedWith": "Dawn on the same machine: webgpu npm 0.4.0 (Node), bun-webgpu 0.1.5 (Bun), dawn-c-runtime plan mode over libwebgpu_dawn (native)",
+ "sourceCommit": "60d137933 (native CLI and libwebgpu_doe_c sources identical to 48178fc9d)",
+ "harness": "python3 bench/cli.py run-config --side baseline|comparison, then bench/cli.py compare per pass; 16 timed samples + 1 warmup per run; runs interleaved baseline, comparison, comparison, baseline; pass 1 = runs 1+2, pass 2 = runs 4+3",
+ "metric": "operation time (doe-execution-total-ns), p50 and p95 over 16 samples, lower is better; lessTimePercent = (Dawn p50 - Doe p50) / Dawn p50, mean of the two passes",
+ "admission": "rows listed here are comparable in both passes under the comparator after b12528b6a; every sample has executionSuccessCount > 0 and executionErrorCount 0; package Doe samples load the staged libwebgpu_doe_c, native samples run executionBackend doe_c_vulkan vs dawn_direct_vulkan",
+ "rows": [
+  {
+   "id": "linux-vulkan-monte-carlo-native-plan",
+   "workload": "compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces",
+   "surface": "native plan (doe_c_direct_plan_vulkan vs dawn_direct_plan_vulkan)",
+   "host": "Linux, AMD Radeon 8060S, RADV Vulkan",
+   "doeP50Ms": [8.15, 8.01], "doeP95Ms": [8.75, 8.84],
+   "dawnP50Ms": [11.77, 11.82], "dawnP95Ms": [12.75, 13.95],
+   "lessTimePercent": 31,
+   "comparisonStatus": "comparable (both passes)",
+   "outputCheck": "native-same-execution-proof: schema 3 CPU reference (tolerance) on both arms, identical output SHA-256"
+  },
+  {
+   "id": "linux-vulkan-matvec-32768x2048-native-plan",
+   "workload": "compute_matvec_32768x2048_f32 (100 unrolled plan dispatches)",
+   "surface": "native plan (doe_c_direct_plan_vulkan vs dawn_direct_plan_vulkan)",
+   "host": "Linux, AMD Radeon 8060S, RADV Vulkan",
+   "doeP50Ms": [1718.68, 1731.71], "doeP95Ms": [1743.71, 1767.34],
+   "dawnP50Ms": [1156.94, 1156.15], "dawnP95Ms": [1173.53, 1206.14],
+   "lessTimePercent": -49,
+   "comparisonStatus": "comparable (both passes); a loss: Doe takes about 49% more time",
+   "outputCheck": "native-same-execution-proof: schema 2 exact zero output (zero inputs); this oracle cannot detect a skipped dispatch"
+  },
+  {
+   "id": "linux-vulkan-monte-carlo-node-package",
+   "workload": "compute_monte_carlo_fixed_samples_131072paths_256samples_8bounces",
+   "surface": "Node package (doe_node_webgpu vs node_webgpu_package)",
+   "host": "Linux, AMD Radeon 8060S, RADV Vulkan",
+   "doeP50Ms": [15.48, 14.92], "doeP95Ms": [16.85, 16.18],
+   "dawnP50Ms": [13.15, 13.30], "dawnP95Ms": [14.21, 14.91],
+   "lessTimePercent": -15,
+   "comparisonStatus": "comparable (both passes); a loss: Doe takes about 15% more time",
+   "outputCheck": "readback-capture-equality: identical final radiance SHA-256 on both, declared oracle matched on both"
+  },
+  {
+   "id": "linux-vulkan-gemma270m-64-64-cold-bun",
+   "workload": "inference_gemma3_270m_prefill_64tok_decode_64tok",
+   "surface": "Bun package, cold (doe_bun_package vs bun_webgpu_package)",
+   "host": "Linux, AMD Radeon 8060S, RADV Vulkan",
+   "doeP50Ms": [121.60, 122.16], "doeP95Ms": [130.96, 126.93],
+   "dawnP50Ms": [137.81, 140.73], "dawnP95Ms": [149.68, 148.32],
+   "lessTimePercent": 12,
+   "comparisonStatus": "comparable (both passes)",
+   "outputCheck": "readback-capture-equality: final token 1664, identical SHA-256 on both in every sample"
+  }
+ ],
+ "measuredButNotAdmitted": [
+  "Stable fluids, native plan and Node package: both arms pass the schema 3 tolerance oracle but Doe's output bytes differ from Dawn's (Dawn matches the earlier cross-runtime digest), so the identical-output rule rejects both passes",
+  "Matrix-vector 32768x2048, Node package: every Doe sample fails createBindGroup (bind group invalid or device mismatch) on the 256 MB read-only binding; Dawn runs it",
+  "Gemma 270M 64+64 warm, Bun package: tokens and readback digests equal, but the package readback mode, scope and effective readback path differ between doe-gpu and bun-webgpu, so the row is rejected"
+ ],
+ "notMeasured": [
+  "Deno: Deno 2.9.6's built-in WebGPU is wgpu, not Dawn, so there is no Dawn counterpart on Linux; not measured"
+ ],
+ "limits": "Single machine, two passes per row. Run receipts stay on the measuring host; this file carries no host names or addresses."
+}
