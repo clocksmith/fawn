@@ -91,6 +91,8 @@
         "name",
         "comparisonTimingDivisor",
         "comparabilityNotes",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "quirksPath",
         "vendor",
@@ -154,7 +156,6 @@
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
-          "commandsPath": "examples/matrix_vector_mul_32768x2048_commands.json",
           "comparabilityNotes": "Apples-to-apples matrix-vector contract aligned to Dawn MatrixVectorMultiplyPerf variant geometry and per-dispatch normalization. Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: -38.62% Doe on AMD Vulkan explore 2026-04-12 (runtime-engineering regression; tracked in bench/docs/compute-matvec-regression-trace.md)",
           "comparable": true,
           "driver": "24.0.0",
@@ -165,7 +166,9 @@
           "family": "gfx11",
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_matvec_32768x2048_f32"
         },
         "apple_metal_extended": {
           "api": "metal",
@@ -246,6 +249,8 @@
         "name",
         "comparisonTimingDivisor",
         "comparabilityNotes",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "quirksPath",
         "vendor",
@@ -309,7 +314,6 @@
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
-          "commandsPath": "examples/matrix_vector_mul_32768x2048_swizzle1_commands.json",
           "comparabilityNotes": "Apples-to-apples matrix-vector contract aligned to Dawn MatrixVectorMultiplyPerf variant geometry and per-dispatch normalization. Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: -3.87% Doe on AMD Vulkan explore 2026-04-12 (runtime-engineering regression)",
           "comparable": true,
           "driver": "24.0.0",
@@ -320,7 +324,9 @@
           "family": "gfx11",
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_matvec_32768x2048_f32_swizzle1"
         },
         "apple_metal_extended": {
           "api": "metal",
@@ -401,6 +407,8 @@
         "name",
         "comparisonTimingDivisor",
         "comparabilityNotes",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "quirksPath",
         "vendor",
@@ -464,7 +472,6 @@
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
-          "commandsPath": "examples/matrix_vector_mul_32768x2048_workgroupshared_swizzle1_commands.json",
           "comparabilityNotes": "Apples-to-apples matrix-vector contract aligned to Dawn MatrixVectorMultiplyPerf variant geometry and per-dispatch normalization. Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: +11.45% Doe on AMD Vulkan explore 2026-04-12",
           "comparable": true,
           "driver": "24.0.0",
@@ -475,7 +482,9 @@
           "family": "gfx11",
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_matvec_32768x2048_f32_workgroupshared_swizzle1"
         },
         "apple_metal_extended": {
           "api": "metal",
@@ -556,6 +565,8 @@
         "name",
         "description",
         "comparabilityNotes",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "quirksPath",
         "vendor",
@@ -670,7 +681,6 @@
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
-          "commandsPath": "examples/workgroup_atomic_commands.json",
           "comparabilityNotes": "Kernel matches Dawn GenWorkgroupWithAtomics (256 threads, 1 atomicStore + 256 atomicLoads per invocation). Both sides dispatch 100 times per step with direct timing (no side-specific divisor scaling). Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: +48.35% Doe on AMD Vulkan explore 2026-04-12",
           "comparable": true,
           "dawnFilter": "WorkgroupAtomicPerf.Run/Vulkan_AMD_Radeon_Graphics__RADV_GFX1151__WorkgroupUsageType_WorkgroupTypeAtomic",
@@ -685,11 +695,12 @@
           "name": "workgroup-atomic 1024",
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_workgroup_atomic_1024"
         },
         "apple_metal_extended": {
           "api": "metal",
-          "commandsPath": "examples/workgroup_atomic_commands.json",
           "comparabilityNotes": "Doe dispatches pre-compiled MSL via MTLComputeCommandEncoder, bypassing Tint compilation entirely. Both sides execute the same atomic workgroup reduction logic.",
           "comparable": true,
           "dawnFilter": "@autodiscover",
@@ -704,7 +715,9 @@
           "name": "workgroup-atomic 1024",
           "quirksPath": "examples/quirks/apple_m3_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "apple"
+          "vendor": "apple",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_workgroup_atomic_1024"
         },
         "apple_metal_smoke": {
           "api": "metal",
@@ -819,6 +832,8 @@
         "name",
         "comparisonTimingDivisor",
         "comparabilityNotes",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "quirksPath",
         "vendor",
@@ -899,7 +914,6 @@
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
-          "commandsPath": "examples/workgroup_non_atomic_commands.json",
           "comparabilityNotes": "Kernel matches Dawn GenWorkgroupNoAtomics (256 threads, 1 store + 256 loads per invocation). Both sides dispatch 100 times per step with direct timing (no side-specific divisor scaling). Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: +47.21% Doe on AMD Vulkan explore 2026-04-12",
           "comparable": true,
           "default": false,
@@ -911,11 +925,12 @@
           "family": "gfx11",
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_workgroup_non_atomic_1024"
         },
         "apple_metal_extended": {
           "api": "metal",
-          "commandsPath": "examples/workgroup_non_atomic_commands.json",
           "comparabilityNotes": "Doe dispatches pre-compiled MSL; Dawn routes through Tint->MSL. Both sides execute the same non-atomic workgroup reduction logic.",
           "comparable": true,
           "default": true,
@@ -927,7 +942,9 @@
           "family": "m3",
           "quirksPath": "examples/quirks/apple_m3_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "apple"
+          "vendor": "apple",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_workgroup_non_atomic_1024"
         },
         "d3d12_comparable": {
           "api": "d3d12",
@@ -1132,6 +1149,8 @@
         "name",
         "comparisonTimingDivisor",
         "comparabilityNotes",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "quirksPath",
         "vendor",
@@ -1192,7 +1211,6 @@
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
-          "commandsPath": "examples/shader_compile_stress_commands.json",
           "comparabilityNotes": "Matched compute pipeline creation + dispatch shape against Dawn ShaderRobustnessPerf MatMulFloatOneDimSharedArray f32 variant, including 50-dispatch step normalization. Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: +48.25% Doe on AMD Vulkan explore 2026-04-12 (cache-relevant)",
           "comparable": true,
           "driver": "24.0.0",
@@ -1203,11 +1221,12 @@
           "family": "gfx11",
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "pipeline_compile_stress"
         },
         "apple_metal_extended": {
           "api": "metal",
-          "commandsPath": "examples/shader_compile_stress_commands.json",
           "comparabilityNotes": "Doe dispatches pre-compiled MSL matmul kernel; Dawn routes through Tint->MSL. Measures steady-state dispatch throughput, not compile time.",
           "comparable": true,
           "driver": "1.0.0",
@@ -1218,7 +1237,9 @@
           "family": "m3",
           "quirksPath": "examples/quirks/apple_m3_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "apple"
+          "vendor": "apple",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "pipeline_compile_stress"
         },
         "d3d12_comparable": {
           "api": "d3d12",
@@ -5674,6 +5695,8 @@
     {
       "fieldOrder": [
         "api",
+        "irPath",
+        "irScenario",
         "commandsPath",
         "dawnFilter",
         "default",
@@ -5699,26 +5722,31 @@
           "comparabilityNotes": "Apples-to-apples contract: command shape and Dawn filter mapping both exercise one long-running compute dispatch per benchmark step.",
           "comparable": true,
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
-          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0)."
+          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
+          "commandsPath": "examples/concurrent_execution_single_commands.json"
         },
         "amd_vulkan_extended_strict": {
           "comparabilityNotes": "Apples-to-apples contract: command shape and Dawn filter mapping both exercise one long-running compute dispatch per benchmark step.",
           "comparable": true,
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
-          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0)."
+          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
+          "commandsPath": "examples/concurrent_execution_single_commands.json"
         },
         "amd_vulkan_superset": {
           "benchmarkClass": "comparable",
           "comparabilityNotes": "Apples-to-apples contract: command shape and Dawn filter mapping both exercise one long-running compute dispatch per benchmark step.",
           "comparable": true,
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
-          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0)."
+          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
+          "commandsPath": "examples/concurrent_execution_single_commands.json"
         },
         "amd_vulkan_superset_native_supported": {
           "comparabilityNotes": "Apples-to-apples contract: command shape and Dawn filter mapping both exercise one long-running compute dispatch per benchmark step. Native Vulkan strict comparable lane currently requires explicit SPIR-V kernel artifacts; this WGSL-kernel workload remains directional until that artifact stage is wired.; Promoted to comparable on 2026-04-17: +14.92% Doe on AMD Vulkan explore 2026-04-12",
           "comparable": true,
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
-          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0)."
+          "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_concurrent_execution_single"
         },
         "apple_metal_extended": {
           "api": "metal",
@@ -5729,7 +5757,9 @@
           "family": "m3",
           "quirksPath": "examples/quirks/apple_m3_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "apple"
+          "vendor": "apple",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_concurrent_execution_single"
         },
         "d3d12_comparable": {
           "api": "d3d12",
@@ -5743,7 +5773,8 @@
           "baselineTimingDivisor": 1,
           "quirksPath": "examples/quirks/windows_d3d12_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "generic"
+          "vendor": "generic",
+          "commandsPath": "examples/concurrent_execution_single_commands.json"
         },
         "local_d3d12_extended": {
           "api": "d3d12",
@@ -5755,13 +5786,13 @@
           "family": "d3d12",
           "quirksPath": "examples/quirks/windows_d3d12_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "generic"
+          "vendor": "generic",
+          "commandsPath": "examples/concurrent_execution_single_commands.json"
         }
       },
       "shared": {
         "api": "vulkan",
         "claimEligible": true,
-        "commandsPath": "examples/concurrent_execution_single_commands.json",
         "dawnFilter": "ConcurrentExecutionTest.Run/Vulkan_AMD_Radeon_Graphics__RADV_GFX1151__ConcurrentExecutionType_RunSingle",
         "default": false,
         "description": "Compute contract aligned to Dawn ConcurrentExecutionTest RunSingle with a single heavy compute dispatch.",
@@ -6539,6 +6570,8 @@
     },
     {
       "fieldOrder": [
+        "irPath",
+        "irScenario",
         "commandsPath",
         "dawnFilter",
         "default",
@@ -6572,7 +6605,8 @@
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "comparisonCommandRepeat": 100,
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json"
         },
         "amd_vulkan_extended_strict": {
           "api": "vulkan",
@@ -6585,7 +6619,8 @@
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "comparisonCommandRepeat": 100,
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "amd"
+          "vendor": "amd",
+          "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json"
         },
         "amd_vulkan_superset": {
           "api": "vulkan",
@@ -6597,7 +6632,8 @@
           "baselineTimingDivisor": 2400,
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Dawn VulkanZeroInitializeWorkgroupMemoryExtensionTest already reports per-iteration metrics (iterationsPerStep=50 internal normalization). Fawn repeats dispatch 50 times and applies baselineTimingDivisor normalization only.",
-          "vendor": "amd"
+          "vendor": "amd",
+          "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json"
         },
         "amd_vulkan_superset_native_supported": {
           "api": "vulkan",
@@ -6610,7 +6646,8 @@
           "quirksPath": "examples/quirks/amd_radv_noop_list.json",
           "timingNormalizationNote": "Dawn VulkanZeroInitializeWorkgroupMemoryExtensionTest already reports per-iteration metrics (iterationsPerStep=50 internal normalization). Fawn repeats dispatch 50 times and applies baselineTimingDivisor normalization only.",
           "vendor": "amd",
-          "directionalReason": "implementation_gap"
+          "directionalReason": "implementation_gap",
+          "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json"
         },
         "apple_metal_extended": {
           "api": "metal",
@@ -6622,7 +6659,9 @@
           "baselineTimingDivisor": 1,
           "quirksPath": "examples/quirks/apple_m3_noop_list.json",
           "timingNormalizationNote": "Both sides run repeat=50 dispatches per sample via the kernel_dispatch command repeat field. Divisors are symmetric at 1.0; per-dispatch timing is implicit in the repeat count.",
-          "vendor": "apple"
+          "vendor": "apple",
+          "irPath": "bench/ir/compute_governed.json",
+          "irScenario": "compute_zero_initialize_workgroup_memory_256"
         },
         "d3d12_comparable": {
           "api": "d3d12",
@@ -6637,7 +6676,8 @@
           "quirksPath": "examples/quirks/windows_d3d12_noop_list.json",
           "comparisonTimingDivisor": 1,
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "generic"
+          "vendor": "generic",
+          "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json"
         },
         "local_d3d12_extended": {
           "api": "d3d12",
@@ -6650,12 +6690,12 @@
           "baselineTimingDivisor": 1,
           "quirksPath": "examples/quirks/windows_d3d12_noop_list.json",
           "timingNormalizationNote": "Strict Dawn-vs-Doe operation comparability uses direct timing (baseline/comparison divisors fixed to 1.0).",
-          "vendor": "generic"
+          "vendor": "generic",
+          "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json"
         }
       },
       "shared": {
         "claimEligible": true,
-        "commandsPath": "examples/zero_initialize_workgroup_memory_256_commands.json",
         "dawnFilter": "VulkanZeroInitializeWorkgroupMemoryExtensionTest.Run/Vulkan_AMD_Radeon_Graphics__RADV_GFX1151__workgroupSize_256",
         "default": false,
         "description": "Compute workload aligned to Dawn VulkanZeroInitializeWorkgroupMemoryExtensionTest workgroupSize=256 variant.",
@@ -10582,12 +10622,12 @@
         }
       },
       "shared": {
-      "benchmarkClass": "comparable",
-      "claimEligible": true,
-      "comparabilityNotes": "Both sides execute the same deterministic fixed-sample path-tracing command stream and reduction passes and validate the final radiance against a hash-bound independent CPU reference.",
-      "comparable": true,
+        "benchmarkClass": "comparable",
+        "claimEligible": true,
+        "comparabilityNotes": "Both sides execute the same deterministic fixed-sample path-tracing command stream and reduction passes and validate the final radiance against a hash-bound independent CPU reference.",
+        "comparable": true,
         "default": false,
-      "description": "Fixed-shape Monte Carlo compute workload with 131072 path threads, 256 samples per path, 8 bounces per sample, and a deterministic reduction over accumulated path radiance.",
+        "description": "Fixed-shape Monte Carlo compute workload with 131072 path threads, 256 samples per path, 8 bounces per sample, and a deterministic reduction over accumulated path radiance.",
         "domain": "compute",
         "extraArgs": [
           "--kernel-root",

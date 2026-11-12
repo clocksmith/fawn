@@ -1,0 +1,33 @@
+[
+  {
+    "kind": "kernel_dispatch",
+    "kernel": "concurrent_execution_runsingle_u32",
+    "x": 1,
+    "y": 1,
+    "z": 1,
+    "bindings": [
+      {
+        "binding": 0,
+        "group": 0,
+        "kind": "buffer",
+        "buffer_type": "storage",
+        "resource_handle": 9801,
+        "buffer_size": 4096,
+        "visibility": "compute"
+      }
+    ],
+    "initialize_buffers_on_create": true,
+    "output_oracle": {
+      "schema_version": 2,
+      "scope": "command_graph",
+      "reference_class": "independent_v1",
+      "kind": "sha256_exact_v1",
+      "initialization": "zero_fill_v1",
+      "binding_group": 0,
+      "binding": 0,
+      "dispatch_count": 1,
+      "expected_sha256": "168fa648b392dbb15f142e0595196f901c9da63878e656882657d215bd5bd1f3",
+      "reference_id": "bench/oracles/concurrent_runsingle_u32_v1.py"
+    }
+  }
+]

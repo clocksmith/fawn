@@ -1,0 +1,1881 @@
+{
+  "schemaVersion": 1,
+  "planKind": "compute_governed",
+  "workloadId": "pipeline_compile_stress",
+  "irPath": "bench/ir/compute_governed.json",
+  "irScenario": "pipeline_compile_stress",
+  "description": "shader_robustness_matmul_512_f32.wgsl grid 16x16x1, 50 dependent plan dispatches from examples/shader_compile_stress_commands.json; the final dispatch carries the command-graph CPU oracle.",
+  "planPath": "bench/plans/generated/pipeline_compile_stress.plan.json",
+  "commandsPath": "bench/plans/generated/compat/pipeline_compile_stress_commands.json",
+  "commandCount": 50,
+  "bufferWriteCount": 0,
+  "bufferLoadCount": 0,
+  "dispatchCount": 50,
+  "sourceIrSha256": "b46beb740527766a2eba2ef60f220cbc1329d321bddc12f2c58f8ae45ebed97c",
+  "compatibilityCommandsSha256": "6b03ae0d48833b2c39070907213b8d7a04ce895ac82f755f846cb1f372d61c74",
+  "commands": [
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "shader_robustness_matmul_512_f32.wgsl",
+      "x": 16,
+      "y": 16,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7201,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 7202,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 7203,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ],
+      "output_oracle": {
+        "schema_version": 2,
+        "scope": "command_graph",
+        "reference_class": "independent_v1",
+        "kind": "sha256_exact_v1",
+        "initialization": "zero_fill_v1",
+        "binding_group": 0,
+        "binding": 2,
+        "dispatch_count": 1,
+        "expected_sha256": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58",
+        "reference_id": "sha256_zero_bytes_1048576_v1"
+      }
+    }
+  ],
+  "planSha256": "49984ffc02147a148abf2c223b84dd1d12c9256ef850d8d11634c2d8d55bb884"
+}

@@ -1,0 +1,1931 @@
+{
+  "schemaVersion": 1,
+  "planKind": "compute_governed",
+  "workloadId": "compute_workgroup_non_atomic_1024",
+  "irPath": "bench/ir/compute_governed.json",
+  "irScenario": "compute_workgroup_non_atomic_1024",
+  "description": "workgroup_non_atomic.wgsl grid 1024x1x1, 100 dependent plan dispatches from examples/workgroup_non_atomic_commands.json; the final dispatch carries the command-graph CPU oracle.",
+  "planPath": "bench/plans/generated/compute_workgroup_non_atomic_1024.plan.json",
+  "commandsPath": "bench/plans/generated/compat/compute_workgroup_non_atomic_1024_commands.json",
+  "commandCount": 100,
+  "bufferWriteCount": 0,
+  "bufferLoadCount": 0,
+  "dispatchCount": 100,
+  "sourceIrSha256": "b46beb740527766a2eba2ef60f220cbc1329d321bddc12f2c58f8ae45ebed97c",
+  "compatibilityCommandsSha256": "a0a38630513c39e44c5bf50cf168fd34625b57213c357be9cf2da5b45011830d",
+  "commands": [
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "workgroup_non_atomic.wgsl",
+      "x": 1024,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 5002,
+          "buffer_size": 1048576,
+          "visibility": "compute"
+        }
+      ],
+      "output_oracle": {
+        "schema_version": 2,
+        "scope": "command_graph",
+        "reference_class": "independent_v1",
+        "kind": "sha256_exact_v1",
+        "initialization": "zero_fill_v1",
+        "binding_group": 0,
+        "binding": 0,
+        "dispatch_count": 1,
+        "expected_sha256": "20b294d0e46d723dd0c7bb96ba3e98ff59d597872f21d6b50bdf29f31d0f8a07",
+        "reference_id": "bench/oracles/workgroup_recurrence_u32_v1.py"
+      }
+    }
+  ],
+  "planSha256": "2c89a80c586f12b8e89be71403a037b3e8f7cf68abb4f6427a7a8d0fe445a0cb"
+}

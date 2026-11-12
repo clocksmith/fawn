@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "planKind": "compute_governed",
+  "workloadId": "compute_concurrent_execution_single",
+  "irPath": "bench/ir/compute_governed.json",
+  "irScenario": "compute_concurrent_execution_single",
+  "description": "concurrent_execution_runsingle_u32 grid 1x1x1, 1 dependent plan dispatch from examples/concurrent_execution_single_commands.json; the final dispatch carries the command-graph CPU oracle.",
+  "planPath": "bench/plans/generated/compute_concurrent_execution_single.plan.json",
+  "commandsPath": "bench/plans/generated/compat/compute_concurrent_execution_single_commands.json",
+  "commandCount": 1,
+  "bufferWriteCount": 0,
+  "bufferLoadCount": 0,
+  "dispatchCount": 1,
+  "sourceIrSha256": "b46beb740527766a2eba2ef60f220cbc1329d321bddc12f2c58f8ae45ebed97c",
+  "compatibilityCommandsSha256": "9129b991ffe1556e8563b4229757666a23f56b2746eba89a31952f3869bf6568",
+  "commands": [
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "concurrent_execution_runsingle_u32",
+      "x": 1,
+      "y": 1,
+      "z": 1,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 9801,
+          "buffer_size": 4096,
+          "visibility": "compute"
+        }
+      ],
+      "initialize_buffers_on_create": true,
+      "output_oracle": {
+        "schema_version": 2,
+        "scope": "command_graph",
+        "reference_class": "independent_v1",
+        "kind": "sha256_exact_v1",
+        "initialization": "zero_fill_v1",
+        "binding_group": 0,
+        "binding": 0,
+        "dispatch_count": 1,
+        "expected_sha256": "168fa648b392dbb15f142e0595196f901c9da63878e656882657d215bd5bd1f3",
+        "reference_id": "bench/oracles/concurrent_runsingle_u32_v1.py"
+      }
+    }
+  ],
+  "planSha256": "46471c2d367f913ac8752422e609e23acb8effa234355e085e5e1af8a713e4d9"
+}

@@ -1,0 +1,3731 @@
+{
+  "schemaVersion": 1,
+  "planKind": "compute_governed",
+  "workloadId": "compute_matvec_32768x2048_f32_workgroupshared_swizzle1",
+  "irPath": "bench/ir/compute_governed.json",
+  "irScenario": "compute_matvec_32768x2048_f32_workgroupshared_swizzle1",
+  "description": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1 grid 8192x1x1, 100 dependent plan dispatches from examples/matrix_vector_mul_32768x2048_workgroupshared_swizzle1_commands.json; the final dispatch carries the command-graph CPU oracle.",
+  "planPath": "bench/plans/generated/compute_matvec_32768x2048_f32_workgroupshared_swizzle1.plan.json",
+  "commandsPath": "bench/plans/generated/compat/compute_matvec_32768x2048_f32_workgroupshared_swizzle1_commands.json",
+  "commandCount": 100,
+  "bufferWriteCount": 0,
+  "bufferLoadCount": 0,
+  "dispatchCount": 100,
+  "sourceIrSha256": "b46beb740527766a2eba2ef60f220cbc1329d321bddc12f2c58f8ae45ebed97c",
+  "compatibilityCommandsSha256": "c0e44e491a90b5ee8aaec7292870fd0ac205ef1f598676259affe5091d61c2ca",
+  "commands": [
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ]
+    },
+    {
+      "kind": "kernel_dispatch",
+      "kernel": "matrix_vector_mul_32768x2048_f32_workgroupshared_swizzle1",
+      "x": 8192,
+      "y": 1,
+      "z": 1,
+      "initialize_buffers_on_create": true,
+      "bindings": [
+        {
+          "binding": 0,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6121,
+          "buffer_size": 268435456,
+          "visibility": "compute"
+        },
+        {
+          "binding": 1,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "readonly",
+          "resource_handle": 6122,
+          "buffer_size": 8192,
+          "visibility": "compute"
+        },
+        {
+          "binding": 2,
+          "group": 0,
+          "kind": "buffer",
+          "buffer_type": "storage",
+          "resource_handle": 6123,
+          "buffer_size": 131072,
+          "visibility": "compute"
+        }
+      ],
+      "output_oracle": {
+        "schema_version": 2,
+        "scope": "command_graph",
+        "reference_class": "independent_v1",
+        "kind": "sha256_exact_v1",
+        "initialization": "zero_fill_v1",
+        "binding_group": 0,
+        "binding": 2,
+        "dispatch_count": 1,
+        "expected_sha256": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+        "reference_id": "sha256_zero_bytes_131072_v1"
+      }
+    }
+  ],
+  "planSha256": "a0920a4495b529d46f383d31f798c9320386761bb367b795ed14bdb2042258e4"
+}
