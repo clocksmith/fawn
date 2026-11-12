@@ -36,6 +36,11 @@ void doe_dx_transition(ID3D12GraphicsCommandList *list,ID3D12Resource *resource,
     seen.before[i] = before;
     seen.after[i] = after;
 }
+/* Held dispatch states are not part of this control: nothing is held. */
+void doe_dx_settle_buffers(doe_dx_native_commands *commands)
+{
+    (void)commands;
+}
 static void restored(ID3D12Resource *resource)
 {
     assert(seen.transitions == 2 && seen.resource[0] == resource && seen.resource[1] == resource);

@@ -13,6 +13,7 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
         doe_dx_release_descriptors(use);
         use = next;
     }
+    free(commands->held);
     free(commands);
 }
 
@@ -47,6 +48,7 @@ doe_dx_status doe_dx_native_commands_create(doe_dx_native_context *context,
     doe_dx_native_commands *commands = calloc(1, sizeof(*commands));
     if (!commands) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.commands.allocate", error);
     commands->context = context;
+    commands->serial = ++context->recording_serial;
     if (context->idle_pairs) {
         /* Oldest first: the earliest retired pair is reused, as with one slot. */
         commands->allocator = context->idle_allocators[0];
@@ -99,12 +101,23 @@ void doe_dx_transition(ID3D12GraphicsCommandList *list, ID3D12Resource *resource
 void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *source,
     uint64_t source_offset, doe_dx_native_buffer *destination,
     uint64_t destination_offset, uint64_t size) {
-    if (source->memory == DOE_DX_DEFAULT)
-        doe_dx_transition(commands->list, source->resource,
-            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    /* The destination returns to COPY_DEST; a DEFAULT source is tracked at
+     * COPY_SOURCE, so consecutive copies out of one buffer record no barrier. */
+    doe_dx_native_buffer *written = destination->memory == DOE_DX_DEFAULT ? destination : NULL;
+    doe_dx_settle_tracked(commands, &written, 1);
+    bool round_trip = false;
+    if (source->memory == DOE_DX_DEFAULT) {
+        const doe_dx_buffer_state read = {source, D3D12_RESOURCE_STATE_COPY_SOURCE};
+        if (!doe_dx_hold_buffers(commands, &read, 1)) {
+            doe_dx_settle_buffers(commands);
+            doe_dx_transition(commands->list, source->resource,
+                D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE);
+            round_trip = true;
+        }
+    }
     ID3D12GraphicsCommandList_CopyBufferRegion(commands->list, destination->resource,
         destination_offset, source->resource, source_offset, size);
-    if (source->memory == DOE_DX_DEFAULT)
+    if (round_trip)
         doe_dx_transition(commands->list, source->resource,
             D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 }
@@ -113,6 +126,7 @@ void doe_dx_native_order_buffers(doe_dx_native_commands *commands,
     doe_dx_native_buffer *const *buffers, size_t count) {
     /* A transition out of COPY_DEST waits for every earlier write in that state;
      * returning to COPY_DEST keeps the per-operation state contract. */
+    doe_dx_settle_tracked(commands, buffers, count);
     D3D12_RESOURCE_BARRIER barriers[16];
     for (size_t first = 0; first < count; first += 16) {
         const size_t chunk = count - first < 16 ? count - first : 16;
@@ -151,6 +165,28 @@ static doe_dx_status prepare_dispatch_signature(doe_dx_native_context *context,
     return DOE_DX_OK;
 }
 
+/* An identical consecutive dispatch borrows the previous descriptor range: the
+ * range is already written, owned by this command and unchanged until retire. */
+static doe_dx_status dispatch_descriptors(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
+    doe_dx_descriptor_use **out, doe_dx_error *error) {
+    doe_dx_compute_reuse *reuse = &commands->reuse;
+    if (reuse->use && reuse->pipeline == pipeline && doe_dx_same_resources(&reuse->resources, resources)) {
+        *out = reuse->use;
+        return DOE_DX_OK;
+    }
+    doe_dx_descriptor_use *use = NULL;
+    doe_dx_status status = doe_dx_prepare_descriptors(commands, pipeline, resources, &use, error);
+    if (status != DOE_DX_OK) return status;
+    use->next = commands->descriptors;
+    commands->descriptors = use;
+    reuse->pipeline = pipeline;
+    reuse->use = use;
+    doe_dx_copy_resources(&reuse->resources, resources);
+    *out = use;
+    return DOE_DX_OK;
+}
+
 static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
     doe_dx_native_buffer *arguments, uint64_t offset, uint32_t x, uint32_t y,
@@ -161,32 +197,44 @@ static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
     }
     doe_dx_descriptor_use *use = NULL;
     if (resources->buffer_count + resources->texture_count + resources->sampler_count) {
-        doe_dx_status status = doe_dx_prepare_descriptors(commands, pipeline, resources, &use, error);
+        doe_dx_status status = dispatch_descriptors(commands, pipeline, resources, &use, error);
         if (status != DOE_DX_OK) return status;
-        use->next = commands->descriptors;
-        commands->descriptors = use;
     }
     ID3D12GraphicsCommandList *list = commands->list;
-    ID3D12GraphicsCommandList_SetComputeRootSignature(list, pipeline->root);
-    ID3D12GraphicsCommandList_SetPipelineState(list, pipeline->state);
+    doe_dx_bind_compute_root(commands, pipeline->root);
+    doe_dx_bind_state(commands, pipeline->state);
     if (pipeline->immediate_words)
         ID3D12GraphicsCommandList_SetComputeRoot32BitConstants(list,pipeline->immediate_root,
             pipeline->immediate_words,resources->immediate_words,0);
-    if (use) doe_dx_bind_descriptors(commands,pipeline,use,false);
-    if (use && use->storage_sizes[0]) ID3D12GraphicsCommandList_SetComputeRootConstantBufferView(list,
-        pipeline->storage_sizes_root,use->storage_sizes[0]);
-    doe_dx_transition_resources(commands, pipeline, resources, false, false);
+    if (use && use != commands->bound.compute_use) {
+        doe_dx_bind_descriptors(commands,pipeline,use,false);
+        if (use->storage_sizes[0]) ID3D12GraphicsCommandList_SetComputeRootConstantBufferView(list,
+            pipeline->storage_sizes_root,use->storage_sizes[0]);
+        commands->bound.compute_use = use;
+    }
+    /* Buffers stay in their dispatch state for the next dispatch (windows_states.c);
+     * the portable owner rejects an argument buffer that is also bound. */
+    const doe_dx_resource_set set = {pipeline->bindings, pipeline->textures, resources};
+    doe_dx_buffer_state states[DOE_DX_MAX_BINDINGS + 1];
+    size_t count = doe_dx_set_buffer_states(&set, 1, false, states);
+    if (arguments)
+        count = doe_dx_add_buffer_state(states, count, arguments, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+    const bool held = doe_dx_hold_buffers(commands, states, count);
+    if (!held) {
+        /* No room to remember states: the original per-dispatch round trip,
+         * from the explicit COPY_DEST contract. */
+        doe_dx_settle_buffers(commands);
+        doe_dx_apply_buffer_states(list, states, count, false);
+    }
+    doe_dx_transition_set_textures(commands, &set, 1, false, false);
     if (arguments) {
-        doe_dx_transition(list, arguments->resource,
-            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
         ID3D12GraphicsCommandList_ExecuteIndirect(list, commands->context->dispatch_signature,
             1, arguments->resource, offset, NULL, 0);
-        doe_dx_transition(list, arguments->resource,
-            D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_COPY_DEST);
     } else {
         ID3D12GraphicsCommandList_Dispatch(list, x, y, z);
     }
-    doe_dx_transition_resources(commands, pipeline, resources, false, true);
+    doe_dx_transition_set_textures(commands, &set, 1, false, true);
+    if (!held) doe_dx_apply_buffer_states(list, states, count, true);
     return doe_dx_fail(DOE_DX_OK, 0, "native.dispatch", error);
 }
 
@@ -203,6 +251,7 @@ doe_dx_status doe_dx_native_dispatch_indirect(doe_dx_native_commands *commands,
 }
 
 doe_dx_status doe_dx_native_finish(doe_dx_native_commands *commands, doe_dx_error *error) {
+    doe_dx_forget_buffers(commands);
     HRESULT result = ID3D12GraphicsCommandList_Close(commands->list);
     return doe_dx_hresult(result, "ID3D12GraphicsCommandList.Close", error);
 }

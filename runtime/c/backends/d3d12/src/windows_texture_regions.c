@@ -6,6 +6,7 @@ void doe_dx_native_texture_region_transfer(doe_dx_native_commands *commands,
     doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
     const doe_dx_texture_footprint *footprint, doe_dx_texture_region region, bool upload)
 {
+    doe_dx_settle_buffers(commands);
     D3D12_TEXTURE_COPY_LOCATION linear = {0}, image = {0};
     linear.pResource = buffer->resource;
     linear.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -34,6 +35,7 @@ void doe_dx_native_texture_blit(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_texture_region from, doe_dx_native_texture *destination,
     uint32_t destination_x, uint32_t destination_y)
 {
+    doe_dx_settle_buffers(commands);
     D3D12_TEXTURE_COPY_LOCATION src = {0}, dst = {0};
     src.pResource = source->resource;
     src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;

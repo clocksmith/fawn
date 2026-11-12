@@ -38,6 +38,7 @@ struct doe_dx_native_context {
     struct doe_dx_buffer_heap *buffer_heaps; /* Placed-buffer heaps, one memory class each. */
     struct doe_dx_descriptor_ring *descriptor_rings; /* Shader-visible CBV/SRV/UAV ranges. */
     doe_dx_limits limits;
+    uint64_t recording_serial; /* Last native recording identity; never zero once used. */
 };
 struct doe_dx_native_buffer {
     ID3D12Resource *resource;
@@ -48,6 +49,11 @@ struct doe_dx_native_buffer {
     struct doe_dx_buffer_heap *heap; /* Non-NULL for a placed allocation. */
     uint64_t heap_mask;              /* Exactly the 64 KiB slots this resource owns. */
     bool zeroed; /* D3D12 zeroed it at creation: committed, or never-placed slots. */
+    /* Shader state a dispatch left this buffer in, valid only while held_serial
+     * names the recording that holds it (see windows_states.c); otherwise the
+     * buffer rests at COPY_DEST. The holding recording owns a buffer lease. */
+    uint64_t held_serial;
+    D3D12_RESOURCE_STATES held_state;
 };
 struct doe_dx_native_texture {
     ID3D12Resource *resource;
@@ -124,13 +130,77 @@ doe_dx_status doe_dx_prepare_depth_view(doe_dx_native_commands *,doe_dx_native_t
 UINT doe_dx_storage_size_slots(const doe_dx_native_resources *);
 doe_dx_status doe_dx_write_storage_sizes(const doe_dx_native_resources *,uint8_t *,size_t,doe_dx_error *);
 struct doe_dx_shared_wait;
+/* Native list bindings already recorded, so equal sets are skipped. A root
+ * signature or heap change forgets the bound tables (D3D12 invalidates them). */
+typedef struct doe_dx_bound_state {
+    ID3D12PipelineState *state;
+    ID3D12RootSignature *compute_root, *graphics_root;
+    ID3D12DescriptorHeap *heaps[2];
+    UINT heap_count;
+    const doe_dx_descriptor_use *compute_use, *graphics_use;
+} doe_dx_bound_state;
+/* The descriptor use of the previous compute dispatch and the exact bindings
+ * it was written for; an identical next dispatch borrows the same range. */
+typedef struct doe_dx_compute_reuse {
+    const doe_dx_native_pipeline *pipeline;
+    doe_dx_descriptor_use *use;
+    doe_dx_native_resources resources;
+} doe_dx_compute_reuse;
 struct doe_dx_native_commands {
     doe_dx_native_context *context; /* Context cannot close with live commands. */
     struct doe_dx_shared_wait *shared_waits;
     ID3D12CommandAllocator *allocator;
     ID3D12GraphicsCommandList *list;
     doe_dx_descriptor_use *descriptors;
+    uint64_t serial; /* Unique recording identity for held buffer states. */
+    doe_dx_native_buffer **held; /* Buffers touched in this list; leases are this command's. */
+    size_t held_count, held_capacity;
+    bool untracked; /* An operation touched buffers without reporting them. */
+    doe_dx_bound_state bound;
+    doe_dx_compute_reuse reuse;
 };
+typedef struct doe_dx_buffer_state {
+    doe_dx_native_buffer *buffer;
+    D3D12_RESOURCE_STATES state;
+} doe_dx_buffer_state;
+/* Buffer state tracking (windows_states.c). Settle returns every tracked
+ * buffer to COPY_DEST and marks the recording untracked, for operations that
+ * do not report their buffers. Settle-tracked does so for the named buffers
+ * only (NULL entries skipped) and records them as touched at COPY_DEST. Forget
+ * drops tracking at Close, where buffer decay ends every state. */
+void doe_dx_settle_buffers(doe_dx_native_commands *commands);
+void doe_dx_settle_tracked(doe_dx_native_commands *commands, doe_dx_native_buffer *const *buffers, size_t count);
+void doe_dx_forget_buffers(doe_dx_native_commands *commands);
+/* Moves each unique buffer to its dispatch state from its tracked state (an
+ * untouched buffer is promoted implicitly, or is at COPY_DEST once untracked)
+ * in one barrier call, with a UAV barrier for UAV->UAV, and tracks it. False,
+ * with nothing recorded, when the tracked list cannot grow. */
+bool doe_dx_hold_buffers(doe_dx_native_commands *commands, const doe_dx_buffer_state *states, size_t count);
+/* COPY_DEST <-> state transitions for unique states, batched; restore reverses. */
+void doe_dx_apply_buffer_states(ID3D12GraphicsCommandList *list, const doe_dx_buffer_state *states,
+    size_t count, bool restore);
+/* Appends or merges (state OR) one buffer use; returns the new count. */
+size_t doe_dx_add_buffer_state(doe_dx_buffer_state *states, size_t count, doe_dx_native_buffer *buffer,
+    D3D12_RESOURCE_STATES state);
+size_t doe_dx_set_buffer_states(const doe_dx_resource_set *sets, size_t count, bool graphics,
+    doe_dx_buffer_state *out);
+/* Whole-pass transitions (windows_transitions.c). Begin records nothing and
+ * returns false when the pass cannot use one state per resource or storage
+ * is unavailable; the caller then keeps per-draw transitions. */
+typedef struct doe_dx_pass_states doe_dx_pass_states;
+bool doe_dx_pass_states_begin(doe_dx_native_commands *commands, const doe_dx_native_render_draw *draws,
+    size_t count, doe_dx_native_texture *attachment_depth, doe_dx_pass_states **out);
+void doe_dx_pass_states_draw(doe_dx_native_commands *commands, doe_dx_pass_states *pass,
+    const doe_dx_native_render_draw *draw);
+void doe_dx_pass_states_end(doe_dx_native_commands *commands, doe_dx_pass_states *pass);
+void doe_dx_transition_set_textures(doe_dx_native_commands *commands, const doe_dx_resource_set *sets,
+    size_t count, bool graphics, bool restore);
+void doe_dx_bind_state(doe_dx_native_commands *commands, ID3D12PipelineState *state);
+bool doe_dx_bind_compute_root(doe_dx_native_commands *commands, ID3D12RootSignature *root);
+bool doe_dx_bind_graphics_root(doe_dx_native_commands *commands, ID3D12RootSignature *root);
+void doe_dx_bind_heaps(doe_dx_native_commands *commands, ID3D12DescriptorHeap *const *heaps, UINT count);
+bool doe_dx_same_resources(const doe_dx_native_resources *a, const doe_dx_native_resources *b);
+void doe_dx_copy_resources(doe_dx_native_resources *to, const doe_dx_native_resources *from);
 ID3D12Fence *doe_dx_shared_fence_native(const doe_dx_shared_fence *);
 doe_dx_status doe_dx_shared_waits_execute(doe_dx_native_context *,doe_dx_native_commands *,doe_dx_error *);
 void doe_dx_shared_waits_close(doe_dx_native_commands *);

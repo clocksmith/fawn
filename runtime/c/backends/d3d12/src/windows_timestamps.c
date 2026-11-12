@@ -44,6 +44,7 @@ void doe_dx_native_timestamp(doe_dx_native_commands *commands,
 void doe_dx_native_resolve_timestamps(doe_dx_native_commands *commands,
     doe_dx_native_timestamps *timestamps, uint32_t first, uint32_t count,
     doe_dx_native_buffer *destination, uint64_t offset) {
+    doe_dx_settle_buffers(commands);
     ID3D12GraphicsCommandList_ResolveQueryData(commands->list, timestamps->heap,
         timestamps->kind, first, count, destination->resource, offset);
 }

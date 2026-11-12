@@ -42,13 +42,14 @@ static doe_dx_status prepare_exact_clear(doe_dx_native_commands *commands,doe_dx
     cpu->next=*head; gpu->next=cpu; *head=gpu;
     return DOE_DX_OK;
 }
-static void clear_color(ID3D12GraphicsCommandList *list,doe_dx_native_texture *texture,
+static void clear_color(doe_dx_native_commands *commands,doe_dx_native_texture *texture,
     D3D12_CPU_DESCRIPTOR_HANDLE target,const exact_clear_view *exact,const float value[4])
 {
+    ID3D12GraphicsCommandList *list=commands->list;
     if (exact->heap) {
         UINT values[4]; memcpy(values,value,sizeof(values));
         doe_dx_transition(list,texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-        ID3D12GraphicsCommandList_SetDescriptorHeaps(list,1,&exact->heap);
+        doe_dx_bind_heaps(commands,&exact->heap,1);
         ID3D12GraphicsCommandList_ClearUnorderedAccessViewUint(list,exact->gpu,exact->cpu,texture->resource,values,0,NULL);
         doe_dx_transition(list,texture->resource,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_RENDER_TARGET);
         return;
@@ -77,14 +78,17 @@ static void resource_sets(const doe_dx_native_render_draw *draw,doe_dx_resource_
 static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_render_draw *draw,
     doe_dx_descriptor_use *use)
 {
-    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
-        if (use->storage_sizes[stage]) ID3D12GraphicsCommandList_SetGraphicsRootConstantBufferView(commands->list,
-            draw->pipeline->render->storage_sizes_root[stage],use->storage_sizes[stage]);
     ID3D12DescriptorHeap *heaps[2];
     UINT count=0;
     if (use->heap) heaps[count++]=use->heap;
     if (use->sampler_heap) heaps[count++]=use->sampler_heap;
-    ID3D12GraphicsCommandList_SetDescriptorHeaps(commands->list,count,heaps);
+    doe_dx_bind_heaps(commands,heaps,count);
+    /* Same range, root signature and heaps: the tables are still bound. */
+    if (commands->bound.graphics_use==use) return;
+    commands->bound.graphics_use=use;
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
+        if (use->storage_sizes[stage]) ID3D12GraphicsCommandList_SetGraphicsRootConstantBufferView(commands->list,
+            draw->pipeline->render->storage_sizes_root[stage],use->storage_sizes[stage]);
     D3D12_GPU_DESCRIPTOR_HANDLE resources={0},samplers={0};
     if (use->heap) doe_dx_descriptor_gpu_start(use,&resources);
     if (use->sampler_heap) use->sampler_heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->sampler_heap,&samplers);
@@ -104,37 +108,65 @@ static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_ren
         }
     }
 }
+static bool same_index_view(const doe_dx_native_render_draw *a,const doe_dx_native_render_draw *b)
+{
+    return a->indices.buffer==b->indices.buffer && a->indices.offset==b->indices.offset &&
+        a->indices.size==b->indices.size && a->index_format==b->index_format;
+}
+/* previous is the last draw recorded in this pass (NULL first); fixed-function
+ * and input-assembler state it already set is not set again. Root constants,
+ * tables and pipeline go through the bound-state owner. */
 static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_render_draw *draw,
-    doe_dx_descriptor_use *bindings)
+    doe_dx_descriptor_use *bindings,const doe_dx_native_render_draw *previous,doe_dx_pass_states *pass)
 {
     doe_dx_resource_set sets[DOE_DX_RENDER_STAGES];
     resource_sets(draw,sets);
-    doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,false);
+    if (pass) doe_dx_pass_states_draw(commands,pass,draw);
+    else doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,false);
     ID3D12GraphicsCommandList *list=commands->list;
-    ID3D12GraphicsCommandList_SetGraphicsRootSignature(list,draw->pipeline->root);
-    ID3D12GraphicsCommandList_SetPipelineState(list,draw->pipeline->state);
+    const doe_dx_windows_render_layout *layout=draw->pipeline->render;
+    const bool root_changed=doe_dx_bind_graphics_root(commands,draw->pipeline->root);
+    doe_dx_bind_state(commands,draw->pipeline->state);
+    /* Root constants persist until the root signature changes; an indirect draw
+     * with draw offsets rewrites its constant through the command signature. */
+    const bool same_root=previous && !root_changed && previous->pipeline->root==draw->pipeline->root;
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
-        uint32_t words=draw->pipeline->render->stages[stage].immediate_bytes/4;
-        if (words) ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,
-            draw->pipeline->render->immediate_root[stage],words,draw->stages[stage].immediate_words,0);
-    }
-    if (draw->pipeline->render->draw_offsets_root!=UINT32_MAX && !draw->indirect.buffer) {
-        const uint32_t offsets[2]={draw->first_vertex,draw->first_instance};
+        uint32_t words=layout->stages[stage].immediate_bytes/4;
+        if (!words) continue;
+        if (same_root && previous->pipeline==draw->pipeline &&
+            !memcmp(previous->stages[stage].immediate_words,draw->stages[stage].immediate_words,words*sizeof(uint32_t)))
+            continue;
         ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,
-            draw->pipeline->render->draw_offsets_root,2,offsets,0);
+            layout->immediate_root[stage],words,draw->stages[stage].immediate_words,0);
+    }
+    if (layout->draw_offsets_root!=UINT32_MAX && !draw->indirect.buffer &&
+        !(same_root && !previous->indirect.buffer && previous->pipeline->render->draw_offsets_root==layout->draw_offsets_root &&
+          previous->first_vertex==draw->first_vertex && previous->first_instance==draw->first_instance)) {
+        const uint32_t offsets[2]={draw->first_vertex,draw->first_instance};
+        ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,layout->draw_offsets_root,2,offsets,0);
     }
     if (bindings) bind_tables(commands,draw,bindings);
-    const float *v=draw->viewport;
-    const D3D12_VIEWPORT viewport={v[0],v[1],v[2],v[3],v[4],v[5]};
-    const uint32_t *s=draw->scissor;
-    const D3D12_RECT scissor={(LONG)s[0],(LONG)s[1],(LONG)(s[0]+s[2]),(LONG)(s[1]+s[3])};
-    if (draw->pipeline->render->stencil_test) ID3D12GraphicsCommandList_OMSetStencilRef(list,draw->stencil_reference);
-    ID3D12GraphicsCommandList_OMSetBlendFactor(list,draw->blend_constant);
-    ID3D12GraphicsCommandList_RSSetViewports(list,1,&viewport);
-    ID3D12GraphicsCommandList_RSSetScissorRects(list,1,&scissor);
-    ID3D12GraphicsCommandList_IASetPrimitiveTopology(list,draw->pipeline->render->topology);
-    doe_dx_bind_vertex_views(commands,draw->pipeline,draw->vertices,draw->vertex_buffer_count);
-    if (draw->indices.buffer) {
+    if (layout->stencil_test && !(previous && previous->pipeline->render->stencil_test &&
+        previous->stencil_reference==draw->stencil_reference))
+        ID3D12GraphicsCommandList_OMSetStencilRef(list,draw->stencil_reference);
+    if (!previous || memcmp(previous->blend_constant,draw->blend_constant,sizeof(draw->blend_constant)))
+        ID3D12GraphicsCommandList_OMSetBlendFactor(list,draw->blend_constant);
+    if (!previous || memcmp(previous->viewport,draw->viewport,sizeof(draw->viewport))) {
+        const float *v=draw->viewport;
+        const D3D12_VIEWPORT viewport={v[0],v[1],v[2],v[3],v[4],v[5]};
+        ID3D12GraphicsCommandList_RSSetViewports(list,1,&viewport);
+    }
+    if (!previous || memcmp(previous->scissor,draw->scissor,sizeof(draw->scissor))) {
+        const uint32_t *s=draw->scissor;
+        const D3D12_RECT scissor={(LONG)s[0],(LONG)s[1],(LONG)(s[0]+s[2]),(LONG)(s[1]+s[3])};
+        ID3D12GraphicsCommandList_RSSetScissorRects(list,1,&scissor);
+    }
+    if (!previous || previous->pipeline->render->topology!=layout->topology)
+        ID3D12GraphicsCommandList_IASetPrimitiveTopology(list,layout->topology);
+    if (!previous || previous->pipeline!=draw->pipeline || previous->vertex_buffer_count!=draw->vertex_buffer_count ||
+        memcmp(previous->vertices,draw->vertices,draw->vertex_buffer_count*sizeof(draw->vertices[0])))
+        doe_dx_bind_vertex_views(commands,draw->pipeline,draw->vertices,draw->vertex_buffer_count);
+    if (draw->indices.buffer && !(previous && same_index_view(previous,draw))) {
         D3D12_INDEX_BUFFER_VIEW indices={0};
         indices.BufferLocation=ID3D12Resource_GetGPUVirtualAddress(draw->indices.buffer->resource)+draw->indices.offset;
         indices.SizeInBytes=(UINT)draw->indices.size;
@@ -144,13 +176,13 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     if (draw->indirect.buffer) {
         ID3D12CommandSignature *signature=draw->indices.buffer ? commands->context->draw_indexed_signature :
             commands->context->draw_signature;
-        if (draw->pipeline->render->draw_offsets_root!=UINT32_MAX)
-            signature=draw->indices.buffer ? draw->pipeline->render->draw_indexed_signature : draw->pipeline->render->draw_signature;
+        if (layout->draw_offsets_root!=UINT32_MAX)
+            signature=draw->indices.buffer ? layout->draw_indexed_signature : layout->draw_signature;
         ID3D12GraphicsCommandList_ExecuteIndirect(list,signature,1,draw->indirect.buffer->resource,
             draw->indirect.offset,NULL,0);
     } else ID3D12GraphicsCommandList_DrawInstanced(list,draw->vertex_count,draw->instance_count,
         draw->first_vertex,draw->first_instance);
-    doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,true);
+    if (!pass) doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,true);
 }
 
 static doe_dx_status prepare_draw_signature(doe_dx_native_context *context,doe_dx_native_pipeline *pipeline,bool indexed,doe_dx_error *error)
@@ -245,6 +277,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         if (status!=DOE_DX_OK) goto fail;
         dsv->next=head; head=dsv;
     }
+    const doe_dx_native_render_draw *described=NULL;
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
         if (draw->query) continue;
@@ -258,10 +291,19 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
             descriptors+=draw->stages[stage].buffer_count+draw->stages[stage].texture_count+draw->stages[stage].sampler_count;
         if (!descriptors) continue;
+        /* Same pipeline and bindings as the previous described draw: borrow its
+         * range, already written and owned by this pass's descriptor list. */
+        if (described && described->pipeline==draw->pipeline &&
+            doe_dx_same_resources(&described->stages[0],&draw->stages[0]) &&
+            doe_dx_same_resources(&described->stages[1],&draw->stages[1])) {
+            bindings[i]=bindings[described-draws];
+            continue;
+        }
         status=doe_dx_prepare_sets(commands,sets,DOE_DX_RENDER_STAGES,&bindings[i],error);
         if (status!=DOE_DX_OK) goto fail;
         bindings[i]->next=head;
         head=bindings[i];
+        described=draw;
     }
     /* Every heap/view is prepared. Only now publish descriptor lifetime and
      * record commands, so first failure cannot leave a partially cleared pass. */
@@ -269,6 +311,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     while (tail->next) tail=tail->next;
     tail->next=commands->descriptors;
     commands->descriptors=head;
+    doe_dx_settle_buffers(commands);
     ID3D12GraphicsCommandList *list=commands->list;
     for (uint32_t i=0;i<color_count;++i) if (colors[i].texture) {
         bool prior=false;
@@ -291,14 +334,23 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,flags,depth->value,(UINT8)depth->stencil,0,NULL);
     }
     for (uint32_t i=0;i<color_count;++i) if (colors[i].texture && colors[i].clear)
-        clear_color(list,colors[i].texture,targets[i],&clears[i],colors[i].value);
+        clear_color(commands,colors[i].texture,targets[i],&clears[i],colors[i].value);
+    /* Without whole-pass states (conflicting uses or no memory) each draw
+     * transitions and restores its own resources, as before. */
+    doe_dx_pass_states *pass=NULL;
+    (void)doe_dx_pass_states_begin(commands,draws,count,depth ? depth->texture : NULL,&pass);
+    const doe_dx_native_render_draw *previous=NULL;
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
         if (draw->query) {
             if (draw->query_begin) ID3D12GraphicsCommandList_BeginQuery(list,draw->query->heap,D3D12_QUERY_TYPE_OCCLUSION,draw->query_index);
             else ID3D12GraphicsCommandList_EndQuery(list,draw->query->heap,D3D12_QUERY_TYPE_OCCLUSION,draw->query_index);
-        } else if (draw->indirect.buffer || (draw->vertex_count && draw->instance_count)) draw_packet(commands,draw,bindings[i]);
+        } else if (draw->indirect.buffer || (draw->vertex_count && draw->instance_count)) {
+            draw_packet(commands,draw,bindings[i],previous,pass);
+            previous=draw;
+        }
     }
+    if (pass) doe_dx_pass_states_end(commands,pass);
     for (uint32_t i=0;i<color_count;++i) {
         const doe_dx_native_render_color *color=&colors[i];
         if (!color->texture) continue;
@@ -314,7 +366,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         }
         if (color->discard) {
             const float zero[4]={0};
-            clear_color(list,color->texture,targets[i],&clears[i],zero);
+            clear_color(commands,color->texture,targets[i],&clears[i],zero);
         }
         bool later=false;
         for (uint32_t j=i+1;j<color_count;++j) if (colors[j].texture==color->texture) later=true;

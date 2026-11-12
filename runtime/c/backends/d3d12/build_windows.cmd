@@ -13,7 +13,7 @@ cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     src\texture_transfer.c src\texture_regions.c src\render_pipeline.c src\render_commands.c src\render_vertices.c src\samplers.c src\bindings.c src\graphics.c ^
     src\timestamps.c src\windows_context.c src\windows_caps.c src\windows_adapter.c src\windows_resources.c ^
     src\windows_commands.c src\windows_pipeline.c src\windows_bindings.c ^
-    src\windows_textures.c src\windows_texture_regions.c src\windows_samplers.c src\windows_transitions.c src\windows_render_pipeline.c src\windows_render_commands.c src\windows_graphics.c src\windows_timestamps.c ^
+    src\windows_textures.c src\windows_texture_regions.c src\windows_samplers.c src\windows_transitions.c src\windows_states.c src\windows_render_pipeline.c src\windows_render_commands.c src\windows_graphics.c src\windows_timestamps.c ^
     src\vertex_layout.c src\geometry.c src\windows_geometry.c ^
     /Fo"%OUT%\\"
 if not "%errorlevel%"=="0" exit /b 1
@@ -25,7 +25,7 @@ lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
     "%OUT%\texture_transfer.obj" "%OUT%\texture_regions.obj" "%OUT%\render_pipeline.obj" "%OUT%\render_commands.obj" "%OUT%\render_vertices.obj" "%OUT%\samplers.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
     "%OUT%\timestamps.obj" "%OUT%\windows_context.obj" "%OUT%\windows_caps.obj" "%OUT%\windows_adapter.obj" "%OUT%\windows_resources.obj" ^
     "%OUT%\windows_commands.obj" "%OUT%\windows_pipeline.obj" "%OUT%\windows_bindings.obj" ^
-    "%OUT%\windows_textures.obj" "%OUT%\windows_texture_regions.obj" "%OUT%\windows_samplers.obj" "%OUT%\windows_transitions.obj" "%OUT%\windows_render_pipeline.obj" "%OUT%\windows_render_commands.obj" "%OUT%\windows_graphics.obj" "%OUT%\windows_timestamps.obj" ^
+    "%OUT%\windows_textures.obj" "%OUT%\windows_texture_regions.obj" "%OUT%\windows_samplers.obj" "%OUT%\windows_transitions.obj" "%OUT%\windows_states.obj" "%OUT%\windows_render_pipeline.obj" "%OUT%\windows_render_commands.obj" "%OUT%\windows_graphics.obj" "%OUT%\windows_timestamps.obj" ^
     "%OUT%\vertex_layout.obj" "%OUT%\geometry.obj" "%OUT%\windows_geometry.obj"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
@@ -63,6 +63,11 @@ rem New whole-pass/stage roots and packed descriptor CPU control; no device.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^
     tests\test_windows_render.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\test_windows_render.obj" /Fe"%OUT%\test_windows_render.exe"
+if not "%errorlevel%"=="0" exit /b 1
+rem Tracked buffer states and recorded-binding skips; fake list, no device.
+cl /nologo /std:c11 /W4 /WX /Iinclude ^
+    tests\test_windows_states.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
+    /Fo"%OUT%\test_windows_states.obj" /Fe"%OUT%\test_windows_states.exe"
 if not "%errorlevel%"=="0" exit /b 1
 rem Canonical PSO key values using real SDK declarations, build only.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^

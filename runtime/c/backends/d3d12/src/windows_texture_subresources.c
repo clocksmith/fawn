@@ -18,6 +18,7 @@ static void transition_slice(ID3D12GraphicsCommandList *list,ID3D12Resource *res
 void doe_dx_native_texture_region_transfer_ex(doe_dx_native_commands *commands,doe_dx_native_buffer *buffer,
     doe_dx_native_texture *texture,const doe_dx_texture_footprint *footprint,doe_dx_texture_region_ex region,bool upload)
 {
+    doe_dx_settle_buffers(commands);
     uint32_t index=subresource(texture,region);
     D3D12_TEXTURE_COPY_LOCATION linear={0},image={0};
     linear.pResource=buffer->resource; linear.Type=D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -48,6 +49,7 @@ void doe_dx_native_texture_region_transfer_ex(doe_dx_native_commands *commands,d
 void doe_dx_native_texture_blit_ex(doe_dx_native_commands *commands,doe_dx_native_texture *source,
     doe_dx_texture_region_ex from,doe_dx_native_texture *destination,doe_dx_texture_region_ex to)
 {
+    doe_dx_settle_buffers(commands);
     uint32_t planes=!from.aspect && doe_dx_format_stencil(source->format) ? 2u : 1u;
     for (uint32_t plane=0;plane<planes;++plane) {
         doe_dx_texture_region_ex source_region=from,target_region=to;

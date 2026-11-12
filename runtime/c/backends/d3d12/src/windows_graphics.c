@@ -154,11 +154,12 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     commands->descriptors = rtv;
     /* All fallible preparation is complete; no rejected call partially records. */
     ID3D12GraphicsCommandList *list = commands->list;
+    doe_dx_settle_buffers(commands);
     doe_dx_transition(list, color->resource, doe_dx_texture_rest(color), D3D12_RESOURCE_STATE_RENDER_TARGET);
     doe_dx_geometry_transition(commands, geometry, mesh, false);
     doe_dx_transition_resources(commands, pipeline, resources, true, false);
-    ID3D12GraphicsCommandList_SetGraphicsRootSignature(list, pipeline->root);
-    ID3D12GraphicsCommandList_SetPipelineState(list, pipeline->state);
+    doe_dx_bind_graphics_root(commands, pipeline->root);
+    doe_dx_bind_state(commands, pipeline->state);
     if (bindings) doe_dx_bind_descriptors(commands,pipeline,bindings,true);
     ID3D12GraphicsCommandList_OMSetRenderTargets(list, 1, &target, FALSE, dsv ? &depth : NULL);
     if (mesh->clear_depth) ID3D12GraphicsCommandList_ClearDepthStencilView(list, depth, D3D12_CLEAR_FLAG_DEPTH, mesh->depth_clear, 0, 0, NULL);

@@ -160,6 +160,7 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
 void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
     doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
     const doe_dx_texture_footprint *footprint, bool upload) {
+    doe_dx_settle_buffers(commands);
     D3D12_TEXTURE_COPY_LOCATION linear = {0};
     linear.pResource = buffer->resource;
     linear.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -187,6 +188,7 @@ void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
 
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination) {
+    doe_dx_settle_buffers(commands);
     doe_dx_transition(commands->list, source->resource,
         doe_dx_texture_rest(source), D3D12_RESOURCE_STATE_COPY_SOURCE);
     if (destination->shared) doe_dx_transition(commands->list,destination->resource,doe_dx_texture_rest(destination),D3D12_RESOURCE_STATE_COPY_DEST);

@@ -207,7 +207,9 @@ keeps index start and instance start distinct. D32 extent must match color. Dept
 transfers copy the entire subresource with zero coordinates and no source box,
 following [CopyTextureRegion depth rules](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion).
 Graphics resources use both pixel and non-pixel shader read states and return to
-COPY_DEST after each draw (COMMON for imported simultaneous-access DXGI textures). RTV, DSV and shader heaps remain owned by the command until
+COPY_DEST at the end of their whole-pass transition, or after each draw when a pass
+cannot hold one state per resource (COMMON for imported simultaneous-access DXGI
+textures; see [tracked buffer states](#tracked-buffer-states-and-recorded-bindings)). RTV, DSV and shader heaps remain owned by the command until
 completion or terminal loss. All fallible descriptor preparation precedes command
 mutation. Timestamp resolves reject unwritten slots and partial destinations with
 uninitialized bytes, following the native
@@ -571,14 +573,59 @@ excluded until all accepted uses retire. Texture, geometry and indirect-argument
 alias admission within each command remains unchanged.
 
 Each unique buffer consumes one existing command resource slot and lease. Native
-barriers combine compatible CBV/SRV read-state bits and transition/restore once
-per allocation, while descriptors retain each view's exact range. There is no
+barriers combine compatible CBV/SRV read-state bits and transition once per
+allocation (held across dispatches, below), while descriptors retain each view's
+exact range. There is no
 shadow allocation or additional lifetime list. `test_aliases.c` covers read views,
 disjoint/overlapping UAVs, bad ranges, mixed classes, the last resource slot,
 early caller release and unknown completion. The SDK CPU call control observes
 actual lowering's barrier count, identity and state bits, including graphics
 read bits and repeated UAVs. These controls do not execute a shader; actual
 public WARP consumption remains separate.
+
+## Tracked buffer states and recorded bindings
+
+`src/windows_states.c` is the one owner of per-list buffer state. A recording
+gets a unique serial; a buffer it touches records that serial and its current
+state, so a buffer is untouched in a list unless its serial matches (the
+exclusive recording reservation gives a buffer one recording at a time).
+Dispatches move every bound buffer, and an indirect argument buffer, from its
+tracked state to the dispatch state in one `ResourceBarrier` call and leave it
+there: a first use in the list relies on implicit promotion from the decayed
+COMMON state, a state change transitions, UNORDERED_ACCESS to UNORDERED_ACCESS
+records a UAV barrier, and a read already covered by the held read union records
+nothing. A buffer copy returns its destination to COPY_DEST and tracks a DEFAULT
+source at COPY_SOURCE by the same rules, so row-by-row copies out of one buffer
+record no barriers; write ordering returns the buffers it names to COPY_DEST.
+A copy-written buffer's next dispatch use therefore transitions explicitly. Texture transfers, query resolves, draws and render
+passes do not report their buffers: they settle every tracked buffer to
+COPY_DEST first and mark the recording untracked, after which an untouched
+buffer is assumed at COPY_DEST (the original explicit contract). Close records
+no restore barriers, because every buffer decays to COMMON when
+ExecuteCommandLists completes ([implicit state transitions](https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12#implicit-state-transitions);
+Dawn relies on the same rules). If the tracked list cannot grow, a dispatch
+falls back to the explicit COPY_DEST round trip.
+
+A whole render pass transitions the union of its draws' buffer and texture uses
+once and restores it once; a resource written as UAV by more than one draw gets a
+UAV barrier before each later writer. A UAV use mixed with any read of the same
+buffer, or one texture used with two access kinds, keeps the per-draw transitions.
+The list also records its bound pipeline state, compute/graphics root signatures,
+descriptor heaps and descriptor tables; equal sets are skipped, and a root or heap
+change forgets the bound tables. A dispatch or draw identical in pipeline and
+descriptor-relevant bindings to the previous one in the list or pass borrows its
+already written descriptor range. Draws skip viewport, scissor, blend factor,
+stencil reference, topology, vertex and index views and root constants equal to
+the previous draw's.
+
+`tests/test_windows_states.c` (official SDK, fake list, no device) checks the
+barrier sequences, settles, untracked fallback, barrier-free Close, stale serials,
+binding skips and reuse keys. The public-ABI clients
+`../../native/tests/dispatch_chain.c` (read_write rounds, write-to-read hand-offs,
+uniform-then-storage reads, copies and passes in one encoder, two command buffers
+in one submit, a write between submissions) and `../../native/tests/draw_repeat.c`
+(unchanged and alternating pipeline/bind-group draws over a compute-written table)
+check every output word and pixel.
 
 ## Growing command-use storage
 

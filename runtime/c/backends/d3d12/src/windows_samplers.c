@@ -62,7 +62,7 @@ void doe_dx_bind_descriptors(doe_dx_native_commands *commands,doe_dx_native_pipe
     UINT count = 0;
     if (use->heap) heaps[count++] = use->heap;
     if (use->sampler_heap) heaps[count++] = use->sampler_heap;
-    ID3D12GraphicsCommandList_SetDescriptorHeaps(commands->list,count,heaps);
+    doe_dx_bind_heaps(commands,heaps,count);
     if (use->heap) {
         D3D12_GPU_DESCRIPTOR_HANDLE handle;
         doe_dx_descriptor_gpu_start(use,&handle);
