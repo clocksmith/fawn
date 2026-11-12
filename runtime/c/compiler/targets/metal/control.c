@@ -107,8 +107,31 @@ static void short_circuit(MetalEmitter *e, uint32_t *cursor, unsigned depth, uin
     metal_line(e, "}");
     ++*cursor;
 }
+/* True when the body of the loop beginning at `loop` needs no do-once funnel:
+ * it has no continue and no switch of its own (nested loops own theirs). A
+ * break there leaves the while directly and skips continuing, as WGSL requires,
+ * and fall-through reaches continuing. The funnel hides the loop from the Metal
+ * compiler's loop optimizations, which costs measurable GPU time. Bounded by
+ * the function's instruction range; malformed nesting keeps the funnel. */
+static bool loop_body_direct(const MetalEmitter *e, uint32_t loop) {
+    unsigned nesting = 0u;
+    for (uint32_t i = loop + 1u; i < e->function_end; ++i) {
+        const IrOpcode opcode = e->module->instructions[i].opcode;
+        if (opcode == IR_LOOP_BEGIN) {
+            ++nesting;
+        } else if (opcode == IR_END_LOOP) {
+            if (nesting == 0u) return false;
+            --nesting;
+        } else if (nesting == 0u) {
+            if (opcode == IR_LOOP_CONTINUING) return true;
+            if (opcode == IR_CONTINUE || opcode == IR_SWITCH_BEGIN) return false;
+        }
+    }
+    return false;
+}
 static void loop_body(MetalEmitter *e, uint32_t *cursor, unsigned depth) {
     const uint32_t loop = (*cursor)++;
+    const bool direct = loop_body_direct(e, loop);
     metal_line(e, "while (true) {");
     ++e->indent;
     metal_block(e, cursor, depth + 1u, loop, false);
@@ -120,17 +143,23 @@ static void loop_body(MetalEmitter *e, uint32_t *cursor, unsigned depth) {
         metal_value(e, test->operands.scalar.left);
         metal_text(e, ") break;\n");
     }
-    metal_indent(e);
-    metal_format(e, "uint loopControl%u = 0u;\n", loop);
-    metal_line(e, "do {");
-    ++e->indent;
-    metal_block(e, cursor, depth + 1u, loop, false);
-    --e->indent;
-    if (!marker(e, *cursor, IR_LOOP_CONTINUING)) return;
-    ++*cursor;
-    metal_line(e, "} while (false);");
-    metal_indent(e);
-    metal_format(e, "if (loopControl%u == 1u) break;\n", loop);
+    if (direct) {
+        metal_block(e, cursor, depth + 1u, loop, false);
+        if (!marker(e, *cursor, IR_LOOP_CONTINUING)) return;
+        ++*cursor;
+    } else {
+        metal_indent(e);
+        metal_format(e, "uint loopControl%u = 0u;\n", loop);
+        metal_line(e, "do {");
+        ++e->indent;
+        metal_block(e, cursor, depth + 1u, loop, false);
+        --e->indent;
+        if (!marker(e, *cursor, IR_LOOP_CONTINUING)) return;
+        ++*cursor;
+        metal_line(e, "} while (false);");
+        metal_indent(e);
+        metal_format(e, "if (loopControl%u == 1u) break;\n", loop);
+    }
     metal_block(e, cursor, depth + 1u, loop, true);
     if (!marker(e, *cursor, IR_END_LOOP)) return;
     ++*cursor;
@@ -234,6 +263,11 @@ static void block_walk(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32
                 } else {
                     if (continuing) {
                         metal_error(e, "Metal unconditional loop control in continuing is unsupported");
+                        break;
+                    }
+                    /* A direct body has no continue, and its break leaves the while. */
+                    if (ir->opcode == IR_BREAK && loop_body_direct(e, loop)) {
+                        metal_text(e, "break;\n");
                         break;
                     }
                     if (ir->opcode == IR_BREAK) metal_format(e, "loopControl%u = 1u; ", loop);

@@ -148,10 +148,22 @@ static void test_entries_and_rejection(void) {
 static void test_control_and_host_fixture(const char *output_path) {
     const char *source = "@group(0) @binding(0) var<storage,read_write> output:array<i32>;"
         "fn bump(x:i32)->i32{output[0]=output[0]+1;return x+1;}"
+        /* A direct body may return from inside the loop as well as break. */
+        "fn first_square_over(limit:i32)->i32{var r:i32=0;loop{r+=1;if(r*r>limit){return r;}if(r>100){break;}}return -1;}"
         "@compute @workgroup_size(1) fn control(){"
         "var x:i32=0;var sum:i32=0;"
         "for(var i:i32=0;i<5;i++){if(i==2){continue;}sum+=i;}"
         "loop{x+=1;if(x==2){continue;}sum+=x;continuing {break if x>=3;}}"
+        /* Direct bodies: break skips continuing; a direct outer loop keeps the
+         * funnel of an inner loop that continues. */
+        "var d:i32=0;loop{d+=1;if(d==4){break;}sum+=d;continuing {sum+=100;break if d>=10;}}"
+        "var o:i32=0;loop{if(o>=2){break;}for(var j:i32=0;j<3;j++){if(j==1){continue;}sum+=j;}o+=1;}"
+        /* A for loop breaks from nested ifs; a switch keeps the funnel without a
+         * continue; a direct inner loop's break stays inside a funnelled outer. */
+        "var w:i32=0;for(var k:i32=0;k<10;k++){if(k>=1){if(k==3){break;}}w+=k;}"
+        "var s:i32=0;loop{switch s {case 0:{s=1;} default:{s+=10;}} if(s>=21){break;}}"
+        "for(var a:i32=0;a<3;a++){if(a==1){continue;}var b:i32=0;loop{b+=1;if(b==2){break;}}w+=b;}"
+        "sum+=w*1000+s*10+first_square_over(10);"
         "let skip=false && bump(9)>0;"
         "let call=(sum>0) && bump(sum)>0;"
         "let maximum:i32=2147483647;let minimum:i32=-2147483648;let zero:i32=0;let negative:i32=-1;output[1]=sum;output[2]=maximum+1;"
@@ -161,6 +173,12 @@ static void test_control_and_host_fixture(const char *output_path) {
     char *text = emit(f, NO_ID);
     has(text, "do {\n");
     has(text, "} while (false);");
+    /* Ten loops; only the four that continue and the one with a switch keep
+     * the do-once funnel. */
+    unsigned loops = 0u, funnels = 0u;
+    for (const char *at = text; (at = strstr(at, "while (true) {")) != NULL; ++at) ++loops;
+    for (const char *at = text; (at = strstr(at, "} while (false);")) != NULL; ++at) ++funnels;
+    assert(loops == 10u && funnels == 5u);
     has(text, "doe_div(");
     has(text, "as_type<int>((as_type<uint>(");
     has(text, " >= 0)");

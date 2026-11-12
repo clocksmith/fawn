@@ -12,7 +12,7 @@ int main() {
     values[8] = 67890;
     doe_entry0(reinterpret_cast<uchar*>(values), sizes);
     assert(values[0] == 2);
-    assert(values[1] == 12);
+    assert(values[1] == 7536);
     assert(values[2] == INT_MIN);
     assert(values[3] == INT_MIN);
     assert(values[4] == -7);
@@ -23,7 +23,7 @@ int main() {
     for (int& value : values) value = 0;
     sizes[0] = 3u * sizeof(int);
     doe_entry0(reinterpret_cast<uchar*>(values), sizes);
-    assert(values[0] == 2 && values[1] == 12 && values[2] == INT_MIN);
+    assert(values[0] == 2 && values[1] == 7536 && values[2] == INT_MIN);
     for (unsigned i = 3u; i < 9u; ++i) assert(values[i] == 0);
     std::puts("Emitted scalar host control passed: continuing/effects/wrapping/robustness.");
 }
