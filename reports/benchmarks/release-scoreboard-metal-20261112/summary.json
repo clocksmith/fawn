@@ -1,0 +1,1388 @@
+{
+ "schemaVersion": 1,
+ "kind": "release-scoreboard-metal-rounds",
+ "consumer": "bench/gates/release_scoreboard_gate.py --backend metal (release performance claim admission for Metal)",
+ "host": {
+  "name": "mac-host",
+  "model": "Mac15,12 (MacBook Air, Apple M3, fanless)",
+  "os": "macOS 26.6.2 (25G83), Darwin 25.6.0",
+  "gpuDriver": "31.0.101",
+  "power": "AC"
+ },
+ "software": {
+  "node": "v22.20.0",
+  "doe": "doe-gpu 0.5.2, C stage built from fawn 83d379802d04afd6d581f07678657c2b4ec78b18 (artifact sha256 defa705f6d47a9884b53f57f8e1736cc85f82e010dfee28f879197d3eec7520f); N-API addon rebuilt from the same tree (source sha256 6526bb93bed932358c4a4563a3bf7bc19f456cd90b6b013881a7e91c76c30e56)",
+  "runner": "fawn 6e8909e49d (adds --first-provider, --quiet-load, hostStateBeforeRun)",
+  "dawn": "webgpu npm 0.4.0 (bench/package.json pin)",
+  "doppler": "e520bf0cf1725965c48d82264a40ba4d2065c8ea (0.7.3), clean tracked tree; r4b used a clean detached worktree of the same commit because ../doppler had another session's uncommitted edit"
+ },
+ "gate": {
+  "summary": "bench/out/release-scoreboard/metal-20261112-r1/scoreboard-summary.json",
+  "verdict": "release scoreboard admissible for metal: every required row is comparable",
+  "note": "Only r1 is a full run; r2/r3/r4b are --rows rounds (functional-only by rule) used for provider-order interleaving."
+ },
+ "evidenceLimits": [
+  "Quiet wait: before each provider run the runner waited for 1-min load < 3 and no other process >= 50% CPU; the host state during runs was logged every 10 s (not per sample).",
+  "Interference during runs: another session ran Playwright headless Chrome bursts (r2 prefill), the macOS aerial wallpaper extension ran from 18:41 local, and the owner was active from about 20:00 local (r4b prefill).",
+  "Prefill samples climb within a run in r2, r3 and r4b (for example Doe r3 14.0 -> 19.7 s); the host is fanless; thermal state was not measured (no powermetrics), so this is unexplained variance, not a measured thermal cause.",
+  "Prefill result depends on order: Doe first +27.0% and +29.6% less time; Dawn first +6.2% and -7.7%. No prefill claim is supported by these rounds.",
+  "r4 (first attempt) is recorded as run-failed: the executor refused a dirty Doppler tree; it carries no timing evidence."
+ ],
+ "rows": [
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "qwen35-2b-decode",
+   "workloadId": "release_scoreboard_qwen35_2b_decode64_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 41.447,
+   "doeP95Ms": 42.488,
+   "dawnP50Ms": 40.15,
+   "dawnP95Ms": 40.234,
+   "doeLessTimePercent": -3.2,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.59,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:15%",
+      "node:14%",
+      "Google Chrome Helper (Aperitif):14%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.39,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:11%",
+      "Google Chrome Helper (Aperitif):10%",
+      "com.apple.DriverKit-AppleBCMWLAN:4%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/qwen35-2b-decode/release_scoreboard_qwen35_2b_decode64_warm/compare.json",
+   "compareReportSha256": "ac189fff0efaaab6fce404717ad5eadfeefdf626ceae1bdd713dc6d67518cc8d"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "qwen35-2b-prefill-2k",
+   "workloadId": "release_scoreboard_qwen35_2b_prefill2k_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 13706.358,
+   "doeP95Ms": 14445.679,
+   "dawnP50Ms": 18788.289,
+   "dawnP95Ms": 19275.208,
+   "doeLessTimePercent": 27.0,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.78,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:11%",
+      "Google Chrome Helper (Aperitif):9%",
+      "claude:4%"
+     ]
+    },
+    "comparison": {
+     "load1": 1.71,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:4%",
+      "Docker Desktop:4%",
+      "chrome-headless-shell:3%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/qwen35-2b-prefill-2k/release_scoreboard_qwen35_2b_prefill2k_warm/compare.json",
+   "compareReportSha256": "b84901671a1f8eab90bf67513b7232bc6bb0829e3ab369fd88519c9b46566a9f"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_gemma3_270m_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 10,
+   "doeP50Ms": 2803.919,
+   "doeP95Ms": 2830.098,
+   "dawnP50Ms": 2725.01,
+   "dawnP95Ms": 2760.054,
+   "doeLessTimePercent": -2.9,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 1.43,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "Docker Desktop:3%",
+      "WindowServer:3%",
+      "node:3%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.16,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "launchservicesd:9%",
+      "loginwindow:7%",
+      "claude:4%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/cold-first-token/release_scoreboard_gemma3_270m_cold_first_token/compare.json",
+   "compareReportSha256": "d75ea58ae101afb3f269596507d84ab223db555bf62a19c90776819ef7ef9bb9"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_qwen35_2b_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 10,
+   "doeP50Ms": 10011.236,
+   "doeP95Ms": 10550.09,
+   "dawnP50Ms": 10051.242,
+   "dawnP95Ms": 10093.141,
+   "doeLessTimePercent": 0.4,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.55,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "io.tailscale.ipn.macsys.network-extension:4%",
+      "node:3%",
+      "WindowServer:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.02,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "io.tailscale.ipn.macsys.network-extension:7%",
+      "WindowServer:2%",
+      "Docker Desktop:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/cold-first-token/release_scoreboard_qwen35_2b_cold_first_token/compare.json",
+   "compareReportSha256": "1cb5e7de90c63fc9f4e5dbe023101f2fa1af96a57814074c9c3672cc7e38fb86"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "draw-call-overhead",
+   "workloadId": "release_scoreboard_draw_1k_static",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 0.657,
+   "doeP95Ms": 0.66,
+   "dawnP50Ms": 0.677,
+   "dawnP95Ms": 0.68,
+   "doeLessTimePercent": 3.1,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.35,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "AddressBookSourceSync:19%",
+      "trustd:10%",
+      "WindowServer:3%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.35,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "mds_stores:4%",
+      "WindowServer:3%",
+      "mds:3%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/draw-call-overhead/release_scoreboard_draw_1k_static/compare.json",
+   "compareReportSha256": "82561b2040752cfaf879c8c429b30fedc954b89a42647f824f958b9822c536a7"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "draw-call-overhead",
+   "workloadId": "release_scoreboard_draw_1k_state_change",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 1.677,
+   "doeP95Ms": 1.687,
+   "dawnP50Ms": 2.009,
+   "dawnP95Ms": 2.015,
+   "doeLessTimePercent": 16.5,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.32,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "mds_stores:3%",
+      "mds:2%",
+      "claude:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.35,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "mds_stores:6%",
+      "mds:5%",
+      "WindowServer:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/draw-call-overhead/release_scoreboard_draw_1k_state_change/compare.json",
+   "compareReportSha256": "27708a7d6361c912b88dbbfa360febbd2b40e4670051795f611a3159830d6fd9"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "draw-call-overhead",
+   "workloadId": "release_scoreboard_draw_5k_static",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 2.007,
+   "doeP95Ms": 2.13,
+   "dawnP50Ms": 2.3,
+   "dawnP95Ms": 2.313,
+   "doeLessTimePercent": 12.7,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.32,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:15%",
+      "WindowServer:3%",
+      "mds_stores:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.46,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:3%",
+      "claude:3%",
+      "Docker Desktop:3%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/draw-call-overhead/release_scoreboard_draw_5k_static/compare.json",
+   "compareReportSha256": "980937999ae82f5eb174b1498d776e0ecb5023d1fbb257839ace851a9d8ed157"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "draw-call-overhead",
+   "workloadId": "release_scoreboard_draw_5k_state_change",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 6.5,
+   "doeP95Ms": 6.616,
+   "dawnP50Ms": 8.286,
+   "dawnP95Ms": 8.329,
+   "doeLessTimePercent": 21.6,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.5,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "airportd:14%",
+      "claude:11%",
+      "locationd:8%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.46,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:5%",
+      "WindowServer:3%",
+      "Docker Desktop:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/draw-call-overhead/release_scoreboard_draw_5k_state_change/compare.json",
+   "compareReportSha256": "9770490f9d9cc486c30f72ba85900657e932c5ce3c594229d8ef19b2b3ef66a5"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "draw-call-overhead",
+   "workloadId": "release_scoreboard_draw_10k_static",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 3.845,
+   "doeP95Ms": 3.871,
+   "dawnP50Ms": 4.144,
+   "dawnP95Ms": 4.168,
+   "doeLessTimePercent": 7.2,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.38,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:8%",
+      "WindowServer:3%",
+      "Docker Desktop:3%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.35,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:8%",
+      "WindowServer:4%",
+      "Docker Desktop:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/draw-call-overhead/release_scoreboard_draw_10k_static/compare.json",
+   "compareReportSha256": "5c63eda5034b297df8040d360b52166df1c096d0e43d03dba04e41251dfafd34"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "draw-call-overhead",
+   "workloadId": "release_scoreboard_draw_10k_state_change",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 13.759,
+   "doeP95Ms": 13.802,
+   "dawnP50Ms": 15.751,
+   "dawnP95Ms": 15.822,
+   "doeLessTimePercent": 12.6,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.49,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:3%",
+      "WindowServer:3%",
+      "Docker Desktop:3%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.4,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:4%",
+      "WindowServer:3%",
+      "locationd:3%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/draw-call-overhead/release_scoreboard_draw_10k_state_change/compare.json",
+   "compareReportSha256": "9e0fbf78a76600096bbb5ead044641da0c26c822be1728e52b949ff73fc2fcf3"
+  },
+  {
+   "round": "metal-20261112-r1",
+   "firstProvider": "doe",
+   "functionalOnly": false,
+   "rowId": "three-js-scene",
+   "workloadId": "release_scoreboard_three_lit_scene_48_objects",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 1.46,
+   "doeP95Ms": 1.544,
+   "dawnP50Ms": 1.625,
+   "dawnP95Ms": 1.634,
+   "doeLessTimePercent": 10.1,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.5,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:3%",
+      "WindowServer:2%",
+      "Docker Desktop:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.5,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:7%",
+      "WindowServer:2%",
+      "mds_stores:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r1/three-js-scene/release_scoreboard_three_lit_scene_48_objects/compare.json",
+   "compareReportSha256": "b2cc915afeb8144d7ecefe6b5cd04552704689467d926c8c94ab5e8e0752142c"
+  },
+  {
+   "round": "metal-20261112-r2",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-decode",
+   "workloadId": "release_scoreboard_qwen35_2b_decode64_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 42.143,
+   "doeP95Ms": 42.766,
+   "dawnP50Ms": 40.01,
+   "dawnP95Ms": 42.429,
+   "doeLessTimePercent": -5.3,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.81,
+     "waitedSeconds": 45.1,
+     "quiet": true,
+     "busiest": [
+      "claude:6%",
+      "claude:4%",
+      "tccd:4%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.54,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:6%",
+      "WindowServer:3%",
+      "Docker Desktop:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r2/qwen35-2b-decode/release_scoreboard_qwen35_2b_decode64_warm/compare.json",
+   "compareReportSha256": "7c6a9daa24de58d52e1b49b0472b15635ed3290bfb927d3a21890943db2df917"
+  },
+  {
+   "round": "metal-20261112-r2",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-prefill-2k",
+   "workloadId": "release_scoreboard_qwen35_2b_prefill2k_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 18694.286,
+   "doeP95Ms": 20076.414,
+   "dawnP50Ms": 19937.153,
+   "dawnP95Ms": 22266.194,
+   "doeLessTimePercent": 6.2,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.92,
+     "waitedSeconds": 90.3,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:14%",
+      "claude:12%",
+      "WallpaperAerialsExtension:8%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.86,
+     "waitedSeconds": 15.1,
+     "quiet": true,
+     "busiest": [
+      "chrome-headless-shell:12%",
+      "claude:10%",
+      "Google Chrome Helper (Aperitif Renderer):8%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r2/qwen35-2b-prefill-2k/release_scoreboard_qwen35_2b_prefill2k_warm/compare.json",
+   "compareReportSha256": "ddcfd33350221ccbfb2a858e9456ab71b15124c0b885fc5c9efb46a37656faea"
+  },
+  {
+   "round": "metal-20261112-r2",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_gemma3_270m_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 10,
+   "doeP50Ms": 2884.615,
+   "doeP95Ms": 2908.299,
+   "dawnP50Ms": 2820.657,
+   "dawnP95Ms": 2982.509,
+   "doeLessTimePercent": -2.3,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.36,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:9%",
+      "WallpaperAerialsExtension:7%",
+      "VTDecoderXPCService:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.41,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:12%",
+      "Keychain Circle Notification:9%",
+      "WallpaperAerialsExtension:6%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r2/cold-first-token/release_scoreboard_gemma3_270m_cold_first_token/compare.json",
+   "compareReportSha256": "b1ea4ba8d518453740e0502c442b462a547f0d756c4d5d366e7f15d3e0653933"
+  },
+  {
+   "round": "metal-20261112-r2",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_qwen35_2b_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 10,
+   "doeP50Ms": 10181.33,
+   "doeP95Ms": 10704.532,
+   "dawnP50Ms": 10933.255,
+   "dawnP95Ms": 11579.551,
+   "doeLessTimePercent": 6.9,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.28,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:10%",
+      "WallpaperAerialsExtension:8%",
+      "io.tailscale.ipn.macsys.network-extension:7%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.22,
+     "waitedSeconds": 15.1,
+     "quiet": true,
+     "busiest": [
+      "chrome-headless-shell:12%",
+      "chrome-headless-shell:5%",
+      "claude:4%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r2/cold-first-token/release_scoreboard_qwen35_2b_cold_first_token/compare.json",
+   "compareReportSha256": "26e6290ef7b68a714b78026b491f093327116c94936fda22e198ef8ddf01a742"
+  },
+  {
+   "round": "metal-20261112-r3",
+   "firstProvider": "doe",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-decode",
+   "workloadId": "release_scoreboard_qwen35_2b_decode64_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 42.507,
+   "doeP95Ms": 44.54,
+   "dawnP50Ms": 41.238,
+   "dawnP95Ms": 44.201,
+   "doeLessTimePercent": -3.1,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.69,
+     "waitedSeconds": 105.3,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:17%",
+      "Google Chrome Helper (Aperitif):16%",
+      "claude:8%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.81,
+     "waitedSeconds": 15.1,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:22%",
+      "Google Chrome Helper (Aperitif):13%",
+      "chrome-headless-shell:12%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r3/qwen35-2b-decode/release_scoreboard_qwen35_2b_decode64_warm/compare.json",
+   "compareReportSha256": "2b0cfc8e2c53c11d37a47b138de95376dd57cc6c8578fed7de35af79b1c6bd3e"
+  },
+  {
+   "round": "metal-20261112-r3",
+   "firstProvider": "doe",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-prefill-2k",
+   "workloadId": "release_scoreboard_qwen35_2b_prefill2k_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 8,
+   "doeP50Ms": 14632.053,
+   "doeP95Ms": 18544.566,
+   "dawnP50Ms": 20776.017,
+   "dawnP95Ms": 22074.817,
+   "doeLessTimePercent": 29.6,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.85,
+     "waitedSeconds": 406.1,
+     "quiet": true,
+     "busiest": [
+      "Google Chrome Helper (Aperitif Renderer):17%",
+      "claude:14%",
+      "chrome-headless-shell:12%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.93,
+     "waitedSeconds": 15.1,
+     "quiet": true,
+     "busiest": [
+      "chrome-headless-shell:15%",
+      "chrome-headless-shell:6%",
+      "chrome-headless-shell:6%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r3/qwen35-2b-prefill-2k/release_scoreboard_qwen35_2b_prefill2k_warm/compare.json",
+   "compareReportSha256": "f29df8239f7fbbf205b20382a738f44dedde6453f0d7d39e915bef0a466df6d5"
+  },
+  {
+   "round": "metal-20261112-r3",
+   "firstProvider": "doe",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_gemma3_270m_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 10,
+   "doeP50Ms": 2869.221,
+   "doeP95Ms": 2947.338,
+   "dawnP50Ms": 2803.598,
+   "dawnP95Ms": 2833.413,
+   "doeLessTimePercent": -2.3,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.16,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:9%",
+      "chrome-headless-shell:8%",
+      "chrome-headless-shell:8%"
+     ]
+    },
+    "comparison": {
+     "load1": 1.94,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:35%",
+      "WindowServer:3%",
+      "Docker Desktop:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r3/cold-first-token/release_scoreboard_gemma3_270m_cold_first_token/compare.json",
+   "compareReportSha256": "b841b5835d6ecc366fc6d348773c342724df95acb33d5b4e455492cbf526e99c"
+  },
+  {
+   "round": "metal-20261112-r3",
+   "firstProvider": "doe",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_qwen35_2b_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 10,
+   "doeP50Ms": 10964.512,
+   "doeP95Ms": 11422.436,
+   "dawnP50Ms": 10415.722,
+   "dawnP95Ms": 11145.184,
+   "doeLessTimePercent": -5.3,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.33,
+     "waitedSeconds": 150.5,
+     "quiet": true,
+     "busiest": [
+      "claude:5%",
+      "WindowServer:4%",
+      "Docker Desktop:4%"
+     ]
+    },
+    "comparison": {
+     "load1": 1.96,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "chrome-headless-shell:5%",
+      "WindowServer:3%",
+      "Docker Desktop:2%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r3/cold-first-token/release_scoreboard_qwen35_2b_cold_first_token/compare.json",
+   "compareReportSha256": "0cf53137f1e7095eef923dd937c9e9469c480ae43026d72b3a893332df605291"
+  },
+  {
+   "round": "metal-20261112-r4",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-decode",
+   "workloadId": "release_scoreboard_qwen35_2b_decode64_warm",
+   "status": "rejected",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 53.389,
+   "doeP95Ms": 54.011,
+   "dawnP50Ms": 45.326,
+   "dawnP95Ms": 54.144,
+   "doeLessTimePercent": -17.8,
+   "outputCheck": {
+    "baseline": "Doppler tracked source must be clean for a scoreboard row",
+    "comparison": "Doppler tracked source must be clean for a scoreboard row"
+   },
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.89,
+     "waitedSeconds": 120.3,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:10%",
+      "Google Chrome Helper (Aperitif GPU):10%",
+      "Google Chrome Helper (Aperitif GPU):10%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.42,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:17%",
+      "WindowServer:4%",
+      "chrome-headless-shell:3%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4/qwen35-2b-decode/release_scoreboard_qwen35_2b_decode64_warm/compare.json",
+   "compareReportSha256": "064f773d4827e74fe91610c382f51b28ffd82e75e5f1983866917959b2308be8"
+  },
+  {
+   "round": "metal-20261112-r4",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-prefill-2k",
+   "workloadId": "release_scoreboard_qwen35_2b_prefill2k_warm",
+   "status": "run-failed",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 47.106,
+   "doeP95Ms": 48.086,
+   "dawnP50Ms": 53.458,
+   "dawnP95Ms": 54.157,
+   "doeLessTimePercent": 11.9,
+   "outputCheck": {
+    "baseline": "Doppler tracked source must be clean for a scoreboard row",
+    "comparison": "Doppler tracked source must be clean for a scoreboard row"
+   },
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.83,
+     "waitedSeconds": 165.6,
+     "quiet": true,
+     "busiest": [
+      "launchd:26%",
+      "WindowServer:4%",
+      "Docker Desktop:4%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.89,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "Google Chrome Helper (Aperitif Renderer):11%",
+      "Google Chrome Helper (Aperitif Renderer):7%",
+      "WindowServer:6%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4/qwen35-2b-prefill-2k/release_scoreboard_qwen35_2b_prefill2k_warm/compare.json",
+   "compareReportSha256": "efdfda494f24cd91cdb943c3dd859f5efdf37d6334b9a533635235f6efcd6984"
+  },
+  {
+   "round": "metal-20261112-r4",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_gemma3_270m_cold_first_token",
+   "status": "run-failed",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 10,
+   "doeP50Ms": 2840.566,
+   "doeP95Ms": 2865.924,
+   "dawnP50Ms": 2770.291,
+   "dawnP95Ms": 2790.28,
+   "doeLessTimePercent": -2.5,
+   "outputCheck": {
+    "baseline": "Doppler tracked source must be clean for a scoreboard row",
+    "comparison": "Doppler tracked source must be clean for a scoreboard row"
+   },
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.7,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:5%",
+      "WindowServer:3%",
+      "Docker Desktop:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.76,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "mdworker_shared:19%",
+      "mds_stores:6%",
+      "launchd:4%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4/cold-first-token/release_scoreboard_gemma3_270m_cold_first_token/compare.json",
+   "compareReportSha256": "23022725432cd0a6e037381fa7f5db9c2d4d587215818e18a3c205dc6f11a622"
+  },
+  {
+   "round": "metal-20261112-r4",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_qwen35_2b_cold_first_token",
+   "status": "run-failed",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 10,
+   "doeP50Ms": 9929.849,
+   "doeP95Ms": 9973.243,
+   "dawnP50Ms": 10138.862,
+   "dawnP95Ms": 10183.872,
+   "doeLessTimePercent": 2.1,
+   "outputCheck": {
+    "baseline": "Doppler tracked source must be clean for a scoreboard row",
+    "comparison": "Doppler tracked source must be clean for a scoreboard row"
+   },
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.15,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "Docker Desktop:3%",
+      "WindowServer:3%",
+      "claude:2%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.53,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:3%",
+      "Docker Desktop:3%",
+      "Google Chrome Helper (Aperitif Renderer):1%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4/cold-first-token/release_scoreboard_qwen35_2b_cold_first_token/compare.json",
+   "compareReportSha256": "e22c4532a8536b094cb25d78bad073f6980bfd93cc3bb9ef098150b481df565e"
+  },
+  {
+   "round": "metal-20261112-r4b",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-decode",
+   "workloadId": "release_scoreboard_qwen35_2b_decode64_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 41.628,
+   "doeP95Ms": 42.315,
+   "dawnP50Ms": 40.019,
+   "dawnP95Ms": 41.089,
+   "doeLessTimePercent": -4.0,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.56,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:3%",
+      "Docker Desktop:3%",
+      "Google Chrome Helper (Aperitif Renderer):1%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.03,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "claude:6%",
+      "WindowServer:5%",
+      "tccd:4%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4b/qwen35-2b-decode/release_scoreboard_qwen35_2b_decode64_warm/compare.json",
+   "compareReportSha256": "7e642d37f1df5d74f284a9c2cd0a2ef777a86dca9f1e7d7401c916118d8dbc5a"
+  },
+  {
+   "round": "metal-20261112-r4b",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "qwen35-2b-prefill-2k",
+   "workloadId": "release_scoreboard_qwen35_2b_prefill2k_warm",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 8,
+   "doeP50Ms": 25486.896,
+   "doeP95Ms": 33520.215,
+   "dawnP50Ms": 23660.689,
+   "dawnP95Ms": 34145.894,
+   "doeLessTimePercent": -7.7,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 1.7,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "ModelCatalogAgent:41%",
+      "WindowServer:7%",
+      "Google Chrome Helper (Aperitif Renderer):6%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.93,
+     "waitedSeconds": 30.2,
+     "quiet": true,
+     "busiest": [
+      "Google Chrome Helper (Aperitif Renderer):25%",
+      "claude:11%",
+      "WindowServer:3%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4b/qwen35-2b-prefill-2k/release_scoreboard_qwen35_2b_prefill2k_warm/compare.json",
+   "compareReportSha256": "b27101578838e2048b196aba340619a12112847b5359ae1c00e1dd8020575e91"
+  },
+  {
+   "round": "metal-20261112-r4b",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_gemma3_270m_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "dawn",
+    "doe"
+   ],
+   "samples": 10,
+   "doeP50Ms": 2744.834,
+   "doeP95Ms": 2763.625,
+   "dawnP50Ms": 2933.444,
+   "dawnP95Ms": 3051.387,
+   "doeLessTimePercent": 6.4,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.91,
+     "waitedSeconds": 677.3,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:22%",
+      "Google Chrome Helper (Aperitif):16%",
+      "tccd:6%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.98,
+     "waitedSeconds": 120.5,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:35%",
+      "Google Chrome Helper (Aperitif):25%",
+      "Google Chrome Helper (Aperitif Renderer):19%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4b/cold-first-token/release_scoreboard_gemma3_270m_cold_first_token/compare.json",
+   "compareReportSha256": "077a0375eeb741816bdd6b8e27bbaa423fd3d4aee5abb312cbfb41d18ed1426d"
+  },
+  {
+   "round": "metal-20261112-r4b",
+   "firstProvider": "dawn",
+   "functionalOnly": true,
+   "rowId": "cold-first-token",
+   "workloadId": "release_scoreboard_qwen35_2b_cold_first_token",
+   "status": "comparable",
+   "providerOrder": [
+    "doe",
+    "dawn"
+   ],
+   "samples": 10,
+   "doeP50Ms": 10145.461,
+   "doeP95Ms": 10382.923,
+   "dawnP50Ms": 10174.837,
+   "dawnP95Ms": 10333.716,
+   "doeLessTimePercent": 0.3,
+   "outputCheck": "passed both providers (token ids / frame equal to recorded metal reference)",
+   "hostStateBeforeRun": {
+    "baseline": {
+     "load1": 2.71,
+     "waitedSeconds": 30.1,
+     "quiet": true,
+     "busiest": [
+      "Google Chrome Helper (Aperitif Renderer):25%",
+      "claude:16%",
+      "WindowServer:6%"
+     ]
+    },
+    "comparison": {
+     "load1": 2.24,
+     "waitedSeconds": 0.0,
+     "quiet": true,
+     "busiest": [
+      "WindowServer:24%",
+      "Terminal:7%",
+      "WindowManager:4%"
+     ]
+    }
+   },
+   "compareReport": "bench/out/release-scoreboard/metal-20261112-r4b/cold-first-token/release_scoreboard_qwen35_2b_cold_first_token/compare.json",
+   "compareReportSha256": "b99945ba50207719cf8ed44bec89e751fe597d0f6f82a13f3bd5e78301ff8025"
+  }
+ ],
+ "decodeProfile": {
+  "workload": "release_scoreboard_qwen35_2b_decode64_warm, same model/prompt/options, harness bench/out/release-scoreboard/metal-20261112-profile/prof-decode.mjs (one warmup generation, 1.5 s gap, timed generation); tokens equal to the metal reference in every profiled run",
+  "hostApiPerToken_ms": {
+   "source": "prototype-wrapped WebGPU calls during the timed generation (api.1, api.2)",
+   "doe": {
+    "decode": [
+     45.2,
+     45.15
+    ],
+    "submitSync": [
+     8.29,
+     6.75
+    ],
+    "mapAsyncSync(blocking)": [
+     21.98,
+     27.63
+    ],
+    "createBuffer": [
+     2.93,
+     2.23
+    ],
+    "createBindGroup": [
+     2.31,
+     2.1
+    ],
+    "passCommands": [
+     0.12,
+     0.09
+    ],
+    "finish": [
+     0.4,
+     0.39
+    ]
+   },
+   "dawn": {
+    "decode": [
+     40.33,
+     41.18
+    ],
+    "submitSync": [
+     0.28,
+     0.28
+    ],
+    "mapAsyncSync": [
+     0.0,
+     0.0
+    ],
+    "mapAsyncResolve": [
+     29.75,
+     30.94
+    ],
+    "createBuffer": [
+     1.58,
+     1.55
+    ],
+    "createBindGroup": [
+     2.64,
+     2.61
+    ],
+    "passCommands": [
+     0.53,
+     0.52
+    ],
+    "finish": [
+     0.01,
+     0.01
+    ]
+   },
+   "shape": "20 submits, 4 mapAsync, 15 compute passes, 20014 dispatches, about 20086 createBuffer/20084 destroy per timed generation on both providers"
+  },
+  "submitTimeline_ms": {
+   "source": "api.3 per-call timestamps",
+   "firstCommandBufferOfEachReadbackGroup": {
+    "doeSubmitSync": [
+     90.9,
+     112.4
+    ],
+    "dawnSubmitSync": [
+     3.0,
+     3.0
+    ],
+    "hostRecordBeforeSubmit": {
+     "doe": [
+      115.5,
+      110.5
+     ],
+     "dawn": [
+      126.2,
+      124.7
+     ]
+    }
+   }
+  },
+  "metalSystemTrace_ms": {
+   "source": "xctrace Metal System Trace, metal-gpu-intervals for the timed generation (xct.1)",
+   "decodeCommandBufferGpuCompute": {
+    "doe": 2290.1,
+    "dawn": 2397.1
+   },
+   "gpuIdleBetweenReadbackGroups": {
+    "doe": [
+     254.8,
+     295.8
+    ],
+    "dawn": [
+     148.2,
+     164.6
+    ]
+   },
+   "encodersPerTimedGeneration": {
+    "doe": 91,
+    "dawn": 43
+   }
+  },
+  "hostSample": {
+   "source": "/usr/bin/sample 3 s at 1 ms on the profiled process during the timed generation (sample.1)",
+   "doeMainThreadSamples": 2593,
+   "doeInWgpuQueueSubmit": 397,
+   "ofWhichBufferBindingsPreflight": 234,
+   "ofWhichUseBuffer": 124,
+   "doeInMapBufferSyncNanosleepWait": 1325
+  },
+  "perKernelGpuTime": "not obtained: Doppler profile:true fails on batched decode (\"Timestamp query capacity did not cover every compute pass\"), the trace gives encoder-level intervals only and its shader-profiler table was empty",
+  "breakdown": "Measured: Doe decode GPU compute is about 4.5% lower than Dawn, while GPU idle between readback groups is about 238 ms longer (about 3.8 ms/token). Each group's first command buffer is submitted only after the host records it and calls submit; Doe submit takes 91-112 ms on that path versus Dawn 3 ms. In the sample, preflight and use_buffer account for 358 of Doe's 397 submit samples. Both buffer-use lookups walk the recording's list of every distinct buffer it uses (runtime/c/backends/metal/src/commands.c doe_mtl_buffer_initialized and doe_mtl_use_buffer), so a Doppler command buffer that uses thousands of fresh uniform buffers costs time quadratic in that buffer count.",
+  "candidatePatch": {
+   "path": "bench/out/release-scoreboard/metal-20261112-profile/doe-metal-recording-use-lookup.patch (also scratchpad), not committed",
+   "change": "Find a recording's use of a buffer on the buffer's own use chain (one use per unretired recording) instead of scanning commands->buffers",
+   "checks": "runtime/c/backends/metal make check passed on the patched tree (mock native, no GPU); runtime/c make check-style passed; a C stage built from a local detached commit 4e9f6695ef (not pushed)",
+   "measured": {
+    "submitSyncPerToken": {
+     "head": [
+      7.75,
+      6.63
+     ],
+     "patched": [
+      0.36,
+      0.38
+     ]
+    },
+    "decodeMsPerTokenInterleaved": {
+     "order": "rounds 1-4 alternated",
+     "dawn": [
+      40.11,
+      43.04,
+      51.89,
+      62.17
+     ],
+     "doeHead": [
+      43.19,
+      44.05,
+      56.9,
+      45.41
+     ],
+     "doePatched": [
+      40.01,
+      38.48,
+      52.7,
+      43.53
+     ],
+     "note": "from round 3 on the owner was using the machine; within each round patched < head"
+    },
+    "metalTrace": {
+     "decodeMsPerToken": {
+      "head": 42.78,
+      "patched": 40.02
+     },
+     "gpuIdleBetweenReadbackGroups": {
+      "head": [
+       258.0,
+       219.7
+      ],
+      "patched": [
+       179.1,
+       139.3
+      ]
+     }
+    },
+    "tokensEqualReference": true
+   },
+   "pending": "make -C runtime/c check on the full tree, Node integration tests, and a clean interleaved scoreboard decode round with the patched stage"
+  }
+ }
+}
