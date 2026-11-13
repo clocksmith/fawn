@@ -111,17 +111,31 @@ test: compiler-core build/test_index_guards test-job test-compute test-uniform t
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_cli.py
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_control.py
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_expressions.py
-sanitize: | build/.ready
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_api.c -lm -o build/test_api_sanitize
-	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_api_sanitize
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_boundaries.c -lm -o build/test_boundaries_sanitize
-	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_boundaries_sanitize
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_constants.c -lm -o build/test_constants_sanitize
-	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_constants_sanitize
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_control_api.c -lm -o build/test_control_api_sanitize
-	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_control_api_sanitize
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_expression_api.c -lm -lm -o build/test_expression_api_sanitize
-	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_expression_api_sanitize
+# Instrument the common compiler once; test clients retain their thread flags.
+SANITIZE_CFLAGS = $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined
+SANITIZE_FLAGS_INPUT = '$(CC)' '$(SANITIZE_CFLAGS)'
+SANITIZE_FLAGS_CHANGED := $(shell printf '%s\n' $(SANITIZE_FLAGS_INPUT) | cmp -s - build/sanitize.flags || printf '%s' compiler-flags-changed)
+SANITIZE_OBJECTS = $(patsubst %.c,build/sanitize/%.o,$(LIB_SOURCES))
+SANITIZE_INVENTORY_CHANGED := $(shell printf '%s\n' $(SANITIZE_OBJECTS) | cmp -s - build/sanitize.sources || printf '%s' compiler-inventory-changed)
+SANITIZE_TESTS = test_api test_boundaries test_constants test_control_api test_expression_api
+SANITIZE_BINS = $(addprefix build/,$(addsuffix _sanitize,$(SANITIZE_TESTS)))
+build/sanitize/%.o: %.c $(HEADERS) Makefile build/sanitize.flags $(SANITIZE_FLAGS_CHANGED) | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(SANITIZE_CFLAGS) -pthread -c $< -o $@
+build/libdoe_compiler_sanitize.a: $(SANITIZE_OBJECTS) build/sanitize.sources $(SANITIZE_INVENTORY_CHANGED)
+	rm -f $@
+	$(AR) rcs $@ $(filter %.o,$^)
+build/test_boundaries_sanitize build/test_control_api_sanitize build/test_expression_api_sanitize: SANITIZE_THREAD_FLAGS = -pthread
+$(SANITIZE_BINS): build/%_sanitize: tests/%.c build/libdoe_compiler_sanitize.a $(HEADERS) $(wildcard tests/*.h) Makefile
+	$(CC) $(SANITIZE_CFLAGS) $(SANITIZE_THREAD_FLAGS) $< build/libdoe_compiler_sanitize.a -lm -o $@
+sanitize: $(SANITIZE_BINS)
+	@for test in $(SANITIZE_BINS); do \
+		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 $$test || exit 1; \
+	done
+build/sanitize.flags: compiler-inventory-force | build/.ready
+	@printf '%s\n' $(SANITIZE_FLAGS_INPUT) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
+build/sanitize.sources: compiler-inventory-force | build/.ready
+	@printf '%s\n' $(SANITIZE_OBJECTS) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
 sanitize-cli: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o build/doe-compiler-c-sanitize
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o build/test_cli_faults_sanitize
