@@ -6,8 +6,10 @@ This file routes work in the Fawn repository, including its Doe GPU component.
 The canonical checkout is `deco/fawn`; do not create a `deco/doe` alias.
 Sibling repositories have their own instructions.
 Read [GOALS.md](GOALS.md), [INTENT.md](INTENT.md), and every `CATSCAN.md` from
-root to the files being changed. Find them with `rg --files -g CATSCAN.md` or
-[the component index](docs/component-index.md). Follow the
+root to the files being changed. Start with
+[the component index](docs/component-index.md), then check the ancestor
+directories of the target files for charters, including newly added ones.
+Repository-wide discovery is for charter audits, not ordinary edits. Follow the
 [charter protocol](docs/component-charters.md); update affected charters with
 an explicitly authorized boundary change, never to excuse a failure.
 
@@ -20,7 +22,7 @@ applicable owner documents below; there is no repository-wide reading checklist.
 | Compiler, native objects, backend or ABI | [Default C runtime map](runtime/c/README.md), [C work guide](runtime/c/AGENTS.md), [C style](runtime/c/STYLE.md), relevant [architecture](docs/architecture.md) section |
 | Retained Zig reference or explicit legacy route | [Zig runtime map and tests](runtime/zig/README.md), [Zig style](runtime/zig/STYLE.md), owning charter |
 | Native C/C++ integration | [Adapter subset](runtime/zig/STYLE.md#native-adapter-subset), adapter's charter and README |
-| C runtime (`runtime/c`) | [C work guide](runtime/c/AGENTS.md), [C style](runtime/c/STYLE.md), [migration gates](docs/c-migration/MIGRATION.md); `make -C runtime/c check` before committing |
+| C runtime (`runtime/c`) | [C work guide](runtime/c/AGENTS.md), [C style](runtime/c/STYLE.md), [migration gates](docs/c-migration/MIGRATION.md); owner-focused checks under the C work guide |
 | JavaScript package | [Package README](packages/doe-gpu/README.md), [JavaScript style](packages/doe-gpu/STYLE.md); native addon: [addon guide](runtime/bridge/webgpu-addon/AGENTS.md) |
 | Python tools or evidence | [Python style](bench/STYLE.md), owning tool's help/tests; [benchmark front door](bench/README.md) when running workloads |
 | Config or contract | [Config style](config/STYLE.md), owning schema and applicable [process law](docs/process.md) section |

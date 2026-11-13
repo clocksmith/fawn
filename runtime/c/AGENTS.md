@@ -8,10 +8,17 @@ new exhaustive independent qualification campaign before implementing the next
 subsystem. Integrated independent qualification still precedes qualified cutover.
 Label authored, compiled, exercised, accepted and hardware-qualified separately.
 
-- Run `make -C runtime/c check` before committing: mechanical style
-  (`tools/check_style.py`), tool tests, a build of every owner and the
-  owned-mutable-globals check (`tools/check_globals.py`). Each owner's own
-  `check` remains its behavioral gate; this one catches cross-owner breakage.
+- For ordinary implementation edits, run `make -C runtime/c check-style` and
+  the affected owner's behavioral target (`check` or the relevant `test-*`
+  target in its Makefile). Once those pass, commit and continue; there is no
+  all-owner build requirement for an owner-private edit or a prose-only change.
+- Run `make -C runtime/c check-tools` when changing the Python build/check tools.
+  Shared headers, enums/status sets, cross-owner build rules or process-global
+  ownership changes require `make -C runtime/c check`: style, tool tests,
+  platform checks, every owner's build and the mutable-globals check. Keep this
+  aggregate check for integrated runtime release qualification as well.
+  Owner behavioral and applicable lifecycle/backend gates remain required;
+  an aggregate build is not a substitute for them.
 - Owner Makefiles default every scratch tree under `$(DOE_C_TMP)` from
   [build-root.mk](build-root.mk), one root per checkout. Clones on one host
   never share objects. The style check's `tmp` rule rejects fixed `/tmp` defaults.

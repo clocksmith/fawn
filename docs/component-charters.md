@@ -31,11 +31,11 @@ Explicit user direction may change intent. Update the affected charter with the
 implementation; never rewrite a charter merely to excuse failing behavior or
 evidence.
 
-Discover charters with:
-
-```bash
-rg --files -g CATSCAN.md
-```
+For ordinary work, start with [the component index](component-index.md), then
+check each ancestor directory from the repository root to the target files for
+`CATSCAN.md`. This also finds newly added charters not yet indexed. Read only the
+union of those chains. Reserve `rg --files -g CATSCAN.md` for repository-wide
+charter audits or index maintenance.
 
 Add a charter only for an independently meaningful outcome, persisted contract,
 state authority, policy or promotion boundary, or testable subsystem. Generated,
