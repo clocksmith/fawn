@@ -111,8 +111,9 @@ feature chain, and keep stale acquired-image generations unusable. No headless o
 CPU image may stand in for an unsupported native surface.
 
 Buffer memory blocks are context-owned and bounded; each buffer carries one aligned
-slice lease grouped by its actual memory type. Dedicated requirements are queried,
-not inferred. Unknown submissions retain their slices. Coherent mapped slices are
+slice lease grouped by its actual memory type. A type's first block is a small one
+when the first request fits; only full blocks count toward the limit. Dedicated
+requirements are queried, not inferred. Unknown submissions retain their slices. Coherent mapped slices are
 cleared before publication; unmapped slices reserve initialization on the existing
 command owner and publish it only after accepted queue submission. An abandoned
 recording must not publish initialization, and an implicit once-only clear must not

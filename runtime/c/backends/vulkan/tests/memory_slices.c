@@ -213,9 +213,29 @@ static void bounded_blocks(void) {
     doe_vk_context c=context(); doe_vk_buffer *rows[17];
     for (unsigned i=0;i<17;++i) rows[i]=buffer(&c,2u*1024u*1024u,DOE_VK_MEMORY_HOST);
     assert(c.memory_block_count==8 && !rows[16]->slice.block);
-    for (unsigned i=0;i<17;++i) doe_vk_buffer_release(rows[i]); close_context(&c);
+    for (unsigned i=0;i<17;++i) doe_vk_buffer_release(rows[i]);
+    close_context(&c);
     c=context(); doe_vk_buffer *large=buffer(&c,3u*1024u*1024u,DOE_VK_MEMORY_HOST);
     assert(!large->slice.block && !c.memory_block_count); doe_vk_buffer_release(large); close_context(&c);
+}
+/* The first block of a memory type is small when the request fits; full blocks
+ * alone count toward the limit. */
+static void small_first_block(void) {
+    doe_vk_context c=context();
+    doe_vk_buffer *small=buffer(&c,16,DOE_VK_MEMORY_HOST),*next=buffer(&c,64u*1024u,DOE_VK_MEMORY_HOST);
+    assert(small->slice.block && mock.memories[small->memory].size==256u*1024u && next->memory==small->memory);
+    doe_vk_buffer *rows[17];
+    for (unsigned i=0;i<17;++i) rows[i]=buffer(&c,2u*1024u*1024u,DOE_VK_MEMORY_HOST);
+    assert(c.memory_block_count==9 && rows[15]->slice.block && !rows[16]->slice.block);
+    assert(mock.memories[rows[0]->memory].size==4u*1024u*1024u);
+    doe_vk_buffer *spill=buffer(&c,16,DOE_VK_MEMORY_HOST); assert(spill->memory==small->memory);
+    /* A type with no block yet but a request above a quarter of the small block
+     * takes no small block, and the full-block limit is already reached. */
+    mock.bits=2; doe_vk_buffer *wide=buffer(&c,128u*1024u,DOE_VK_MEMORY_HOST);
+    assert(!wide->slice.block && c.memory_block_count==9);
+    for (unsigned i=0;i<17;++i) doe_vk_buffer_release(rows[i]);
+    doe_vk_buffer_release(small); doe_vk_buffer_release(next); doe_vk_buffer_release(spill); doe_vk_buffer_release(wide);
+    close_context(&c);
 }
 static void zero_and_retirement(void) {
     doe_vk_context c=context(); mock.bits=4;
@@ -368,8 +388,9 @@ static void candidate_uncached_4mb_and_chunked_wc(void) {
 }
 
 int main(void) {
-    placement(); small_native_alignment(); exclusive_and_faults(); bounded_blocks(); zero_and_retirement(); batch_records();
+    placement(); small_native_alignment(); exclusive_and_faults(); bounded_blocks(); small_first_block();
+    zero_and_retirement(); batch_records();
     candidate_uncached_4mb_and_chunked_wc();
-    puts("PASS memory slices: actual-type/aligned nonoverlap, zero reuse/canaries, dedicated and absent-query fallback, allocation/map/bind rollback, private padding, abandoned/accepted/unknown initialization and completion-held reuse; batched/mixed/legacy argument offsets, grouped copies, bounded dispatches and per-record metadata; native procedure controls only");
+    puts("PASS memory slices: actual-type/aligned nonoverlap, small first block outside the full-block limit, zero reuse/canaries, dedicated and absent-query fallback, allocation/map/bind rollback, private padding, abandoned/accepted/unknown initialization and completion-held reuse; batched/mixed/legacy argument offsets, grouped copies, bounded dispatches and per-record metadata; native procedure controls only");
     return 0;
 }

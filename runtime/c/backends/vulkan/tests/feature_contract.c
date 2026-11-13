@@ -113,14 +113,15 @@ int main(void) {
     doe_vk_error error;
     robust = extension = demote = true;
     assert(doe_vk_prepare_features(&context, &options, &selection, &error) == DOE_VK_OK);
-    /* Maintenance5 and external-fd presence each enumerate count + list;
-     * none of those optional features is offered by this adapter fixture. */
-    assert(enumerations == 4 && queries == 1 && chains == 0 && !selection.maintenance5_enabled);
+    /* Maintenance5, robustness2 and external-fd presence each enumerate
+     * count + list; none is offered by this adapter fixture. */
+    assert(enumerations == 6 && queries == 1 && chains == 0 && !selection.maintenance5_enabled);
+    assert(!selection.robustness2_enabled);
     assert(selection.extension == NULL && selection.base.robustBufferAccess == 1);
     assert(selection.base.shaderInt64 == 0);
     options.enable_shader_demote_if_supported = true;
     assert(doe_vk_prepare_features(&context, &options, &selection, &error) == DOE_VK_OK);
-    assert(enumerations == 10 && queries == 2 && chains == 1);
+    assert(enumerations == 14 && queries == 2 && chains == 1);
     assert(selection.extension != NULL && selection.demote.shaderDemoteToHelperInvocation == 1);
     assert(selection.demote.pNext == NULL && selection.base.shaderInt64 == 0);
     extension = false;

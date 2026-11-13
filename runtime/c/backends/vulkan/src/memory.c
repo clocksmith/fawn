@@ -3,7 +3,12 @@
  * leases until their existing command references prove the resources unused. */
 #include "internal.h"
 #include "vk_abi_external.h"
-enum { MEMORY_BLOCK_BYTES=4*1024*1024, MEMORY_BLOCK_LIMIT=8 };
+/* A memory type's first block is the small one when the first request fits a
+ * quarter of it, so a process that needs only a few small buffers of a type
+ * does not pay the driver for a full block. At most one small block exists per
+ * type (it is created only while the type has none); full blocks alone count
+ * toward the limit. */
+enum { MEMORY_BLOCK_BYTES=4*1024*1024, MEMORY_BLOCK_LIMIT=8, MEMORY_FIRST_BLOCK_BYTES=256*1024 };
 struct doe_vk_memory_block {
     VkDeviceMemory memory;
     void *mapped;
@@ -89,10 +94,19 @@ doe_vk_status doe_vk_buffer_allocate(doe_vk_buffer *buffer,const VkMemoryRequire
         return doe_vk_fail(DOE_VK_NATIVE_FAILURE,"buffer memory alignment",error);
     VkMemoryRequirements aligned=*r;
     if (aligned.alignment<_Alignof(max_align_t)) aligned.alignment=_Alignof(max_align_t);
-    struct doe_vk_memory_block *block=context->memory_blocks;
-    while (block && (block->type!=index || !place(block,&aligned,&buffer->slice))) block=block->next;
-    if (!block && context->memory_block_count<MEMORY_BLOCK_LIMIT) {
-        doe_vk_status status=new_block(context,index,block_bytes,&block,error);
+    struct doe_vk_memory_block *block=NULL;
+    bool typed=false;
+    uint32_t full=0;
+    for (struct doe_vk_memory_block *candidate=context->memory_blocks;candidate;candidate=candidate->next) {
+        if (candidate->capacity>=MEMORY_BLOCK_BYTES) ++full;
+        if (candidate->type!=index) continue;
+        typed=true;
+        if (!block && place(candidate,&aligned,&buffer->slice)) block=candidate;
+    }
+    const bool first=!typed && aligned.size<=MEMORY_FIRST_BLOCK_BYTES/4u &&
+        aligned.alignment<=MEMORY_FIRST_BLOCK_BYTES/4u;
+    if (!block && (first || full<MEMORY_BLOCK_LIMIT)) {
+        doe_vk_status status=new_block(context,index,first ? MEMORY_FIRST_BLOCK_BYTES : block_bytes,&block,error);
         if (status==DOE_VK_OUT_OF_MEMORY) return exclusive(buffer,r,index,host,false,error);
         if (status!=DOE_VK_OK) return status;
         if (!place(block,&aligned,&buffer->slice)) abort();
