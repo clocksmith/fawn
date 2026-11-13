@@ -101,6 +101,91 @@
             "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
             "engine": null
           }
+        },
+        "vulkan": {
+          "tokenIds": [
+            271,
+            248068,
+            271,
+            248069,
+            271,
+            760,
+            11679,
+            22186,
+            383,
+            279,
+            9249,
+            314,
+            279,
+            348,
+            50,
+            44791,
+            9,
+            557,
+            2590,
+            264,
+            8545,
+            11,
+            1363,
+            6239,
+            36781,
+            11,
+            694,
+            364,
+            82697,
+            11,
+            424,
+            6273,
+            1040,
+            264,
+            2018,
+            6574,
+            13,
+            1216,
+            995,
+            978,
+            279,
+            324,
+            55965,
+            51624,
+            364,
+            34227,
+            1578,
+            11,
+            264,
+            3364,
+            421,
+            2483,
+            777,
+            1056,
+            1066,
+            264,
+            23271,
+            1375,
+            321,
+            264,
+            5365,
+            8396,
+            314,
+            279
+          ],
+          "promptTokenCount": 17,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "radeon-8060s-graphics-radv-strix-halo-",
+            "shaderSourceReceiptsHash": "fdfd50b5b81a1a0807e9c2ff8287f5d75fb6f15b594e8f916e9c18b40a176e92",
+            "dopplerCommit": "e520bf0cf1725965c48d82264a40ba4d2065c8ea",
+            "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
+            "engine": null,
+            "capability": {
+              "mode": "full",
+              "exposedFeatures": null,
+              "exposedLimits": null
+            }
+          }
         }
       }
     },
@@ -137,6 +222,28 @@
             "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
             "engine": null
           }
+        },
+        "vulkan": {
+          "tokenIds": [
+            198
+          ],
+          "promptTokenCount": 2018,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "radeon-8060s-graphics-radv-strix-halo-",
+            "shaderSourceReceiptsHash": "52ae98b681f97a169e5ba0eda2a1dab3d47ba77255c3a9358e2f0db9ecc4c9f6",
+            "dopplerCommit": "e520bf0cf1725965c48d82264a40ba4d2065c8ea",
+            "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
+            "engine": null,
+            "capability": {
+              "mode": "full",
+              "exposedFeatures": null,
+              "exposedLimits": null
+            }
+          }
         }
       }
     },
@@ -171,6 +278,28 @@
             "modelManifestSha256": "87d6131e29534406451562592847007a967cc970e3f9fcd3e4f1556c0b46eece",
             "engine": null
           }
+        },
+        "vulkan": {
+          "tokenIds": [
+            9079
+          ],
+          "promptTokenCount": 6,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "radeon-8060s-graphics-radv-strix-halo-",
+            "shaderSourceReceiptsHash": "b6e81f839eca3852d5f7fe501741188a66a324a7d17db536127cc9f13643079c",
+            "dopplerCommit": "e520bf0cf1725965c48d82264a40ba4d2065c8ea",
+            "modelManifestSha256": "87d6131e29534406451562592847007a967cc970e3f9fcd3e4f1556c0b46eece",
+            "engine": null,
+            "capability": {
+              "mode": "full",
+              "exposedFeatures": null,
+              "exposedLimits": null
+            }
+          }
         }
       }
     },
@@ -204,6 +333,28 @@
             "dopplerCommit": "3b94a4ff52d378835123fe81241ed57946c384b6",
             "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
             "engine": null
+          }
+        },
+        "vulkan": {
+          "tokenIds": [
+            11751
+          ],
+          "promptTokenCount": 5,
+          "referenceClass": "recorded-single-provider-dawn",
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "radeon-8060s-graphics-radv-strix-halo-",
+            "shaderSourceReceiptsHash": "7ea8792c7e7fe4a85c13ae3e7805641fe520e4dc63069232bbf83dbdc1c351f5",
+            "dopplerCommit": "e520bf0cf1725965c48d82264a40ba4d2065c8ea",
+            "modelManifestSha256": "de880cb8ca348530ef68199eaaddb553195b5f4ed652f0ae0a22420acfc6f26d",
+            "engine": null,
+            "capability": {
+              "mode": "full",
+              "exposedFeatures": null,
+              "exposedLimits": null
+            }
           }
         }
       }

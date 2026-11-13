@@ -127,6 +127,35 @@
               }
             }
           }
+        },
+        "vulkan": {
+          "framePath": "bench/workloads/release-scoreboard/references/release_scoreboard_three_lit_scene_48_objects.vulkan.rgba.gz",
+          "frameSha256": "af6e3c873384793258a8ac7e884d5e4e7b4613339989f43a35467c66ccc7d441",
+          "referenceClass": "recorded-single-provider-dawn",
+          "tolerance": {
+            "maxChannelDifference": 2,
+            "maxDifferingPixelFraction": 0.0005
+          },
+          "recordedWith": {
+            "providers": [
+              "dawn"
+            ],
+            "adapterDevice": "radeon-8060s-graphics-radv-strix-halo-",
+            "shaderSourceReceiptsHash": "9ae34df4f116783cbc19b2130fa0cdea1104b57a1f73216b1bbcc57d71474afe",
+            "dopplerCommit": null,
+            "modelManifestSha256": null,
+            "engine": {
+              "packageName": "three",
+              "version": "0.186.1",
+              "packageJsonSha256": "f9c474a27c920b9435353a6235968f4453436bee0444fac7e5fd289c8fa463de",
+              "webgpuBuildSha256": "15cfce5c653541704fd9a3463c39d3e8b854bb6265ccd854d7cfe74090625cc6"
+            },
+            "capability": {
+              "mode": "full",
+              "exposedFeatures": null,
+              "exposedLimits": null
+            }
+          }
         }
       }
     }
