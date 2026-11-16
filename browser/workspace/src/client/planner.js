@@ -3,6 +3,7 @@ export const PLANNER_TOOLS = Object.freeze({
   observe: 'Read a selected page. Input: pageId.',
   act: 'Execute an action using the latest observation. Input: pageId, kind, target ({handle} from the latest observation, or {url} for navigate), params, effect, completion. Never guess a handle. Upload requires an observed file input, params.fileIds from permissions.uploadFiles, effect.external=true with a unique effectKey, and completion.completedWhen. input-files-equal conditions take selector and files [{name,byteLength}]. File attachment may disclose bytes immediately; never retry an uncertain upload.',
   capture: 'Save the latest observation as evidence. Input: pageId.',
+  artifact_read: 'Read saved bytes omitted from an artifact excerpt. Input: artifactId, expectedRevision (the displayed revision), offset (zero-based character offset), maxChars (1..6000). Follow nextOffset to read more. This reads only records already shared with this task; it does not refresh evidence.',
   repository_files: 'List files under the human-selected repository.',
   repository_read: 'Read and save one repository file as evidence. Input: path.',
   record: 'Add an assumption, finding, decision or question. Input: kind, text, dependsOn (artifact IDs).',

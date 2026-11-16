@@ -7,6 +7,7 @@ import { InvestigationStore } from './investigation.js';
 import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
+import { readArtifact } from './artifact-read.js';
 import { createOwnerSession } from '../workflows/owner-session.js';
 import { sha256Hex } from '../journal.js';
 
@@ -257,6 +258,7 @@ export class WorkspaceController {
         const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return plannerView(observation, pageId);
       }
       if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
+      if (tool === 'artifact_read') return readArtifact(this.store.get(id), input, visibleArtifacts);
       if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);
       if (tool === 'repository_read') { const artifact = await this.readRepository(id, input); visibleArtifacts.add(artifact.id); return artifact; }
