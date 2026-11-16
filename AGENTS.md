@@ -1,21 +1,36 @@
 # Fawn code agent
 
-## Start with the owner
+## Build boldly
+
+- Build the ambitious version. Implement the bold idea end to end, run it, then
+  fix what breaks. A working rough cut beats a careful plan.
+- Act without asking on reversible work in your lane: new features, rewrites,
+  large refactors, deleting dead code, wild experiments. Ask only before
+  irreversible or outward-facing steps: force-push, deleting data, spending
+  money, publishing, or touching another session's uncommitted work.
+- Reading is lookup, not a gate. Read the code you change; consult GOALS,
+  CATSCAN, charters and contracts when a question needs them, never as a
+  checklist before editing.
+- Qualification, receipts and frozen comparisons govern what we claim, not
+  whether code may be written, merged or tried. Measure once something is in use.
+- Breaking an experiment is fine. Fix breakage you cause before you stop, and
+  leave `main` runnable.
+- Report what you built and what it did. Never claim faster, better or qualified
+  without a measurement.
+
+## Start with the code
 
 This file routes work in the Fawn repository, including its Doe GPU component.
 The canonical checkout is `deco/fawn`; do not create a `deco/doe` alias.
 Sibling repositories have their own instructions.
-Read [GOALS.md](GOALS.md), [INTENT.md](INTENT.md), and every `CATSCAN.md` from
-root to the files being changed. Start with
-[the component index](docs/component-index.md), then check the ancestor
-directories of the target files for charters, including newly added ones.
-Repository-wide discovery is for charter audits, not ordinary edits. Follow the
-[charter protocol](docs/component-charters.md); update affected charters with
-an explicitly authorized boundary change, never to excuse a failure.
+Read the code you change and trace its real consumer. [GOALS.md](GOALS.md),
+[INTENT.md](INTENT.md), `CATSCAN.md` files, [component charters](docs/component-charters.md)
+and the [component index](docs/component-index.md) are references: open them
+when a question needs them, not as a checklist before editing. Update a charter
+when you deliberately move a boundary.
 
-Locate the real consumer and trace the complete affected path before editing.
-Choose its smallest decisive check before implementation. Read only the
-applicable owner documents below; there is no repository-wide reading checklist.
+The table is a lookup for where each kind of change keeps its owner docs, not a
+reading list.
 
 | Change | Read at the owner |
 | --- | --- |
@@ -40,10 +55,9 @@ distribution and [Cerebras front door](docs/cerebras.md) for that lane.
 
 ## Work selection
 
-Follow [GOALS.md's constraints](GOALS.md#strategic-constraints) and
-[the selected proofs](docs/thesis.md#three-proofs). Commercial strategy and the
-ordered roadmap remain private. Historical reports and status notes cannot
-start competing work or reopen rejected campaigns.
+[GOALS.md](GOALS.md) and [the thesis](docs/thesis.md#three-proofs) describe the
+current direction; within it, pick the most ambitious useful work and build it.
+Commercial strategy and the ordered roadmap remain private.
 
 For systematic Zig review, use the [review ledger](runtime/zig/reviews/README.md)
 and `python3 runtime/zig/tools/review_log.py --next`.
@@ -69,13 +83,8 @@ unresolved question warrants more. A local pass proves only its exercised scope.
 
 ## Handoff
 
-State component, intent preserved or changed, acceptance evidence, and boundary
-effects using the [charter handoff](docs/component-charters.md#mechanical-validation).
-Report [cleanup and iteration measurements](docs/process.md#language-and-cleanup-evaluation)
-without claiming unmeasured improvements. A contract change updates its owner,
-consumer, schema/migration and applicable checks together.
-
+Report what you changed, what you ran and what it showed, with commit hashes.
 Fix correctness failures rather than relabeling them or weakening acceptance.
-Describe concrete deltas, dependencies and measured process state; never invent
-engineering timelines. Public claims need current source-bound evidence, not
-progress language or a successful compile.
+Public claims need current measured evidence, not progress language or a
+successful compile. A contract change updates its owner, consumer and checks
+together.
