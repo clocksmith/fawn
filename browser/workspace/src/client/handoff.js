@@ -1,80 +1,88 @@
-// What a returning agent or person needs to continue an investigation without
-// losing work or repeating an action whose outcome is unknown. Built only from the
-// investigation journal and the service's action records; it grants no authority.
-
-const MAX_TRIED = 40;
+// Bounded continuation view of the complete journal and service action records.
+// This summary grants no authority and never settles an uncertain action.
+const LIMITS = Object.freeze({ sessions: 8, tried: 40, human: 12, unresolvedActions: 20, openQuestions: 12, needsReview: 20 });
 const MAX_TEXT = 400;
-
-const clip = (value) => {
+const clip = value => {
   const text = typeof value === 'string' ? value : JSON.stringify(value ?? null);
   return text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}…` : text;
 };
-
+function bounded(value) {
+  const text = JSON.stringify(value ?? null);
+  return text.length <= MAX_TEXT ? value : { excerpt: clip(text), truncated: true, totalCharacters: text.length };
+}
 function summarizeOutput(output) {
   if (output == null) return null;
   if (output.id && output.kind) return { artifactId: output.id, kind: output.kind };
-  if (output.actionId) {
-    return { actionId: output.actionId, kind: output.kind ?? null, outcome: output.outcome ?? null,
-      basis: output.outcomeBasis ?? null, isUncertain: !!output.isUncertain };
-  }
+  if (output.actionId) return { actionId: output.actionId, kind: output.kind ?? null, outcome: output.outcome ?? null,
+    basis: bounded(output.outcomeBasis ?? null), isUncertain: !!output.isUncertain };
   if (output.error) return { error: clip(output.error) };
   return { summary: clip(output) };
 }
 
-/** Prior sessions: delegations, how each ended, what was tried and what the human did. */
-export function handoffBrief(project, workspace = null) {
-  const sessions = [];
-  const tried = [];
-  const human = [];
-  const requested = new Map();
+/** Cursors select older pages; use only the opaque nextCursor returned for that collection. */
+export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
+  const sessions = [], human = [], requested = new Map(), pagination = {};
   let current = null;
-  for (const event of project.activity) {
+  // One forward settlement scan: each call is indexed once and updated on result.
+  for (let index = 0; index < project.activity.length; index++) {
+    const event = project.activity[index], provenance = { seq: event.seq ?? null, activityIndex: index };
+    const cursor = String(event.seq ?? `activity:${index}`);
     if (event.event === 'delegated') {
-      current = { task: clip(event.task), startedAt: event.at, actionKinds: event.actionKinds,
-        pageIds: event.pageIds, origins: event.origins, ended: null };
-      sessions.push(current);
+      current = { cursor, event, provenance, ended: null, finishProposal: null }; sessions.push(current);
     } else if (event.event === 'finish' || event.event === 'ask_human') {
-      if (current) current.ended = { how: event.event, text: clip(event.text) };
+      if (current) current.finishProposal = { how: event.event, text: clip(event.text), seq: event.seq ?? null };
+    } else if (event.type === 'run-updated' && event.run?.status !== 'running') {
+      if (current) current.ended = { how: event.run.status, detail: clip(event.run.detail ?? ''), seq: event.seq ?? null };
     } else if (event.event === 'tool-requested') {
-      requested.set(event.callId, { tool: event.tool, input: event.input });
+      requested.set(event.callId, { cursor: event.callId, event, provenance, result: null });
     } else if (event.event === 'tool-result' || event.event === 'tool-failed') {
       const call = requested.get(event.callId);
-      if (call) {
-        tried.push({ tool: call.tool, input: clip(call.input),
-          result: event.event === 'tool-failed' ? { error: clip(event.error) } : summarizeOutput(event.output) });
-      }
-    } else if (event.event === 'human-control') {
-      human.push({ at: event.at, event: 'took control', outstandingActions: event.outstanding?.length ?? 0 });
-    } else if (event.event === 'human-note') {
-      human.push({ at: event.at, event: 'note', text: clip(event.text) });
+      if (call) call.result = event;
+    } else if (event.event === 'human-control' || event.event === 'human-note') {
+      human.push({ cursor, event, provenance });
     }
   }
-  for (const [callId, call] of requested) {
-    const settled = project.activity.some(event => event.callId === callId
-      && (event.event === 'tool-result' || event.event === 'tool-failed'));
-    if (!settled && !['finish', 'ask_human'].includes(call.tool)) {
-      tried.push({ tool: call.tool, input: clip(call.input), result: { interrupted: 'no recorded result; the session ended first' } });
+  function page(name, entries, summarize) {
+    let end = entries.length;
+    if (cursors[name] !== undefined && cursors[name] !== null) {
+      end = entries.findIndex(entry => entry.cursor === cursors[name]);
+      if (end < 0) throw Error(`Unknown or expired ${name} handoff cursor; refresh the handoff.`);
     }
+    const start = Math.max(0, end - LIMITS[name]);
+    pagination[name] = { total: entries.length, included: end - start, omittedOlder: start,
+      omittedNewer: entries.length - end, nextCursor: start > 0 ? entries[start].cursor : null };
+    return entries.slice(start, end).map(summarize);
   }
+  const unresolved = (workspace?.actions ?? []).filter(action => action.isUncertain);
   const artifacts = Object.values(project.artifacts);
-  const unresolved = (workspace?.actions ?? [])
-    .filter(action => action.isUncertain)
-    .map(action => ({
-      actionId: action.actionId, pageId: action.pageId, kind: action.kind, target: action.target,
-      effectKey: action.effectKey, completion: action.completion, outcome: action.outcome,
-      basis: action.outcomeBasis, lastReconciliation: action.reconciliation?.result ?? null,
-    }));
-  return {
+  const result = {
     previousRun: project.run ? { status: project.run.status, detail: clip(project.run.detail ?? ''), turns: project.run.turns } : null,
-    sessions,
-    tried: tried.slice(-MAX_TRIED),
-    human,
-    unresolvedActions: unresolved,
-    openQuestions: artifacts.filter(value => value.kind === 'question' && value.status === 'current')
-      .map(value => ({ id: value.id, text: clip(value.text) })),
-    needsReview: artifacts.filter(value => value.status === 'needs-review').map(value => value.id),
+    sessions: page('sessions', sessions, ({ event, provenance, ended, finishProposal }) => ({ ...provenance,
+      task: clip(event.task), startedAt: event.at, actionKinds: bounded(event.actionKinds),
+      pageIds: bounded(event.pageIds), origins: bounded(event.origins), ended, finishProposal })),
+    tried: page('tried', [...requested.values()].filter(call => call.result || !['finish', 'ask_human'].includes(call.event.tool)),
+      ({ event, provenance, result }) => ({ ...provenance, callId: event.callId, requestSeq: event.seq ?? null,
+        resultSeq: result?.seq ?? null, tool: event.tool, input: clip(event.input),
+        result: result ? result.event === 'tool-failed' ? { error: clip(result.error) } : summarizeOutput(result.output)
+          : { interrupted: 'no recorded result; the session ended first' } })),
+    human: page('human', human, ({ event, provenance }) => ({ ...provenance, at: event.at,
+      event: event.event === 'human-control' ? 'took control' : 'note',
+      ...(event.event === 'human-control' ? { outstandingActions: event.outstanding?.length ?? 0 } : { text: clip(event.text) }) })),
+    unresolvedActionCount: unresolved.length,
+    unresolvedActions: page('unresolvedActions', unresolved.map(action => ({ cursor: action.actionId, action })), ({ action }) => ({
+      actionId: action.actionId, pageId: action.pageId, kind: action.kind, target: bounded(action.target),
+      effectKey: action.effectKey == null ? null : clip(action.effectKey), completion: bounded(action.completion), outcome: action.outcome,
+      basis: bounded(action.outcomeBasis), lastReconciliation: action.reconciliation?.result ?? null,
+    })),
+    openQuestions: page('openQuestions', artifacts.filter(value => value.kind === 'question' && value.status === 'current')
+      .map(value => ({ cursor: value.id, value })), ({ value }) => ({ id: value.id, revision: value.revision, text: clip(value.text) })),
+    needsReview: page('needsReview', artifacts.filter(value => value.status === 'needs-review')
+      .map(value => ({ cursor: value.id, value })), ({ value }) => value.id),
+    pagination,
+    authority: 'The complete investigation journal (seq/callId) and service action records (actionId) remain authoritative; excerpts are summaries. Use handoff_read with pagination[collection].nextCursor to retrieve older entries.',
     guidance: unresolved.length
-      ? 'Some earlier actions have unknown outcomes. Establish each with reconcile (conditions observable on its page) before any new action; never repeat one unless reconcile returns effect-absent.'
+      ? `${unresolved.length} earlier actions have unknown outcomes, including any omitted from this page. Establish every one with reconcile before a new action; never repeat one unless reconcile returns effect-absent. Page through unresolvedActions with handoff_read as needed.`
       : 'No earlier action has an unknown outcome.',
   };
+  return result;
 }

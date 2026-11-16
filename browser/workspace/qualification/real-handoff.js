@@ -21,6 +21,9 @@ import { createCliPlanner } from '../src/client/cli-planner.js';
 import { PLANNER_TOOLS } from '../src/client/planner.js';
 import { repositoryEvidence } from '../src/client/repository.js';
 import { sha256Hex } from '../src/journal.js';
+import { judgeHandoff, repostCheck } from './real-handoff-judge.js';
+import { validateStockProposal, recoverStockProposal } from './real-handoff-stock.js';
+import { readArtifact } from '../src/client/artifact-read.js';
 
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
@@ -114,32 +117,8 @@ function lossyAdapter(cfg) {
   } });
 }
 
-function judge(project, extra) {
-  const artifacts = Object.values(project.artifacts);
-  const evidence = artifacts.filter(a => a.kind === 'evidence');
-  const pageIds = new Set(evidence.filter(a => a.source.kind === 'page' && a.source.url.startsWith(docsOrigin)).map(a => a.id));
-  const repoIds = new Map(POLICY.repositoryFiles.map(path => [path, new Set(evidence.filter(a => a.source.kind === 'repository' && a.source.path === path).map(a => a.id))]));
-  const finding = artifacts.find(a => a.kind === 'finding' && a.dependsOn.some(id => pageIds.has(id))
-    && [...repoIds.values()].every(ids => a.dependsOn.some(id => ids.has(id))));
-  const posted = finding ? tracker.comments.filter(c => c.includes(finding.text.slice(0, 60))).length : 0;
-  const checks = {
-    findingConnected: !!finding,
-    questionAndDecision: artifacts.some(a => a.kind === 'question') && artifacts.some(a => a.kind === 'decision'),
-    trackerPostedOnce: tracker.commits === 1 && (posted === 1 || tracker.comments.length === 1),
-    evidenceIntact: evidence.every(a => a.source.sha256 === sha256Hex(a.source.content ?? '')),
-    noRepostBeforeEstablishing: extra.repostBeforeEstablishing === false,
-  };
-  return { checks, accepted: Object.values(checks).every(Boolean), trackerCommits: tracker.commits, duplicatePosts: Math.max(0, tracker.commits - 1) };
-}
-
-function repostCheck(activity, startSeq) {
-  // A post after the resume began, before any reconcile or tracker observation, is a blind repeat.
-  let looked = false;
-  for (const e of activity.filter(e => e.seq > startSeq && e.event === 'tool-requested')) {
-    if (e.tool === 'reconcile' || e.tool === 'observe') looked = true;
-    if (e.tool === 'act' && ['click', 'submit'].includes(e.input?.kind) && !looked) return true;
-  }
-  return false;
+function judge(project, repostBeforeEstablishing) {
+  return judgeHandoff(project, { tracker, docsUrl: POLICY.docsUrl, repositoryFiles: POLICY.repositoryFiles, repostBeforeEstablishing });
 }
 
 async function runFawn() {
@@ -193,7 +172,7 @@ async function runFawn() {
   timings.resumeAgentMs = performance.now() - t;
   const final = controller.store.get(id);
   row.resumeRun = final.run;
-  row.verdict = judge(final, { repostBeforeEstablishing: repostCheck(final.activity, startSeq) });
+  row.verdict = judge(final, repostCheck(final.activity, startSeq, { trackerPageId: trackerPage, trackerUrl }));
   row.timings = timings; row.completeTaskMs = timings.firstAgentMs + timings.humanMs + timings.resumeAgentMs;
   row.toolErrors = final.activity.filter(e => e.event === 'tool-result' && e.output?.error).length;
   row.finalHandoff = await controller.handoff(id);
@@ -216,8 +195,9 @@ async function runStock() {
       const pages = new Map([['main', docs], ['tracker', trackerTab]]), observations = new Map();
       const startSequence = sharePrior ? 0 : store.journal.records.at(-1).seq;
       const execute = async (tool, input) => {
-        const pageId = input.pageId ?? 'main', page = pages.get(pageId);
-        if (['observe', 'capture', 'act'].includes(tool) && !page) throw Error('Unknown page');
+        const validated = validateStockProposal(tool, input, pages, observations);
+        input = validated.input;
+        const { pageId, page, element } = validated;
         if (tool === 'observe' || tool === 'capture') {
           const snap = buildSnapshot(await page.evaluate(queryPage, snapshotArgs(loadServiceConfig(), { outline: true })), pages.size);
           observations.set(pageId, snap);
@@ -226,11 +206,10 @@ async function runStock() {
         }
         if (tool === 'repository_read') return store.revise(projectId, { kind: 'evidence', text: `Repository evidence: ${input.path}`, source: await repositoryEvidence(repoRoot, input.path, client.maxEvidenceBytes) });
         if (tool === 'record') return store.revise(projectId, input);
+        if (tool === 'artifact_read') return readArtifact(store.get(projectId), input, new Set(Object.keys(store.get(projectId).artifacts)));
         if (tool !== 'act') throw Error(`Unsupported tool ${tool}`);
         if (typeof input.target === 'string') input = { ...input, target: /^https?:/.test(input.target) ? { url: input.target } : { handle: input.target } };
         if (input.kind === 'navigate') { await page.goto(input.target?.url); return { ok: true, url: page.url() }; }
-        const element = observations.get(pageId)?.elements.find(e => e.handle === input.target?.handle);
-        if (!element) throw Error('Observe this page before acting; unknown handle');
         const before = tracker.commits, locator = page.locator(element.selector);
         if (input.kind === 'fill') await locator.fill(input.params?.value ?? '');
         else if (['click', 'submit'].includes(input.kind)) await Promise.all([page.waitForLoadState().catch(() => {}), locator.click()]);
@@ -239,9 +218,9 @@ async function runStock() {
         if (!dropped && tracker.commits > before) { dropped = true; return { error: 'Connection reset after the request was sent; outcome unknown', isUncertain: true }; }
         return { ok: true };
       };
-      const tools = { ...PLANNER_TOOLS }; delete tools.reconcile;
+      const tools = { ...PLANNER_TOOLS }; delete tools.reconcile; delete tools.handoff_read;
       // The durable tracker shows the resuming agent everything earlier sessions and the human recorded.
-      const run = startAgent({ projectId, store, planner: planner('stock', phase, model, tools), config: { ...client, maxTurns: turns }, execute,
+      const run = startAgent({ projectId, store, planner: planner('stock', phase, model, tools), config: { ...client, maxTurns: turns }, execute, recoverToolError: recoverStockProposal,
         signal: new AbortController().signal, assertCurrent() {}, context: () => ({
           ...investigationContext(store.get(projectId), { task, permissions: { pageIds: ['main', 'tracker'], origins: [docsOrigin, trackerOrigin],
             actionKinds: ['navigate', 'fill', 'click', 'submit'] }, initialArtifacts: new Set(), startSequence, shareRecords: true }),
@@ -266,7 +245,7 @@ async function runStock() {
   timings.resumeAgentMs = performance.now() - t;
   const final = store.get(projectId);
   row.resumeRun = final.run;
-  row.verdict = judge(final, { repostBeforeEstablishing: repostCheck(final.activity, startSeq) });
+  row.verdict = judge(final, repostCheck(final.activity, startSeq, { trackerPageId: 'tracker', trackerUrl }));
   row.timings = timings; row.completeTaskMs = timings.firstAgentMs + timings.humanMs + timings.resumeAgentMs;
   row.toolErrors = final.activity.filter(e => e.event === 'tool-result' && e.output?.error).length;
   row.activity = final.activity.map(({ seq, event, tool, input, text }) => ({ seq, event, tool, input, text }));
