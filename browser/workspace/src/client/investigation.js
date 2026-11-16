@@ -3,6 +3,10 @@ import { Journal, sha256Hex, canonicalJson } from '../journal.js';
 import { randomUUID } from 'node:crypto';
 
 const KINDS = ['evidence', 'assumption', 'finding', 'decision', 'question'];
+function dependenciesCurrent(project, artifact) {
+  return artifact.dependsOn.every(id => project.artifacts[id]?.status === 'current'
+    && project.artifacts[id].revision === artifact.dependencyRevisions[id]);
+}
 export class InvestigationStore {
   constructor(directory) {
     this.journal = Journal.open({ directory, fileName: 'investigation.jsonl', lockFileName: 'investigation.lock' });
@@ -16,7 +20,11 @@ export class InvestigationStore {
       const project = this.projects.get(body.projectId);
       if (!project) throw Error(`Unknown investigation ${body.projectId}`);
       if (type === 'artifact-revised') {
-        project.artifacts[body.artifact.id] = structuredClone(body.artifact);
+        const artifact = structuredClone(body.artifact);
+        // Replaying an older journal must not approve a conclusion whose premise
+        // was already invalidated, even if that revision stored status=current.
+        if (!dependenciesCurrent(project, artifact)) artifact.status = 'needs-review';
+        project.artifacts[artifact.id] = artifact;
         // Every dependent must be reviewed against the new revision, including transitive conclusions.
         const changed = new Set([body.artifact.id]);
         let more = true;
@@ -57,6 +65,7 @@ export class InvestigationStore {
     const dependencyRevisions = Object.fromEntries(dependsOn.map(parent => [parent, project.artifacts[parent].revision]));
     const artifact = { id, kind, text: text.trim(), dependsOn, dependencyRevisions, source,
       revision: expectedRevision + 1, status: 'current' };
+    if (!dependenciesCurrent(project, artifact)) artifact.status = 'needs-review';
     const { status, ...revision } = artifact;
     artifact.contentHash = sha256Hex(canonicalJson(revision));
     this.append('artifact-revised', { projectId, artifact }); return artifact;

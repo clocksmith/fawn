@@ -52,14 +52,27 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.artifact').length === 2);
   const id = await page.evaluate(() => localStorage.getItem('fawn-project'));
   const assumption = Object.values(app.controller.store.get(id).artifacts).find(artifact => artifact.kind === 'assumption');
-  app.controller.record(id, { kind: 'finding', text: 'A retry is safe', dependsOn: [assumption.id] });
+  const finding = app.controller.record(id, { kind: 'finding', text: 'A retry is safe', dependsOn: [assumption.id] });
   await page.waitForFunction(() => document.querySelectorAll('.artifact').length === 3);
+  const decision = app.controller.record(id, { kind: 'decision', text: 'Retry the request', dependsOn: [finding.id] });
+  await page.waitForFunction(() => document.querySelectorAll('.artifact').length === 4);
   const card = page.locator(`#artifact-${assumption.id}`);
   await card.getByRole('button', { name: 'Correct', exact: true }).click();
   await card.locator('textarea').fill('The response can be lost after submission.');
   await card.getByRole('button', { name: 'Save correction' }).click();
-  await page.locator('.artifact.needs-review').waitFor();
+  await page.locator(`#artifact-${finding.id}.needs-review`).waitFor();
   assert.equal(app.controller.store.get(id).artifacts[assumption.id].revision, 2);
+  const decisionCard = page.locator(`#artifact-${decision.id}`);
+  await decisionCard.getByRole('button', { name: 'Correct', exact: true }).click();
+  await decisionCard.locator('textarea').fill('Retry the request after checking the earlier result.');
+  await decisionCard.getByRole('button', { name: 'Save correction' }).click();
+  await page.waitForFunction(({ id, decisionId }) => {
+    const card = document.getElementById(`artifact-${decisionId}`);
+    return card?.classList.contains('needs-review') && card.textContent.includes('after checking the earlier result');
+  }, { id, decisionId: decision.id });
+  assert.equal(app.controller.store.get(id).artifacts[decision.id].revision, 2);
+  assert.equal(app.controller.store.get(id).artifacts[decision.id].status, 'needs-review',
+    'Editing a decision in the product cannot approve its unreviewed premise');
   await page.screenshot({ path: join(directory, 'desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 430, height: 930 });
   await page.screenshot({ path: join(directory, 'compact.png'), fullPage: true });
