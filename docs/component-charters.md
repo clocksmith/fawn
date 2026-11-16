@@ -1,7 +1,8 @@
 # Component charter protocol
 
-CATSCAN charters make component intent recursive, discoverable, and
-mechanically guarded without constraining internal algorithms.
+CATSCAN files are optional, searchable component maps. They describe ownership,
+dependencies, important contracts and known traps; they are references for
+investigation, not prerequisites to editing or approval gates for redesign.
 
 ## Authority files
 
@@ -16,32 +17,25 @@ mechanically guarded without constraining internal algorithms.
 | ADR or design document | Why a mechanism was selected |
 | Tests, registries, reports, receipts | Current evidence and status |
 
-A charter states what must remain true, not how to implement it. Existing code
-does not override a charter.
+## Using and changing a component map
 
-## Recursive rule
+Start with the requested outcome, the code and its observed behavior. Consult
+[the component index](component-index.md) or a relevant charter when an ownership
+or contract question needs it. Do not walk an ancestor reading chain before
+coding. Parent links explain relationships; they do not add a separate pre-edit
+ceremony.
 
-Before changing a file, read the nearest `AGENTS.md`, canonical project goals,
-and every `CATSCAN.md` from the repository root to the target directory. For
-multi-directory changes, read the union of applicable chains. Children may
-narrow their parent but cannot broaden authority, weaken invariants, or
-contradict it.
+A map may be outdated. Agents may redesign component boundaries within the
+requested scope and update affected documentation with the implementation.
+Preserve real public API, security, data and resource-lifetime constraints, or
+explicitly implement and verify the intended contract change. Rewording a
+charter does not fix incorrect behavior or establish performance evidence.
 
-Explicit user direction may change intent. Update the affected charter with the
-implementation; never rewrite a charter merely to excuse failing behavior or
-evidence.
+Add a map only where it captures independently useful architectural information.
+Utility, generated, vendored, cache and fixture directories do not each need one.
+Consolidate duplicate maps while preserving unique contracts and navigation.
 
-For ordinary work, start with [the component index](component-index.md), then
-check each ancestor directory from the repository root to the target files for
-`CATSCAN.md`. This also finds newly added charters not yet indexed. Read only the
-union of those chains. Reserve `rg --files -g CATSCAN.md` for repository-wide
-charter audits or index maintenance.
-
-Add a charter only for an independently meaningful outcome, persisted contract,
-state authority, policy or promotion boundary, or testable subsystem. Generated,
-vendored, cache, fixture, utility, and mechanical directories inherit.
-
-## Required shape
+## Shape for indexed maps
 
 ```markdown
 # CATSCAN: <Component>
@@ -77,8 +71,10 @@ Parent: [<parent component>](../CATSCAN.md)
 Any implementation is permitted if it preserves these boundaries and passes the acceptance evidence.
 ```
 
-The repository root uses `Parent: none`. Keep charters below 250 words. Put
-algorithms, history, roadmaps, tutorials, and current status in linked owners.
+The repository root uses `Parent: none`. The existing index checker accepts this
+shape and a 250-word limit for retained maps. Keep maps concise, but preserve
+unique architectural knowledge when consolidating; move longer explanations to
+a linked owner rather than deleting them to meet a word count.
 
 ## Mechanical validation
 
@@ -88,15 +84,12 @@ python3 bench/gates/catscan_gate.py
 python3 -m unittest bench.tests.test_catscan_gate
 ```
 
-The gate validates shape, nearest parents, identifiers, local links, acceptance
-evidence, size, and the generated [`component-index.md`](component-index.md).
-Semantic alignment remains a review obligation.
+Run the index writer and focused checker when changing indexed maps or their
+links. They validate shape, nearest parents, identifiers, local links, acceptance
+references, size and the generated [`component-index.md`](component-index.md).
+They do not establish runtime correctness or require charter reading before
+implementation. Ordinary code changes use the affected behavior's checks.
 
-Handoffs state:
-
-```text
-Component: <name>
-Intent: preserved | changed
-Acceptance evidence: <commands or artifacts>
-Boundary effects: none | <named components>
-```
+Report changed behavior, relevant evidence and remaining work. Mention a changed
+boundary when it helps the next operator; no separate charter handoff ritual is
+required.

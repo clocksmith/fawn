@@ -151,13 +151,15 @@ make an unverified workload claim-bearing.
 Component intent is recorded in `CATSCAN.md` files; consult the relevant
 charter when you need its contract. If work changes a component boundary,
 update the affected charter in the same change and regenerate
-`docs/component-index.md`. The blocking CATSCAN gate validates structure and
-references; semantic alignment remains the handoff and review obligation in
-[`component-charters.md`](component-charters.md).
+`docs/component-index.md` when its indexed maps change. The CATSCAN checker
+validates retained maps and references, not a pre-edit reading chain. See
+[component-map guidance](component-charters.md).
 
 ## Stage order
 
-Every promoted change follows this order:
+This sequence governs evidence promotion and release. Development, prototypes
+and ordinary commits use focused verification and can iterate before the full
+promotion sequence is available. Every promoted change follows this order:
 
 ```text
 Mine -> Normalize -> Verify -> Bind -> Gate -> Benchmark -> Release
@@ -845,28 +847,25 @@ repeat implementation details may be removed with that evidence; preserve tests
 that detect semantic, ownership, callback, recovery, and physical-execution
 defects. Shorter verification must not be purchased by dropping safety coverage.
 
-Behavior-preserving refactors follow this evidence sequence:
+Verify a refactor at the behavior it changes. Characterize important existing
+behavior, trace consumers, make the substantive change and exercise those
+consumers. Use semantic digests, traces, oracles or receipts when they answer the
+actual correctness question; no fixed sequence of scaffolds or compatibility
+facades is required. Keep a compatibility facade only while a real consumer
+needs it, and remove it after migration.
 
-```text
-capture characterization workload
--> extract neutral contract
--> move implementation
--> preserve an exercised compatibility facade
--> compare semantic digest, trace, oracle, and receipt
--> remove the facade only after consumers migrate
-```
-
-If a refactor intentionally tightens or changes a contract, its receipt must
-classify that delta separately from preserved cases. Compatibility facades
-remain only while an exercised consumer requires them.
+If a refactor intentionally changes a public contract, document the delta and
+verify both the new behavior and affected consumers. Preserve frozen acceptance
+contracts for comparisons; a deliberate product change does not retroactively
+qualify historical evidence.
 
 ### Language and cleanup evaluation
 
-For each cleanup, distinguish net production lines removed from test, generated,
-documentation, and tooling changes. Report duplicate decisions eliminated,
-production helper call sites, added indirection, preserved outputs and first
-failure boundaries, fault cases exercised, focused checks, and full gates run
-or not run. Share mechanics within the owning repository only where trust,
+When evaluating cleanup or language choices, use the evidence relevant to the
+question: removed duplicate decisions, added indirection, preserved outputs and
+failure boundaries, or focused fault checks. Report meaningful behavior changes
+and verification; ordinary cleanup does not require a metrics dossier. Share
+mechanics within the owning repository only where trust,
 ownership, and failure semantics match; keep caller policy at its owner.
 
 When evaluating a language or abstraction choice, use representative changes

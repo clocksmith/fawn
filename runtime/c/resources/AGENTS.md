@@ -1,6 +1,6 @@
 # Resource ownership
 
-Follow the common C guide and parent charter. This owner adopts real native
+The common C guide and parent charter are references. This owner adopts real native
 resources; never create a synthetic backend or publish borrowed native storage
 as owned. Preserve same-device identity, transactional acquisition, first-error
 recording and unknown-submission obligations. Keep map/future delivery, labels

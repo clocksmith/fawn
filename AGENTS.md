@@ -1,31 +1,8 @@
 # Fawn code agent
 
-## Build boldly
-
-Understand → inspect → build → run → diagnose → improve → deliver.
-
-- Start from the requested outcome and the existing implementation. Read the
-  relevant code, and compare with working alternatives, before guessing.
-- Make the most direct substantive change. Large refactors, replacement
-  implementations, aggressive prototypes and speculative ideas are allowed when
-  they serve the goal.
-- Run the changed system early. Fix the failures you cause; don't stop at a
-  plan, scaffold or failing test.
-- If the result misses the goal, find the reason in the code and behavior,
-  change it and repeat. Sweep parameters only to answer a real question. When a
-  strategy is clearly failing, try a materially different one.
-- Make routine design and implementation choices yourself. Ask only for a
-  consequential product choice, access you lack, or a blocker you can't
-  resolve safely.
-- Commit coherent, tested progress often, and keep going while the requested
-  outcome is unfinished.
-- Done means the requested behavior works and was exercised against a
-  real-world or competitive baseline. A passing unit test, receipt, report,
-  scaffold or milestone is not completion.
-- GOALS, INTENT, CATSCAN and charters are references to look up, not reading
-  required before editing.
-- Report results: what changed, the evidence, what remains, and blockers only
-  when they need the owner or unavailable access. No completion percentages.
+When working inside Deco, follow the shared operating and safety rules in
+[the workspace instructions](../AGENTS.md). This file adds Fawn's build,
+verification and ownership guidance. Standalone checkouts use this file directly.
 
 ## Start with the code
 
@@ -83,12 +60,12 @@ unresolved question warrants more. A local pass proves only its exercised scope.
 
 ## Git workflow
 
-- Commit on this repo's `main` and push to `origin/main`; no branches,
-  branch-backed worktrees or PRs unless requested. Never force-push `main`.
-- Preserve existing work when changing branches or integrating remote updates.
-  Stage only task changes. Report the pushed commit or concrete blocker.
-- Keep generated output and local archives out of commits under the
-  [retention policy](reports/README.md#retention).
+Use path-limited commits in the shared checkout. Use a branch or isolated
+worktree when a substantial change could collide with another session; preserve
+its work when integrating. Push coherent, checked changes to the agreed remote
+branch and report the commit or concrete blocker.
+Keep generated output and local archives out of commits under the
+[retention policy](reports/README.md#retention).
 
 ## Handoff
 

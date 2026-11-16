@@ -1,6 +1,7 @@
 # Registered evidence owner
 
-Inherit [benchmark instructions](../AGENTS.md) and [this charter](CATSCAN.md).
+Follow [benchmark instructions](../AGENTS.md); [this charter](CATSCAN.md) is an
+ownership reference.
 
 - `builder.py`: orchestration, schema validation, output generation and freshness.
 - `sources.py`: verified receipt I/O, shared adapter helpers and dispatch.
