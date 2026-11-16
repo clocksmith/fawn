@@ -11,6 +11,7 @@ import { chromium } from 'playwright-core';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
 import { performChoice } from './choice-query.js';
 import { playwrightLaunchOptions } from '../browser-launch.js';
+import { closeWithin } from './bounded-close.js';
 
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 
@@ -36,7 +37,7 @@ class PlaywrightWorkspaceAdapter {
     try {
       const page = context.pages()[0] ?? await context.newPage();
       page.setDefaultTimeout(this._config.dispatch.actionTimeoutMs);
-      const entry = { context, page, pages: new Map([['main', page]]) };
+      const entry = { context, page, profileDir, pages: new Map([['main', page]]) };
       this._workspaces.set(workspaceId, entry);
       for (const saved of pages.filter(value => value.pageId !== 'main')) {
         const restored = await context.newPage();
@@ -110,9 +111,11 @@ class PlaywrightWorkspaceAdapter {
   async focusPage(workspaceId, pageId) { await this._page(workspaceId, pageId).bringToFront(); }
 
   async close() {
-    const contexts = [...this._workspaces.values()].map((entry) => entry.context);
+    const entries = [...this._workspaces.values()];
     this._workspaces.clear();
-    await Promise.all(contexts.map((context) => context.close()));
+    // Releasing the workspace never waits on a browser that will not exit (see bounded-close.js).
+    await Promise.all(entries.map((entry) => closeWithin(entry.context,
+      { profileDir: entry.profileDir, timeoutMs: this._config.dispatch.actionTimeoutMs })));
   }
 }
 

@@ -92,9 +92,16 @@ prepared stock script that finished in 8.4 s with no model calls.
 
 ## Active blockers
 
-- Closing a persistent browser context can stall: 300 s once in the Fawn arm and
-  7.7 to 24.2 s in four stock rows of the reuse run. The adapter does not bound
-  it and the cause is not established.
+- Stock Chrome is slow to exit after a graceful close once it has run for about
+  30 s: 14 s alone and 586 s with several instances on one machine, on a blank
+  page with a fresh profile, and Playwright waits without a limit. That stalled
+  the reuse run (300 s in the Fawn arm, 7.7 to 24.2 s in four stock rows). The
+  Playwright adapter now [bounds the release](../../browser/workspace/src/adapters/bounded-close.js)
+  at the action timeout and then ends that profile's browser (16 s in the same
+  586 s conditions, no process left). Why Chrome is slow to exit is not
+  established, a forced exit can lose the profile's last unflushed site data,
+  the CDP adapter and Windows are not covered, and the reuse comparison has not
+  been re-run with the bound.
 
 - Personal workflow learning, verified repair-suffix reuse and UI delegation
   require host-installed task definitions and local verifiers. Live ATS and
