@@ -71,7 +71,30 @@ a local tracker still completes in less total wall-clock time than
 false`). Together with the controlled [shopping comparison](../../browser/workspace/qualification/shopping/README.md),
 these checks do not establish live-site merchant or ATS mutation support.
 
+A [real-investigation handoff and reuse diagnostic](../../reports/fawn-workspace/20261116-handoff-and-reuse/decision.json)
+runs one engineering investigation through a lost tracker acknowledgement, a
+crash, a scripted human restart and a different model resuming
+([`real-handoff.js`](../../browser/workspace/qualification/real-handoff.js)).
+Fawn and stock Chrome plus a tracker passed every fixed acceptance check in all
+six pairs with zero duplicate posts. At `052b5b0c23` Fawn used more planner
+calls (21, 17, 21 versus 14, 15, 15), cost more and took longer in all three
+pairs. At `bf865f931f` a resumed session checks each unknown action's recorded
+completion condition on the live page before the planner runs, and the planner
+view marks form-submitting controls; Fawn then used 12 calls versus 15 to 16,
+about $2.26 versus $3.09 and 87 to 95 s versus 114 to 138 s in all three pairs.
+That advantage is scoped to this investigation: the stock control has no
+automatic outcome check, the tracker is a local fixture and the human step is
+scripted. The same record binds an uncontaminated
+[product workflow reuse run](../../browser/workspace/qualification/workflow-reuse.md#unmodified-product-revisions):
+5 planner calls versus 18 for fresh planning with all 18 cases correct, no
+elapsed-time advantage because one browser shutdown stalled for 300 s, and a
+prepared stock script that finished in 8.4 s with no model calls.
+
 ## Active blockers
+
+- Closing a persistent browser context can stall: 300 s once in the Fawn arm and
+  7.7 to 24.2 s in four stock rows of the reuse run. The adapter does not bound
+  it and the cause is not established.
 
 - Personal workflow learning, verified repair-suffix reuse and UI delegation
   require host-installed task definitions and local verifiers. Live ATS and

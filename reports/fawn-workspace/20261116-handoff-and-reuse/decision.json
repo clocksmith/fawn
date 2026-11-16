@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "classification": "bounded real-investigation handoff and local-product workflow reuse diagnostic; release promotion rejected",
+  "consumer": "docs/status/fawn-workspace.md; Track C review of whether the workspace client measurably helps a resumed investigation and repeated product lookups, separate from Doe GPU and Fawn browser runtime claims",
+  "requiresNativeRuntimeWins": false,
+  "gpuClaimsIncluded": false,
+  "browserIdentity": {
+    "channel": "chrome",
+    "version": "157.0.8103.78",
+    "platform": "macOS"
+  },
+  "localRawReports": {
+    "availability": "local ignored evidence; not published",
+    "handoff": ".tmp/track-c-handoff-20261116/{clean-052b5b0c,clean-bf865f93}/pair-{1,2,3}/real-handoff.json",
+    "workflowReuse": ".tmp/track-c-workflow-20261116/clean-052b5b0c/"
+  },
+  "handoff": {
+    "harness": "browser/workspace/qualification/real-handoff.js",
+    "task": "Investigate BF-local-combobox-choice-not-retained from the live W3C combobox pattern page and two repository files, post the finding to a tracker whose first acknowledgement is lost, crash, scripted human restart and note, then a different model resumes",
+    "models": {
+      "first": "claude-opus-5-5",
+      "resume": "claude-sonnet-5-5"
+    },
+    "before": {
+      "sourceCommit": "052b5b0c23",
+      "pairs": [
+        {
+          "pair": 1,
+          "reportSha256": "3cad53135bd6015b506736add56bcc9252e0c2d6eb4f96ed839c7087106f5256",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 21,
+            "measuredCostUsd": 3.242,
+            "completeTaskMs": 136707,
+            "resumePlannerTools": [
+              "observe",
+              "observe",
+              "observe",
+              "observe",
+              "observe",
+              "observe",
+              "reconcile",
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 14,
+            "measuredCostUsd": 2.7014,
+            "completeTaskMs": 124135,
+            "resumePlannerTools": [
+              "observe",
+              "record",
+              "finish"
+            ]
+          }
+        },
+        {
+          "pair": 2,
+          "reportSha256": "c01a73256ef77b0fb26a02efffc841793fe2a42c74f33c7dcc5609cda3a3edd0",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 17,
+            "measuredCostUsd": 2.9336,
+            "completeTaskMs": 117197,
+            "resumePlannerTools": [
+              "observe",
+              "observe",
+              "reconcile",
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 15,
+            "measuredCostUsd": 2.919,
+            "completeTaskMs": 112604,
+            "resumePlannerTools": [
+              "observe",
+              "capture",
+              "record",
+              "finish"
+            ]
+          }
+        },
+        {
+          "pair": 3,
+          "reportSha256": "d78ca7ec910501853d0bede231b617b11f022f5076cb441f0e57a75471e1ad93",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 21,
+            "measuredCostUsd": 3.2682,
+            "completeTaskMs": 137653,
+            "resumePlannerTools": [
+              "observe",
+              "observe",
+              "observe",
+              "observe",
+              "observe",
+              "observe",
+              "reconcile",
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 15,
+            "measuredCostUsd": 2.8809,
+            "completeTaskMs": 115335,
+            "resumePlannerTools": [
+              "observe",
+              "capture",
+              "record",
+              "finish"
+            ]
+          }
+        }
+      ]
+    },
+    "change": {
+      "sourceCommit": "bf865f931f",
+      "summary": "On resume the service checks each unknown action against its own recorded completion condition on the live page before the planner runs; the planner observation view marks form-submitting controls"
+    },
+    "after": {
+      "sourceCommit": "bf865f931f",
+      "pairs": [
+        {
+          "pair": 1,
+          "reportSha256": "a5e3bd0820464b8354b7c25836c77ef0cb5d06eb3ce58420b3e36eaf2e42ffd4",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.2877,
+            "completeTaskMs": 86903,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 16,
+            "measuredCostUsd": 3.2627,
+            "completeTaskMs": 138153,
+            "resumePlannerTools": [
+              "observe",
+              "capture",
+              "record",
+              "finish"
+            ]
+          }
+        },
+        {
+          "pair": 2,
+          "reportSha256": "52d5e84cb687ca862f7f34e2f9b7d6cc2eda26e85bd1fb407e32f61d8d266cfa",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.2338,
+            "completeTaskMs": 86768,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 15,
+            "measuredCostUsd": 2.9006,
+            "completeTaskMs": 115245,
+            "resumePlannerTools": [
+              "observe",
+              "capture",
+              "record",
+              "finish"
+            ]
+          }
+        },
+        {
+          "pair": 3,
+          "reportSha256": "2f89b783186fb640cee0a0e7a3010e832a3dde09ff9929365319dea32af626cd",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.264,
+            "completeTaskMs": 94952,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 16,
+            "measuredCostUsd": 3.1118,
+            "completeTaskMs": 114448,
+            "resumePlannerTools": [
+              "observe",
+              "capture",
+              "record",
+              "repository_files",
+              "finish"
+            ]
+          }
+        }
+      ]
+    },
+    "finding": "All twelve arm runs passed every fixed acceptance check with zero duplicate posts. Before the change Fawn used more planner calls, cost more and took longer than stock Chrome plus a tracker in all three pairs. After it Fawn used fewer calls, cost less and finished sooner in all three pairs.",
+    "advantageEstablished": "scoped to this one investigation and these three pairs"
+  },
+  "workflowReuse": {
+    "harness": "browser/workspace/qualification/workflow-reuse-product.js",
+    "sourceCommit": "052b5b0c23",
+    "summarySha256": "3be841202132ae4c9faf78bc4671b3546261384c80a578480f3f3d98a0f00d3a",
+    "arms": {
+      "fawn": {
+        "runs": 6,
+        "correct": 6,
+        "totalTaskMs": 342779.501875,
+        "modelCalls": 5,
+        "measuredCostUsd": 0.09453280000000001
+      },
+      "stock-fresh": {
+        "runs": 6,
+        "correct": 6,
+        "totalTaskMs": 206403.183918,
+        "modelCalls": 18,
+        "measuredCostUsd": 0.2722302
+      },
+      "stock-script": {
+        "runs": 6,
+        "correct": 6,
+        "totalTaskMs": 8428.219416999997,
+        "modelCalls": 0,
+        "measuredCostUsd": 0
+      }
+    },
+    "closePhaseMsByArm": {
+      "fawn": 300506,
+      "stock-fresh": 76923,
+      "stock-script": 572
+    },
+    "allCorrect": true,
+    "observedTaskTotalLowerThanFresh": false,
+    "productSuperiorityEstablished": false,
+    "finding": "Fawn learning plus repair used 5 planner calls against 18 for fresh planning with all 18 cases correct, and the four later lookups used none. Fawn total time was higher because one persistent-context close took 300,081 ms; stock-fresh closes took 7.7 to 24.2 s in four rows. The hand-written stock script completed all six lookups in 8.4 s with zero model calls."
+  },
+  "limits": [
+    "One engineering investigation on a local tracker fixture with live W3C documentation; three pairs per source revision. Not multi-day recovery, a real external tracker, or arbitrary sites.",
+    "The human step is scripted. The stock arm has no automatic outcome check on resume; a competent control could add one, so the after-change difference measures a product default, not something stock automation cannot do.",
+    "Both arms run on stock Google Chrome. Nothing here concerns Doe, WebGPU or a Chromium fork.",
+    "Runs were sequential with no other Fawn comparison overlapping; other unrelated agent sessions were active on the machine.",
+    "The 300 s close is an unexplained browser shutdown stall, unbounded in the product adapter; it is a defect to fix, and no elapsed-time advantage over fresh planning is claimed for workflow reuse.",
+    "Workflow reuse does not beat a prepared script on time or model cost; script authoring effort is unmeasured.",
+    "browser/differentiation.test.js and browser/qualification.test.js fail on the unchanged 052b5b0c23 checkout as well; browser/participant.test.js was killed in the full suite and not re-run in isolation."
+  ]
+}
