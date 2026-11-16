@@ -10,9 +10,11 @@ DoeLab tests improvements; DoeProof records evidence.**
 Doe also runs outside the browser, through Node, Bun and Deno and through native
 embedding, with the independently usable WGSL compiler keeping GPU programs
 executable, inspectable and portable across hardware. Standalone Doe use does not
-require the Fawn browser. Durable browser workspaces are an optional Fawn feature:
-one shared observation, action and recovery service with narrow CDP/Playwright
-adapters, which can also run above stock Chromium.
+require the Fawn browser. Browser workspaces, where agents and people carry an
+investigation across interruptions and handoffs, are central to what Fawn
+delivers and optional for standalone Doe use: one shared observation, action
+and recovery service with narrow CDP/Playwright adapters, which can also run
+above stock Chromium. Doe remains Fawn's central technical ambition.
 This file owns the product goals, constraints, and exclusions. These are desired
 outcomes, not claims of qualified support or completed adoption.
 [The thesis](docs/thesis.md) owns the technical rationale and the proofs that
@@ -89,12 +91,21 @@ requirements; `fawnWorkspace` in the [strategy contract](config/doe-product-stra
 binds its acceptance steps to admitted evidence. These are intended outcomes, not
 implemented service claims.
 
+The workspace retains evidence, task context, permissions, actions, unresolved
+outcomes and handoffs, so an agent or person can resume after a stop, crash or
+handoff, including days later, without repeating an action whose outcome is
+unknown. Reusing verified workflows and repairs is a goal only where measured.
+Synthetic workflow reuse does not establish multi-day recovery, real-world
+handoff, or a competitive win; those remain open.
+
 After Doe-owned webpage execution passes its gate, the integrated product target
 is one useful durable workflow with ownership and task state preserved across
 interruption. Display uncertain and failed outcomes honestly. Require a material
 complete-task advantage over competent stock Chromium automation on a frozen user
 task, then establish an external user who keeps the replacement enabled. Fixture
 qualification and internal use do not establish retained external adoption.
+Agent-browser engines such as Cloudflare's Kitesurf are external comparators;
+use as a Fawn backend is a question to investigate, not a selected architecture.
 
 The independent compiler and runtime retain these outcomes:
 
