@@ -1,15 +1,9 @@
 // Planner input is paid for on every turn. Only the newest observation of each page is sent in full;
 // saved evidence keeps its hash and identity but sends a bounded excerpt of its bytes.
-const EVIDENCE_EXCERPT_CHARS = 6000;
-function compactArtifact(artifact) {
-  const content = artifact.source?.content;
-  if (typeof content !== 'string' || content.length <= EVIDENCE_EXCERPT_CHARS) return artifact;
-  return { ...artifact, source: { ...artifact.source, content: content.slice(0, EVIDENCE_EXCERPT_CHARS),
-    contentTruncated: { shownChars: EVIDENCE_EXCERPT_CHARS, totalChars: content.length } } };
-}
+import { artifactMemory } from './artifact-memory.js';
 export function investigationContext(project, { task, permissions, initialArtifacts, startSequence, shareRecords, visibleArtifacts = null, handoff = null }) {
-  const artifacts = Object.fromEntries(Object.entries(project.artifacts).filter(([key]) => visibleArtifacts ? visibleArtifacts.has(key) : shareRecords || !initialArtifacts.has(key))
-    .map(([key, artifact]) => [key, compactArtifact(artifact)]));
+  const shared = visibleArtifacts ?? new Set(Object.keys(project.artifacts).filter(key => shareRecords || !initialArtifacts.has(key)));
+  const { artifacts, artifactCatalog } = artifactMemory(project, shared);
   const events = project.activity.filter(event => event.seq > startSequence && ['tool-requested', 'tool-result', 'tool-failed'].includes(event.event));
   const latestObservation = new Map();
   for (const event of events) {
@@ -27,11 +21,14 @@ export function investigationContext(project, { task, permissions, initialArtifa
       if (event.event === 'tool-requested') return { event: event.event, callId: event.callId, tool: event.tool, input: event.input };
       if (event.event === 'tool-failed') return { event: event.event, callId: event.callId,
         error: event.error, code: event.code, details: event.details, recoverable: event.recoverable };
-      const output = event.output?.id && artifacts[event.output.id]
-        ? { artifactId: event.output.id, kind: event.output.kind } : event.output;
+      const output = event.output?.id && event.output?.kind
+        ? shared.has(event.output.id) ? { artifactId: event.output.id, kind: event.output.kind,
+          revision: event.output.revision, status: event.output.status }
+          : { omitted: 'Source record was not shared with this task' }
+        : event.output;
       return { event: event.event, callId: event.callId, output };
     });
-  return { goal: project.goal, task, permissions, repositoryAvailable: !!project.repositoryRoot, artifacts, history,
+  return { goal: project.goal, task, permissions, repositoryAvailable: !!project.repositoryRoot, artifacts, artifactCatalog, history,
     ...(handoff ? { handoff } : {}) };
 }
 

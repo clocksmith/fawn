@@ -427,8 +427,9 @@ cursor in `pagination[collection].nextCursor` to older entries. The total
 `unresolvedActionCount` includes actions omitted from the displayed page. A
 model's finish proposal cannot complete a run while an action remains unresolved.
 
-Saved evidence stays intact in the journal even when planner context includes
-only an excerpt. `artifact_read` retrieves a bounded range from an explicitly
+Saved evidence stays intact in the journal. Planner context includes a bounded
+recent view; `artifact_list` searches and pages through all explicitly shared
+records, so long investigations do not eagerly reload every source. `artifact_read` retrieves a bounded range from an explicitly
 shared artifact at `expectedRevision`, with source and excerpt hashes. It does
 not refresh the source or add filesystem or page permissions. Revising a
 conclusion preserves `needs-review` while any supporting premise is unreviewed.

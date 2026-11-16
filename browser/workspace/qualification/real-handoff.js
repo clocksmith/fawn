@@ -23,6 +23,7 @@ import { repositoryEvidence } from '../src/client/repository.js';
 import { sha256Hex } from '../src/journal.js';
 import { judgeHandoff, repostCheck } from './real-handoff-judge.js';
 import { validateStockProposal, recoverStockProposal } from './real-handoff-stock.js';
+import { listArtifacts } from '../src/client/artifact-memory.js';
 import { readArtifact } from '../src/client/artifact-read.js';
 
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
@@ -207,6 +208,7 @@ async function runStock() {
         }
         if (tool === 'repository_read') return store.revise(projectId, { kind: 'evidence', text: `Repository evidence: ${input.path}`, source: await repositoryEvidence(repoRoot, input.path, client.maxEvidenceBytes) });
         if (tool === 'record') return store.revise(projectId, input);
+        if (tool === 'artifact_list') return listArtifacts(store.get(projectId), input, new Set(Object.keys(store.get(projectId).artifacts)));
         if (tool === 'artifact_read') return readArtifact(store.get(projectId), input, new Set(Object.keys(store.get(projectId).artifacts)));
         if (tool !== 'act') throw Error(`Unsupported tool ${tool}`);
         if (typeof input.target === 'string') input = { ...input, target: /^https?:/.test(input.target) ? { url: input.target } : { handle: input.target } };

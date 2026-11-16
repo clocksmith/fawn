@@ -8,6 +8,7 @@ import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
 import { readArtifact } from './artifact-read.js';
+import { listArtifacts } from './artifact-memory.js';
 import { REJECTION_CODES } from '../errors.js';
 import { createOwnerSession } from '../workflows/owner-session.js';
 import { sha256Hex } from '../journal.js';
@@ -279,6 +280,7 @@ export class WorkspaceController {
         if (!resume) throw Error('Resume the investigation before reading prior handoff records');
         return this.handoff(id, { cursors: input.cursors ?? {} });
       }
+      if (tool === 'artifact_list') return listArtifacts(this.store.get(id), input, visibleArtifacts);
       if (tool === 'artifact_read') return readArtifact(this.store.get(id), input, visibleArtifacts);
       if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);
