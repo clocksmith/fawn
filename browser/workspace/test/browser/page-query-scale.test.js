@@ -1,4 +1,4 @@
-// Browser equivalence and scaling check for page-query.js: exact snapshot/handle parity
+// Browser equivalence and scaling check for page-query.js: existing snapshot/handle parity
 // against direct querySelectorAll uniqueness checks across standards/quirks mode, duplicate
 // id/name/href, CSS special characters, inline SVG, outlines/regionGroups, and 10k-link DOMs.
 import assert from 'node:assert/strict';
@@ -256,7 +256,12 @@ try {
       { outline: true, regions: ['#scope'], regionGroups: ['.card'], readRoots: ['#scope'], maxElements: 4 },
     ]) {
       const args = { ...snapshotArgs(config, opts), maxElements: opts.maxElements };
-      const actual = buildSnapshot(await page.evaluate(queryPage, args), 1);
+      const actualRaw = await page.evaluate(queryPage, args);
+      // Actionability is intentionally new and independently exercised by
+      // workflow-actionability.test.js. Preserve exact parity for every old field,
+      // including legacy digests, handles, permission scopes and truncation.
+      for (const element of actualRaw.elements) delete element.actionability;
+      const actual = buildSnapshot(actualRaw, 1);
       const expected = buildSnapshot(await page.evaluate(referenceQueryPage, args), 1);
       assert.deepEqual(actual, expected);
     }
@@ -274,7 +279,7 @@ try {
   assert.equal(large.isTruncated, true);
   assert.equal(large.elements.length, config.observation.maxElements);
   assert.ok(elapsedMs < 1500, `Expected linear 10k-anchor snapshot < 1500ms, got ${elapsedMs.toFixed(1)}ms`);
-  console.log(`ok: page-query exact parity and 10k-anchor linear scaling (${elapsedMs.toFixed(1)}ms)`);
+  console.log(`ok: page-query legacy-field parity and 10k-anchor linear scaling (${elapsedMs.toFixed(1)}ms)`);
 } finally {
   await browser.close();
 }

@@ -68,6 +68,12 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     const text = fullText(node);
     return {
       tag: node.tagName.toLowerCase(),
+      actionability: {
+        visible: node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'
+          && getComputedStyle(node).visibility !== 'collapse',
+        inert: Boolean(node.closest('[inert], [aria-hidden="true"]')),
+        disabled: node.matches(':disabled') || Boolean(node.closest('[aria-disabled="true"]')),
+      },
       attributes,
       text: text.slice(0, elementTextChars),
       textFingerprint: fingerprint(text),
@@ -281,6 +287,7 @@ function elementDigest(element) {
   return sha256Hex(canonicalJson({
     tag: element.tag,
     attributes: element.attributes,
+    ...(element.actionability ? { actionability: element.actionability } : {}),
     text: element.text,
     textFingerprint: element.textFingerprint,
     ...(element.formAction ? { formAction: element.formAction } : {}),
