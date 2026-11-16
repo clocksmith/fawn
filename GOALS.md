@@ -92,11 +92,13 @@ binds its acceptance steps to admitted evidence. These are intended outcomes, no
 implemented service claims.
 
 The workspace retains evidence, task context, permissions, actions, unresolved
-outcomes and handoffs, so an agent or person can resume after a stop, crash or
-handoff, including days later, without repeating an action whose outcome is
-unknown. Reusing verified workflows and repairs is a goal only where measured.
-Synthetic workflow reuse does not establish multi-day recovery, real-world
-handoff, or a competitive win; those remain open.
+outcomes and handoffs. An investigation continues across sessions, crashes, days
+and changes of operator: a person can inspect or take over, and another agent can
+resume. When an action's outcome is uncertain, Fawn establishes what happened
+rather than blindly repeating it. Verified workflows and repairs are reusable,
+with evidence that reuse makes subsequent work better or faster. Synthetic
+workflow reuse does not establish multi-day recovery, real-world handoff, or a
+competitive win; those remain open.
 
 After Doe-owned webpage execution passes its gate, the integrated product target
 is one useful durable workflow with ownership and task state preserved across
@@ -104,8 +106,11 @@ interruption. Display uncertain and failed outcomes honestly. Require a material
 complete-task advantage over competent stock Chromium automation on a frozen user
 task, then establish an external user who keeps the replacement enabled. Fixture
 qualification and internal use do not establish retained external adoption.
-Agent-browser engines such as Cloudflare's Kitesurf are external comparators;
-use as a Fawn backend is a question to investigate, not a selected architecture.
+Compare against competent stock Chromium automation and competitors such as
+Cloudflare's Kitesurf; using another engine as a backend is an investigation, not
+a decision. Fawn's agent-browser goal is met when real agent work is measurably
+better in completion, recovery, speed, cost or control, not when synthetic demos
+pass or components are merely integrated.
 
 The independent compiler and runtime retain these outcomes:
 
