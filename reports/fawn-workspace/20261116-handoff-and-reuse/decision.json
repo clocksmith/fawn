@@ -258,15 +258,91 @@
     "allCorrect": true,
     "observedTaskTotalLowerThanFresh": false,
     "productSuperiorityEstablished": false,
-    "finding": "Fawn learning plus repair used 5 planner calls against 18 for fresh planning with all 18 cases correct, and the four later lookups used none. Fawn total time was higher because one persistent-context close took 300,081 ms; stock-fresh closes took 7.7 to 24.2 s in four rows. The hand-written stock script completed all six lookups in 8.4 s with zero model calls."
+    "finding": "Fawn learning plus repair used 5 planner calls against 18 for fresh planning with all 18 cases correct, and the four later lookups used none. Fawn total time was higher because one persistent-context close took 300,081 ms; stock-fresh closes took 7.7 to 24.2 s in four rows. The hand-written stock script completed all six lookups in 8.4 s with zero model calls.",
+    "afterBoundedClose": {
+      "sourceCommit": "d0f4680434",
+      "change": "The Playwright adapter bounds workspace release at the action timeout and then ends that profile browser (browser/workspace/src/adapters/bounded-close.js)",
+      "closeProbe": {
+        "conditions": "blank page, fresh profile, stock Chrome 157 headless on macOS, close after 35 s uptime with three instances closing together",
+        "unboundedCloseMs": 586001,
+        "boundedCloseMs": 16058,
+        "ordinaryCloseMs": 249,
+        "leftoverProcesses": 0
+      },
+      "invalidRun": {
+        "summarySha256": "9027b04086d0c631140c5d2272d032f9fb57692a8a2b103be142cb0c3e7b658e",
+        "arms": {
+          "fawn": {
+            "runs": 6,
+            "correct": 6,
+            "totalTaskMs": 30405.566333000035,
+            "modelCalls": 5,
+            "measuredCostUsd": 0.0967269
+          },
+          "stock-fresh": {
+            "runs": 6,
+            "correct": 5,
+            "totalTaskMs": 497403.0962930001,
+            "modelCalls": 15,
+            "measuredCostUsd": null
+          },
+          "stock-script": {
+            "runs": 6,
+            "correct": 6,
+            "totalTaskMs": 3814.425376000123,
+            "modelCalls": 0,
+            "measuredCostUsd": 0
+          }
+        },
+        "allCorrect": false,
+        "observedTaskTotalLowerThanFresh": true,
+        "reason": "One stock-fresh planner request exceeded its 60 s deadline, failing that row, and the stock arm then waited 376 s on an unbounded browser close. The control was impaired by the planner provider, so this run is retained but supports no comparison."
+      },
+      "cleanRun": {
+        "summarySha256": "e930577b646ea3d833d81a76e5de06118376e4b626985cd2403c77425d6b57fc",
+        "arms": {
+          "fawn": {
+            "runs": 6,
+            "correct": 6,
+            "totalTaskMs": 25836.716624999994,
+            "modelCalls": 5,
+            "measuredCostUsd": 0.0196243
+          },
+          "stock-fresh": {
+            "runs": 6,
+            "correct": 6,
+            "totalTaskMs": 70114.582083,
+            "modelCalls": 17,
+            "measuredCostUsd": 0.11538689999999999
+          },
+          "stock-script": {
+            "runs": 6,
+            "correct": 6,
+            "totalTaskMs": 3753.5014999999985,
+            "modelCalls": 0,
+            "measuredCostUsd": 0
+          }
+        },
+        "allCorrect": true,
+        "observedTaskTotalLowerThanFresh": true,
+        "closeSecondsByArm": {
+          "fawn": 0.3,
+          "stock-fresh": 0.5,
+          "stock-script": 0.4
+        }
+      },
+      "finding": "In the clean run all 18 cases were correct. Fawn completed learning, repair and four later lookups in 25.8 s with 5 planner calls; fresh planning took 70.1 s with 17 calls; the prepared stock script took 3.8 s with none. No close stalled in this run, so it does not exercise the bound; the probe does."
+    },
+    "localRawReportsAfter": ".tmp/track-c-workflow-20261116/{clean-d0f46804,clean-d0f46804-run2}/"
   },
   "limits": [
     "One engineering investigation on a local tracker fixture with live W3C documentation; three pairs per source revision. Not multi-day recovery, a real external tracker, or arbitrary sites.",
     "The human step is scripted. The stock arm has no automatic outcome check on resume; a competent control could add one, so the after-change difference measures a product default, not something stock automation cannot do.",
     "Both arms run on stock Google Chrome. Nothing here concerns Doe, WebGPU or a Chromium fork.",
     "Runs were sequential with no other Fawn comparison overlapping; other unrelated agent sessions were active on the machine.",
-    "The 300 s close is an unexplained browser shutdown stall, unbounded in the product adapter; it is a defect to fix, and no elapsed-time advantage over fresh planning is claimed for workflow reuse.",
     "Workflow reuse does not beat a prepared script on time or model cost; script authoring effort is unmeasured.",
-    "browser/differentiation.test.js and browser/qualification.test.js fail on the unchanged 052b5b0c23 checkout as well; browser/participant.test.js was killed in the full suite and not re-run in isolation."
+    "browser/differentiation.test.js and browser/qualification.test.js fail on the unchanged 052b5b0c23 checkout as well; browser/participant.test.js was killed in the full suite and not re-run in isolation.",
+    "The workflow reuse elapsed-time result rests on one clean run after the bounded close; an earlier run at 052b5b0c23 lost on time to a 300 s close and one run at d0f4680434 was invalid.",
+    "The bounded close covers the Playwright adapter on macOS and Linux only; why Chrome is slow to exit is not established, and a forced exit can lose the last unflushed profile data."
   ]
 }

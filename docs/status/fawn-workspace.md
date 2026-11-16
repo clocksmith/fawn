@@ -86,9 +86,13 @@ That advantage is scoped to this investigation: the stock control has no
 automatic outcome check, the tracker is a local fixture and the human step is
 scripted. The same record binds an uncontaminated
 [product workflow reuse run](../../browser/workspace/qualification/workflow-reuse.md#unmodified-product-revisions):
-5 planner calls versus 18 for fresh planning with all 18 cases correct, no
-elapsed-time advantage because one browser shutdown stalled for 300 s, and a
-prepared stock script that finished in 8.4 s with no model calls.
+at `052b5b0c23`, 5 planner calls versus 18 for fresh planning with all 18 cases
+correct but no elapsed-time advantage, because one browser shutdown stalled for
+300 s. After the release bound (`d0f4680434`) one clean run completed in 25.8 s
+with 5 calls versus 70.1 s with 17 for fresh planning; an earlier run at that
+revision is retained as invalid because a planner timeout failed a control row.
+The prepared stock script finished in 3.8 s with no model calls, so reuse does
+not beat a script.
 
 ## Active blockers
 
@@ -100,8 +104,8 @@ prepared stock script that finished in 8.4 s with no model calls.
   at the action timeout and then ends that profile's browser (16 s in the same
   586 s conditions, no process left). Why Chrome is slow to exit is not
   established, a forced exit can lose the profile's last unflushed site data,
-  the CDP adapter and Windows are not covered, and the reuse comparison has not
-  been re-run with the bound.
+  and the CDP adapter and Windows are not covered. The clean reuse run after
+  the bound had no stall, so only the probe exercises it.
 
 - Personal workflow learning, verified repair-suffix reuse and UI delegation
   require host-installed task definitions and local verifiers. Live ATS and
