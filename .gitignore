@@ -259,3 +259,6 @@ reports/maintenance/*-fawn-*/
 # Workflow graphs include private matching keys; protect exports regardless of directory.
 *.private.json
 *.private.json.*.tmp
+
+# Isolated agent checkouts are local working state.
+.worktrees/
