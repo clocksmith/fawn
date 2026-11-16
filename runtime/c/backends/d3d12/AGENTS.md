@@ -1,6 +1,6 @@
 # D3D12 C owner
 
-- Read the common C guide and this directory's charter. Native WebGPU object
+- The common C guide and this directory's charter are references. Native WebGPU object
   validation and shader meaning remain outside this backend-private ABI.
 - Use Windows SDK C declarations in `windows_*.c`; do not construct replacement
   COM vtables, spoof `_WIN32`, or call host controls an SDK/driver check.

@@ -1,6 +1,6 @@
 # Benchmark work
 
-Read [the charter](CATSCAN.md) and [Python style](STYLE.md). Use
+[The charter](CATSCAN.md) and [Python style](STYLE.md) are references. Use
 [the existing CLI](cli.py); preserve command names and frozen measurement rules.
 
 | Job | Owner |

@@ -1,6 +1,6 @@
 # Owned shader boundary
 
-Read the parent C guide and this component's [charter](CATSCAN.md). Compiler
+The parent C guide and this component's [charter](CATSCAN.md) are references. Compiler
 ABI20 retains whole-module validation or specialization in explicit caller-owned
 compiler workspace and publishes it once into exact owned spans. ABI13/18 semantics
 remain unchanged. Never substitute source, reinterpret stage layouts,

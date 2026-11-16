@@ -1,6 +1,6 @@
 # Host primitive implementation
 
-Read the parent C guide and this owner's [contract](README.md).
+The parent C guide and this owner's [contract](README.md) are references.
 
 - Keep native handles and partial construction bits in these leaves. Callers own
   exclusion and policy; never add a queue, scheduler, allocator or refcount here.
