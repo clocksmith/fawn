@@ -221,7 +221,7 @@ async function runStock() {
         if (tool === 'observe' || tool === 'capture') {
           const snap = buildSnapshot(await page.evaluate(queryPage, snapshotArgs(loadServiceConfig(), { outline: true })), pages.size);
           observations.set(pageId, snap);
-          if (tool === 'observe') return { pageId, url: snap.url, title: snap.title, text: snap.text, elements: snap.elements.map(({ handle, role, name, value }) => ({ handle, role, name, value })) };
+          if (tool === 'observe') return { pageId, url: snap.url, title: snap.title, text: snap.text, elements: snap.elements.filter(e => e.handle).map(({ handle, selector, role, label, value, inputType, href }) => ({ handle, selector, role, label, value, inputType, href })) };
           return store.revise(projectId, { kind: 'evidence', text: `Page evidence: ${snap.title}`, source: { kind: 'page', pageId, url: snap.url, content: snap.text, sha256: sha256Hex(snap.text) } });
         }
         if (tool === 'repository_read') return store.revise(projectId, { kind: 'evidence', text: `Repository evidence: ${input.path}`, source: await repositoryEvidence(repoRoot, input.path, client.maxEvidenceBytes) });

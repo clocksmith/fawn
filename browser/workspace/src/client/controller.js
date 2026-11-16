@@ -10,6 +10,14 @@ import { handoffBrief } from './handoff.js';
 import { createOwnerSession } from '../workflows/owner-session.js';
 import { sha256Hex } from '../journal.js';
 
+/** What the planner needs from an observation. Admission tables and digests stay in the service. */
+export function plannerView(observation, pageId) {
+  return { pageId, url: observation.url, title: observation.title, observationVersion: observation.observationVersion,
+    isTruncated: observation.isTruncated, text: observation.text,
+    elements: (observation.elements ?? []).filter(element => element.handle).map(({ handle, selector, role, label, value, inputType, href }) =>
+      ({ handle, selector, role, label, ...(value ? { value } : {}), ...(inputType ? { inputType } : {}), ...(href ? { href } : {}) })) };
+}
+
 export class WorkspaceController {
   constructor({ service, stateDir, config, planner = null, workflowStore = null, workflowTasks = new Map() }) {
     this.service = service; this.config = config; this.planner = planner; this.active = new Map(); this.owners = new Map(); this.operations = new Map();
@@ -238,10 +246,15 @@ export class WorkspaceController {
       assertCurrent(); controller.signal.throwIfAborted();
       // Models often name a target by its bare handle or URL; normalize rather than fail the run.
       if (typeof input.target === 'string') input = { ...input, target: /^https?:/.test(input.target) ? { url: input.target } : { handle: input.target } };
+      // A single condition object is a common slip; the service requires a list.
+      for (const key of ['completedWhen', 'failedWhen']) {
+        const value = input.completion?.[key];
+        if (value && !Array.isArray(value) && typeof value === 'object') input = { ...input, completion: { ...input.completion, [key]: [value] } };
+      }
       const pageId = input.pageId ?? pageIds[0];
       if (['observe', 'act', 'capture'].includes(tool) && !pageIds.includes(pageId)) throw Error('Page exceeds this delegation');
       if (tool === 'observe') {
-        const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return { ...observation, pageId };
+        const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return plannerView(observation, pageId);
       }
       if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
       if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
