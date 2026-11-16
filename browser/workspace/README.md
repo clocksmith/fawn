@@ -421,6 +421,23 @@ selected pages, regions, origins and actions. Saved evidence/notes require separ
 disclosure consent. Take over at any time; already dispatched effects may still
 complete. **Check result** reads evidence and never repeats an action.
 
+A resumed delegation receives prior attempts, human notes, open questions and
+unresolved actions. Handoff pages are bounded; `handoff_read` follows the opaque
+cursor in `pagination[collection].nextCursor` to older entries. The total
+`unresolvedActionCount` includes actions omitted from the displayed page. A
+model's finish proposal cannot complete a run while an action remains unresolved.
+
+Saved evidence stays intact in the journal even when planner context includes
+only an excerpt. `artifact_read` retrieves a bounded range from an explicitly
+shared artifact at `expectedRevision`, with source and excerpt hashes. It does
+not refresh the source or add filesystem or page permissions. Revising a
+conclusion preserves `needs-review` while any supporting premise is unreviewed.
+
+Malformed action proposals can return to the planner only when admission attests
+that they were never dispatched and the error is correctable. Rejected proposals
+and corrections consume the ordinary request budget. Unknown effects, denied
+authority and service failures still stop the run; they are not automatic retries.
+
 State defaults to `~/.local/state/fawn-workspace`; use `--state-dir` to select
 another directory. Admin credentials stay in its private `client-credentials.json`.
 `--port`, `--adapter playwright|cdp` and `--headless` select local presentation.
