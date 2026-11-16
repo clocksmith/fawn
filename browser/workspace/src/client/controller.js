@@ -23,8 +23,9 @@ const CORRECTABLE_PROPOSALS = new Set([
 export function plannerView(observation, pageId) {
   return { pageId, url: observation.url, title: observation.title, observationVersion: observation.observationVersion,
     isTruncated: observation.isTruncated, text: observation.text,
-    elements: (observation.elements ?? []).filter(element => element.handle).map(({ handle, selector, role, label, value, inputType, href }) =>
-      ({ handle, selector, role, label, ...(value ? { value } : {}), ...(inputType ? { inputType } : {}), ...(href ? { href } : {}) })) };
+    elements: (observation.elements ?? []).filter(element => element.handle).map(({ handle, selector, role, label, value, inputType, href, actionability }) =>
+      ({ handle, selector, role, label, ...(value ? { value } : {}), ...(inputType ? { inputType } : {}), ...(href ? { href } : {}),
+        ...(actionability ? { actionability } : {}) })) };
 }
 
 export class WorkspaceController {

@@ -13,6 +13,7 @@ export function judgeHandoff(project, { tracker, docsUrl, repositoryFiles, repos
   const findings = artifacts.filter(a => a.kind === 'finding' && current(a) && normalized(a.text)
     && a.dependsOn.some(id => pageIds.has(id)) && repoIds.every(ids => a.dependsOn.some(id => ids.has(id))));
   const checks = {
+    runCompleted: project.run?.status === 'completed',
     findingConnected: findings.length > 0,
     questionAndDecision: ['question', 'decision'].every(kind => artifacts.some(a => a.kind === kind && current(a) && normalized(a.text))),
     trackerPostedOnce: tracker.commits === 1 && tracker.comments.length === 1

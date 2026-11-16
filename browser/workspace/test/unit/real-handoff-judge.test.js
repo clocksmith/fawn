@@ -11,7 +11,7 @@ function project() {
   artifacts.finding = { id: 'finding', kind: 'finding', status: 'current', text: 'The custom combobox changes its visual option without committing the selected value to application state. Inspect the input and selection event path.', dependsOn: ['page', 'code', 'case'] };
   artifacts.question = { kind: 'question', status: 'current', text: 'Which selection event is consumed?' };
   artifacts.decision = { kind: 'decision', status: 'current', text: 'Trace the selected-value event handler next.' };
-  return { artifacts };
+  return { artifacts, run: { status: 'completed' } };
 }
 const p = project(), text = p.artifacts.finding.text;
 const grade = (value = p, tracker = { commits: 1, comments: [text] }) => judgeHandoff(value, { tracker, docsUrl, repositoryFiles, repostBeforeEstablishing: false });
@@ -21,6 +21,7 @@ assert.equal(grade(p, { commits: 1, comments: [text.slice(0, 60) + ' unrelated c
 assert.equal(grade(p, { commits: 2, comments: [text, text] }).accepted, false);
 assert.equal(grade(p, { commits: 1, comments: ['  ' + text.replace(/ /g, '\n') + '  '] }).accepted, true);
 for (const alter of [
+  value => { value.run.status = 'needs-attention'; },
   value => { value.artifacts.page.source.url = 'https://docs.example/unrelated'; },
   value => { value.artifacts.finding.status = 'needs-review'; },
   value => { value.artifacts.question.status = 'needs-review'; },

@@ -176,6 +176,7 @@ async function runFawn() {
   row.timings = timings; row.completeTaskMs = timings.firstAgentMs + timings.humanMs + timings.resumeAgentMs;
   row.toolErrors = final.activity.filter(e => e.event === 'tool-result' && e.output?.error).length;
   row.finalHandoff = await controller.handoff(id);
+  row.judgeProject = { artifacts: final.artifacts, activity: final.activity, run: final.run };
   row.activity = final.activity.map(({ seq, event, tool, input, text }) => ({ seq, event, tool, input, text }));
   await controller.close(); await service.close();
   return row;
@@ -248,6 +249,7 @@ async function runStock() {
   row.verdict = judge(final, repostCheck(final.activity, startSeq, { trackerPageId: 'tracker', trackerUrl }));
   row.timings = timings; row.completeTaskMs = timings.firstAgentMs + timings.humanMs + timings.resumeAgentMs;
   row.toolErrors = final.activity.filter(e => e.event === 'tool-result' && e.output?.error).length;
+  row.judgeProject = { artifacts: final.artifacts, activity: final.activity, run: final.run };
   row.activity = final.activity.map(({ seq, event, tool, input, text }) => ({ seq, event, tool, input, text }));
   store.close();
   return row;
@@ -257,8 +259,14 @@ const rows = [];
 try {
   for (const arm of arms) {
     tracker.comments = []; tracker.commits = 0;
-    try { rows.push(arm === 'fawn' ? await runFawn() : await runStock()); }
-    catch (error) { rows.push({ arm, error: error.stack }); }
+    let row;
+    try { row = arm === 'fawn' ? await runFawn() : await runStock(); }
+    catch (error) { row = { arm, error: error.stack }; }
+    row.trackerSnapshot = structuredClone(tracker);
+    rows.push(row);
+    // Persist each completed arm before beginning the next: later crashes must
+    // not discard its outcome or the exact inputs needed to re-check grading.
+    writeFileSync(join(out, `${arm}-result.json`), JSON.stringify(row, null, 2));
   }
 } finally { await new Promise(r => fixture.close(r)); }
 const sum = (arm, key) => calls.filter(c => c.arm === arm).reduce((s, c) => s + (c[key] ?? 0), 0);
