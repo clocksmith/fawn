@@ -17,9 +17,14 @@ import { scopeWorkflowObservation, WORKFLOW_SYSTEM, WORKFLOW_TOOLS } from '../sr
 import { sha256Hex, canonicalJson } from '../src/journal.js';
 
 const args = process.argv.slice(2), arg = flag => args[args.indexOf(flag)+1];
-if (args.includes('--help')) { console.log('Usage: node qualification/workflow-reuse-product.js --repository SIMULATTE --out DIR [--controlled]'); process.exit(0); }
+if (args.includes('--help')) { console.log('Usage: node qualification/workflow-reuse-product.js --repository SIMULATTE --out DIR [--controlled] [--lifecycle-only]'); process.exit(0); }
 if (!args.includes('--repository') || !args.includes('--out')) throw Error('Explicit product repository and output required');
-const repository = resolve(arg('--repository')), out = resolve(arg('--out')), controlled = args.includes('--controlled');
+for(let i=0;i<args.length;i++){
+  if(['--controlled','--lifecycle-only'].includes(args[i]))continue;
+  if(['--repository','--out'].includes(args[i])&&args[i+1]&&!args[i+1].startsWith('--')){i++;continue;}
+  throw Error(`Unknown or incomplete argument: ${args[i]}`);
+}
+const repository = resolve(arg('--repository')), out = resolve(arg('--out')), lifecycleOnly=args.includes('--lifecycle-only'), controlled = args.includes('--controlled')||lifecycleOnly;
 if (existsSync(join(out,'frozen.json'))) throw Error('Never overwrite a retained trial');
 mkdirSync(out,{recursive:true,mode:0o700});
 const root = resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
@@ -28,7 +33,7 @@ const config = loadServiceConfig(undefined,{browserChannel:'chrome',headless:tru
 config.observation.maxElements=1000;
 const source = (revision,path) => execFileSync('git',['show',`${revision}:${path}`],{cwd:repository,maxBuffer:20_000_000,stdio:['ignore','pipe','ignore']});
 const revisions = ['500167e0^','500167e0'].map(ref=>execFileSync('git',['rev-parse',ref],{cwd:repository,encoding:'utf8'}).trim());
-const tasks=[{revision:revisions[0],query:'cache',phase:'learning'},
+const tasks=lifecycleOnly?[{revision:revisions[1],query:'cache',phase:'lifecycle'}]:[{revision:revisions[0],query:'cache',phase:'learning'},
   {revision:revisions[1],query:'cache',phase:'repair'},
   ...['queue','database','retry','cache'].map((query,i)=>({revision:revisions[1],query,phase:`later-${i+1}`}))];
 const locators=[['textbox','Search components','input','search'],['button','Toggle component library','button','']];
@@ -37,8 +42,9 @@ const task='Look up the public component definitions matching input slot query i
 const sourcePaths=['client/workflow-agent','client/workflow-store','client/trace-dag','client/agent','client/cli-planner','adapters/page-query','adapters/playwright-adapter','service'].map(x=>`browser/workspace/src/${x}.js`);
 sourcePaths.push('browser/workspace/qualification/workflow-reuse-product.js');
 const sourceHashes=Object.fromEntries(sourcePaths.map(p=>[p,sha256Hex(readFileSync(join(root,p)))]));
-const frozen={schema:'fawn.real-product-workflow-reuse/v1',startedAt:new Date().toISOString(),controlled,revisions,tasks,task,locators,maxCostUsd,sourceHashes,
+const frozen={schema:'fawn.real-product-workflow-reuse/v1',startedAt:new Date().toISOString(),controlled,lifecycleOnly,revisions,tasks,task,locators,maxCostUsd,sourceHashes,
   engine:'installed stock Chrome via Playwright in both arms; no Doe or Chromium-fork advantage measured',
+  profilePolicy:'fresh profile per task, retained on disk in both arms; every cleanup phase is charged',
   acceptance:'All result IDs equal the independently read committed catalog filter, input equals the task query, diagram unchanged, zero non-GET site requests; repaired workflow persists and later runs use zero planner calls. Charge learning+repair+all later work, browser/service setup and persistence in cumulative totals. Stock fresh planning and semantic stock script both retained; no broad superiority inferred.'};
 writeFileSync(join(out,'frozen.json'),JSON.stringify(frozen,null,2));
 let revision=revisions[0], rejectedWrites=0, spentUpper=0; const calls=[],rows=[],cache=new Map(),assets={};
@@ -82,6 +88,10 @@ function planner(name){
     finally{call.elapsedMs=performance.now()-started;if(!controlled&&Number.isFinite(call.usage?.costUsd))spentUpper+=call.usage.costUsd-maxCallUsd;writeFileSync(join(out,'calls.json'),JSON.stringify(calls,null,2));}
   }};
 }
+async function phase(phases,name,work){
+  const started=performance.now();
+  try{return await work();}finally{phases[name]=(phases[name]??0)+performance.now()-started;}
+}
 async function prepare(page,navigate=true){
   if(navigate)await page.goto(url,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.body.dataset.editorReady==='true',{},{timeout:15000});
@@ -98,9 +108,9 @@ async function verify(page,query,original){
 }
 async function fawn(t,index){
   const name=`fawn-${index}-${t.phase}`,started=performance.now();revision=t.revision;
-  let adapter,service,store,row;
+  let adapter,service,store,row;const phases={};
   try{
-    service=await WorkspaceService.open({stateDir:join(out,name,'service'),config,createAdapter:options=>(adapter=createPlaywrightAdapter(options))});
+    service=await phase(phases,'serviceOpenMs',()=>WorkspaceService.open({stateDir:join(out,name,'service'),config,createAdapter:options=>(adapter=createPlaywrightAdapter(options))}));
     const admin={workspaceId:name,...await service.createWorkspace({workspaceId:name,scopedReads:true})};
     await service.grantAuthorization({...admin,grantId:'lookup',ownerId:'agent',intents:['lookup'],actionKinds:['navigate','fill','click'],targetOrigins:[origin],pageIds:['main'],readRegions:null});
     const owner={workspaceId:name,...await service.assignOwner({...admin,ownerId:'agent'})};
@@ -114,15 +124,18 @@ async function fawn(t,index){
       verifyAccount:async()=>new URL(page.url()).origin===origin?'public-catalog':null,verificationId:'committed-catalog-result-ids-v1',taskSourceHashes:{qualification:sha256Hex(readFileSync(fileURLToPath(import.meta.url)))},
       disclosurePolicy:{origin,fields:[{kind:'fill',slot:'query',locator:locators[0]}],intermediateClicks:clicks},
       service,owner,pageId:'main',intent:'lookup',inputs:inputs(t.query),task,planner:planner(name),config:{...client,maxTurns:8},store,projectId:name,
-      verifyReview:()=>verify(page,t.query,original),signal:new AbortController().signal});
-    return row={name,arm:'fawn',...t,result,oracle:await verify(page,t.query,original),browserVersion:page.context().browser()?.version()??null,taskMs:performance.now()-started};
-  }catch(e){return row={name,arm:'fawn',...t,error:e.message,taskMs:performance.now()-started};}
-  finally{store?.close();await service?.close();if(row)row.taskMs=performance.now()-started;}
+      verifyReview:()=>phase(phases,'verificationMs',()=>verify(page,t.query,original)),signal:new AbortController().signal});
+    return row={name,arm:'fawn',phases,...t,result,oracle:await phase(phases,'verificationMs',()=>verify(page,t.query,original)),browserVersion:page.context().browser()?.version()??null,taskMs:performance.now()-started};
+  }catch(e){return row={name,arm:'fawn',phases,...t,error:e.message,taskMs:performance.now()-started};}
+  finally{store?.close();await phase(phases,'serviceCloseMs',()=>service?.close());if(row)row.taskMs=performance.now()-started;}
 }
 async function stock(t,index,script=false){
-  const name=`stock-${script?'script':'fresh'}-${index}`,started=performance.now();revision=t.revision;let browser,row;
+  const name=`stock-${script?'script':'fresh'}-${index}`,started=performance.now();revision=t.revision;let browser,context,page,row;const phases={},resources={downloads:0};
   try{
-    browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage();const original=await prepare(page);
+    context=await phase(phases,'browserLaunchMs',()=>chromium.launchPersistentContext(join(out,name,'profile'),{channel:'chrome',headless:true}));
+    browser=context.browser();
+    page=await phase(phases,'pageOpenMs',async()=>context.pages()[0]??await context.newPage());page.on('download',()=>resources.downloads++);
+    const original=await phase(phases,'prepareMs',()=>prepare(page));
     const provider=planner(name);let modelCalls=0;
     if(script){
       const field=page.getByLabel('Search components',{exact:true});
@@ -144,9 +157,17 @@ async function stock(t,index,script=false){
         else throw Error('Stock action outside task authorization');
       }
     }
-    return row={name,arm:script?'stock-script':'stock-fresh',...t,modelCalls,oracle:await verify(page,t.query,original),browserVersion:page.context().browser()?.version()??null,taskMs:performance.now()-started};
-  }catch(e){return row={name,arm:script?'stock-script':'stock-fresh',...t,error:e.message,taskMs:performance.now()-started};}
-  finally{await browser?.close();if(row)row.taskMs=performance.now()-started;}
+    return row={name,phases,resources,arm:script?'stock-script':'stock-fresh',...t,modelCalls,oracle:await phase(phases,'verificationMs',()=>verify(page,t.query,original)),browserVersion:page.context().browser()?.version()??null,taskMs:performance.now()-started};
+  }catch(e){return row={name,phases,resources,arm:script?'stock-script':'stock-fresh',...t,error:e.message,taskMs:performance.now()-started};}
+  finally{
+    resources.pagesBeforeClose=context?.pages().length??0;
+    await phase(phases,'pageCloseMs',()=>page?.close());
+    await phase(phases,'contextCloseMs',()=>context?.close());
+    await phase(phases,'browserCloseMs',()=>browser?.close());
+    resources.browserDisconnected=!browser?.isConnected();
+    resources.pagesAfterClose=context?.pages().length??0;
+    if(row)row.taskMs=performance.now()-started;
+  }
 }
 try{
   for(let i=0;i<tasks.length;i++){
@@ -158,16 +179,17 @@ try{
   await new Promise(resolve=>server.close(resolve));
   const unchanged=Object.entries(sourceHashes).every(([path,hash])=>sha256Hex(readFileSync(join(root,path)))===hash);
   const arms=Object.fromEntries(['fawn','stock-fresh','stock-script'].map(arm=>{const runs=rows.filter(r=>r.arm===arm);return[arm,{runs:runs.length,correct:runs.filter(r=>r.oracle?.completed&&(!r.result||r.result.completed)).length,totalTaskMs:runs.reduce((n,r)=>n+r.taskMs,0),modelCalls:calls.filter(c=>c.name.startsWith(arm==='fawn'?'fawn-':arm==='stock-fresh'?'stock-fresh':'stock-script')).length,
-      measuredCostUsd:controlled?0:calls.filter(c=>c.name.startsWith(arm==='fawn'?'fawn-':arm==='stock-fresh'?'stock-fresh':'stock-script')).reduce((n,c)=>n+(Number.isFinite(c.usage?.costUsd)?c.usage.costUsd:0),0)}];}));
+      measuredCostUsd:controlled?0:(calls.filter(c=>c.name.startsWith(arm==='fawn'?'fawn-':arm==='stock-fresh'?'stock-fresh':'stock-script')).every(c=>Number.isFinite(c.usage?.costUsd))
+        ?calls.filter(c=>c.name.startsWith(arm==='fawn'?'fawn-':arm==='stock-fresh'?'stock-fresh':'stock-script')).reduce((n,c)=>n+c.usage.costUsd,0):null)}];}));
   const later=rows.filter(r=>r.arm==='fawn'&&r.phase.startsWith('later'));
-  const summary={finishedAt:new Date().toISOString(),controlled,sourceUnchanged:unchanged,rejectedSiteWrites:rejectedWrites,costUpperBoundUsd:spentUpper,arms,
+  const summary={finishedAt:new Date().toISOString(),controlled,lifecycleOnly,sourceUnchanged:unchanged,rejectedSiteWrites:rejectedWrites,costUpperBoundUsd:spentUpper,arms,
     engineVersions:[...new Set(rows.map(r=>r.browserVersion).filter(Boolean))],
-    learningAndRepairAmortized:arms.fawn.totalTaskMs<arms['stock-fresh'].totalTaskMs,
+    observedTaskTotalLowerThanFresh:arms.fawn.totalTaskMs<arms['stock-fresh'].totalTaskMs,
     productSuperiorityEstablished:false,
-    repairedWorkflowRetained:later.length===4&&later.every(r=>r.result?.completed&&r.result.modelCalls===0&&r.oracle?.completed),
+    repairedWorkflowRetained:lifecycleOnly?null:later.length===4&&later.every(r=>r.result?.completed&&r.result.modelCalls===0&&r.oracle?.completed),
     allCorrect:rows.length===tasks.length*3&&rows.every(r=>r.oracle?.completed&&(!r.result||r.result.completed)),
     claim:'Real local product revisions only; planner-call and elapsed totals include initial learning and repair. Stock semantic script is a measured floor; its authoring cost is unmeasured, so no total-cost superiority over scripts is claimed. No live-hosted-site, human-time or general browser/GPU superiority established.'};
   writeFileSync(join(out,'summary.json'),JSON.stringify(summary,null,2));writeFileSync(join(out,'assets.json'),JSON.stringify(assets,null,2));writeFileSync(join(out,'rows.json'),JSON.stringify(rows,null,2));
   console.log(JSON.stringify(summary));
-  if(!summary.allCorrect||!summary.repairedWorkflowRetained||!unchanged||rejectedWrites)process.exitCode=1;
+  if(!summary.allCorrect||(!lifecycleOnly&&!summary.repairedWorkflowRetained)||!unchanged||rejectedWrites)process.exitCode=1;
 }

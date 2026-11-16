@@ -87,3 +87,75 @@ The [retained decision](../../../reports/fawn-workspace/20261109-workflow-reuse/
 binds the live source, model identity, paired outcomes, independent audit and
 initial failed trial. Raw activity and the private graph remain in ignored local
 storage; the projection is diagnostic evidence, not portable release qualification.
+
+## Unmodified product revisions
+
+`workflow-reuse-product.js` runs a separate read-only Lucyd component lookup on
+Simulatte's committed source before and after `500167e0`. The real change moved
+the component library from an always-visible panel into an inert drawer. The
+server reproduces the existing `/system-diagram` route rewrite and serves the
+committed assets unchanged; it rejects non-GET requests. It does not add test
+controls or modify the site to create a performance difference.
+
+```sh
+node browser/workspace/qualification/workflow-reuse-product.js --repository ../simulatte --out /tmp/lucyd-workflow-preflight --controlled
+node browser/workspace/qualification/workflow-reuse-product.js --repository ../simulatte --out /tmp/lucyd-workflow-sonnet
+```
+
+The paid command uses the same planner port, model, input slots and authorized
+control projection for Fawn and fresh stock Playwright. It also retains a semantic
+stock-script baseline that uses the existing search label and drawer control.
+That script's authoring cost is unmeasured, so its elapsed time is a reference
+floor rather than a claim about total human effort. Both browser paths use stock
+Chrome; this exercise establishes no Doe or Chromium-fork advantage.
+
+The independent verifier reads the committed component catalog directly and
+compares expected result IDs with the actual rendered list. It also checks the
+query, open drawer and unchanged diagram. Only those verified results can teach
+repairs. Every Fawn task opens a fresh service/browser profile and reconstructs
+its private workflow store; later related queries must retain the repaired path
+without planner calls. Totals charge initial learning, changed-page repair,
+later tasks, browser/service setup, persistence and cleanup.
+
+Workflow scope comes from the host's disclosure rules, never model suggestions.
+Unrelated controls no longer define recipe identity. Hidden, inert and disabled
+controls remain visible in the general service observation with actionability
+metadata, but are omitted from workflow planning and replay. Original observation
+versions, text, truncation, account checks and per-action authorization remain in
+force. Changing the allowed controls changes the recipe scope. Existing unscoped
+recipes safely miss and relearn; an arbitrary verifier failure or uncertain
+effect still stops and teaches nothing.
+
+Retain all failed runs and source hashes. If another workload overlaps a run,
+record its start/end and qualify the timing separately: functional correctness,
+planner-call counts and observed provider charges do not establish an
+uncontaminated speed improvement. A faster scripted baseline must remain visible
+in the result; this bounded local-product case cannot establish general browser
+superiority or live-site compatibility.
+
+The 2026-11-16 source-bound run at `22ce1ad219` completed all 18 checks. Including
+learning and the changed-drawer repair, Fawn used five planner calls billed at
+$0.0978277; fresh stock planning used seventeen billed at $0.2740556. All four
+later Fawn queries reused the persisted repair without planner calls. The stock
+semantic script passed all six tasks with zero planner calls and $0 provider
+charges. Its authoring cost was not measured: this result supports a benefit over
+fresh replanning, not a win over a prepared script.
+
+Elapsed-time comparisons from that run are rejected for two reasons: a concurrent
+handoff trial overlapped it, and stock launch deleted a temporary Chrome profile
+while Fawn retained its persistent profile. A zero-model lifecycle diagnostic
+isolated 10.7–11.0 seconds in stock `browser.close()`, versus 10–17 ms closing its
+page and 46–59 ms closing its context. Playwright's ordinary launch registers the
+generated user-data directory for deletion and waits for cleanup at browser close.
+This explains a systematic lifecycle asymmetry; it does not establish the entire
+cause of the original 179-second row.
+
+The reproducer now retains a fresh profile in both arms and records separate
+page, context, browser, service and verification phases. The matched zero-model
+follow-up closed stock contexts in 97–116 ms and the already-disconnected browser
+in about 1 ms, with no downloads or remaining pages. No paid comparison was
+rerun. Use `--lifecycle-only` for that focused diagnostic without model usage.
+Original receipts, failed readiness probes, journals, both diagnostics and a hash
+manifest are retained locally under `.tmp/track-c-workflow-20261116`; that private
+archive is intentionally outside Git. Keep its `run-context.json` timing verdict
+with the raw summary rather than promoting the raw elapsed totals into a claim.

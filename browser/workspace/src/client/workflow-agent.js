@@ -36,7 +36,7 @@ function view(observation) {
  */
 export function scopeWorkflowObservation(service, template, locators) {
   if (locators === null) return { service, template };
-  if (typeof template !== 'string' || !template.trim() || !Array.isArray(locators) || !locators.length || locators.length > 1000
+  if (typeof template !== 'string' || !template.trim() || !Array.isArray(locators) || locators.length > 1000
     || locators.some(value => !Array.isArray(value) || value.length !== 4
       || value.some(part => typeof part !== 'string'))) throw Error('Invalid workflow observation scope');
   const allowed = new Set(locators.map(value => canonicalJson(value)));

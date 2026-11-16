@@ -68,6 +68,8 @@ try {
   const originalPolicy = scopeWorkflowObservation(page(), 'component-lookup', [expand, search]);
   assert.notEqual(changedPolicy.template, originalPolicy.template, 'Changing allowed controls invalidates recipe scope');
   assert.equal(originalPolicy.template, scopeWorkflowObservation(page(), 'component-lookup', [search, expand]).template);
-  assert.throws(() => scopeWorkflowObservation(page(), 'component-lookup', []), /Invalid workflow observation scope/);
+  assert.deepEqual((await scopeWorkflowObservation(page(), 'read-only', []).service.observe({})).elements, [],
+    'An observation-only task must not gain actionable handles');
+  assert.throws(() => scopeWorkflowObservation(page(), 'component-lookup', [['malformed']]), /Invalid workflow observation scope/);
   console.log('ok: task-scoped reuse, real structural repair, restored zero-call reuse, policy isolation and failure boundaries');
 } finally { store.close(); rmSync(root, { recursive: true, force: true }); }

@@ -25,5 +25,12 @@ try {
   assert.notEqual(before.elements.find(e=>e.selector==='#inside').digest,
     after.elements.find(e=>e.selector==='#inside').digest, 'Ancestor interactivity changes target identity');
   assert.equal(after.elements.find(e=>e.selector==='#inside').actionability.inert, false);
+  await page.addStyleTag({content:'/* CSSOM test */'});
+  const styled = await snapshot();
+  const htmlBeforeCssChange = await page.content();
+  await page.evaluate(()=>document.styleSheets[document.styleSheets.length-1].insertRule('#search { visibility: hidden }'));
+  assert.equal(await page.content(), htmlBeforeCssChange, 'CSSOM mutation does not alter serialized HTML');
+  const cssChanged = await snapshot();
+  assert.notEqual(styled.contentHash, cssChanged.contentHash, 'CSSOM-only visibility changes observation identity');
   console.log('ok: actual Chromium visibility, inert ancestor, disabled fieldset and task-scoped handles');
 } finally { await browser.close(); }
