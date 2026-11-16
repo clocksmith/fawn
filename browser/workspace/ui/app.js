@@ -68,7 +68,12 @@ function render(state) {
   if (investigation.run?.status === 'needs-attention') attention.push(investigation.run.detail);
   $('#attention').hidden = !attention.length; $('#attention').textContent = attention.join(' ');
   $('#model-status').textContent = state.planner?.model ?? 'Planner not configured';
-  $('#delegate').disabled = !state.planner || unresolved.length > 0 || investigation.run?.status === 'running';
+  // Unconfirmed actions no longer block work: continuing hands them to the agent, which must establish them first.
+  if (unresolved.length) $('#resume').checked = true;
+  $('#resume').disabled = unresolved.length > 0;
+  $('#delegate').disabled = !state.planner || investigation.run?.status === 'running';
+  const handoff = state.selected?.handoff;
+  $('#handoff-summary').textContent = handoff ? `${handoff.sessions.length} earlier agent session(s) · ${handoff.tried.length} recorded attempt(s) · ${handoff.unresolvedActions.length} unconfirmed action(s) · ${handoff.openQuestions.length} open question(s)` : '';
   for (const id of ['capture', 'select-region', 'open-page']) $(`#${id}`).disabled = !human;
   $('#navigate-form button').disabled = !human;
   const pages = workspace.pages.filter(page => !page.closed);
@@ -173,6 +178,7 @@ function render(state) {
     const text = event.event === 'tool-requested' ? `Agent requested ${event.tool}`
       : event.event === 'tool-result' ? 'Tool result recorded'
       : event.event === 'human-control' ? 'You took control'
+      : event.event === 'human-note' ? `Note: ${event.text}`
       : event.event === 'delegated' ? event.task
       : event.event === 'personal-workflow-started' ? `Started workflow ${event.template} (${event.mode})`
       : event.event === 'workflow-replay' ? `Replayed ${event.steps} cached step(s) (${event.reason})`
@@ -223,9 +229,10 @@ $('#delegate-form').onsubmit = event => { event.preventDefault(); act(async () =
   })));
   if (uploadFiles.length) actionKinds.push('upload');
   await command('delegate', { ...(uploadFiles.length ? { uploadFiles } : {}), pageIds: [...selectedPages], origins: data.get('origins').split(',').map(value => value.trim()).filter(Boolean),
-    regions: data.get('regions').trim() ? [data.get('regions').trim()] : null, actionKinds, shareRecords: data.has('shareRecords'), task: data.get('task') });
+    regions: data.get('regions').trim() ? [data.get('regions').trim()] : null, actionKinds, shareRecords: data.has('shareRecords'), resume: data.has('resume') || $('#resume').checked, task: data.get('task') });
   event.target.elements.uploadFiles.value = '';
 }); };
+$('#note-form').onsubmit = event => { event.preventDefault(); act(async () => { await command('note', { text: new FormData(event.target).get('text') }); event.target.reset(); }); };
 $('#record-form').onsubmit = event => { event.preventDefault(); act(async () => {
   const data = new FormData(event.target); await command('record', { kind: data.get('kind'), text: data.get('text'), dependsOn: data.getAll('dependsOn') }); event.target.reset();
 }); };

@@ -1,13 +1,36 @@
-export function investigationContext(project, { task, permissions, initialArtifacts, startSequence, shareRecords, visibleArtifacts = null }) {
-  const artifacts = Object.fromEntries(Object.entries(project.artifacts).filter(([key]) => visibleArtifacts ? visibleArtifacts.has(key) : shareRecords || !initialArtifacts.has(key)));
-  const history = project.activity.filter(event => event.seq > startSequence && ['tool-requested', 'tool-result'].includes(event.event))
+// Planner input is paid for on every turn. Only the newest observation of each page is sent in full;
+// saved evidence keeps its hash and identity but sends a bounded excerpt of its bytes.
+const EVIDENCE_EXCERPT_CHARS = 6000;
+function compactArtifact(artifact) {
+  const content = artifact.source?.content;
+  if (typeof content !== 'string' || content.length <= EVIDENCE_EXCERPT_CHARS) return artifact;
+  return { ...artifact, source: { ...artifact.source, content: content.slice(0, EVIDENCE_EXCERPT_CHARS),
+    contentTruncated: { shownChars: EVIDENCE_EXCERPT_CHARS, totalChars: content.length } } };
+}
+export function investigationContext(project, { task, permissions, initialArtifacts, startSequence, shareRecords, visibleArtifacts = null, handoff = null }) {
+  const artifacts = Object.fromEntries(Object.entries(project.artifacts).filter(([key]) => visibleArtifacts ? visibleArtifacts.has(key) : shareRecords || !initialArtifacts.has(key))
+    .map(([key, artifact]) => [key, compactArtifact(artifact)]));
+  const events = project.activity.filter(event => event.seq > startSequence && ['tool-requested', 'tool-result'].includes(event.event));
+  const latestObservation = new Map();
+  for (const event of events) {
+    if (event.event === 'tool-result' && event.output?.observationVersion !== undefined && typeof event.output?.text === 'string') {
+      latestObservation.set(event.output.pageId ?? 'main', event.seq);
+    }
+  }
+  const history = events
     .map(event => {
+      if (event.event === 'tool-result' && event.output?.observationVersion !== undefined && typeof event.output?.text === 'string'
+        && latestObservation.get(event.output.pageId ?? 'main') !== event.seq) {
+        const { pageId, url, title, observationVersion } = event.output;
+        return { event: event.event, callId: event.callId, output: { pageId, url, title, observationVersion, superseded: 'a newer observation of this page follows' } };
+      }
       if (event.event === 'tool-requested') return { event: event.event, callId: event.callId, tool: event.tool, input: event.input };
       const output = event.output?.id && artifacts[event.output.id]
         ? { artifactId: event.output.id, kind: event.output.kind } : event.output;
       return { event: event.event, callId: event.callId, output };
     });
-  return { goal: project.goal, task, permissions, repositoryAvailable: !!project.repositoryRoot, artifacts, history };
+  return { goal: project.goal, task, permissions, repositoryAvailable: !!project.repositoryRoot, artifacts, history,
+    ...(handoff ? { handoff } : {}) };
 }
 
 // A bounded product agent. It owns planning, never browser authority or outcome truth.

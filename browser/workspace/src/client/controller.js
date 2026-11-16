@@ -6,6 +6,7 @@ import { realpath } from 'node:fs/promises';
 import { InvestigationStore } from './investigation.js';
 import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
+import { handoffBrief } from './handoff.js';
 import { createOwnerSession } from '../workflows/owner-session.js';
 import { sha256Hex } from '../journal.js';
 
@@ -103,6 +104,14 @@ export class WorkspaceController {
     if (previous?.source.sha256 === source.sha256) return previous;
     return this.store.revise(id, { id: artifactId, expectedRevision, kind: 'evidence', text: `Repository evidence: ${path}`, source });
   }
+  /** A person's note for whoever continues: kept in the journal and shown in every handoff. */
+  humanNote(id, text) {
+    if (typeof text !== 'string' || !text.trim() || Buffer.byteLength(text) > this.config.maxInputBytes) throw Error('Provide a non-empty note within budget');
+    this.store.get(id);
+    return this.store.activity(id, { event: 'human-note', text: text.trim() });
+  }
+  /** What a returning agent or person sees: prior sessions, attempts, human notes, unknown outcomes. */
+  async handoff(id) { return handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id))); }
   record(id, input) {
     if (input.kind === 'evidence' || (input.id && this.store.get(id).artifacts[input.id]?.kind === 'evidence')) throw Error('Capture a page or repository file to create evidence');
     return this.store.revise(id, input);
@@ -197,13 +206,17 @@ export class WorkspaceController {
     });
   }
   delegate(id, input) { return this.exclusive(id, () => this.delegateNow(id, input)); }
-  async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false, uploadFiles }) {
+  async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false, uploadFiles, resume = false }) {
     if (!this.planner) throw Error('Configure FAWN_MODEL and the planner API credential before delegating');
     if (!Array.isArray(pageIds) || !pageIds.length || !Array.isArray(origins) || !origins.length) throw Error('Select pages and exact origins');
     if (!Array.isArray(actionKinds) || !actionKinds.length || typeof task !== 'string' || !task.trim()) throw Error('Select actions and provide a bounded task');
     if (this.active.has(id)) throw Error('The prior agent has not settled; take over and wait before resuming');
     const before = await this.service.inspect(this.admin(id));
-    if (before.actions.some(action => action.isUncertain || (action.dispatchStatus === 'dispatched' && !action.outcome))) throw Error('Review unresolved actions before delegating');
+    if (before.actions.some(action => action.dispatchStatus === 'dispatched' && !action.outcome)) throw Error('Wait for dispatched actions to settle before delegating');
+    // A fresh task must not inherit unknown outcomes; a resumed task inherits them and must establish each one.
+    if (!resume && before.actions.some(action => action.isUncertain)) throw Error('Review unresolved actions before delegating, or resume with the handoff');
+    if (resume) shareRecords = true;
+    let handoff = resume ? handoffBrief(this.store.get(id), before) : null;
     const grantId = `delegation-${randomUUID()}`;
     const approved = await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent', intents: ['delegated-task'],
       targetOrigins: origins, actionKinds, pageIds, readRegions: regions,
@@ -218,15 +231,17 @@ export class WorkspaceController {
     const initialArtifacts = new Set(Object.keys(this.store.get(id).artifacts));
     const visibleArtifacts = new Set(shareRecords ? initialArtifacts : []);
     const startSequence = this.store.journal.records.at(-1)?.seq ?? 0;
-    this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId,
+    this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId, resume,
       ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) });
     const assertCurrent = () => { if (this.owners.get(id)?.ownerGeneration !== owner.ownerGeneration) throw Error('Agent ownership changed'); };
     const execute = async (tool, input, { callId }) => {
       assertCurrent(); controller.signal.throwIfAborted();
+      // Models often name a target by its bare handle or URL; normalize rather than fail the run.
+      if (typeof input.target === 'string') input = { ...input, target: /^https?:/.test(input.target) ? { url: input.target } : { handle: input.target } };
       const pageId = input.pageId ?? pageIds[0];
       if (['observe', 'act', 'capture'].includes(tool) && !pageIds.includes(pageId)) throw Error('Page exceeds this delegation');
       if (tool === 'observe') {
-        const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return observation;
+        const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return { ...observation, pageId };
       }
       if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
       if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
@@ -236,7 +251,18 @@ export class WorkspaceController {
         if ((input.id && !visibleArtifacts.has(input.id)) || input.dependsOn?.some(key => !visibleArtifacts.has(key))) throw Error('Reasoning depends on records not shared with this task');
         const artifact = this.record(id, input); visibleArtifacts.add(artifact.id); return artifact;
       }
+      if (tool === 'reconcile') {
+        const unresolved = handoff?.unresolvedActions.find(value => value.actionId === input.actionId);
+        if (!unresolved) throw Error('Reconcile only names an unresolved action from the handoff');
+        const reconciled = await this.service.reconcile({ ...owner, actionId: input.actionId, method: 'application-state',
+          effectPresentWhen: input.effectPresentWhen ?? [], effectAbsentWhen: input.effectAbsentWhen ?? [] });
+        handoff = handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id)));
+        return reconciled;
+      }
       if (tool !== 'act') throw Error(`Unsupported product tool ${tool}`);
+      if (handoff?.unresolvedActions.length && input.kind !== 'navigate') {
+        throw Error('Establish every unresolved action with reconcile before taking a new action');
+      }
       const observed = observations.get(pageId);
       if (!observed) throw Error('Observe this page before proposing an action');
       const admitted = await this.service.submitAction({ ...owner, pageId, actionId: callId, authorizedIntent: 'delegated-task',
@@ -247,7 +273,7 @@ export class WorkspaceController {
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
       execute, signal: controller.signal, assertCurrent, context: () => investigationContext(this.store.get(id), {
         task, permissions: { pageIds, origins, regions, actionKinds,
-          ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) }, initialArtifacts, startSequence, shareRecords, visibleArtifacts
+          ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) }, initialArtifacts, startSequence, shareRecords, visibleArtifacts, handoff
       }) });
     const settled = run.done.then(async () => {
       await this.exclusive(id, async () => {
@@ -278,7 +304,8 @@ export class WorkspaceController {
   async status(id = null) {
     const projects = [...this.store.projects.keys()].map(key => this.store.get(key));
     const exists = id && this.store.projects.has(id);
-    return { projects, missingProjectId: id && !exists ? id : null, selected: exists ? { investigation: this.store.get(id), workspace: await this.service.inspect(this.admin(id)) } : null,
+    return { projects, missingProjectId: id && !exists ? id : null, selected: exists ? await (async () => { const workspace = await this.service.inspect(this.admin(id)), investigation = this.store.get(id);
+        return { investigation, workspace, handoff: handoffBrief(investigation, workspace) }; })() : null,
       workflows: this.#workflowSummaries(), planner: this.planner?.identity ?? null, pollMs: this.config.pollMs };
   }
   async close() {

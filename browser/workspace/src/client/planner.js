@@ -1,11 +1,12 @@
 // Product planner port. It proposes tools; the trusted service decides what may execute.
 export const PLANNER_TOOLS = Object.freeze({
   observe: 'Read a selected page. Input: pageId.',
-  act: 'Execute an action using the latest observation. Input: pageId, kind, target (handle or url), params, effect, completion. Never guess a handle. Upload requires an observed file input, params.fileIds from permissions.uploadFiles, effect.external=true with a unique effectKey, and completion.completedWhen. input-files-equal conditions take selector and files [{name,byteLength}]. File attachment may disclose bytes immediately; never retry an uncertain upload.',
+  act: 'Execute an action using the latest observation. Input: pageId, kind, target ({handle} from the latest observation, or {url} for navigate), params, effect, completion. Never guess a handle. Upload requires an observed file input, params.fileIds from permissions.uploadFiles, effect.external=true with a unique effectKey, and completion.completedWhen. input-files-equal conditions take selector and files [{name,byteLength}]. File attachment may disclose bytes immediately; never retry an uncertain upload.',
   capture: 'Save the latest observation as evidence. Input: pageId.',
   repository_files: 'List files under the human-selected repository.',
   repository_read: 'Read and save one repository file as evidence. Input: path.',
   record: 'Add an assumption, finding, decision or question. Input: kind, text, dependsOn (artifact IDs).',
+  reconcile: 'Establish whether an earlier action listed in handoff.unresolvedActions took effect. Input: actionId, effectPresentWhen and/or effectAbsentWhen (conditions such as {kind:"element-text-includes",selector,value} that the trusted service checks on the action page). Observe or navigate that page first so the evidence is visible.',
   finish: 'Finish this bounded task. Input: summary.', ask_human: 'Stop for human attention. Input: reason.'
 });
 const TOOL_NAMES = Object.keys(PLANNER_TOOLS);
@@ -13,7 +14,8 @@ export const PLANNER_SYSTEM = 'You investigate a user-selected task through boun
   + 'Keep assumptions separate from evidence. Cite artifact IDs in findings and decisions. Do not fabricate completion. '
   + 'Observe before every action. An uncertain action is a reason to ask_human, never retry it. '
   + 'Respect the remaining request budget. Reserve a request to finish after recording the requested evidence and conclusions. Do not spend requests listing files when the task gives the exact filename. '
-  + 'Only use admitted pages, origins and regions. A record can depend only on existing artifacts. Finish with unresolved questions explicit.';
+  + 'Only use admitted pages, origins and regions. A record can depend only on existing artifacts. Finish with unresolved questions explicit. '
+  + 'When the context has a handoff, continue that work: read what earlier sessions tried and what the human noted, do not redo completed steps, and establish every unresolved action with reconcile before any new action.';
 export function createPlanner({ model, endpoint, apiKey, maxOutputTokens, timeoutMs, fetchImpl = fetch }) {
   if (!model || !apiKey) return null;
   const url = new URL(endpoint);
