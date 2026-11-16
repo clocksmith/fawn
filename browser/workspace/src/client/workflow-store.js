@@ -240,7 +240,8 @@ export class WorkflowStore {
     const scope = { accountScope, template: options.template };
     const sourceHashes = Object.fromEntries(SOURCE_FILES.map(path => [path,
       sha256Hex(readFileSync(new URL(path, import.meta.url)))]));
-    const policyHash = sha256Hex(canonicalJson({ disclosure: policy, fieldGroups, learnRepairs }));
+    const policyHash = sha256Hex(canonicalJson({ disclosure: policy, fieldGroups, learnRepairs,
+      observationScope: 'authorized-controls-v1' }));
     accounting.context = { verificationId,
       policyHash,
       sourceHashes, taskSourceHashes: frozenTaskSources,
@@ -271,6 +272,7 @@ export class WorkflowStore {
     let learned = null;
     await this.attempts.update(accounting.runId, { stage: 'executing' });
     const result = await runWorkflow({ ...options, learnRepairs,
+      observationLocators: [...policy.fields.map(field => field.locator), ...policy.intermediateClicks],
       fieldGroups, accountScope, planner, dag: TraceDag.restore(checkout.dag, this.limits),
       intermediateClicks: policy.intermediateClicks, assertContext,
       authorizeStep: async step => {
