@@ -58,7 +58,8 @@ try {
     createAdapter: () => new FakeAdapter({ receiptsPath }) });
   controller = new WorkspaceController({ service, stateDir: join(root, 'client'), config, planner: planner([]) });
   await controller.restore();
-  await controller.navigate(id, { pageId: 'main', url: `${ORIGIN}/form/done` });
+  // The open page does not show the receipt, so the service's own check on resume establishes nothing.
+  await controller.navigate(id, { pageId: 'main', url: `${ORIGIN}/form` });
   await controller.delegate(id, { ...delegation, resume: true, task: 'Continue the interrupted investigation.' });
   await controller.active.get(id)?.done;
   assert.equal(controller.store.get(id).run.status, 'needs-attention',
@@ -66,6 +67,8 @@ try {
   assert.equal((await controller.handoff(id)).unresolvedActions.length, 1);
 
   // Once the live page establishes the result, finishing is valid without resending.
+  await controller.takeOver(id);
+  await controller.navigate(id, { pageId: 'main', url: `${ORIGIN}/form/done` });
   const checked = await controller.check(id, { actionId: uncertain.actionId });
   assert.equal(checked.reconciliation.result, 'effect-present');
   assert.equal((await controller.handoff(id)).unresolvedActions.length, 0);

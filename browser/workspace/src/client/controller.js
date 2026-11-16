@@ -24,9 +24,10 @@ const CORRECTABLE_PROPOSALS = new Set([
 export function plannerView(observation, pageId) {
   return { pageId, url: observation.url, title: observation.title, observationVersion: observation.observationVersion,
     isTruncated: observation.isTruncated, text: observation.text,
-    elements: (observation.elements ?? []).filter(element => element.handle).map(({ handle, selector, role, label, value, inputType, href, actionability }) =>
+    elements: (observation.elements ?? []).filter(element => element.handle).map(({ handle, selector, role, label, value, inputType, href, formAction, actionability }) =>
       ({ handle, selector, role, label, ...(value ? { value } : {}), ...(inputType ? { inputType } : {}), ...(href ? { href } : {}),
-        ...(actionability ? { actionability } : {}) })) };
+        // Admission rejects a click on a control that submits a form; say so before the planner spends a turn finding out.
+        ...(formAction ? { submitsForm: true } : {}), ...(actionability ? { actionability } : {}) })) };
 }
 
 export class WorkspaceController {
@@ -261,6 +262,24 @@ export class WorkspaceController {
     this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId, resume,
       ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) });
     const assertCurrent = () => { if (this.owners.get(id)?.ownerGeneration !== owner.ownerGeneration) throw Error('Agent ownership changed'); };
+    // An interrupted action already declared how its completion shows on the page. Before the resuming
+    // planner spends a request, the trusted service checks that same condition on the live page. Only
+    // effect-present settles here: a condition that does not hold proves nothing, and the planner still
+    // has to establish that outcome. Each check is recorded like a planner call, marked automatic.
+    if (resume) {
+      for (const action of before.actions.filter(value => value.isUncertain && pageIds.includes(value.pageId)
+        && Array.isArray(value.completion?.completedWhen) && value.completion.completedWhen.length > 0)) {
+        const callId = randomUUID(), input = { actionId: action.actionId, effectPresentWhen: action.completion.completedWhen };
+        this.store.activity(id, { event: 'tool-requested', callId, tool: 'reconcile', input, automatic: true });
+        try {
+          const output = await this.service.reconcile({ ...owner, ...input, method: 'application-state', effectAbsentWhen: [] });
+          this.store.activity(id, { event: 'tool-result', callId, output, automatic: true });
+        } catch (error) {
+          this.store.activity(id, { event: 'tool-failed', callId, error: error.message, code: error.code ?? null, recoverable: true, automatic: true });
+        }
+      }
+      handoff = handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id)));
+    }
     const execute = async (tool, input, { callId }) => {
       assertCurrent(); controller.signal.throwIfAborted();
       // Models often name a target by its bare handle or URL; normalize rather than fail the run.

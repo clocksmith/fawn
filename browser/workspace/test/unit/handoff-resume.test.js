@@ -59,30 +59,38 @@ try {
   const blind = scripted([{ tool: 'act', input: { pageId: 'main', kind: 'submit', target: { handle: 'hsend' } } }]);
   controller = new WorkspaceController({ service, stateDir: clientDir, config, planner: blind });
   await controller.restore();
-  await controller.navigate(id, { pageId: 'main', url: `${ORIGIN}/form/done` });
+  // The page in front of this session does not show the receipt, so the automatic check proves nothing.
+  await controller.navigate(id, { pageId: 'main', url: `${ORIGIN}/form` });
   await controller.delegate(id, { pageIds: ['main'], origins: [ORIGIN], actionKinds: ['submit', 'navigate'], task: 'Continue', resume: true });
   await controller.active.get(id)?.done;
   assert.match(controller.store.get(id).run.detail, /Establish every unresolved action/);
+  const unproven = controller.store.get(id).activity.filter(event => event.automatic && event.event === 'tool-result');
+  assert.equal(unproven.at(-1).output.reconciliation.result, 'inconclusive', 'an unmet completion condition settles nothing');
+  assert.equal((await controller.handoff(id)).unresolvedActions.length, 1);
   assert.ok(blind.seen[0].handoff, 'the resumed agent receives the handoff');
   assert.ok(blind.seen[0].handoff.human.some(entry => entry.event === 'note'));
 
   // Session B again: establish the outcome from the page, then finish without resending.
+  // Session B again, with the receipt page open: the service checks the action's own recorded
+  // completion condition on resume, so the planner needs no observe or reconcile request.
   const careful = scripted([
-    { tool: 'observe', input: { pageId: 'main' } },
-    { tool: 'reconcile', input: { actionId: brief.unresolvedActions[0].actionId,
-      effectPresentWhen: [{ kind: 'element-text-includes', selector: '#receipt', value: 'Submission received' }] } },
     { tool: 'finish', input: { summary: 'The earlier send went through; nothing to resend.' } },
   ]);
   controller.planner = careful;
+  await controller.navigate(id, { pageId: 'main', url: `${ORIGIN}/form/done` });
   await controller.delegate(id, { pageIds: ['main'], origins: [ORIGIN], actionKinds: ['submit', 'navigate'], task: 'Continue', resume: true });
   await controller.active.get(id)?.done;
   const project = controller.store.get(id);
   assert.equal(project.run.status, 'completed');
-  const reconciled = project.activity.find(event => event.event === 'tool-result' && event.output?.reconciliation);
+  const reconciled = project.activity.findLast(event => event.event === 'tool-result' && event.output?.reconciliation);
   assert.equal(reconciled.output.reconciliation.result, 'effect-present');
+  assert.equal(reconciled.automatic, true);
+  assert.equal(careful.seen.length, 1, 'one planner request: finish');
+  assert.equal(careful.seen[0].handoff.unresolvedActions.length, 0, 'the resumed planner starts with the outcome established');
+  assert.ok(careful.seen[0].history.some(entry => entry.event === 'tool-requested' && entry.tool === 'reconcile'), 'and sees how it was established');
   assert.equal((await controller.handoff(id)).unresolvedActions.length, 0);
   assert.equal(readFileSync(receiptsPath, 'utf8').trim().split('\n').length, 1, 'no duplicate submission');
-  console.log('ok: handoff memory, blind-repeat refusal, reconcile from the live page, zero duplicates');
+  console.log('ok: handoff memory, blind-repeat refusal, inconclusive automatic check, automatic reconcile from the live page, zero duplicates');
 } finally {
   await controller?.close().catch(() => {}); await service?.close().catch(() => {});
   rmSync(root, { recursive: true, force: true });

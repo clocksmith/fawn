@@ -102,14 +102,14 @@ try {
   await controller.navigate(id, { pageId: 'main', url: trackerUrl });
   let turn = 0;
   controller.planner = { identity: { model: 'controlled-different-returning-agent' }, async next(context) {
-    assert.equal(context.handoff.unresolvedActionCount, turn < 2 ? 1 : 0);
+    // On resume the service checks the interrupted post's own recorded completion condition on the live
+    // site, so the returning agent starts with the outcome established and spends no request on it.
+    assert.equal(context.handoff.unresolvedActionCount, 0);
+    const established = context.history.find(event => event.event === 'tool-requested' && event.tool === 'reconcile');
+    assert.equal(established?.input.actionId, boundary.actionId, 'the returning agent sees how the outcome was established');
     if (turn++ === 0) return { tool: 'observe', input: { pageId: 'main' } };
-    if (turn === 2) {
-      const observed = context.history.findLast(event => event.event === 'tool-result' && event.output?.text)?.output;
-      assert.ok(observed.text.includes(comment), 'returning agent observes the accepted post on the live site');
-      return { tool: 'reconcile', input: { actionId: boundary.actionId,
-        effectPresentWhen: [{ kind: 'element-text-includes', selector: '#comments', value: comment }] } };
-    }
+    const observed = context.history.findLast(event => event.event === 'tool-result' && event.output?.text)?.output;
+    assert.ok(observed.text.includes(comment), 'returning agent observes the accepted post on the live site');
     return { tool: 'finish', input: { summary: 'The live tracker confirms the earlier post; no repeat is needed.' } };
   } };
   await controller.delegate(id, { pageIds: ['main'], origins: [new URL(trackerUrl).origin], actionKinds: ['submit', 'navigate'], task: 'Establish the earlier post and finish without duplicating it.', resume: true });
