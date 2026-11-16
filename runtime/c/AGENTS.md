@@ -1,6 +1,6 @@
 # C migration work
 
-Read the repository AGENTS.md, applicable CATSCAN.md, and [common style](STYLE.md).
+Follow [common style](STYLE.md); look up the applicable CATSCAN.md when you need a contract.
 C is selected. Author coherent subsystems in parallel; integrate focused-checked
 source progress into canonical main without force, preserving production defaults.
 review and run focused compile/behavior checks as code changes. Do not require a

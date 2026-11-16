@@ -148,9 +148,9 @@ An `operationKind` may be derived for routing, but it must not duplicate or
 override workload policy. Timing is evidence carried by a workload; it does not
 make an unverified workload claim-bearing.
 
-Component intent is independently governed by the applicable root-to-target
-`CATSCAN.md` chain. Resolve that chain before entering a stage. If work changes
-a component boundary, update the affected charter before Gate and regenerate
+Component intent is recorded in `CATSCAN.md` files; consult the relevant
+charter when you need its contract. If work changes a component boundary,
+update the affected charter in the same change and regenerate
 `docs/component-index.md`. The blocking CATSCAN gate validates structure and
 references; semantic alignment remains the handoff and review obligation in
 [`component-charters.md`](component-charters.md).
