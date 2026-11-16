@@ -68,6 +68,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
     const text = fullText(node);
     return {
       tag: node.tagName.toLowerCase(),
+      // Live rendering hints, not authority or a promise that dispatch will succeed.
       actionability: {
         visible: node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'
           && getComputedStyle(node).visibility !== 'collapse',
@@ -339,7 +340,10 @@ function buildSnapshot(raw, pageCount) {
     elements,
     structuralHash: structuralOutlineHash(elements),
     pageCount,
-    contentHash: sha256Hex(canonicalJson({ url: raw.url, html: raw.html, controlValues })),
+    contentHash: sha256Hex(canonicalJson({ url: raw.url, html: raw.html, controlValues,
+      ...(elements.some(element => element.actionability) ? {
+        actionability: elements.map(element => [element.selector, element.actionability ?? null]),
+      } : {}) })),
     regionDigests: Object.fromEntries((raw.regions ?? []).map((region) => [region.selector, regionDigest(region)])),
     regionOutlines: Object.fromEntries((raw.regions ?? []).filter((region) => region.outline !== null)
       .map((region) => [region.selector, region.outline])),
