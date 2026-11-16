@@ -8,8 +8,16 @@ import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
 import { readArtifact } from './artifact-read.js';
+import { REJECTION_CODES } from '../errors.js';
 import { createOwnerSession } from '../workflows/owner-session.js';
 import { sha256Hex } from '../journal.js';
+
+const CORRECTABLE_PROPOSALS = new Set([
+  REJECTION_CODES.INVALID_COMMAND, REJECTION_CODES.UNSUPPORTED_CONDITION,
+  REJECTION_CODES.UNSUPPORTED_ACTION_KIND, REJECTION_CODES.UNKNOWN_TARGET,
+  REJECTION_CODES.TARGET_CHANGED, REJECTION_CODES.STALE_OBSERVATION,
+  REJECTION_CODES.EXPIRED_OBSERVATION, REJECTION_CODES.UNKNOWN_OBSERVATION,
+]);
 
 /** What the planner needs from an observation. Admission tables and digests stay in the service. */
 export function plannerView(observation, pageId) {
@@ -120,7 +128,7 @@ export class WorkspaceController {
     return this.store.activity(id, { event: 'human-note', text: text.trim() });
   }
   /** What a returning agent or person sees: prior sessions, attempts, human notes, unknown outcomes. */
-  async handoff(id) { return handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id))); }
+  async handoff(id, options = {}) { return handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id)), options); }
   record(id, input) {
     if (input.kind === 'evidence' || (input.id && this.store.get(id).artifacts[input.id]?.kind === 'evidence')) throw Error('Capture a page or repository file to create evidence');
     return this.store.revise(id, input);
@@ -258,6 +266,10 @@ export class WorkspaceController {
         const observation = await this.service.observe({ ...owner, pageId }); observations.set(pageId, observation); return plannerView(observation, pageId);
       }
       if (input.artifactId && !visibleArtifacts.has(input.artifactId)) throw Error('Source record was not shared with this task');
+      if (tool === 'handoff_read') {
+        if (!resume) throw Error('Resume the investigation before reading prior handoff records');
+        return this.handoff(id, { cursors: input.cursors ?? {} });
+      }
       if (tool === 'artifact_read') return readArtifact(this.store.get(id), input, visibleArtifacts);
       if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);
@@ -267,7 +279,8 @@ export class WorkspaceController {
         const artifact = this.record(id, input); visibleArtifacts.add(artifact.id); return artifact;
       }
       if (tool === 'reconcile') {
-        const unresolved = handoff?.unresolvedActions.find(value => value.actionId === input.actionId);
+        const state = await this.service.inspect(this.admin(id));
+        const unresolved = resume && state.actions.find(value => value.actionId === input.actionId && value.isUncertain);
         if (!unresolved) throw Error('Reconcile only names an unresolved action from the handoff');
         const reconciled = await this.service.reconcile({ ...owner, actionId: input.actionId, method: 'application-state',
           effectPresentWhen: input.effectPresentWhen ?? [], effectAbsentWhen: input.effectAbsentWhen ?? [] });
@@ -275,7 +288,7 @@ export class WorkspaceController {
         return reconciled;
       }
       if (tool !== 'act') throw Error(`Unsupported product tool ${tool}`);
-      if (handoff?.unresolvedActions.length && input.kind !== 'navigate') {
+      if ((handoff?.unresolvedActionCount ?? handoff?.unresolvedActions.length) && input.kind !== 'navigate') {
         throw Error('Establish every unresolved action with reconcile before taking a new action');
       }
       const observed = observations.get(pageId);
@@ -286,7 +299,17 @@ export class WorkspaceController {
       observations.delete(pageId); return admitted.result;
     };
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
-      execute, signal: controller.signal, assertCurrent, context: () => investigationContext(this.store.get(id), {
+      execute, signal: controller.signal, assertCurrent,
+      recoverToolError: error => error.details?.neverDispatched?.code === error.code && CORRECTABLE_PROPOSALS.has(error.code),
+      verifyCompletion: async () => {
+        const state = await this.service.inspect(this.admin(id));
+        const outstanding = state.actions.filter(action => action.isUncertain || action.dispatchStatus === 'queued'
+          || (action.dispatchStatus === 'dispatched' && !action.outcome));
+        return { completed: outstanding.length === 0,
+          detail: outstanding.length ? `${outstanding.length} unresolved browser action(s) need review; the task is not complete.`
+            : 'Task finished with no unresolved browser actions.' };
+      },
+      context: () => investigationContext(this.store.get(id), {
         task, permissions: { pageIds, origins, regions, actionKinds,
           ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) }, initialArtifacts, startSequence, shareRecords, visibleArtifacts, handoff
       }) });

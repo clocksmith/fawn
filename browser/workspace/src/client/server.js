@@ -54,7 +54,7 @@ export async function startWorkspaceServer({ controller, config, port = config.p
           return { runId };
         },
         delegate: () => controller.delegate(projectId, input), takeOver: () => controller.takeOver(projectId),
-        note: () => controller.humanNote(projectId, input.text), handoff: () => controller.handoff(projectId),
+        note: () => controller.humanNote(projectId, input.text), handoff: () => controller.handoff(projectId, input),
         revoke: () => controller.revoke(projectId, input), check: () => controller.check(projectId, input),
         decide: async () => {
           await controller.check(projectId, input);

@@ -10,7 +10,7 @@ function compactArtifact(artifact) {
 export function investigationContext(project, { task, permissions, initialArtifacts, startSequence, shareRecords, visibleArtifacts = null, handoff = null }) {
   const artifacts = Object.fromEntries(Object.entries(project.artifacts).filter(([key]) => visibleArtifacts ? visibleArtifacts.has(key) : shareRecords || !initialArtifacts.has(key))
     .map(([key, artifact]) => [key, compactArtifact(artifact)]));
-  const events = project.activity.filter(event => event.seq > startSequence && ['tool-requested', 'tool-result'].includes(event.event));
+  const events = project.activity.filter(event => event.seq > startSequence && ['tool-requested', 'tool-result', 'tool-failed'].includes(event.event));
   const latestObservation = new Map();
   for (const event of events) {
     if (event.event === 'tool-result' && event.output?.observationVersion !== undefined && typeof event.output?.text === 'string') {
@@ -25,6 +25,8 @@ export function investigationContext(project, { task, permissions, initialArtifa
         return { event: event.event, callId: event.callId, output: { pageId, url, title, observationVersion, superseded: 'a newer observation of this page follows' } };
       }
       if (event.event === 'tool-requested') return { event: event.event, callId: event.callId, tool: event.tool, input: event.input };
+      if (event.event === 'tool-failed') return { event: event.event, callId: event.callId,
+        error: event.error, code: event.code, details: event.details, recoverable: event.recoverable };
       const output = event.output?.id && artifacts[event.output.id]
         ? { artifactId: event.output.id, kind: event.output.kind } : event.output;
       return { event: event.event, callId: event.callId, output };
@@ -37,7 +39,7 @@ export function investigationContext(project, { task, permissions, initialArtifa
 import { randomUUID } from 'node:crypto';
 
 export function startAgent({ projectId, store, planner, execute, config, signal, assertCurrent, context: getContext,
-  runId = randomUUID(), verifyCompletion = null }) {
+  runId = randomUUID(), verifyCompletion = null, recoverToolError = null }) {
   const id = runId, usage = [];
   let turns = 0;
   const save = (status, detail) => {
@@ -84,7 +86,21 @@ export function startAgent({ projectId, store, planner, execute, config, signal,
           save(proposal.tool === 'finish' ? 'completed' : 'needs-attention', proposal.input.summary ?? proposal.input.reason);
           return;
         }
-        const output = await execute(proposal.tool, proposal.input, { callId });
+        let output;
+        try { output = await execute(proposal.tool, proposal.input, { callId }); }
+        catch (error) {
+          assertCurrent(); signal.throwIfAborted();
+          const recoverable = recoverToolError?.(error) === true;
+          store.activity(projectId, { event: 'tool-failed', callId, error: error.message,
+            code: error.code ?? null, recoverable,
+            details: { path: error.details?.path, expected: error.details?.expected,
+              neverDispatched: error.details?.neverDispatched } });
+          if (!recoverable) throw error;
+          // Only a trusted caller can attest a correctable, never-dispatched
+          // proposal. A new planner decision consumes the ordinary turn budget.
+          save('running', `Proposal rejected: ${error.code}`);
+          continue;
+        }
         store.activity(projectId, { event: 'tool-result', callId, output });
         assertCurrent(); signal.throwIfAborted();
         if (output?.isUncertain || output?.outcome === 'failed' || output?.serviceError) {

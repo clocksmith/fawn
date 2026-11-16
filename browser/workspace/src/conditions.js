@@ -133,4 +133,4 @@ async function evaluateConditions(conditions, probe) {
   return { allEstablished: results.every((result) => result.established), results };
 }
 
-export { evaluateConditions, validateConditions };
+export { CONDITION_FIELDS, evaluateConditions, validateConditions };
