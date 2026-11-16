@@ -449,7 +449,12 @@ unless both model and credential are configured. No model runs on startup.
 Protocol 4 adds page identity and opt-in scoped read grants. Earlier journals replay
 with main-page compatibility. Restored tabs open blank with an explicit Reopen
 control; no page navigation or pending tool is silently repeated. The product
-client remains unqualified for general task advantage until its own complete-task
+client fences the previous operator and revokes interrupted agent-task grants
+during restore. `node browser/workspace/test/browser/product-crash-recovery.test.js`
+exercises a real Chromium post followed by SIGKILL before outcome persistence,
+then live reconciliation without a duplicate. This development check has been
+exercised on macOS Chrome; it is not a cross-platform or performance qualification.
+The product client remains unqualified for general task advantage until its own complete-task
 comparison passes. Prior frozen-suite results keep their original scope.
 
 With an already authenticated Claude Code installation, select the planner-only

@@ -13,7 +13,10 @@ import { WorkspaceController } from '../../src/client/controller.js';
 import { createPlaywrightAdapter } from '../../src/adapters/playwright-adapter.js';
 import { readVerifiedJournal, sha256Hex } from '../../src/journal.js';
 import { testBrowserSelection } from '../support/browser-selection.js';
-assert.notEqual(process.platform, 'win32', 'This SIGSTOP/SIGKILL boundary test requires a POSIX host');
+if (process.platform === 'win32') {
+  console.log('skip: the SIGSTOP/SIGKILL boundary test requires a POSIX host; Windows recovery is not exercised');
+  process.exit(0);
+}
 const root = mkdtempSync(join(tmpdir(), 'fawn-product-process-crash-'));
 const receipts = join(root, 'tracker-comments.jsonl'), marker = join(root, 'effect-boundary.json');
 const comment = 'The selected option must be committed to application state; inspect the change event handler.';
@@ -70,7 +73,9 @@ try {
   }, 'a committed effect before outcome persistence');
   assert.equal(boundary.pid, child.pid);
   assert.deepEqual(comments(), [{ text: comment }], 'the real site durably accepted exactly one post before the kill');
-  const before = readVerifiedJournal(join(root, 'service/journal.jsonl'));
+  const journalPath = join(root, 'service/journal.jsonl');
+  const beforeBytes = readFileSync(journalPath);
+  const before = readVerifiedJournal(journalPath);
   assert.ok(before.records.some(record => record.type === 'authorization-granted' && record.body.grant.ownerId === 'agent'), 'the crashed process left a real delegated grant');
   assert.ok(before.records.some(record => record.type === 'action-dispatch-started' && record.body.actionId === boundary.actionId));
   assert.ok(!before.records.some(record => record.type === 'action-outcome' && record.body.actionId === boundary.actionId), 'the process is stopped before any outcome append');
@@ -116,6 +121,7 @@ try {
   assert.deepEqual(comments(), [{ text: comment }], 'a different returning agent never duplicates the accepted post');
   const after = readVerifiedJournal(join(root, 'service/journal.jsonl'));
   assert.deepEqual(after.records.slice(0, before.records.length), before.records, 'recovery preserves the complete pre-crash journal');
+  assert.ok(readFileSync(journalPath).subarray(0, beforeBytes.length).equals(beforeBytes), 'recovery preserves the exact pre-crash journal bytes');
   console.log('ok: real Chromium post, SIGKILL before outcome append, evidence/grant recovery, live reconciliation, zero duplicate posts');
 } finally {
   if (child && !childExit) { descendants = ownedDescendants(child.pid); child.kill('SIGKILL'); }
