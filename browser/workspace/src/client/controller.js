@@ -49,10 +49,18 @@ export class WorkspaceController {
   admin(id) { const value = this.credentials[id]; if (!value) throw Error('Missing investigation admin credential'); return { workspaceId: id, adminCredential: value }; }
   async restore() {
     for (const id of this.store.projects.keys()) {
-      const interrupted = this.store.get(id).run;
-      await this.takeOver(id);
-      if (interrupted?.status === 'running') this.store.run(id, { ...interrupted,
-        status: 'needs-attention', detail: 'Service restarted. Review recorded outcomes before explicitly resuming.' });
+      await this.exclusive(id, async () => {
+        const interrupted = this.store.get(id).run;
+        const prior = await this.service.inspect(this.admin(id));
+        // Fence the dead operator before removing its task grants. A crash skips
+        // the normal delegation finalizer; those grants must not survive restore.
+        await this.takeOverNow(id);
+        for (const grant of prior.grants.filter(value => value.ownerId === 'agent')) {
+          await this.service.revokeAuthorization({ ...this.admin(id), grantId: grant.grantId });
+        }
+        if (interrupted?.status === 'running') this.store.run(id, { ...interrupted,
+          status: 'needs-attention', detail: 'Service restarted. Review recorded outcomes before explicitly resuming.' });
+      });
     }
   }
   async create({ goal, repositoryRoot = null }) {
