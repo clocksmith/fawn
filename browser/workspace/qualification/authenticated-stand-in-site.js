@@ -82,6 +82,8 @@ export async function startStandInSite() {
   return {
     origin, issueUrl: origin + STAND_IN_ISSUE_PATH, signInUrl: `${origin}/login?return_to=${encodeURIComponent(STAND_IN_ISSUE_PATH)}`,
     password, logins, requests,
+    /** The code pages the issue links to: the only pages that count as code evidence on this site. */
+    codeUrls: Object.keys(CODE).map(path => origin + path),
     /** The site ends every session, as a real one does after days away or a revocation. */
     forgetSessions() { sessions.clear(); },
     /** Someone else comments while the investigation is interrupted. */

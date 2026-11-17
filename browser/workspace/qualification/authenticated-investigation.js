@@ -33,12 +33,13 @@ import { startStandInSite } from './authenticated-stand-in-site.js';
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
 const help = `Usage: node browser/workspace/qualification/authenticated-investigation.js --out DIR (--stand-in | --issue-url URL)
-  [--arms fawn,stock] [--repository-root PATH] [--sign-in-url URL] [--auth-loss revoke|clear-cookies]
+  [--arms fawn,stock] [--repository-root PATH --expected-code PATH,PATH] [--sign-in-url URL] [--auth-loss revoke|clear-cookies]
   [--sign-in-timeout-min 15] [--max-cost-usd 10] [--headless]
-A real site needs a person at this machine: the harness prints ACTION NEEDED lines and waits.`;
+A real site needs a person at this machine: the harness prints ACTION NEEDED lines and waits.
+With --issue-url, name the repository checkout and the files the issue concerns; only those files count as code evidence.`;
 const args = process.argv.slice(2);
 if (args.includes('--help')) { console.log(help); process.exit(0); }
-const FLAGS = ['--stand-in', '--headless'], VALUES = ['--out', '--issue-url', '--arms', '--repository-root', '--sign-in-url', '--auth-loss', '--sign-in-timeout-min', '--max-cost-usd'];
+const FLAGS = ['--stand-in', '--headless'], VALUES = ['--out', '--issue-url', '--arms', '--repository-root', '--expected-code', '--sign-in-url', '--auth-loss', '--sign-in-timeout-min', '--max-cost-usd'];
 for (let i = 0; i < args.length; i++) {
   if (FLAGS.includes(args[i])) continue;
   if (VALUES.includes(args[i]) && args[i + 1] && !args[i + 1].startsWith('--')) { i++; continue; }
@@ -63,6 +64,12 @@ const origin = new URL(issueUrl).origin;
 const signInUrl = standIn ? site.signInUrl : value('--sign-in-url',
   new URL(issueUrl).hostname === 'github.com' ? `${origin}/login?return_to=${encodeURIComponent(issueUrl)}` : issueUrl);
 const FRESH = standIn ? 'Rolled back the TTL change on Tuesday' : null;
+// Declared before running: the only sources that count as code evidence. On a real site these are
+// named repository files, bound to their bytes in the checkout at the start of the run.
+const expectedCode = (value('--expected-code') ?? '').split(',').map(path => path.trim()).filter(Boolean);
+if (!standIn && (!repositoryRoot || !expectedCode.length)) throw Error(`A real-site trial needs --repository-root and --expected-code\n${help}`);
+const CODE = standIn ? { kind: 'pages', urls: site.codeUrls }
+  : { kind: 'repository', paths: expectedCode, hashes: Object.fromEntries(expectedCode.map(path => [path, sha256Hex(readFileSync(join(repositoryRoot, path), 'utf8'))])) };
 
 // Fixed before running.
 const POLICY = Object.freeze({
@@ -71,8 +78,8 @@ const POLICY = Object.freeze({
   // everything the task asks for, so the finishing agent now gets the client's ordinary 20.
   // resumeTurns was 6 in the second (af1634bdf0): the Fawn arm's resuming agent spent it writing findings
   // from the preserved evidence and finished before it ever looked at the unreachable page.
-  firstTurns: 14, resumeTurns: 12, finishTurns: 20, interruptAfterEvidence: 2,
-  maxTotalCostUsd: Number(value('--max-cost-usd', '10')), authLoss, acceptance: ACCEPTANCE,
+  firstTurns: 14, resumeTurns: 12, finishTurns: 20, interruptAfter: 'issue page and one declared code source saved',
+  maxTotalCostUsd: Number(value('--max-cost-usd', '10')), authLoss, acceptance: ACCEPTANCE, code: CODE,
 });
 const GOAL = 'Produce a source-linked summary of one issue: the problem, the code involved, prior attempts and unresolved questions.';
 const TASK = `Investigate the issue at ${issueUrl} (pageId main) and produce a source-linked summary. `
@@ -255,6 +262,15 @@ async function runArm(arm) {
   const row = { arm: arm.name }, agentMs = {}, humanWaitMs = {};
   const timed = async (bucket, key, task) => { const started = performance.now(); try { return await task(); } finally { bucket[key] = performance.now() - started; } };
   const evidenceIds = () => Object.values(arm.project().artifacts).filter(value => value.kind === 'evidence').map(value => value.id);
+  // The interruption comes once the issue page and one declared code source are saved, which is what
+  // the first acceptance check asks for; an agent that never reads a declared source is not interrupted.
+  const plain = url => String(url ?? '').split(/[?#]/)[0];
+  const readyToInterrupt = () => {
+    const evidence = Object.values(arm.project().artifacts).filter(value => value.kind === 'evidence');
+    return evidence.some(value => value.source?.kind === 'page' && plain(value.source.url) === plain(issueUrl))
+      && evidence.some(value => CODE.kind === 'pages' ? value.source?.kind === 'page' && CODE.urls.map(plain).includes(plain(value.source.url))
+        : value.source?.kind === 'repository' && CODE.paths.includes(value.source.path));
+  };
   const whole = performance.now();
   try {
     await arm.open();
@@ -268,7 +284,7 @@ async function runArm(arm) {
       const finished = Promise.resolve(arm.wait()).then(() => true);
       for (;;) {
         if (await Promise.race([finished, delay(150).then(() => false)])) break;
-        if (evidenceIds().length >= POLICY.interruptAfterEvidence) { row.interrupted = true; await arm.interrupt(); break; }
+        if (readyToInterrupt()) { row.interrupted = true; await arm.interrupt(); break; }
       }
       await arm.wait();
     });
@@ -305,13 +321,13 @@ async function runArm(arm) {
 
     const final = arm.project();
     row.finalRun = final.run; row.boundaries = boundaries; row.evidenceAtInterruption = evidenceAtInterruption;
-    row.verdict = judgeAuthenticatedInvestigation(final, { issueUrl, boundaries, evidenceAtInterruption, freshMarker: FRESH });
+    row.verdict = judgeAuthenticatedInvestigation(final, { issueUrl, code: CODE, boundaries, evidenceAtInterruption, freshMarker: FRESH });
     row.judgeProject = { artifacts: final.artifacts, activity: final.activity, run: final.run };
     await arm.close();
     if (site) {
       row.credentialInJournals = arm.journals().some(file => readFileSync(file, 'utf8').includes(site.password));
       row.verdict.checks.credentialAbsent = !row.credentialInJournals && !credentialReachedPlanner;
-      row.verdict.accepted = Object.values(row.verdict.checks).every(Boolean);
+      row.verdict.mechanicallyAccepted = Object.values(row.verdict.checks).every(Boolean);
     }
   } catch (error) {
     row.error = error.stack;
@@ -335,11 +351,11 @@ try {
     rows.push(row);
     // Persist each arm before the next begins; a later failure must not discard it.
     writeFileSync(join(out, `${name}-result.json`), JSON.stringify(row, null, 2));
-    announce(`Finished arm ${name}: ${row.error ? 'error' : row.verdict.accepted ? 'accepted' : 'not accepted'}`);
+    announce(`Finished arm ${name}: ${row.error ? 'error' : row.verdict.mechanicallyAccepted ? 'mechanical checks passed; diagnosis ungraded' : 'mechanical checks failed'}`);
   }
 } finally { await site?.close(); }
 
-const projection = row => row.error ? { arm: row.arm, error: row.error.split('\n')[0] } : { arm: row.arm, accepted: row.verdict.accepted, checks: row.verdict.checks,
+const projection = row => row.error ? { arm: row.arm, error: row.error.split('\n')[0] } : { arm: row.arm, mechanicallyAccepted: row.verdict.mechanicallyAccepted, diagnosis: row.verdict.diagnosis, checks: row.verdict.checks,
   counts: row.verdict.counts, interrupted: row.interrupted === true, resumeToolSequence: row.resumeToolSequence, plannerCalls: row.plannerCalls,
   costUsd: row.costUsd, agentMs: row.agentMs, agentTotalMs: row.agentTotalMs, humanWaitMs: row.humanWaitMs };
 const report = { schemaVersion: 1,
@@ -353,6 +369,7 @@ const report = { schemaVersion: 1,
   // contain the investigated site's content and stays local.
   publicProjection: rows.map(projection),
   limitations: ['One pair; model variance can flip any single verdict.',
+    'The checks are mechanical: records exist, are intact and are linked. Whether the diagnosis is correct is ungraded until a person grades it (authenticated-investigation-grade.js).',
     'Read-only: no action with an uncertain outcome occurs, so outcome reconciliation is not exercised.',
     'The first agent is stopped and its browser ended in-process; the owning process is not killed.',
     ...(standIn ? ['The site is a local stand-in and the person is scripted.'] : ['Human waiting time is recorded separately and excluded from agent time.'])] };
