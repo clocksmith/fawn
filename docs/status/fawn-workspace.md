@@ -82,8 +82,12 @@ pairs. At `bf865f931f` a resumed session checks each unknown action's recorded
 completion condition on the live page before the planner runs, and the planner
 view marks form-submitting controls; Fawn then used 12 calls versus 15 to 16,
 about $2.26 versus $3.09 and 87 to 95 s versus 114 to 138 s in all three pairs.
-That advantage is scoped to this investigation: the stock control has no
-automatic outcome check, the tracker is a local fixture and the human step is
+That advantage was a product default, not something stock automation cannot
+do: the stock control had no automatic outcome check. Given the same check
+(`73de12f7a2`, `--stock-outcome-check`), both arms passed with 12 planner calls
+at the same cost in all three pairs, and stock finished sooner in two of them
+(mean 72.6 s versus 84.2 s). No advantage over that control is established on
+this investigation. The tracker is a local fixture and the human step is
 scripted. The same record binds an uncontaminated
 [product workflow reuse run](../../browser/workspace/qualification/workflow-reuse.md#unmodified-product-revisions):
 at `052b5b0c23`, 5 planner calls versus 18 for fresh planning with all 18 cases

@@ -220,8 +220,90 @@
         }
       ]
     },
-    "finding": "All twelve arm runs passed every fixed acceptance check with zero duplicate posts. Before the change Fawn used more planner calls, cost more and took longer than stock Chrome plus a tracker in all three pairs. After it Fawn used fewer calls, cost less and finished sooner in all three pairs.",
-    "advantageEstablished": "scoped to this one investigation and these three pairs"
+    "finding": "All twelve arm runs passed every fixed acceptance check with zero duplicate posts. Before the change Fawn used more planner calls, cost more and took longer than stock Chrome plus a tracker in all three pairs. After it Fawn used fewer calls, cost less and finished sooner in all three pairs. Against the stronger control added at 73de12f7a2 that advantage disappears.",
+    "advantageEstablished": "none against a control with the same automatic outcome check; the earlier advantage was a product default on this investigation, not something stock automation cannot do",
+    "strongerControl": {
+      "sourceCommit": "73de12f7a2",
+      "change": "With --stock-outcome-check the stock arm also checks an uncertain action recorded completion condition on the live page before its planner runs on resume",
+      "pairs": [
+        {
+          "pair": 1,
+          "reportSha256": "20f5377448a52e0be09060e7e471b7d0ca2af9da56f63e5519721a604f00acb7",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.3205,
+            "completeTaskMs": 75561,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.3198,
+            "completeTaskMs": 80767,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          }
+        },
+        {
+          "pair": 2,
+          "reportSha256": "ec8e9360d9214ece6e115b0944f13053459e1aca6e84332902af67fc2f20fa82",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.2462,
+            "completeTaskMs": 104322,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.2512,
+            "completeTaskMs": 68539,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          }
+        },
+        {
+          "pair": 3,
+          "reportSha256": "a08314bfa9a45873b4cf531131655bfeb720ef3a46ecbe439ad6ea8c2b5014a4",
+          "sourceDirty": false,
+          "fawn": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.2382,
+            "completeTaskMs": 72706,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          },
+          "stockChromeAndTracker": {
+            "accepted": true,
+            "duplicatePosts": 0,
+            "plannerCalls": 12,
+            "measuredCostUsd": 2.263,
+            "completeTaskMs": 68402,
+            "resumePlannerTools": [
+              "finish"
+            ]
+          }
+        }
+      ],
+      "finding": "With the same automatic outcome check in the control, both arms passed every check with zero duplicate posts and used 12 planner calls at the same cost in all three pairs. Stock finished sooner in two of three pairs (mean 72.6 s against 84.2 s for Fawn; one Fawn run took 104 s)."
+    }
   },
   "workflowReuse": {
     "harness": "browser/workspace/qualification/workflow-reuse-product.js",
@@ -337,12 +419,13 @@
   },
   "limits": [
     "One engineering investigation on a local tracker fixture with live W3C documentation; three pairs per source revision. Not multi-day recovery, a real external tracker, or arbitrary sites.",
-    "The human step is scripted. The stock arm has no automatic outcome check on resume; a competent control could add one, so the after-change difference measures a product default, not something stock automation cannot do.",
+    "The human step is scripted. The before and after pairs used a stock arm with no automatic outcome check on resume; the strongerControl pairs give it one.",
     "Both arms run on stock Google Chrome. Nothing here concerns Doe, WebGPU or a Chromium fork.",
     "Runs were sequential with no other Fawn comparison overlapping; other unrelated agent sessions were active on the machine.",
     "Workflow reuse does not beat a prepared script on time or model cost; script authoring effort is unmeasured.",
     "browser/differentiation.test.js and browser/qualification.test.js fail on the unchanged 052b5b0c23 checkout as well; browser/participant.test.js was killed in the full suite and not re-run in isolation.",
     "The workflow reuse elapsed-time result rests on one clean run after the bounded close; an earlier run at 052b5b0c23 lost on time to a 300 s close and one run at d0f4680434 was invalid.",
-    "The bounded close covers the Playwright adapter on macOS and Linux only; why Chrome is slow to exit is not established, and a forced exit can lose the last unflushed profile data."
+    "The bounded close covers the Playwright adapter on macOS and Linux only; why Chrome is slow to exit is not established, and a forced exit can lose the last unflushed profile data.",
+    "The stronger control was added after review; its three pairs are the comparison to cite for this investigation."
   ]
 }
