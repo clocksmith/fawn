@@ -32,12 +32,14 @@ struct doe_mtl_texture_view {
     uint32_t references;
     void *native;
     doe_mtl_texture_view_desc desc;
+    doe_mtl_commands *last_commands;
     struct doe_mtl_texture_view *prev, *next; /* Parent's live-view list. */
 };
 struct doe_mtl_sampler {
     doe_mtl_context *context;
     uint32_t references;
     void *native;
+    doe_mtl_commands *last_commands;
 };
 struct doe_mtl_texture_use {
     doe_mtl_texture *texture;
@@ -84,6 +86,8 @@ bool doe_mtl_texture_region_initialized(const doe_mtl_commands *commands,
     const doe_mtl_texture *texture, doe_mtl_texture_region region);
 doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,
     doe_mtl_texture *texture, doe_mtl_texture_use **out);
+doe_mtl_texture_use *doe_mtl_recording_texture_use(const doe_mtl_commands *commands,
+    const doe_mtl_texture *texture);
 void doe_mtl_texture_region_initialize(doe_mtl_texture_use *use, doe_mtl_texture_region region);
 doe_mtl_status doe_mtl_immediates_preflight(doe_mtl_immediate_binding binding,
     uint32_t sizes_slot, doe_mtl_native_resources *native);

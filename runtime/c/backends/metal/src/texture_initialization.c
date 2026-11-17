@@ -2,10 +2,9 @@
 #include "texture_internal.h"
 
 const uint8_t *doe_mtl_texture_initialization(const doe_mtl_commands *commands, const doe_mtl_texture *texture) {
-    const doe_mtl_texture_use *use;
-    for (use = commands ? commands->textures : NULL; use != NULL; use = use->next)
-        if (use->texture == texture && use->initialization_generation == texture->initialization_generation)
-            return use->initialized;
+    const doe_mtl_texture_use *use = doe_mtl_recording_texture_use(commands, texture);
+    if (use != NULL && use->initialization_generation == texture->initialization_generation)
+        return use->initialized;
     if (texture->uses && texture->uses->initialization_generation == texture->initialization_generation &&
         texture->owner->state == DOE_MTL_SUBMITTED && texture->owner->submission_known &&
         !texture->owner->completion_unknown) return texture->uses->initialized;
@@ -63,11 +62,9 @@ void doe_mtl_texture_aspect_publish(doe_mtl_commands *commands,
     doe_mtl_texture_use *use;
     size_t index;
     if (view == NULL) return;
+    use = doe_mtl_recording_texture_use(commands, view->texture);
+    if (use == NULL) return;
     index = (size_t)view->desc.base_mip * doe_mtl_texture_layers(&view->texture->desc) + view->desc.base_layer;
-    for (use = commands->textures; use != NULL; use = use->next) {
-        if (use->texture != view->texture) continue;
-        if (initialized) use->initialized[index] |= aspects;
-        else use->initialized[index] &= (uint8_t)~aspects;
-        return;
-    }
+    if (initialized) use->initialized[index] |= aspects;
+    else use->initialized[index] &= (uint8_t)~aspects;
 }

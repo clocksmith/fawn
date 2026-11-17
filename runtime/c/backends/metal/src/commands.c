@@ -121,12 +121,21 @@ doe_mtl_status doe_mtl_buffer_preflight(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
+/* A recording's use of a buffer is on that buffer's own use chain, which holds
+ * one use per unretired recording; walking it avoids scanning every buffer the
+ * recording uses. */
+static doe_mtl_buffer_use *recording_buffer_use(const doe_mtl_commands *commands,
+    const doe_mtl_buffer *buffer) {
+    if (commands == NULL || buffer == NULL) return NULL;
+    for (doe_mtl_buffer_use *use = buffer->uses; use != NULL; use = use->older)
+        if (use->commands == commands) return use;
+    return NULL;
+}
+
 bool doe_mtl_buffer_initialized(const doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer) {
-    const doe_mtl_buffer_use *use;
-    for (use = commands->buffers; use != NULL; use = use->next) {
-        if (use->buffer == buffer) return use->initialized;
-    }
+    const doe_mtl_buffer_use *use = recording_buffer_use(commands, buffer);
+    if (use != NULL) return use->initialized;
     /* A committed command precedes this recording on the context's one queue.
      * Its speculative initialization is usable by GPU work, never host access.
      * Completion below observes earlier uses before publishing later output. */
@@ -139,17 +148,10 @@ doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
     doe_mtl_buffer *buffer, doe_mtl_buffer_use **out) {
     doe_mtl_buffer_use *use;
     doe_mtl_status status;
-    /* A recording holds at most one use per buffer; when it is the buffer's
-     * newest use, no list walk is needed to find it. */
-    if (buffer->uses != NULL && buffer->uses->commands == commands) {
-        *out = buffer->uses;
+    use = recording_buffer_use(commands, buffer);
+    if (use != NULL) {
+        *out = use;
         return DOE_MTL_OK;
-    }
-    for (use = commands->buffers; use != NULL; use = use->next) {
-        if (use->buffer == buffer) {
-            *out = use;
-            return DOE_MTL_OK;
-        }
     }
     use = calloc(1, sizeof(*use));
     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
@@ -282,6 +284,7 @@ static void retire_uses(doe_mtl_commands *commands, bool completed, bool success
     while (commands->pipelines != NULL) {
         doe_mtl_pipeline_use *use = commands->pipelines;
         commands->pipelines = use->next;
+        if (use->pipeline->last_commands == commands) use->pipeline->last_commands = NULL;
         doe_mtl_pipeline_release(use->pipeline);
         free(use);
     }

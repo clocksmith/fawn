@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Exact typed method-call controls, not an Objective-C runtime or Apple SDK test. */
 #include "../src/objc_abi.h"
+#include "../src/texture_internal.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -502,8 +503,41 @@ static void guard_batch_controls(void) {
     assert(fixture.dispatches == 3 && fixture.ends == 3 && fixture.pools == fixture.drains);
 }
 
+static void dispatch_batch_controls(void) {
+    call_fixture fixture;
+    fixture_init(&fixture);
+    doe_mtl_buffer src = {.native = &fixture.source_buffer};
+    doe_mtl_buffer dst = {.native = &fixture.destination_buffer};
+    doe_mtl_buffer_binding b0[2] = {{3, &src, 12, 28}, {7, &dst, 4, 16}};
+    doe_mtl_buffer_binding b2[1] = {{3, &src, 12, 28}};
+    uint32_t imm[4] = {0x11223344u, 0, 0, 0x55667788u};
+    doe_mtl_native_compute_dispatch steps[4] = {
+        {.pipeline=&fixture.pipeline, .resources={.buffers=b0, .buffer_count=2, .immediates={imm, 16}},
+            .sizes_slot=30, .repeat=1, .groups={2,1,1}, .workgroup={8,1,1}},
+        /* Identical pipeline and bindings: no rebind, no PSO set, one dispatch. */
+        {.pipeline=&fixture.pipeline, .resources={.buffers=b0, .buffer_count=2, .immediates={imm, 16}},
+            .sizes_slot=30, .repeat=1, .groups={4,1,1}, .workgroup={8,1,1}},
+        /* Empty step inside the batch: skipped completely. */
+        {.pipeline=&fixture.pipeline, .resources={.buffers=b2, .buffer_count=1},
+            .sizes_slot=30, .repeat=0, .groups={1,1,1}, .workgroup={8,1,1}},
+        /* Drops slot 7 and immediates while keeping slot 3 unchanged. */
+        {.pipeline=&fixture.pipeline, .resources={.buffers=b2, .buffer_count=1},
+            .sizes_slot=30, .repeat=2, .groups={3,1,1}, .workgroup={8,1,1}}
+    };
+    assert(doe_mtl_objc_dispatch_batch(&fixture.runtime, &fixture.command, steps, 4, NULL) == DOE_MTL_OK);
+    assert(fixture.compute_begins == 1 && fixture.ends == 1 && fixture.pipeline_sets == 1);
+    assert(fixture.dispatches == 4 && fixture.buffer_sets == 3 && fixture.bytes_sets == 2);
+    assert(fixture.bound[3].buffer == &fixture.source_buffer && fixture.bound[3].offset == 12);
+    assert(fixture.bound[7].buffer == NULL && fixture.sizes[3] == 28 && fixture.sizes[7] == 0);
+    assert(fixture.bytes_length == 124 && fixture.pools == fixture.drains);
+    steps[0].repeat = 0; steps[1].repeat = 0; steps[3].repeat = 0;
+    assert(doe_mtl_objc_dispatch_batch(&fixture.runtime, &fixture.command, steps, 4, NULL) == DOE_MTL_OK);
+    assert(fixture.compute_begins == 1 && fixture.dispatches == 4);
+}
+
 int main(void) {
     guard_batch_controls();
+    dispatch_batch_controls();
     pipeline_controls();
     encoding_controls();
     immediate_controls();

@@ -126,6 +126,48 @@ doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeli
     return doe_mtl_fail(DOE_MTL_OK, "dispatchThreadgroups:threadsPerThreadgroup:", error);
 }
 
+doe_mtl_status doe_mtl_objc_dispatch_batch(void *userdata, void *command,
+    const doe_mtl_native_compute_dispatch *dispatches, size_t count, doe_mtl_error *error) {
+    doe_mtl_objc *runtime = userdata;
+    doe_mtl_objc_stage_state state = {0};
+    const doe_mtl_objc_stage_selectors selectors = {runtime->set_buffer,
+        runtime->set_bytes, runtime->set_texture, runtime->set_sampler};
+    const doe_mtl_native_compute_dispatch *previous = NULL;
+    void *current_pipeline = NULL, *pool, *encoder;
+    size_t d;
+    bool has_work = false;
+    for (d = 0; d < count; ++d)
+        if (dispatches[d].repeat != 0) { has_work = true; break; }
+    if (!has_work) return doe_mtl_fail(DOE_MTL_OK, "empty dispatch", error);
+    pool = doe_mtl_objc_pool(runtime);
+    if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    encoder = doe_mtl_objc_object(runtime, command, runtime->compute_encoder);
+    if (encoder == NULL) {
+        doe_mtl_objc_drain(runtime, pool);
+        return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "computeCommandEncoder", error);
+    }
+    for (d = 0; d < count; ++d) {
+        const doe_mtl_native_compute_dispatch *step = &dispatches[d];
+        const doe_mtl_size grid = {step->groups.x, step->groups.y, step->groups.z};
+        const doe_mtl_size group = {step->workgroup.x, step->workgroup.y, step->workgroup.z};
+        uint32_t r;
+        if (step->repeat == 0) continue;
+        if (step->pipeline != current_pipeline) {
+            runtime->set_object_call(encoder, runtime->set_pipeline, step->pipeline);
+            current_pipeline = step->pipeline;
+        }
+        if (!previous || step->sizes_slot != previous->sizes_slot ||
+            !doe_mtl_render_bindings_same(&step->resources, &previous->resources))
+            doe_mtl_objc_bind_stage(runtime, encoder, &step->resources, step->sizes_slot, selectors, &state);
+        for (r = 0; r < step->repeat; ++r)
+            runtime->dispatch_call(encoder, runtime->dispatch, grid, group);
+        previous = step;
+    }
+    doe_mtl_objc_void(runtime, encoder, runtime->end_encoding);
+    doe_mtl_objc_drain(runtime, pool);
+    return doe_mtl_fail(DOE_MTL_OK, "dispatchThreadgroups:threadsPerThreadgroup:", error);
+}
+
 doe_mtl_status doe_mtl_objc_dispatch_indirect(void *userdata, void *command, void *pipeline,
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error) {

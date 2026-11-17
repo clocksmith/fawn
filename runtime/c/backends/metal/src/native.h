@@ -81,6 +81,13 @@ typedef struct doe_mtl_native_render_draw {
  * equal identities imply equal native bindings, admission and leases. */
 bool doe_mtl_render_bindings_same(const doe_mtl_render_bindings *a, const doe_mtl_render_bindings *b);
 
+typedef struct doe_mtl_native_compute_dispatch {
+    void *pipeline;
+    doe_mtl_render_bindings resources;
+    uint32_t sizes_slot, repeat;
+    doe_mtl_dimensions groups, workgroup;
+} doe_mtl_native_compute_dispatch;
+
 typedef struct doe_mtl_native_timestamps {
     void *buffer;
     uint32_t begin, end;
@@ -136,6 +143,8 @@ typedef struct doe_mtl_native {
         const doe_mtl_native_resources *resources, uint32_t sizes_slot,
         doe_mtl_dimensions groups, doe_mtl_dimensions workgroup,
         uint32_t repeat, const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error);
+    doe_mtl_status (*dispatch_batch)(void *userdata, void *command,
+        const doe_mtl_native_compute_dispatch *dispatches, size_t count, doe_mtl_error *error);
     doe_mtl_status (*guard_batch)(void *, void *, const doe_mtl_native_guard_copy *, size_t,
         const doe_mtl_native_guard_dispatch *, size_t, doe_mtl_error *);
     doe_mtl_status (*dispatch_indirect)(void *userdata, void *command, void *pipeline,

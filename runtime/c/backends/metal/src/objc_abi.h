@@ -245,6 +245,8 @@ doe_mtl_status doe_mtl_objc_dispatch(void *userdata, void *command, void *pipeli
     const doe_mtl_native_resources *resources, uint32_t sizes_slot,
     doe_mtl_dimensions groups, doe_mtl_dimensions workgroup, uint32_t repeat,
     const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_dispatch_batch(void *userdata, void *command,
+    const doe_mtl_native_compute_dispatch *dispatches, size_t count, doe_mtl_error *error);
 bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *runtime);
 void doe_mtl_objc_image_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
 void doe_mtl_objc_identity_caps(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);
@@ -267,12 +269,17 @@ doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
 doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
     const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
     size_t draw_count, doe_mtl_error *error);
+typedef struct doe_mtl_objc_stage_selectors {
+    void *set_buffer, *set_bytes, *set_texture, *set_sampler;
+} doe_mtl_objc_stage_selectors;
 typedef struct doe_mtl_objc_stage_state {
     doe_mtl_native_resources bindings; /* One encoder-local cache, never per draw. */
     uint64_t texture_mask[2];
     uint32_t buffer_mask, sampler_mask, sizes_slot;
     bool valid;
 } doe_mtl_objc_stage_state;
+void doe_mtl_objc_bind_stage(doe_mtl_objc *, void *, const doe_mtl_render_bindings *,
+    uint32_t, doe_mtl_objc_stage_selectors, doe_mtl_objc_stage_state *);
 /* One stage's size-table setBytes payload: sizes[0..sizes_slot] as uint32 words,
  * then any immediate words at DOE_MTL_IMMEDIATE_OFFSET. Returns its byte length. */
 enum { DOE_MTL_SIZE_TABLE_WORDS = (DOE_MTL_IMMEDIATE_OFFSET + DOE_MTL_IMMEDIATE_BYTES) / 4 };

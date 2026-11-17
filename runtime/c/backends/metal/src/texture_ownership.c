@@ -19,20 +19,22 @@ doe_mtl_status doe_mtl_texture_preflight(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
+doe_mtl_texture_use *doe_mtl_recording_texture_use(const doe_mtl_commands *commands,
+    const doe_mtl_texture *texture) {
+    if (commands == NULL || texture == NULL) return NULL;
+    for (doe_mtl_texture_use *use = texture->uses; use != NULL; use = use->older)
+        if (use->commands == commands) return use;
+    return NULL;
+}
+
 doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,
     doe_mtl_texture *texture, doe_mtl_texture_use **out) {
     doe_mtl_texture_use *use;
     doe_mtl_status status;
-    /* As for buffers: at most one use per recording, newest first. */
-    if (texture->uses != NULL && texture->uses->commands == commands) {
-        *out = texture->uses;
+    use = doe_mtl_recording_texture_use(commands, texture);
+    if (use != NULL) {
+        *out = use;
         return DOE_MTL_OK;
-    }
-    for (use = commands->textures; use != NULL; use = use->next) {
-        if (use->texture == texture) {
-            *out = use;
-            return DOE_MTL_OK;
-        }
     }
     use = calloc(1, sizeof(*use));
     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
@@ -109,8 +111,9 @@ doe_mtl_status doe_mtl_use_view(doe_mtl_commands *commands, doe_mtl_texture_view
     doe_mtl_texture_use *texture_use;
     doe_mtl_status status = doe_mtl_use_texture(commands, view->texture, &texture_use);
     if (status != DOE_MTL_OK) return status;
+    if (view->last_commands == commands) return DOE_MTL_OK;
     for (use = commands->views; use != NULL; use = use->next)
-        if (use->view == view) return DOE_MTL_OK;
+        if (use->view == view) { view->last_commands = commands; return DOE_MTL_OK; }
     use = calloc(1, sizeof(*use));
     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
     status = doe_mtl_texture_view_retain(view);
@@ -118,6 +121,7 @@ doe_mtl_status doe_mtl_use_view(doe_mtl_commands *commands, doe_mtl_texture_view
         free(use);
         return status;
     }
+    view->last_commands = commands;
     use->view = view;
     use->next = commands->views;
     commands->views = use;
@@ -127,8 +131,9 @@ doe_mtl_status doe_mtl_use_view(doe_mtl_commands *commands, doe_mtl_texture_view
 static doe_mtl_status use_sampler(doe_mtl_commands *commands, doe_mtl_sampler *sampler) {
     doe_mtl_sampler_use *use;
     doe_mtl_status status;
+    if (sampler->last_commands == commands) return DOE_MTL_OK;
     for (use = commands->samplers; use != NULL; use = use->next)
-        if (use->sampler == sampler) return DOE_MTL_OK;
+        if (use->sampler == sampler) { sampler->last_commands = commands; return DOE_MTL_OK; }
     use = calloc(1, sizeof(*use));
     if (use == NULL) return DOE_MTL_OUT_OF_MEMORY;
     status = doe_mtl_sampler_retain(sampler);
@@ -136,6 +141,7 @@ static doe_mtl_status use_sampler(doe_mtl_commands *commands, doe_mtl_sampler *s
         free(use);
         return status;
     }
+    sampler->last_commands = commands;
     use->sampler = sampler;
     use->next = commands->samplers;
     commands->samplers = use;
@@ -179,12 +185,14 @@ void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool succ
     while (commands->views != NULL) {
         doe_mtl_view_use *use = commands->views;
         commands->views = use->next;
+        if (use->view->last_commands == commands) use->view->last_commands = NULL;
         doe_mtl_texture_view_release(use->view);
         free(use);
     }
     while (commands->samplers != NULL) {
         doe_mtl_sampler_use *use = commands->samplers;
         commands->samplers = use->next;
+        if (use->sampler->last_commands == commands) use->sampler->last_commands = NULL;
         doe_mtl_sampler_release(use->sampler);
         free(use);
     }

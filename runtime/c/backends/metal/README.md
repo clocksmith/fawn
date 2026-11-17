@@ -55,8 +55,10 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
   payload; immediates require that table and never take a slot of their own.
   Compute encoders start with empty bindings; render encoders clear removed slots.
 - Direct/repeated threadgroup dispatch, guarded GPU-generated indirect compute,
-  buffer-region copy and byte-pattern fill.
-  Every native operation uses the real Metal encoder and ends it before the next.
+  buffer-region copy and byte-pattern fill. Contiguous untimed direct compute
+  dispatches share one serial Metal compute encoder and update only changed
+  pipeline/resource slots; copies, fills, indirect guards and timed spans open
+  and end their own encoders before the next operation.
 - Private 1D/2D/array/cube/3D and device-admitted 2D multisample images, explicit mip/layer views and swizzles,
   retained samplers, staging-buffer upload/readback and texture-region copies.
   Uncompressed color, BC, ETC2/EAC and ASTC LDR layouts use explicit native format

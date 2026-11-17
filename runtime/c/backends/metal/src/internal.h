@@ -42,6 +42,7 @@ struct doe_mtl_pipeline {
     void *native;
     doe_mtl_dimensions workgroup;
     uint32_t sizes_slot;
+    doe_mtl_commands *last_commands;
 };
 struct doe_mtl_buffer_use {
     doe_mtl_buffer *buffer;

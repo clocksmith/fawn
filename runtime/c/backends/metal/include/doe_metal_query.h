@@ -69,6 +69,11 @@ typedef struct doe_mtl_compute_dispatch {
 } doe_mtl_compute_dispatch;
 doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
     const doe_mtl_compute_dispatch *dispatch, doe_mtl_error *error);
+/* Encodes one untimed run of compute dispatches in a single native compute
+ * encoder after validating and leasing every step; empty steps are skipped
+ * and any timestamped step is rejected. */
+doe_mtl_status doe_mtl_commands_compute_batch(doe_mtl_commands *commands,
+    const doe_mtl_compute_dispatch *dispatches, size_t count, doe_mtl_error *error);
 #ifdef __cplusplus
 }
 #endif

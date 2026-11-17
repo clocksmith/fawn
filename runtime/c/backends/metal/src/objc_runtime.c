@@ -418,6 +418,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.copy = doe_mtl_objc_copy;
     native.fill = doe_mtl_objc_fill;
     native.dispatch = doe_mtl_objc_dispatch;
+    native.dispatch_batch = doe_mtl_objc_dispatch_batch;
     native.dispatch_indirect = doe_mtl_objc_dispatch_indirect;
     native.guard_batch = doe_mtl_objc_guard_batch;
     native.texture = doe_mtl_objc_texture;

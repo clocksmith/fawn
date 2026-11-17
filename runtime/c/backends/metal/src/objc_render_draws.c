@@ -6,9 +6,8 @@ static uint32_t first_slot(uint64_t mask) {
     while (!(mask & 1)) { mask >>= 1; ++slot; }
     return slot;
 }
-static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_bindings *resources,
-    uint32_t sizes_slot, doe_mtl_objc_stage_state *state, bool vertex) {
-    doe_mtl_objc_graphics *g = &r->graphics;
+void doe_mtl_objc_bind_stage(doe_mtl_objc *r, void *encoder, const doe_mtl_render_bindings *resources,
+    uint32_t sizes_slot, doe_mtl_objc_stage_selectors s, doe_mtl_objc_stage_state *state) {
     doe_mtl_native_resources *old = &state->bindings;
     uint32_t sizes[DOE_MTL_BUFFER_SLOTS] = {0}, table[DOE_MTL_SIZE_TABLE_WORDS], buffers = 0, samplers = 0;
     uint64_t textures[2] = {0};
@@ -24,8 +23,7 @@ static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_
         void *native = doe_mtl_buffer_native(binding->buffer);
         buffers |= UINT32_C(1) << slot;
         if (native != old->buffers[slot].buffer || binding->offset != old->buffers[slot].offset || old_table == slot)
-            r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer,
-                native, (size_t)binding->offset, slot);
+            r->bind_buffer_call(encoder, s.set_buffer, native, (size_t)binding->offset, slot);
         sizes[slot] = (uint32_t)binding->size;
         if (slot <= sizes_slot && sizes[slot] != old->buffers[slot].size) table_changed = true;
         old->buffers[slot] = (doe_mtl_native_binding){native,(size_t)binding->offset,sizes[slot]};
@@ -36,13 +34,13 @@ static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_
         if (slot <= sizes_slot && old->buffers[slot].size) table_changed = true;
         old->buffers[slot] = (doe_mtl_native_binding){0};
         if (slot != sizes_slot)
-            r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer, NULL, 0, slot);
+            r->bind_buffer_call(encoder, s.set_buffer, NULL, 0, slot);
     }
     if (old_table != UINT32_MAX && old_table != sizes_slot && !(buffers & (UINT32_C(1) << old_table)))
-        r->bind_buffer_call(encoder, vertex ? g->set_vertex_buffer : g->set_fragment_buffer, NULL, 0, old_table);
+        r->bind_buffer_call(encoder, s.set_buffer, NULL, 0, old_table);
     /* Preflight admits immediates only with a size table to carry them. */
     if (sizes_slot != UINT32_MAX && table_changed)
-        r->bind_bytes_call(encoder, vertex ? g->set_vertex_bytes : g->set_fragment_bytes, table,
+        r->bind_bytes_call(encoder, s.set_bytes, table,
             doe_mtl_objc_size_table(sizes, sizes_slot, resources->immediates.bytes, resources->immediates.size, table),
             sizes_slot);
     old->immediate_size = resources->immediates.size;
@@ -51,15 +49,14 @@ static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_
         uint32_t slot = resources->textures[i].slot;
         void *native = doe_mtl_texture_view_native(resources->textures[i].view);
         textures[slot / 64] |= UINT64_C(1) << (slot % 64);
-        if (native != old->textures[slot]) r->bind_image_call(encoder,
-            vertex ? g->set_vertex_texture : g->set_fragment_texture, native, slot);
+        if (native != old->textures[slot]) r->bind_image_call(encoder, s.set_texture, native, slot);
         old->textures[slot] = native;
     }
     for (size_t word = 0; word < 2; ++word) {
         uint64_t missing = state->texture_mask[word] & ~textures[word];
         while (missing) {
             uint32_t slot = first_slot(missing) + (uint32_t)word * 64; missing &= missing - 1;
-            r->bind_image_call(encoder, vertex ? g->set_vertex_texture : g->set_fragment_texture, NULL, slot);
+            r->bind_image_call(encoder, s.set_texture, NULL, slot);
             old->textures[slot] = NULL;
         }
         state->texture_mask[word] = textures[word];
@@ -68,18 +65,25 @@ static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_
         uint32_t slot = resources->samplers[i].slot;
         void *native = doe_mtl_sampler_native(resources->samplers[i].sampler);
         samplers |= UINT32_C(1) << slot;
-        if (native != old->samplers[slot]) r->bind_image_call(encoder,
-            vertex ? g->set_vertex_sampler : g->set_fragment_sampler, native, slot);
+        if (native != old->samplers[slot]) r->bind_image_call(encoder, s.set_sampler, native, slot);
         old->samplers[slot] = native;
     }
     removed = state->sampler_mask & ~samplers;
     while (removed) {
         uint32_t slot = first_slot(removed); removed &= removed - 1;
-        r->bind_image_call(encoder, vertex ? g->set_vertex_sampler : g->set_fragment_sampler, NULL, slot);
+        r->bind_image_call(encoder, s.set_sampler, NULL, slot);
         old->samplers[slot] = NULL;
     }
     state->buffer_mask = buffers; state->sampler_mask = samplers;
     state->sizes_slot = sizes_slot; state->valid = true;
+}
+static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_render_bindings *resources,
+    uint32_t sizes_slot, doe_mtl_objc_stage_state *state, bool vertex) {
+    doe_mtl_objc_graphics *g = &r->graphics;
+    doe_mtl_objc_stage_selectors s = vertex ?
+        (doe_mtl_objc_stage_selectors){g->set_vertex_buffer,g->set_vertex_bytes,g->set_vertex_texture,g->set_vertex_sampler} :
+        (doe_mtl_objc_stage_selectors){g->set_fragment_buffer,g->set_fragment_bytes,g->set_fragment_texture,g->set_fragment_sampler};
+    doe_mtl_objc_bind_stage(r, encoder, resources, sizes_slot, s, state);
 }
 static void raster_state(const doe_mtl_native_render_pass *pass, const doe_mtl_render_draw *draw,
     doe_mtl_viewport *viewport, doe_mtl_scissor_abi *scissor) {

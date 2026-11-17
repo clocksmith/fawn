@@ -70,9 +70,17 @@ native_failure native_metal_record_commands(doe_mtl_commands *commands, doe_reso
                 record->value.clear.size, 0, &error);
             break;
         }
-        case DOE_COMMAND_DISPATCH:
-            failure = native_metal_dispatch(commands, record);
+        case DOE_COMMAND_DISPATCH: {
+            const size_t limit = span.count && span.first > i ? span.first : count;
+            size_t run = 1;
+            while (i + run < limit && records[i + run].kind == DOE_COMMAND_DISPATCH) ++run;
+            if (run == 1) failure = native_metal_dispatch(commands, record);
+            else {
+                failure = native_metal_dispatch_batch(commands, records + i, run);
+                if (failure.status == NATIVE_OK) i += run - 1;
+            }
             break;
+        }
         case DOE_COMMAND_DISPATCH_INDIRECT:
             failure = native_metal_dispatch_indirect(commands, record);
             break;

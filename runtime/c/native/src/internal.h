@@ -289,6 +289,8 @@ native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);
 native_failure native_metal_pipeline_create(native_pipeline *pipeline, const native_stage *stage);
 native_failure native_metal_dispatch(doe_mtl_commands *commands, const doe_resource_command *record);
+native_failure native_metal_dispatch_batch(doe_mtl_commands *commands,
+    const doe_resource_command *records, size_t count);
 bool native_vulkan_binding_layout(const native_pipeline *pipeline, doe_vk_binding_layout *out);
 doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
     doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
