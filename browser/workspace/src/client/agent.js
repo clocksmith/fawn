@@ -59,9 +59,9 @@ export function investigationContext(project, { task, permissions, initialArtifa
 import { randomUUID } from 'node:crypto';
 
 export function startAgent({ projectId, store, planner, execute, config, signal, assertCurrent, context: getContext,
-  runId = randomUUID(), verifyCompletion = null, recoverToolError = null }) {
+  runId = randomUUID(), verifyCompletion = null, recoverToolError = null, reviewFinish = null }) {
   const id = runId, usage = [];
-  let turns = 0;
+  let turns = 0, finishReturned = false;
   const save = (status, detail) => {
     if (store.get(projectId).run?.id !== id) return;
     store.run(projectId, { id, status, detail, turns, usage, planner: planner.identity });
@@ -94,6 +94,16 @@ export function startAgent({ projectId, store, planner, execute, config, signal,
         const callId = randomUUID();
         // Persist the call before execution. Restart never automatically replays a pending call.
         store.activity(projectId, { event: 'tool-requested', callId, tool: proposal.tool, input: proposal.input });
+        // A finish that leaves saved work visibly incomplete is returned once, while requests remain,
+        // with what is missing. A second finish is accepted as the agent's decision.
+        const objection = proposal.tool === 'finish' && reviewFinish && !finishReturned && turns < config.maxTurns ? reviewFinish() : null;
+        if (objection) {
+          finishReturned = true;
+          store.activity(projectId, { event: 'tool-failed', callId, error: objection, code: 'finish-incomplete', recoverable: true,
+            details: { neverDispatched: { code: 'finish-incomplete' } } });
+          save('running', 'Finish returned: saved records still need rechecking');
+          continue;
+        }
         if (proposal.tool === 'finish' || proposal.tool === 'ask_human') {
           store.activity(projectId, { event: proposal.tool, text: proposal.input.summary ?? proposal.input.reason ?? '' });
           if (proposal.tool === 'finish' && verifyCompletion) {

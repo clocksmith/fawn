@@ -26,7 +26,7 @@ import { PLANNER_TOOLS } from '../src/client/planner.js';
 import { repositoryEvidence, repositoryFiles } from '../src/client/repository.js';
 import { listArtifacts } from '../src/client/artifact-memory.js';
 import { readArtifact } from '../src/client/artifact-read.js';
-import { describeChange } from '../src/client/validity.js';
+import { describeChange, unfinishedRecords } from '../src/client/validity.js';
 import { sha256Hex } from '../src/journal.js';
 import { validateStockProposal, recoverStockProposal } from './real-handoff-stock.js';
 import { judgeChangingSourceInvestigation, comparisonValidity, ACCEPTANCE } from './changing-source-judge.js';
@@ -212,7 +212,9 @@ function stockArm(dir, repository) {
       tools.repository_read = `${tools.repository_read} To re-read a file into its existing evidence record, also pass artifactId and expectedRevision.`;
       abort = new AbortController();
       run = startAgent({ projectId, store, planner: planner('stock', phase, model, tools), config: { ...client, maxTurns: turns }, execute,
-        recoverToolError: recoverStockProposal, signal: abort.signal, assertCurrent() {}, context: () => ({
+        recoverToolError: recoverStockProposal, signal: abort.signal, assertCurrent() {},
+        // The control gets the same check the product makes: a finish that leaves marked records unrevised is returned once.
+        reviewFinish: () => unfinishedRecords(store.get(projectId)), context: () => ({
           ...investigationContext(store.get(projectId), { task, permissions: { pageIds: ['main'], origins: [origin], actionKinds: ['navigate'] },
             initialArtifacts: new Set(), startSequence, shareRecords: true }),
           ...(resume ? { repositoryChanges: { note: 'Files saved as evidence that differ from the repository now.', files: changes },

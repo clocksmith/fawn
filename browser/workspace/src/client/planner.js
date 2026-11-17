@@ -26,6 +26,7 @@ export const PLANNER_SYSTEM = 'You investigate a user-selected task through boun
   + 'Never enter a password or other credential. When a site needs a sign-in that is missing or expired, use ask_human naming the site and page, and do not work around it. '
   + 'When more than one explanation fits, record each as a hypothesis and settle it with evidence; rejected explanations stay on the record with the reason. '
   + 'When handoff.validity or sources_check lists records under needsRecheck, check each against the changed source before relying on it, then record it again with its id and expectedRevision, corrected if it no longer holds. Records under stillValid need no rework. '
+  + 'Results in history are shortened once three later results follow them. Record each conclusion as soon as the evidence in front of you supports it; do not read everything first, and do not request the same slice again. '
   + 'Only use admitted pages, origins and regions. A record can depend only on existing artifacts. Finish with unresolved questions explicit. '
   + 'When the context has a handoff, continue that work: read what earlier sessions tried and what the human noted, do not redo completed steps, and establish every unresolved action with reconcile before any new action. A reconcile already in the history marked automatic was run by the service on resume; do not repeat one that returned effect-present.';
 export function createPlanner({ model, endpoint, apiKey, maxOutputTokens, timeoutMs, fetchImpl = fetch }) {

@@ -3,6 +3,13 @@ import { spawn as spawnProcess } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { PLANNER_SYSTEM, PLANNER_TOOLS } from './planner.js';
 
+// In two retained trial sessions a model tried to call a workspace tool (record) directly, was told
+// by the CLI that no such tool exists, and finished without saving its conclusions. The contracts
+// below are not callable from inside the model's session; only the structured reply is.
+export const REPLY_PROTOCOL = 'How to reply: you cannot call the workspace tools yourself, and trying to will fail. '
+  + 'Each request asks for exactly one next step. Give it as your structured reply {tool, input}; the workspace runs that tool and asks you again with the result in history. '
+  + 'Every tool in the contracts below, including record, is available this way on every request. Never report a tool as unavailable, and never put conclusions only in a finish summary: save them with record first.';
+
 export function createCliPlanner({ executable, model, directory, config, spawn = spawnProcess,
   system = PLANNER_SYSTEM, tools = PLANNER_TOOLS }) {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -16,7 +23,7 @@ export function createCliPlanner({ executable, model, directory, config, spawn =
       const args = ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
         '--tools', '', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--safe-mode', '--restricted',
         '--setting-sources', '', '--no-session-persistence', '--max-budget-usd', String(config.cliMaxBudgetUsd),
-        '--system-prompt', `${system}\nTool contracts: ${JSON.stringify(tools)}`,
+        '--system-prompt', `${system}\n${REPLY_PROTOCOL}\nTool contracts: ${JSON.stringify(tools)}`,
         ...(model ? ['--model', model] : [])];
       return new Promise((resolve, reject) => {
         const child = spawn(executable, args, { cwd: directory, stdio: ['pipe', 'pipe', 'pipe'], shell: false });

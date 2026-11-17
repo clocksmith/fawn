@@ -7,7 +7,7 @@ import { InvestigationStore } from './investigation.js';
 import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
-import { validityBrief, describeChange } from './validity.js';
+import { validityBrief, describeChange, unfinishedRecords } from './validity.js';
 import { readArtifact } from './artifact-read.js';
 import { listArtifacts } from './artifact-memory.js';
 import { REJECTION_CODES } from '../errors.js';
@@ -395,12 +395,15 @@ export class WorkspaceController {
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
       execute, signal: controller.signal, assertCurrent,
       recoverToolError: error => error.details?.neverDispatched?.code === error.code && CORRECTABLE_PROPOSALS.has(error.code),
+      reviewFinish: () => unfinishedRecords(this.store.get(id)),
       verifyCompletion: async () => {
         const state = await this.service.inspect(this.admin(id));
         const outstanding = state.actions.filter(action => action.isUncertain || action.dispatchStatus === 'queued'
           || (action.dispatchStatus === 'dispatched' && !action.outcome));
-        return { completed: outstanding.length === 0,
-          detail: outstanding.length ? `${outstanding.length} unresolved browser action(s) need review; the task is not complete.`
+        if (outstanding.length) return { completed: false, detail: `${outstanding.length} unresolved browser action(s) need review; the task is not complete.` };
+        const stale = Object.values(this.store.get(id).artifacts).filter(value => value.kind !== 'evidence' && value.status === 'needs-review').length;
+        return { completed: stale === 0,
+          detail: stale ? `${stale} saved record(s) still need rechecking against changed sources; the task is not complete.`
             : 'Task finished with no unresolved browser actions.' };
       },
       context: () => investigationContext(this.store.get(id), {

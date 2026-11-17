@@ -91,3 +91,16 @@ export function validityBrief(project, { unresolvedActions = 0 } = {}) {
     nextAction,
   };
 }
+
+/**
+ * Why a finish should be returned to the agent: saved records are still marked as needing review.
+ * Returns the message to give the agent, or null when nothing is outstanding.
+ */
+export function unfinishedRecords(project, { limit = 8 } = {}) {
+  const stale = Object.values(project.artifacts).filter(value => value.kind !== 'evidence' && value.status === 'needs-review');
+  if (!stale.length) return null;
+  const listed = stale.slice(0, limit).map(value => `${value.id} (${value.kind}, revision ${value.revision})`).join('; ');
+  return `${stale.length} saved record(s) still need rechecking because a source they rest on changed: ${listed}${stale.length > limit ? '; and more' : ''}. `
+    + 'Check each against the current source, then save it again with the record tool, passing its id and expectedRevision and correcting the text if it no longer holds. '
+    + 'The record tool is available through your reply. Finish after that; a second finish is accepted as it stands.';
+}
