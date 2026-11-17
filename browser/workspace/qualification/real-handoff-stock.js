@@ -22,3 +22,18 @@ export function validateStockProposal(tool, input, pages, observations) {
 }
 export const recoverStockProposal = error => error.code === 'STOCK_PROPOSAL_INVALID'
   && error.details?.neverDispatched?.code === error.code;
+
+/**
+ * What a durable tracker can check for itself on resume: each action whose outcome came back unknown
+ * and that declared how its completion shows on the page. Already-checked actions are not repeated.
+ */
+export function uncertainStockActions(activity) {
+  const requests = new Map(activity.filter(event => event.event === 'tool-requested').map(event => [event.callId, event]));
+  const checked = new Set(activity.filter(event => event.event === 'tool-result' && event.output?.result === 'effect-present' && event.output.forCallId)
+    .map(event => event.output.forCallId));
+  return activity.filter(event => event.event === 'tool-result' && event.output?.isUncertain && !checked.has(event.callId)).flatMap(event => {
+    const request = requests.get(event.callId), declared = request?.input?.completion?.completedWhen;
+    const conditions = Array.isArray(declared) ? declared : declared && typeof declared === 'object' ? [declared] : [];
+    return request?.tool === 'act' && conditions.length ? [{ forCallId: event.callId, pageId: request.input.pageId ?? 'main', conditions }] : [];
+  });
+}

@@ -13,7 +13,9 @@ import { chromium } from 'playwright-core';
 import { WorkspaceService } from '../src/service.js';
 import { loadServiceConfig } from '../src/config.js';
 import { createPlaywrightAdapter } from '../src/adapters/playwright-adapter.js';
-import { queryPage, snapshotArgs, buildSnapshot } from '../src/adapters/page-query.js';
+import { queryPage, snapshotArgs, buildSnapshot, buildProbe, elementArgs } from '../src/adapters/page-query.js';
+import { evaluateConditions } from '../src/conditions.js';
+import { randomUUID } from 'node:crypto';
 import { WorkspaceController } from '../src/client/controller.js';
 import { InvestigationStore } from '../src/client/investigation.js';
 import { startAgent, investigationContext } from '../src/client/agent.js';
@@ -22,18 +24,22 @@ import { PLANNER_TOOLS } from '../src/client/planner.js';
 import { repositoryEvidence } from '../src/client/repository.js';
 import { sha256Hex } from '../src/journal.js';
 import { judgeHandoff, repostCheck } from './real-handoff-judge.js';
-import { validateStockProposal, recoverStockProposal } from './real-handoff-stock.js';
+import { validateStockProposal, recoverStockProposal, uncertainStockActions } from './real-handoff-stock.js';
 import { listArtifacts } from '../src/client/artifact-memory.js';
 import { readArtifact } from '../src/client/artifact-read.js';
 
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
-const help = 'Usage: node browser/workspace/qualification/real-handoff.js --out DIR [--arms fawn,stock] [--docs-url URL]';
+const help = 'Usage: node browser/workspace/qualification/real-handoff.js --out DIR [--arms fawn,stock] [--docs-url URL] [--stock-outcome-check]';
 const args = process.argv.slice(2);
 if (args.includes('--help')) { console.log(help); process.exit(0); }
 const value = (flag, fallback) => { const i = args.indexOf(flag); return i < 0 ? fallback : args[i + 1]; };
 const out = resolve(value('--out', mkdtempSync(join(tmpdir(), 'fawn-real-handoff-'))));
 const arms = value('--arms', 'fawn,stock').split(',');
+// A stronger control: on resume the stock arm also checks an uncertain action's recorded completion
+// condition on the live page before its planner runs, as the Fawn client does. Off by default so
+// the earlier protocol stays reproducible; the report records which was used.
+const stockOutcomeCheck = args.includes('--stock-outcome-check');
 mkdirSync(out, { recursive: true });
 
 // Fixed before running.
@@ -221,6 +227,23 @@ async function runStock() {
         if (!dropped && tracker.commits > before) { dropped = true; return { error: 'Connection reset after the request was sent; outcome unknown', isUncertain: true }; }
         return { ok: true };
       };
+      if (sharePrior && stockOutcomeCheck) {
+        // The tracker already holds each action's declared completion condition and whether its
+        // outcome came back unknown. Check that condition on the live page; only a met condition
+        // settles anything, and the check is recorded where the resuming agent will read it.
+        for (const { forCallId, pageId, conditions } of uncertainStockActions(store.get(projectId).activity)) {
+          const target = pages.get(pageId);
+          if (!target) continue;
+          const callId = randomUUID();
+          store.activity(projectId, { event: 'tool-requested', callId, tool: 'outcome_check', automatic: true, input: { forCallId, effectPresentWhen: conditions } });
+          try {
+            const probe = { url: async () => target.url(), element: async selector => buildProbe(await target.evaluate(queryPage, elementArgs(selector))) };
+            const present = await evaluateConditions(conditions, probe);
+            store.activity(projectId, { event: 'tool-result', callId, automatic: true,
+              output: { forCallId, result: present.allEstablished ? 'effect-present' : 'inconclusive', conditions: present } });
+          } catch (error) { store.activity(projectId, { event: 'tool-failed', callId, automatic: true, recoverable: true, error: error.message }); }
+        }
+      }
       const tools = { ...PLANNER_TOOLS }; delete tools.reconcile; delete tools.handoff_read;
       // The durable tracker shows the resuming agent everything earlier sessions and the human recorded.
       const run = startAgent({ projectId, store, planner: planner('stock', phase, model, tools), config: { ...client, maxTurns: turns }, execute, recoverToolError: recoverStockProposal,
@@ -272,7 +295,7 @@ try {
   }
 } finally { await new Promise(r => fixture.close(r)); }
 const sum = (arm, key) => calls.filter(c => c.arm === arm).reduce((s, c) => s + (c[key] ?? 0), 0);
-const report = { schemaVersion: 1, classification: 'diagnostic: one paired real-investigation handoff run', policy: POLICY,
+const report = { schemaVersion: 1, classification: 'diagnostic: one paired real-investigation handoff run', policy: { ...POLICY, stockOutcomeCheck },
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
   sourceDirty: !!execFileSync('git', ['status', '--porcelain', '--', 'browser/workspace'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
   rows: rows.map(r => ({ ...r, plannerCalls: calls.filter(c => c.arm === (r.arm === 'fawn' ? 'fawn' : 'stock')).length,
