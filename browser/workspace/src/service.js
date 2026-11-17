@@ -915,15 +915,17 @@ class WorkspaceService {
     return { pageId };
   }
 
-  /** Stop accepting commands and release the browser and journal. */
+  /** Stop accepting commands and release the browser and journal. Reports how each browser was released. */
   async close() {
     this.#ready = false;
-    await this.#adapter.close();
+    const released = await this.#adapter.close();
+    const releases = Array.isArray(released) ? released.filter(value => value?.workspaceId && value.release) : [];
     const retained = new Set([...this.#state.workspaces.values()].flatMap(workspace => [...workspace.grants.values()]
       .filter(grant => grant.expiresAt === null || Date.parse(grant.expiresAt) > this.#nowMs())
       .flatMap(grant => (grant.uploadFiles ?? []).map(file => file.fileId))));
     try { this.#uploads.retireUnused(retained); }
     finally { this.#journal.close(); }
+    return { releases };
   }
 }
 

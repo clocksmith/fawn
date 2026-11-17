@@ -110,7 +110,9 @@ not beat a script.
   ends the browser with no time to exit and restarts: the journal bytes and
   every recorded action survive and the profile reopens. A session cookie set
   just before the release was lost in two of three runs; the workspace then
-  shows the site as signed out, and nothing re-establishes the session.
+  shows the site as signed out. The product client records a forced release
+  and the next handoff warns that sign-ins may be lost; nothing re-establishes
+  the session, and no real signed-in investigation has exercised this.
 
 - Personal workflow learning, verified repair-suffix reuse and UI delegation
   require host-installed task definitions and local verifiers. Live ATS and

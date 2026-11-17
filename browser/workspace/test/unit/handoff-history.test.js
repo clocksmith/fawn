@@ -59,3 +59,42 @@ assert.equal(failedFinish.sessions[0].ended.how, 'needs-attention');
 assert.match(failedFinish.sessions[0].ended.detail, /unresolved/);
 assert.equal(activity.length, 56000, 'the complete journal was not truncated');
 console.log('ok: bounded handoff, linear settlement, complete pagination and provenance');
+
+// A forced browser release is recorded for whoever resumes, and only the latest release counts.
+{
+  const { mkdtempSync: tmp, rmSync: remove } = await import('node:fs');
+  const { tmpdir: temporary } = await import('node:os');
+  const { join: joinPath } = await import('node:path');
+  const { InvestigationStore: Store } = await import('../../src/client/investigation.js');
+  const { handoffBrief: brief } = await import('../../src/client/handoff.js');
+  const { WorkspaceController: Controller } = await import('../../src/client/controller.js');
+  const { default: assertStrict } = await import('node:assert/strict');
+  const directory = tmp(joinPath(temporary(), 'fawn-forced-release-handoff-'));
+  try {
+    const controller = Object.create(Controller.prototype);
+    controller.active = new Map(); controller.store = new Store(joinPath(directory, 'investigations'));
+    controller.store.create({ id: 'investigation-a', goal: 'Keep working across restarts' });
+    assertStrict.equal(brief(controller.store.get('investigation-a')).lastBrowserRelease, undefined);
+    await controller.close({ release: async () => ({ releases: [{ workspaceId: 'investigation-a', release: 'forced' },
+      { workspaceId: 'unknown-workspace', release: 'forced' }] }) });
+    const reopened = new Store(joinPath(directory, 'investigations'));
+    const handed = brief(reopened.get('investigation-a'));
+    assertStrict.equal(handed.lastBrowserRelease.forced, true);
+    assertStrict.match(handed.lastBrowserRelease.note, /sign in again/);
+    reopened.close();
+    const next = Object.create(Controller.prototype);
+    next.active = new Map(); next.store = new Store(joinPath(directory, 'investigations'));
+    await next.close({ release: async () => ({ releases: [{ workspaceId: 'investigation-a', release: 'graceful' }] }) });
+    const cleared = new Store(joinPath(directory, 'investigations'));
+    assertStrict.equal(brief(cleared.get('investigation-a')).lastBrowserRelease, undefined, 'a later ordinary release clears the warning');
+    const events = cleared.get('investigation-a').activity.filter(event => event.event === 'browser-released').length;
+    cleared.close();
+    const quiet = Object.create(Controller.prototype);
+    quiet.active = new Map(); quiet.store = new Store(joinPath(directory, 'investigations'));
+    await quiet.close({ release: async () => ({ releases: [{ workspaceId: 'investigation-a', release: 'graceful' }] }) });
+    const after = new Store(joinPath(directory, 'investigations'));
+    assertStrict.equal(after.get('investigation-a').activity.filter(event => event.event === 'browser-released').length, events, 'ordinary releases are not recorded otherwise');
+    after.close();
+    console.log('ok: a forced browser release reaches the next handoff and a later ordinary release clears it');
+  } finally { remove(directory, { recursive: true, force: true }); }
+}

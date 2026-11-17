@@ -51,7 +51,7 @@ try {
   const profileDir = join(stateDir, 'profiles', workspaceId);
   const browserPids = profileBrowserPids(profileDir);
   assert.equal(browserPids.length, 1, `one main browser owns ${profileDir}`);
-  assert.deepEqual(await adapter.close({ timeoutMs: 0 }), ['forced']);
+  assert.deepEqual(await adapter.close({ timeoutMs: 0 }), [{ workspaceId, release: 'forced' }]);
   assert.deepEqual(profileBrowserPids(profileDir), [], 'no browser is left on the profile');
   await service.close();
   assert.ok(readFileSync(journalPath).subarray(0, beforeBytes.length).equals(beforeBytes), 'the forced release preserves every journal byte');

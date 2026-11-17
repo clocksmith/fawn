@@ -376,9 +376,18 @@ export class WorkspaceController {
         return { investigation, workspace, handoff: handoffBrief(investigation, workspace) }; })() : null,
       workflows: this.#workflowSummaries(), planner: this.planner?.identity ?? null, pollMs: this.config.pollMs };
   }
-  async close() {
+  /** With `release` (the service close), a browser that had to be ended is recorded for whoever resumes. */
+  async close({ release = null } = {}) {
     for (const id of this.active.keys()) await this.takeOver(id);
     await Promise.all([...this.active.values()].map(value => value.done));
-    this.store.close();
+    try {
+      const { releases = [] } = release ? await release() ?? {} : {};
+      for (const value of releases) {
+        if (!this.store.projects.has(value.workspaceId)) continue;
+        // An ordinary release is recorded only to clear an earlier forced one.
+        const earlier = this.store.get(value.workspaceId).activity.findLast(event => event.event === 'browser-released')?.forced === true;
+        if (value.release === 'forced' || earlier) this.store.activity(value.workspaceId, { event: 'browser-released', forced: value.release === 'forced' });
+      }
+    } finally { this.store.close(); }
   }
 }

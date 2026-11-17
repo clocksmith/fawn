@@ -22,7 +22,7 @@ function summarizeOutput(output) {
 /** Cursors select older pages; use only the opaque nextCursor returned for that collection. */
 export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
   const sessions = [], human = [], requested = new Map(), pagination = {};
-  let current = null;
+  let current = null, forcedRelease = null;
   // One forward settlement scan: each call is indexed once and updated on result.
   for (let index = 0; index < project.activity.length; index++) {
     const event = project.activity[index], provenance = { seq: event.seq ?? null, activityIndex: index };
@@ -40,6 +40,8 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
       if (call) call.result = event;
     } else if (event.event === 'human-control' || event.event === 'human-note') {
       human.push({ cursor, event, provenance });
+    } else if (event.event === 'browser-released') {
+      forcedRelease = event.forced ? { seq: event.seq ?? null, at: event.at ?? null } : null;
     }
   }
   function page(name, entries, summarize) {
@@ -79,6 +81,10 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
     needsReview: page('needsReview', artifacts.filter(value => value.status === 'needs-review')
       .map(value => ({ cursor: value.id, value })), ({ value }) => value.id),
     pagination,
+    // The browser did not exit in time at the last shutdown and was ended. Recorded work is intact;
+    // a site session set shortly before may not have reached disk.
+    ...(forcedRelease ? { lastBrowserRelease: { forced: true, ...forcedRelease,
+      note: 'The browser was ended at the last shutdown. Site sign-ins may be lost: observe each site before relying on a session, and ask_human to sign in again if it is gone.' } } : {}),
     authority: 'The complete investigation journal (seq/callId) and service action records (actionId) remain authoritative; excerpts are summaries. Use handoff_read with pagination[collection].nextCursor to retrieve older entries.',
     guidance: unresolved.length
       ? `${unresolved.length} earlier actions have unknown outcomes, including any omitted from this page. Establish every one with reconcile before a new action; never repeat one unless reconcile returns effect-absent. Page through unresolvedActions with handoff_read as needed.`

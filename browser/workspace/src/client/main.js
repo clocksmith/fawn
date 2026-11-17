@@ -47,7 +47,7 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
     await controller.restore();
     http = await startWorkspaceServer({ controller, config, port });
     return { ...http, controller, service, browser: serviceConfig.browser,
-      async close() { await http.close(); await controller.close(); await service.close(); } };
+      async close() { await http.close(); await controller.close({ release: () => service.close() }); } };
   } catch (error) { controller?.store.close(); await service.close(); throw error; }
 }
 

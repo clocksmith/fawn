@@ -110,12 +110,13 @@ class PlaywrightWorkspaceAdapter {
 
   async focusPage(workspaceId, pageId) { await this._page(workspaceId, pageId).bringToFront(); }
 
-  /** Resolves to one 'graceful' or 'forced' per released workspace. */
+  /** Resolves to { workspaceId, release: 'graceful' | 'forced' } per released workspace. */
   async close({ timeoutMs = this._config.dispatch.actionTimeoutMs } = {}) {
-    const entries = [...this._workspaces.values()];
+    const entries = [...this._workspaces.entries()];
     this._workspaces.clear();
     // Releasing the workspace never waits on a browser that will not exit (see bounded-close.js).
-    return Promise.all(entries.map((entry) => closeWithin(entry.context, { profileDir: entry.profileDir, timeoutMs })));
+    return Promise.all(entries.map(async ([workspaceId, entry]) => ({ workspaceId,
+      release: await closeWithin(entry.context, { profileDir: entry.profileDir, timeoutMs }) })));
   }
 }
 
