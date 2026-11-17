@@ -72,6 +72,10 @@ try {
   const first = unreadMentions(fresh, 'browserProcess.close has no deadline').mentions[0];
   assert.deepEqual([first.term, first.path, first.offset, first.defines], ['browserProcess', 'lib/launcher.js', at, true]);
   assert.match(first.excerpt, /closeOrKill\(DEFAULT_TIMEOUT\)/);
+  // What is left unseen is only the bare declaration's neighbours: nothing worth attaching, so nothing is returned.
+  const declared = { artifacts: { x: { id: 'x', kind: 'evidence', revision: 1, source: { kind: 'repository', path: 'lib/x.js', content: `${filler}let browserProcess = void 0;\nuse(browserProcess);\n` } } }, activity: [] };
+  const bare = unreadMentions(declared, 'browserProcess.close has no deadline').mentions[0];
+  assert.deepEqual([bare.defines, Object.hasOwn(bare, 'excerpt'), bare.offset], [false, false, filler.length + 4], 'a bare declaration is pointed at but not attached');
   // A new revision of the source resets what counts as shown.
   writeFileSync(join(repository, 'lib/launcher.js'), LAUNCHER.replace('DEFAULT_TIMEOUT', 'THIRTY_SECONDS'));
   await controller.checkSources(id);

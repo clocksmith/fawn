@@ -68,8 +68,9 @@ export function unreadMentions(project, text) {
         if (TRIVIAL_VALUE.test(after)) { declaration ??= match.index; continue; }
         definition = match.index; break;
       }
-      definition ??= declaration;
-      if (first !== null) found.push({ term, artifactId: artifact.id, revision: artifact.revision, path: artifact.source.path, offset: definition ?? first, defines: definition !== null });
+      // A bare declaration is worth pointing at but not worth showing: in a live run a corrected record
+      // was returned a second time carrying only `let browserProcess = void 0`, which cost a request.
+      if (first !== null) found.push({ term, artifactId: artifact.id, revision: artifact.revision, path: artifact.source.path, offset: definition ?? declaration ?? first, defines: definition !== null });
     }
   }
   if (!found.length) return null;

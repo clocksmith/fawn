@@ -141,8 +141,21 @@ same planner calls and usage (37 versus 36). Graded against the separately
 established cause, the control's diagnosis was correct and Fawn's only partly
 correct: for the second time the Fawn agent recorded that Playwright has no
 close deadline without reading the part of `browserType.js` that implements
-one, and the control paged to it. Neither arm is accepted, and no advantage
-over stock automation with a durable tracker is established.
+one, and the control paged to it. Neither arm is accepted. A pointer to that
+unseen code, attached to the saved conclusion, was ignored in a Fawn-only run.
+The client now [returns a claim that something is absent or unbounded](../../browser/workspace/test/unit/unread-mentions.test.js)
+once, unsaved, with the saved text around the code it names where that code is
+defined in a part of a source no agent was shown; sending the record again
+saves it. In the two live sessions where that fired with the deciding code,
+the agent corrected the conclusion. In the fifth pair the outcome reversed:
+Fawn's diagnosis was graded correct and the control's partly correct (it never
+read that file), while the control passed all mechanical checks and Fawn
+failed one, because it used its 24 resume requests before saving the
+open-question and decision records. Fawn used 31 planner calls to the
+control's 36. Across three valid pairs no arm was accepted and the outcome
+varied more between runs than between arms: no advantage over stock automation
+with a durable tracker is established. The changes between runs were made on
+this same investigation, so none of it is held out.
 
 ## Active blockers
 

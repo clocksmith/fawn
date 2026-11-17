@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "classification": "four paired runs of one investigation across a real source change; two valid pairs; no advantage established; release promotion rejected",
+  "classification": "seven runs of one investigation across a real source change, three of them valid pairs; no arm accepted in any pair; no advantage established; release promotion rejected",
   "consumer": "docs/status/fawn-workspace.md; Track C review of investigation memory on a real code and documentation investigation, separate from Doe GPU and Fawn browser runtime claims",
   "requiresNativeRuntimeWins": false,
   "gpuClaimsIncluded": false,
@@ -603,6 +603,332 @@
         }
       ],
       "changesSincePreviousRun": "cf4f4de82b: the planner prompt states that workspace tools are reached only through the structured reply; a finish that leaves records marked for review is returned once (both arms); guidance to record conclusions as they are reached. The returned finish did not fire in either arm."
+    },
+    {
+      "harnessCommit": "e0bb07196c",
+      "reportSha256": "62bde33000dbf18177e89e2a97ed6c825df583909877622b13fd873807191343",
+      "spentUsd": 7.61,
+      "outcome": "Fawn arm only; not a comparison",
+      "comparison": {
+        "valid": false,
+        "reasons": [
+          {
+            "arm": null,
+            "reason": "fewer than two arms ran"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "arm": "fawn",
+          "mechanicallyAccepted": true,
+          "diagnosis": {
+            "status": "ungraded",
+            "correct": null,
+            "gradedBy": null,
+            "basis": null
+          },
+          "checks": {
+            "finalCompleted": true,
+            "evidenceIntact": true,
+            "changedSourcesRead": true,
+            "hypothesesSettled": true,
+            "noRecordNeedsReview": true,
+            "conclusionsOnCurrentSources": true,
+            "interruptedConclusionsRechecked": true,
+            "connectedDiagnosis": true
+          },
+          "counts": {
+            "evidence": 10,
+            "records": 7,
+            "hypotheses": 2,
+            "settledHypotheses": 2,
+            "rejectedHypotheses": 1,
+            "needingReview": 0,
+            "restingOnSupersededSource": 0,
+            "restedOnChangingSourceAtInterruption": 1,
+            "notWrittenAgain": 0
+          },
+          "interrupted": true,
+          "recordsAtInterruption": 1,
+          "restingOnChangingSource": 1,
+          "plannerCalls": 36,
+          "costUsd": 6.110828799999999,
+          "agentMs": {
+            "first": 124956.861917,
+            "resume": 180607.26924999995
+          },
+          "agentTotalMs": 305564.1311669999,
+          "resumeTools": [
+            "artifact_read",
+            "artifact_read",
+            "repository_read",
+            "repository_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "repository_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "record",
+            "record",
+            "record",
+            "artifact_read",
+            "record",
+            "record",
+            "record",
+            "record",
+            "record",
+            "finish"
+          ]
+        }
+      ],
+      "observation": "The workspace attached a pointer to the unseen part of browserType.js to a saved finding. The agent did not read it and again recorded that Playwright has no close deadline. Diagnosis not formally graded; it repeats the partly correct conclusion."
+    },
+    {
+      "harnessCommit": "30ed40879b",
+      "reportSha256": "84c4552e7dd9dc086fd5b74d44cbe79dca27b97bebb7f45e76bed2591743524b",
+      "spentUsd": 7.65,
+      "outcome": "Fawn arm only; cut short by the run spend ceiling the operator set (9, with 1.5 held back per request)",
+      "comparison": {
+        "valid": false,
+        "reasons": [
+          {
+            "arm": null,
+            "reason": "fewer than two arms ran"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "arm": "fawn",
+          "mechanicallyAccepted": false,
+          "diagnosis": {
+            "status": "ungraded",
+            "correct": null,
+            "gradedBy": null,
+            "basis": null
+          },
+          "checks": {
+            "finalCompleted": false,
+            "evidenceIntact": true,
+            "changedSourcesRead": true,
+            "hypothesesSettled": true,
+            "noRecordNeedsReview": false,
+            "conclusionsOnCurrentSources": true,
+            "interruptedConclusionsRechecked": false,
+            "connectedDiagnosis": false
+          },
+          "counts": {
+            "evidence": 10,
+            "records": 3,
+            "hypotheses": 2,
+            "settledHypotheses": 1,
+            "rejectedHypotheses": 1,
+            "needingReview": 1,
+            "restingOnSupersededSource": 0,
+            "restedOnChangingSourceAtInterruption": 1,
+            "notWrittenAgain": 1
+          },
+          "interrupted": true,
+          "recordsAtInterruption": 3,
+          "restingOnChangingSource": 1,
+          "plannerCalls": 32,
+          "costUsd": 6.149330199999998,
+          "agentMs": {
+            "first": 216754.143583,
+            "resume": 100584.22
+          },
+          "agentTotalMs": 317338.363583,
+          "resumeTools": [
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "repository_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read"
+          ]
+        }
+      ],
+      "observation": "The first agent twice tried to save that Playwright waits with no limit; both times the record was returned unsaved with the closeOrKill code attached, and the hypothesis it then saved rejects that claim. The resuming agent was stopped by the spend ceiling after 15 of 24 requests, all of them reads."
+    },
+    {
+      "harnessCommit": "30ed40879b",
+      "reportSha256": "9c094a7aef81f915551c02abcd22dc34007b42388cca67ac686dc748005c131a",
+      "spentUsd": 12.97,
+      "outcome": "valid pair; the control passed all mechanical checks with a partly correct diagnosis; Fawn failed one mechanical check with a correct diagnosis; neither accepted",
+      "comparison": {
+        "valid": true,
+        "reasons": []
+      },
+      "rows": [
+        {
+          "arm": "fawn",
+          "mechanicallyAccepted": false,
+          "diagnosis": {
+            "status": "ungraded",
+            "correct": null,
+            "gradedBy": null,
+            "basis": null
+          },
+          "checks": {
+            "finalCompleted": true,
+            "evidenceIntact": true,
+            "changedSourcesRead": true,
+            "hypothesesSettled": true,
+            "noRecordNeedsReview": true,
+            "conclusionsOnCurrentSources": true,
+            "interruptedConclusionsRechecked": true,
+            "connectedDiagnosis": false
+          },
+          "counts": {
+            "evidence": 10,
+            "records": 4,
+            "hypotheses": 2,
+            "settledHypotheses": 2,
+            "rejectedHypotheses": 2,
+            "needingReview": 0,
+            "restingOnSupersededSource": 0,
+            "restedOnChangingSourceAtInterruption": 1,
+            "notWrittenAgain": 0
+          },
+          "interrupted": true,
+          "recordsAtInterruption": 1,
+          "restingOnChangingSource": 1,
+          "plannerCalls": 31,
+          "costUsd": 4.318560199999999,
+          "agentMs": {
+            "first": 48682.271542,
+            "resume": 189260.30729199998
+          },
+          "agentTotalMs": 237942.57883399999,
+          "resumeTools": [
+            "repository_read",
+            "repository_read",
+            "artifact_read",
+            "artifact_read",
+            "repository_read",
+            "repository_read",
+            "repository_read",
+            "observe",
+            "sources_check",
+            "capture",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "record",
+            "record",
+            "record",
+            "record",
+            "artifact_read",
+            "record",
+            "record",
+            "record",
+            "finish"
+          ]
+        },
+        {
+          "arm": "stock-chrome-and-tracker",
+          "mechanicallyAccepted": true,
+          "diagnosis": {
+            "status": "ungraded",
+            "correct": null,
+            "gradedBy": null,
+            "basis": null
+          },
+          "checks": {
+            "finalCompleted": true,
+            "evidenceIntact": true,
+            "changedSourcesRead": true,
+            "hypothesesSettled": true,
+            "noRecordNeedsReview": true,
+            "conclusionsOnCurrentSources": true,
+            "interruptedConclusionsRechecked": true,
+            "connectedDiagnosis": true
+          },
+          "counts": {
+            "evidence": 8,
+            "records": 7,
+            "hypotheses": 2,
+            "settledHypotheses": 2,
+            "rejectedHypotheses": 1,
+            "needingReview": 0,
+            "restingOnSupersededSource": 0,
+            "restedOnChangingSourceAtInterruption": 1,
+            "notWrittenAgain": 0
+          },
+          "interrupted": true,
+          "recordsAtInterruption": 1,
+          "restingOnChangingSource": 1,
+          "plannerCalls": 36,
+          "costUsd": 5.6520226,
+          "agentMs": {
+            "first": 133386.1815,
+            "resume": 197530.408208
+          },
+          "agentTotalMs": 330916.589708,
+          "resumeTools": [
+            "repository_read",
+            "artifact_read",
+            "repository_read",
+            "artifact_read",
+            "repository_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "artifact_read",
+            "observe",
+            "repository_read",
+            "artifact_read",
+            "artifact_read",
+            "record",
+            "artifact_read",
+            "capture",
+            "record",
+            "record",
+            "record",
+            "record",
+            "record",
+            "record",
+            "finish"
+          ]
+        }
+      ],
+      "diagnosisGrades": [
+        {
+          "arm": "fawn",
+          "status": "graded",
+          "correct": true,
+          "gradedBy": "Track C operator session, 2026-11-17",
+          "basis": "Sealed cause and rubric (sha256 893565b9aea09ad933cad0508b00a29a9b90c1d698d2ab90229aa73a6a9f6db2). Correct on all three points: both adapters are described as bounded at the current revision and the earlier CDP reading is marked superseded; the explanation that Playwright waits without a limit is rejected, citing closeOrKill in browserType.js as a deadline followed by a kill, and the measured 586 s stall is stated as unexplained by the source and to be measured; the reproduction is runnable. One finding still repeats the status document sentence that Playwright waits without a limit as part of what that document says. The 30 s value was not read.",
+          "accepted": false
+        },
+        {
+          "arm": "stock-chrome-and-tracker",
+          "status": "graded",
+          "correct": false,
+          "gradedBy": "Track C operator session, 2026-11-17",
+          "basis": "Sealed cause and rubric (sha256 893565b9aea09ad933cad0508b00a29a9b90c1d698d2ab90229aa73a6a9f6db2). Partly correct: the CDP release is described as bounded at the current revision and the reproduction is runnable, but the supported explanation is that Playwright has no deadline, taken from browserContext.js and the status document; the records say browser.js and browserType.js were not read and that a deadline elsewhere is not excluded.",
+          "accepted": false
+        }
+      ],
+      "observation": "The resuming Fawn agent tried to save a finding that the close path has no deadline; it was returned with the closeOrKill code, the agent read browserType.js at that place and saved the corrected finding and a rejected hypothesis. A second return carried only a bare declaration and cost a request (fixed afterwards). Fawn used all 24 resume requests and finished without saving the open-question and decision records, which is the one mechanical check it failed. The control never read browserType.js."
     }
   ],
   "sealedCause": {
@@ -610,15 +936,16 @@
     "establishedBy": "operator experiment outside the trial, before the runs",
     "summary": "Playwright 1.58.2 does force-kill the browser 30 s after a close request (closeOrKill in lib/server/browserType.js). It then waits for the child close event, which needs the child standard streams to close. Chrome has by then started its updater and a crash handler in other process groups; they survive the kill and hold the inherited streams open until they exit."
   },
-  "finding": "In the last valid pair the Fawn arm passed all eight mechanical checks (nine records, two explanations settled, one rejected, the interrupted conclusion rewritten against the changed file) and the control failed one (it wrote its alternative explanations inside a single hypothesis record) at the same usage and planner calls (37 versus 36). Graded against the separately established cause, the control diagnosis was correct and the Fawn diagnosis only partly correct: Fawn again recorded that Playwright has no deadline without reading the part of browserType.js that implements one, while the control paged to it. Neither arm is accepted. In the earlier valid pair neither arm passed and the control saved more. No advantage over stock automation with a durable tracker is established.",
+  "finding": "Three valid pairs, three different outcomes, and in none of them was either arm accepted (all mechanical checks passed and the diagnosis graded correct). Pair at b59404b8de: neither arm passed the mechanical checks and the control saved more. Pair at cf4f4de82b: Fawn passed all mechanical checks with a partly correct diagnosis; the control failed one with a correct diagnosis. Pair at 30ed40879b: the control passed all mechanical checks with a partly correct diagnosis; Fawn failed one with a correct diagnosis, using fewer planner calls (31 versus 36) and less usage (4.32 versus 5.65). The one behaviour that held each time it was exercised live (two sessions) is the returned absence claim: shown the unseen code that decides it, the agent corrected the conclusion. No advantage over stock automation with a durable tracker is established.",
   "limits": [
-    "Two valid pairs with different outcomes; model variance is larger than any difference between the arms.",
+    "Three valid pairs with three different outcomes; model variance is larger than any difference between the arms.",
     "The interrupted first agent had one conclusion resting on a changing source in every run; a larger set was not exercised.",
-    "The diagnoses were graded by the operator who also established the sealed cause.",
-    "The control is the same durable record store, is told which saved files changed, and since cf4f4de82b gets the same returned finish; it is not given the list of records that rest on a changed file.",
-    "The Mac was under unrelated load during the last two runs, so elapsed times are not comparable with earlier runs.",
+    "The diagnoses were graded by the operator who also established the sealed cause and wrote the product changes between runs.",
+    "Product changes were made between runs in response to what the previous run showed, on this same investigation; nothing here is held out.",
+    "The control is the same durable record store, is told which saved files changed and gets the same returned finish; it does not get the list of records resting on a changed file or the returned absence claim.",
+    "The Mac was under unrelated load during the runs after the second, so elapsed times are not comparable across runs.",
     "Both arms ran on stock Google Chrome. Nothing here concerns Doe, WebGPU or a Chromium fork.",
     "The documentation page is live and was not pinned."
   ],
-  "remainingFailure": "Saved sources are shown 6000 characters at a time and the Fawn agent does not follow a call to its definition in the unseen part of another saved file: in two graded runs it concluded that Playwright has no close deadline from browser.js and the status document, without reading closeOrKill at character 11126 of browserType.js. Search inside saved sources (fa10f1a760) exists and was not used for this."
+  "remainingFailure": "In the last pair the Fawn arm spent its 24 resume requests before saving the open-question and decision records: fifteen went to re-reading sources before the first record, and two to returned records, one of which carried nothing useful (a bare declaration; no longer attached as of the commit after 30ed40879b). The returned-absence-claim check was built on this investigation and has not been tried on another one. Across pairs the outcome still varies more between runs than between arms."
 }
