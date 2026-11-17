@@ -31,4 +31,16 @@ assert.deepEqual(views.map(view => [view.observationVersion, Array.isArray(view.
 // A failed proposal counts as a result too, so a run of refusals still ages the page out.
 for (let index = 0; index < 3; index++) { const callId = `f${index}`; activity.push({ seq: ++seq, event: 'tool-requested', callId, tool: 'act', input: {} }, { seq: ++seq, event: 'tool-failed', callId, error: 'refused', recoverable: true }); }
 assert.equal(context().history.findLast(event => event.output?.observationVersion === 9).output.elements, undefined);
-console.log('ok: a page observation is sent in full while in use, reduced after three later results, and restored by observing again');
+
+// A slice of saved evidence ages the same way and keeps what is needed to read it again.
+const slice = { artifactId: 'evidence-1', revision: 2, kind: 'evidence', field: 'source', offset: 6000, end: 12000, totalChars: 27000, nextOffset: 12000,
+  content: 'x'.repeat(6000), sliceSha256: 'a'.repeat(64), sourceSha256: 'b'.repeat(64) };
+call('artifact_read', { artifactId: 'evidence-1', offset: 6000 }, slice);
+const read = () => context().history.find(event => event.output?.artifactId === 'evidence-1').output;
+assert.equal(read().content.length, 6000);
+for (let index = 0; index < 3; index++) call('record', { kind: 'question', text: `later ${index}` }, { ok: true });
+assert.deepEqual(read(), { artifactId: 'evidence-1', revision: 2, kind: 'evidence', field: 'source', offset: 6000, end: 12000, totalChars: 27000, nextOffset: 12000,
+  sliceSha256: 'a'.repeat(64), sourceSha256: 'b'.repeat(64), omitted: ['content'], aged: 'Sent in full earlier. Request it again if it is still needed.' });
+// Small results are never touched.
+assert.deepEqual(context().history.find(event => event.output?.ok === true).output, { ok: true });
+console.log('ok: page observations and large results are sent in full while in use, reduced after three later results, and restored by asking again');

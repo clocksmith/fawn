@@ -6,6 +6,15 @@ import { artifactMemory } from './artifact-memory.js';
 // this many later results have followed it, it is reduced to where the page was and how it began.
 // The planner observes again to act there, and anything it saved as evidence is still on record.
 const FULL_OBSERVATION_RESULTS = 3, AGED_EXCERPT_CHARS = 1200;
+// The same holds for any other large result, such as a slice of saved evidence: after the same number
+// of later results its long fields are dropped. What identifies it stays, so it can be read again.
+const AGED_RESULT_BYTES = 3000, AGED_FIELD_CHARS = 200;
+function ageResult(output) {
+  if (!output || typeof output !== 'object' || Array.isArray(output) || JSON.stringify(output).length <= AGED_RESULT_BYTES) return output;
+  const kept = Object.fromEntries(Object.entries(output).filter(([, value]) => value === null || ['number', 'boolean'].includes(typeof value)
+    || (typeof value === 'string' && value.length <= AGED_FIELD_CHARS)));
+  return { ...kept, omitted: Object.keys(output).filter(key => !Object.hasOwn(kept, key)), aged: 'Sent in full earlier. Request it again if it is still needed.' };
+}
 export function investigationContext(project, { task, permissions, initialArtifacts, startSequence, shareRecords, visibleArtifacts = null, handoff = null }) {
   const shared = visibleArtifacts ?? new Set(Object.keys(project.artifacts).filter(key => shareRecords || !initialArtifacts.has(key)));
   const { artifacts, artifactCatalog } = artifactMemory(project, shared);
@@ -39,7 +48,7 @@ export function investigationContext(project, { task, permissions, initialArtifa
         ? shared.has(event.output.id) ? { artifactId: event.output.id, kind: event.output.kind,
           revision: event.output.revision, status: event.output.status }
           : { omitted: 'Source record was not shared with this task' }
-        : event.output;
+        : resultsAfter.get(event.seq) >= FULL_OBSERVATION_RESULTS ? ageResult(event.output) : event.output;
       return { event: event.event, callId: event.callId, output };
     });
   return { goal: project.goal, task, permissions, repositoryAvailable: !!project.repositoryRoot, artifacts, artifactCatalog, history,

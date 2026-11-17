@@ -76,6 +76,8 @@ const TASK_RESUME = 'Resume this investigation after an interruption; days have 
 const NOTE = 'Days have passed and the repository has new commits since the last session. Continue and finish.';
 
 const announce = message => console.log(`[${new Date().toISOString()}] ${message}`);
+// The tracker's log is a summary, as the Fawn handoff is: long inputs and outputs are clipped, and their content stays in the saved records.
+const logClip = value => { const text = typeof value === 'string' ? value : JSON.stringify(value ?? null); return text.length <= 400 ? value : `${text.slice(0, 400)}…`; };
 let spent = 0;
 const calls = [];
 function planner(arm, phase, model, tools = PLANNER_TOOLS) {
@@ -210,7 +212,7 @@ function stockArm(dir, repository) {
             initialArtifacts: new Set(), startSequence, shareRecords: true }),
           ...(resume ? { repositoryChanges: { note: 'Files saved as evidence that differ from the repository now.', files: changes },
             trackerLog: store.get(projectId).activity.filter(e => ['tool-requested', 'tool-result', 'tool-failed', 'human-note', 'finish', 'ask_human'].includes(e.event))
-              .map(({ seq, event, tool, input, output, text, error }) => ({ seq, event, tool, input, output: output?.id ? { artifactId: output.id, kind: output.kind } : output, text, error })) } : {}) }) });
+              .map(({ seq, event, tool, input, output, text, error }) => ({ seq, event, tool, input: logClip(input), output: output?.id ? { artifactId: output.id, kind: output.kind } : logClip(output), text, error })) } : {}) }) });
     },
     wait: () => run?.done,
     project: () => store.get(projectId),
