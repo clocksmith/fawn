@@ -100,8 +100,9 @@ function planner(arm, phase, model, tools = PLANNER_TOOLS) {
 }
 
 // The investigated repository is a plain directory holding the investigated files as they are at
-// one commit, written with `git show`. No git command ever runs inside it: this checkout is a
-// submodule whose shared configuration points every linked worktree back at the main working tree.
+// one commit, written with `git show`. No git command ever runs inside it. A linked worktree is not
+// used: this checkout is a submodule with a relative core.worktree setting, and in a linked worktree
+// git resolved the top level to the git directory and compared paths against the main checkout.
 function materialize(repository, commit) {
   for (const path of SOURCES.filter(source => !source.startsWith(PACKAGE))) {
     mkdirSync(dirname(join(repository, path)), { recursive: true });
