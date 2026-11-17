@@ -105,7 +105,12 @@ not beat a script.
   586 s conditions, no process left). Why Chrome is slow to exit is not
   established, a forced exit can lose the profile's last unflushed site data,
   and the CDP adapter and Windows are not covered. The clean reuse run after
-  the bound had no stall, so only the probe exercises it.
+  the bound had no stall, so only the probe exercises it. A
+  [real-Chromium check](../../browser/workspace/test/browser/forced-release-durability.test.js)
+  ends the browser with no time to exit and restarts: the journal bytes and
+  every recorded action survive and the profile reopens. A session cookie set
+  just before the release was lost in two of three runs; the workspace then
+  shows the site as signed out, and nothing re-establishes the session.
 
 - Personal workflow learning, verified repair-suffix reuse and UI delegation
   require host-installed task definitions and local verifiers. Live ATS and
