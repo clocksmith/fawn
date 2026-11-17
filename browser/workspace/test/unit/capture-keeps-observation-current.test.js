@@ -34,7 +34,28 @@ try {
   assert.equal(turn, 4, 'four planner requests, none spent on a refusal');
   const navigated = project.activity.find(event => event.event === 'tool-result' && event.output?.outcome);
   assert.equal(navigated.output.outcome, 'completed');
-  console.log('ok: capture keeps the agent observation current; the following navigation is admitted without an extra request');
+
+  // A resuming agent may open a URL before reading the page: the workspace observes for it. An action
+  // on an element it has not read is refused before the browser and can be corrected in the same run.
+  const later = [
+    { tool: 'act', input: { pageId: 'main', kind: 'navigate', target: { url: `${ORIGIN}/form` } } },
+    { tool: 'act', input: { pageId: 'main', kind: 'fill', target: { handle: 'hname' }, params: { value: 'unseen' } } },
+    { tool: 'observe', input: { pageId: 'main' } },
+    { tool: 'finish', input: { summary: 'Opened the form.' } },
+  ];
+  turn = 0;
+  controller.planner = { identity: { model: 'scripted' }, next: async () => later[turn++] };
+  await controller.delegate(id, { pageIds: ['main'], origins: [ORIGIN], actionKinds: ['navigate', 'fill'], task: 'Open the form again.' });
+  await controller.active.get(id)?.done;
+  const second = controller.store.get(id), since = second.activity.findLast(event => event.event === 'delegated').seq;
+  const events = second.activity.filter(event => event.seq > since);
+  assert.equal(second.run.status, 'completed', JSON.stringify(second.run));
+  assert.equal(events.find(event => event.event === 'tool-result' && event.output?.outcome)?.output.outcome, 'completed', 'navigation without a prior observe is admitted');
+  const refused = events.filter(event => event.event === 'tool-failed');
+  assert.equal(refused.length, 1);
+  assert.equal(refused[0].code, 'observation-required'); assert.equal(refused[0].recoverable, true);
+  assert.deepEqual(refused[0].details.neverDispatched, { code: 'observation-required' });
+  console.log('ok: capture keeps the agent observation current; navigation observes for itself; an unread-page action is refused before the browser and corrected');
 } finally {
   await controller?.close().catch(() => {}); await service?.close().catch(() => {});
   rmSync(root, { recursive: true, force: true });

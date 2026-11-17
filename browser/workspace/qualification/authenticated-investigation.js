@@ -67,7 +67,9 @@ const FRESH = standIn ? 'Rolled back the TTL change on Tuesday' : null;
 // Fixed before running.
 const POLICY = Object.freeze({
   firstModel: 'claude-opus-5-5', resumeModel: 'claude-sonnet-5-5', finishModel: 'claude-sonnet-5-5',
-  firstTurns: 14, resumeTurns: 6, finishTurns: 12, interruptAfterEvidence: 2,
+  // finishTurns was 12 in the first live rehearsal (ed2041f46c); both arms spent it before recording
+  // everything the task asks for, so the finishing agent now gets the client's ordinary 20.
+  firstTurns: 14, resumeTurns: 6, finishTurns: 20, interruptAfterEvidence: 2,
   maxTotalCostUsd: Number(value('--max-cost-usd', '10')), authLoss, acceptance: ACCEPTANCE,
 });
 const GOAL = 'Produce a source-linked summary of one issue: the problem, the code involved, prior attempts and unresolved questions.';

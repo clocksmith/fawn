@@ -18,6 +18,8 @@ const CORRECTABLE_PROPOSALS = new Set([
   REJECTION_CODES.UNSUPPORTED_ACTION_KIND, REJECTION_CODES.UNKNOWN_TARGET,
   REJECTION_CODES.TARGET_CHANGED, REJECTION_CODES.STALE_OBSERVATION,
   REJECTION_CODES.EXPIRED_OBSERVATION, REJECTION_CODES.UNKNOWN_OBSERVATION,
+  // Raised by this client before anything reaches the service: an action on a page the planner has not read.
+  'observation-required',
 ]);
 
 /** What the planner needs from an observation. Admission tables and digests stay in the service. */
@@ -328,8 +330,15 @@ export class WorkspaceController {
       if ((handoff?.unresolvedActionCount ?? handoff?.unresolvedActions.length) && input.kind !== 'navigate') {
         throw Error('Establish every unresolved action with reconcile before taking a new action');
       }
-      const observed = observations.get(pageId);
-      if (!observed) throw Error('Observe this page before proposing an action');
+      // Opening a URL does not depend on anything the planner read from the page, so the workspace takes
+      // the required observation itself. Every other action names something on the page and the planner
+      // must have seen it; that proposal was never sent to the browser and can be corrected.
+      let observed = observations.get(pageId);
+      if (!observed && input.kind === 'navigate' && input.target?.url) observed = await this.service.observe({ ...owner, pageId });
+      if (!observed) {
+        throw Object.assign(Error('Observe this page before proposing an action on it'),
+          { code: 'observation-required', details: { expected: ['observe'], neverDispatched: { code: 'observation-required' } } });
+      }
       // Credentials are a person's to enter. The run stops for attention instead of typing into the field.
       if ((observed.elements ?? []).some(element => element.handle && element.handle === input.target?.handle && element.inputType === 'password')) {
         throw Error('Passwords are entered by a person: sign in on this page, then return the task to the agent');
