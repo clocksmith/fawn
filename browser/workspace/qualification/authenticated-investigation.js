@@ -17,7 +17,7 @@ import { loadServiceConfig } from '../src/config.js';
 import { createPlaywrightAdapter } from '../src/adapters/playwright-adapter.js';
 import { closeWithin, profileBrowserPids } from '../src/adapters/bounded-close.js';
 import { queryPage, snapshotArgs, buildSnapshot } from '../src/adapters/page-query.js';
-import { WorkspaceController } from '../src/client/controller.js';
+import { WorkspaceController, navigationNotice } from '../src/client/controller.js';
 import { InvestigationStore } from '../src/client/investigation.js';
 import { startAgent, investigationContext } from '../src/client/agent.js';
 import { createCliPlanner } from '../src/client/cli-planner.js';
@@ -69,7 +69,9 @@ const POLICY = Object.freeze({
   firstModel: 'claude-opus-5-5', resumeModel: 'claude-sonnet-5-5', finishModel: 'claude-sonnet-5-5',
   // finishTurns was 12 in the first live rehearsal (ed2041f46c); both arms spent it before recording
   // everything the task asks for, so the finishing agent now gets the client's ordinary 20.
-  firstTurns: 14, resumeTurns: 6, finishTurns: 20, interruptAfterEvidence: 2,
+  // resumeTurns was 6 in the second (af1634bdf0): the Fawn arm's resuming agent spent it writing findings
+  // from the preserved evidence and finished before it ever looked at the unreachable page.
+  firstTurns: 14, resumeTurns: 12, finishTurns: 20, interruptAfterEvidence: 2,
   maxTotalCostUsd: Number(value('--max-cost-usd', '10')), authLoss, acceptance: ACCEPTANCE,
 });
 const GOAL = 'Produce a source-linked summary of one issue: the problem, the code involved, prior attempts and unresolved questions.';
@@ -220,8 +222,9 @@ function stockArm(dir) {
         // The same limits the workspace enforces for the Fawn arm: navigation only, inside the site.
         if (input.kind !== 'navigate') fail('This task is read-only: only navigate is permitted');
         if (new URL(input.target.url).origin !== origin) fail('Navigation outside the permitted site');
-        await page.goto(input.target.url); observations.delete('main');
-        return { ok: true, url: page.url() };
+        const response = await page.goto(input.target.url); observations.delete('main');
+        // The control reports the response status too; an unreachable page is how a lost sign-in shows.
+        return navigationNotice(input, { ok: true, url: page.url(), evidence: { effect: { status: response?.status() ?? null } } });
       };
       const tools = { ...PLANNER_TOOLS }; delete tools.reconcile; delete tools.handoff_read;
       abort = new AbortController();

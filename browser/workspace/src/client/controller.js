@@ -22,6 +22,16 @@ const CORRECTABLE_PROPOSALS = new Set([
   'observation-required',
 ]);
 
+/**
+ * A navigation that reaches its URL is recorded as completed even when the site answers with an error
+ * page. Say so where the planner will read it: an unreachable page is often a lost sign-in.
+ */
+export function navigationNotice(input, result) {
+  const status = result?.evidence?.effect?.status;
+  if (input?.kind !== 'navigate' || !Number.isInteger(status) || status < 400) return result;
+  return { ...result, notice: `The site answered HTTP ${status} for this address. The page may not exist, or it may need a sign-in that is missing or has expired; observe it before relying on it.` };
+}
+
 /** What the planner needs from an observation. Admission tables and digests stay in the service. */
 export function plannerView(observation, pageId) {
   return { pageId, url: observation.url, title: observation.title, observationVersion: observation.observationVersion,
@@ -346,7 +356,7 @@ export class WorkspaceController {
       const admitted = await this.service.submitAction({ ...owner, pageId, actionId: callId, authorizedIntent: 'delegated-task',
         kind: input.kind, target: input.target, params: input.params, completion: input.completion, effect: input.effect,
         observationVersion: observed.observationVersion });
-      observations.delete(pageId); return admitted.result;
+      observations.delete(pageId); return navigationNotice(input, await admitted.result);
     };
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
       execute, signal: controller.signal, assertCurrent,
