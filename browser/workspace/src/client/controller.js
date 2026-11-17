@@ -8,7 +8,7 @@ import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
 import { validityBrief, describeChange, unfinishedRecords } from './validity.js';
-import { unreadMentions } from './unread-mentions.js';
+import { unreadMentions, claimsAbsence } from './unread-mentions.js';
 import { readArtifact } from './artifact-read.js';
 import { listArtifacts } from './artifact-memory.js';
 import { REJECTION_CODES } from '../errors.js';
@@ -22,6 +22,8 @@ const CORRECTABLE_PROPOSALS = new Set([
   REJECTION_CODES.EXPIRED_OBSERVATION, REJECTION_CODES.UNKNOWN_OBSERVATION,
   // Raised by this client before anything reaches the service: an action on a page the planner has not read.
   'observation-required',
+  // Raised by this client before a record is saved: an absence claim whose deciding code was never shown.
+  'unread-definition',
 ]);
 
 /**
@@ -327,6 +329,7 @@ export class WorkspaceController {
       }
       handoff = handoffBrief(this.store.get(id), await this.service.inspect(this.admin(id)));
     }
+    const returnedRecords = new Set();
     const execute = async (tool, input, { callId }) => {
       assertCurrent(); controller.signal.throwIfAborted();
       // Models often name a target by its bare handle or URL; normalize rather than fail the run.
@@ -360,9 +363,21 @@ export class WorkspaceController {
       if (tool === 'repository_read') { const artifact = await this.readRepository(id, input); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'record') {
         if ((input.id && !visibleArtifacts.has(input.id)) || input.dependsOn?.some(key => !visibleArtifacts.has(key))) throw Error('Reasoning depends on records not shared with this task');
+        // Code this conclusion names that sits in saved sources beyond what the agents were shown.
+        const unread = input.kind === 'question' || typeof input.text !== 'string' ? null : unreadMentions(this.store.get(id), input.text);
+        const excerpts = (unread?.mentions ?? []).filter(mention => mention.excerpt);
+        for (const { artifactId, revision, from, to } of excerpts) this.store.activity(id, { event: 'source-shown', artifactId, revision, from, to });
+        // A claim that something is absent, resting on a file whose defining part was never shown, goes
+        // back to the agent with that part attached, before it is saved. At most twice per session, and
+        // never twice for the same text: the agent keeps the last word.
+        if (excerpts.length && claimsAbsence(input.text) && returnedRecords.size < 2 && !returnedRecords.has(input.text)) {
+          returnedRecords.add(input.text);
+          const shown = excerpts.map(mention => `${mention.path} at offset ${mention.offset} (${mention.term}): ${JSON.stringify(mention.excerpt)}`).join(' ');
+          throw Object.assign(Error(`Not saved yet. This record says something is absent or unbounded and names code that is defined in a part of a saved source no agent had been shown. Here is that part: ${shown} `
+            + 'If it changes the conclusion, correct the text and cite that source in dependsOn; read more with artifact_read if needed. If the conclusion stands, send the same record again and it will be saved.'),
+            { code: 'unread-definition', details: { expected: ['record', 'artifact_read'], neverDispatched: { code: 'unread-definition' } } });
+        }
         const artifact = this.record(id, input); visibleArtifacts.add(artifact.id);
-        // Point at code this conclusion names that sits in saved sources beyond what the agent was shown.
-        const unread = artifact.kind === 'question' ? null : unreadMentions(this.store.get(id), artifact.text);
         return unread ? { ...artifact, unreadMentions: unread } : artifact;
       }
       if (tool === 'reconcile') {
