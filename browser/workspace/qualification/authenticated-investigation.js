@@ -34,12 +34,12 @@ const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
 const help = `Usage: node browser/workspace/qualification/authenticated-investigation.js --out DIR (--stand-in | --issue-url URL)
   [--arms fawn,stock] [--repository-root PATH --expected-code PATH,PATH] [--sign-in-url URL] [--auth-loss revoke|clear-cookies]
-  [--sign-in-timeout-min 15] [--max-cost-usd 10] [--headless]
+  [--sign-in-timeout-min 15] [--max-cost-usd 10] [--headless] [--no-session-reuse]
 A real site needs a person at this machine: the harness prints ACTION NEEDED lines and waits.
 With --issue-url, name the repository checkout and the files the issue concerns; only those files count as code evidence.`;
 const args = process.argv.slice(2);
 if (args.includes('--help')) { console.log(help); process.exit(0); }
-const FLAGS = ['--stand-in', '--headless'], VALUES = ['--out', '--issue-url', '--arms', '--repository-root', '--expected-code', '--sign-in-url', '--auth-loss', '--sign-in-timeout-min', '--max-cost-usd'];
+const FLAGS = ['--stand-in', '--headless', '--no-session-reuse'], VALUES = ['--out', '--issue-url', '--arms', '--repository-root', '--expected-code', '--sign-in-url', '--auth-loss', '--sign-in-timeout-min', '--max-cost-usd'];
 for (let i = 0; i < args.length; i++) {
   if (FLAGS.includes(args[i])) continue;
   if (VALUES.includes(args[i]) && args[i + 1] && !args[i + 1].startsWith('--')) { i++; continue; }
@@ -54,8 +54,15 @@ mkdirSync(out, { recursive: true, mode: 0o700 });
 const arms = value('--arms', 'fawn,stock').split(',');
 const headless = standIn || args.includes('--headless');
 const repositoryRoot = value('--repository-root') ? resolve(value('--repository-root')) : null;
-const authLoss = standIn ? 'site-forgets-sessions' : value('--auth-loss', 'revoke');
-if (!standIn && !['revoke', 'clear-cookies'].includes(authLoss)) throw Error('--auth-loss must be revoke or clear-cookies');
+// How the sign-in is lost while the investigation is interrupted. clear-cookies removes the profile's
+// cookies, which is what a forced browser exit can do and needs nobody; revoke asks the person to end
+// the session at the site. Both leave the agent facing the same unreachable page.
+const authLoss = value('--auth-loss', standIn ? 'site-forgets-sessions' : 'clear-cookies');
+if (!(standIn ? ['site-forgets-sessions', 'clear-cookies'] : ['revoke', 'clear-cookies']).includes(authLoss)) throw Error(`Unsupported --auth-loss ${authLoss}`);
+// The person signs in for the first arm only. Later arms start from, and are restored to, that same
+// person's session, carried in this process's memory. It is never written to a file, a journal or a
+// report, and never reaches a planner.
+const reuseSession = !args.includes('--no-session-reuse');
 const signInTimeoutMs = Number(value('--sign-in-timeout-min', '15')) * 60_000;
 
 const site = standIn ? await startStandInSite() : null;
@@ -132,22 +139,39 @@ async function waitUntil(check, label) {
 }
 // The person at the machine. On the stand-in the same steps are scripted, typed into the page as a
 // person would; the stand-in's password is generated per run and exists only in this process.
+let carriedSession = null;
+const humanSteps = [];
+const expectedPersonSteps = standIn ? 0 : (reuseSession && authLoss === 'clear-cookies' ? 2 : arms.length * (authLoss === 'revoke' ? 3 : 2));
 const person = {
-  async signIn(page, label) {
+  /**
+   * @param why  what this sign-in is for, shown to the person
+   * @param mayReuse  whether this arm may take the session a person already established in an earlier arm
+   */
+  async signIn(page, label, { why, mayReuse }) {
+    const started = performance.now();
+    const done = by => { humanSteps.push({ label, by, waitedMs: Math.round(performance.now() - started) }); return by; };
+    if (mayReuse && reuseSession && carriedSession) {
+      await page.context().addCookies(carriedSession);
+      if (await signedIn(page)) { await page.goto(issueUrl).catch(() => {}); return done('session carried from the first arm'); }
+    }
     await page.goto(signInUrl).catch(() => {});
     if (standIn) {
       await page.fill('#user', 'investigator'); await page.fill('#password', site.password);
       await Promise.all([page.waitForURL(url => url.pathname === new URL(issueUrl).pathname), page.click('#go')]);
-      return;
+    } else {
+      const step = humanSteps.filter(entry => entry.by === 'person').length + 1;
+      announce(`ACTION NEEDED (step ${step} of ${expectedPersonSteps}, ${label}): ${why} Sign in in the Chrome window that is showing ${new URL(signInUrl).host}. Waiting up to ${signInTimeoutMs / 60_000} minutes.`);
+      await waitUntil(() => signedIn(page), `${label} sign-in`);
+      announce(`Signed in (${label}).`);
     }
-    announce(`ACTION NEEDED (${label}): sign in in the Chrome window that is showing ${new URL(signInUrl).host}. Waiting up to ${signInTimeoutMs / 60_000} minutes.`);
-    await waitUntil(() => signedIn(page), `${label} sign-in`);
-    announce(`Signed in (${label}).`);
+    carriedSession = await page.context().cookies([origin]);
+    return done(standIn ? 'scripted person' : 'person');
   },
   // What happens to the sign-in while the investigation is interrupted.
   async loseSignInWhileAway() {
     if (!standIn) return;
-    site.forgetSessions(); site.addComment('priya', `${FRESH}; large carts are slow again and support has two new reports.`);
+    if (authLoss === 'site-forgets-sessions') site.forgetSessions();
+    site.addComment('priya', `${FRESH}; large carts are slow again and support has two new reports.`);
   },
   async confirmSignedOut(page, label) {
     if (authLoss === 'clear-cookies') await page.context().clearCookies();
@@ -262,7 +286,7 @@ function stockArm(dir) {
   };
 }
 
-async function runArm(arm) {
+async function runArm(arm, firstArm) {
   const row = { arm: arm.name }, agentMs = {}, humanWaitMs = {};
   const timed = async (bucket, key, task) => { const started = performance.now(); try { return await task(); } finally { bucket[key] = performance.now() - started; } };
   const evidenceIds = () => Object.values(arm.project().artifacts).filter(value => value.kind === 'evidence').map(value => value.id);
@@ -279,7 +303,8 @@ async function runArm(arm) {
   try {
     await arm.open();
     await arm.personOpensIssue();
-    await timed(humanWaitMs, 'firstSignIn', () => person.signIn(arm.page(), `${arm.name}, first sign-in`));
+    await timed(humanWaitMs, 'firstSignIn', () => person.signIn(arm.page(), `${arm.name}, first sign-in`,
+      { why: 'The investigation needs a signed-in session to start.', mayReuse: !firstArm }));
     await arm.personOpensIssue();
 
     // Session A: a live model starts; once the issue and one code source are saved it is interrupted.
@@ -313,7 +338,9 @@ async function runArm(arm) {
 
     // The person signs in again and hands the work back; another agent finishes.
     if (row.resumeRun?.status !== 'completed') {
-      await timed(humanWaitMs, 'secondSignIn', () => person.signIn(arm.page(), `${arm.name}, second sign-in`));
+      const request = arm.project().activity.findLast(event => event.event === 'ask_human' && event.seq > boundaries.resumeStarted)?.text;
+      await timed(humanWaitMs, 'secondSignIn', () => person.signIn(arm.page(), `${arm.name}, second sign-in`,
+        { why: request ? `The agent lost access and asked: "${String(request).slice(0, 160)}"` : 'The agent stopped without access to the site.', mayReuse: !firstArm }));
       arm.note('Signed in again; continue.');
       await arm.personOpensIssue();
       boundaries.secondSignIn = arm.lastSeq();
@@ -351,7 +378,7 @@ try {
   for (const name of arms) {
     const dir = join(out, name); rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true });
     announce(`Starting arm ${name}`);
-    const row = await runArm(name === 'fawn' ? fawnArm(dir) : stockArm(dir));
+    const row = await runArm(name === 'fawn' ? fawnArm(dir) : stockArm(dir), rows.length === 0);
     rows.push(row);
     // Persist each arm before the next begins; a later failure must not discard it.
     writeFileSync(join(out, `${name}-result.json`), JSON.stringify(row, null, 2));
@@ -369,6 +396,8 @@ const report = { schemaVersion: 1,
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
   sourceDirty: !!execFileSync('git', ['status', '--porcelain', '--', 'browser/workspace'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
   rows, calls, spentUsd: spent,
+  // Who established each sign-in. A carried session is the first arm's, restored from memory.
+  humanSteps, sessionReuse: reuseSession ? 'the first arm\'s signed-in session was carried in process memory to later arms; it was not written anywhere' : 'disabled',
   // Counts and outcomes only: safe to copy into a public record. Everything else in this file can
   // contain the investigated site's content and stays local.
   publicProjection: rows.map(projection),
@@ -377,6 +406,11 @@ const report = { schemaVersion: 1,
     'Read-only: no action with an uncertain outcome occurs, so outcome reconciliation is not exercised.',
     'The first agent is stopped and its browser ended in-process; the owning process is not killed.',
     ...(standIn ? ['The site is a local stand-in and the person is scripted.'] : ['Human waiting time is recorded separately and excluded from agent time.'])] };
-writeFileSync(join(out, 'authenticated-investigation.json'), JSON.stringify(report, null, 2));
+const serialized = JSON.stringify(report, null, 2);
+// The carried session is a credential. Refuse to write a report that contains any of it.
+if ((carriedSession ?? []).some(cookie => typeof cookie.value === 'string' && cookie.value.length >= 8 && serialized.includes(cookie.value))) {
+  throw Error('Refusing to write a report that contains session cookie values');
+}
+writeFileSync(join(out, 'authenticated-investigation.json'), serialized);
 console.log(JSON.stringify({ report: join(out, 'authenticated-investigation.json'), spentUsd: spent, rows: report.publicProjection }, null, 1));
 process.exit(rows.every(row => !row.error) ? 0 : 1);
