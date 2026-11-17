@@ -46,7 +46,9 @@ export function investigationContext(project, { task, permissions, initialArtifa
         error: event.error, code: event.code, details: event.details, recoverable: event.recoverable };
       const output = event.output?.id && event.output?.kind
         ? shared.has(event.output.id) ? { artifactId: event.output.id, kind: event.output.kind,
-          revision: event.output.revision, status: event.output.status }
+          revision: event.output.revision, status: event.output.status,
+          // Advice attached to a saved conclusion stays in view for as long as other full results do.
+          ...(event.output.unreadMentions && resultsAfter.get(event.seq) < FULL_OBSERVATION_RESULTS ? { unreadMentions: event.output.unreadMentions } : {}) }
           : { omitted: 'Source record was not shared with this task' }
         : resultsAfter.get(event.seq) >= FULL_OBSERVATION_RESULTS ? ageResult(event.output) : event.output;
       return { event: event.event, callId: event.callId, output };

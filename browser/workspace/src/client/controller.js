@@ -8,6 +8,7 @@ import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
 import { validityBrief, describeChange, unfinishedRecords } from './validity.js';
+import { unreadMentions } from './unread-mentions.js';
 import { readArtifact } from './artifact-read.js';
 import { listArtifacts } from './artifact-memory.js';
 import { REJECTION_CODES } from '../errors.js';
@@ -359,7 +360,10 @@ export class WorkspaceController {
       if (tool === 'repository_read') { const artifact = await this.readRepository(id, input); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'record') {
         if ((input.id && !visibleArtifacts.has(input.id)) || input.dependsOn?.some(key => !visibleArtifacts.has(key))) throw Error('Reasoning depends on records not shared with this task');
-        const artifact = this.record(id, input); visibleArtifacts.add(artifact.id); return artifact;
+        const artifact = this.record(id, input); visibleArtifacts.add(artifact.id);
+        // Point at code this conclusion names that sits in saved sources beyond what the agent was shown.
+        const unread = artifact.kind === 'question' ? null : unreadMentions(this.store.get(id), artifact.text);
+        return unread ? { ...artifact, unreadMentions: unread } : artifact;
       }
       if (tool === 'reconcile') {
         const state = await this.service.inspect(this.admin(id));
