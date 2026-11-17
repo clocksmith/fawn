@@ -162,13 +162,25 @@ class CdpConnection {
     };
   }
 
-  async close() {
-    try {
-      await this.send('Browser.close');
-    } catch {
-      this._child.kill('SIGKILL');
-    }
-    await this._closed;
+  /**
+   * Ask the browser to close, wait a bounded time for its process to exit, then end it. Resolves to
+   * { release, survivors, errors } with the same meanings as the Playwright adapter's release
+   * (bounded-close.js); here the child handle identifies the process exactly.
+   */
+  async close({ timeoutMs = this._timeoutMs, exitWaitMs = 2000 } = {}) {
+    const errors = [], pid = this._child.pid;
+    const exitedWithin = (ms) => { let timer;
+      return Promise.race([this._closed.then(() => true), new Promise((resolve) => { timer = setTimeout(() => resolve(false), ms); })]).finally(() => clearTimeout(timer)); };
+    let asked = true;
+    // A browser that exits on this request may drop the pipe before its reply arrives.
+    try { await this.send('Browser.close'); } catch (error) { asked = false; errors.push({ step: 'close', message: String(error?.message ?? error) }); }
+    if (await exitedWithin(timeoutMs)) return { release: asked ? 'graceful' : 'already-exited', survivors: [], errors };
+    let signalled = false;
+    try { signalled = this._child.kill('SIGKILL'); }
+    catch (error) { errors.push({ step: 'signal', pid, code: error?.code ?? null, message: String(error?.message ?? error) }); }
+    if (await exitedWithin(exitWaitMs)) return { release: signalled ? 'forced' : 'already-exited', survivors: [], errors };
+    if (!signalled && !errors.some((entry) => entry.step === 'signal')) errors.push({ step: 'signal', pid, code: null, message: 'the signal was not delivered' });
+    return { release: 'unresolved', survivors: [pid], errors };
   }
 
   async abortLaunch() {
@@ -324,10 +336,17 @@ class CdpWorkspaceAdapter {
     await cdp.send('Target.activateTarget', { targetId });
   }
 
-  async close() {
-    const entries = [...this._workspaces.values()];
-    this._workspaces.clear();
-    await Promise.all(entries.map((entry) => entry.cdp.close()));
+  /**
+   * Resolves to { workspaceId, release, survivors?, errors? } per workspace. Releasing never waits on a
+   * browser that will not exit, and a workspace whose browser could not be shown to have exited
+   * stays owned by this adapter.
+   */
+  async close({ timeoutMs = this._config.dispatch.actionTimeoutMs } = {}) {
+    return Promise.all([...this._workspaces.entries()].map(async ([workspaceId, entry]) => {
+      const { release, survivors, errors } = await entry.cdp.close({ timeoutMs });
+      if (release !== 'unresolved' && this._workspaces.get(workspaceId) === entry) this._workspaces.delete(workspaceId);
+      return { workspaceId, release, ...(survivors.length ? { survivors } : {}), ...(errors.length ? { errors } : {}) };
+    }));
   }
 }
 

@@ -125,7 +125,8 @@ shows yet that this improves a real investigation.
   step, when exit could not be shown; the adapter keeps owning an unresolved
   browser and the next handoff says so. Why Chrome is slow to exit is not
   established, a forced exit can lose the profile's last unflushed site data,
-  and the CDP adapter and Windows are not covered. The clean reuse run after
+  and Windows is not covered. The CDP adapter bounds its release the same way,
+  using its own child process handle. The clean reuse run after
   the bound had no stall, so only the probe exercises it. A
   [real-Chromium check](../../browser/workspace/test/browser/forced-release-durability.test.js)
   ends the browser with no time to exit and restarts: the journal bytes and

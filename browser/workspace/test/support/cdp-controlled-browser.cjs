@@ -19,6 +19,8 @@ input.on('data', chunk => {
     save();
     const reply = result => ({ id: command.id, result });
     const reject = () => send([{ id: command.id, error: { code: -32000, message: 'controlled command rejection' } }]);
+    // A browser that acknowledges the close and then never exits, as stock Chrome can for minutes.
+    if (command.method === 'Browser.close' && scenario === 'close-stalls') { send([reply({})]); continue; }
     if (command.method === 'Browser.close') { send([reply({})]); process.exit(0); }
     if (command.method === 'Target.getTargets') { send([reply({ targetInfos: [{ type: 'page', targetId: 'page' }] })]); continue; }
     if (command.method === 'Target.attachToTarget') { send([reply({ sessionId: 'session' })]); continue; }

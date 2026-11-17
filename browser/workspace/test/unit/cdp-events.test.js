@@ -57,7 +57,39 @@ if (process.platform === 'win32') {
         assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' }, `${scenario}: owned peer must be reaped`);
       }
     }
-    console.log('ok: grouped CDP waits, early/coalesced events, cancellation, pipe close and no unhandled rejections');
+    // Releasing a workspace is bounded and reports what was established about the browser's exit.
+    {
+      const scenario = 'close-stalls', record = join(root, scenario + '.json'), executable = join(root, scenario + ' controlled browser'), timeoutMs = 80;
+      const script = `#!${process.execPath}\nglobal.CONTROL=${JSON.stringify({ scenario, record, timeoutMs })};\n${source}`;
+      writeFileSync(executable, script); chmodSync(executable, 0o700);
+      const config = structuredClone(loadServiceConfig());
+      config.dispatch.actionTimeoutMs = timeoutMs; config.browser.channel = 'fawn';
+      config.browser.fawnBuild = { executable: { path: executable, sha256: createHash('sha256').update(script).digest('hex') }, dependencies: [], runtime: { mode: 'dawn' } };
+      const adapter = createCdpAdapter({ config, profileRoot: join(root, scenario, 'profiles'), artifactRoot: join(root, scenario, 'artifacts') });
+      await adapter.openWorkspace('stalled');
+      const { pid } = JSON.parse(readFileSync(record));
+      const started = performance.now();
+      // The browser acknowledges the close and never exits: it is ended after the bound and verified gone.
+      assert.deepEqual(await adapter.close(), [{ workspaceId: 'stalled', release: 'forced' }]);
+      assert.ok(performance.now() - started < 2000, 'the release does not wait on a browser that will not exit');
+      assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+      assert.deepEqual(await adapter.close(), [], 'a released workspace is no longer owned');
+    }
+    // A browser that exits when asked is a graceful release.
+    {
+      const scenario = 'early-event', record = join(root, 'graceful.json'), executable = join(root, 'graceful controlled browser'), timeoutMs = 80;
+      const script = `#!${process.execPath}\nglobal.CONTROL=${JSON.stringify({ scenario, record, timeoutMs })};\n${source}`;
+      writeFileSync(executable, script); chmodSync(executable, 0o700);
+      const config = structuredClone(loadServiceConfig());
+      config.dispatch.actionTimeoutMs = timeoutMs; config.browser.channel = 'fawn';
+      config.browser.fawnBuild = { executable: { path: executable, sha256: createHash('sha256').update(script).digest('hex') }, dependencies: [], runtime: { mode: 'dawn' } };
+      const adapter = createCdpAdapter({ config, profileRoot: join(root, 'graceful', 'profiles'), artifactRoot: join(root, 'graceful', 'artifacts') });
+      await adapter.openWorkspace('clean');
+      const [released] = await adapter.close();
+      assert.equal(released.workspaceId, 'clean');
+      assert.ok(['graceful', 'already-exited'].includes(released.release), JSON.stringify(released));
+    }
+    console.log('ok: grouped CDP waits, early/coalesced events, cancellation, pipe close, bounded verified release and no unhandled rejections');
   } finally {
     process.removeListener('unhandledRejection', onUnhandled);
     rmSync(root, { recursive: true, force: true });
