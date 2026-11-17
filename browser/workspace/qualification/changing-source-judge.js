@@ -63,3 +63,25 @@ export function judgeChangingSourceInvestigation(project, { liveHashes, changedS
       needingReview: reasoning.filter(value => value.status !== 'current').length, restingOnSupersededSource: superseded.length,
       restedOnChangingSourceAtInterruption: restingOnChangingSource.length, notWrittenAgain: notRechecked.length } };
 }
+
+const HARNESS_LIMITS = /per-request budget|deadline exceeded|spend ceiling/i;
+/**
+ * Whether a pair of arms may be compared at all. A pair compares nothing when an arm crashed, when a
+ * limit set by the harness (not by the task) stopped a planner, or when the first agent was never
+ * interrupted with a conclusion resting on a source about to change, which is the case the trial is for.
+ *
+ * @param rows  one per arm: { arm, error?, interrupted?, restingOnChangingSource?, plannerErrors: string[] }
+ */
+export function comparisonValidity(rows) {
+  const reasons = [];
+  for (const row of rows) {
+    if (row.error) { reasons.push({ arm: row.arm, reason: 'the arm did not run to its end' }); continue; }
+    const limited = (row.plannerErrors ?? []).filter(error => HARNESS_LIMITS.test(error));
+    if (limited.length) reasons.push({ arm: row.arm, reason: `a harness limit stopped a planner request: ${[...new Set(limited)].join('; ')}` });
+    if (row.interrupted !== true || !(row.restingOnChangingSource?.length > 0)) {
+      reasons.push({ arm: row.arm, reason: 'the first agent was not interrupted with a conclusion resting on a changing source' });
+    }
+  }
+  if (rows.length < 2) reasons.push({ arm: null, reason: 'fewer than two arms ran' });
+  return { valid: reasons.length === 0, reasons };
+}

@@ -1,7 +1,7 @@
 // The changing-source investigation is accepted mechanically only when its conclusions rest on the
 // sources as they are now. Each criterion fails alone; the diagnosis itself is never graded here.
 import assert from 'node:assert/strict';
-import { judgeChangingSourceInvestigation, ACCEPTANCE } from '../../qualification/changing-source-judge.js';
+import { comparisonValidity, judgeChangingSourceInvestigation, ACCEPTANCE } from '../../qualification/changing-source-judge.js';
 import { sha256Hex } from '../../src/journal.js';
 
 const OLD = 'await this._closed;\n', NEW = 'if (await exitedWithin(timeoutMs)) return;\n', LAUNCHER = 'gracefullyClose();\n';
@@ -49,4 +49,19 @@ failing('connectedDiagnosis', value => { value.project.artifacts.adapter.depends
 failing('connectedDiagnosis', value => { delete value.project.artifacts.open; });
 // A source the trial did not pin (a page) never counts as superseded.
 assert.equal(grade(value => { value.project.artifacts.page.source.content = 'other'; value.project.artifacts.page.source.sha256 = sha256Hex('other'); }).checks.conclusionsOnCurrentSources, true);
-console.log('ok: conclusions must rest on current sources, interrupted conclusions must be written again, each criterion fails alone, diagnosis left ungraded');
+// A pair is comparable only when both arms reached the case the trial is for and no harness limit cut one short.
+const armRow = (arm, extra = {}) => ({ arm, interrupted: true, restingOnChangingSource: ['adapter'], plannerErrors: ['Interrupted'], ...extra });
+assert.deepEqual(comparisonValidity([armRow('fawn'), armRow('stock')]), { valid: true, reasons: [] });
+// The retained second run: the control's first agent stopped on the per-request cap before recording anything.
+const cut = comparisonValidity([armRow('fawn'), armRow('stock', { interrupted: undefined, restingOnChangingSource: [], plannerErrors: ['Planner per-request budget reached'] })]);
+assert.equal(cut.valid, false);
+assert.deepEqual(cut.reasons.map(entry => entry.arm), ['stock', 'stock']);
+assert.match(cut.reasons[0].reason, /harness limit.*per-request budget/);
+assert.match(cut.reasons[1].reason, /not interrupted/);
+assert.equal(comparisonValidity([armRow('fawn', { plannerErrors: ['Planner deadline exceeded', 'Planner deadline exceeded'] }), armRow('stock')]).reasons[0].reason,
+  'a harness limit stopped a planner request: Planner deadline exceeded');
+assert.equal(comparisonValidity([armRow('fawn', { error: 'Error: boom' }), armRow('stock')]).valid, false);
+assert.equal(comparisonValidity([armRow('fawn')]).valid, false, 'one arm is not a comparison');
+// A planner's own mistake is the arm's result, not a harness limit.
+assert.equal(comparisonValidity([armRow('fawn', { plannerErrors: ['Planner returned no valid structured tool proposal'] }), armRow('stock')]).valid, true);
+console.log('ok: a cut-short arm invalidates the pair, conclusions must rest on current sources, interrupted conclusions must be written again, each criterion fails alone, diagnosis left ungraded');
