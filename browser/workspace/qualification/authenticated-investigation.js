@@ -207,6 +207,7 @@ function stockArm(dir) {
     async personOpensIssue() { await page.goto(issueUrl).catch(() => {}); },
     async start({ model, phase, task, turns, resume }) {
       const pages = new Map([['main', page]]), observations = new Map();
+      let observationCount = 0;
       const startSequence = resume ? 0 : store.journal.records.at(-1).seq;
       const all = () => new Set(Object.keys(store.get(projectId).artifacts));
       const execute = async (tool, input) => {
@@ -219,7 +220,8 @@ function stockArm(dir) {
         if (tool === 'observe' || tool === 'capture') {
           const snap = buildSnapshot(await page.evaluate(queryPage, snapshotArgs(loadServiceConfig(), { outline: true })), pages.size);
           observations.set('main', snap);
-          if (tool === 'observe') return { pageId: 'main', url: snap.url, title: snap.title, isTruncated: snap.isTruncated, text: snap.text,
+          // A version lets the shared context builder supersede and age this observation exactly as it does for the Fawn arm.
+          if (tool === 'observe') return { pageId: 'main', url: snap.url, title: snap.title, observationVersion: ++observationCount, isTruncated: snap.isTruncated, text: snap.text,
             elements: snap.elements.filter(e => e.handle).map(({ handle, selector, role, label, value, inputType, href }) => ({ handle, selector, role, label, value, inputType, href })) };
           return store.revise(projectId, { kind: 'evidence', text: `Page evidence: ${snap.title || snap.url}`,
             source: { kind: 'page', pageId: 'main', url: snap.url, capturedAt: new Date().toISOString(), content: snap.text, sha256: sha256Hex(snap.text) } });

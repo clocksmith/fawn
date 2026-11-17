@@ -1,6 +1,11 @@
 // Planner input is paid for on every turn. Only the newest observation of each page is sent in full;
 // saved evidence keeps its hash and identity but sends a bounded excerpt of its bytes.
 import { artifactMemory } from './artifact-memory.js';
+// A page observation can be most of a request (text plus every addressable element), and it is paid
+// for again on every later turn. It stays in full while the planner is working on that page; once
+// this many later results have followed it, it is reduced to where the page was and how it began.
+// The planner observes again to act there, and anything it saved as evidence is still on record.
+const FULL_OBSERVATION_RESULTS = 3, AGED_EXCERPT_CHARS = 1200;
 export function investigationContext(project, { task, permissions, initialArtifacts, startSequence, shareRecords, visibleArtifacts = null, handoff = null }) {
   const shared = visibleArtifacts ?? new Set(Object.keys(project.artifacts).filter(key => shareRecords || !initialArtifacts.has(key)));
   const { artifacts, artifactCatalog } = artifactMemory(project, shared);
@@ -11,12 +16,21 @@ export function investigationContext(project, { task, permissions, initialArtifa
       latestObservation.set(event.output.pageId ?? 'main', event.seq);
     }
   }
+  const results = events.filter(event => event.event !== 'tool-requested');
+  const resultsAfter = new Map(results.map((event, index) => [event.seq, results.length - 1 - index]));
   const history = events
     .map(event => {
       if (event.event === 'tool-result' && event.output?.observationVersion !== undefined && typeof event.output?.text === 'string'
         && latestObservation.get(event.output.pageId ?? 'main') !== event.seq) {
         const { pageId, url, title, observationVersion } = event.output;
         return { event: event.event, callId: event.callId, output: { pageId, url, title, observationVersion, superseded: 'a newer observation of this page follows' } };
+      }
+      if (event.event === 'tool-result' && event.output?.observationVersion !== undefined && typeof event.output?.text === 'string'
+        && resultsAfter.get(event.seq) >= FULL_OBSERVATION_RESULTS) {
+        const { pageId, url, title, observationVersion, isTruncated, text, elements } = event.output;
+        return { event: event.event, callId: event.callId, output: { pageId, url, title, observationVersion, isTruncated,
+          textExcerpt: text.slice(0, AGED_EXCERPT_CHARS), textChars: text.length, elementCount: elements?.length ?? 0,
+          aged: 'Sent in full earlier. Observe this page again before acting on its elements.' } };
       }
       if (event.event === 'tool-requested') return { event: event.event, callId: event.callId, tool: event.tool, input: event.input };
       if (event.event === 'tool-failed') return { event: event.event, callId: event.callId,
