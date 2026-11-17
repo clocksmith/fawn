@@ -28,18 +28,19 @@ import { readArtifact } from '../src/client/artifact-read.js';
 import { sha256Hex } from '../src/journal.js';
 import { validateStockProposal, recoverStockProposal } from './real-handoff-stock.js';
 import { judgeAuthenticatedInvestigation, ACCEPTANCE } from './authenticated-investigation-judge.js';
+import { harnessLimitErrors } from './changing-source-judge.js';
 import { startStandInSite } from './authenticated-stand-in-site.js';
 
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
 const help = `Usage: node browser/workspace/qualification/authenticated-investigation.js --out DIR (--stand-in | --issue-url URL)
   [--arms fawn,stock] [--repository-root PATH --expected-code PATH,PATH] [--sign-in-url URL] [--auth-loss revoke|clear-cookies]
-  [--sign-in-timeout-min 15] [--max-cost-usd 10] [--headless] [--no-session-reuse]
+  [--sign-in-timeout-min 15] [--max-cost-usd 10] [--max-request-usd 1.5] [--headless] [--no-session-reuse]
 A real site needs a person at this machine: the harness prints ACTION NEEDED lines and waits.
 With --issue-url, name the repository checkout and the files the issue concerns; only those files count as code evidence.`;
 const args = process.argv.slice(2);
 if (args.includes('--help')) { console.log(help); process.exit(0); }
-const FLAGS = ['--stand-in', '--headless', '--no-session-reuse'], VALUES = ['--out', '--issue-url', '--arms', '--repository-root', '--expected-code', '--sign-in-url', '--auth-loss', '--sign-in-timeout-min', '--max-cost-usd'];
+const FLAGS = ['--stand-in', '--headless', '--no-session-reuse'], VALUES = ['--out', '--issue-url', '--arms', '--repository-root', '--expected-code', '--sign-in-url', '--auth-loss', '--sign-in-timeout-min', '--max-cost-usd', '--max-request-usd'];
 for (let i = 0; i < args.length; i++) {
   if (FLAGS.includes(args[i])) continue;
   if (VALUES.includes(args[i]) && args[i + 1] && !args[i + 1].startsWith('--')) { i++; continue; }
@@ -78,7 +79,12 @@ if (!standIn && (!repositoryRoot || !expectedCode.length)) throw Error(`A real-s
 const CODE = standIn ? { kind: 'pages', urls: site.codeUrls }
   : { kind: 'repository', paths: expectedCode, hashes: Object.fromEntries(expectedCode.map(path => [path, sha256Hex(readFileSync(join(repositoryRoot, path), 'utf8'))])) };
 
-// Fixed before running.
+// Fixed before running. The per-request cap stops a runaway request; it was 0.4, and the same kind of
+// cap at 0.5 ended an arm of the changing-source trial one request after a large page was observed.
+// A person's sign-ins are spent on this trial, so the cap is set well clear of an ordinary request and
+// any request it does stop is reported as a harness limit, not as the arm's result.
+const maxRequestCostUsd = Number(value('--max-request-usd', '1.5'));
+if (!(maxRequestCostUsd > 0)) throw Error('Invalid per-request cap');
 const POLICY = Object.freeze({
   firstModel: 'claude-opus-5-5', resumeModel: 'claude-sonnet-5-5', finishModel: 'claude-sonnet-5-5',
   // finishTurns was 12 in the first live rehearsal (ed2041f46c); both arms spent it before recording
@@ -86,7 +92,7 @@ const POLICY = Object.freeze({
   // resumeTurns was 6 in the second (af1634bdf0): the Fawn arm's resuming agent spent it writing findings
   // from the preserved evidence and finished before it ever looked at the unreachable page.
   firstTurns: 14, resumeTurns: 12, finishTurns: 20, interruptAfter: 'issue page and one declared code source saved',
-  maxTotalCostUsd: Number(value('--max-cost-usd', '10')), authLoss, acceptance: ACCEPTANCE, code: CODE,
+  maxTotalCostUsd: Number(value('--max-cost-usd', '10')), maxRequestCostUsd, authLoss, acceptance: ACCEPTANCE, code: CODE,
 });
 const GOAL = 'Produce a source-linked summary of one issue: the problem, the code involved, prior attempts and unresolved questions.';
 const TASK = `Investigate the issue at ${issueUrl} (pageId main) and produce a source-linked summary. `
@@ -106,18 +112,18 @@ let spent = 0, credentialReachedPlanner = false;
 const calls = [];
 function planner(arm, phase, model, tools = PLANNER_TOOLS) {
   const provider = createCliPlanner({ executable: process.env.FAWN_CLAUDE_BIN ?? 'claude', model, tools,
-    directory: join(out, arm, `planner-${phase}`), config: { ...client, cliMaxBudgetUsd: 0.4 } });
+    directory: join(out, arm, `planner-${phase}`), config: { ...client, cliMaxBudgetUsd: maxRequestCostUsd } });
   return { identity: provider.identity, async next(context, options) {
-    if (spent + 0.4 > POLICY.maxTotalCostUsd) throw Error('Run spend ceiling reached');
+    if (spent + maxRequestCostUsd > POLICY.maxTotalCostUsd) throw Error('Run spend ceiling reached');
     if (site && JSON.stringify(context).includes(site.password)) credentialReachedPlanner = true;
     const started = performance.now();
     try {
       const result = await provider.next(context, options);
-      spent += result.usage?.costUsd ?? 0.4;
+      spent += result.usage?.costUsd ?? maxRequestCostUsd;
       calls.push({ arm, phase, model, tool: result.tool, ms: performance.now() - started, costUsd: result.usage?.costUsd ?? null, models: result.usage?.models });
       return result;
     } catch (error) {
-      spent += error.usage?.costUsd ?? 0.4;
+      spent += error.usage?.costUsd ?? maxRequestCostUsd;
       calls.push({ arm, phase, model, error: error.message, ms: performance.now() - started, costUsd: error.usage?.costUsd ?? null });
       throw error;
     }
@@ -396,6 +402,9 @@ const report = { schemaVersion: 1,
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
   sourceDirty: !!execFileSync('git', ['status', '--porcelain', '--', 'browser/workspace'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
   rows, calls, spentUsd: spent,
+  // Requests a harness limit stopped. Any entry means the affected arm's result is the harness's, not the arm's.
+  harnessLimits: [...new Set(calls.map(call => call.arm))].map(arm => ({ arm, errors: harnessLimitErrors(calls.filter(call => call.arm === arm && call.error).map(call => call.error)) }))
+    .filter(entry => entry.errors.length),
   // Who established each sign-in. A carried session is the first arm's, restored from memory.
   humanSteps, sessionReuse: reuseSession ? 'the first arm\'s signed-in session was carried in process memory to later arms; it was not written anywhere' : 'disabled',
   // Counts and outcomes only: safe to copy into a public record. Everything else in this file can
@@ -412,5 +421,5 @@ if ((carriedSession ?? []).some(cookie => typeof cookie.value === 'string' && co
   throw Error('Refusing to write a report that contains session cookie values');
 }
 writeFileSync(join(out, 'authenticated-investigation.json'), serialized);
-console.log(JSON.stringify({ report: join(out, 'authenticated-investigation.json'), spentUsd: spent, rows: report.publicProjection }, null, 1));
+console.log(JSON.stringify({ report: join(out, 'authenticated-investigation.json'), spentUsd: spent, harnessLimits: report.harnessLimits, rows: report.publicProjection }, null, 1));
 process.exit(rows.every(row => !row.error) ? 0 : 1);

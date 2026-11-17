@@ -65,6 +65,8 @@ export function judgeChangingSourceInvestigation(project, { liveHashes, changedS
 }
 
 const HARNESS_LIMITS = /per-request budget|deadline exceeded|spend ceiling/i;
+/** The planner errors caused by a limit the harness set, each named once. */
+export const harnessLimitErrors = errors => [...new Set((errors ?? []).filter(error => HARNESS_LIMITS.test(error)))];
 /**
  * Whether a pair of arms may be compared at all. A pair compares nothing when an arm crashed, when a
  * limit set by the harness (not by the task) stopped a planner, or when the first agent was never
@@ -76,8 +78,8 @@ export function comparisonValidity(rows) {
   const reasons = [];
   for (const row of rows) {
     if (row.error) { reasons.push({ arm: row.arm, reason: 'the arm did not run to its end' }); continue; }
-    const limited = (row.plannerErrors ?? []).filter(error => HARNESS_LIMITS.test(error));
-    if (limited.length) reasons.push({ arm: row.arm, reason: `a harness limit stopped a planner request: ${[...new Set(limited)].join('; ')}` });
+    const limited = harnessLimitErrors(row.plannerErrors);
+    if (limited.length) reasons.push({ arm: row.arm, reason: `a harness limit stopped a planner request: ${limited.join('; ')}` });
     if (row.interrupted !== true || !(row.restingOnChangingSource?.length > 0)) {
       reasons.push({ arm: row.arm, reason: 'the first agent was not interrupted with a conclusion resting on a changing source' });
     }

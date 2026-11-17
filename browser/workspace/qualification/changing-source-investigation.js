@@ -29,11 +29,11 @@ import { readArtifact } from '../src/client/artifact-read.js';
 import { describeChange } from '../src/client/validity.js';
 import { sha256Hex } from '../src/journal.js';
 import { validateStockProposal, recoverStockProposal } from './real-handoff-stock.js';
-import { judgeChangingSourceInvestigation, ACCEPTANCE } from './changing-source-judge.js';
+import { judgeChangingSourceInvestigation, comparisonValidity, ACCEPTANCE } from './changing-source-judge.js';
 
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
-const help = 'Usage: node browser/workspace/qualification/changing-source-investigation.js --out DIR --before COMMIT --after COMMIT [--arms fawn,stock] [--max-cost-usd 12]';
+const help = 'Usage: node browser/workspace/qualification/changing-source-investigation.js --out DIR --before COMMIT --after COMMIT [--arms fawn,stock] [--max-cost-usd 12] [--max-request-usd 1.5]';
 const args = process.argv.slice(2);
 if (args.includes('--help')) { console.log(help); process.exit(0); }
 const value = (flag, fallback = null) => { const i = args.indexOf(flag); return i < 0 ? fallback : args[i + 1]; };
@@ -59,9 +59,13 @@ const DOCS_URL = 'https://playwright.dev/docs/api/class-browsercontext', origin 
 const changedBetween = git(repoRoot, 'diff', '--name-only', before, after).split('\n').filter(path => SOURCES.includes(path));
 if (!changedBetween.length) throw Error('None of the investigated sources differ between --before and --after');
 
-// Fixed before running.
+// Fixed before running. The per-request cap exists to stop a runaway request, not to shape the result:
+// at 0.5 it ended the control's first agent on the request after it observed the documentation page
+// (0.501), before anything was recorded. A request stopped by it now invalidates the pair.
+const maxRequestCostUsd = Number(value('--max-request-usd', '1.5'));
+if (!(maxRequestCostUsd > 0)) throw Error('Invalid per-request cap');
 const POLICY = Object.freeze({ firstModel: 'claude-opus-5-5', resumeModel: 'claude-sonnet-5-5', firstTurns: 18, resumeTurns: 24,
-  maxTotalCostUsd: Number(value('--max-cost-usd', '12')), before, after, sources: SOURCES, changedSources: changedBetween, docsUrl: DOCS_URL,
+  maxTotalCostUsd: Number(value('--max-cost-usd', '12')), maxRequestCostUsd, before, after, sources: SOURCES, changedSources: changedBetween, docsUrl: DOCS_URL,
   interruptAfter: 'a record rests on evidence from a source that changes between the two commits', acceptance: ACCEPTANCE });
 const GOAL = 'Explain why releasing a Fawn workspace can stall for minutes on stock Chrome, and what each browser adapter does about it.';
 const TASK = 'Investigate why releasing a Fawn workspace (closing its browser) can stall for minutes on stock Chrome, whether each of the two browser adapters is exposed, and what each does about it. '
@@ -82,17 +86,17 @@ let spent = 0;
 const calls = [];
 function planner(arm, phase, model, tools = PLANNER_TOOLS) {
   const provider = createCliPlanner({ executable: process.env.FAWN_CLAUDE_BIN ?? 'claude', model, tools,
-    directory: join(out, arm, `planner-${phase}`), config: { ...client, cliMaxBudgetUsd: 0.5 } });
+    directory: join(out, arm, `planner-${phase}`), config: { ...client, cliMaxBudgetUsd: maxRequestCostUsd } });
   return { identity: provider.identity, async next(context, options) {
-    if (spent + 0.5 > POLICY.maxTotalCostUsd) throw Error('Run spend ceiling reached');
+    if (spent + maxRequestCostUsd > POLICY.maxTotalCostUsd) throw Error('Run spend ceiling reached');
     const started = performance.now();
     try {
       const result = await provider.next(context, options);
-      spent += result.usage?.costUsd ?? 0.5;
+      spent += result.usage?.costUsd ?? maxRequestCostUsd;
       calls.push({ arm, phase, model, tool: result.tool, ms: performance.now() - started, costUsd: result.usage?.costUsd ?? null, models: result.usage?.models });
       return result;
     } catch (error) {
-      spent += error.usage?.costUsd ?? 0.5;
+      spent += error.usage?.costUsd ?? maxRequestCostUsd;
       calls.push({ arm, phase, model, error: error.message, ms: performance.now() - started, costUsd: error.usage?.costUsd ?? null });
       throw error;
     }
@@ -279,6 +283,7 @@ async function runArm(name, dir) {
   row.agentMs = agentMs; row.agentTotalMs = Object.values(agentMs).reduce((sum, ms) => sum + ms, 0);
   row.plannerCalls = mine.length; row.costUsd = mine.reduce((sum, call) => sum + (call.costUsd ?? 0), 0);
   row.resumeTools = mine.filter(call => call.phase === 'resume').map(call => call.tool ?? `error: ${call.error}`);
+  row.plannerErrors = mine.filter(call => call.error).map(call => call.error);
   return row;
 }
 
@@ -295,7 +300,8 @@ const projection = row => row.error ? { arm: row.arm, error: row.error.split('\n
   diagnosis: row.verdict.diagnosis, checks: row.verdict.checks, counts: row.verdict.counts, interrupted: row.interrupted === true,
   recordsAtInterruption: row.recordsAtInterruption, restingOnChangingSource: row.restingOnChangingSource.length,
   plannerCalls: row.plannerCalls, costUsd: row.costUsd, agentMs: row.agentMs, agentTotalMs: row.agentTotalMs, resumeTools: row.resumeTools };
-const report = { schemaVersion: 1, classification: 'diagnostic: one paired investigation across a real source change', policy: POLICY,
+const comparison = comparisonValidity(rows.map(row => ({ ...row, restingOnChangingSource: row.restingOnChangingSource ?? [] })));
+const report = { schemaVersion: 1, classification: 'diagnostic: one paired investigation across a real source change', policy: POLICY, comparison,
   harnessCommit: git(repoRoot, 'rev-parse', 'HEAD'), harnessDirty: !!git(repoRoot, 'status', '--porcelain', '--', 'browser/workspace'),
   rows, calls, spentUsd: spent, publicProjection: rows.map(projection),
   limitations: ['One pair; model variance can flip any single verdict.',
@@ -304,5 +310,5 @@ const report = { schemaVersion: 1, classification: 'diagnostic: one paired inves
     'The first agent is stopped and its browser ended in-process; the owning process is not killed.',
     'The documentation page is live and may differ between arms and runs.'] };
 writeFileSync(join(out, 'changing-source-investigation.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ report: join(out, 'changing-source-investigation.json'), spentUsd: spent, rows: report.publicProjection }, null, 1));
+console.log(JSON.stringify({ report: join(out, 'changing-source-investigation.json'), spentUsd: spent, comparison, rows: report.publicProjection }, null, 1));
 process.exit(rows.every(row => !row.error) ? 0 : 1);

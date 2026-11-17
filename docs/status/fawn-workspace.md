@@ -125,7 +125,11 @@ diagnosis of the Playwright side was graded incorrect against a cause
 established separately: the deciding code lies beyond the 6,000 characters of a
 saved source that are shown at a time, and the agent did not page to it. The
 stock control was cut short by the harness's per-request budget cap, so the pair
-compares nothing. No advantage is established.
+compares nothing. No advantage is established. The harness now sets that cap
+well clear of an ordinary request and [reports a pair as not comparable](../../browser/workspace/qualification/changing-source-judge.js)
+when a harness limit stops a request or an arm never reaches the interruption;
+applied to the retained second run it gives that verdict. The pair has not been
+run again.
 
 ## Active blockers
 
