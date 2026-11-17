@@ -113,9 +113,10 @@ export class WorkspaceController {
       kind: 'navigate', target: { url: target.href }, observationVersion: observation.observationVersion });
     return admitted.result;
   }
-  async capture(id, { pageId, regions = [], artifactId, expectedRevision = 0 }, owner = null) {
+  async capture(id, { pageId, regions = [], artifactId, expectedRevision = 0 }, owner = null, onObservation = null) {
     const identity = owner ?? await this.humanPage(id, pageId);
     const observation = await this.service.observe({ ...identity, pageId, ...(regions.length ? { regions } : {}) });
+    onObservation?.(observation);
     const content = observation.text;
     const source = { kind: 'page', pageId, url: observation.url, observationVersion: observation.observationVersion,
       capturedAt: new Date().toISOString(), regions: observation.readScope?.regions ?? null, content, sha256: sha256Hex(content) };
@@ -301,7 +302,13 @@ export class WorkspaceController {
       }
       if (tool === 'artifact_list') return listArtifacts(this.store.get(id), input, visibleArtifacts);
       if (tool === 'artifact_read') return readArtifact(this.store.get(id), input, visibleArtifacts);
-      if (tool === 'capture') { const artifact = await this.capture(id, { ...input, pageId }, owner); visibleArtifacts.add(artifact.id); return artifact; }
+      if (tool === 'capture') {
+        // Saving a page reads it again, which supersedes the observation the planner last saw. Keep the
+        // newer one as current so the next action is not refused as stale; handles and digests are still
+        // checked against it, so a page that changed in between is refused there instead.
+        const artifact = await this.capture(id, { ...input, pageId }, owner, observation => { if (!input.regions?.length) observations.set(pageId, observation); });
+        visibleArtifacts.add(artifact.id); return artifact;
+      }
       if (tool === 'repository_files') return repositoryFiles(this.store.get(id).repositoryRoot, this.config.maxRepositoryFiles);
       if (tool === 'repository_read') { const artifact = await this.readRepository(id, input); visibleArtifacts.add(artifact.id); return artifact; }
       if (tool === 'record') {
