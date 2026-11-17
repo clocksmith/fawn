@@ -1,6 +1,7 @@
 // Planner input is paid for on every turn. Only the newest observation of each page is sent in full;
 // saved evidence keeps its hash and identity but sends a bounded excerpt of its bytes.
 import { artifactMemory } from './artifact-memory.js';
+import { completionContract, completionProgress, incompleteDeliverables } from './completion-contract.js';
 // A page observation can be most of a request (text plus every addressable element), and it is paid
 // for again on every later turn. It stays in full while the planner is working on that page; once
 // this many later results have followed it, it is reduced to where the page was and how it began.
@@ -61,7 +62,9 @@ export function investigationContext(project, { task, permissions, initialArtifa
 import { randomUUID } from 'node:crypto';
 
 export function startAgent({ projectId, store, planner, execute, config, signal, assertCurrent, context: getContext,
-  runId = randomUUID(), verifyCompletion = null, recoverToolError = null, reviewFinish = null }) {
+  runId = randomUUID(), verifyCompletion = null, recoverToolError = null, reviewFinish = null, requiredCompletion = null, completionRecords = null }) {
+  const contract = completionContract(requiredCompletion);
+  const progress = () => completionProgress(completionRecords ? completionRecords() : store.get(projectId).artifacts, contract);
   const id = runId, usage = [];
   let turns = 0, finishReturned = false;
   const save = (status, detail) => {
@@ -73,7 +76,7 @@ export function startAgent({ projectId, store, planner, execute, config, signal,
     try {
       while (turns < config.maxTurns) {
         assertCurrent(); signal.throwIfAborted();
-        const context = { ...getContext(), budget: { maxRequests: config.maxTurns, remainingRequests: config.maxTurns - turns } };
+        const context = { ...getContext(), ...(contract ? { completion: progress() } : {}), budget: { maxRequests: config.maxTurns, remainingRequests: config.maxTurns - turns } };
         if (Buffer.byteLength(JSON.stringify(context)) > config.maxInputBytes) throw Error('Investigation input budget reached');
         const requestId = randomUUID();
         turns += 1; usage.push(null);
@@ -98,20 +101,28 @@ export function startAgent({ projectId, store, planner, execute, config, signal,
         store.activity(projectId, { event: 'tool-requested', callId, tool: proposal.tool, input: proposal.input });
         // A finish that leaves saved work visibly incomplete is returned once, while requests remain,
         // with what is missing. A second finish is accepted as the agent's decision.
-        const objection = proposal.tool === 'finish' && reviewFinish && !finishReturned && turns < config.maxTurns ? reviewFinish() : null;
+        const objection = proposal.tool === 'finish' && !finishReturned && turns < config.maxTurns
+          ? (reviewFinish?.() || incompleteDeliverables(progress())) : null;
         if (objection) {
           finishReturned = true;
           store.activity(projectId, { event: 'tool-failed', callId, error: objection, code: 'finish-incomplete', recoverable: true,
             details: { neverDispatched: { code: 'finish-incomplete' } } });
-          save('running', 'Finish returned: saved records still need rechecking');
+          save('running', 'Finish returned: required work remains');
           continue;
         }
         if (proposal.tool === 'finish' || proposal.tool === 'ask_human') {
           store.activity(projectId, { event: proposal.tool, text: proposal.input.summary ?? proposal.input.reason ?? '' });
+          if (proposal.tool === 'finish') {
+            const missing = incompleteDeliverables(progress());
+            if (missing) { save('needs-attention', missing); return; }
+          }
           if (proposal.tool === 'finish' && verifyCompletion) {
             save('running', 'Checking the completed work');
             const verified = await verifyCompletion();
             assertCurrent(); signal.throwIfAborted();
+            // The verifier may yield while sources or saved records change. Check the live contract again.
+            const missingAfterVerification = incompleteDeliverables(progress());
+            if (missingAfterVerification) { save('needs-attention', missingAfterVerification); return; }
             save(verified.completed === true ? 'completed' : 'needs-attention', verified.detail);
             return;
           }

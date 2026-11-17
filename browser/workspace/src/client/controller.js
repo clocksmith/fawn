@@ -1,4 +1,5 @@
 // Human and agent clients compose the supported service; only the service dispatches effects.
+import { completionContract } from './completion-contract.js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, chmodSync, openSync, fsyncSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
@@ -280,7 +281,10 @@ export class WorkspaceController {
     });
   }
   delegate(id, input) { return this.exclusive(id, () => this.delegateNow(id, input)); }
-  async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false, uploadFiles, resume = false }) {
+  async delegateNow(id, { pageIds, origins, regions = null, actionKinds, task, shareRecords = false, uploadFiles, resume = false, requiredCompletion }) {
+    // An omitted contract on resume keeps the trusted prior delegation contract. Explicit null clears it.
+    const priorContract = resume ? this.store.get(id).activity.findLast(event => event.event === 'delegated')?.requiredCompletion : null;
+    const contract = completionContract(requiredCompletion === undefined ? priorContract ?? null : requiredCompletion);
     if (!this.planner) throw Error('Configure FAWN_MODEL and the planner API credential before delegating');
     if (!Array.isArray(pageIds) || !pageIds.length || !Array.isArray(origins) || !origins.length) throw Error('Select pages and exact origins');
     if (!Array.isArray(actionKinds) || !actionKinds.length || typeof task !== 'string' || !task.trim()) throw Error('Select actions and provide a bounded task');
@@ -309,6 +313,7 @@ export class WorkspaceController {
     const visibleArtifacts = new Set(shareRecords ? initialArtifacts : []);
     const startSequence = this.store.journal.records.at(-1)?.seq ?? 0;
     this.store.activity(id, { event: 'delegated', task, pageIds, origins, regions, actionKinds, shareRecords, grantId, resume,
+      ...(contract ? { requiredCompletion: contract } : {}),
       ...(approved.uploadFiles ? { uploadFiles: approved.uploadFiles } : {}) });
     const assertCurrent = () => { if (this.owners.get(id)?.ownerGeneration !== owner.ownerGeneration) throw Error('Agent ownership changed'); };
     // An interrupted action already declared how its completion shows on the page. Before the resuming
@@ -412,7 +417,8 @@ export class WorkspaceController {
       observations.delete(pageId); return navigationNotice(input, await admitted.result);
     };
     const run = startAgent({ projectId: id, store: this.store, planner: this.planner, config: this.config,
-      execute, signal: controller.signal, assertCurrent,
+      execute, signal: controller.signal, assertCurrent, requiredCompletion: contract,
+      completionRecords: () => Object.fromEntries(Object.entries(this.store.get(id).artifacts).filter(([key]) => visibleArtifacts.has(key))),
       recoverToolError: error => error.details?.neverDispatched?.code === error.code && CORRECTABLE_PROPOSALS.has(error.code),
       reviewFinish: () => unfinishedRecords(this.store.get(id)),
       verifyCompletion: async () => {

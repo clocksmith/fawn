@@ -64,8 +64,10 @@ if (!changedBetween.length) throw Error('None of the investigated sources differ
 // (0.501), before anything was recorded. A request stopped by it now invalidates the pair.
 const maxRequestCostUsd = Number(value('--max-request-usd', '1.5'));
 if (!(maxRequestCostUsd > 0)) throw Error('Invalid per-request cap');
+const REQUIRED_COMPLETION = Object.freeze({ requiredRecords: Object.freeze({ finding: 1, hypothesis: 2, question: 1, decision: 1 }) });
 const POLICY = Object.freeze({ firstModel: 'claude-opus-5-5', resumeModel: 'claude-sonnet-5-5', firstTurns: 18, resumeTurns: 24,
   maxTotalCostUsd: Number(value('--max-cost-usd', '12')), maxRequestCostUsd, before, after, sources: SOURCES, changedSources: changedBetween, docsUrl: DOCS_URL,
+  requiredCompletion: REQUIRED_COMPLETION,
   interruptAfter: 'a record rests on evidence from a source that changes between the two commits', acceptance: ACCEPTANCE });
 const GOAL = 'Explain why releasing a Fawn workspace can stall for minutes on stock Chrome, and what each browser adapter does about it.';
 const TASK = 'Investigate why releasing a Fawn workspace (closing its browser) can stall for minutes on stock Chrome, whether each of the two browser adapters is exposed, and what each does about it. '
@@ -140,7 +142,7 @@ function fawnArm(dir, repository) {
     },
     async start({ model, phase, task, turns, resume }) {
       controller.planner = planner('fawn', phase, model); controller.config = { ...client, maxTurns: turns };
-      await controller.delegate(id, { pageIds: ['main'], origins: [origin], actionKinds: ['navigate'], task, resume });
+      await controller.delegate(id, { pageIds: ['main'], origins: [origin], actionKinds: ['navigate'], task, resume, requiredCompletion: REQUIRED_COMPLETION });
     },
     wait: () => controller.active.get(id)?.done,
     project: () => controller.store.get(id),
@@ -212,7 +214,7 @@ function stockArm(dir, repository) {
       tools.repository_read = `${tools.repository_read} To re-read a file into its existing evidence record, also pass artifactId and expectedRevision.`;
       abort = new AbortController();
       run = startAgent({ projectId, store, planner: planner('stock', phase, model, tools), config: { ...client, maxTurns: turns }, execute,
-        recoverToolError: recoverStockProposal, signal: abort.signal, assertCurrent() {},
+        requiredCompletion: REQUIRED_COMPLETION, recoverToolError: recoverStockProposal, signal: abort.signal, assertCurrent() {},
         // The control gets the same check the product makes: a finish that leaves marked records unrevised is returned once.
         reviewFinish: () => unfinishedRecords(store.get(projectId)), context: () => ({
           ...investigationContext(store.get(projectId), { task, permissions: { pageIds: ['main'], origins: [origin], actionKinds: ['navigate'] },
