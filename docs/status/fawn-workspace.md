@@ -111,11 +111,37 @@ cover a changed file, a deleted file, a resuming agent and a person correcting
 through the UI. Saved pages are not re-read automatically, and no comparison
 shows yet that this improves a real investigation.
 
+A [paired investigation across a real source change](../../reports/fawn-workspace/20261117-changing-source-investigation/decision.json)
+([`changing-source-investigation.js`](../../browser/workspace/qualification/changing-source-investigation.js))
+had one agent read the adapter code, the installed Playwright source and a live
+documentation page, interrupted it, moved the investigated files between two
+commits and had a different model finish. The first run is retained as invalid:
+both arms stopped on planner context limits, which led to old page observations
+and other large results being reduced after three later results (a 149 KB
+request became 65 KB). In the second run the Fawn arm completed: the workspace
+re-read the changed files, the one conclusion resting on them was marked and
+rewritten, and the final records describe the adapter as it now is. Its
+diagnosis of the Playwright side was graded incorrect against a cause
+established separately: the deciding code lies beyond the 6,000 characters of a
+saved source that are shown at a time, and the agent did not page to it. The
+stock control was cut short by the harness's per-request budget cap, so the pair
+compares nothing. No advantage is established.
+
 ## Active blockers
 
-- Stock Chrome is slow to exit after a graceful close once it has run for about
-  30 s: 14 s alone and 586 s with several instances on one machine, on a blank
-  page with a fresh profile, and Playwright waits without a limit. That stalled
+- Closing a Playwright persistent context on stock Chrome is slow once the
+  browser has run for about 30 s: 14 s alone and 586 s with several instances
+  on one machine, on a blank page with a fresh profile. An earlier version of
+  this note said Playwright waits without a limit; a traced run shows otherwise.
+  Playwright 1.58.2 force-kills the browser 30 s after the close request
+  (`closeOrKill` in its `browserType.js`) and the browser process dies, but it
+  then waits for the child's `close` event, which needs the child's standard
+  streams to close. Chrome has by then started its updater and a crash handler
+  in other process groups; they survive the kill and hold those inherited
+  streams open until they exit. In the trace three browsers were killed at
+  30 s and the close had still not returned four minutes later, with the
+  streams held by `chrome_crashpad_handler` and `GoogleUpdater` processes. The
+  14 s single-instance case was not traced to the same cause. That stalled
   the reuse run (300 s in the Fawn arm, 7.7 to 24.2 s in four stock rows). The
   Playwright adapter now [bounds the release](../../browser/workspace/src/adapters/bounded-close.js)
   at the action timeout and then ends that profile's browser (16 s in the same

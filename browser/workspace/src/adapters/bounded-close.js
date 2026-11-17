@@ -1,9 +1,11 @@
 // Bounded release of one persistent-profile browser.
 //
-// Stock Chrome can take many seconds, sometimes minutes, to exit after a graceful close once it has
-// been running for about half a minute, and Playwright waits for a persistent context's process
-// without a limit. Releasing a workspace must not depend on that: ask for a graceful close, wait a
-// fixed time, then end the browser that owns this profile. Workspace state lives in the journal,
+// Closing a Playwright persistent context on stock Chrome can take many seconds, sometimes minutes,
+// once the browser has been running for about half a minute. Playwright does force-kill the browser
+// 30 s after the close request, but then waits for the child's standard streams to close, and
+// Chrome's updater and crash handler, which outlive the kill, hold them open (traced 2026-11-17; see
+// docs/status/fawn-workspace.md). Releasing a workspace must not depend on that: ask for a graceful
+// close, wait a fixed time, then end the browser that owns this profile and stop waiting. Workspace state lives in the journal,
 // which is already safe against process death; a forced exit can lose the profile's last
 // unflushed site data (for example a cookie set moments before closing).
 import { execFileSync } from 'node:child_process';
