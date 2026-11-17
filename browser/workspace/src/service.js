@@ -283,6 +283,8 @@ class WorkspaceService {
     const targetFormActions = Object.fromEntries(snapshot.elements
       .filter((element) => element.formAction)
       .map((element) => [element.selector, element.formAction]));
+    // Selectors of password fields. Admission refuses to fill one: an admitted action's value is journaled.
+    const passwordTargets = snapshot.elements.filter((element) => element.inputType === 'password').map((element) => element.selector);
     const targetNavigations = Object.fromEntries(snapshot.elements
       .filter((element) => element.href)
       .map((element) => [element.selector, element.href]));
@@ -302,6 +304,7 @@ class WorkspaceService {
       targetDigests,
       targetFormActions,
       targetNavigations,
+      ...(passwordTargets.length ? { passwordTargets } : {}),
       handles,
       regions: snapshot.regionDigests,
     });

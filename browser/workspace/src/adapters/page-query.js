@@ -11,6 +11,9 @@ const ELEMENT_TEXT_CHARS = 200;
 
 // Runs inside the page; must stay self-contained.
 function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars, regions = [], regionGroups = [], outline = false, readRoots = null }) {
+  // A typed password never leaves the page: observations, evidence and digests see only whether
+  // the field is filled. A person enters credentials; agents and journals do not read them.
+  const controlValue = (node) => node.tagName === 'INPUT' && node.type === 'password' ? (node.value ? '[hidden]' : '') : String(node.value);
   // Custom widgets declare their ARIA role; without these, a custom dropdown and its options
   // never appear in an observation and cannot be targeted.
   const WIDGET_ROLES = ['button', 'link', 'checkbox', 'radio', 'switch', 'combobox', 'listbox', 'option',
@@ -78,7 +81,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       attributes,
       text: text.slice(0, elementTextChars),
       textFingerprint: fingerprint(text),
-      value: 'value' in node ? String(node.value) : null,
+      value: 'value' in node ? controlValue(node) : null,
       href: node.href ?? null,
       formAction,
       ...(node.tagName === 'INPUT' && node.type === 'file' ? { inputType: 'file',
@@ -232,7 +235,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       if (handle) {
         const name = (node.innerText ?? '').trim() || node.getAttribute('aria-label') || node.getAttribute('name') || '';
         const choice = node.tagName === 'SELECT' ? null : choiceOf(node);
-        const value = VALUE_TAGS.includes(node.tagName) ? ` = ${JSON.stringify(String(node.value))}`
+        const value = VALUE_TAGS.includes(node.tagName) ? ` = ${JSON.stringify(controlValue(node))}`
           : choice ? ` = ${JSON.stringify(choice.label ?? '')}` : '';
         const states = statesOf(node).map((state) => ` ${state}`).join('');
         parts.push(`[${handle} ${roleOf(node)} ${JSON.stringify(name)}${value}${states}]`);
@@ -250,7 +253,7 @@ function queryPage({ mode, selector, maxElements, maxTextChars, elementTextChars
       group,
       count: 1,
       html: region.outerHTML,
-      values: controls.map((control) => String(control.value)),
+      values: controls.map((control) => controlValue(control)),
       outline: outline ? renderOutline(region) : null,
     };
   };

@@ -288,6 +288,13 @@ function checkObservation(workspace, command, nowMs, live = null) {
         received: command.kind,
       });
     }
+    // Every admitted action is journaled with its value, so a password is never accepted as one,
+    // from any owner. A person types it directly into the browser.
+    if (command.kind === 'fill' && cited.passwordTargets?.includes(command.target.selector)) {
+      reject(REJECTION_CODES.INVALID_COMMAND, `${command.target.selector} is a password field; credentials are typed directly in the browser, never sent through the workspace`, {
+        selector: command.target.selector,
+      });
+    }
     const digest = cited.targetDigests?.[command.target.selector];
     if (!digest) {
       reject(REJECTION_CODES.UNKNOWN_TARGET, `target ${command.target.selector} not in observation`, {

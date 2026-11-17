@@ -111,8 +111,17 @@ not beat a script.
   every recorded action survive and the profile reopens. A session cookie set
   just before the release was lost in two of three runs; the workspace then
   shows the site as signed out. The product client records a forced release
-  and the next handoff warns that sign-ins may be lost; nothing re-establishes
-  the session, and no real signed-in investigation has exercised this.
+  and the next handoff warns that sign-ins may be lost.
+- Sign-in belongs to a person. Observations report a password field only as
+  empty or `[hidden]`, the service refuses to fill one for any owner (admitted
+  values are journaled), and a delegated agent that proposes it is stopped for
+  attention. A [real-Chromium check](../../browser/workspace/test/browser/sign-in-handback.test.js)
+  on a local signed-in fixture loses the session across a forced release, has
+  the agent ask for sign-in, has a person type the password at the browser and
+  a later agent finish, with the password absent from observations, planner
+  inputs and both journals. Planners are scripted there. No real external
+  account, live model, one-time code, single sign-on redirect or headless
+  deployment (where a person cannot reach the browser window) is exercised.
 
 - Personal workflow learning, verified repair-suffix reuse and UI delegation
   require host-installed task definitions and local verifiers. Live ATS and

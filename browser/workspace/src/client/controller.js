@@ -323,6 +323,10 @@ export class WorkspaceController {
       }
       const observed = observations.get(pageId);
       if (!observed) throw Error('Observe this page before proposing an action');
+      // Credentials are a person's to enter. The run stops for attention instead of typing into the field.
+      if ((observed.elements ?? []).some(element => element.handle && element.handle === input.target?.handle && element.inputType === 'password')) {
+        throw Error('Passwords are entered by a person: sign in on this page, then return the task to the agent');
+      }
       const admitted = await this.service.submitAction({ ...owner, pageId, actionId: callId, authorizedIntent: 'delegated-task',
         kind: input.kind, target: input.target, params: input.params, completion: input.completion, effect: input.effect,
         observationVersion: observed.observationVersion });
