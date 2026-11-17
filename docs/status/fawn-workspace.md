@@ -98,6 +98,19 @@ revision is retained as invalid because a planner timeout failed a control row.
 The prepared stock script finished in 3.8 s with no model calls, so reuse does
 not beat a script.
 
+Investigation memory now follows source changes. The client re-reads every
+saved repository source on resume or on request, saves a changed file as the
+next revision of the same evidence record, and reports
+([`validity.js`](../../browser/workspace/src/client/validity.js)) which records
+rest on it and need rechecking, which still hold, which explanations were
+already rejected and the next useful step. Competing explanations are
+`hypothesis` records; supporting or rejecting one needs a reason and a record it
+rests on. A [controller and planner check](../../browser/workspace/test/unit/investigation-validity.test.js)
+and a [real-browser UI check](../../browser/workspace/test/browser/investigation-memory-ui.test.js)
+cover a changed file, a deleted file, a resuming agent and a person correcting
+through the UI. Saved pages are not re-read automatically, and no comparison
+shows yet that this improves a real investigation.
+
 ## Active blockers
 
 - Stock Chrome is slow to exit after a graceful close once it has run for about

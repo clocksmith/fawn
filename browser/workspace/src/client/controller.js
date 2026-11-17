@@ -7,6 +7,7 @@ import { InvestigationStore } from './investigation.js';
 import { repositoryEvidence, repositoryFiles } from './repository.js';
 import { startAgent, investigationContext } from './agent.js';
 import { handoffBrief } from './handoff.js';
+import { validityBrief, describeChange } from './validity.js';
 import { readArtifact } from './artifact-read.js';
 import { listArtifacts } from './artifact-memory.js';
 import { REJECTION_CODES } from '../errors.js';
@@ -157,6 +158,35 @@ export class WorkspaceController {
     if (input.kind === 'evidence' || (input.id && this.store.get(id).artifacts[input.id]?.kind === 'evidence')) throw Error('Capture a page or repository file to create evidence');
     return this.store.revise(id, input);
   }
+  /**
+   * Compare every saved repository source with the file as it is now, and say what that means for
+   * the conclusions built on it. A changed file is saved as the next revision of the same evidence
+   * record, which marks every record resting on it for review; the earlier bytes stay in the journal.
+   * Pages are not re-read here: reopening a page is a browser action someone has to take.
+   */
+  async checkSources(id, { refresh = true } = {}) {
+    const project = this.store.get(id), changed = [], unchecked = [];
+    let unchangedCount = 0;
+    for (const artifact of Object.values(project.artifacts).filter(value => value.kind === 'evidence')) {
+      if (artifact.source?.kind !== 'repository') {
+        unchecked.push({ artifactId: artifact.id, source: artifact.source?.url ?? null, reason: 'a page is rechecked by opening it and saving it again' });
+        continue;
+      }
+      let live;
+      try { live = await repositoryEvidence(project.repositoryRoot, artifact.source.path, this.config.maxEvidenceBytes); }
+      catch (error) {
+        changed.push({ artifactId: artifact.id, path: artifact.source.path, missing: true, savedRevision: artifact.revision, detail: String(error.message).slice(0, 200) });
+        continue;
+      }
+      if (live.sha256 === artifact.source.sha256) { unchangedCount += 1; continue; }
+      const revision = refresh ? this.store.revise(id, { id: artifact.id, expectedRevision: artifact.revision, kind: 'evidence', text: artifact.text, source: live }).revision : artifact.revision;
+      changed.push({ artifactId: artifact.id, path: artifact.source.path, previousRevision: artifact.revision, revision, refreshed: refresh,
+        previousSha256: artifact.source.sha256, sha256: live.sha256, change: describeChange(artifact.source.content, live.content) });
+    }
+    this.store.activity(id, { event: 'sources-checked', changed, unchecked, unchangedCount });
+    const workspace = await this.service.inspect(this.admin(id));
+    return validityBrief(this.store.get(id), { unresolvedActions: workspace.actions.filter(action => action.isUncertain).length });
+  }
   /** Trusted host entrypoint. Task/account/disclosure/oracle definitions are installed by the
    * host, not accepted from HTTP, a model, or a downloaded graph. No final-submit permission.
    */
@@ -257,6 +287,9 @@ export class WorkspaceController {
     // A fresh task must not inherit unknown outcomes; a resumed task inherits them and must establish each one.
     if (!resume && before.actions.some(action => action.isUncertain)) throw Error('Review unresolved actions before delegating, or resume with the handoff');
     if (resume) shareRecords = true;
+    // Time has passed: before a returning agent reads anything, re-read the saved repository sources so
+    // its handoff says which conclusions rest on files that changed and which still hold.
+    if (resume) await this.checkSources(id);
     let handoff = resume ? handoffBrief(this.store.get(id), before) : null;
     const grantId = `delegation-${randomUUID()}`;
     const approved = await this.service.grantAuthorization({ ...this.admin(id), grantId, ownerId: 'agent', intents: ['delegated-task'],
@@ -312,6 +345,7 @@ export class WorkspaceController {
         if (!resume) throw Error('Resume the investigation before reading prior handoff records');
         return this.handoff(id, { cursors: input.cursors ?? {} });
       }
+      if (tool === 'sources_check') return this.checkSources(id);
       if (tool === 'artifact_list') return listArtifacts(this.store.get(id), input, visibleArtifacts);
       if (tool === 'artifact_read') return readArtifact(this.store.get(id), input, visibleArtifacts);
       if (tool === 'capture') {

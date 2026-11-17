@@ -2,7 +2,17 @@
 import { Journal, sha256Hex, canonicalJson } from '../journal.js';
 import { randomUUID } from 'node:crypto';
 
-const KINDS = ['evidence', 'assumption', 'finding', 'decision', 'question'];
+const KINDS = ['evidence', 'assumption', 'finding', 'decision', 'question', 'hypothesis'];
+// A hypothesis is a competing explanation kept as a record. Supporting or rejecting it must say why
+// and cite at least one other record, so a rejected explanation stays visible with its reason.
+const DISPOSITIONS = ['open', 'supported', 'rejected'];
+function hypothesisDisposition(kind, disposition, dependsOn) {
+  if (kind !== 'hypothesis') { if (disposition !== undefined && disposition !== null) throw Error('Only a hypothesis has a disposition'); return null; }
+  const state = disposition?.state ?? 'open', reason = typeof disposition?.reason === 'string' ? disposition.reason.trim() : '';
+  if (!DISPOSITIONS.includes(state)) throw Error(`A hypothesis is ${DISPOSITIONS.join(', ')}`);
+  if (state !== 'open' && (!reason || !dependsOn.length)) throw Error('Supporting or rejecting a hypothesis needs a reason and at least one record it depends on');
+  return { state, reason };
+}
 function dependenciesCurrent(project, artifact) {
   return artifact.dependsOn.every(id => project.artifacts[id]?.status === 'current'
     && project.artifacts[id].revision === artifact.dependencyRevisions[id]);
@@ -48,7 +58,7 @@ export class InvestigationStore {
     return this.get(id);
   }
   get(id) { const project = this.projects.get(id); if (!project) throw Error('Unknown investigation'); return structuredClone(project); }
-  revise(projectId, { id = randomUUID(), kind, text, dependsOn = [], source = null, expectedRevision = 0 }) {
+  revise(projectId, { id = randomUUID(), kind, text, dependsOn = [], source = null, expectedRevision = 0, disposition }) {
     if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9:._-]{0,127}$/i.test(id) || ['constructor', 'prototype'].includes(id)) throw Error('Invalid artifact identity');
     const project = this.get(projectId), previous = Object.hasOwn(project.artifacts, id) ? project.artifacts[id] : null;
     if (!KINDS.includes(kind) || typeof text !== 'string' || !text.trim()) throw Error('Artifact kind and text are required');
@@ -63,8 +73,9 @@ export class InvestigationStore {
     if (dependsOn.some(parent => reaches(parent))) throw Error('Artifact dependencies cannot form a cycle');
     if (kind === 'evidence' && (!source || source.sha256 !== sha256Hex(source.content ?? ''))) throw Error('Evidence must bind the saved source bytes');
     const dependencyRevisions = Object.fromEntries(dependsOn.map(parent => [parent, project.artifacts[parent].revision]));
+    const settled = hypothesisDisposition(kind, disposition, dependsOn);
     const artifact = { id, kind, text: text.trim(), dependsOn, dependencyRevisions, source,
-      revision: expectedRevision + 1, status: 'current' };
+      ...(settled ? { disposition: settled } : {}), revision: expectedRevision + 1, status: 'current' };
     if (!dependenciesCurrent(project, artifact)) artifact.status = 'needs-review';
     const { status, ...revision } = artifact;
     artifact.contentHash = sha256Hex(canonicalJson(revision));

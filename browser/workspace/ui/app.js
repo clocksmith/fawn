@@ -67,6 +67,17 @@ function render(state) {
   if (needsReview.length) attention.push(`${needsReview.length} ${needsReview.length === 1 ? 'conclusion depends' : 'conclusions depend'} on changed evidence or assumptions.`);
   if (investigation.run?.status === 'needs-attention') attention.push(investigation.run.detail);
   $('#attention').hidden = !attention.length; $('#attention').textContent = attention.join(' ');
+  // What still holds and what does not, after the last check of saved sources.
+  const validity = state.selected?.handoff?.validity;
+  const lines = [];
+  if (validity?.sourcesCheckedAt) {
+    for (const source of validity.changedSources) lines.push(source.missing ? `${source.path} can no longer be read; ${source.affects.length} record(s) rest on it.`
+      : `${source.path} changed from line ${source.change.firstChangedLine} (${source.change.removedLines} removed, ${source.change.addedLines} added); ${source.affects.length} record(s) rest on it.`);
+    lines.push(`${validity.counts.needsRecheck} record(s) need rechecking, ${validity.counts.stillValid} still hold, ${validity.counts.rejectedHypotheses} rejected explanation(s) kept.`);
+    if (validity.uncheckedSources.length) lines.push(`${validity.uncheckedSources.length} saved page(s) were not re-read; use Refresh source on each.`);
+    lines.push(`Next: ${validity.nextAction}`);
+  }
+  $('#validity').hidden = !lines.length; $('#validity').replaceChildren(...lines.map(line => node('p', line)));
   $('#model-status').textContent = state.planner?.model ?? 'Planner not configured';
   // Unconfirmed actions no longer block work: continuing hands them to the agent, which must establish them first.
   if (unresolved.length) $('#resume').checked = true;
@@ -131,8 +142,20 @@ function render(state) {
           artifactsIdentity = ''; text.remove(); save.remove();
         }); card.append(text, save); text.focus();
       }));
+      // A competing explanation is settled in the open: supporting or rejecting it needs a reason.
+      if (artifact.kind === 'hypothesis') {
+        top.append(node('span', artifact.disposition?.state ?? 'open', 'tag'));
+        for (const state of ['supported', 'rejected']) if (artifact.disposition?.state !== state) top.append(button(state === 'supported' ? 'Support' : 'Reject', async () => {
+          const reason = document.createElement('textarea'); reason.placeholder = `Why is this ${state}? It must rest on at least one saved record.`;
+          const save = button(`Save as ${state}`, async () => {
+            await command('record', { id: artifact.id, kind: 'hypothesis', text: artifact.text, dependsOn: artifact.dependsOn, expectedRevision: artifact.revision, disposition: { state, reason: reason.value } });
+            artifactsIdentity = ''; reason.remove(); save.remove();
+          }); card.append(reason, save); reason.focus();
+        }));
+      }
       card.id = `artifact-${artifact.id}`;
       card.append(top, node('p', artifact.text));
+      if (artifact.disposition?.reason) card.append(node('p', `${artifact.disposition.state === 'rejected' ? 'Rejected' : 'Supported'}: ${artifact.disposition.reason}`, 'muted'));
       if (artifact.dependsOn.length) {
         const dependencies = node('div', null, 'dependency-links'); dependencies.append(node('small', 'Depends on'));
         for (const id of artifact.dependsOn) dependencies.append(button(investigation.artifacts[id]?.text.slice(0, 65) || 'Saved record', async () => {
@@ -254,6 +277,7 @@ $('#resume-task').onclick = () => {
 };
 $('#take-over').onclick = () => act(() => command('takeOver'));
 $('#open-page').onclick = () => act(async () => { const page = await command('openPage'); pageId = page.pageId; });
+$('#check-sources').onclick = () => act(async () => { await command('checkSources'); artifactsIdentity = ''; });
 $('#browse').onclick = () => act(() => command('focusPage', { pageId }));
 $('#capture').onclick = () => act(() => command('capture', { pageId }));
 $('#select-region').onclick = () => act(async () => { notice('Click the region in your browser page. Escape cancels.'); const result = await command('selectRegion', { pageId }); $('#regions').value = result.selector; });

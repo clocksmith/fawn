@@ -1,3 +1,4 @@
+import { validityBrief } from './validity.js';
 // Bounded continuation view of the complete journal and service action records.
 // This summary grants no authority and never settles an uncertain action.
 const LIMITS = Object.freeze({ sessions: 8, tried: 40, human: 12, unresolvedActions: 20, openQuestions: 12, needsReview: 20 });
@@ -89,6 +90,9 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
       .map(value => ({ cursor: value.id, value })), ({ value }) => ({ id: value.id, revision: value.revision, text: clip(value.text) })),
     needsReview: page('needsReview', artifacts.filter(value => value.status === 'needs-review')
       .map(value => ({ cursor: value.id, value })), ({ value }) => value.id),
+    // What still holds, what changed underneath it, which explanations were already rejected, and
+    // the next useful step. Read this before relying on any saved conclusion.
+    validity: validityBrief(project, { unresolvedActions: unresolved.length }),
     pagination,
     // The browser did not close cleanly at the last shutdown. Recorded work is intact; a site session
     // set shortly before may not have reached disk, and an unresolved browser may still be running.
