@@ -128,8 +128,21 @@ stock control was cut short by the harness's per-request budget cap, so the pair
 compares nothing. No advantage is established. The harness now sets that cap
 well clear of an ordinary request and [reports a pair as not comparable](../../browser/workspace/qualification/changing-source-judge.js)
 when a harness limit stops a request or an arm never reaches the interruption;
-applied to the retained second run it gives that verdict. The pair has not been
-run again.
+applied to the retained second run it gives that verdict. Two further pairs
+were valid. In the third neither arm passed: the resuming Fawn agent read for
+fourteen requests, tried to call the record tool directly inside the model
+CLI, was told no such tool exists and finished with its conclusions only in
+the summary, while the control saved four records and ran out of requests.
+The planner prompt now says how tools are reached, and a finish that leaves
+records marked for recheck is [returned once](../../browser/workspace/test/unit/finish-returns-stale-records.test.js)
+(in both arms) and otherwise ends as needing attention. In the fourth pair
+Fawn passed all eight mechanical checks and the control failed one, at the
+same planner calls and usage (37 versus 36). Graded against the separately
+established cause, the control's diagnosis was correct and Fawn's only partly
+correct: for the second time the Fawn agent recorded that Playwright has no
+close deadline without reading the part of `browserType.js` that implements
+one, and the control paged to it. Neither arm is accepted, and no advantage
+over stock automation with a durable tracker is established.
 
 ## Active blockers
 
