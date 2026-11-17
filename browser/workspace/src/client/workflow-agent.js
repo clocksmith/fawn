@@ -65,9 +65,10 @@ export function scopeWorkflowObservation(service, template, locators) {
 export async function runWorkflow({ dag, mode, service, owner, pageId, intent, template, inputs,
   intermediateClicks, task, planner, config, store, projectId, verifyReview, signal,
   assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null, fieldGroups = null,
-  learnRepairs = false, observationLocators = null }) {
+  learnRepairs = false, observationLocators = null, reconvergeMidRepair = false }) {
   if (!['learn', 'fresh', 'reuse'].includes(mode)) throw Error('Invalid workflow mode');
   if (typeof learnRepairs !== 'boolean') throw Error('Explicit boolean repair-learning policy required');
+  if (typeof reconvergeMidRepair !== 'boolean') throw Error('Explicit boolean mid-repair reconvergence policy required');
   ({ service, template } = scopeWorkflowObservation(service, template, observationLocators));
   const started = performance.now();
   const identity = { ...owner, pageId };
@@ -141,6 +142,7 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       recorder = canPublish ? await recorder.repair() : dag.session({ ...options, fieldGroups: null });
     }
     await observe();
+    let reconvergedTerminal = false;
     const execute = async (tool, input) => {
       if (tool === 'observe') { await observe(); return view(observation); }
       if (tool !== 'act' || !input || Object.keys(input).some(key => !['kind', 'handle', 'slot'].includes(key))) {
@@ -162,11 +164,24 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       }
       if (failure) throw failure;
       if (recorded.status !== 'completed') throw Error(`Workflow stopped: ${recorded.reason}`);
+      let continuedSteps = 0;
+      if (reconvergeMidRepair && mode === 'reuse' && recorder.nextId && dag.nodes.has(recorder.nextId)) {
+        const resumed = await recorder.continueReplay();
+        if (resumed.halted) throw Error(`Workflow stopped: ${resumed.reason}`);
+        continuedSteps = resumed.continuedSteps;
+        cacheSteps += continuedSteps;
+        if (resumed.reachedTerminal) reconvergedTerminal = true;
+      }
       await observe();
-      lastResult = { status: 'completed', kind: input.kind, label: matches[0].label, slot: input.slot ?? null };
+      lastResult = { status: 'completed', kind: input.kind, label: matches[0].label, slot: input.slot ?? null,
+        ...(continuedSteps > 0 ? { reconvergedCacheSteps: continuedSteps } : {}) };
       return lastResult;
     };
-    const countedPlanner = { identity: planner?.identity ?? null, next: (...args) => {
+    const countedPlanner = { identity: planner?.identity ?? null, next: async (...args) => {
+      if (reconvergedTerminal) {
+        reconvergedTerminal = false;
+        return { tool: 'finish', input: { summary: 'Reconverged onto verified workflow suffix' } };
+      }
       if (!planner) throw Error('Configure FAWN_MODEL and the planner API credential before learning or repairing a workflow');
       modelCalls++;
       return planner.next(...args);

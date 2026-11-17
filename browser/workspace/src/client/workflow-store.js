@@ -11,7 +11,7 @@ import { WorkflowAttempts, attemptErrorCode } from './workflow-attempts.js';
 
 const VERSION = 1;
 const HASH = /^[a-f0-9]{64}$/;
-const SOURCE_FILES = ['private-json-file.js', 'workflow-attempts.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'field-group-scope.js', 'controller.js',
+const SOURCE_FILES = ['private-json-file.js', 'workflow-attempts.js', 'workflow-sync.js', 'workflow-store.js', 'workflow-agent.js', 'trace-dag.js', 'trace-graph-dp.js', 'field-group-scope.js', 'controller.js',
   'agent.js', '../adapters/page-query.js', '../service.js'];
 const exactKeys = (value, keys) => value && typeof value === 'object'
   && !Array.isArray(value) && Object.keys(value).sort().join() === [...keys].sort().join();

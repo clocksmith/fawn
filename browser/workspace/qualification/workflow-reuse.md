@@ -78,7 +78,8 @@ is uncontrolled, and three familiar pairs cannot establish population p95 or
 real-site reliability. Changed/stale latency is reported without requiring a win.
 
 `frozen.json`, per-run `result.json`, `planner-calls.json` and `report.json` retain
-source/policy identities, inputs, results and failures. `workflow.private.json`
+source/policy identities (including `trace-dag.js` and `trace-graph-dp.js`),
+inputs, results and failures. `workflow.private.json`
 contains the reusable HMAC graph and stays private/ignored. A passing
 `syntheticReuseEstablished` is scoped to this fixture; the report leaves
 `productAdvantageEstablished` false for the broader product claim.

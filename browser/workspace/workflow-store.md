@@ -113,13 +113,17 @@ Fresh mode deliberately remains non-collecting. The generated
 | `workflowVersions` | Immutable snapshot, workflow ID, revision, parent version and private DAG/key |
 | `workflowRuns` | Base/result version IDs, outcome, verification ID, source/policy hashes, declared and observed model identities, calls, elapsed time, intervention requests |
 
-The store envelope remains version 1. New DAG snapshots are version 2, adding
-`repairs: [exactNodeHash]` to each node. Readers admit version-1 DAGs without
-changing their hashes; later publications create a version-2 snapshot while
-retaining the old version bytes. Older clients cannot read version-2 graphs:
-upgrade cooperating clients before sharing these snapshots. Repair bridges count
-toward `maxEdges`, must point to a node at the same action depth and cannot chain
-or cycle. Ordinary action edges still advance exactly one depth.
+The store envelope remains version 1. New DAG snapshots are version 3
+(`src/client/trace-dag.js`, `src/client/trace-graph-dp.js`), keying nodes on
+canonical screen outline plus satisfied slot sets, contracting intra-trace
+loops, compressing dominated click detours, and routing via backward Bellman
+dynamic programming (`repairs: [exactNodeHash]` on nodes, optional positive
+`weight` on edges). Readers admit version-1, version-2 and version-3 DAGs
+without changing legacy version-1/version-2 hashes. Old version bytes remain
+immutable; cooperating shared-sync clients must run code supporting version-3
+snapshots before exchanging version-3 graphs. Repair bridges count toward
+`maxEdges`, cannot chain or cycle, and must not point backward in topological
+rank. All graphs remain strictly acyclic within `maxSteps`.
 
 Receipts exclude applicant values, observations and review text. Full local
 investigation journals retain their existing private behavior. Observed model

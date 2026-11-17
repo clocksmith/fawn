@@ -36,9 +36,11 @@ so writes rewrite the whole file. This is a small-store implementation, not a
 large-scale database or multi-host filesystem protocol.
 
 Clients decrypt and validate before merging snapshots. A conflict causes a fresh
-checkout and same-key graph union, capped at five attempts. Existing ordered-prefix
-semantics remain unchanged; conflicting actions stop as ambiguous. Publication is
-only attached to full verified learning runs. Repairs, public imports and automatic
+checkout and same-key graph union (`TraceDag.merge`), capped at five attempts.
+Version-3 snapshots reduce dominated click detours and reconverge shared screen
+suffixes deterministically so `merge(a, b)` equals `merge(b, a)`; equal-cost
+branches to distinct semantic terminals still stop as ambiguous. Publication
+attaches only to independently verified runs; public imports and unverified
 candidate promotion are not implemented.
 
 A network outage allows local reuse; denied credentials or invalid ciphertext

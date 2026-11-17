@@ -39,7 +39,7 @@ const tasks=lifecycleOnly?[{revision:revisions[1],query:'cache',phase:'lifecycle
 const locators=[['textbox','Search components','input','search'],['button','Toggle component library','button','']];
 const clicks=[locators[1]], maxCostUsd=6, maxCallUsd=0.15;
 const task='Look up the public component definitions matching input slot query in Lucyd. Open the component library if it is collapsed, set Search components using slot query, and finish with filtered definitions visible. Do not add components, edit the diagram, save, export, import or run the simulation.';
-const sourcePaths=['client/workflow-agent','client/workflow-store','client/trace-dag','client/agent','client/cli-planner','adapters/page-query','adapters/playwright-adapter','service'].map(x=>`browser/workspace/src/${x}.js`);
+const sourcePaths=['client/workflow-agent','client/workflow-store','client/trace-dag','client/trace-graph-dp','client/agent','client/cli-planner','adapters/page-query','adapters/playwright-adapter','service'].map(x=>`browser/workspace/src/${x}.js`);
 sourcePaths.push('browser/workspace/qualification/workflow-reuse-product.js');
 const sourceHashes=Object.fromEntries(sourcePaths.map(p=>[p,sha256Hex(readFileSync(join(root,p)))]));
 const frozen={schema:'fawn.real-product-workflow-reuse/v1',startedAt:new Date().toISOString(),controlled,lifecycleOnly,revisions,tasks,task,locators,maxCostUsd,sourceHashes,

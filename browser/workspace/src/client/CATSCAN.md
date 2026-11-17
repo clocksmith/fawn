@@ -36,6 +36,7 @@ Outputs:
 - Corrections invalidate dependents; earlier revisions persist.
 - HTTP exposes no handles/credentials.
 - Replay checks accounts/disclosure, preserves service admission and stops before submission.
+- Recipe DAGs key state on screen outline and satisfied slots so repairs, reordered fills and composed sub-recipes reconverge, compress dominated detours and select optimal routes via backward dynamic programming while preserving semantic-tie stops.
 - Scoped reuse requires reviewed meanings, unique targets and ordered dependency boundaries.
 - Verified repairs retain the executed prefix; exact-page suffixes require independent review.
 - Client-encrypted graphs; remote storage grants no browser authority.
@@ -44,6 +45,7 @@ Outputs:
 ## Acceptance
 
 - Evidence: [Client tests](../../test/unit/product-client.test.js): authority/restart; [shopping](../../test/unit/shopping.test.js): approval/recovery.
+- [DAG reduction and DP checks](../../test/unit/trace-graph-dp.test.js): loop contraction, detour compression, diamond reconvergence, Bellman DP routing, recipe composition and mid-entry.
 - [Persistence checks](../../workflow-store.md#focused-checks): isolation, attempt accounting and crash preservation.
 - [Sync checks](../../workflow-registry.md#focused-evidence): encrypted cross-client reuse.
 - [Scoped replay](../../test/unit/scoped-trace.test.js): aliases, dependencies and safe stops.

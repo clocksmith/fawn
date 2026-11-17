@@ -33,7 +33,7 @@ if (existsSync(join(out, 'frozen.json'))) throw Error('Output already contains a
 mkdirSync(out, { recursive: true, mode: 0o700 });
 const paths = [policyPath, 'config/fawn-workspace-client.json', 'config/fawn-workspace-service.json',
   'browser/workspace/qualification/workflow-reuse-compare.js', 'browser/workspace/test/support/application-fixture.js',
-  ...['client/workflow-agent', 'client/trace-dag', 'client/agent', 'client/cli-planner', 'client/investigation',
+  ...['client/workflow-agent', 'client/trace-dag', 'client/trace-graph-dp', 'client/agent', 'client/cli-planner', 'client/investigation',
     'service', 'state', 'admission', 'conditions', 'journal', 'adapters/page-query', 'adapters/playwright-adapter',
     'adapters/choice-query'].map(path => `browser/workspace/src/${path}.js`)];
 const sourceHashes = Object.fromEntries(paths.map(path => [path, sha256Hex(readFileSync(join(root, path)))]));

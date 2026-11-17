@@ -9,8 +9,8 @@ const locatorValid = locator => Array.isArray(locator) && locator.length === 4
   && locator.every(value => typeof value === 'string');
 
 /** Explicit host policy, never inferred from the page or a planner. Each group contains one
- * write per field followed by one approved transition. Groups and learned actions stay ordered;
- * independent DOM controls may reorder. Aliases assert reviewed meaning, not fuzzy similarity.
+ * write per field followed by one approved transition. Groups stay ordered while unordered
+ * fills within a group reconverge onto the same canonical slot-set boundary in v3.
  */
 export function createFieldGroupScope(groups, maxSteps) {
   if (!Array.isArray(groups) || !groups.length) throw Error('Field groups are required');
@@ -39,7 +39,7 @@ export function createFieldGroupScope(groups, maxSteps) {
     count += group.steps.length;
   }
   if (count > maxSteps) throw Error('Field groups exceed trace step limit');
-  const at = depth => {
+  const atDepth = depth => {
     let start = 0;
     for (const group of policy) {
       if (depth < start + group.steps.length) return { group, offset: depth - start };
@@ -47,13 +47,50 @@ export function createFieldGroupScope(groups, maxSteps) {
     }
     return null;
   };
+  const resolveProgress = progress => {
+    if (typeof progress === 'number') {
+      const active = atDepth(progress);
+      if (!active) return null;
+      return {
+        group: active.group,
+        isBoundary: active.offset === active.group.steps.length - 1,
+        filledSlots: null,
+      };
+    }
+    if (!progress || typeof progress !== 'object' || !Number.isSafeInteger(progress.groupIndex)
+      || progress.groupIndex < 0 || !Array.isArray(progress.filledSlots)) {
+      throw Error('Invalid field-group progress');
+    }
+    if (progress.groupIndex >= policy.length) return null;
+    const group = policy[progress.groupIndex];
+    return {
+      group,
+      isBoundary: progress.filledSlots.length >= group.steps.length - 1,
+      filledSlots: progress.filledSlots,
+    };
+  };
   const compatible = (rule, element) => rule.locators.some(locator => same(locator, structuralLocator(element)));
   return {
     policy,
-    outline(observation, depth) {
-      const active = at(depth);
+    initialProgress() {
+      return { groupIndex: 0, filledSlots: [] };
+    },
+    advanceProgress(progress, step) {
+      const resolved = resolveProgress(progress);
+      if (!resolved) throw Error('Field-group progress already completed');
+      if (step.kind === 'click') {
+        return { groupIndex: progress.groupIndex + 1, filledSlots: [] };
+      }
+      if (progress.filledSlots.includes(step.slot)) throw Error('Duplicate field-group slot write');
+      return {
+        groupIndex: progress.groupIndex,
+        filledSlots: [...progress.filledSlots, step.slot].sort(),
+      };
+    },
+    outline(observation, progress) {
+      const active = resolveProgress(progress);
       if (!active) return ['terminal', observation.elements.map(structuralLocator)];
-      const { group, offset } = active;
+      const { group, isBoundary } = active;
       const bound = group.steps.map(rule => {
         const matches = observation.elements.filter(element => compatible(rule, element));
         // Hidden controls also appear in workspace observations. Never silently discard duplicates.
@@ -62,16 +99,16 @@ export function createFieldGroupScope(groups, maxSteps) {
       });
       // Reuse known fields around unrelated additions, but never cross a changed dependency
       // boundary. New controls must be independently handled before a planner may advance.
-      const extras = offset === group.steps.length - 1
+      const extras = isBoundary
         ? observation.elements.filter(element => !group.steps.some(rule => compatible(rule, element))).map(structuralLocator)
         : [];
       return [group.id, bound, extras];
     },
-    matches(step, element, depth, dag) {
-      const active = at(depth);
+    matches(step, element, progress, dag) {
+      const active = resolveProgress(progress);
       if (!active) return false;
-      const { group, offset } = active;
-      const isBoundary = offset === group.steps.length - 1;
+      const { group, isBoundary, filledSlots } = active;
+      if (!isBoundary && step.slot && filledSlots?.includes(step.slot)) return false;
       const rules = isBoundary ? group.steps.slice(-1) : group.steps.slice(0, -1);
       return rules.some(rule => rule.kind === step.kind
         && (rule.slot ? dag.hash(['slot', rule.slot]) === step.slot : step.slot === null)

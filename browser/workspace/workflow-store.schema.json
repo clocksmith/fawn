@@ -77,7 +77,8 @@
               "version": {
                 "enum": [
                   1,
-                  2
+                  2,
+                  3
                 ]
               },
               "key": {
@@ -142,6 +143,10 @@
                               "next": {
                                 "type": "string",
                                 "pattern": "^[a-f0-9]{64}$"
+                              },
+                              "weight": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
                               },
                               "step": {
                                 "type": "object",
@@ -230,11 +235,29 @@
                 "if": {
                   "properties": {
                     "version": {
-                      "const": 2
+                      "const": 1
                     }
                   }
                 },
                 "then": {
+                  "properties": {
+                    "nodes": {
+                      "items": {
+                        "prefixItems": [
+                          {},
+                          {
+                            "not": {
+                              "required": [
+                                "repairs"
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "else": {
                   "properties": {
                     "nodes": {
                       "items": {
@@ -249,18 +272,36 @@
                       }
                     }
                   }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "version": {
+                      "enum": [
+                        1,
+                        2
+                      ]
+                    }
+                  }
                 },
-                "else": {
+                "then": {
                   "properties": {
                     "nodes": {
                       "items": {
                         "prefixItems": [
                           {},
                           {
-                            "not": {
-                              "required": [
-                                "repairs"
-                              ]
+                            "properties": {
+                              "edges": {
+                                "items": {
+                                  "not": {
+                                    "required": [
+                                      "weight"
+                                    ]
+                                  }
+                                }
+                              }
                             }
                           }
                         ]

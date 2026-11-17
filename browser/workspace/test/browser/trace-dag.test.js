@@ -107,6 +107,41 @@ try {
         .record({ kind: 'click', locator: submit })).reason, 'unsupported-target', 'A native submit cannot masquerade as an intermediate click');
       assert.equal(submissions, 0);
 
+      // Commuting stage-1 order (mode -> name -> next -> city) reconverges as a confluent diamond.
+      await navigate('/board-diamond/jobs/reordered');
+      const reorderedSession = dag.session(options);
+      assert.equal((await reorderedSession.record({ kind: 'select', locator: mode, slot: 'mode' })).status, 'completed');
+      assert.equal((await reorderedSession.record({ kind: 'fill', locator: name, slot: 'name' })).status, 'completed');
+      assert.equal((await reorderedSession.record({ kind: 'click', locator: next })).status, 'completed');
+      assert.equal((await reorderedSession.record({ kind: 'fill', locator: city, slot: 'city' })).status, 'completed');
+      assert.equal((await reorderedSession.finish()).reason, 'recorded-submit-boundary');
+      assert.equal(dag.compressionStats().confluentDiamonds, 1);
+
+      // Modular recipe composition (stage 1 + stage 2) and mid-recipe stage-2 entry.
+      await navigate('/board-compose/stage-one');
+      const stageOneDag = new TraceDag(limits);
+      const stageTwoDag = new TraceDag(limits);
+      stageTwoDag.key = stageOneDag.key;
+      const recStageOne = stageOneDag.session(options);
+      await recStageOne.record({ kind: 'fill', locator: name, slot: 'name' });
+      await recStageOne.record({ kind: 'select', locator: mode, slot: 'mode' });
+      await recStageOne.record({ kind: 'click', locator: next });
+      assert.equal((await recStageOne.finish()).reason, 'recorded-submit-boundary');
+      const recStageTwo = stageTwoDag.session(options);
+      await recStageTwo.record({ kind: 'fill', locator: city, slot: 'city' });
+      assert.equal((await recStageTwo.finish()).reason, 'recorded-submit-boundary');
+      const composed = TraceDag.compose(stageOneDag.export(), stageTwoDag.export(), limits);
+      await navigate('/board-compose/full-replay');
+      const composedReplay = await composed.session(replayOptions).replay();
+      assert.equal(composedReplay.reason, 'submit-boundary');
+      assert.equal(composedReplay.steps, 4);
+      await navigate('/board-compose/mid-entry');
+      const stageOneOnly = stageOneDag.session(replayOptions);
+      assert.equal((await stageOneOnly.replay()).reason, 'submit-boundary');
+      const midEntryReplay = await composed.session(replayOptions).replay();
+      assert.equal(midEntryReplay.reason, 'submit-boundary');
+      assert.equal(midEntryReplay.steps, 1, 'Mid-recipe entry executes only the remaining stage-2 suffix');
+
       await navigate('/board-c/jobs/unseen');
       const branch = await dag.session(replayOptions).replay();
       assert.equal(branch.reason, 'unseen-branch');
