@@ -1,6 +1,14 @@
 // Pure DAG reduction, path compression and backward dynamic programming for browser recipes.
 // Keeps graph transformations deterministic, idempotent and free of browser or planner authority.
-import { canonicalJson } from '../journal.js';
+
+export function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).filter(key => value[key] !== undefined).sort();
+    return `{${keys.map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
 
 const DEFAULT_REPLAN_PENALTY = 1000;
 const COST_EPSILON = 1e-9;
