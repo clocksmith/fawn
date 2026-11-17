@@ -1,4 +1,5 @@
 // Bounded planner views over the complete, explicitly shared evidence store.
+import { definitionsIn } from './artifact-read.js';
 const RECENT_ARTIFACTS = 8;
 const EXCERPT_CHARS = 6000;
 const CATALOG_PAGE = 12;
@@ -22,8 +23,14 @@ function excerpt(artifact) {
     result.textTruncated = { shownChars: EXCERPT_CHARS, totalChars: artifact.text.length };
   }
   const content = artifact.source?.content;
-  if (typeof content === 'string' && content.length > EXCERPT_CHARS) result.source = { ...artifact.source,
-    content: content.slice(0, EXCERPT_CHARS), contentTruncated: { shownChars: EXCERPT_CHARS, totalChars: content.length } };
+  if (typeof content === 'string' && content.length > EXCERPT_CHARS) {
+    // Say what the unseen part contains, so a planner knows it is there and can jump to it with
+    // artifact_read (offset, or find) instead of concluding from the opening of the file.
+    const { definitions, more } = definitionsIn(content, EXCERPT_CHARS);
+    result.source = { ...artifact.source, content: content.slice(0, EXCERPT_CHARS),
+      contentTruncated: { shownChars: EXCERPT_CHARS, totalChars: content.length,
+        ...(definitions.length ? { definitionsBeyondExcerpt: definitions, ...(more ? { moreDefinitions: more } : {}) } : {}) } };
+  }
   return result;
 }
 export function artifactMemory(project, visibleArtifacts) {
