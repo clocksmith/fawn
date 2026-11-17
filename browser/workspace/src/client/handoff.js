@@ -2,6 +2,12 @@
 // This summary grants no authority and never settles an uncertain action.
 const LIMITS = Object.freeze({ sessions: 8, tried: 40, human: 12, unresolvedActions: 20, openQuestions: 12, needsReview: 20 });
 const MAX_TEXT = 400;
+const SIGN_IN = 'Site sign-ins may be lost: observe each site before relying on a session, and ask_human to sign in again if it is gone.';
+const RELEASE_NOTES = Object.freeze({
+  forced: `The browser was ended at the last shutdown. ${SIGN_IN}`,
+  'already-exited': `The browser had already exited at the last shutdown without closing cleanly. ${SIGN_IN}`,
+  unresolved: `A browser from the last shutdown could not be shown to have exited and may still be running on this profile; ask_human to check before relying on the pages. ${SIGN_IN}`,
+});
 const clip = value => {
   const text = typeof value === 'string' ? value : JSON.stringify(value ?? null);
   return text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}…` : text;
@@ -41,7 +47,10 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
     } else if (event.event === 'human-control' || event.event === 'human-note') {
       human.push({ cursor, event, provenance });
     } else if (event.event === 'browser-released') {
-      forcedRelease = event.forced ? { seq: event.seq ?? null, at: event.at ?? null } : null;
+      // Records written before the release kind existed carry only `forced`.
+      const release = event.release ?? (event.forced ? 'forced' : 'graceful');
+      forcedRelease = release === 'graceful' ? null : { release, seq: event.seq ?? null, at: event.at ?? null,
+        ...(event.survivors ? { survivors: event.survivors } : {}) };
     }
   }
   function page(name, entries, summarize) {
@@ -81,10 +90,9 @@ export function handoffBrief(project, workspace = null, { cursors = {} } = {}) {
     needsReview: page('needsReview', artifacts.filter(value => value.status === 'needs-review')
       .map(value => ({ cursor: value.id, value })), ({ value }) => value.id),
     pagination,
-    // The browser did not exit in time at the last shutdown and was ended. Recorded work is intact;
-    // a site session set shortly before may not have reached disk.
-    ...(forcedRelease ? { lastBrowserRelease: { forced: true, ...forcedRelease,
-      note: 'The browser was ended at the last shutdown. Site sign-ins may be lost: observe each site before relying on a session, and ask_human to sign in again if it is gone.' } } : {}),
+    // The browser did not close cleanly at the last shutdown. Recorded work is intact; a site session
+    // set shortly before may not have reached disk, and an unresolved browser may still be running.
+    ...(forcedRelease ? { lastBrowserRelease: { forced: forcedRelease.release === 'forced', ...forcedRelease, note: RELEASE_NOTES[forcedRelease.release] ?? RELEASE_NOTES.forced } } : {}),
     authority: 'The complete investigation journal (seq/callId) and service action records (actionId) remain authoritative; excerpts are summaries. Use handoff_read with pagination[collection].nextCursor to retrieve older entries.',
     guidance: unresolved.length
       ? `${unresolved.length} earlier actions have unknown outcomes, including any omitted from this page. Establish every one with reconcile before a new action; never repeat one unless reconcile returns effect-absent. Page through unresolvedActions with handoff_read as needed.`

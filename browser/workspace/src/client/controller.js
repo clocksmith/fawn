@@ -406,7 +406,7 @@ export class WorkspaceController {
         return { investigation, workspace, handoff: handoffBrief(investigation, workspace) }; })() : null,
       workflows: this.#workflowSummaries(), planner: this.planner?.identity ?? null, pollMs: this.config.pollMs };
   }
-  /** With `release` (the service close), a browser that had to be ended is recorded for whoever resumes. */
+  /** With `release` (the service close), a browser that did not close cleanly is recorded for whoever resumes. */
   async close({ release = null } = {}) {
     for (const id of this.active.keys()) await this.takeOver(id);
     await Promise.all([...this.active.values()].map(value => value.done));
@@ -414,9 +414,11 @@ export class WorkspaceController {
       const { releases = [] } = release ? await release() ?? {} : {};
       for (const value of releases) {
         if (!this.store.projects.has(value.workspaceId)) continue;
-        // An ordinary release is recorded only to clear an earlier forced one.
-        const earlier = this.store.get(value.workspaceId).activity.findLast(event => event.event === 'browser-released')?.forced === true;
-        if (value.release === 'forced' || earlier) this.store.activity(value.workspaceId, { event: 'browser-released', forced: value.release === 'forced' });
+        // An ordinary release is recorded only to clear an earlier one that was not.
+        const last = this.store.get(value.workspaceId).activity.findLast(event => event.event === 'browser-released');
+        const earlier = last ? (last.release ?? (last.forced ? 'forced' : 'graceful')) !== 'graceful' : false;
+        if (value.release !== 'graceful' || earlier) this.store.activity(value.workspaceId, { event: 'browser-released', release: value.release,
+          forced: value.release === 'forced', ...(value.survivors ? { survivors: value.survivors } : {}), ...(value.errors ? { errors: value.errors } : {}) });
       }
     } finally { this.store.close(); }
   }

@@ -95,6 +95,22 @@ console.log('ok: bounded handoff, linear settlement, complete pagination and pro
     const after = new Store(joinPath(directory, 'investigations'));
     assertStrict.equal(after.get('investigation-a').activity.filter(event => event.event === 'browser-released').length, events, 'ordinary releases are not recorded otherwise');
     after.close();
-    console.log('ok: a forced browser release reaches the next handoff and a later ordinary release clears it');
+    // A browser that could not be shown to have exited is reported as such, with the processes left.
+    const stuck = Object.create(Controller.prototype);
+    stuck.active = new Map(); stuck.store = new Store(joinPath(directory, 'investigations'));
+    await stuck.close({ release: async () => ({ releases: [{ workspaceId: 'investigation-a', release: 'unresolved', survivors: [4242],
+      errors: [{ step: 'signal', pid: 4242, code: 'EPERM', message: 'not permitted' }] }] }) });
+    const warned = new Store(joinPath(directory, 'investigations'));
+    const unresolved = brief(warned.get('investigation-a')).lastBrowserRelease;
+    assertStrict.equal(unresolved.release, 'unresolved'); assertStrict.equal(unresolved.forced, false);
+    assertStrict.deepEqual(unresolved.survivors, [4242]);
+    assertStrict.match(unresolved.note, /may still be running/);
+    warned.activity('investigation-a', { event: 'browser-released', release: 'already-exited', forced: false });
+    assertStrict.match(brief(warned.get('investigation-a')).lastBrowserRelease.note, /already exited/);
+    // Records written before the release kind existed still read correctly.
+    warned.activity('investigation-a', { event: 'browser-released', forced: true });
+    assertStrict.equal(brief(warned.get('investigation-a')).lastBrowserRelease.release, 'forced');
+    warned.close();
+    console.log('ok: forced, already-exited and unresolved browser releases reach the next handoff; a later ordinary release clears them');
   } finally { remove(directory, { recursive: true, force: true }); }
 }

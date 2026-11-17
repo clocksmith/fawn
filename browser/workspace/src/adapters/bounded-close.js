@@ -20,21 +20,59 @@ export function profileBrowserPids(profileDir, { list = () => execFileSync('ps',
   });
 }
 
-/** Resolves to 'graceful', or 'forced' after the deadline when the owning browser had to be ended. */
-export async function closeWithin(context, { profileDir, timeoutMs, settleMs = 1000, findPids = profileBrowserPids, kill = process.kill.bind(process) }) {
+const pause = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+/**
+ * Release one persistent-profile browser and say what was established about its exit.
+ *
+ *   graceful        the close completed and no browser remains on the profile
+ *   already-exited  the close failed or ran out of time, yet no browser was found on the profile
+ *   forced          a browser on the profile was signalled and is verified gone
+ *   unresolved      a browser on the profile could not be shown to have exited
+ *
+ * `survivors` lists process ids still present; `errors` lists what could not be done. Only a process
+ * that no longer exists (ESRCH) is an acceptable signalling failure. The caller keeps owning an
+ * unresolved browser.
+ */
+export async function closeWithin(context, { profileDir, timeoutMs, settleMs = 1000, exitWaitMs = 2000, pollMs = 50,
+  findPids = profileBrowserPids, kill = process.kill.bind(process), canVerify = process.platform !== 'win32' }) {
+  const errors = [];
   let timer;
-  const closing = context.close().then(() => 'graceful');
-  // A rejected close after a forced exit is expected; never leave it unhandled.
-  closing.catch(() => {});
-  const first = await Promise.race([closing.catch(() => 'graceful'), new Promise((resolve) => { timer = setTimeout(() => resolve('deadline'), timeoutMs); })]);
+  const closing = context.close().then(() => ({ state: 'closed' }), (error) => ({ state: 'rejected', error }));
+  const first = await Promise.race([closing, new Promise((resolve) => { timer = setTimeout(() => resolve({ state: 'deadline' }), timeoutMs); })]);
   clearTimeout(timer);
-  if (first !== 'deadline') return 'graceful';
-  for (const pid of findPids(profileDir)) {
-    try { kill(pid, 'SIGKILL'); } catch { /* It exited between the listing and the signal. */ }
+  if (first.state === 'rejected') errors.push({ step: 'close', message: String(first.error?.message ?? first.error) });
+  if (!canVerify) {
+    // Without a process listing nothing beyond a completed close can be established.
+    if (first.state === 'closed') return { release: 'graceful', survivors: [], errors };
+    errors.push({ step: 'verify', message: 'browser exit cannot be verified on this platform' });
+    return { release: 'unresolved', survivors: [], errors };
+  }
+  const present = () => {
+    try { return findPids(profileDir); }
+    catch (error) { errors.push({ step: 'list', message: String(error?.message ?? error) }); return null; }
+  };
+  let pids = present();
+  if (pids === null) return { release: 'unresolved', survivors: [], errors };
+  if (!pids.length) return { release: first.state === 'closed' ? 'graceful' : 'already-exited', survivors: [], errors };
+  let signalled = 0;
+  for (const pid of pids) {
+    try { kill(pid, 'SIGKILL'); signalled += 1; }
+    catch (error) {
+      // It exited between the listing and the signal. Anything else is a failure to end it.
+      if (error?.code !== 'ESRCH') errors.push({ step: 'signal', pid, code: error?.code ?? null, message: String(error?.message ?? error) });
+    }
+  }
+  for (const deadline = Date.now() + exitWaitMs; ;) {
+    pids = present();
+    if (pids === null) return { release: 'unresolved', survivors: [], errors };
+    if (!pids.length || Date.now() >= deadline) break;
+    await pause(pollMs);
   }
   // Playwright's close does not always settle after its browser is ended, so it is given a short
-  // grace period and then abandoned; the process it was waiting for no longer exists.
-  await Promise.race([closing.catch(() => {}), new Promise((resolve) => { timer = setTimeout(resolve, settleMs); })]);
+  // grace period and then abandoned; the process it was waiting for is accounted for above.
+  await Promise.race([closing, new Promise((resolve) => { timer = setTimeout(resolve, settleMs); })]);
   clearTimeout(timer);
-  return 'forced';
+  if (pids.length) return { release: 'unresolved', survivors: pids, errors };
+  return { release: signalled ? 'forced' : 'already-exited', survivors: [], errors };
 }

@@ -102,7 +102,11 @@ not beat a script.
   the reuse run (300 s in the Fawn arm, 7.7 to 24.2 s in four stock rows). The
   Playwright adapter now [bounds the release](../../browser/workspace/src/adapters/bounded-close.js)
   at the action timeout and then ends that profile's browser (16 s in the same
-  586 s conditions, no process left). Why Chrome is slow to exit is not
+  586 s conditions, no process left). The release reports what it established:
+  `graceful`, `forced` or `already-exited` only when no browser remains on the
+  profile, and `unresolved`, with the surviving process ids and the failed
+  step, when exit could not be shown; the adapter keeps owning an unresolved
+  browser and the next handoff says so. Why Chrome is slow to exit is not
   established, a forced exit can lose the profile's last unflushed site data,
   and the CDP adapter and Windows are not covered. The clean reuse run after
   the bound had no stall, so only the probe exercises it. A

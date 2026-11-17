@@ -110,13 +110,17 @@ class PlaywrightWorkspaceAdapter {
 
   async focusPage(workspaceId, pageId) { await this._page(workspaceId, pageId).bringToFront(); }
 
-  /** Resolves to { workspaceId, release: 'graceful' | 'forced' } per released workspace. */
-  async close({ timeoutMs = this._config.dispatch.actionTimeoutMs } = {}) {
-    const entries = [...this._workspaces.entries()];
-    this._workspaces.clear();
-    // Releasing the workspace never waits on a browser that will not exit (see bounded-close.js).
-    return Promise.all(entries.map(async ([workspaceId, entry]) => ({ workspaceId,
-      release: await closeWithin(entry.context, { profileDir: entry.profileDir, timeoutMs }) })));
+  /**
+   * Resolves to { workspaceId, release, survivors?, errors? } per workspace (see bounded-close.js).
+   * A workspace whose browser could not be shown to have exited stays owned by this adapter.
+   */
+  async close({ timeoutMs = this._config.dispatch.actionTimeoutMs, releaseBrowser = closeWithin } = {}) {
+    // Releasing the workspace never waits on a browser that will not exit.
+    return Promise.all([...this._workspaces.entries()].map(async ([workspaceId, entry]) => {
+      const { release, survivors, errors } = await releaseBrowser(entry.context, { profileDir: entry.profileDir, timeoutMs });
+      if (release !== 'unresolved' && this._workspaces.get(workspaceId) === entry) this._workspaces.delete(workspaceId);
+      return { workspaceId, release, ...(survivors.length ? { survivors } : {}), ...(errors.length ? { errors } : {}) };
+    }));
   }
 }
 
