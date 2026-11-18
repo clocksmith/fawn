@@ -96,7 +96,23 @@ correct but no elapsed-time advantage, because one browser shutdown stalled for
 with 5 calls versus 70.1 s with 17 for fresh planning; an earlier run at that
 revision is retained as invalid because a planner timeout failed a control row.
 The prepared stock script finished in 3.8 s with no model calls, so reuse does
-not beat a script.
+not beat a script. A follow-up
+[six-task, three-repeat ordinary workflow reuse benchmark](../../reports/fawn-workspace/20261117-ordinary-workflow-reuse/decision.json)
+([`ordinary-workflow-reuse.js`](../../browser/workspace/qualification/ordinary-workflow-reuse.js),
+[notes](../../browser/workspace/qualification/workflow-reuse.md#ordinary-multi-task-reuse-six-tasks-three-repeats))
+at `7e9682b0e0` ran two form-fill tasks, two search-and-extract tasks (including
+unmodified Simulatte `500167e0` `/system-diagram`) and two multi-page navigation
+tasks from cold private workflow stores per repeat on stock Chrome `158.0.8127.36`
+with `claude-sonnet-5-5` (72 browser runs, all 72 correct, zero submissions and
+zero rejected site writes). Across the three repeats, saved-workflow reuse
+finished the six-task suite in `12.284 s`, `12.859 s` and `13.479 s` (mean
+`12.874 s`, SD `0.598 s`) with `0` model calls per repeat, versus `88.359 s`,
+`89.030 s` and `105.720 s` (mean `94.370 s`, SD `9.835 s`) and `37` calls per
+repeat for fresh planning, winning all 18 matched task-repeat pairs after one
+verified `37`-call learning pass per repeat (mean `88.836 s`). The hand-written
+Playwright script floor took `3.145 s`, `3.373 s` and `3.629 s` (mean `3.382 s`,
+`0` calls), keeping the same claim boundary: reuse beats fresh re-planning, not
+a prepared script.
 
 Investigation memory now follows source changes. The client re-reads every
 saved repository source on resume or on request, saves a changed file as the
@@ -182,8 +198,10 @@ this same investigation, so none of it is held out.
   browser and the next handoff says so. Why Chrome is slow to exit is not
   established, a forced exit can lose the profile's last unflushed site data,
   and Windows is not covered. The CDP adapter bounds its release the same way,
-  using its own child process handle. The clean reuse run after
-  the bound had no stall, so only the probe exercises it. A
+  using its own child process handle. The first clean reuse run after
+  the bound had no stall; in the `7e9682b0e0` 72-run ordinary-task campaign,
+  one `fawn-fresh` run hit the stall after 18.7 s of task work and released at
+  the 15.0 s bound while the other 71 runs closed in under 1 s. A
   [real-Chromium check](../../browser/workspace/test/browser/forced-release-durability.test.js)
   ends the browser with no time to exit and restarts: the journal bytes and
   every recorded action survive and the profile reopens. A session cookie set

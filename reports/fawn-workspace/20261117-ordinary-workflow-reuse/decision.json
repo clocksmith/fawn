@@ -1,0 +1,709 @@
+{
+  "schemaVersion": 1,
+  "classification": "bounded six-task three-repeat ordinary workflow reuse diagnostic; reuse faster with zero model calls in 18 of 18 pairs; script floor remains faster; release promotion rejected",
+  "consumer": "docs/status/fawn-workspace.md; browser/workspace/qualification/workflow-reuse.md; Track C evaluation of whether Fawn saved-workflow reuse finishes ordinary browser tasks faster and with fewer model calls than planning fresh across three independent repeats, separate from Doe GPU and Fawn browser runtime claims",
+  "requiresNativeRuntimeWins": false,
+  "gpuClaimsIncluded": false,
+  "browserIdentity": {
+    "channel": "chrome",
+    "version": "158.0.8127.36",
+    "platform": "macOS"
+  },
+  "harness": "browser/workspace/qualification/ordinary-workflow-reuse.js",
+  "site": "browser/workspace/qualification/ordinary-tasks-site.js",
+  "unitTest": "browser/workspace/test/unit/ordinary-tasks-site.test.js",
+  "sourceCommit": "7e9682b0e0a7dc55ddfd1a5894b47e72910d36e7",
+  "sourceDirty": false,
+  "sourceUnchangedDuringRun": true,
+  "simulatteRevision": "500167e0dbc98273992f889de929a1b6c3d14604",
+  "sourceHashes": {
+    "config/fawn-workspace-client.json": "6b8eb48acfce9056cfc1fd277cbf6dfde518f39292eecae2a4d7d23cfedaf299",
+    "config/fawn-workspace-service.json": "8505d5f15c9a11093a22066e8042b46b47069f420c16a1b7f8524f245d9442f1",
+    "browser/workspace/qualification/ordinary-workflow-reuse.js": "c4ecbc883bb05566a7be3ea624473265b7211ec7c632818b321e5cac094da3fd",
+    "browser/workspace/qualification/ordinary-tasks-site.js": "02da25ba2dd261229a45d197ccec4d80da3e9459e6503165e589e9531e946b67",
+    "browser/workspace/src/client/workflow-agent.js": "a0d7f38ba8f86346506dec4fc86989e0d610e986e18fcda3c1770652589ca798",
+    "browser/workspace/src/client/workflow-store.js": "a5d43f7c209b6385ba6a121936f42c91451b6d48476847739119faca94644020",
+    "browser/workspace/src/client/trace-dag.js": "90556f9c0cd5f47b0e4424addb8c99d61cdaa1853763d183b0e2a7916f83b29a",
+    "browser/workspace/src/client/trace-graph-dp.js": "f329a8c215ec8496a8ae4ee407c18c52601b8d340b98e2fca105793989375b4b",
+    "browser/workspace/src/client/agent.js": "f37fed609bf3a219cc070c6899fc9fd0f69de433162857da5acd4be661532a57",
+    "browser/workspace/src/client/cli-planner.js": "d22c47ce02e0b8b5ede7e16900736908b457ce14adb8088a61c9b2d54179d6ad",
+    "browser/workspace/src/client/investigation.js": "665e1daa7b3fce71a9a9c1e45ad08ebf69180b80b1616b160bebdc62d47da45d",
+    "browser/workspace/src/adapters/page-query.js": "77391a4202ef99f9f3dcb8602e237286179f84702f7f140cf3f68607a85fb47c",
+    "browser/workspace/src/adapters/playwright-adapter.js": "477d9577dcf6ae273d3f3335dc6b4c9940dbe9f32b5dffa3e2cb9ff8575ea3e7",
+    "browser/workspace/src/adapters/bounded-close.js": "d250d7fb21b916f1564a50d1b7e13989f59557942414ffe569f7eaae374733ca",
+    "browser/workspace/src/service.js": "0ea41d83fc8a20a08e121357fee650090adcd062b91c3135546d9eec39364a68"
+  },
+  "localRawReports": {
+    "availability": "local ignored evidence; not published",
+    "controlledPreflight": {
+      "path": ".tmp/track-c-ordinary-preflight-01/",
+      "summarySha256": "9263da6c2e60fff96d2128923a2c1fd73214cfc4717c023354c4b29d44fb1d1e",
+      "allRunsCompletedCorrectly": true,
+      "allReuseZeroModelCalls": true
+    },
+    "liveSonnetRun": {
+      "path": ".tmp/track-c-ordinary-sonnet-01/",
+      "files": {
+        "frozen.json": {
+          "bytes": 8827,
+          "sha256": "efdd6f5a5ee355fc0956446e08e81bf252312e538d0d5898bae702bf4fd284a6"
+        },
+        "summary.json": {
+          "bytes": 13519,
+          "sha256": "5cc8e58935a9f43baf7c5bda877608b09d1911d402ad9426c9291b03d219f185"
+        },
+        "rows.json": {
+          "bytes": 95350,
+          "sha256": "afb17d790e75decd1bd264edb8f0e42c3593112e4600cb26aae3cf37a181869e"
+        },
+        "calls.json": {
+          "bytes": 276561,
+          "sha256": "fb009e26a5ffa93a146c29f38b97dde90bde01ae15be69c78bb18a8013ab0264"
+        },
+        "assets.json": {
+          "bytes": 8587,
+          "sha256": "9c38751f75a302551236ddb58caabc4f37fd4a2057aeb6a17075de31571f2996"
+        }
+      }
+    }
+  },
+  "ceilings": {
+    "maxModelCalls": 288,
+    "maxCostUsd": 12,
+    "maxCallUsd": 0.15,
+    "maxTurnsPerRun": 16,
+    "declaredModel": "sonnet"
+  },
+  "observedModels": [
+    "claude-sonnet-5-5"
+  ],
+  "startedAt": "2026-11-18T00:53:38.626Z",
+  "finishedAt": "2026-11-18T01:03:37.199Z",
+  "repeats": 3,
+  "taskCount": 6,
+  "totalBrowserRuns": 72,
+  "totalModelCalls": 222,
+  "measuredTotalCostUsd": 1.547879,
+  "rejectedSiteWrites": 0,
+  "totalSubmissions": 0,
+  "allRunsCompletedCorrectly": true,
+  "allReuseZeroModelCalls": true,
+  "allRepeatsReuseFasterThanFresh": true,
+  "allTaskRepeatPairsReuseFasterThanFresh": true,
+  "productSuperiorityOverScriptEstablished": false,
+  "aggregateAcrossRepeats": {
+    "freshMeanTotalSeconds": 94.37,
+    "freshSdTotalSeconds": 9.835,
+    "reuseMeanTotalSeconds": 12.874,
+    "reuseSdTotalSeconds": 0.598,
+    "learnMeanTotalSeconds": 88.836,
+    "stockScriptMeanTotalSeconds": 3.382,
+    "freshMeanTotalCalls": 37,
+    "reuseMeanTotalCalls": 0,
+    "learnMeanTotalCalls": 37
+  },
+  "perRepeat": [
+    {
+      "repeat": 1,
+      "arms": {
+        "fawn-learn": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 89.338,
+          "totalMs": 89338.10487499998,
+          "modelCalls": 37,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0.26991
+        },
+        "fawn-fresh": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 88.359,
+          "totalMs": 88358.87204299998,
+          "modelCalls": 37,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0.267236
+        },
+        "fawn-reuse": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 12.284,
+          "totalMs": 12284.019459000006,
+          "modelCalls": 0,
+          "cacheSteps": 31,
+          "measuredCostUsd": 0
+        },
+        "stock-script": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 3.145,
+          "totalMs": 3145.2354159999595,
+          "modelCalls": 0,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0
+        }
+      },
+      "reuseFasterThanFresh": true,
+      "secondsSavedReuseVsFresh": 76.075,
+      "speedupReuseVsFresh": 7.19,
+      "callsSavedReuseVsFresh": 37
+    },
+    {
+      "repeat": 2,
+      "arms": {
+        "fawn-learn": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 88.095,
+          "totalMs": 88094.99120899994,
+          "modelCalls": 37,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0.237446
+        },
+        "fawn-fresh": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 89.03,
+          "totalMs": 89029.64545800007,
+          "modelCalls": 37,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0.269898
+        },
+        "fawn-reuse": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 12.859,
+          "totalMs": 12859.239749,
+          "modelCalls": 0,
+          "cacheSteps": 31,
+          "measuredCostUsd": 0
+        },
+        "stock-script": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 3.373,
+          "totalMs": 3373.0625860000146,
+          "modelCalls": 0,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0
+        }
+      },
+      "reuseFasterThanFresh": true,
+      "secondsSavedReuseVsFresh": 76.17,
+      "speedupReuseVsFresh": 6.92,
+      "callsSavedReuseVsFresh": 37
+    },
+    {
+      "repeat": 3,
+      "arms": {
+        "fawn-learn": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 89.076,
+          "totalMs": 89075.75275099999,
+          "modelCalls": 37,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0.237381
+        },
+        "fawn-fresh": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 105.72,
+          "totalMs": 105719.53341800004,
+          "modelCalls": 37,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0.26601
+        },
+        "fawn-reuse": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 13.479,
+          "totalMs": 13479.205375999969,
+          "modelCalls": 0,
+          "cacheSteps": 31,
+          "measuredCostUsd": 0
+        },
+        "stock-script": {
+          "runs": 6,
+          "correct": 6,
+          "totalSeconds": 3.629,
+          "totalMs": 3629.234166999988,
+          "modelCalls": 0,
+          "cacheSteps": 0,
+          "measuredCostUsd": 0
+        }
+      },
+      "reuseFasterThanFresh": true,
+      "secondsSavedReuseVsFresh": 92.24,
+      "speedupReuseVsFresh": 7.84,
+      "callsSavedReuseVsFresh": 37
+    }
+  ],
+  "perTask": [
+    {
+      "taskId": "job-application-intake",
+      "category": "form-fill",
+      "fresh": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          16.204,
+          15.538,
+          17.15
+        ],
+        "meanSeconds": 16.297,
+        "sdSeconds": 0.81,
+        "callsByRepeat": [
+          7,
+          7,
+          7
+        ],
+        "meanCalls": 7
+      },
+      "reuse": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          2.232,
+          2.328,
+          2.442
+        ],
+        "meanSeconds": 2.334,
+        "sdSeconds": 0.105,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "learn": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          17.589,
+          16.128,
+          16.065
+        ],
+        "meanSeconds": 16.594,
+        "sdSeconds": 0.862,
+        "callsByRepeat": [
+          7,
+          7,
+          7
+        ],
+        "meanCalls": 7
+      },
+      "stockScript": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          0.471,
+          0.447,
+          0.558
+        ],
+        "meanSeconds": 0.492,
+        "sdSeconds": 0.059,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "reuseWinsAllRepeats": true,
+      "meanSpeedupReuseVsFresh": 6.98
+    },
+    {
+      "taskId": "expense-reimbursement-claim",
+      "category": "form-fill",
+      "fresh": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          16.986,
+          15.99,
+          16.495
+        ],
+        "meanSeconds": 16.49,
+        "sdSeconds": 0.498,
+        "callsByRepeat": [
+          7,
+          7,
+          7
+        ],
+        "meanCalls": 7
+      },
+      "reuse": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          2.588,
+          2.575,
+          2.879
+        ],
+        "meanSeconds": 2.681,
+        "sdSeconds": 0.172,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "learn": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          16.72,
+          15.985,
+          16.804
+        ],
+        "meanSeconds": 16.503,
+        "sdSeconds": 0.451,
+        "callsByRepeat": [
+          7,
+          7,
+          7
+        ],
+        "meanCalls": 7
+      },
+      "stockScript": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          0.53,
+          0.414,
+          0.5
+        ],
+        "meanSeconds": 0.481,
+        "sdSeconds": 0.06,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "reuseWinsAllRepeats": true,
+      "meanSpeedupReuseVsFresh": 6.15
+    },
+    {
+      "taskId": "lucyd-component-lookup",
+      "category": "search-extract",
+      "fresh": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          9.161,
+          9.327,
+          9.457
+        ],
+        "meanSeconds": 9.315,
+        "sdSeconds": 0.149,
+        "callsByRepeat": [
+          3,
+          3,
+          3
+        ],
+        "meanCalls": 3
+      },
+      "reuse": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          1.691,
+          1.612,
+          1.804
+        ],
+        "meanSeconds": 1.703,
+        "sdSeconds": 0.096,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "learn": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          9.77,
+          9.051,
+          9.008
+        ],
+        "meanSeconds": 9.276,
+        "sdSeconds": 0.428,
+        "callsByRepeat": [
+          3,
+          3,
+          3
+        ],
+        "meanCalls": 3
+      },
+      "stockScript": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          0.644,
+          0.668,
+          0.782
+        ],
+        "meanSeconds": 0.698,
+        "sdSeconds": 0.073,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "reuseWinsAllRepeats": true,
+      "meanSpeedupReuseVsFresh": 5.47
+    },
+    {
+      "taskId": "invoice-ledger-search",
+      "category": "search-extract",
+      "fresh": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          13.893,
+          13.905,
+          14.106
+        ],
+        "meanSeconds": 13.968,
+        "sdSeconds": 0.119,
+        "callsByRepeat": [
+          6,
+          6,
+          6
+        ],
+        "meanCalls": 6
+      },
+      "reuse": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          1.846,
+          1.912,
+          2.052
+        ],
+        "meanSeconds": 1.937,
+        "sdSeconds": 0.105,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "learn": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          14.231,
+          14.445,
+          14.395
+        ],
+        "meanSeconds": 14.357,
+        "sdSeconds": 0.112,
+        "callsByRepeat": [
+          6,
+          6,
+          6
+        ],
+        "meanCalls": 6
+      },
+      "stockScript": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          0.464,
+          0.596,
+          0.573
+        ],
+        "meanSeconds": 0.544,
+        "sdSeconds": 0.07,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "reuseWinsAllRepeats": true,
+      "meanSpeedupReuseVsFresh": 7.21
+    },
+    {
+      "taskId": "hardware-quote-navigation",
+      "category": "multi-page-nav",
+      "fresh": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          18.441,
+          19.156,
+          34.198
+        ],
+        "meanSeconds": 23.932,
+        "sdSeconds": 8.898,
+        "callsByRepeat": [
+          8,
+          8,
+          8
+        ],
+        "meanCalls": 8
+      },
+      "reuse": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          2.399,
+          2.744,
+          2.636
+        ],
+        "meanSeconds": 2.593,
+        "sdSeconds": 0.176,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "learn": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          17.761,
+          18.243,
+          18.25
+        ],
+        "meanSeconds": 18.085,
+        "sdSeconds": 0.28,
+        "callsByRepeat": [
+          8,
+          8,
+          8
+        ],
+        "meanCalls": 8
+      },
+      "stockScript": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          0.535,
+          0.652,
+          0.616
+        ],
+        "meanSeconds": 0.601,
+        "sdSeconds": 0.06,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "reuseWinsAllRepeats": true,
+      "meanSpeedupReuseVsFresh": 9.23
+    },
+    {
+      "taskId": "docs-release-notes-navigation",
+      "category": "multi-page-nav",
+      "fresh": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          13.674,
+          15.113,
+          14.314
+        ],
+        "meanSeconds": 14.367,
+        "sdSeconds": 0.721,
+        "callsByRepeat": [
+          6,
+          6,
+          6
+        ],
+        "meanCalls": 6
+      },
+      "reuse": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          1.527,
+          1.687,
+          1.668
+        ],
+        "meanSeconds": 1.627,
+        "sdSeconds": 0.088,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "learn": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          13.267,
+          14.244,
+          14.554
+        ],
+        "meanSeconds": 14.021,
+        "sdSeconds": 0.672,
+        "callsByRepeat": [
+          6,
+          6,
+          6
+        ],
+        "meanCalls": 6
+      },
+      "stockScript": {
+        "runs": 3,
+        "correct": 3,
+        "secondsByRepeat": [
+          0.5,
+          0.597,
+          0.599
+        ],
+        "meanSeconds": 0.566,
+        "sdSeconds": 0.056,
+        "callsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "meanCalls": 0
+      },
+      "reuseWinsAllRepeats": true,
+      "meanSpeedupReuseVsFresh": 8.83
+    }
+  ],
+  "boundedCloseObservation": {
+    "slowCloseCountOutOf72": 1,
+    "row": {
+      "repeat": 3,
+      "taskId": "hardware-quote-navigation",
+      "arm": "fawn-fresh",
+      "taskMs": 34198,
+      "workflowRunMs": 18706,
+      "serviceCloseMs": 15032
+    },
+    "note": "71 of 72 browser runs closed in under 1 s. Repeat 3 hardware-quote-navigation fawn-fresh hit Chrome persistent-context exit delay after 18.706 s of task execution and was bounded at 15.032 s by browser/workspace/src/adapters/bounded-close.js instead of stalling for minutes; even excluding close time (18.706 s), fawn-reuse total time including close (2.636 s) finished faster."
+  },
+  "finding": "Across 6 ordinary tasks (2 form-fill, 2 search-and-extract including unmodified Simulatte 500167e0 Lucyd /system-diagram, and 2 multi-page navigation) repeated 3 times from cold private workflow stores (72 browser runs, all 72 correct, 0 final submissions, 0 rejected site writes), saved-workflow reuse completed the 6-task suite in 12.284 s, 12.859 s and 13.479 s (mean 12.874 s, SD 0.598 s) with 0 model calls per repeat, compared with 88.359 s, 89.030 s and 105.720 s (mean 94.370 s, SD 9.835 s) and 37 claude-sonnet-5-5 calls per repeat for fresh planning. Reuse beat fresh planning on wall-clock time and model calls in all 18 matched task-repeat pairs after one verified 37-call learning pass per repeat (mean 88.836 s). The reference hand-written Playwright script completed the 6 tasks in 3.145 s, 3.373 s and 3.629 s (mean 3.382 s) with 0 model calls, so workflow reuse beats fresh re-planning, not a prepared script.",
+  "limits": [
+    "Five tasks run against local loopback HTML fixtures and one against committed Simulatte 500167e0 /system-diagram assets served locally; live external ATS, merchant and documentation sites are not exercised.",
+    "Each repeat starts from a cold private WorkflowStore, runs one verified learning pass on distinct inputs, then alternates fresh and reuse arm order on matched evaluation inputs in fresh workspaces and browser profiles.",
+    "All arms run on stock Google Chrome 158.0.8127.36 via Playwright; nothing here establishes a Doe GPU, WebGPU or Chromium-fork advantage.",
+    "Saved-workflow reuse requires one verified up-front learning pass (mean 88.836 s and 37 Sonnet calls across the 6 tasks); one learning pass plus one reuse pass (mean 101.710 s, 37 calls) already uses fewer calls and less time than two fresh passes (mean 188.740 s, 74 calls), while amortizing further on subsequent runs.",
+    "Workflow reuse does not beat a hand-written Playwright script on execution time (mean 12.874 s vs 3.382 s across the 6 tasks); script authoring and maintenance effort are unmeasured.",
+    "Evaluates familiar structure across distinct slot values; changed-DOM repair was separately measured on Simulatte 500167e0 in 20261116-handoff-and-reuse and is not re-injected here."
+  ]
+}

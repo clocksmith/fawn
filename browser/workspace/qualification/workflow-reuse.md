@@ -160,3 +160,61 @@ Original receipts, failed readiness probes, journals, both diagnostics and a has
 manifest are retained locally under `.tmp/track-c-workflow-20261116`; that private
 archive is intentionally outside Git. Keep its `run-context.json` timing verdict
 with the raw summary rather than promoting the raw elapsed totals into a claim.
+
+## Ordinary multi-task reuse (six tasks, three repeats)
+
+`ordinary-workflow-reuse.js` and `ordinary-tasks-site.js` measure saved-workflow
+reuse (`mode: 'reuse'`) against fresh Sonnet planning (`mode: 'fresh'`) across six
+ordinary browser tasks repeated three times from cold private workflow stores:
+
+- Form fill: two-stage `job-application-intake` (four slots, two intermediate
+  clicks, stops on review) and `expense-reimbursement-claim` (five slots, one
+  preview click with computed approval tier, stops before submission).
+- Search and extract: `lucyd-component-lookup` on unmodified Simulatte `500167e0`
+  `/system-diagram` assets (drawer toggle + `Search components`, verified against
+  committed catalog JSON and unchanged diagram hash) and `invoice-ledger-search`
+  (three filter slots + filter and summary extraction clicks, verified against
+  exact matching invoice IDs and dollar subtotal).
+- Multi-page navigation: `hardware-quote-navigation` (`/store` -> `/store/docks` ->
+  `/store/docks/tb4-quote` -> four quote slots + summary screen, stops before
+  `Place order`) and `docs-release-notes-navigation` (`/docs` -> `/docs/releases` ->
+  channel/subsystem filter -> `/docs/releases/digest`).
+
+```sh
+node browser/workspace/qualification/ordinary-workflow-reuse.js --controlled --repeats 3 --out .tmp/track-c-ordinary-preflight-01
+node browser/workspace/qualification/ordinary-workflow-reuse.js --repeats 3 --max-calls 288 --max-cost-usd 12 --max-call-usd 0.15 --out .tmp/track-c-ordinary-sonnet-01
+```
+
+Each repeat opens a fresh `WorkflowStore`, learns each task once on distinct
+`learnInputs`, then alternates `fresh` and `reuse` execution order on matched
+`evalInputs` in separate workspaces and Chrome profiles alongside a hand-written
+Playwright `stock-script` floor. Final submit targets are `type="submit"` and
+independently counted by the server.
+
+In the source-bound live run at `7e9682b0e0` (`sourceDirty: false`, stock Chrome
+`158.0.8127.36`, `claude-sonnet-5-5`, 222 total model calls billed at $1.547879,
+[retained decision](../../../reports/fawn-workspace/20261117-ordinary-workflow-reuse/decision.json)),
+all 72 browser runs completed correctly with zero submissions and zero rejected
+site writes:
+
+- Repeat totals across the 6 tasks: `fawn-reuse` took `12.284 s`, `12.859 s` and
+  `13.479 s` (mean `12.874 s`, SD `0.598 s`) with `0` model calls and `31` cached
+  steps per repeat; `fawn-fresh` took `88.359 s`, `89.030 s` and `105.720 s`
+  (mean `94.370 s`, SD `9.835 s`) with `37` model calls per repeat; `fawn-learn`
+  took `89.338 s`, `88.095 s` and `89.076 s` (mean `88.836 s`) with `37` model
+  calls per repeat; `stock-script` took `3.145 s`, `3.373 s` and `3.629 s` (mean
+  `3.382 s`) with `0` calls.
+- Per-task means (`fawn-fresh` versus `fawn-reuse`): `job-application-intake`
+  `16.297 s` (`7` calls) vs `2.334 s` (`0` calls); `expense-reimbursement-claim`
+  `16.490 s` (`7` calls) vs `2.681 s` (`0` calls); `lucyd-component-lookup`
+  `9.315 s` (`3` calls) vs `1.703 s` (`0` calls); `invoice-ledger-search`
+  `13.968 s` (`6` calls) vs `1.937 s` (`0` calls); `hardware-quote-navigation`
+  `23.932 s` (`8` calls) vs `2.593 s` (`0` calls); `docs-release-notes-navigation`
+  `14.367 s` (`6` calls) vs `1.627 s` (`0` calls).
+- Reuse finished faster with zero model calls in all 18 matched task-repeat pairs.
+  One of the 72 runs (Repeat 3 `hardware-quote-navigation` `fawn-fresh`) hit a
+  persistent-context close stall after `18.706 s` of task execution and was capped
+  at `15.032 s` by `bounded-close.js` (`34.198 s` total); the other 71 runs closed
+  in under `1 s`. Reuse beats fresh re-planning after one verified learning pass,
+  while the prepared Playwright script remains faster on execution time (`3.382 s`
+  vs `12.874 s`) with script authoring effort unmeasured.
