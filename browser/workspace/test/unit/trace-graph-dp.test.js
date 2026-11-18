@@ -447,4 +447,93 @@ const btn = (label, handle = label.toLowerCase().replace(/\s+/g, '-')) => ({
   }
 }
 
+// 7. Multi-goal shared DAG: diverging click branches and intermediate goal pass-through with zero wrong actions.
+{
+  const filterBtn = btn('Filter catalog', 'filter-cat');
+  const openProduct = btn('Open product', 'open-prod');
+  const openCompliance = btn('Open compliance review', 'open-comp');
+  const openQuote = btn('Open quote builder', 'open-quote');
+  const fillQty = textbox('Quantity', 'qty');
+  const calcQuote = btn('Calculate quote', 'calc');
+  const clicks = [filterBtn, openProduct, openCompliance, openQuote, calcQuote].map(structuralLocator);
+
+  function forkedPortal(startStage = 'home') {
+    let stage = startStage, qty = '', version = 0;
+    const actions = [];
+    return {
+      actions,
+      stage: () => stage,
+      qty: () => qty,
+      outstanding: async () => [],
+      observe: async () => ({
+        url: 'https://portal.invalid/app',
+        observationVersion: ++version,
+        isTruncated: false,
+        elements: stage === 'home' ? [filterBtn]
+          : stage === 'filtered' ? [openProduct]
+            : stage === 'overview' ? [openCompliance, openQuote]
+              : stage === 'compliance' ? []
+                : stage === 'quote-form' ? [{ ...fillQty, value: qty }, calcQuote]
+                  : [],
+      }),
+      submitAction: async req => {
+        actions.push(req.target.handle);
+        if (req.target.handle === 'filter-cat') stage = 'filtered';
+        else if (req.target.handle === 'open-prod') stage = 'overview';
+        else if (req.target.handle === 'open-comp') stage = 'compliance';
+        else if (req.target.handle === 'open-quote') stage = 'quote-form';
+        else if (req.target.handle === 'qty') qty = req.params.value;
+        else if (req.target.handle === 'calc') stage = 'quote-summary';
+        return { result: Promise.resolve({ outcome: 'completed' }) };
+      },
+    };
+  }
+
+  const dag = new TraceDag(limits);
+  const opts = (service, goal, inputs = {}) => ({
+    service, owner: {}, pageId: 'main', intent: 'portal', template: 'shared-portal-v1',
+    inputs, intermediateClicks: clicks, goal,
+  });
+
+  // Teach T1: home -> filtered -> overview -> compliance (shorter 1-step branch from overview!)
+  const s1 = dag.session(opts(forkedPortal('home'), 'compliance-packet'));
+  await s1.record({ kind: 'click', locator: structuralLocator(filterBtn) });
+  await s1.record({ kind: 'click', locator: structuralLocator(openProduct) });
+  await s1.record({ kind: 'click', locator: structuralLocator(openCompliance) });
+  assert.equal((await s1.finish()).reason, 'recorded-submit-boundary');
+
+  // Teach T2 starting at 'overview': overview -> quote-form -> qty -> calc (longer 3-step branch from overview!)
+  const s2 = dag.session(opts(forkedPortal('overview'), 'shipping-quote', { quantity: '4' }));
+  await s2.record({ kind: 'click', locator: structuralLocator(openQuote) });
+  await s2.record({ kind: 'fill', locator: structuralLocator(fillQty), slot: 'quantity' });
+  await s2.record({ kind: 'click', locator: structuralLocator(calcQuote) });
+  assert.equal((await s2.finish()).reason, 'recorded-submit-boundary');
+
+  // Confirm separate top-level goalTerminals table and restore validation.
+  const exported = dag.export();
+  assert.equal(Array.isArray(exported.goalTerminals), true);
+  assert.equal(exported.goalTerminals.length, 2);
+  const restored = TraceDag.restore(exported, limits);
+  assert.equal(restored.compressionStats().terminalCount, 2);
+
+  // Replay held-out composite: start at 'home' requesting 'shipping-quote' -> must take T1 prefix + T2 branch (zero wrong actions!).
+  const compositeSvc = forkedPortal('home');
+  const compositeReplay = await restored.session(opts(compositeSvc, 'shipping-quote', { quantity: '9' })).replay();
+  assert.equal(compositeReplay.reason, 'submit-boundary');
+  assert.deepEqual(compositeSvc.actions, ['filter-cat', 'open-prod', 'open-quote', 'qty', 'calc']);
+  assert.equal(compositeSvc.qty(), '9');
+
+  // Replay T1 goal from 'home' -> must still route to 'compliance-packet' cleanly.
+  const compSvc = forkedPortal('home');
+  const compReplay = await restored.session(opts(compSvc, 'compliance-packet')).replay();
+  assert.equal(compReplay.reason, 'submit-boundary');
+  assert.deepEqual(compSvc.actions, ['filter-cat', 'open-prod', 'open-comp']);
+
+  // Invalid goalTerminals pointing at a non-terminal node must be rejected on restore.
+  const bad = structuredClone(exported);
+  const nonTerm = bad.nodes.find(([, n]) => !n.terminal);
+  bad.goalTerminals.push([dag.hash(['goal', 'illegal']), [nonTerm[0]]]);
+  assert.throws(() => TraceDag.restore(bad, limits), /Invalid trace goalTerminals/);
+}
+
 console.log('ok: loop contraction, detour graph compression, diamond reconvergence, Bellman DP routing, modular recipe composition, mid-entry and mid-repair suffix takeover');

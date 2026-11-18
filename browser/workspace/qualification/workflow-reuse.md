@@ -218,3 +218,36 @@ site writes:
   in under `1 s`. Reuse beats fresh re-planning after one verified learning pass,
   while the prepared Playwright script remains faster on execution time (`3.382 s`
   vs `12.874 s`) with script authoring effort unmeasured.
+
+## Goal-aware overlapping requests and mid-path repair (controlled preflight)
+
+`overlapping-requests-reuse.js` and `overlapping-requests-site.js` test whether a
+goal-aware `TraceDag` (`goalTerminals` stored separately from shared `nodes` in
+`trace-dag.js` and `trace-graph-dp.js`) transfers learned segments across eight
+requests (`R1..R8`) over three cold-store repeats with rotated arm order against
+`stock-reusable-parts` (parameterized helpers with preconditions, `call_helper`
+slicing, persistent notes and automatic outcome checks) and `fresh-planning`:
+
+```sh
+node browser/workspace/qualification/overlapping-requests-reuse.js --controlled --repeats 3 --out .tmp/track-c-overlapping-preflight-02
+```
+
+- `R1` teaches `A -> B` (`product-brief`); `R2` teaches `B -> C` (`shipping-quote`);
+  `R3` holds back `A -> C` until evaluation and verifies `11`-edge zero-call
+  composition through `B` as an intermediate stop; `R4` reuses `A -> B` (`4` steps)
+  into a new `B -> D` compliance tail; `R5` enters from unseen shortlist `E` (`2`
+  steps) and reconverges onto `B -> C` (`7` steps); `R6` swaps in a v2 middle gate
+  (`5` prefix + `2` repair + `5` reconverged suffix) and persists the repair; `R7`
+  reopens the store on new inputs and replays all `12` steps with `0` calls; `R8`
+  tests a lookalike screen under `sandbox-guest-account` alongside `3` separate
+  ambiguous-target probes.
+- Controlled preflight result ([decision](../../../reports/fawn-workspace/20261117-overlapping-requests-preflight/decision.json),
+  [request rows](../../../reports/fawn-workspace/20261117-overlapping-requests-preflight/request-rows.json),
+  [retained traces](../../../reports/fawn-workspace/20261117-overlapping-requests-preflight/retained-traces.json)):
+  `63/63` task-completion cases passed (`44` reused actions and `22` controlled
+  calls per repeat on `fawn-graph`; `44` helper-reused actions and `30` calls per
+  repeat on `stock-reusable-parts`; `0` reused actions and `70` calls on
+  `fresh-planning`), `9/9` lookalike-account cases refused safely with `0`
+  pre-refusal actions, and `3/3` ambiguous-target probes stopped safely (`0`
+  pre-refusal actions, `0` duplicate or wrong-branch effects). Speed and model-cost
+  comparisons wait on an approved paid run (`--max-calls 240 --max-cost-usd 8 --max-call-usd 0.15`).

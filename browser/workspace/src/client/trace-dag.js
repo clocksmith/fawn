@@ -7,6 +7,7 @@ import { createFieldGroupScope } from './field-group-scope.js';
 import {
   analyzeTraceGraph,
   compressTraceRecords,
+  normalizeGoalTerminals,
   reduceTraceGraph,
   solveRecipeDp,
   topologicalSort,
@@ -48,10 +49,17 @@ export class TraceDag {
     this.limits = Object.freeze({ ...limits });
     this.key = randomBytes(32).toString('hex');
     this.nodes = new Map();
+    this.goalTerminals = new Map();
   }
   hash(value) { return createHmac('sha256', this.key).update(canonicalJson(value)).digest('hex'); }
   export() {
-    return structuredClone({ version: this.version, key: this.key, limits: this.limits, nodes: [...this.nodes] });
+    return structuredClone({
+      version: this.version,
+      key: this.key,
+      limits: this.limits,
+      nodes: [...this.nodes],
+      ...(this.goalTerminals.size ? { goalTerminals: [...this.goalTerminals] } : {}),
+    });
   }
   solve({ inputs = {}, goal = null, replanPenalty } = {}) {
     const availableSlots = new Set(
@@ -63,6 +71,7 @@ export class TraceDag {
     return solveRecipeDp(this.nodes, this.limits, {
       availableSlots,
       targetGoal,
+      goalTerminals: this.goalTerminals,
       ...(replanPenalty !== undefined ? { replanPenalty } : {}),
     });
   }
@@ -72,27 +81,22 @@ export class TraceDag {
   /** Private generated state only. Loading never starts a session or dispatches an action. */
   static restore(state, limits) {
     if (!SUPPORTED_VERSIONS.includes(state?.version)) throw Error('Invalid trace cache');
+    const stateKeys = state && typeof state === 'object' ? Object.keys(state).sort().join() : '';
+    const validStateKeys = stateKeys === 'key,limits,nodes,version'
+      || (state.version >= VERSION && stateKeys === 'goalTerminals,key,limits,nodes,version');
     const dag = new TraceDag(limits, { version: state.version });
-    if (!HASH.test(state.key)
+    if (!validStateKeys || !HASH.test(state.key)
       || canonicalJson(state.limits) !== canonicalJson(limits) || !Array.isArray(state.nodes)
       || state.nodes.length > limits.maxNodes) throw Error('Invalid trace cache');
     const nodes = new Map();
     let edges = 0;
+    const expectedKeys = state.version === 1 ? 'depth,edges,terminal' : 'depth,edges,repairs,terminal';
     for (const entry of state.nodes) {
       if (!Array.isArray(entry) || entry.length !== 2) throw Error('Invalid trace node');
       const [id, node] = entry;
-      const nodeKeys = node && typeof node === 'object' ? Object.keys(node).sort().join() : '';
-      const validKeys = state.version === 1
-        ? nodeKeys === 'depth,edges,terminal'
-        : (nodeKeys === 'depth,edges,repairs,terminal'
-          || (state.version >= VERSION && node?.terminal === true && nodeKeys === 'depth,edges,goals,repairs,terminal'));
-      if (!HASH.test(id) || nodes.has(id) || !node || !validKeys
+      if (!HASH.test(id) || nodes.has(id) || !node || Object.keys(node).sort().join() !== expectedKeys
         || !Number.isSafeInteger(node.depth) || node.depth < 0 || node.depth > limits.maxSteps
         || typeof node.terminal !== 'boolean' || !Array.isArray(node.edges)) throw Error('Invalid trace node');
-      if (node.goals !== undefined && (!Array.isArray(node.goals) || !node.goals.length
-        || node.goals.some(g => !HASH.test(g)) || new Set(node.goals).size !== node.goals.length)) {
-        throw Error('Invalid trace goals');
-      }
       const repairs = state.version === 1 ? [] : node.repairs;
       if (!Array.isArray(repairs) || repairs.some(next => !HASH.test(next)) || new Set(repairs).size !== repairs.length) {
         throw Error('Invalid trace repair');
@@ -128,8 +132,22 @@ export class TraceDag {
     } else {
       topologicalSort(nodes, limits.maxSteps);
     }
+    const goalTerminals = new Map();
+    if (state.goalTerminals !== undefined) {
+      if (!Array.isArray(state.goalTerminals) || !state.goalTerminals.length) throw Error('Invalid trace goalTerminals');
+      for (const item of state.goalTerminals) {
+        if (!Array.isArray(item) || item.length !== 2) throw Error('Invalid trace goalTerminals');
+        const [goalHash, ids] = item;
+        if (!HASH.test(goalHash) || goalTerminals.has(goalHash) || !Array.isArray(ids) || !ids.length
+          || ids.some(id => !HASH.test(id) || !nodes.get(id)?.terminal) || new Set(ids).size !== ids.length) {
+          throw Error('Invalid trace goalTerminals');
+        }
+        goalTerminals.set(goalHash, [...ids].sort());
+      }
+    }
     dag.key = state.key;
     dag.nodes = nodes;
+    dag.goalTerminals = goalTerminals;
     return dag;
   }
   /** Union same-key private snapshots, reducing dominated detours in v3. */
@@ -146,9 +164,6 @@ export class TraceDag {
       if (!node) { a.nodes.set(id, incoming); continue; }
       if (targetVersion < VERSION && node.depth !== incoming.depth) throw Error('Workflow depth differs');
       node.terminal ||= incoming.terminal;
-      if (node.terminal && (node.goals?.length || incoming.goals?.length)) {
-        node.goals = [...new Set([...(node.goals ?? []), ...(incoming.goals ?? [])])].sort();
-      }
       for (const next of incoming.repairs) if (!node.repairs.includes(next)) node.repairs.push(next);
       for (const edge of incoming.edges) {
         const match = node.edges.find(existing => existing.next === edge.next
@@ -162,7 +177,18 @@ export class TraceDag {
     }
     if (targetVersion === VERSION) {
       const { nodes: reduced } = reduceTraceGraph(a.nodes, limits);
-      return TraceDag.restore({ version: VERSION, key: a.key, limits, nodes: [...reduced] }, limits);
+      const mergedGoals = new Map([...a.goalTerminals.entries()].map(([g, ids]) => [g, [...ids]]));
+      for (const [g, ids] of b.goalTerminals) {
+        mergedGoals.set(g, [...new Set([...(mergedGoals.get(g) ?? []), ...ids])]);
+      }
+      const normGoals = normalizeGoalTerminals(mergedGoals, reduced);
+      return TraceDag.restore({
+        version: VERSION,
+        key: a.key,
+        limits,
+        nodes: [...reduced],
+        ...(normGoals.size ? { goalTerminals: [...normGoals] } : {}),
+      }, limits);
     }
     for (const node of a.nodes.values()) {
       node.edges.sort((x, y) => canonicalJson(x).localeCompare(canonicalJson(y)));
@@ -191,11 +217,6 @@ export class TraceDag {
       }
       const continuesInSecond = !incoming.terminal && (incoming.edges.length > 0 || incoming.repairs.length > 0);
       existing.terminal = continuesInSecond ? false : (existing.terminal || incoming.terminal);
-      if (!existing.terminal) {
-        delete existing.goals;
-      } else if (existing.goals?.length || incoming.goals?.length) {
-        existing.goals = [...new Set([...(existing.goals ?? []), ...(incoming.goals ?? [])])].sort();
-      }
       for (const next of incoming.repairs) if (!existing.repairs.includes(next)) existing.repairs.push(next);
       for (const edge of incoming.edges) {
         const match = existing.edges.find(prev => prev.next === edge.next
@@ -208,7 +229,18 @@ export class TraceDag {
       }
     }
     const { nodes: reduced } = reduceTraceGraph(combined, limits);
-    return TraceDag.restore({ version: VERSION, key: a.key, limits, nodes: [...reduced] }, limits);
+    const composedGoals = new Map([...a.goalTerminals.entries()].map(([g, ids]) => [g, [...ids]]));
+    for (const [g, ids] of b.goalTerminals) {
+      composedGoals.set(g, [...new Set([...(composedGoals.get(g) ?? []), ...ids])]);
+    }
+    const normGoals = normalizeGoalTerminals(composedGoals, reduced);
+    return TraceDag.restore({
+      version: VERSION,
+      key: a.key,
+      limits,
+      nodes: [...reduced],
+      ...(normGoals.size ? { goalTerminals: [...normGoals] } : {}),
+    }, limits);
   }
   static composeAll(graphs, limits) {
     if (!Array.isArray(graphs) || graphs.length < 1) throw Error('At least one recipe graph is required');
@@ -266,18 +298,23 @@ export class TraceDag {
     const term = compressed.terminal;
     const termNode = nodes.get(term.id) ?? { depth: term.depth, edges: [], repairs: [], terminal: false };
     termNode.terminal = true;
-    if (term.goal) {
-      termNode.goals = [...new Set([...(termNode.goals ?? []), term.goal])].sort();
-    }
     nodes.set(term.id, termNode);
 
+    const nextGoals = new Map([...this.goalTerminals.entries()].map(([g, ids]) => [g, [...ids]]));
+    if (term.goal) {
+      nextGoals.set(term.goal, [...new Set([...(nextGoals.get(term.goal) ?? []), term.id])]);
+    }
     const { nodes: reduced } = reduceTraceGraph(nodes, this.limits, { pruneDeadEnds: true, pruneDetours });
-    this.nodes = TraceDag.restore({
+    const normGoals = normalizeGoalTerminals(nextGoals, reduced);
+    const restored = TraceDag.restore({
       version: VERSION,
       key: this.key,
       limits: this.limits,
       nodes: [...reduced],
-    }, this.limits).nodes;
+      ...(normGoals.size ? { goalTerminals: [...normGoals] } : {}),
+    }, this.limits);
+    this.nodes = restored.nodes;
+    this.goalTerminals = restored.goalTerminals;
   }
 }
 
@@ -316,6 +353,8 @@ class TraceSession {
     this.depth = 0;
     this.records = [];
     this.repairs = [];
+    this.traceEvents = [];
+    this.repairedSession = false;
     this.nextId = null;
     this.terminal = null;
     this.stopped = false;
@@ -360,7 +399,9 @@ class TraceSession {
       const outline = structuralOutlineHash(observation.elements);
       const outlineSlots = stateOverride?.outlineSlots ?? this.outlineSlots;
       const sameOutlineClicks = stateOverride?.sameOutlineClicks ?? this.sameOutlineClicks;
-      const stateKey = ['state-v3', outlineSlots, sameOutlineClicks];
+      const stateKey = observation.elements.length === 0 && this.goalHash !== null
+        ? ['state-v3-goal-leaf', this.goalHash]
+        : ['state-v3', outlineSlots, sameOutlineClicks];
       return { observation, id: this.dag.hash([scope, stateKey, outline]), outline };
     };
     if (this.dag.version < VERSION) {
@@ -428,7 +469,13 @@ class TraceSession {
       }
     }
     const after = this.frame(afterObs);
-    return { status: 'completed', result, after };
+    return {
+      status: 'completed',
+      result,
+      after,
+      label: element.label,
+      slotName: step.kind === 'click' ? null : (this.slotNames.get(step.slot) ?? null),
+    };
   }
   /** Slot provenance is structural: callers cannot pass a literal params.value at this API. */
   record(spec, observation = null, { weight } = {}) {
@@ -459,6 +506,15 @@ class TraceSession {
           next: executed.after.id,
           ...(weight !== undefined ? { weight } : {}),
         });
+        this.traceEvents.push({
+          phase: this.repairedSession ? 'repaired-edge' : 'learned-edge',
+          stepIndex: depth,
+          kind: spec.kind,
+          label: executed.label,
+          slot: spec.slot ?? null,
+          fromNode: before.id.slice(0, 12),
+          toNode: executed.after.id.slice(0, 12),
+        });
         this.nextId = executed.after.id;
       }
       return { status: executed.status, reason: executed.reason, result: executed.result };
@@ -479,17 +535,39 @@ class TraceSession {
     continuation.depth = this.depth;
     continuation.records = structuredClone(this.records);
     continuation.repairs = structuredClone(this.repairs);
+    continuation.traceEvents = structuredClone(this.traceEvents);
+    continuation.repairedSession = true;
     const exact = continuation.frame(before.observation);
     if (this.fieldScope) continuation.repairs.push({ id: before.id, depth: this.depth, next: exact.id });
     continuation.nextId = exact.id;
     return continuation;
+  }
+  #isGoalTerminal(nodeId, node) {
+    if (!node?.terminal) return false;
+    if (this.goalHash === null) return true;
+    return Boolean(this.dag.goalTerminals.get(this.goalHash)?.includes(nodeId));
+  }
+  #recordFallback(before, reason) {
+    let pathname = null;
+    try { pathname = new URL(before.observation.url).pathname; } catch { pathname = null; }
+    this.traceEvents.push({
+      phase: 'fallback',
+      atStep: this.depth,
+      node: before.id.slice(0, 12),
+      reason,
+      pathname,
+    });
   }
   /** Call only after the task's pre-submit acceptance checks pass. No final action is cached. */
   finish({ publish = true, pruneDetours = true } = {}) {
     return this.exclusive(async () => {
       const terminal = await this.observe();
       if (!this.records.length || this.nextId !== terminal.id) return this.stop('changed-terminal');
-      this.terminal = { id: terminal.id, depth: this.depth };
+      this.terminal = {
+        id: terminal.id,
+        depth: this.depth,
+        ...(this.goalHash !== null ? { goal: this.goalHash } : {}),
+      };
       if (publish) this.dag.publish(this.records, this.terminal, this.repairs, { pruneDetours });
       return this.stop('recorded-submit-boundary');
     });
@@ -505,7 +583,11 @@ class TraceSession {
           .filter(([, value]) => typeof value === 'string')
           .map(([slotHash]) => slotHash),
       );
-      const dp = solveRecipeDp(this.dag.nodes, this.dag.limits, { availableSlots });
+      const dp = solveRecipeDp(this.dag.nodes, this.dag.limits, {
+        availableSlots,
+        targetGoal: this.goalHash,
+        goalTerminals: this.dag.goalTerminals,
+      });
       let before = await this.observe();
       if (this.nextId && this.nextId !== before.id) {
         return { continuedSteps: 0, reason: 'prefix-mismatch', reachedTerminal: false };
@@ -514,9 +596,10 @@ class TraceSession {
       for (;;) {
         const node = this.dag.nodes.get(before.id);
         if (!node) return { continuedSteps, reason: 'unseen-branch', reachedTerminal: false };
-        if (node.terminal) return { continuedSteps, reason: 'submit-boundary', reachedTerminal: true };
+        if (this.#isGoalTerminal(before.id, node)) return { continuedSteps, reason: 'submit-boundary', reachedTerminal: true };
         const decision = dp.policy.get(before.id);
-        if (!decision || decision.kind === 'repair-only' || decision.kind === 'ambiguous' || decision.kind === 'missing-slot') {
+        if (!decision || decision.kind === 'checkpoint' || decision.kind === 'repair-only'
+          || decision.kind === 'ambiguous' || decision.kind === 'missing-slot') {
           return { continuedSteps, reason: decision?.kind ?? 'unseen-branch', reachedTerminal: false };
         }
         const step = decision.step;
@@ -527,8 +610,19 @@ class TraceSession {
         }
         continuedSteps += 1;
         this.records.push({ id: before.id, depth, step, next: executed.after.id });
+        this.traceEvents.push({
+          phase: 'reconverged-suffix-replay',
+          stepIndex: depth,
+          kind: step.kind,
+          label: executed.label,
+          slot: executed.slotName,
+          fromNode: before.id.slice(0, 12),
+          toNode: executed.after.id.slice(0, 12),
+          acceptedWhy: 'reconverged-node-dp-path-to-target-goal-and-live-locator-verified',
+        });
         this.nextId = executed.after.id;
         if (!node.edges.some(edge => canonicalJson(edge.step) === canonicalJson(step) && edge.next === executed.after.id)) {
+          this.#recordFallback(executed.after, 'unseen-branch');
           return { continuedSteps, reason: 'unseen-branch', reachedTerminal: false };
         }
         before = executed.after;
@@ -562,15 +656,23 @@ class TraceSession {
           .filter(([, value]) => typeof value === 'string')
           .map(([slotHash]) => slotHash),
       );
+      const hasKnownGoal = this.goalHash === null || Boolean(this.dag.goalTerminals.get(this.goalHash)?.length);
       const dp = this.dag.version >= VERSION
-        ? solveRecipeDp(this.dag.nodes, this.dag.limits, { availableSlots })
+        ? solveRecipeDp(this.dag.nodes, this.dag.limits, {
+            availableSlots,
+            targetGoal: this.goalHash,
+            goalTerminals: this.dag.goalTerminals,
+          })
         : null;
       let before = await this.observe();
       before = this.#inferMidFormEntry(before, dp);
       for (;;) {
         let node = this.dag.nodes.get(before.id);
-        if (!node) return this.stop('unseen-branch');
-        if (node.terminal) return this.stop('submit-boundary');
+        if (!node) {
+          this.#recordFallback(before, 'unseen-branch');
+          return this.stop('unseen-branch');
+        }
+        if (this.#isGoalTerminal(before.id, node)) return this.stop('submit-boundary');
         if (this.fieldScope && node.repairs.length) {
           const exactSlots = this.dag.version >= VERSION ? [...this.groupProgress.filledSlots] : [];
           const exact = this.frame(before.observation, null, { outlineSlots: exactSlots, sameOutlineClicks: this.sameOutlineClicks });
@@ -582,26 +684,52 @@ class TraceSession {
             before = exact;
             this.nextId = exact.id;
             node = this.dag.nodes.get(before.id);
-            if (node.terminal) return this.stop('submit-boundary');
+            if (this.#isGoalTerminal(before.id, node)) return this.stop('submit-boundary');
           }
         }
         let step;
         if (dp) {
           const decision = dp.policy.get(before.id);
-          if (!decision || decision.kind === 'repair-only') return this.stop('unseen-branch');
-          if (decision.kind === 'ambiguous') return this.stop('ambiguous-branch');
+          if (!decision || decision.kind === 'checkpoint' || decision.kind === 'repair-only') {
+            const why = decision?.kind === 'checkpoint' ? 'checkpoint-reached-for-unseen-goal' : 'unseen-branch';
+            this.#recordFallback(before, why);
+            return this.stop('unseen-branch');
+          }
+          if (decision.kind === 'ambiguous') {
+            this.#recordFallback(before, 'ambiguous-branch');
+            return this.stop('ambiguous-branch');
+          }
           step = decision.step;
         } else {
           const steps = new Map(node.edges.map(edge => [canonicalJson(edge.step), edge.step]));
-          if (steps.size !== 1) return this.stop('ambiguous-branch');
+          if (steps.size !== 1) {
+            this.#recordFallback(before, 'ambiguous-branch');
+            return this.stop('ambiguous-branch');
+          }
           step = steps.values().next().value;
         }
         const depth = this.depth;
         const executed = await this.execute(before, step);
-        if (executed.status !== 'completed') return executed;
+        if (executed.status !== 'completed') {
+          this.#recordFallback(before, executed.reason);
+          return executed;
+        }
         this.records.push({ id: before.id, depth, step, next: executed.after.id });
+        this.traceEvents.push({
+          phase: 'prefix-replay',
+          stepIndex: depth,
+          kind: step.kind,
+          label: executed.label,
+          slot: executed.slotName,
+          fromNode: before.id.slice(0, 12),
+          toNode: executed.after.id.slice(0, 12),
+          acceptedWhy: hasKnownGoal
+            ? 'dp-path-to-target-goal-and-live-locator-verified'
+            : 'slot-feasible-prefix-toward-known-checkpoint-and-live-locator-verified',
+        });
         this.nextId = executed.after.id;
         if (!node.edges.some(edge => canonicalJson(edge.step) === canonicalJson(step) && edge.next === executed.after.id)) {
+          this.#recordFallback(executed.after, 'unseen-branch');
           return this.stop('unseen-branch');
         }
         before = executed.after;

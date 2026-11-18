@@ -254,13 +254,11 @@ export function reduceTraceGraph(nodes, limits, { pruneDeadEnds = true, pruneDet
     const sortedEdges = [...dedupedEdges.values()]
       .sort((left, right) => canonicalJson(left).localeCompare(canonicalJson(right)));
     const sortedRepairs = [...new Set(node.repairs ?? [])].sort();
-    const sortedGoals = [...new Set(node.goals ?? [])].sort();
     normalized.set(id, {
       depth: rank.get(id) ?? 0,
       edges: sortedEdges,
       repairs: sortedRepairs,
       terminal: Boolean(node.terminal),
-      ...(node.terminal && sortedGoals.length ? { goals: sortedGoals } : {}),
     });
   }
   return {
@@ -269,23 +267,51 @@ export function reduceTraceGraph(nodes, limits, { pruneDeadEnds = true, pruneDet
   };
 }
 
-/** Backward Bellman dynamic programming over the recipe DAG. */
-export function solveRecipeDp(nodes, limits, { availableSlots = null, targetGoal = null, replanPenalty = DEFAULT_REPLAN_PENALTY } = {}) {
+export function normalizeGoalTerminals(goalTerminals, nodes) {
+  const out = new Map();
+  if (!goalTerminals) return out;
+  const entries = goalTerminals instanceof Map ? [...goalTerminals.entries()] : goalTerminals;
+  for (const [goalHash, ids] of entries) {
+    const liveIds = [...new Set(ids)].filter(id => nodes.get(id)?.terminal).sort();
+    if (liveIds.length) out.set(goalHash, liveIds);
+  }
+  return new Map([...out.entries()].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+/** Backward Bellman dynamic programming over the recipe DAG.
+ * Goal completion predicates (`goalTerminals`: goalHash -> terminal node IDs) live outside shared
+ * nodes so a screen that completed an earlier goal can act as an intermediate stop for a later goal.
+ */
+export function solveRecipeDp(nodes, limits, {
+  availableSlots = null,
+  targetGoal = null,
+  goalTerminals = null,
+  replanPenalty = DEFAULT_REPLAN_PENALTY,
+} = {}) {
   const { order } = topologicalSort(nodes, limits.maxSteps);
   const values = new Map();
   const terminals = new Map();
   const policy = new Map();
+  const goalMap = normalizeGoalTerminals(goalTerminals, nodes);
+  const targetGoalNodes = targetGoal !== null ? new Set(goalMap.get(targetGoal) ?? []) : null;
+  const knownGoal = targetGoal !== null && targetGoalNodes.size > 0;
+  const checkpointNodes = targetGoal !== null && !knownGoal
+    ? new Set([...goalMap.values()].flat())
+    : null;
 
   for (let idx = order.length - 1; idx >= 0; idx--) {
     const id = order[idx];
     const node = nodes.get(id);
-    const isTargetTerminal = targetGoal !== null
-      ? Boolean(node.terminal && Array.isArray(node.goals) && node.goals.includes(targetGoal))
-      : Boolean(node.terminal);
-    if (isTargetTerminal) {
+    if (targetGoal === null ? Boolean(node.terminal) : (knownGoal && targetGoalNodes.has(id))) {
       values.set(id, 0);
       terminals.set(id, new Set([id]));
       policy.set(id, { kind: 'terminal', cost: 0 });
+      continue;
+    }
+    if (checkpointNodes?.has(id)) {
+      values.set(id, 0);
+      terminals.set(id, new Set([id]));
+      policy.set(id, { kind: 'checkpoint', cost: 0 });
       continue;
     }
 

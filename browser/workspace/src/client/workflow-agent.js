@@ -65,10 +65,11 @@ export function scopeWorkflowObservation(service, template, locators) {
 export async function runWorkflow({ dag, mode, service, owner, pageId, intent, template, inputs,
   intermediateClicks, task, planner, config, store, projectId, verifyReview, signal,
   assertContext = async () => {}, authorizeStep = async () => {}, publishTrace = null, accountScope = null, fieldGroups = null,
-  learnRepairs = false, observationLocators = null, reconvergeMidRepair = false }) {
+  learnRepairs = false, observationLocators = null, reconvergeMidRepair = false, goal = null }) {
   if (!['learn', 'fresh', 'reuse'].includes(mode)) throw Error('Invalid workflow mode');
   if (typeof learnRepairs !== 'boolean') throw Error('Explicit boolean repair-learning policy required');
   if (typeof reconvergeMidRepair !== 'boolean') throw Error('Explicit boolean mid-repair reconvergence policy required');
+  if (goal !== null && (typeof goal !== 'string' || !goal.trim())) throw Error('Invalid workflow goal');
   ({ service, template } = scopeWorkflowObservation(service, template, observationLocators));
   const started = performance.now();
   const identity = { ...owner, pageId };
@@ -86,16 +87,18 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
     assertCurrent();
   };
   const options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
-    assertContext: assertWorkflowContext, authorizeStep, accountScope, fieldGroups };
-  let recorder, observation, cacheSteps = 0, fallbackReason = null;
+    assertContext: assertWorkflowContext, authorizeStep, accountScope, fieldGroups, goal };
+  let recorder, observation, cacheSteps = 0, prefixCacheSteps = 0, reconvergedCacheSteps = 0, replayMs = 0, fallbackReason = null;
+  let askedForHelp = null;
   let canPublish = mode === 'learn', lastResult = null, modelCalls = 0;
   const finish = (completed, detail) => {
     const current = store.get(projectId).run;
     if (current?.id === runId) store.run(projectId, { ...current,
       status: completed ? 'completed' : signal.aborted ? 'stopped' : 'needs-attention', detail });
     return { mode, status: completed ? 'completed' : 'needs-attention', completed, detail, verification,
-      modelCalls, cacheSteps, fallbackReason, elapsedMs: performance.now() - started,
-      humanInterventions: 0, interventionRequests: completed ? 0 : 1 };
+      modelCalls, cacheSteps, prefixCacheSteps, reconvergedCacheSteps, replayMs, askedForHelp, fallbackReason,
+      traceEvents: recorder ? structuredClone(recorder.traceEvents ?? []) : [],
+      elapsedMs: performance.now() - started, humanInterventions: 0, interventionRequests: completed ? 0 : 1 };
   };
   const observe = async () => {
     await assertWorkflowContext();
@@ -126,8 +129,11 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
     recorder = dag.session(options);
     if (mode === 'reuse') {
       let replay, failure;
+      const replayStarted = performance.now();
       try { replay = await recorder.replay(); } catch (error) { failure = error; }
-      cacheSteps = recorder.depth;
+      replayMs += performance.now() - replayStarted;
+      prefixCacheSteps = recorder.depth;
+      cacheSteps = prefixCacheSteps;
       store.activity(projectId, { event: 'workflow-replay', steps: cacheSteps,
         reason: replay?.reason ?? failure?.code ?? failure?.message });
       if (replay?.reason === 'submit-boundary') {
@@ -142,6 +148,13 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       recorder = canPublish ? await recorder.repair() : dag.session({ ...options, fieldGroups: null });
     }
     await observe();
+    if (mode === 'reuse' && fallbackReason) {
+      askedForHelp = {
+        afterPrefixSteps: prefixCacheSteps,
+        reason: fallbackReason,
+        pathname: observation?.url ? new URL(observation.url).pathname : null,
+      };
+    }
     let reconvergedTerminal = false;
     const execute = async (tool, input) => {
       if (tool === 'observe') { await observe(); return view(observation); }
@@ -166,9 +179,12 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
       if (recorded.status !== 'completed') throw Error(`Workflow stopped: ${recorded.reason}`);
       let continuedSteps = 0;
       if (reconvergeMidRepair && mode === 'reuse' && recorder.nextId && dag.nodes.has(recorder.nextId)) {
+        const contStarted = performance.now();
         const resumed = await recorder.continueReplay();
+        replayMs += performance.now() - contStarted;
         if (resumed.halted) throw Error(`Workflow stopped: ${resumed.reason}`);
         continuedSteps = resumed.continuedSteps;
+        reconvergedCacheSteps += continuedSteps;
         cacheSteps += continuedSteps;
         if (resumed.reachedTerminal) reconvergedTerminal = true;
       }

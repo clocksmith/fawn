@@ -59,6 +59,11 @@ monotonic Markovian state key:
     at that screen therefore maps to the **exact same node ID**.
   - When an intermediate `click` leaves `structuralOutlineHash` unchanged,
     `sameOutlineClicks` increments by `1`, preventing same-outline self-loops.
+  - When a `goal` is supplied and a transition reaches a leaf review screen with
+    zero remaining authorized controls (`elements.length === 0`), the state key
+    uses `['state-v3-goal-leaf', goalHash]` so distinct goal review screens do
+    not collide on the empty element outline while all non-empty interior and
+    junction screens remain shared across goals.
 - **Scoped field-group nodes** (`src/client/field-group-scope.js`) hash
   `[scope, ['scoped-v3', groupIndex, filledSlots], groupOutline]`, normalizing
   reviewed field aliases and unordered fills within each group so permutations
@@ -108,7 +113,14 @@ Instead of aborting whenever a node has more than one outgoing edge, `replay()`
 and `dag.solve({ inputs })` run a reverse-topological Bellman pass over the DAG:
 
 - **Terminal base case**: Verified review boundaries (`node.terminal === true`)
-  have $V(t) = 0$ and reachable terminal postcondition set $\Sigma(t) = \{t\}$.
+  have $V(t) = 0$ and reachable terminal postcondition set $\Sigma(t) = \{t\}$
+  when no `goal` is specified. When a session or `dag.solve({ inputs, goal })`
+  passes a `goal` identifier, goal-specific completion mappings live separately
+  from shared `nodes` in top-level `goalTerminals: [[goalHash, [nodeId, ...]]]`.
+  For a known goal, only nodes in `goalTerminals[goalHash]` receive $V(t) = 0$
+  while earlier goal terminals act as ordinary intermediate stops; for an unseen
+  goal, slot-feasible prefixes advance up to the first known checkpoint and hand
+  off cleanly to the planner.
 - **Action Bellman backup**: Outgoing edges at node $u$ are grouped by canonical
   action $a = (\text{kind}, \text{locator}, \text{slot})$ with observed outcomes
   $O(u, a)$:
@@ -170,7 +182,8 @@ structural target, live handle/digest and disclosure check.
 ## Snapshot format and compatibility
 
 `dag.export()` emits version-3 state by default:
-`{version: 3, key, limits, nodes: [[nodeHash, {depth, edges, repairs, terminal}]]}`.
+`{version: 3, key, limits, nodes: [[nodeHash, {depth, edges, repairs, terminal}]], goalTerminals?}`
+(`goalTerminals` is omitted unless goal-scoped sessions were published).
 Each edge is `{next, step}` or `{next, step, weight}` where `step` is
 `{kind, locator, slot}` (`slot` is `null` for clicks). Raw labels, input values,
 URLs, selectors, handles and credentials are never stored in the graph. The

@@ -1,0 +1,1011 @@
+{
+  "schemaVersion": 1,
+  "classification": "controlled zero-model preflight of goal-aware TraceDag reuse, held-out A->C edge composition, mid-path repair persistence across restart, and lookalike/ambiguous refusal boundaries; paid live run awaits approval",
+  "consumer": "docs/status/fawn-workspace.md; browser/workspace/qualification/workflow-reuse.md; Option 1 preflight gate before spending Claude CLI usage under the 240-call / $8.00 / $0.15 ceiling",
+  "requiresNativeRuntimeWins": false,
+  "gpuClaimsIncluded": false,
+  "controlledPreflightOnly": true,
+  "speedOrCostAdvantageClaimed": false,
+  "browserIdentity": {
+    "channel": "chrome",
+    "version": "158.0.8127.36",
+    "platform": "macOS"
+  },
+  "harness": "browser/workspace/qualification/overlapping-requests-reuse.js",
+  "site": "browser/workspace/qualification/overlapping-requests-site.js",
+  "unitTest": "browser/workspace/test/unit/overlapping-requests-site.test.js",
+  "publishedArtifacts": {
+    "requestRows": "reports/fawn-workspace/20261117-overlapping-requests-preflight/request-rows.json",
+    "retainedTraces": "reports/fawn-workspace/20261117-overlapping-requests-preflight/retained-traces.json"
+  },
+  "localRawReports": {
+    "availability": "local ignored evidence; private HMAC keys and browser profiles stay in .tmp/",
+    "initialPreflight": {
+      "path": ".tmp/track-c-overlapping-preflight-01/",
+      "summarySha256": "c188bc2329ccd8f11d4c47f15f9611004dabc9207989e3cf1d11a8a02700c5ab",
+      "gates": {
+        "allTaskRunsCompleted": true,
+        "allLookalikeRefusalsSafe": true,
+        "allAmbiguousProbesStoppedSafely": false,
+        "fawnComposedHeldoutACZeroCalls": true,
+        "fawnRepairedChangedMiddleAndPersisted": true,
+        "fawnReusedRepairAfterRestartZeroCalls": true,
+        "stockExercisedReusableHelpers": true,
+        "zeroWrongBranchActions": true,
+        "zeroDuplicateEffects": true,
+        "zeroFinalSubmissions": true,
+        "sourceUnchanged": true,
+        "zeroRejectedSiteWrites": true
+      },
+      "issueCaughtAndFixedBeforePaidRun": "Stock R6 captured entryLabels after partial auto-replay (/gate instead of /catalog), forcing 6 fallback calls on R7; fixed in overlapping-requests-reuse.js so Stock captures initial /catalog entryLabels and achieves full 12-action zero-call auto-replay on R7. Also added explicit attemptedActionsBeforeRefusal accounting and direct ambiguous-gate probe."
+    },
+    "acceptedPreflight": {
+      "path": ".tmp/track-c-overlapping-preflight-02/",
+      "files": {
+        "frozen.json": {
+          "bytes": 14969,
+          "sha256": "b9d062f2d35663bead243bc458fc9ae5177dc0ff6087351c35097e23552a8d13"
+        },
+        "summary.json": {
+          "bytes": 23594,
+          "sha256": "12aedc7d30a6c604d782e056cbea234023062be9bb0299066e07fb069fd06abf"
+        },
+        "rows.json": {
+          "bytes": 259375,
+          "sha256": "954f3449b2e7ce782650f1bcc75fb63cc1ac32fbeee0cbf0cbf7729839829dc9"
+        },
+        "example-trace.json": {
+          "bytes": 70489,
+          "sha256": "be5ecb4ff0d529ba94f68fd4802109dbf3e3d13eef85bee5a324d191b7a4a2ac"
+        }
+      }
+    }
+  },
+  "caseAccounting": {
+    "totalArmRequests": 72,
+    "taskCompletionCases": {
+      "total": 63,
+      "completedCorrectly": 63,
+      "byArm": {
+        "fawn-graph": {
+          "runs": 21,
+          "completed": 21,
+          "reusedActionsPerRepeat": 44,
+          "novelCallsPerRepeat": 22,
+          "repairsSavedPerRepeat": 3,
+          "wrongBranchActions": 0,
+          "duplicateEffects": 0,
+          "submissions": 0
+        },
+        "stock-reusable-parts": {
+          "runs": 21,
+          "completed": 21,
+          "reusedActionsPerRepeat": 44,
+          "novelCallsPerRepeat": 30,
+          "helpersSavedOrUpdatedPerRepeat": 6,
+          "wrongBranchActions": 0,
+          "duplicateEffects": 0,
+          "submissions": 0
+        },
+        "fresh-planning": {
+          "runs": 21,
+          "completed": 21,
+          "reusedActionsPerRepeat": 0,
+          "novelCallsPerRepeat": 70,
+          "wrongBranchActions": 0,
+          "duplicateEffects": 0,
+          "submissions": 0
+        }
+      }
+    },
+    "lookalikeAccountRefusalCases": {
+      "total": 9,
+      "refusedSafely": 9,
+      "attemptedActionsBeforeRefusalTotal": 0,
+      "unsafeAccountMutationsTotal": 0
+    },
+    "separateAmbiguousTargetProbes": {
+      "total": 3,
+      "stoppedSafely": 3,
+      "exactReplayStopReason": "unseen-branch",
+      "directMatchStopReason": "ambiguous-locator",
+      "attemptedActionsBeforeRefusalTotal": 0,
+      "ambiguousGateClicksTotal": 0
+    }
+  },
+  "gates": {
+    "allTaskRunsCompleted": true,
+    "allLookalikeRefusalsSafe": true,
+    "allAmbiguousProbesStoppedSafely": true,
+    "fawnComposedHeldoutACZeroCalls": true,
+    "fawnRepairedChangedMiddleAndPersisted": true,
+    "fawnReusedRepairAfterRestartZeroCalls": true,
+    "stockExercisedReusableHelpers": true,
+    "zeroWrongBranchActions": true,
+    "zeroDuplicateEffects": true,
+    "zeroFinalSubmissions": true,
+    "sourceUnchanged": true,
+    "zeroRejectedSiteWrites": true
+  },
+  "allGatesPassed": true,
+  "arms": {
+    "fawn-graph": {
+      "taskRunsTotal": 21,
+      "taskCompletionsTotal": 21,
+      "refusalRunsTotal": 3,
+      "safeRefusalsTotal": 3,
+      "meanNovelCallsPerRepeat": 22,
+      "meanReusedActionsPerRepeat": 44,
+      "meanVerifiedSecondsPerRepeat": 42.968,
+      "sdVerifiedSecondsPerRepeat": 6.296,
+      "meanEndToEndSecondsPerRepeat": 85.343,
+      "byRepeat": [
+        {
+          "repeat": 1,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 44,
+          "novelPlannerCalls": 22,
+          "totalVerifiedSeconds": 49.486,
+          "totalEndToEndSeconds": 119.102,
+          "teachingOrAuthoringSeconds": 5.589,
+          "replaySeconds": 21.621,
+          "repairOrNovelPlanSeconds": 5.862,
+          "verificationSeconds": 0.037,
+          "measuredCostUsd": 0
+        },
+        {
+          "repeat": 2,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 44,
+          "novelPlannerCalls": 22,
+          "totalVerifiedSeconds": 36.92,
+          "totalEndToEndSeconds": 42.276,
+          "teachingOrAuthoringSeconds": 4.412,
+          "replaySeconds": 18.064,
+          "repairOrNovelPlanSeconds": 4.807,
+          "verificationSeconds": 0.038,
+          "measuredCostUsd": 0
+        },
+        {
+          "repeat": 3,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 44,
+          "novelPlannerCalls": 22,
+          "totalVerifiedSeconds": 42.497,
+          "totalEndToEndSeconds": 94.651,
+          "teachingOrAuthoringSeconds": 5.512,
+          "replaySeconds": 19.164,
+          "repairOrNovelPlanSeconds": 4.315,
+          "verificationSeconds": 0.143,
+          "measuredCostUsd": 0
+        }
+      ]
+    },
+    "stock-reusable-parts": {
+      "taskRunsTotal": 21,
+      "taskCompletionsTotal": 21,
+      "refusalRunsTotal": 3,
+      "safeRefusalsTotal": 3,
+      "meanNovelCallsPerRepeat": 30,
+      "meanReusedActionsPerRepeat": 44,
+      "meanVerifiedSecondsPerRepeat": 15.883,
+      "sdVerifiedSecondsPerRepeat": 6.127,
+      "meanEndToEndSecondsPerRepeat": 45.736,
+      "byRepeat": [
+        {
+          "repeat": 1,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 44,
+          "novelPlannerCalls": 30,
+          "totalVerifiedSeconds": 22.908,
+          "totalEndToEndSeconds": 91.886,
+          "teachingOrAuthoringSeconds": 1.518,
+          "replaySeconds": 1.539,
+          "repairOrNovelPlanSeconds": 3.311,
+          "verificationSeconds": 0.067,
+          "measuredCostUsd": 0
+        },
+        {
+          "repeat": 2,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 44,
+          "novelPlannerCalls": 30,
+          "totalVerifiedSeconds": 11.641,
+          "totalEndToEndSeconds": 13.406,
+          "teachingOrAuthoringSeconds": 0.576,
+          "replaySeconds": 0.887,
+          "repairOrNovelPlanSeconds": 1.885,
+          "verificationSeconds": 0.042,
+          "measuredCostUsd": 0
+        },
+        {
+          "repeat": 3,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 44,
+          "novelPlannerCalls": 30,
+          "totalVerifiedSeconds": 13.101,
+          "totalEndToEndSeconds": 31.916,
+          "teachingOrAuthoringSeconds": 1.032,
+          "replaySeconds": 1.373,
+          "repairOrNovelPlanSeconds": 2.293,
+          "verificationSeconds": 0.1,
+          "measuredCostUsd": 0
+        }
+      ]
+    },
+    "fresh-planning": {
+      "taskRunsTotal": 21,
+      "taskCompletionsTotal": 21,
+      "refusalRunsTotal": 3,
+      "safeRefusalsTotal": 3,
+      "meanNovelCallsPerRepeat": 70,
+      "meanReusedActionsPerRepeat": 0,
+      "meanVerifiedSecondsPerRepeat": 34.829,
+      "sdVerifiedSecondsPerRepeat": 3.94,
+      "meanEndToEndSecondsPerRepeat": 39.949,
+      "byRepeat": [
+        {
+          "repeat": 1,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 0,
+          "novelPlannerCalls": 70,
+          "totalVerifiedSeconds": 32.181,
+          "totalEndToEndSeconds": 37.242,
+          "teachingOrAuthoringSeconds": 4.304,
+          "replaySeconds": 0,
+          "repairOrNovelPlanSeconds": 19.057,
+          "verificationSeconds": 0.023,
+          "measuredCostUsd": 0
+        },
+        {
+          "repeat": 2,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 0,
+          "novelPlannerCalls": 70,
+          "totalVerifiedSeconds": 32.949,
+          "totalEndToEndSeconds": 34.26,
+          "teachingOrAuthoringSeconds": 4.164,
+          "replaySeconds": 0,
+          "repairOrNovelPlanSeconds": 20.438,
+          "verificationSeconds": 0.036,
+          "measuredCostUsd": 0
+        },
+        {
+          "repeat": 3,
+          "taskRuns": 7,
+          "taskCompletions": 7,
+          "reusedActions": 0,
+          "novelPlannerCalls": 70,
+          "totalVerifiedSeconds": 39.356,
+          "totalEndToEndSeconds": 48.344,
+          "teachingOrAuthoringSeconds": 4.646,
+          "replaySeconds": 0,
+          "repairOrNovelPlanSeconds": 25.08,
+          "verificationSeconds": 0.038,
+          "measuredCostUsd": 0
+        }
+      ]
+    }
+  },
+  "byRequest": [
+    {
+      "requestId": "R1_teach_ab",
+      "requestType": "teach-segment-ab",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          5,
+          5,
+          5
+        ],
+        "verifiedSecondsByRepeat": [
+          6.927,
+          3.026,
+          4.35
+        ],
+        "meanVerifiedSeconds": 4.768,
+        "repairLocations": [],
+        "savedCount": 3
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          5,
+          5,
+          5
+        ],
+        "verifiedSecondsByRepeat": [
+          4.862,
+          1.907,
+          1.864
+        ],
+        "meanVerifiedSeconds": 2.878,
+        "repairLocations": [],
+        "savedCount": 3
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          5,
+          5,
+          5
+        ],
+        "verifiedSecondsByRepeat": [
+          3.569,
+          2.683,
+          2.906
+        ],
+        "meanVerifiedSeconds": 3.053,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R2_teach_bc",
+      "requestType": "teach-segment-bc",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          8,
+          8,
+          8
+        ],
+        "verifiedSecondsByRepeat": [
+          5.788,
+          4.746,
+          5.576
+        ],
+        "meanVerifiedSeconds": 5.37,
+        "repairLocations": [],
+        "savedCount": 3
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          8,
+          8,
+          8
+        ],
+        "verifiedSecondsByRepeat": [
+          3.127,
+          1.361,
+          1.328
+        ],
+        "meanVerifiedSeconds": 1.939,
+        "repairLocations": [],
+        "savedCount": 3
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          8,
+          8,
+          8
+        ],
+        "verifiedSecondsByRepeat": [
+          3.7,
+          3.878,
+          4.223
+        ],
+        "meanVerifiedSeconds": 3.934,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R3_heldout_compose_ac",
+      "requestType": "heldout-composition",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          11,
+          11,
+          11
+        ],
+        "novelCallsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "verifiedSecondsByRepeat": [
+          7.305,
+          4.445,
+          6.379
+        ],
+        "meanVerifiedSeconds": 6.043,
+        "repairLocations": [],
+        "savedCount": 0
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          11,
+          11,
+          11
+        ],
+        "novelCallsByRepeat": [
+          3,
+          3,
+          3
+        ],
+        "verifiedSecondsByRepeat": [
+          3.219,
+          1.627,
+          1.428
+        ],
+        "meanVerifiedSeconds": 2.091,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r1-stock-reusable-parts-r3-heldout-compose-ac/catalog"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r2-stock-reusable-parts-r3-heldout-compose-ac/catalog"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r3-stock-reusable-parts-r3-heldout-compose-ac/catalog"
+          }
+        ],
+        "savedCount": 3
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          12,
+          12,
+          12
+        ],
+        "verifiedSecondsByRepeat": [
+          5.485,
+          5.204,
+          6.217
+        ],
+        "meanVerifiedSeconds": 5.635,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R4_shared_prefix_new_tail",
+      "requestType": "shared-prefix-new-tail",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          4,
+          4,
+          4
+        ],
+        "novelCallsByRepeat": [
+          5,
+          5,
+          5
+        ],
+        "verifiedSecondsByRepeat": [
+          7.244,
+          5.129,
+          6.094
+        ],
+        "meanVerifiedSeconds": 6.156,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 4,
+            "reason": "unseen-branch",
+            "pathname": "/app/r1-fawn-graph-r4-shared-prefix-new-tail/brief"
+          },
+          {
+            "afterPrefixSteps": 4,
+            "reason": "unseen-branch",
+            "pathname": "/app/r2-fawn-graph-r4-shared-prefix-new-tail/brief"
+          },
+          {
+            "afterPrefixSteps": 4,
+            "reason": "unseen-branch",
+            "pathname": "/app/r3-fawn-graph-r4-shared-prefix-new-tail/brief"
+          }
+        ],
+        "savedCount": 3
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          4,
+          4,
+          4
+        ],
+        "novelCallsByRepeat": [
+          6,
+          6,
+          6
+        ],
+        "verifiedSecondsByRepeat": [
+          3.323,
+          1.986,
+          1.537
+        ],
+        "meanVerifiedSeconds": 2.282,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r1-stock-reusable-parts-r4-shared-prefix-new-tail/catalog"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r2-stock-reusable-parts-r4-shared-prefix-new-tail/catalog"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r3-stock-reusable-parts-r4-shared-prefix-new-tail/catalog"
+          }
+        ],
+        "savedCount": 3
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          9,
+          9,
+          9
+        ],
+        "verifiedSecondsByRepeat": [
+          4.278,
+          3.81,
+          5.578
+        ],
+        "meanVerifiedSeconds": 4.555,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R5_new_entry_shared_suffix",
+      "requestType": "new-entry-shared-suffix",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          7,
+          7,
+          7
+        ],
+        "novelCallsByRepeat": [
+          2,
+          2,
+          2
+        ],
+        "verifiedSecondsByRepeat": [
+          6.756,
+          6.686,
+          6.057
+        ],
+        "meanVerifiedSeconds": 6.5,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 0,
+            "reason": "unseen-branch",
+            "pathname": "/app/r1-fawn-graph-r5-new-entry-shared-suffix/shortlist"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "unseen-branch",
+            "pathname": "/app/r2-fawn-graph-r5-new-entry-shared-suffix/shortlist"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "unseen-branch",
+            "pathname": "/app/r3-fawn-graph-r5-new-entry-shared-suffix/shortlist"
+          }
+        ],
+        "savedCount": 3
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          7,
+          7,
+          7
+        ],
+        "novelCallsByRepeat": [
+          4,
+          4,
+          4
+        ],
+        "verifiedSecondsByRepeat": [
+          3.587,
+          1.407,
+          2.115
+        ],
+        "meanVerifiedSeconds": 2.369,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r1-stock-reusable-parts-r5-new-entry-shared-suffix/shortlist"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r2-stock-reusable-parts-r5-new-entry-shared-suffix/shortlist"
+          },
+          {
+            "afterPrefixSteps": 0,
+            "reason": "no-exact-helper-for-entry-and-goal",
+            "pathname": "/app/r3-stock-reusable-parts-r5-new-entry-shared-suffix/shortlist"
+          }
+        ],
+        "savedCount": 3
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          10,
+          10,
+          10
+        ],
+        "verifiedSecondsByRepeat": [
+          4.229,
+          4.13,
+          5.379
+        ],
+        "meanVerifiedSeconds": 4.579,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R6_changed_middle_repair",
+      "requestType": "changed-middle-repair",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          10,
+          10,
+          10
+        ],
+        "novelCallsByRepeat": [
+          2,
+          2,
+          2
+        ],
+        "verifiedSecondsByRepeat": [
+          7.323,
+          6.796,
+          7.259
+        ],
+        "meanVerifiedSeconds": 7.126,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 5,
+            "reason": "unseen-branch",
+            "pathname": "/app/r1-fawn-graph-r6-changed-middle-repair/gate"
+          },
+          {
+            "afterPrefixSteps": 5,
+            "reason": "unseen-branch",
+            "pathname": "/app/r2-fawn-graph-r6-changed-middle-repair/gate"
+          },
+          {
+            "afterPrefixSteps": 5,
+            "reason": "unseen-branch",
+            "pathname": "/app/r3-fawn-graph-r6-changed-middle-repair/gate"
+          }
+        ],
+        "savedCount": 3
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          10,
+          10,
+          10
+        ],
+        "novelCallsByRepeat": [
+          4,
+          4,
+          4
+        ],
+        "verifiedSecondsByRepeat": [
+          2.482,
+          1.68,
+          2.305
+        ],
+        "meanVerifiedSeconds": 2.155,
+        "repairLocations": [
+          {
+            "afterPrefixSteps": 5,
+            "reason": "missing-locator",
+            "pathname": "/app/r1-stock-reusable-parts-r6-changed-middle-repair/gate"
+          },
+          {
+            "afterPrefixSteps": 5,
+            "reason": "missing-locator",
+            "pathname": "/app/r2-stock-reusable-parts-r6-changed-middle-repair/gate"
+          },
+          {
+            "afterPrefixSteps": 5,
+            "reason": "missing-locator",
+            "pathname": "/app/r3-stock-reusable-parts-r6-changed-middle-repair/gate"
+          }
+        ],
+        "savedCount": 3
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          13,
+          13,
+          13
+        ],
+        "verifiedSecondsByRepeat": [
+          5.402,
+          6.207,
+          7.794
+        ],
+        "meanVerifiedSeconds": 6.468,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R7_post_repair_variant",
+      "requestType": "post-repair-reuse",
+      "isRefusalCase": false,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          12,
+          12,
+          12
+        ],
+        "novelCallsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "verifiedSecondsByRepeat": [
+          8.142,
+          6.093,
+          6.783
+        ],
+        "meanVerifiedSeconds": 7.006,
+        "repairLocations": [],
+        "savedCount": 0
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          12,
+          12,
+          12
+        ],
+        "novelCallsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "verifiedSecondsByRepeat": [
+          2.309,
+          1.672,
+          2.525
+        ],
+        "meanVerifiedSeconds": 2.169,
+        "repairLocations": [],
+        "savedCount": 0
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 3,
+        "refusedSafely": 0,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          13,
+          13,
+          13
+        ],
+        "verifiedSecondsByRepeat": [
+          5.518,
+          7.037,
+          7.258
+        ],
+        "meanVerifiedSeconds": 6.604,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    },
+    {
+      "requestId": "R8_lookalike_unsafe_account_refusal",
+      "requestType": "unsafe-lookalike-refusal",
+      "isRefusalCase": true,
+      "fawnGraph": {
+        "runs": 3,
+        "completed": 0,
+        "refusedSafely": 3,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "verifiedSecondsByRepeat": [
+          2.309,
+          1.354,
+          1.469
+        ],
+        "meanVerifiedSeconds": 1.711,
+        "repairLocations": [],
+        "savedCount": 0
+      },
+      "stockReusableParts": {
+        "runs": 3,
+        "completed": 0,
+        "refusedSafely": 3,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "verifiedSecondsByRepeat": [
+          1.932,
+          0.882,
+          1.533
+        ],
+        "meanVerifiedSeconds": 1.449,
+        "repairLocations": [],
+        "savedCount": 0
+      },
+      "freshPlanning": {
+        "runs": 3,
+        "completed": 0,
+        "refusedSafely": 3,
+        "reusedActionsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "novelCallsByRepeat": [
+          0,
+          0,
+          0
+        ],
+        "verifiedSecondsByRepeat": [
+          0.722,
+          1.018,
+          1.5
+        ],
+        "meanVerifiedSeconds": 1.08,
+        "repairLocations": [],
+        "savedCount": 0
+      }
+    }
+  ],
+  "proposedLiveRunCeiling": {
+    "awaitingUserApproval": true,
+    "maxModelCalls": 240,
+    "maxCostUsd": 8,
+    "maxCallUsd": 0.15,
+    "note": "Three repeats of fawn-graph vs stock-reusable-parts use ~156 planner calls (~66 Fawn + ~90 Stock), well inside 240 calls / $8.00 (adding 1 fresh-planning reference pass brings total to ~226 calls <= 240)."
+  }
+}

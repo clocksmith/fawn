@@ -112,7 +112,20 @@ repeat for fresh planning, winning all 18 matched task-repeat pairs after one
 verified `37`-call learning pass per repeat (mean `88.836 s`). The hand-written
 Playwright script floor took `3.145 s`, `3.373 s` and `3.629 s` (mean `3.382 s`,
 `0` calls), keeping the same claim boundary: reuse beats fresh re-planning, not
-a prepared script.
+a prepared script. A separate
+[controlled preflight of goal-aware overlapping-request reuse](../../reports/fawn-workspace/20261117-overlapping-requests-preflight/decision.json)
+([`overlapping-requests-reuse.js`](../../browser/workspace/qualification/overlapping-requests-reuse.js),
+[request rows](../../reports/fawn-workspace/20261117-overlapping-requests-preflight/request-rows.json),
+[retained traces](../../reports/fawn-workspace/20261117-overlapping-requests-preflight/retained-traces.json))
+separates goal completion predicates (`goalTerminals`) from shared `TraceDag`
+nodes and exercises `63` task-completion cases, `9` lookalike-account refusal
+cases and `3` ambiguous-target probes across `fawn-graph`, `stock-reusable-parts`
+(parameterized helpers, preconditions, persistent notes and outcome checks) and
+`fresh-planning`: all `63` task cases completed (`11`-step zero-call held-out
+`A->C` composition on `R3`, `5+5`-step mid-path repair persistence on `R6`, and
+`12`-step zero-call post-restart replay on `R7`), all `9` lookalike refusals and
+`3` ambiguous probes stopped with zero pre-refusal actions or duplicate effects,
+and no speed or model-cost claim is made before an approved paid run.
 
 Investigation memory now follows source changes. The client re-reads every
 saved repository source on resume or on request, saves a changed file as the

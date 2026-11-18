@@ -72,7 +72,8 @@ export class WorkflowStore {
     for (const entry of Object.values(state.workflowVersions)) {
       if (!exactKeys(entry, ['workflowId', 'revision', 'parentVersion', 'dag']) || !state.workflows[entry.workflowId]
         || !Number.isSafeInteger(entry.revision) || entry.revision < 0
-        || !exactKeys(entry.dag, ['version', 'key', 'limits', 'nodes'])) throw Error('Invalid workflow namespace');
+        || !(exactKeys(entry.dag, ['version', 'key', 'limits', 'nodes'])
+          || exactKeys(entry.dag, ['version', 'key', 'limits', 'nodes', 'goalTerminals']))) throw Error('Invalid workflow namespace');
       TraceDag.restore(entry.dag, this.limits);
       if (entry.revision === 0 ? entry.parentVersion !== null
         : state.workflowVersions[entry.parentVersion]?.revision !== entry.revision - 1
