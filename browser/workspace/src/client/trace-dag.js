@@ -53,14 +53,16 @@ export class TraceDag {
   export() {
     return structuredClone({ version: this.version, key: this.key, limits: this.limits, nodes: [...this.nodes] });
   }
-  solve({ inputs = {}, replanPenalty } = {}) {
+  solve({ inputs = {}, goal = null, replanPenalty } = {}) {
     const availableSlots = new Set(
       Object.entries(inputs)
         .filter(([, value]) => typeof value === 'string')
         .map(([slot]) => this.hash(['slot', slot])),
     );
+    const targetGoal = goal !== null ? this.hash(['goal', goal]) : null;
     return solveRecipeDp(this.nodes, this.limits, {
       availableSlots,
+      targetGoal,
       ...(replanPenalty !== undefined ? { replanPenalty } : {}),
     });
   }
@@ -76,13 +78,21 @@ export class TraceDag {
       || state.nodes.length > limits.maxNodes) throw Error('Invalid trace cache');
     const nodes = new Map();
     let edges = 0;
-    const expectedKeys = state.version === 1 ? 'depth,edges,terminal' : 'depth,edges,repairs,terminal';
     for (const entry of state.nodes) {
       if (!Array.isArray(entry) || entry.length !== 2) throw Error('Invalid trace node');
       const [id, node] = entry;
-      if (!HASH.test(id) || nodes.has(id) || !node || Object.keys(node).sort().join() !== expectedKeys
+      const nodeKeys = node && typeof node === 'object' ? Object.keys(node).sort().join() : '';
+      const validKeys = state.version === 1
+        ? nodeKeys === 'depth,edges,terminal'
+        : (nodeKeys === 'depth,edges,repairs,terminal'
+          || (state.version >= VERSION && node?.terminal === true && nodeKeys === 'depth,edges,goals,repairs,terminal'));
+      if (!HASH.test(id) || nodes.has(id) || !node || !validKeys
         || !Number.isSafeInteger(node.depth) || node.depth < 0 || node.depth > limits.maxSteps
         || typeof node.terminal !== 'boolean' || !Array.isArray(node.edges)) throw Error('Invalid trace node');
+      if (node.goals !== undefined && (!Array.isArray(node.goals) || !node.goals.length
+        || node.goals.some(g => !HASH.test(g)) || new Set(node.goals).size !== node.goals.length)) {
+        throw Error('Invalid trace goals');
+      }
       const repairs = state.version === 1 ? [] : node.repairs;
       if (!Array.isArray(repairs) || repairs.some(next => !HASH.test(next)) || new Set(repairs).size !== repairs.length) {
         throw Error('Invalid trace repair');
@@ -136,6 +146,9 @@ export class TraceDag {
       if (!node) { a.nodes.set(id, incoming); continue; }
       if (targetVersion < VERSION && node.depth !== incoming.depth) throw Error('Workflow depth differs');
       node.terminal ||= incoming.terminal;
+      if (node.terminal && (node.goals?.length || incoming.goals?.length)) {
+        node.goals = [...new Set([...(node.goals ?? []), ...(incoming.goals ?? [])])].sort();
+      }
       for (const next of incoming.repairs) if (!node.repairs.includes(next)) node.repairs.push(next);
       for (const edge of incoming.edges) {
         const match = node.edges.find(existing => existing.next === edge.next
@@ -178,6 +191,11 @@ export class TraceDag {
       }
       const continuesInSecond = !incoming.terminal && (incoming.edges.length > 0 || incoming.repairs.length > 0);
       existing.terminal = continuesInSecond ? false : (existing.terminal || incoming.terminal);
+      if (!existing.terminal) {
+        delete existing.goals;
+      } else if (existing.goals?.length || incoming.goals?.length) {
+        existing.goals = [...new Set([...(existing.goals ?? []), ...(incoming.goals ?? [])])].sort();
+      }
       for (const next of incoming.repairs) if (!existing.repairs.includes(next)) existing.repairs.push(next);
       for (const edge of incoming.edges) {
         const match = existing.edges.find(prev => prev.next === edge.next
@@ -248,6 +266,9 @@ export class TraceDag {
     const term = compressed.terminal;
     const termNode = nodes.get(term.id) ?? { depth: term.depth, edges: [], repairs: [], terminal: false };
     termNode.terminal = true;
+    if (term.goal) {
+      termNode.goals = [...new Set([...(termNode.goals ?? []), term.goal])].sort();
+    }
     nodes.set(term.id, termNode);
 
     const { nodes: reduced } = reduceTraceGraph(nodes, this.limits, { pruneDeadEnds: true, pruneDetours });
@@ -266,19 +287,22 @@ export class TraceDag {
  */
 class TraceSession {
   constructor(dag, { service, owner, pageId, intent, template, inputs = {}, intermediateClicks = [], signal,
-    assertContext = async () => {}, authorizeStep = async () => {}, accountScope = null, fieldGroups = null }) {
+    assertContext = async () => {}, authorizeStep = async () => {}, accountScope = null, fieldGroups = null, goal = null }) {
     if (typeof template !== 'string' || !template || typeof pageId !== 'string' || !pageId
       || typeof intent !== 'string' || !intent) throw Error('Trace requires template, pageId and intent');
+    if (goal !== null && (typeof goal !== 'string' || !goal.trim())) throw Error('Invalid trace goal');
     this.dag = dag;
     this.service = service;
     this.identity = { ...owner, pageId };
     this.intent = intent;
     this.template = template;
+    this.goal = goal;
+    this.goalHash = goal !== null ? dag.hash(['goal', goal]) : null;
     if (accountScope !== null && (typeof accountScope !== 'string' || !accountScope.trim())) throw Error('Invalid trace account scope');
     this.accountScope = accountScope;
     this.fieldScope = fieldGroups ? createFieldGroupScope(fieldGroups, dag.limits.maxSteps) : null;
     this.options = { service, owner, pageId, intent, template, inputs, intermediateClicks, signal,
-      assertContext, authorizeStep, accountScope, fieldGroups };
+      assertContext, authorizeStep, accountScope, fieldGroups, goal };
     this.inputs = new Map(Object.entries(inputs).map(([slot, value]) => [dag.hash(['slot', slot]), value]));
     this.slotNames = new Map(Object.keys(inputs).map(slot => [dag.hash(['slot', slot]), slot]));
     this.assertContext = assertContext;

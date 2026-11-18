@@ -49,7 +49,9 @@ export function compressTraceRecords(records, terminal) {
   const finalId = terminal?.id ?? states.at(-1);
   return {
     records: contracted,
-    terminal: terminal ? { id: finalId, depth: contracted.length } : null,
+    terminal: terminal
+      ? { id: finalId, depth: contracted.length, ...(terminal.goal ? { goal: terminal.goal } : {}) }
+      : null,
     contractedSteps: records.length - contracted.length,
   };
 }
@@ -252,11 +254,13 @@ export function reduceTraceGraph(nodes, limits, { pruneDeadEnds = true, pruneDet
     const sortedEdges = [...dedupedEdges.values()]
       .sort((left, right) => canonicalJson(left).localeCompare(canonicalJson(right)));
     const sortedRepairs = [...new Set(node.repairs ?? [])].sort();
+    const sortedGoals = [...new Set(node.goals ?? [])].sort();
     normalized.set(id, {
       depth: rank.get(id) ?? 0,
       edges: sortedEdges,
       repairs: sortedRepairs,
       terminal: Boolean(node.terminal),
+      ...(node.terminal && sortedGoals.length ? { goals: sortedGoals } : {}),
     });
   }
   return {
@@ -266,7 +270,7 @@ export function reduceTraceGraph(nodes, limits, { pruneDeadEnds = true, pruneDet
 }
 
 /** Backward Bellman dynamic programming over the recipe DAG. */
-export function solveRecipeDp(nodes, limits, { availableSlots = null, replanPenalty = DEFAULT_REPLAN_PENALTY } = {}) {
+export function solveRecipeDp(nodes, limits, { availableSlots = null, targetGoal = null, replanPenalty = DEFAULT_REPLAN_PENALTY } = {}) {
   const { order } = topologicalSort(nodes, limits.maxSteps);
   const values = new Map();
   const terminals = new Map();
@@ -275,7 +279,10 @@ export function solveRecipeDp(nodes, limits, { availableSlots = null, replanPena
   for (let idx = order.length - 1; idx >= 0; idx--) {
     const id = order[idx];
     const node = nodes.get(id);
-    if (node.terminal) {
+    const isTargetTerminal = targetGoal !== null
+      ? Boolean(node.terminal && Array.isArray(node.goals) && node.goals.includes(targetGoal))
+      : Boolean(node.terminal);
+    if (isTargetTerminal) {
       values.set(id, 0);
       terminals.set(id, new Set([id]));
       policy.set(id, { kind: 'terminal', cost: 0 });
