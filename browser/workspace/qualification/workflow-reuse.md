@@ -230,6 +230,7 @@ slicing, persistent notes and automatic outcome checks) and `fresh-planning`:
 
 ```sh
 node browser/workspace/qualification/overlapping-requests-reuse.js --controlled --repeats 3 --out .tmp/track-c-overlapping-preflight-02
+node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedule paired --repeats 3 --max-calls 240 --max-cost-usd 8 --max-call-usd 0.15 --out .tmp/track-c-overlapping-sonnet-01
 ```
 
 - `R1` teaches `A -> B` (`product-brief`); `R2` teaches `B -> C` (`shipping-quote`);
@@ -249,5 +250,11 @@ node browser/workspace/qualification/overlapping-requests-reuse.js --controlled 
   repeat on `stock-reusable-parts`; `0` reused actions and `70` calls on
   `fresh-planning`), `9/9` lookalike-account cases refused safely with `0`
   pre-refusal actions, and `3/3` ambiguous-target probes stopped safely (`0`
-  pre-refusal actions, `0` duplicate or wrong-branch effects). Speed and model-cost
-  comparisons wait on an approved paid run (`--max-calls 240 --max-cost-usd 8 --max-call-usd 0.15`).
+  pre-refusal actions, `0` duplicate or wrong-branch effects). Paid runs require
+  an explicit `--arm-schedule`: `paired` alternates `fawn-graph` and
+  `stock-reusable-parts` across all three repeats (`156` scripted-call equivalents,
+  `120` calls / `$4.00` equal per-arm share inside `--max-calls 240 --max-cost-usd 8 --max-call-usd 0.15`);
+  `paired-plus-fresh-1` adds one `fresh-planning` baseline pass in Repeat 1 (`226`
+  equivalents, `14` calls headroom); `all-three` (`366` equivalents) is rejected
+  before launch under a `240`-call cap. Speed and model-cost comparisons wait on
+  owner approval of the paid schedule.

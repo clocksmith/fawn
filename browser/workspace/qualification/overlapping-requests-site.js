@@ -835,3 +835,86 @@ export function createControlledOverlappingPlanner(spec, request, { isStock = fa
     },
   };
 }
+
+export const SCRIPTED_CALL_EQUIVALENTS_PER_PASS = Object.freeze({
+  'fawn-graph': 22,
+  'stock-reusable-parts': 30,
+  'fresh-planning': 70,
+});
+
+export function resolveOverlappingArmSchedule({
+  armSchedule,
+  repeats,
+  controlled,
+  maxModelCalls,
+  maxCostUsd,
+}) {
+  if (!controlled && !armSchedule) {
+    throw Error(
+      'Paid runs require an explicit --arm-schedule <paired|paired-plus-fresh-1|all-three> matching the approved ceiling',
+    );
+  }
+  const mode = armSchedule ?? 'all-three';
+  const ALL_THREE_ROTATIONS = [
+    ['fawn-graph', 'stock-reusable-parts', 'fresh-planning'],
+    ['stock-reusable-parts', 'fresh-planning', 'fawn-graph'],
+    ['fresh-planning', 'fawn-graph', 'stock-reusable-parts'],
+  ];
+  const PAIRED_ROTATIONS = [
+    ['fawn-graph', 'stock-reusable-parts'],
+    ['stock-reusable-parts', 'fawn-graph'],
+    ['fawn-graph', 'stock-reusable-parts'],
+  ];
+  const PAIRED_PLUS_FRESH_ONCE = [
+    ['fawn-graph', 'stock-reusable-parts', 'fresh-planning'],
+    ['stock-reusable-parts', 'fawn-graph'],
+    ['fawn-graph', 'stock-reusable-parts'],
+  ];
+
+  let scheduleByRepeat;
+  if (mode === 'paired') {
+    scheduleByRepeat = PAIRED_ROTATIONS.slice(0, repeats);
+  } else if (mode === 'paired-plus-fresh-1') {
+    scheduleByRepeat = PAIRED_PLUS_FRESH_ONCE.slice(0, repeats);
+  } else if (mode === 'all-three') {
+    scheduleByRepeat = ALL_THREE_ROTATIONS.slice(0, repeats);
+  } else {
+    throw Error(`Unsupported --arm-schedule: ${mode} (expected paired, paired-plus-fresh-1, or all-three)`);
+  }
+
+  const armPasses = scheduleByRepeat.flat();
+  const scriptedCallEquivalents = armPasses.reduce(
+    (sum, arm) => sum + SCRIPTED_CALL_EQUIVALENTS_PER_PASS[arm],
+    0,
+  );
+  if (!controlled && scriptedCallEquivalents > maxModelCalls) {
+    throw Error(
+      `Arm schedule "${mode}" implies ${scriptedCallEquivalents} scripted-call equivalents across ${repeats} repeat(s), exceeding --max-calls ${maxModelCalls}; use --arm-schedule paired (${repeats * 52} equivalents) or --arm-schedule paired-plus-fresh-1 (${repeats * 52 + 70} equivalents).`,
+    );
+  }
+
+  const perArmCeilings = mode === 'paired'
+    ? {
+        'fawn-graph': {
+          maxCalls: Math.floor(maxModelCalls / 2),
+          maxCostUsd: Number((maxCostUsd / 2).toFixed(4)),
+        },
+        'stock-reusable-parts': {
+          maxCalls: maxModelCalls - Math.floor(maxModelCalls / 2),
+          maxCostUsd: Number((maxCostUsd / 2).toFixed(4)),
+        },
+      }
+    : null;
+
+  return {
+    mode,
+    scheduleByRepeat,
+    totalArmPasses: armPasses.length,
+    expectedTaskCompletionCases: armPasses.length * 7,
+    expectedLookalikeRefusalCases: armPasses.length * 1,
+    expectedAmbiguousProbes: repeats,
+    scriptedCallEquivalents,
+    headroomCallsUnderCap: maxModelCalls - scriptedCallEquivalents,
+    perArmCeilings,
+  };
+}

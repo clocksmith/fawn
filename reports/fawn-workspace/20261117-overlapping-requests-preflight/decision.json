@@ -1006,6 +1006,54 @@
     "maxModelCalls": 240,
     "maxCostUsd": 8,
     "maxCallUsd": 0.15,
-    "note": "Three repeats of fawn-graph vs stock-reusable-parts use ~156 planner calls (~66 Fawn + ~90 Stock), well inside 240 calls / $8.00 (adding 1 fresh-planning reference pass brings total to ~226 calls <= 240)."
+    "explicitArmSchedules": {
+      "paired": {
+        "recommended": true,
+        "command": "node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedule paired --repeats 3 --max-calls 240 --max-cost-usd 8 --max-call-usd 0.15 --out .tmp/track-c-overlapping-sonnet-01",
+        "scheduleByRepeat": [
+          ["fawn-graph", "stock-reusable-parts"],
+          ["stock-reusable-parts", "fawn-graph"],
+          ["fawn-graph", "stock-reusable-parts"]
+        ],
+        "cases": {
+          "taskCompletionCases": 42,
+          "lookalikeRefusalCases": 6,
+          "ambiguousTargetProbes": 3
+        },
+        "scriptedCallEquivalents": 156,
+        "headroomCallsUnder240Cap": 84,
+        "equalPerArmCeilings": {
+          "fawn-graph": { "maxCalls": 120, "maxCostUsd": 4 },
+          "stock-reusable-parts": { "maxCalls": 120, "maxCostUsd": 4 }
+        }
+      },
+      "paired-plus-fresh-1": {
+        "recommended": false,
+        "command": "node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedule paired-plus-fresh-1 --repeats 3 --max-calls 240 --max-cost-usd 8 --max-call-usd 0.15 --out .tmp/track-c-overlapping-sonnet-01",
+        "scheduleByRepeat": [
+          ["fawn-graph", "stock-reusable-parts", "fresh-planning"],
+          ["stock-reusable-parts", "fawn-graph"],
+          ["fawn-graph", "stock-reusable-parts"]
+        ],
+        "cases": {
+          "taskCompletionCases": 49,
+          "lookalikeRefusalCases": 7,
+          "ambiguousTargetProbes": 3
+        },
+        "scriptedCallEquivalents": 226,
+        "headroomCallsUnder240Cap": 14,
+        "caution": "226 scripted-call equivalents leaves only 14 extra planner requests across 23 runs under a 240-call cap; use --arm-schedule paired for generous retry headroom under 240 calls."
+      },
+      "all-three": {
+        "scriptedCallEquivalents": 366,
+        "refusedUnder240Cap": true,
+        "reason": "Pre-launch guard rejects --arm-schedule all-three on paid runs when maxModelCalls < 366."
+      }
+    },
+    "comparisonMetrics": [
+      "correctness (task completions, safe lookalike refusals, wrong-branch and duplicate effects)",
+      "planner cost (calls and measured USD across R1..R7 including learning R1..R2 and repairs R4..R6)",
+      "elapsed time (verified and end-to-end seconds across R1..R7 including learning, replay, repair, verification and browser lifecycle)"
+    ]
   }
 }

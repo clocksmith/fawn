@@ -5,6 +5,7 @@ import {
   computeShippingQuote,
   resolveItemBySearch,
   resolveItemByShortlist,
+  resolveOverlappingArmSchedule,
   startOverlappingRequestsServer,
 } from '../../qualification/overlapping-requests-site.js';
 
@@ -12,6 +13,44 @@ const spec = buildOverlappingRequestsSpec();
 assert.equal(spec.requests.length, 8);
 assert.equal(spec.requests.filter(r => !r.isRefusalCase).length, 7);
 assert.equal(spec.requests.filter(r => r.isRefusalCase).length, 1);
+
+// Verify explicit paid arm-schedule resolution and pre-launch ceiling checks
+assert.throws(
+  () => resolveOverlappingArmSchedule({ armSchedule: null, repeats: 3, controlled: false, maxModelCalls: 240, maxCostUsd: 8 }),
+  /Paid runs require an explicit --arm-schedule/,
+);
+assert.throws(
+  () => resolveOverlappingArmSchedule({ armSchedule: 'all-three', repeats: 3, controlled: false, maxModelCalls: 240, maxCostUsd: 8 }),
+  /366 scripted-call equivalents.*exceeding --max-calls 240/,
+);
+const pairedPlan = resolveOverlappingArmSchedule({
+  armSchedule: 'paired',
+  repeats: 3,
+  controlled: false,
+  maxModelCalls: 240,
+  maxCostUsd: 8,
+});
+assert.equal(pairedPlan.scriptedCallEquivalents, 156);
+assert.equal(pairedPlan.headroomCallsUnderCap, 84);
+assert.equal(pairedPlan.expectedTaskCompletionCases, 42);
+assert.equal(pairedPlan.expectedLookalikeRefusalCases, 6);
+assert.equal(pairedPlan.expectedAmbiguousProbes, 3);
+assert.deepEqual(pairedPlan.perArmCeilings, {
+  'fawn-graph': { maxCalls: 120, maxCostUsd: 4 },
+  'stock-reusable-parts': { maxCalls: 120, maxCostUsd: 4 },
+});
+
+const pairedPlusFreshPlan = resolveOverlappingArmSchedule({
+  armSchedule: 'paired-plus-fresh-1',
+  repeats: 3,
+  controlled: false,
+  maxModelCalls: 240,
+  maxCostUsd: 8,
+});
+assert.equal(pairedPlusFreshPlan.scriptedCallEquivalents, 226);
+assert.equal(pairedPlusFreshPlan.headroomCallsUnderCap, 14);
+assert.equal(pairedPlusFreshPlan.expectedTaskCompletionCases, 49);
+assert.equal(pairedPlusFreshPlan.expectedLookalikeRefusalCases, 7);
 
 for (const req of spec.requests) {
   assert.equal(req.inputsByRepeat.length, 3);

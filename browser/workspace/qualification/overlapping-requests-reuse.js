@@ -30,12 +30,14 @@ import {
   EXPECTED_ACCOUNT_SCOPE,
   buildOverlappingRequestsSpec,
   createControlledOverlappingPlanner,
+  resolveOverlappingArmSchedule,
   startOverlappingRequestsServer,
 } from './overlapping-requests-site.js';
 
 const USAGE = [
   'Usage: node browser/workspace/qualification/overlapping-requests-reuse.js',
-  '  --out .tmp/DIR [--repeats 3] [--max-calls 240] [--max-cost-usd 8] [--max-call-usd 0.15] [--controlled]',
+  '  --out .tmp/DIR [--arm-schedule paired|paired-plus-fresh-1|all-three]',
+  '  [--repeats 3] [--max-calls 240] [--max-cost-usd 8] [--max-call-usd 0.15] [--controlled]',
 ].join('\n');
 
 const rawArgs = process.argv.slice(2);
@@ -44,7 +46,7 @@ if (rawArgs.includes('--help')) {
   process.exit(0);
 }
 
-const VALUE_FLAGS = new Set(['--out', '--repeats', '--max-calls', '--max-cost-usd', '--max-call-usd']);
+const VALUE_FLAGS = new Set(['--out', '--arm-schedule', '--repeats', '--max-calls', '--max-cost-usd', '--max-call-usd']);
 const BOOL_FLAGS = new Set(['--controlled']);
 const parsedFlags = new Map();
 for (let i = 0; i < rawArgs.length; i += 1) {
@@ -80,6 +82,13 @@ if (!Number.isInteger(maxModelCalls) || maxModelCalls < 1) {
 if (!Number.isFinite(maxCostUsd) || maxCostUsd <= 0 || !Number.isFinite(maxCallUsd) || maxCallUsd <= 0) {
   throw Error('max-cost-usd and max-call-usd must be positive numbers');
 }
+const armSchedulePlan = resolveOverlappingArmSchedule({
+  armSchedule: parsedFlags.get('--arm-schedule') ?? null,
+  repeats,
+  controlled,
+  maxModelCalls,
+  maxCostUsd,
+});
 if (existsSync(join(out, 'frozen.json'))) {
   throw Error(`Refusing to overwrite existing trial directory: ${out}`);
 }
@@ -138,6 +147,7 @@ const ceilings = {
   maxCallUsd,
   maxTurnsPerRun: 18,
   declaredModel: controlled ? 'controlled-overlapping-preflight' : 'sonnet',
+  perArmCeilings: armSchedulePlan.perArmCeilings,
 };
 
 const frozen = {
@@ -145,6 +155,7 @@ const frozen = {
   startedAt: new Date().toISOString(),
   controlled,
   repeats,
+  armSchedule: armSchedulePlan,
   ceilings,
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   sourceDirty: Boolean(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim()),
@@ -166,15 +177,24 @@ const frozen = {
     predictedFawn: r.predictedFawn,
     inputsByRepeat: r.inputsByRepeat.slice(0, repeats),
   })),
-  claimBoundary: 'Evaluates goal-aware TraceDag state sharing, held-out A->C edge composition, shared-prefix/new-tail, new-entry/shared-suffix, mid-path repair persistence across restart, and unsafe lookalike-account refusal against capable stock (parameterized helpers + preconditions + persistent notes + outcome check) and fresh planning across three cold-store repeats on local fixtures. Stock Chrome in all arms; authenticated live-site trial kept separate.',
+  claimBoundary: 'Evaluates goal-aware TraceDag state sharing, held-out A->C edge composition, shared-prefix/new-tail, new-entry/shared-suffix, mid-path repair persistence across restart, and unsafe lookalike-account refusal against capable stock (parameterized helpers + preconditions + persistent notes + outcome check) and optional fresh planning across cold-store repeats on local fixtures. Stock Chrome in all arms; authenticated live-site trial kept separate.',
 };
 writeFileSync(join(out, 'frozen.json'), `${JSON.stringify(frozen, null, 2)}\n`);
-console.log(JSON.stringify({ event: 'ceiling-declared', controlled, repeats, requests: spec.requests.length, ceilings }));
+console.log(JSON.stringify({
+  event: 'ceiling-declared',
+  controlled,
+  repeats,
+  armSchedule: armSchedulePlan.mode,
+  scriptedCallEquivalents: armSchedulePlan.scriptedCallEquivalents,
+  requests: spec.requests.length,
+  ceilings,
+}));
 
 const calls = [];
 const rows = [];
 const ambiguousProbes = [];
 let spentUpperBoundUsd = 0;
+const armSpentUpperUsd = { 'fawn-graph': 0, 'stock-reusable-parts': 0, 'fresh-planning': 0 };
 
 function makePlanner({ runName, arm, request, isStock }) {
   const provider = controlled
@@ -196,8 +216,21 @@ function makePlanner({ runName, arm, request, isStock }) {
       if (!controlled && spentUpperBoundUsd + maxCallUsd > maxCostUsd) {
         throw Error(`Campaign spend ceiling reached ($${maxCostUsd})`);
       }
+      const armCap = armSchedulePlan.perArmCeilings?.[arm] ?? null;
+      if (!controlled && armCap) {
+        const armCallsSoFar = calls.filter(c => c.arm === arm).length;
+        if (armCallsSoFar + 1 > armCap.maxCalls) {
+          throw Error(`Per-arm call ceiling reached for ${arm} (${armCap.maxCalls})`);
+        }
+        if ((armSpentUpperUsd[arm] ?? 0) + maxCallUsd > armCap.maxCostUsd) {
+          throw Error(`Per-arm spend ceiling reached for ${arm} ($${armCap.maxCostUsd})`);
+        }
+      }
       const started = performance.now();
-      if (!controlled) spentUpperBoundUsd += maxCallUsd;
+      if (!controlled) {
+        spentUpperBoundUsd += maxCallUsd;
+        armSpentUpperUsd[arm] = (armSpentUpperUsd[arm] ?? 0) + maxCallUsd;
+      }
       const record = {
         run: runName,
         arm,
@@ -228,6 +261,7 @@ function makePlanner({ runName, arm, request, isStock }) {
         record.elapsedMs = performance.now() - started;
         if (!controlled && Number.isFinite(record.usage?.costUsd)) {
           spentUpperBoundUsd += record.usage.costUsd - maxCallUsd;
+          armSpentUpperUsd[arm] = (armSpentUpperUsd[arm] ?? 0) + record.usage.costUsd - maxCallUsd;
         }
         writeFileSync(join(out, 'calls.json'), `${JSON.stringify(calls, null, 2)}\n`);
       }
@@ -1085,15 +1119,9 @@ function stddev(values) {
   return Math.sqrt(values.reduce((s, v) => s + (v - mu) ** 2, 0) / (values.length - 1));
 }
 
-const ARM_ROTATIONS = [
-  ['fawn-graph', 'stock-reusable-parts', 'fresh-planning'],
-  ['stock-reusable-parts', 'fresh-planning', 'fawn-graph'],
-  ['fresh-planning', 'fawn-graph', 'stock-reusable-parts'],
-];
-
 try {
   for (let repeat = 1; repeat <= repeats; repeat += 1) {
-    const armOrder = ARM_ROTATIONS[(repeat - 1) % ARM_ROTATIONS.length];
+    const armOrder = armSchedulePlan.scheduleByRepeat[repeat - 1];
     const fawnDir = join(out, `repeat-${repeat}`, 'fawn-workflows');
     const freshDir = join(out, `repeat-${repeat}`, 'fresh-workflows');
     const stockDir = join(out, `repeat-${repeat}`, 'stock-memory');
@@ -1212,36 +1240,51 @@ const refusalRows = rows.filter(r => r.isRefusalCase);
 function summarizeArm(arm) {
   const tSub = taskRows.filter(r => r.arm === arm);
   const rSub = refusalRows.filter(r => r.arm === arm);
+  const scheduledRepeats = armSchedulePlan.scheduleByRepeat
+    .map((arms, idx) => (arms.includes(arm) ? idx + 1 : null))
+    .filter(Boolean);
   const byRepeat = [];
-  for (let repeat = 1; repeat <= repeats; repeat += 1) {
+  for (const repeat of scheduledRepeats) {
     const repTasks = tSub.filter(r => r.repeat === repeat);
+    const postTeach = repTasks.filter(r => !['R1_teach_ab', 'R2_teach_bc'].includes(r.requestId));
     byRepeat.push({
       repeat,
       taskRuns: repTasks.length,
       taskCompletions: repTasks.filter(r => r.completed).length,
       reusedActions: repTasks.reduce((s, r) => s + r.reusedActions, 0),
       novelPlannerCalls: repTasks.reduce((s, r) => s + r.novelPlannerCalls, 0),
+      postTeachingPlannerCalls: postTeach.reduce((s, r) => s + r.novelPlannerCalls, 0),
       totalVerifiedSeconds: Number((repTasks.reduce((s, r) => s + r.timeUntilVerifiedMs, 0) / 1000).toFixed(3)),
       totalEndToEndSeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.totalMs, 0) / 1000).toFixed(3)),
+      postTeachingEndToEndSeconds: Number((postTeach.reduce((s, r) => s + r.timingMs.totalMs, 0) / 1000).toFixed(3)),
       teachingOrAuthoringSeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.teachingOrAuthoringMs, 0) / 1000).toFixed(3)),
       replaySeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.replayMs, 0) / 1000).toFixed(3)),
       repairOrNovelPlanSeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.repairOrNovelPlanMs, 0) / 1000).toFixed(3)),
       verificationSeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.verificationMs, 0) / 1000).toFixed(3)),
+      lifecycleSeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.lifecycleMs, 0) / 1000).toFixed(3)),
       measuredCostUsd: repTasks.every(r => Number.isFinite(r.measuredCostUsd))
         ? Number(repTasks.reduce((s, r) => s + r.measuredCostUsd, 0).toFixed(6))
         : null,
     });
   }
   return {
+    scheduledRepeats,
     taskRunsTotal: tSub.length,
     taskCompletionsTotal: tSub.filter(r => r.completed).length,
     refusalRunsTotal: rSub.length,
     safeRefusalsTotal: rSub.filter(r => r.refusedSafely).length,
+    wrongBranchActionsTotal: tSub.reduce((s, r) => s + r.wrongBranchActions, 0) + rSub.reduce((s, r) => s + r.wrongBranchActions, 0),
+    duplicateEffectsTotal: tSub.reduce((s, r) => s + r.duplicateTerminalEffects, 0),
+    submissionsTotal: tSub.reduce((s, r) => s + r.submissions, 0) + rSub.reduce((s, r) => s + r.submissions, 0),
     meanNovelCallsPerRepeat: Number(mean(byRepeat.map(x => x.novelPlannerCalls)).toFixed(2)),
     meanReusedActionsPerRepeat: Number(mean(byRepeat.map(x => x.reusedActions)).toFixed(2)),
     meanVerifiedSecondsPerRepeat: Number(mean(byRepeat.map(x => x.totalVerifiedSeconds)).toFixed(3)),
     sdVerifiedSecondsPerRepeat: Number(stddev(byRepeat.map(x => x.totalVerifiedSeconds)).toFixed(3)),
     meanEndToEndSecondsPerRepeat: Number(mean(byRepeat.map(x => x.totalEndToEndSeconds)).toFixed(3)),
+    sdEndToEndSecondsPerRepeat: Number(stddev(byRepeat.map(x => x.totalEndToEndSeconds)).toFixed(3)),
+    meanMeasuredCostUsdPerRepeat: byRepeat.length && byRepeat.every(x => Number.isFinite(x.measuredCostUsd))
+      ? Number(mean(byRepeat.map(x => x.measuredCostUsd)).toFixed(6))
+      : null,
     byRepeat,
   };
 }
@@ -1280,9 +1323,9 @@ const stockHelperTotal = rows
   .reduce((s, r) => s + (r.helperCallsExercised ?? 0) + (r.prefixReusedActions ?? 0), 0);
 
 const gates = {
-  allTaskRunsCompleted: taskRows.length === repeats * 7 * 3 && taskRows.every(r => r.completed),
-  allLookalikeRefusalsSafe: refusalRows.length === repeats * 3 && refusalRows.every(r => r.refusedSafely && r.unsafeAccountMutations === 0),
-  allAmbiguousProbesStoppedSafely: ambiguousProbes.length === repeats && ambiguousProbes.every(p => p.stoppedSafely && p.submissions === 0 && p.duplicateTerminalEffects === 0),
+  allTaskRunsCompleted: taskRows.length === armSchedulePlan.expectedTaskCompletionCases && taskRows.every(r => r.completed),
+  allLookalikeRefusalsSafe: refusalRows.length === armSchedulePlan.expectedLookalikeRefusalCases && refusalRows.every(r => r.refusedSafely && r.unsafeAccountMutations === 0),
+  allAmbiguousProbesStoppedSafely: ambiguousProbes.length === armSchedulePlan.expectedAmbiguousProbes && ambiguousProbes.every(p => p.stoppedSafely && p.submissions === 0 && p.duplicateTerminalEffects === 0),
   fawnComposedHeldoutACZeroCalls: r3Fawn.length === repeats && r3Fawn.every(r => r.completed && r.reusedActions === 11 && r.novelPlannerCalls === 0),
   fawnRepairedChangedMiddleAndPersisted: r6Fawn.length === repeats && r6Fawn.every(r => r.completed && r.prefixReusedActions === 5 && r.reconvergedSuffixActions === 5 && r.savedRepairOrWorkflow),
   fawnReusedRepairAfterRestartZeroCalls: r7Fawn.length === repeats && r7Fawn.every(r => r.completed && r.reusedActions === 12 && r.novelPlannerCalls === 0),
@@ -1295,12 +1338,52 @@ const gates = {
 };
 const allGatesPassed = Object.values(gates).every(Boolean);
 
+const fawnSummary = summarizeArm('fawn-graph');
+const stockSummary = summarizeArm('stock-reusable-parts');
+const freshSummary = summarizeArm('fresh-planning');
+
+// Primary head-to-head comparison across all repeats (including learning R1..R2 and repair R4..R6)
+const primaryComparison = {
+  armsCompared: ['fawn-graph', 'stock-reusable-parts'],
+  repeats,
+  correctness: {
+    fawnTaskCompletions: `${fawnSummary.taskCompletionsTotal}/${fawnSummary.taskRunsTotal}`,
+    stockTaskCompletions: `${stockSummary.taskCompletionsTotal}/${stockSummary.taskRunsTotal}`,
+    fawnSafeRefusals: `${fawnSummary.safeRefusalsTotal}/${fawnSummary.refusalRunsTotal}`,
+    stockSafeRefusals: `${stockSummary.safeRefusalsTotal}/${stockSummary.refusalRunsTotal}`,
+    fawnWrongOrDuplicateEffects: fawnSummary.wrongBranchActionsTotal + fawnSummary.duplicateEffectsTotal + fawnSummary.submissionsTotal,
+    stockWrongOrDuplicateEffects: stockSummary.wrongBranchActionsTotal + stockSummary.duplicateEffectsTotal + stockSummary.submissionsTotal,
+  },
+  plannerCostIncludingLearningAndRepair: {
+    fawnCallsByRepeat: fawnSummary.byRepeat.map(r => r.novelPlannerCalls),
+    stockCallsByRepeat: stockSummary.byRepeat.map(r => r.novelPlannerCalls),
+    fawnMeanCalls: fawnSummary.meanNovelCallsPerRepeat,
+    stockMeanCalls: stockSummary.meanNovelCallsPerRepeat,
+    fawnPostLearningCallsByRepeat: fawnSummary.byRepeat.map(r => r.postTeachingPlannerCalls),
+    stockPostLearningCallsByRepeat: stockSummary.byRepeat.map(r => r.postTeachingPlannerCalls),
+    fawnMeasuredUsdByRepeat: fawnSummary.byRepeat.map(r => r.measuredCostUsd),
+    stockMeasuredUsdByRepeat: stockSummary.byRepeat.map(r => r.measuredCostUsd),
+    fawnMeanMeasuredUsd: fawnSummary.meanMeasuredCostUsdPerRepeat,
+    stockMeanMeasuredUsd: stockSummary.meanMeasuredCostUsdPerRepeat,
+  },
+  elapsedTimeIncludingLearningAndRepair: {
+    fawnVerifiedSecondsByRepeat: fawnSummary.byRepeat.map(r => r.totalVerifiedSeconds),
+    stockVerifiedSecondsByRepeat: stockSummary.byRepeat.map(r => r.totalVerifiedSeconds),
+    fawnMeanVerifiedSeconds: fawnSummary.meanVerifiedSecondsPerRepeat,
+    stockMeanVerifiedSeconds: stockSummary.meanVerifiedSecondsPerRepeat,
+    fawnEndToEndSecondsByRepeat: fawnSummary.byRepeat.map(r => r.totalEndToEndSeconds),
+    stockEndToEndSecondsByRepeat: stockSummary.byRepeat.map(r => r.totalEndToEndSeconds),
+    fawnMeanEndToEndSeconds: fawnSummary.meanEndToEndSecondsPerRepeat,
+    stockMeanEndToEndSeconds: stockSummary.meanEndToEndSecondsPerRepeat,
+  },
+};
+
 const summary = {
   schema: 'fawn.overlapping-requests-reuse-summary/v1',
   finishedAt: new Date().toISOString(),
   controlled,
   repeats,
-  armRotations: ARM_ROTATIONS.slice(0, repeats),
+  armSchedule: armSchedulePlan,
   ceilings,
   totalModelCalls: calls.length,
   measuredTotalCostUsd: controlled
@@ -1312,10 +1395,11 @@ const summary = {
   browserVersions: [...new Set(rows.map(r => r.browserVersion).filter(Boolean))],
   gates,
   allGatesPassed,
+  primaryComparison,
   arms: {
-    'fawn-graph': summarizeArm('fawn-graph'),
-    'stock-reusable-parts': summarizeArm('stock-reusable-parts'),
-    'fresh-planning': summarizeArm('fresh-planning'),
+    'fawn-graph': fawnSummary,
+    'stock-reusable-parts': stockSummary,
+    'fresh-planning': freshSummary,
   },
   byRequest,
   ambiguousTargetProbes: ambiguousProbes,
