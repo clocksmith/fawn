@@ -125,7 +125,13 @@ cases and `3` ambiguous-target probes across `fawn-graph`, `stock-reusable-parts
 `A->C` composition on `R3`, `5+5`-step mid-path repair persistence on `R6`, and
 `12`-step zero-call post-restart replay on `R7`), all `9` lookalike refusals and
 `3` ambiguous probes stopped with zero pre-refusal actions or duplicate effects,
-and no speed or model-cost claim is made before an approved paid run.
+and no speed or model-cost claim is made before an approved paid run
+([approval spec](../../browser/workspace/qualification/overlapping-requests-approval.md),
+[authoring-cost receipt](../../reports/fawn-workspace/20261118-overlapping-requests-approval/authoring-cost-summary.json):
+`72` SLOC hand-written `R1..R8` script reaches `4.200 s` verified at `0` calls
+after a `+11` SLOC manual `Gate_v2` patch, while `461`-SLOC `stock-reusable-parts`
+spends `30` vs `22` planner calls/repeat and `17` vs `9` post-teaching calls for
+the same `44/45` reused actions).
 
 Investigation memory now follows source changes. The client re-reads every
 saved repository source on resume or on request, saves a changed file as the

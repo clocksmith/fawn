@@ -1,0 +1,446 @@
+{
+  "schema": "fawn.stock-authoring-cost-summary/v1",
+  "generatedAt": "2026-11-18T13:10:52.089Z",
+  "paidModelCalls": 0,
+  "measuredCostUsd": 0,
+  "loopbackOnly": true,
+  "browserVersion": "158.0.8127.36",
+  "ordinarySixTaskStockScripts": {
+    "description": "Hand-authored per-task Playwright scripts + runner wrapper behind the 3.382s 0-call floor in 20261117-ordinary-workflow-reuse",
+    "perTaskScripts": {
+      "file": "browser/workspace/qualification/ordinary-tasks-site.js",
+      "fileSha256": "02da25ba2dd261229a45d197ccec4d80da3e9459e6503165e589e9531e946b67",
+      "blockCount": 6,
+      "blocks": [
+        {
+          "lineRange": "645-652",
+          "rawLines": 8,
+          "sloc": 8,
+          "bytes": 579,
+          "playwrightOps": 12
+        },
+        {
+          "lineRange": "708-715",
+          "rawLines": 8,
+          "sloc": 8,
+          "bytes": 605,
+          "playwrightOps": 12
+        },
+        {
+          "lineRange": "767-773",
+          "rawLines": 7,
+          "sloc": 7,
+          "bytes": 387,
+          "playwrightOps": 6
+        },
+        {
+          "lineRange": "820-826",
+          "rawLines": 7,
+          "sloc": 7,
+          "bytes": 526,
+          "playwrightOps": 10
+        },
+        {
+          "lineRange": "887-895",
+          "rawLines": 9,
+          "sloc": 9,
+          "bytes": 698,
+          "playwrightOps": 14
+        },
+        {
+          "lineRange": "949-955",
+          "rawLines": 7,
+          "sloc": 7,
+          "bytes": 521,
+          "playwrightOps": 10
+        }
+      ],
+      "totals": {
+        "rawLines": 46,
+        "sloc": 46,
+        "bytes": 3316,
+        "playwrightOps": 64
+      }
+    },
+    "runnerWrapper": {
+      "file": "browser/workspace/qualification/ordinary-workflow-reuse.js",
+      "lineRange": "358-428",
+      "fileSha256": "c4ecbc883bb05566a7be3ea624473265b7211ec7c632818b321e5cac094da3fd",
+      "rawLines": 71,
+      "sloc": 71,
+      "bytes": 2273,
+      "playwrightOps": 1
+    },
+    "combinedAuthoringSurface": {
+      "sloc": 117,
+      "bytes": 5589,
+      "explicitPlaywrightOps": 65,
+      "fawnPerTaskAuthoringSloc": 0
+    }
+  },
+  "overlappingHandwrittenStockScript": {
+    "description": "Hand-authored static Playwright script on R1..R8 showing 0-call execution floor AND manual code-maintenance cost when Gate_v2 replaces Gate_v1 on R6",
+    "codeSurfaceFullPatched": {
+      "rawLines": 78,
+      "sloc": 72,
+      "bytes": 3357,
+      "playwrightOps": 31
+    },
+    "manualGateV2RepairPatchSurface": {
+      "rawLines": 12,
+      "sloc": 11,
+      "bytes": 503,
+      "playwrightOps": 2
+    },
+    "v1BeforeManualRepairPatch": {
+      "supportGateV2": false,
+      "taskCompletions": 5,
+      "taskTotal": 7,
+      "failedTaskIds": [
+        {
+          "requestId": "R6_changed_middle_repair",
+          "errorCode": "missing-locator"
+        },
+        {
+          "requestId": "R7_post_repair_variant",
+          "errorCode": "missing-locator"
+        }
+      ],
+      "lookalikeRefusalSafe": true,
+      "ambiguousProbeSafe": true,
+      "totalTaskVerifiedSeconds": 4.883,
+      "totalTaskEndToEndSeconds": 5.355,
+      "rows": [
+        {
+          "requestId": "R1_teach_ab",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.957,
+          "endToEndSeconds": 1.011,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R2_teach_bc",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.593,
+          "endToEndSeconds": 0.655,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R3_heldout_compose_ac",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.688,
+          "endToEndSeconds": 0.756,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R4_shared_prefix_new_tail",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.645,
+          "endToEndSeconds": 0.712,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R5_new_entry_shared_suffix",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.675,
+          "endToEndSeconds": 0.751,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R6_changed_middle_repair",
+          "isRefusalCase": false,
+          "completed": false,
+          "refusedSafely": false,
+          "errorCode": "missing-locator",
+          "verifiedSeconds": 0.672,
+          "endToEndSeconds": 0.752,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R7_post_repair_variant",
+          "isRefusalCase": false,
+          "completed": false,
+          "refusedSafely": false,
+          "errorCode": "missing-locator",
+          "verifiedSeconds": 0.654,
+          "endToEndSeconds": 0.718,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R8_lookalike_unsafe_account_refusal",
+          "isRefusalCase": true,
+          "completed": false,
+          "refusedSafely": true,
+          "errorCode": "script-account-precondition-refused",
+          "verifiedSeconds": 0.443,
+          "endToEndSeconds": 0.532,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        }
+      ]
+    },
+    "v2AfterManualRepairPatch": {
+      "supportGateV2": true,
+      "taskCompletions": 7,
+      "taskTotal": 7,
+      "failedTaskIds": [],
+      "lookalikeRefusalSafe": true,
+      "ambiguousProbeSafe": true,
+      "totalTaskVerifiedSeconds": 4.2,
+      "totalTaskEndToEndSeconds": 4.66,
+      "rows": [
+        {
+          "requestId": "R1_teach_ab",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.532,
+          "endToEndSeconds": 0.596,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R2_teach_bc",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.593,
+          "endToEndSeconds": 0.661,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R3_heldout_compose_ac",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.616,
+          "endToEndSeconds": 0.684,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R4_shared_prefix_new_tail",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.605,
+          "endToEndSeconds": 0.666,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R5_new_entry_shared_suffix",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.572,
+          "endToEndSeconds": 0.637,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R6_changed_middle_repair",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.627,
+          "endToEndSeconds": 0.699,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R7_post_repair_variant",
+          "isRefusalCase": false,
+          "completed": true,
+          "refusedSafely": false,
+          "errorCode": null,
+          "verifiedSeconds": 0.654,
+          "endToEndSeconds": 0.716,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        },
+        {
+          "requestId": "R8_lookalike_unsafe_account_refusal",
+          "isRefusalCase": true,
+          "completed": false,
+          "refusedSafely": true,
+          "errorCode": "script-account-precondition-refused",
+          "verifiedSeconds": 0.395,
+          "endToEndSeconds": 0.463,
+          "submissions": 0,
+          "unsafeAccountMutations": 0
+        }
+      ]
+    }
+  },
+  "capableStockReusablePartsArm": {
+    "description": "Custom parameterized-helper + precondition + [startStep,endStep) slice-dispatch harness in overlapping-requests-reuse.js vs built-in WorkflowStore.run() caller wiring",
+    "customHarnessSurface": {
+      "promptAndToolContract": {
+        "file": "browser/workspace/qualification/overlapping-requests-reuse.js",
+        "lineRange": "102-115",
+        "fileSha256": "d80666511169d66959cda06bf04bcefe107c1e753545de854d384db61e04e22c",
+        "rawLines": 14,
+        "sloc": 12,
+        "bytes": 1566,
+        "playwrightOps": 0
+      },
+      "runtimeAndSliceDispatcher": {
+        "file": "browser/workspace/qualification/overlapping-requests-reuse.js",
+        "lineRange": "524-994",
+        "fileSha256": "d80666511169d66959cda06bf04bcefe107c1e753545de854d384db61e04e22c",
+        "rawLines": 471,
+        "sloc": 449,
+        "bytes": 19624,
+        "playwrightOps": 18
+      },
+      "totalCustomSloc": 461,
+      "totalCustomBytes": 21190
+    },
+    "fawnCallerWiringSurface": {
+      "callerBlock": {
+        "file": "browser/workspace/qualification/overlapping-requests-reuse.js",
+        "lineRange": "347-390",
+        "fileSha256": "d80666511169d66959cda06bf04bcefe107c1e753545de854d384db61e04e22c",
+        "rawLines": 44,
+        "sloc": 43,
+        "bytes": 1564,
+        "playwrightOps": 0
+      },
+      "bespokeHelperHarnessSloc": 0
+    },
+    "plannerCallComparisonPerRepeat": {
+      "teachingCallsR1R2": {
+        "fawnGraph": 13,
+        "stockReusableParts": 13,
+        "freshPlanning": 13
+      },
+      "postTeachingCallsR3ToR7": {
+        "fawnGraph": 9,
+        "stockReusableParts": 17,
+        "freshPlanning": 57
+      },
+      "totalCallsR1ToR7": {
+        "fawnGraph": 22,
+        "stockReusableParts": 30,
+        "freshPlanning": 70
+      },
+      "reusedActionsR3ToR7": {
+        "fawnGraph": 44,
+        "stockReusableParts": 44,
+        "freshPlanning": 0
+      },
+      "fawnCallReductionVsCapableStockOverallPct": 26.7,
+      "fawnCallReductionVsCapableStockPostTeachingPct": 47.1,
+      "perRequestBreakdown": [
+        {
+          "requestId": "R1_teach_ab",
+          "requestType": "teach-segment-ab",
+          "reusedActionsBothArms": 0,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 5,
+          "stockPlannerCalls": 5,
+          "freshPlannerCalls": 5,
+          "extraStockCallsOverFawn": 0,
+          "whyDifferenceOccurs": "Initial teaching pass on unseen segment: identical action-by-action planning"
+        },
+        {
+          "requestId": "R2_teach_bc",
+          "requestType": "teach-segment-bc",
+          "reusedActionsBothArms": 0,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 8,
+          "stockPlannerCalls": 8,
+          "freshPlannerCalls": 8,
+          "extraStockCallsOverFawn": 0,
+          "whyDifferenceOccurs": "Initial teaching pass on unseen segment: identical action-by-action planning"
+        },
+        {
+          "requestId": "R3_heldout_compose_ac",
+          "requestType": "heldout-composition",
+          "reusedActionsBothArms": 11,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 0,
+          "stockPlannerCalls": 3,
+          "freshPlannerCalls": 12,
+          "extraStockCallsOverFawn": 3,
+          "whyDifferenceOccurs": "Fawn TraceDag composes A->B + B->C across goalTerminals in 0 calls; Stock has no (catalog, shipping-quote) helper yet so planner spends 3 calls invoking call_helper(A->B), call_helper(B->C), and finish"
+        },
+        {
+          "requestId": "R4_shared_prefix_new_tail",
+          "requestType": "shared-prefix-new-tail",
+          "reusedActionsBothArms": 4,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 5,
+          "stockPlannerCalls": 6,
+          "freshPlannerCalls": 9,
+          "extraStockCallsOverFawn": 1,
+          "whyDifferenceOccurs": "Fawn auto-replays 4-step A->B prefix to checkpoint B before calling planner (5 novel tail calls); Stock invokes planner at step 0 to emit call_helper(A->B) (+1 call = 6 calls)"
+        },
+        {
+          "requestId": "R5_new_entry_shared_suffix",
+          "requestType": "new-entry-shared-suffix",
+          "reusedActionsBothArms": 7,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 2,
+          "stockPlannerCalls": 4,
+          "freshPlannerCalls": 10,
+          "extraStockCallsOverFawn": 2,
+          "whyDifferenceOccurs": "Fawn plans 2 novel E->B steps and auto-reconverges onto 7-step B->C suffix + oracle finish (2 calls); Stock plans 2 E->B steps then spends +2 calls on call_helper(B->C) and finish (4 calls)"
+        },
+        {
+          "requestId": "R6_changed_middle_repair",
+          "requestType": "changed-middle-repair",
+          "reusedActionsBothArms": 10,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 2,
+          "stockPlannerCalls": 4,
+          "freshPlannerCalls": 13,
+          "extraStockCallsOverFawn": 2,
+          "whyDifferenceOccurs": "Fawn auto-replays 5 prefix steps, plans 2 Gate_v2 repair steps, and auto-reconverges onto 5-step QuoteForm->C suffix (2 calls); Stock auto-replays 5 steps, plans 2 Gate_v2 steps, then spends +2 calls on call_helper(QuoteForm->C slice [2,7)) and finish (4 calls)"
+        },
+        {
+          "requestId": "R7_post_repair_variant",
+          "requestType": "post-repair-reuse",
+          "reusedActionsBothArms": 12,
+          "stockMatchesReuse": true,
+          "fawnPlannerCalls": 0,
+          "stockPlannerCalls": 0,
+          "freshPlannerCalls": 13,
+          "extraStockCallsOverFawn": 0,
+          "whyDifferenceOccurs": "Exact (startRoute, goal) match after repair: both auto-replay 12 actions with 0 calls"
+        }
+      ]
+    }
+  },
+  "plainTakeaway": "Hand-written Playwright scripts remain the raw speed floor (~4.2s verified / 4.66s end-to-end across R1..R7 with 0 model calls), but require 72 SLOC (31 explicit Playwright selector/navigation ops) and fail on R6..R7 (5/7 completed) when Gate_v2 ships until a developer edits code (+11 SLOC). Upgrading stock automation with LLM-driven reusable helpers removes per-route manual scripting at the cost of 461 SLOC of custom helper/precondition/slice machinery, yet flat (startRoute, goal) helpers still cannot compose A->B + B->C or reconverge onto a shared suffix without asking the planner to pick and stitch call_helper slices—spending 30 vs 22 planner calls per repeat overall, and 17 vs 9 planner calls after R1..R2 teaching (-47.1% post-teaching calls in Fawn for the same 44/45 reused actions)."
+}

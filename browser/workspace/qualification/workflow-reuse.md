@@ -217,7 +217,8 @@ site writes:
   at `15.032 s` by `bounded-close.js` (`34.198 s` total); the other 71 runs closed
   in under `1 s`. Reuse beats fresh re-planning after one verified learning pass,
   while the prepared Playwright script remains faster on execution time (`3.382 s`
-  vs `12.874 s`) with script authoring effort unmeasured.
+  vs `12.874 s`) at the cost of `117` SLOC (`65` explicit Playwright operations) of
+  hand-authored script and runner code ([authoring-cost summary](../../../reports/fawn-workspace/20261118-overlapping-requests-approval/authoring-cost-summary.json)).
 
 ## Goal-aware overlapping requests and mid-path repair (controlled preflight)
 
@@ -257,4 +258,13 @@ node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedul
   `paired-plus-fresh-1` adds one `fresh-planning` baseline pass in Repeat 1 (`226`
   equivalents, `14` calls headroom); `all-three` (`366` equivalents) is rejected
   before launch under a `240`-call cap. Speed and model-cost comparisons wait on
-  owner approval of the paid schedule.
+  owner approval of the [one-page paid-run spec](./overlapping-requests-approval.md),
+  which also binds [`measure-stock-authoring-cost.js`](./measure-stock-authoring-cost.js)
+  ([receipt](../../../reports/fawn-workspace/20261118-overlapping-requests-approval/authoring-cost-summary.json)):
+  a hand-written Playwright script across `R1..R8` runs in `4.200 s` verified
+  (`4.660 s` end-to-end, `0` calls) using `72` SLOC (`31` Playwright ops) and breaks
+  on `R6..R7` (`5/7` completed) until manually patched (`+11` SLOC), while the
+  capable `stock-reusable-parts` arm requires `461` SLOC of custom helper/slice
+  harness code and spends `30` vs `22` total planner calls per repeat (`17` vs `9`
+  post-teaching calls across `R3..R7` to stitch `call_helper` slices for the same
+  `44/45` reused actions).
