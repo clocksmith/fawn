@@ -33,7 +33,7 @@ import { judgeChangingSourceInvestigation, comparisonValidity, ACCEPTANCE } from
 
 const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const client = JSON.parse(readFileSync(join(repoRoot, 'config/fawn-workspace-client.json')));
-const help = 'Usage: node browser/workspace/qualification/changing-source-investigation.js --out DIR --before COMMIT --after COMMIT [--arms fawn,stock] [--max-cost-usd 12] [--max-request-usd 1.5]';
+const help = 'Usage: node browser/workspace/qualification/changing-source-investigation.js --out DIR --before COMMIT --after COMMIT [--arms fawn,stock] [--max-cost-usd 12, split equally between arms] [--max-request-usd 1.5]';
 const args = process.argv.slice(2);
 if (args.includes('--help')) { console.log(help); process.exit(0); }
 const value = (flag, fallback = null) => { const i = args.indexOf(flag); return i < 0 ? fallback : args[i + 1]; };
@@ -66,7 +66,7 @@ const maxRequestCostUsd = Number(value('--max-request-usd', '1.5'));
 if (!(maxRequestCostUsd > 0)) throw Error('Invalid per-request cap');
 const REQUIRED_COMPLETION = Object.freeze({ requiredRecords: Object.freeze({ finding: 1, hypothesis: 2, question: 1, decision: 1 }) });
 const POLICY = Object.freeze({ firstModel: 'claude-opus-5-5', resumeModel: 'claude-sonnet-5-5', firstTurns: 18, resumeTurns: 24,
-  maxTotalCostUsd: Number(value('--max-cost-usd', '12')), maxRequestCostUsd, before, after, sources: SOURCES, changedSources: changedBetween, docsUrl: DOCS_URL,
+  maxTotalCostUsd: Number(value('--max-cost-usd', '12')), maxArmCostUsd: Number(value('--max-cost-usd', '12')) / arms.length, maxRequestCostUsd, before, after, sources: SOURCES, changedSources: changedBetween, docsUrl: DOCS_URL,
   requiredCompletion: REQUIRED_COMPLETION,
   interruptAfter: 'a record rests on evidence from a source that changes between the two commits', acceptance: ACCEPTANCE });
 const GOAL = 'Explain why releasing a Fawn workspace can stall for minutes on stock Chrome, and what each browser adapter does about it.';
@@ -84,21 +84,24 @@ const NOTE = 'Days have passed and the repository has new commits since the last
 const announce = message => console.log(`[${new Date().toISOString()}] ${message}`);
 // The tracker's log is a summary, as the Fawn handoff is: long inputs and outputs are clipped, and their content stays in the saved records.
 const logClip = value => { const text = typeof value === 'string' ? value : JSON.stringify(value ?? null); return text.length <= 400 ? value : `${text.slice(0, 400)}…`; };
-let spent = 0;
+// Each arm has its own equal share of the ceiling. A shared running total let the arm that ran first
+// use up the allowance of the arm that ran second.
+const spentBy = Object.fromEntries(arms.map(arm => [arm, 0]));
+const totalSpent = () => Object.values(spentBy).reduce((sum, value) => sum + value, 0);
 const calls = [];
 function planner(arm, phase, model, tools = PLANNER_TOOLS) {
   const provider = createCliPlanner({ executable: process.env.FAWN_CLAUDE_BIN ?? 'claude', model, tools,
     directory: join(out, arm, `planner-${phase}`), config: { ...client, cliMaxBudgetUsd: maxRequestCostUsd } });
   return { identity: provider.identity, async next(context, options) {
-    if (spent + maxRequestCostUsd > POLICY.maxTotalCostUsd) throw Error('Run spend ceiling reached');
+    if (spentBy[arm] + maxRequestCostUsd > POLICY.maxArmCostUsd) throw Error('Run spend ceiling reached');
     const started = performance.now();
     try {
       const result = await provider.next(context, options);
-      spent += result.usage?.costUsd ?? maxRequestCostUsd;
+      spentBy[arm] += result.usage?.costUsd ?? maxRequestCostUsd;
       calls.push({ arm, phase, model, tool: result.tool, ms: performance.now() - started, costUsd: result.usage?.costUsd ?? null, models: result.usage?.models });
       return result;
     } catch (error) {
-      spent += error.usage?.costUsd ?? maxRequestCostUsd;
+      spentBy[arm] += error.usage?.costUsd ?? maxRequestCostUsd;
       calls.push({ arm, phase, model, error: error.message, ms: performance.now() - started, costUsd: error.usage?.costUsd ?? null });
       throw error;
     }
@@ -307,12 +310,12 @@ const projection = row => row.error ? { arm: row.arm, error: row.error.split('\n
 const comparison = comparisonValidity(rows.map(row => ({ ...row, restingOnChangingSource: row.restingOnChangingSource ?? [] })));
 const report = { schemaVersion: 1, classification: 'diagnostic: one paired investigation across a real source change', policy: POLICY, comparison,
   harnessCommit: git(repoRoot, 'rev-parse', 'HEAD'), harnessDirty: !!git(repoRoot, 'status', '--porcelain', '--', 'browser/workspace'),
-  rows, calls, spentUsd: spent, publicProjection: rows.map(projection),
+  rows, calls, spentUsd: totalSpent(), spentByArmUsd: spentBy, publicProjection: rows.map(projection),
   limitations: ['One pair; model variance can flip any single verdict.',
     'The checks are mechanical: records exist, are intact, are linked and rest on current sources. Whether the diagnosis is correct is ungraded until a person grades it.',
     'The control is told which saved files changed; it is not given the list of records that rest on them.',
     'The first agent is stopped and its browser ended in-process; the owning process is not killed.',
     'The documentation page is live and may differ between arms and runs.'] };
 writeFileSync(join(out, 'changing-source-investigation.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ report: join(out, 'changing-source-investigation.json'), spentUsd: spent, comparison, rows: report.publicProjection }, null, 1));
+console.log(JSON.stringify({ report: join(out, 'changing-source-investigation.json'), spentUsd: totalSpent(), comparison, rows: report.publicProjection }, null, 1));
 process.exit(rows.every(row => !row.error) ? 0 : 1);
