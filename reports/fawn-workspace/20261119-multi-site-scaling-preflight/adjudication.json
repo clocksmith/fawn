@@ -1,0 +1,76 @@
+{
+  "schema": "fawn.multi-site-scaling-adjudication/v1",
+  "recordedOn": "2026-11-19",
+  "retainedPriorReceipt": "reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json",
+  "retainedPriorCurve": "reports/fawn-workspace/20261118-multi-site-scaling-preflight/scaling-curve.json",
+  "rerunReceipt": "reports/fawn-workspace/20261119-multi-site-scaling-preflight/decision.json",
+  "rerunCurve": "reports/fawn-workspace/20261119-multi-site-scaling-preflight/scaling-curve.json",
+  "adjudicatedDefects": [
+    {
+      "defectId": "stock-90s-verify-timeout-on-early-helper-stop",
+      "observedInRetained20261118": {
+        "tasksSeen": [21, 22, 23, 24],
+        "taskPhase": "T6_gate_v2_repair",
+        "stockMeanVerifiedSecondsOnAffectedRows": [90.819, 90.656, 90.655, 90.672],
+        "stockOverallMeanVerifiedSecondsPerTask": 13.507,
+        "stockMeanExcludingFourRows": 0.642
+      },
+      "rootCauseTrace": "During T6_gate_v2_repair, stock-reusable-parts auto-replayed its saved T3 helper (search -> primary-review) through step 4 and stopped at step 5 when the v1 gate button (#gate-v1-btn) matched 0 locators on the drifted v2 gate screen (helperStoppedEarly = true, refusalCode = null). browser/workspace/qualification/multi-site-scaling.js then unconditionally called task.verify(page, ...) while still on the gate_v2 page before falling back to the planner. Inside verifyPrimary (multi-site-scaling-site.js), three sequential Playwright page.locator('#rev-...').textContent().catch(() => null) calls each waited for Playwright's default 30,000 ms action timeout (3 x 30.0 s = 90.0 s per site).",
+      "fixApplied": "Guarded auto-replay verification with !helperStoppedEarly in multi-site-scaling.js so an incomplete helper stop falls back to the planner immediately without running terminal review locators on an intermediate screen, and switched multi-site-scaling-site.js verifiers to immediate synchronous DOM state reads via page.evaluate.",
+      "measuredInRerun20261119": {
+        "tasksSeen": [21, 22, 23, 24],
+        "stockMeanVerifiedSecondsOnAffectedRows": [0.76, 0.738, 0.78, 0.876],
+        "stockOverallMeanVerifiedSecondsPerTask": 0.689,
+        "ninetySecondTimeoutRowsRemaining": 0
+      }
+    },
+    {
+      "defectId": "stock-skipped-saved-hab-helper-and-missing-persistent-notes",
+      "observedInRetained20261118": {
+        "t3TasksSeen": [9, 10, 11, 12],
+        "stockCallsOnT3": 6,
+        "stockTotalCallsPerOrder": 120
+      },
+      "rootCauseTrace": "On T3 (held-out A -> C composition), scriptedStockDecision in multi-site-scaling.js re-executed A -> B via raw click/fill steps before calling hBC, skipping the hAB helper it had already saved on T1. Stock also lacked the persistentNotes (save_note) tool present in overlapping-requests-reuse.js.",
+      "fixApplied": "Updated scriptedStockDecision to invoke call_helper(hAB) at entry on T3 followed by call_helper(hBC) at the intermediate form, and added persistentNotes / save_note parity.",
+      "measuredInRerun20261119": {
+        "stockMeanCallsMiddle9To20": 4.17,
+        "stockTotalCallsPerOrder": 110,
+        "fawnTotalCallsPerOrder": 78,
+        "freshTotalCallsPerOrder": 238
+      }
+    },
+    {
+      "defectId": "four-sites-were-label-swapped-copies-of-one-template",
+      "observedInRetained20261118": {
+        "siteTemplateCount": 1,
+        "uniformControlTypes": true
+      },
+      "fixApplied": "Replaced the uniform template in multi-site-scaling-site.js with four structurally distinct site architectures: procurement (2-field input[type=search]+select search, 2-field input[type=text]+select detail, dl review), helpdesk (1-field search, 3-field input+select+textarea triage, section review), inventory (1-field barcode lookup, 3-field transfer form, table review), and compliance (select-first filter + keyword, 2-field select+textarea, article review), yielding distinct step counts across sites.",
+      "measuredInRerun20261119": {
+        "distinctDomContainers": ["dl", "section", "table", "article"],
+        "completions": "224/224",
+        "safeRefusals": "32/32"
+      }
+    },
+    {
+      "defectId": "fawn-300ms-polling-value-settle-overhead",
+      "observedBefore20261119": {
+        "serviceValueSettleMs": 300,
+        "pilotRehearsalFawnVerifiedSeconds": 20.588,
+        "pilotRehearsalStockVerifiedSeconds": 4.931,
+        "scalingFawnMeanVerifiedSecondsPerTask": 2.202
+      },
+      "rootCauseTrace": "config/fawn-workspace-service.json set dispatch.valueSettleMs to 300 with completionPollMs = 10, causing WorkspaceService.#awaitValue to execute ~30 sequential timer + probe.element IPC roundtrips (~395 ms) on every fill and select action (~15.0 s across 38 fill/select actions in R1..R7).",
+      "fixApplied": "Tightened dispatch.valueSettleMs to 40 ms with a 2-step bounded settle check ([20 ms, 20 ms]) in browser/workspace/src/service.js, eliminated duplicate probeUrl IPC in #checkLiveDispatch, added per-action dispatchProfileMs timestamps in ACTION_OUTCOME evidence, and verified real-Chromium hydration-reset detection in choice-controls.test.js and uploads.test.js across Playwright and CDP adapters.",
+      "measuredInRerun20261119": {
+        "serviceValueSettleMs": 40,
+        "pilotRehearsal3RepeatFawnMeanVerifiedSeconds": 7.827,
+        "pilotRehearsal3RepeatStockMeanVerifiedSeconds": 5.633,
+        "pilotBreakEvenSecondsPerSavedCall": 0.274,
+        "meanTotalDispatchMsPerAction": 63.364,
+        "scalingFawnMeanVerifiedSecondsPerTask": 1.063
+      }
+    }
+  ]
+}

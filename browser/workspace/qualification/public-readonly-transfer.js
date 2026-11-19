@@ -2,9 +2,8 @@
 // Strict read-only public-site transfer harness for Track C1.
 //
 // Evaluates whether Fawn's frozen TraceDag v3 transfers to an owner-selected external site
-// without permitting any non-GET/HEAD mutation, form submission, or cross-origin write.
-// In --controlled mode, exercises the read-only network interceptor and workflow transfer
-// against a local read-only documentation-index fixture whose POST endpoints are verified blocked.
+// without permitting any non-GET/HEAD mutation, form submission, or unapproved origin traffic,
+// while strictly enforcing --max-calls, --max-cost-usd, and --max-call-usd pre-call ceilings.
 
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -17,11 +16,52 @@ import { WorkflowStore } from '../src/client/workflow-store.js';
 import { InvestigationStore } from '../src/client/investigation.js';
 import { createCliPlanner } from '../src/client/cli-planner.js';
 import { WORKFLOW_SYSTEM, WORKFLOW_TOOLS } from '../src/client/workflow-agent.js';
+import { createDispatchBudgetLedger, validateBudgetCeilings } from './budget-ledger.js';
 
 export const ALLOWED_READONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 export function isReadOnlyHttpMethod(method) {
   return ALLOWED_READONLY_METHODS.has(String(method ?? '').toUpperCase());
+}
+
+export function parseReadOnlyBudgetCeilings({
+  controlled,
+  maxCallsRaw,
+  maxCostUsdRaw,
+  maxCallUsdRaw,
+}) {
+  if (!controlled && (maxCallsRaw === null || maxCallsRaw === undefined || maxCostUsdRaw === null || maxCostUsdRaw === undefined)) {
+    throw Error('Live public read-only runs require explicit --max-calls and --max-cost-usd ceilings');
+  }
+  return validateBudgetCeilings({
+    controlled,
+    maxCalls: maxCallsRaw ?? '20',
+    maxCostUsd: maxCostUsdRaw ?? '1',
+    maxCallUsd: maxCallUsdRaw ?? '0.15',
+  });
+}
+
+export function createBudgetedReadOnlyPlanner({
+  provider,
+  ceilings,
+  controlled = false,
+  ledger,
+  runId = 'ro',
+  onRecord = null,
+}) {
+  const shared = ledger ?? createDispatchBudgetLedger({
+    controlled,
+    maxCalls: ceilings.maxCalls,
+    maxCostUsd: ceilings.maxCostUsd,
+    maxCallUsd: ceilings.maxCallUsd,
+    onRecord,
+  });
+  return shared.wrapPlanner({
+    provider,
+    arm: 'readonly-transfer',
+    runName: runId,
+    itemId: runId,
+  });
 }
 
 export function validateReadOnlyTransferSpec(spec) {
@@ -39,40 +79,84 @@ export function validateReadOnlyTransferSpec(spec) {
       throw Error(`Forbidden input type in read-only transfer spec: ${inputType}`);
     }
   }
+  const allowedReadOrigins = [url.origin];
+  if (spec.allowedReadOrigins !== undefined) {
+    if (!Array.isArray(spec.allowedReadOrigins)) {
+      throw Error('allowedReadOrigins must be an array of http/https origins');
+    }
+    for (const rawOrigin of spec.allowedReadOrigins) {
+      const parsed = new URL(rawOrigin);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw Error(`Unsupported allowedReadOrigins protocol: ${parsed.protocol}`);
+      }
+      if (!allowedReadOrigins.includes(parsed.origin)) allowedReadOrigins.push(parsed.origin);
+    }
+  }
   if (!Array.isArray(spec.queries) || spec.queries.length < 2) {
     throw Error('Spec requires at least 2 read-only queries (1 learn + >=1 transfer reuse)');
   }
+  for (const q of spec.queries) {
+    const texts = Array.isArray(q.expectedTexts)
+      ? q.expectedTexts
+      : (typeof q.expectedText === 'string' && q.expectedText ? [q.expectedText] : []);
+    if (texts.length === 0) {
+      throw Error('Each query requires expectedText or non-empty expectedTexts');
+    }
+  }
   return {
     origin: url.origin,
+    allowedReadOrigins,
     entryUrl: url.toString(),
     template: String(spec.template ?? 'public-readonly-transfer'),
     goal: String(spec.goal ?? 'readonly-lookup'),
+    pinnedTargetMetadata: spec.pinnedTargetMetadata ?? null,
     fields: spec.fields,
     intermediateClicks: spec.intermediateClicks,
-    queries: spec.queries,
+    queries: spec.queries.map(q => ({
+      inputs: q.inputs ?? {},
+      entryMustIncludeTexts: Array.isArray(q.entryMustIncludeTexts) ? q.entryMustIncludeTexts : [],
+      expectedTexts: Array.isArray(q.expectedTexts) ? q.expectedTexts : [q.expectedText],
+    })),
   };
 }
 
-export function attachReadOnlyNetworkGuard(page, allowedOrigin) {
+export function attachReadOnlyNetworkGuard(page, allowedOrigin, { allowedReadOrigins = [allowedOrigin] } = {}) {
+  const permittedOrigins = new Set([allowedOrigin, ...allowedReadOrigins]);
   const blockedRequests = [];
+  const blockedDocumentWrites = [];
+  let dispatchedWriteRequests = 0;
+
   const handler = async route => {
     const req = route.request();
     const method = req.method().toUpperCase();
     const reqUrl = new URL(req.url());
     const allowedScheme = reqUrl.protocol === 'data:' || reqUrl.protocol === 'blob:';
-    if (!allowedScheme && (!isReadOnlyHttpMethod(method) || reqUrl.origin !== allowedOrigin)) {
-      blockedRequests.push({
+    const readOnlyMethod = isReadOnlyHttpMethod(method);
+    const originPermitted = permittedOrigins.has(reqUrl.origin);
+
+    if (!allowedScheme && (!readOnlyMethod || !originPermitted)) {
+      const entry = {
         method,
         url: req.url(),
         resourceType: req.resourceType(),
-      });
+        reason: !readOnlyMethod ? 'non-readonly-method' : 'disallowed-origin',
+      };
+      blockedRequests.push(entry);
+      if (!readOnlyMethod && req.resourceType() === 'document') {
+        blockedDocumentWrites.push(entry);
+      }
       await route.abort('blockedbyclient');
       return;
+    }
+    if (!allowedScheme && !readOnlyMethod) {
+      dispatchedWriteRequests += 1;
     }
     await route.continue();
   };
   return {
     blockedRequests,
+    blockedDocumentWrites,
+    getDispatchedWriteRequests: () => dispatchedWriteRequests,
     install: () => page.route('**/*', handler),
   };
 }
@@ -132,10 +216,46 @@ export async function startReadOnlyReferenceMirrorServer() {
   };
 }
 
+function createControlledReadOnlyPlanner(validated, query, page) {
+  let clickedIntermediateOnce = false;
+  return {
+    identity: { model: 'controlled-readonly' },
+    next: async ({ observation, inputs }) => {
+      const els = observation.elements ?? [];
+      if (query.expectedTexts.every(t => observation.text.includes(t))) {
+        return { tool: 'finish', input: { summary: 'Verified expected read-only text' } };
+      }
+      for (const field of validated.fields) {
+        const el = els.find(e => e.label === field.locator[1]);
+        if (el && Object.hasOwn(inputs, field.slot) && el.value !== String(inputs[field.slot])) {
+          return { tool: 'act', input: { kind: field.kind, handle: el.handle, slot: field.slot } };
+        }
+      }
+      if (!clickedIntermediateOnce) {
+        for (const clickLoc of validated.intermediateClicks) {
+          const target = els.find(e => e.role === clickLoc[0] && e.label === clickLoc[1] && e.tag === clickLoc[2]);
+          if (target) {
+            clickedIntermediateOnce = true;
+            return { tool: 'act', input: { kind: 'click', handle: target.handle } };
+          }
+        }
+      } else if (page) {
+        await page.waitForLoadState('networkidle', { timeout: 4000 }).catch(() => {});
+        const htmlNow = await page.content();
+        if (query.expectedTexts.every(t => htmlNow.includes(t))) {
+          return { tool: 'finish', input: { summary: 'Verified expected read-only text after SPA settle' } };
+        }
+        return { tool: 'observe', input: {} };
+      }
+      return { tool: 'ask_human', input: { reason: 'Missing read-only control' } };
+    },
+  };
+}
+
 async function runCli() {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.log('Usage: node browser/workspace/qualification/public-readonly-transfer.js --out .tmp/DIR [--spec spec.json] [--controlled] [--max-calls 20] [--max-cost-usd 1]');
+    console.log('Usage: node browser/workspace/qualification/public-readonly-transfer.js --out .tmp/DIR [--spec spec.json] [--controlled] [--max-calls 20] [--max-cost-usd 1] [--max-call-usd 0.15]');
     return;
   }
   const getFlag = name => {
@@ -145,13 +265,31 @@ async function runCli() {
   const controlled = args.includes('--controlled');
   const outRel = getFlag('--out');
   if (!outRel) throw Error('--out is required');
-  if (!controlled && (!getFlag('--spec') || !getFlag('--max-calls') || !getFlag('--max-cost-usd'))) {
+  if (!controlled && !getFlag('--spec')) {
     throw Error('Live public read-only runs require --spec, --max-calls, and --max-cost-usd');
   }
+  const ceilings = parseReadOnlyBudgetCeilings({
+    controlled,
+    maxCallsRaw: getFlag('--max-calls'),
+    maxCostUsdRaw: getFlag('--max-cost-usd'),
+    maxCallUsdRaw: getFlag('--max-call-usd'),
+  });
+
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
   const out = resolve(root, outRel);
   if (existsSync(join(out, 'summary.json'))) throw Error(`Refusing to overwrite ${out}`);
   mkdirSync(out, { recursive: true, mode: 0o700 });
+
+  const writeCalls = allCalls => {
+    writeFileSync(join(out, 'calls.json'), `${JSON.stringify(allCalls, null, 2)}\n`);
+  };
+  const ledger = createDispatchBudgetLedger({
+    controlled,
+    maxCalls: ceilings.maxCalls,
+    maxCostUsd: ceilings.maxCostUsd,
+    maxCallUsd: ceilings.maxCallUsd,
+    onRecord: writeCalls,
+  });
 
   const mirror = controlled && !getFlag('--spec') ? await startReadOnlyReferenceMirrorServer() : null;
   try {
@@ -174,6 +312,8 @@ async function runCli() {
         };
     const validated = validateReadOnlyTransferSpec(rawSpec);
     const serviceConfig = loadServiceConfig(undefined, { browserChannel: 'chrome', headless: true });
+    serviceConfig.observation.maxElements = 2000;
+    serviceConfig.observation.maxTextChars = 80000;
     const clientConfig = JSON.parse(readFileSync(join(root, 'config/fawn-workspace-client.json'), 'utf8'));
     const storeDir = join(out, 'workflows');
     mkdirSync(storeDir, { recursive: true, mode: 0o700 });
@@ -207,6 +347,13 @@ async function runCli() {
         });
         const owner = { workspaceId: wsId, ...await service.assignOwner({ ...admin, ownerId: 'agent' }) };
         const obs0 = await service.observe(owner);
+
+        const page = adapter._page(wsId, 'main');
+        const netGuard = attachReadOnlyNetworkGuard(page, validated.origin, {
+          allowedReadOrigins: validated.allowedReadOrigins,
+        });
+        await netGuard.install();
+
         await (await service.submitAction({
           ...owner,
           actionId: `nav-${wsId}`,
@@ -215,13 +362,16 @@ async function runCli() {
           target: { url: validated.entryUrl },
           observationVersion: obs0.observationVersion,
         })).result;
+        await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
 
-        const page = adapter._page(wsId, 'main');
-        const netGuard = attachReadOnlyNetworkGuard(page, validated.origin);
-        await netGuard.install();
+        let entryVerified = true;
+        if (q.entryMustIncludeTexts.length > 0) {
+          const entryHtml = await page.content();
+          entryVerified = q.entryMustIncludeTexts.every(t => entryHtml.includes(t));
+        }
 
         invStore = new InvestigationStore(join(runDir, 'client'));
-        invStore.create({ id: wsId, goal: `Lookup ${q.expectedText}` });
+        invStore.create({ id: wsId, goal: `Lookup ${q.expectedTexts.join(', ')}` });
         const wfStore = new WorkflowStore({
           directory: storeDir,
           ownerScope: 'readonly-transfer',
@@ -231,29 +381,24 @@ async function runCli() {
           lockRetryMs: 10,
         });
 
-        const planner = controlled
-          ? {
-              identity: { model: 'controlled-readonly' },
-              next: async ({ observation, inputs }) => {
-                const els = observation.elements;
-                const s = els.find(e => e.label === 'Search reference');
-                const sec = els.find(e => e.label === 'Reference section');
-                const btn = els.find(e => e.label === 'Find topic');
-                if (observation.text.includes(q.expectedText)) return { tool: 'finish', input: { summary: 'Found' } };
-                if (s && s.value !== inputs.query) return { tool: 'act', input: { kind: 'fill', handle: s.handle, slot: 'query' } };
-                if (sec && sec.value !== inputs.section) return { tool: 'act', input: { kind: 'select', handle: sec.handle, slot: 'section' } };
-                if (btn) return { tool: 'act', input: { kind: 'click', handle: btn.handle } };
-                return { tool: 'ask_human', input: { reason: 'Missing control' } };
-              },
-            }
+        const rawProvider = controlled
+          ? createControlledReadOnlyPlanner(validated, q, page)
           : createCliPlanner({
               executable: process.env.FAWN_CLAUDE_BIN ?? 'claude',
               model: 'sonnet',
               directory: join(runDir, 'planner'),
-              config: { ...clientConfig, cliMaxBudgetUsd: 0.15 },
+              config: { ...clientConfig, cliMaxBudgetUsd: ceilings.maxCallUsd },
               system: WORKFLOW_SYSTEM,
               tools: WORKFLOW_TOOLS,
             });
+        const planner = createBudgetedReadOnlyPlanner({
+          provider: rawProvider,
+          ceilings,
+          controlled,
+          ledger,
+          runId: wsId,
+          onRecord: writeCalls,
+        });
 
         const res = await wfStore.run({
           mode,
@@ -275,23 +420,33 @@ async function runCli() {
           pageId: 'main',
           intent: 'readonly-transfer',
           inputs: q.inputs,
-          task: `Look up "${q.expectedText}" in read-only mode without submitting any form.`,
+          task: `Look up ${JSON.stringify(q.expectedTexts)} in read-only mode without submitting any form.`,
           planner,
           config: { ...clientConfig, maxTurns: 10 },
           store: invStore,
           projectId: wsId,
-          verifyReview: async () => ({
-            completed: (await page.content()).includes(q.expectedText) && netGuard.blockedRequests.length === 0,
-          }),
+          verifyReview: async () => {
+            await page.waitForLoadState('networkidle', { timeout: 4000 }).catch(() => {});
+            const html = await page.content();
+            return {
+              completed: entryVerified
+                && q.expectedTexts.every(t => html.includes(t))
+                && netGuard.getDispatchedWriteRequests() === 0
+                && netGuard.blockedDocumentWrites.length === 0,
+            };
+          },
           signal: new AbortController().signal,
         });
         rows.push({
           queryIndex: i + 1,
           mode,
+          entryVerified,
           completed: res.completed,
           modelCalls: res.modelCalls,
           cacheSteps: res.cacheSteps,
-          blockedNonReadOnlyRequests: netGuard.blockedRequests.length,
+          dispatchedWriteRequests: netGuard.getDispatchedWriteRequests(),
+          blockedDocumentWrites: netGuard.blockedDocumentWrites.length,
+          abortedBackgroundRequests: netGuard.blockedRequests.length - netGuard.blockedDocumentWrites.length,
         });
       } finally {
         invStore?.close();
@@ -299,19 +454,32 @@ async function runCli() {
       }
     }
 
+    const measuredTotalCostUsd = controlled
+      ? 0
+      : (ledger.calls.every(c => Number.isFinite(c.usage?.costUsd))
+          ? Number(ledger.calls.reduce((s, c) => s + c.usage.costUsd, 0).toFixed(6))
+          : null);
+
     const summary = {
-      schema: 'fawn.public-readonly-transfer/v1',
+      schema: 'fawn.public-readonly-transfer/v2',
       controlled,
       origin: validated.origin,
+      entryUrl: validated.entryUrl,
+      pinnedTargetMetadata: validated.pinnedTargetMetadata,
+      ceilings,
+      totalModelCalls: ledger.calls.length,
+      measuredTotalCostUsd,
       serverWriteHits: mirror ? mirror.getServerWriteHits() : 0,
       allCompleted: rows.every(r => r.completed),
-      zeroBlockedWrites: rows.every(r => r.blockedNonReadOnlyRequests === 0),
+      zeroDispatchedWrites: rows.every(r => r.dispatchedWriteRequests === 0),
+      zeroBlockedWrites: rows.every(r => r.blockedDocumentWrites === 0 && r.dispatchedWriteRequests === 0),
       transferReuseZeroCalls: rows.slice(1).every(r => r.modelCalls === 0 && r.cacheSteps > 0),
       rows,
     };
+    writeCalls(ledger.calls);
     writeFileSync(join(out, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
     console.log(JSON.stringify(summary));
-    if (!summary.allCompleted || !summary.zeroBlockedWrites || !summary.transferReuseZeroCalls) {
+    if (!summary.allCompleted || !summary.zeroDispatchedWrites || !summary.zeroBlockedWrites || !summary.transferReuseZeroCalls) {
       process.exitCode = 1;
     }
   } finally {

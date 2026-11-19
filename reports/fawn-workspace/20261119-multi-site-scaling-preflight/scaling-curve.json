@@ -1,0 +1,1150 @@
+[
+  {
+    "tasksSeen": 1,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.886,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.4832,
+        "meanActiveGraphsBytes": 2248,
+        "meanBytesPerAddedWorkflow": 2248,
+        "meanStoreNodes": 5,
+        "meanStoreEdges": 4
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.578,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.0046,
+        "meanActiveGraphsBytes": 950,
+        "meanBytesPerAddedWorkflow": 950,
+        "meanStoreNodes": 1,
+        "meanStoreEdges": 4
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.851,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.469,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 2,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.761,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.0527,
+        "meanActiveGraphsBytes": 3888,
+        "meanBytesPerAddedWorkflow": 1945,
+        "meanStoreNodes": 10,
+        "meanStoreEdges": 8
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.577,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.0408,
+        "meanActiveGraphsBytes": 1893,
+        "meanBytesPerAddedWorkflow": 947,
+        "meanStoreNodes": 2,
+        "meanStoreEdges": 8
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.859,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.456,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 3,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.708,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.0598,
+        "meanActiveGraphsBytes": 5528,
+        "meanBytesPerAddedWorkflow": 1843,
+        "meanStoreNodes": 15,
+        "meanStoreEdges": 12
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.654,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.0083,
+        "meanActiveGraphsBytes": 2835,
+        "meanBytesPerAddedWorkflow": 945,
+        "meanStoreNodes": 3,
+        "meanStoreEdges": 12
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.806,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.466,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 4,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.736,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.069,
+        "meanActiveGraphsBytes": 7168,
+        "meanBytesPerAddedWorkflow": 1792,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 16
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.529,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0.0055,
+        "meanActiveGraphsBytes": 3782,
+        "meanBytesPerAddedWorkflow": 946,
+        "meanStoreNodes": 4,
+        "meanStoreEdges": 16
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.861,
+        "meanPlannerCalls": 5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.594,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 5,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.885,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.1061,
+        "meanActiveGraphsBytes": 8979,
+        "meanBytesPerAddedWorkflow": 1796,
+        "meanStoreNodes": 25,
+        "meanStoreEdges": 21
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.587,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.0685,
+        "meanActiveGraphsBytes": 4937,
+        "meanBytesPerAddedWorkflow": 988,
+        "meanStoreNodes": 5,
+        "meanStoreEdges": 21
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.856,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.75,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 6,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.853,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.13,
+        "meanActiveGraphsBytes": 10789,
+        "meanBytesPerAddedWorkflow": 1798,
+        "meanStoreNodes": 30,
+        "meanStoreEdges": 26
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.583,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.0157,
+        "meanActiveGraphsBytes": 6078,
+        "meanBytesPerAddedWorkflow": 1013,
+        "meanStoreNodes": 6,
+        "meanStoreEdges": 26
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.954,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.783,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 7,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.863,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.1399,
+        "meanActiveGraphsBytes": 12599,
+        "meanBytesPerAddedWorkflow": 1800,
+        "meanStoreNodes": 35,
+        "meanStoreEdges": 31
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.592,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.0162,
+        "meanActiveGraphsBytes": 7219,
+        "meanBytesPerAddedWorkflow": 1031,
+        "meanStoreNodes": 7,
+        "meanStoreEdges": 31
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.062,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.742,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 8,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 0.882,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.1129,
+        "meanActiveGraphsBytes": 14410,
+        "meanBytesPerAddedWorkflow": 1801,
+        "meanStoreNodes": 40,
+        "meanStoreEdges": 36
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.571,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0.0163,
+        "meanActiveGraphsBytes": 8373,
+        "meanBytesPerAddedWorkflow": 1047,
+        "meanStoreNodes": 8,
+        "meanStoreEdges": 36
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.086,
+        "meanPlannerCalls": 6,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.734,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 9,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.198,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1431,
+        "meanActiveGraphsBytes": 14410,
+        "meanBytesPerAddedWorkflow": 1801,
+        "meanStoreNodes": 40,
+        "meanStoreEdges": 36
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.718,
+        "meanPlannerCalls": 3,
+        "meanDpLookupMs": 0.0139,
+        "meanActiveGraphsBytes": 10274,
+        "meanBytesPerAddedWorkflow": 1142,
+        "meanStoreNodes": 9,
+        "meanStoreEdges": 45
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.448,
+        "meanPlannerCalls": 10,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.832,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 10,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.183,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1659,
+        "meanActiveGraphsBytes": 14410,
+        "meanBytesPerAddedWorkflow": 1801,
+        "meanStoreNodes": 40,
+        "meanStoreEdges": 36
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.701,
+        "meanPlannerCalls": 3,
+        "meanDpLookupMs": 0.0192,
+        "meanActiveGraphsBytes": 12163,
+        "meanBytesPerAddedWorkflow": 1217,
+        "meanStoreNodes": 10,
+        "meanStoreEdges": 54
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.16,
+        "meanPlannerCalls": 10,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.788,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 11,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.067,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1717,
+        "meanActiveGraphsBytes": 14410,
+        "meanBytesPerAddedWorkflow": 1801,
+        "meanStoreNodes": 40,
+        "meanStoreEdges": 36
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.712,
+        "meanPlannerCalls": 3,
+        "meanDpLookupMs": 0.0251,
+        "meanActiveGraphsBytes": 14052,
+        "meanBytesPerAddedWorkflow": 1278,
+        "meanStoreNodes": 11,
+        "meanStoreEdges": 63
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.131,
+        "meanPlannerCalls": 10,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.839,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 12,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.031,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1565,
+        "meanActiveGraphsBytes": 14410,
+        "meanBytesPerAddedWorkflow": 1801,
+        "meanStoreNodes": 40,
+        "meanStoreEdges": 36
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.712,
+        "meanPlannerCalls": 3,
+        "meanDpLookupMs": 0.014,
+        "meanActiveGraphsBytes": 15953,
+        "meanBytesPerAddedWorkflow": 1329,
+        "meanStoreNodes": 12,
+        "meanStoreEdges": 72
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.144,
+        "meanPlannerCalls": 10,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.657,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 13,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.047,
+        "meanPlannerCalls": 4.5,
+        "meanDpLookupMs": 0.1326,
+        "meanActiveGraphsBytes": 15726,
+        "meanBytesPerAddedWorkflow": 1748,
+        "meanStoreNodes": 43.5,
+        "meanStoreEdges": 39.5
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.647,
+        "meanPlannerCalls": 5.5,
+        "meanDpLookupMs": 0.0094,
+        "meanActiveGraphsBytes": 17572,
+        "meanBytesPerAddedWorkflow": 1352,
+        "meanStoreNodes": 13,
+        "meanStoreEdges": 79.5
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.018,
+        "meanPlannerCalls": 8.5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.608,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 14,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.108,
+        "meanPlannerCalls": 4.5,
+        "meanDpLookupMs": 0.1528,
+        "meanActiveGraphsBytes": 17041,
+        "meanBytesPerAddedWorkflow": 1704,
+        "meanStoreNodes": 47,
+        "meanStoreEdges": 43
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.634,
+        "meanPlannerCalls": 5.5,
+        "meanDpLookupMs": 0.0082,
+        "meanActiveGraphsBytes": 19189,
+        "meanBytesPerAddedWorkflow": 1371,
+        "meanStoreNodes": 14,
+        "meanStoreEdges": 87
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.016,
+        "meanPlannerCalls": 8.5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.601,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 15,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.112,
+        "meanPlannerCalls": 4.5,
+        "meanDpLookupMs": 0.1033,
+        "meanActiveGraphsBytes": 18357,
+        "meanBytesPerAddedWorkflow": 1669,
+        "meanStoreNodes": 50.5,
+        "meanStoreEdges": 46.5
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.632,
+        "meanPlannerCalls": 5.5,
+        "meanDpLookupMs": 0.0104,
+        "meanActiveGraphsBytes": 20806,
+        "meanBytesPerAddedWorkflow": 1387,
+        "meanStoreNodes": 15,
+        "meanStoreEdges": 94.5
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.986,
+        "meanPlannerCalls": 8.5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.597,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 16,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.095,
+        "meanPlannerCalls": 4.5,
+        "meanDpLookupMs": 0.226,
+        "meanActiveGraphsBytes": 19672,
+        "meanBytesPerAddedWorkflow": 1639,
+        "meanStoreNodes": 54,
+        "meanStoreEdges": 50
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.621,
+        "meanPlannerCalls": 5.5,
+        "meanDpLookupMs": 0.0086,
+        "meanActiveGraphsBytes": 22425,
+        "meanBytesPerAddedWorkflow": 1402,
+        "meanStoreNodes": 16,
+        "meanStoreEdges": 102
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.075,
+        "meanPlannerCalls": 8.5,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.599,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 17,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.101,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.1654,
+        "meanActiveGraphsBytes": 20355,
+        "meanBytesPerAddedWorkflow": 1566,
+        "meanStoreNodes": 56,
+        "meanStoreEdges": 52
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.673,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0085,
+        "meanActiveGraphsBytes": 23950,
+        "meanBytesPerAddedWorkflow": 1409,
+        "meanStoreNodes": 17,
+        "meanStoreEdges": 109
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.984,
+        "meanPlannerCalls": 8,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.642,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 18,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.11,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.1975,
+        "meanActiveGraphsBytes": 21038,
+        "meanBytesPerAddedWorkflow": 1503,
+        "meanStoreNodes": 58,
+        "meanStoreEdges": 54
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.65,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0111,
+        "meanActiveGraphsBytes": 25466,
+        "meanBytesPerAddedWorkflow": 1415,
+        "meanStoreNodes": 18,
+        "meanStoreEdges": 116
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.028,
+        "meanPlannerCalls": 8,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.621,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 19,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.162,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.1828,
+        "meanActiveGraphsBytes": 21721,
+        "meanBytesPerAddedWorkflow": 1448,
+        "meanStoreNodes": 60,
+        "meanStoreEdges": 56
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.659,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0113,
+        "meanActiveGraphsBytes": 26982,
+        "meanBytesPerAddedWorkflow": 1420,
+        "meanStoreNodes": 19,
+        "meanStoreEdges": 123
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 0.991,
+        "meanPlannerCalls": 8,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.611,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 20,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.081,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.1177,
+        "meanActiveGraphsBytes": 22404,
+        "meanBytesPerAddedWorkflow": 1400,
+        "meanStoreNodes": 62,
+        "meanStoreEdges": 58
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.669,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0104,
+        "meanActiveGraphsBytes": 28507,
+        "meanBytesPerAddedWorkflow": 1425,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 130
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.088,
+        "meanPlannerCalls": 8,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.64,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 21,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.297,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.162,
+        "meanActiveGraphsBytes": 23277,
+        "meanBytesPerAddedWorkflow": 1369,
+        "meanStoreNodes": 64,
+        "meanStoreEdges": 61
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.76,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0133,
+        "meanActiveGraphsBytes": 28708,
+        "meanBytesPerAddedWorkflow": 1436,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 131
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.409,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.651,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 22,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.26,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.218,
+        "meanActiveGraphsBytes": 24150,
+        "meanBytesPerAddedWorkflow": 1342,
+        "meanStoreNodes": 66,
+        "meanStoreEdges": 64
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.738,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0175,
+        "meanActiveGraphsBytes": 28908,
+        "meanBytesPerAddedWorkflow": 1446,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 132
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.404,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.649,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 23,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.279,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.1754,
+        "meanActiveGraphsBytes": 25023,
+        "meanBytesPerAddedWorkflow": 1317,
+        "meanStoreNodes": 68,
+        "meanStoreEdges": 67
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.78,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0108,
+        "meanActiveGraphsBytes": 29107,
+        "meanBytesPerAddedWorkflow": 1456,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 133
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.526,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.66,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 24,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.298,
+        "meanPlannerCalls": 2,
+        "meanDpLookupMs": 0.1421,
+        "meanActiveGraphsBytes": 25896,
+        "meanBytesPerAddedWorkflow": 1295,
+        "meanStoreNodes": 70,
+        "meanStoreEdges": 70
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.876,
+        "meanPlannerCalls": 4,
+        "meanDpLookupMs": 0.0087,
+        "meanActiveGraphsBytes": 29308,
+        "meanBytesPerAddedWorkflow": 1465,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 134
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.264,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.646,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 25,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.192,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1526,
+        "meanActiveGraphsBytes": 25896,
+        "meanBytesPerAddedWorkflow": 1295,
+        "meanStoreNodes": 70,
+        "meanStoreEdges": 70
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.92,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.0112,
+        "meanActiveGraphsBytes": 29308,
+        "meanBytesPerAddedWorkflow": 1465,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 134
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.27,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.638,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 26,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.193,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.2572,
+        "meanActiveGraphsBytes": 25896,
+        "meanBytesPerAddedWorkflow": 1295,
+        "meanStoreNodes": 70,
+        "meanStoreEdges": 70
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.783,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.0117,
+        "meanActiveGraphsBytes": 29308,
+        "meanBytesPerAddedWorkflow": 1465,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 134
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.226,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.653,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 27,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.202,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1449,
+        "meanActiveGraphsBytes": 25896,
+        "meanBytesPerAddedWorkflow": 1295,
+        "meanStoreNodes": 70,
+        "meanStoreEdges": 70
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.834,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.0112,
+        "meanActiveGraphsBytes": 29308,
+        "meanBytesPerAddedWorkflow": 1465,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 134
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.371,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.661,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  },
+  {
+    "tasksSeen": 28,
+    "byArm": {
+      "fawn-graph": {
+        "meanVerifiedSeconds": 1.169,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.1733,
+        "meanActiveGraphsBytes": 25896,
+        "meanBytesPerAddedWorkflow": 1295,
+        "meanStoreNodes": 70,
+        "meanStoreEdges": 70
+      },
+      "stock-reusable-parts": {
+        "meanVerifiedSeconds": 0.913,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0.0123,
+        "meanActiveGraphsBytes": 29308,
+        "meanBytesPerAddedWorkflow": 1465,
+        "meanStoreNodes": 20,
+        "meanStoreEdges": 134
+      },
+      "fresh-planning": {
+        "meanVerifiedSeconds": 1.402,
+        "meanPlannerCalls": 11,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      },
+      "stock-script": {
+        "meanVerifiedSeconds": 0.655,
+        "meanPlannerCalls": 0,
+        "meanDpLookupMs": 0,
+        "meanActiveGraphsBytes": 0,
+        "meanBytesPerAddedWorkflow": 0,
+        "meanStoreNodes": 0,
+        "meanStoreEdges": 0
+      }
+    }
+  }
+]

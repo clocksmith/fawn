@@ -60,7 +60,7 @@ Three familiar pairs alternate arm order. One pair per fault then exercises:
 
 The injected page mutation and acknowledgment loss are declared harness faults,
 not alternate routes for performing task actions. Every task mutation uses the
-real service admission, dispatch and 300 ms value-settling checks.
+real service admission, dispatch and 40 ms bounded value-settling checks.
 
 ## Measurements and decision
 
@@ -267,7 +267,18 @@ node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedul
   capable `stock-reusable-parts` arm requires `461` SLOC of custom helper/slice
   harness code and spends `30` vs `22` total planner calls per repeat (`17` vs `9`
   post-teaching calls across `R3..R7` to stitch `call_helper` slices for the same
-  `44/45` reused actions).
+  `44/45` reused actions). After tightening `dispatch.valueSettleMs` from `300 ms`
+  to `40 ms` (`2 x 20 ms` bounded settle checks in `service.js`), the 3-repeat
+  paired `$0` rehearsal drops `fawn-graph` verified time from the stale `20.588 s`
+  figure to `7.827 s` (`7.763, 8.460, 7.258`) versus `5.633 s` (`6.208, 6.076, 4.614`)
+  on `stock-reusable-parts` (`63.36 ms` mean per UI action across `225` profiled
+  actions; **`0.274 s/call` break-even** at `-8` calls), completes `6/6` legitimate
+  lookalike page redesigns (`R9_legitimate_lookalike_redesign`, `0` calls, `0`
+  false refusals), enforces synchronous pre-call `$0.15` / `$4.00` / `$8.00`
+  reservations via [`budget-ledger.js`](./budget-ledger.js), and classifies fewer
+  calls with worse wall-clock time plus higher USD as an economic loss
+  (`stock-win`, never `tie`). The `$8` live Sonnet pilot remains held pending
+  explicit owner go-ahead.
 
 ## Dynamic-row audit, mirrored multi-site scaling, and read-only transfer (`0` paid calls)
 
@@ -276,24 +287,38 @@ node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedul
   links vary across visits, and deterministically verifies that scoped workflow
   observations (`scopeWorkflowObservation` and `createFieldGroupScope`) preserve
   `0`-call replay and held-out `A -> C` composition across changing result lists
-  while refusing six lookalike/ambiguity classes (`accountScope` mismatch, altered
-  control policy, waiver-gate substitution, duplicate target buttons, disabled
-  controls, and cross-goal zero-control leaves) with `0` dispatched actions.
+  and legitimate page-chrome redesigns while refusing six unsafe lookalike/ambiguity
+  classes (`accountScope` mismatch, altered control policy, waiver-gate substitution,
+  duplicate target buttons, disabled controls, and cross-goal zero-control leaves)
+  with `0` dispatched actions.
 - [`multi-site-scaling.js`](./multi-site-scaling.js) and
   [`multi-site-scaling-site.js`](./multi-site-scaling-site.js) run `28` overlapping
-  tasks plus `4` site-specific lookalike/ambiguity traps across `4` sandbox sites
-  (`procurement`, `helpdesk`, `inventory`, `compliance`) with changing search/list
-  rows on every visit, mirrored task orders (`forward` and `mirrored`), and equal
-  learning opportunities across `fawn-graph`, `stock-reusable-parts`,
-  `fresh-planning`, and `stock-script` ([controlled preflight receipt](../../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json),
-  [scaling curve](../../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/scaling-curve.json)):
-  `224/224` task runs and `32/32` safety refusals passed (`0` submissions, `0`
-  wrong-branch or duplicate effects), `fawn-graph` controlled calls fell from
-  `5.50`/task (`1..8`) to `2.00`/task (`9..20`) and `1.00`/task (`21..28`) (`76`
-  total/order vs `120` on `stock-reusable-parts` and `236` on `fresh-planning`),
-  max Bellman DP lookup stayed at `0.58 ms` across `68` nodes, and active store
-  size settled at `25,152` bytes (`1,258` bytes per added workflow).
-- [`public-readonly-transfer.js`](./public-readonly-transfer.js) enforces a
-  client-side non-`GET`/`HEAD` route abort guard and same-origin read-only spec
-  validator (`0` blocked or server write hits, `0` transfer-reuse calls in
-  controlled preflight), ready for an owner-selected public site.
+  tasks plus `4` site-specific lookalike/ambiguity traps across `4` structurally
+  distinct sandbox site architectures (`procurement` `dl`, `helpdesk` `section`,
+  `inventory` `table`, and `compliance` `article`, with distinct control types and
+  step counts) with changing search/list rows on every visit, mirrored task orders
+  (`forward` and `mirrored`), and equal learning/note/helper parity across
+  `fawn-graph`, `stock-reusable-parts`, `fresh-planning`, and `stock-script`.
+  Adjudicating the [retained `20261118` preflight](../../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json)
+  ([adjudication trace](../../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/adjudication.json))
+  traced four `90 s` `stock-reusable-parts` rows (`tasksSeen 21..24`, `13.507 s`
+  mean) to `multi-site-scaling.js` running `verifyPrimary` (`3 x 30 s` locator
+  timeouts) after an incomplete helper stop on `gate_v2`, and fixed Stock skipping
+  its saved `hAB` helper on `T3`. In the [adjudicated `20261119` rerun](../../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/decision.json)
+  ([scaling curve](../../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/scaling-curve.json)),
+  all `224/224` task runs and `32/32` safety refusals passed with `0` `90 s`
+  timeouts: `stock-reusable-parts` averaged `0.689 s`/task at `110` calls/order
+  (`5.50` -> `4.17` -> `2.00`), `fawn-graph` averaged `1.063 s`/task at `78`
+  calls/order (`5.50` -> `2.17` -> `1.00`), `fresh-planning` averaged `1.117 s`/task
+  at `238` calls/order, max Bellman DP lookup stayed at `0.89 ms` across `70`
+  nodes, and active store size settled at `25,896` bytes (`1,295` bytes per added
+  workflow).
+- [`public-readonly-transfer.js`](./public-readonly-transfer.js) enforces atomic
+  pre-call spend/call reservations via [`budget-ledger.js`](./budget-ledger.js),
+  a client-side non-`GET`/`HEAD` route abort guard, and strict same-origin read-only
+  navigation. Against the owner-confirmed read-only target
+  ([`specs/reploid-pr6-readonly.json`](./specs/reploid-pr6-readonly.json):
+  `https://github.com/clocksmith/reploid/pull/6`, merge commit `7df3c3b63`, `2`
+  changed files `README.md` and `docs/open-mesh-architecture.md`), controlled
+  execution completed `3/3` queries (`2` learn calls, `[0, 0]` reuse calls, `0`
+  dispatched or blocked writes).

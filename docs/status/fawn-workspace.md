@@ -132,20 +132,31 @@ and no speed or model-cost claim is made before an approved paid run
 after a `+11` SLOC manual `Gate_v2` patch, while `461`-SLOC `stock-reusable-parts`
 spends `30` vs `22` planner calls/repeat and `17` vs `9` post-teaching calls for
 the same `44/45` reused actions). With `TraceDag` machinery frozen,
-[`overlapping-requests-reuse.js`](../../browser/workspace/qualification/overlapping-requests-reuse.js)
-and [`overlapping-requests-approval.md`](../../browser/workspace/qualification/overlapping-requests-approval.md)
-now predeclare paired latency/cost/tie rules (`--latency-claim faster|non-inferior`)
-and separate teaching, repair, replay, retry and refusal accounting (`$0` spend
-authorized), [`dynamic-rows-and-lookalikes.test.js`](../../browser/workspace/test/unit/dynamic-rows-and-lookalikes.test.js)
-verifies dynamic-row matching alongside six lookalike/ambiguity refusals, and a
-`256`-episode [four-site mirrored scaling preflight](../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json)
-([`multi-site-scaling.js`](../../browser/workspace/qualification/multi-site-scaling.js),
-[curve](../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/scaling-curve.json),
-[`public-readonly-transfer.js`](../../browser/workspace/qualification/public-readonly-transfer.js))
-recorded `224/224` controlled completions and `32/32` safe refusals across
-visit-varying lists (`76` vs `120` vs `236` simulated calls/order, `0.58 ms` max
-DP lookup, `1,258` bytes per added workflow; no live LLM speed or cost claim
-is made before an approved live run).
+[`overlapping-requests-reuse.js`](../../browser/workspace/qualification/overlapping-requests-reuse.js),
+[`budget-ledger.js`](../../browser/workspace/qualification/budget-ledger.js), and
+[`overlapping-requests-approval.md`](../../browser/workspace/qualification/overlapping-requests-approval.md)
+enforce atomic pre-call spend/call reservations, predeclare paired latency/cost/economic-loss
+rules (`--latency-claim faster|non-inferior`, classifying fewer calls with worse
+time and higher USD as `stock-win`), separate teaching, repair, replay, retry and
+safe-stop outcome buckets, require `6/6` zero-call completions on legitimate
+lookalike page redesigns (`R9_legitimate_lookalike_redesign`), and cut 3-repeat
+`$0` `fawn-graph` verified time from `20.588 s` down to `7.827 s` vs `5.633 s` on
+`stock-reusable-parts` (`40 ms` bounded `valueSettleMs`, `63.36 ms`/action mean,
+`0.274 s/call` break-even; `$8` live Sonnet pilot held pending owner go-ahead).
+Adjudicating the retained `256`-episode
+[`20261118` scaling preflight](../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json)
+([adjudication](../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/adjudication.json),
+[`20261119` rerun](../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/decision.json),
+[curve](../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/scaling-curve.json))
+eliminated four `90 s` `stock-reusable-parts` verifier timeouts (`13.507 s` ->
+`0.689 s`/task), restored Stock `hAB` + `persistentNotes` parity (`120` -> `110`
+calls/order vs `78` on `fawn-graph` at `1.063 s`/task and `238` on `fresh-planning`
+at `1.117 s`/task), replaced the uniform site template with four structurally
+distinct DOM/control architectures (`dl`, `section`, `table`, `article`; `0.89 ms`
+max DP lookup at `70` nodes; `1,295` bytes/workflow), and verified budget-enforced
+same-origin read-only transfer on [`reploid` PR #6 (`7df3c3b63`)](../../browser/workspace/qualification/specs/reploid-pr6-readonly.json)
+(`2` learn calls, `[0, 0]` reuse calls, `0` dispatched or blocked writes; no live
+LLM speed or cost claim is made before an approved live run).
 
 Investigation memory now follows source changes. The client re-reads every
 saved repository source on resume or on request, saves a changed file as the

@@ -461,7 +461,34 @@ try {
     /Ambiguous field-group meaning/,
   );
 
-  console.log('ok: dynamic-row scoped invariance, A->C composition across changing lists, and 6 lookalike/ambiguity refusals');
+  // 10. Legitimate lookalike page MUST succeed (no false refusal): redesigned banner prose,
+  //     extra promotional links/buttons outside authorized controls, and unseen row links under
+  //     the verified accountScope complete in 0 calls.
+  const LEGIT_REDESIGN_ROWS = [
+    { id: 'promo-link-1', label: 'New Q4 Warehouse Rebates Guide' },
+    { id: 'promo-link-2', label: 'Download Updated Carrier Schedule' },
+    { id: 'lot-999', label: 'SKU-CHASSIS-99: 4U Rack Enclosure (New Arrival)' },
+  ];
+  const sLegitLookalike = createSandboxService({
+    startScreen: 'A',
+    visitRows: LEGIT_REDESIGN_ROWS,
+    proseBanner: 'Redesigned Q4 Enterprise Warehouse Header — Theme v2',
+  });
+  const rLegitLookalike = await execWorkflow({
+    dag,
+    service: sLegitLookalike,
+    mode: 'reuse',
+    goal: 'transfer-review',
+    inputs: { query: 'chassis', status: 'in-stock', qty: '11' },
+    verifyReview: async () => ({
+      completed: sLegitLookalike.screen() === 'C_LEAF' && sLegitLookalike.state().qty === '11',
+    }),
+  });
+  assert.equal(rLegitLookalike.completed, true, 'Legitimate lookalike redesign under verified account must succeed');
+  assert.equal(rLegitLookalike.modelCalls, 0);
+  assert.equal(rLegitLookalike.cacheSteps, 7);
+
+  console.log('ok: dynamic-row scoped invariance, A->C composition, legitimate lookalike completion, and 6 unsafe refusals');
 } finally {
   invStore.close();
   rmSync(tempRoot, { recursive: true, force: true });

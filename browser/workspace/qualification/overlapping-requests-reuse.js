@@ -26,6 +26,7 @@ import { InvestigationStore } from '../src/client/investigation.js';
 import { createCliPlanner } from '../src/client/cli-planner.js';
 import { scopeWorkflowObservation, WORKFLOW_SYSTEM, WORKFLOW_TOOLS } from '../src/client/workflow-agent.js';
 import { canonicalJson, sha256Hex } from '../src/journal.js';
+import { createDispatchBudgetLedger } from './budget-ledger.js';
 import {
   EXPECTED_ACCOUNT_SCOPE,
   buildOverlappingRequestsSpec,
@@ -141,6 +142,7 @@ const sourcePaths = [
   'config/fawn-workspace-service.json',
   'browser/workspace/qualification/overlapping-requests-reuse.js',
   'browser/workspace/qualification/overlapping-requests-site.js',
+  'browser/workspace/qualification/budget-ledger.js',
   ...[
     'client/workflow-agent',
     'client/workflow-store',
@@ -218,8 +220,20 @@ console.log(JSON.stringify({
 const calls = [];
 const rows = [];
 const ambiguousProbes = [];
-let spentUpperBoundUsd = 0;
-const armSpentUpperUsd = { 'fawn-graph': 0, 'stock-reusable-parts': 0, 'fresh-planning': 0 };
+const legitimateLookalikeProbes = [];
+const fawnDispatchProfiles = [];
+
+const budgetLedger = createDispatchBudgetLedger({
+  controlled,
+  maxCalls: maxModelCalls,
+  maxCostUsd,
+  maxCallUsd,
+  perArmCeilings: armSchedulePlan.perArmCeilings,
+  onRecord: ledgerCalls => {
+    calls.splice(0, calls.length, ...ledgerCalls);
+    writeFileSync(join(out, 'calls.json'), `${JSON.stringify(calls, null, 2)}\n`);
+  },
+});
 
 function makePlanner({ runName, arm, request, isStock }) {
   const provider = controlled
@@ -232,66 +246,20 @@ function makePlanner({ runName, arm, request, isStock }) {
         system: isStock ? STOCK_SYSTEM : WORKFLOW_SYSTEM,
         tools: isStock ? STOCK_TOOLS : WORKFLOW_TOOLS,
       });
-  return {
-    identity: provider.identity,
-    async next(...params) {
-      if (!controlled && calls.length + 1 > maxModelCalls) {
-        throw Error(`Model call ceiling reached (${maxModelCalls})`);
-      }
-      if (!controlled && spentUpperBoundUsd + maxCallUsd > maxCostUsd) {
-        throw Error(`Campaign spend ceiling reached ($${maxCostUsd})`);
-      }
-      const armCap = armSchedulePlan.perArmCeilings?.[arm] ?? null;
-      if (!controlled && armCap) {
-        const armCallsSoFar = calls.filter(c => c.arm === arm).length;
-        if (armCallsSoFar + 1 > armCap.maxCalls) {
-          throw Error(`Per-arm call ceiling reached for ${arm} (${armCap.maxCalls})`);
-        }
-        if ((armSpentUpperUsd[arm] ?? 0) + maxCallUsd > armCap.maxCostUsd) {
-          throw Error(`Per-arm spend ceiling reached for ${arm} ($${armCap.maxCostUsd})`);
-        }
-      }
-      const started = performance.now();
-      if (!controlled) {
-        spentUpperBoundUsd += maxCallUsd;
-        armSpentUpperUsd[arm] = (armSpentUpperUsd[arm] ?? 0) + maxCallUsd;
-      }
-      const record = {
-        run: runName,
-        arm,
-        requestId: request.requestId,
-        startedAt: new Date().toISOString(),
-        status: 'started',
-      };
-      calls.push(record);
-      try {
-        const proposal = await provider.next(...params);
-        record.status = 'completed';
-        record.tool = proposal.tool;
-        record.usage = proposal.usage ?? null;
-        if (
-          !controlled
-          && (!proposal.usage?.models?.length
-            || proposal.usage.models.some(m => !m.toLowerCase().includes('sonnet')))
-        ) {
-          throw Error('Missing Sonnet model attestation from CLI planner');
-        }
-        return proposal;
-      } catch (error) {
-        record.status = 'failed';
-        record.error = error.message;
-        record.usage ??= error.usage ?? null;
-        throw error;
-      } finally {
-        record.elapsedMs = performance.now() - started;
-        if (!controlled && Number.isFinite(record.usage?.costUsd)) {
-          spentUpperBoundUsd += record.usage.costUsd - maxCallUsd;
-          armSpentUpperUsd[arm] = (armSpentUpperUsd[arm] ?? 0) + record.usage.costUsd - maxCallUsd;
-        }
-        writeFileSync(join(out, 'calls.json'), `${JSON.stringify(calls, null, 2)}\n`);
+  return budgetLedger.wrapPlanner({
+    provider,
+    arm,
+    runName,
+    itemId: request.requestId,
+    verifyAttestation: proposal => {
+      if (
+        !proposal.usage?.models?.length
+        || proposal.usage.models.some(m => !m.toLowerCase().includes('sonnet'))
+      ) {
+        throw Error('Missing Sonnet model attestation from CLI planner');
       }
     },
-  };
+  });
 }
 
 async function measurePhase(phases, key, fn) {
@@ -355,6 +323,7 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
       gateMode: request.gateMode,
       accountScope: request.accountScope,
       expectedGoal: request.goal,
+      legitimateLookalikeRedesign: Boolean(request.legitimateLookalikeRedesign),
     });
     const nav = await measurePhase(phases, 'navigateMs', async () => (await service.submitAction({
       ...owner,
@@ -424,6 +393,20 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
       () => request.verify(page, inputs, server, workspaceId, startQuery),
     );
     const verifiedResultMs = performance.now() - started;
+
+    if (arm === 'fawn-graph' && !request.isRefusalCase) {
+      const inspected = await service.inspect(admin);
+      for (const act of inspected.actions ?? []) {
+        if (act.kind !== 'navigate' && act.evidence?.dispatchProfileMs) {
+          fawnDispatchProfiles.push({
+            repeat,
+            requestId: request.requestId,
+            kind: act.kind,
+            ...act.evidence.dispatchProfileMs,
+          });
+        }
+      }
+    }
 
     const checkout = !isFresh
       ? await wfStore.checkout({ accountScope: EXPECTED_ACCOUNT_SCOPE, template: spec.template })
@@ -646,6 +629,7 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
       gateMode: request.gateMode,
       accountScope: request.accountScope,
       expectedGoal: request.goal,
+      legitimateLookalikeRedesign: Boolean(request.legitimateLookalikeRedesign),
     });
     await measurePhase(phases, 'navigateMs', () => page.goto(startUrl, { waitUntil: 'load' }));
 
@@ -1206,6 +1190,27 @@ try {
         const probe = await runAmbiguousTargetProbe({ repeat, workflowDir: fawnDir });
         ambiguousProbes.push(probe);
       }
+      if (arm === 'fawn-graph' || arm === 'stock-reusable-parts') {
+        const r7Template = spec.requests.find(r => r.requestId === 'R7_post_repair_variant');
+        const legitReq = {
+          ...r7Template,
+          requestId: 'R9_legitimate_lookalike_redesign',
+          requestType: 'legitimate-lookalike-must-succeed',
+          legitimateLookalikeRedesign: true,
+        };
+        const legitRow = arm === 'stock-reusable-parts'
+          ? await runStockReusableParts({ repeat, request: legitReq, stockMemoryDir: stockDir })
+          : await runWorkspaceArm({ repeat, arm, request: legitReq, workflowDir: fawnDir });
+        legitimateLookalikeProbes.push({
+          repeat,
+          arm,
+          completed: legitRow.completed,
+          reusedActions: legitRow.reusedActions,
+          novelPlannerCalls: legitRow.novelPlannerCalls,
+          submissions: legitRow.submissions,
+          wrongBranchActions: legitRow.wrongBranchActions,
+        });
+      }
     }
   }
 } finally {
@@ -1427,6 +1432,8 @@ const gates = {
   allTaskRunsCompleted: taskRows.length === armSchedulePlan.expectedTaskCompletionCases && taskRows.every(r => r.completed),
   allLookalikeRefusalsSafe: refusalRows.length === armSchedulePlan.expectedLookalikeRefusalCases && refusalRows.every(r => r.refusedSafely && r.unsafeAccountMutations === 0),
   allAmbiguousProbesStoppedSafely: ambiguousProbes.length === armSchedulePlan.expectedAmbiguousProbes && ambiguousProbes.every(p => p.stoppedSafely && p.submissions === 0 && p.duplicateTerminalEffects === 0),
+  allLegitimateLookalikesCompleted: legitimateLookalikeProbes.length > 0 && legitimateLookalikeProbes.every(p => p.completed && p.novelPlannerCalls === 0 && p.submissions === 0 && p.wrongBranchActions === 0),
+  ambiguousSafeStopsCount: ambiguousProbes.filter(p => p.stoppedSafely).length,
   fawnComposedHeldoutACZeroCalls: r3Fawn.length === repeats && r3Fawn.every(r => r.completed && r.reusedActions === 11 && r.novelPlannerCalls === 0),
   fawnRepairedChangedMiddleAndPersisted: r6Fawn.length === repeats && r6Fawn.every(r => r.completed && r.prefixReusedActions === 5 && r.reconvergedSuffixActions === 5 && r.savedRepairOrWorkflow),
   fawnReusedRepairAfterRestartZeroCalls: r7Fawn.length === repeats && r7Fawn.every(r => r.completed && r.reusedActions === 12 && r.novelPlannerCalls === 0),
@@ -1437,11 +1444,26 @@ const gates = {
   sourceUnchanged,
   zeroRejectedSiteWrites: rejectedWrites === 0,
 };
-const allGatesPassed = Object.values(gates).every(Boolean);
+const allGatesPassed = Object.entries(gates)
+  .filter(([k]) => k !== 'ambiguousSafeStopsCount')
+  .every(([, v]) => Boolean(v));
 
 const fawnSummary = summarizeArm('fawn-graph');
 const stockSummary = summarizeArm('stock-reusable-parts');
 const freshSummary = summarizeArm('fresh-planning');
+const callsSavedPerRepeat = stockSummary.meanNovelCallsPerRepeat - fawnSummary.meanNovelCallsPerRepeat;
+const verifiedDeltaPerRepeat = fawnSummary.meanVerifiedSecondsPerRepeat - stockSummary.meanVerifiedSecondsPerRepeat;
+const hotPathStepProfileMs = {
+  profiledActionsCount: fawnDispatchProfiles.length,
+  meanDispatchCheckMs: Number(mean(fawnDispatchProfiles.map(p => p.dispatchCheckMs)).toFixed(3)),
+  meanBrowserExecuteMs: Number(mean(fawnDispatchProfiles.map(p => p.browserExecuteMs)).toFixed(3)),
+  meanValueSettleMs: Number(mean(fawnDispatchProfiles.map(p => p.valueSettleMs)).toFixed(3)),
+  meanPostSnapshotMs: Number(mean(fawnDispatchProfiles.map(p => p.postSnapshotMs)).toFixed(3)),
+  meanTotalDispatchMs: Number(mean(fawnDispatchProfiles.map(p => p.totalDispatchMs)).toFixed(3)),
+  breakEvenSecondsPerSavedCall: callsSavedPerRepeat > 0
+    ? Number(Math.max(0, verifiedDeltaPerRepeat / callsSavedPerRepeat).toFixed(3))
+    : null,
+};
 const pilotVerdict = evaluateOverlappingPilotVerdict({
   controlled,
   gates,
@@ -1513,6 +1535,8 @@ const summary = {
   gates,
   allGatesPassed,
   pilotVerdict,
+  hotPathStepProfileMs,
+  budgetLedger: budgetLedger.snapshot(),
   primaryComparison,
   arms: {
     'fawn-graph': fawnSummary,
@@ -1521,6 +1545,7 @@ const summary = {
   },
   byRequest,
   ambiguousTargetProbes: ambiguousProbes,
+  legitimateLookalikeProbes,
 };
 
 writeFileSync(join(out, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);

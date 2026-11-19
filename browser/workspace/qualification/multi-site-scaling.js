@@ -27,6 +27,7 @@ import { InvestigationStore } from '../src/client/investigation.js';
 import { createCliPlanner } from '../src/client/cli-planner.js';
 import { WORKFLOW_SYSTEM, WORKFLOW_TOOLS } from '../src/client/workflow-agent.js';
 import { canonicalJson, sha256Hex } from '../src/journal.js';
+import { createDispatchBudgetLedger } from './budget-ledger.js';
 import {
   SCALING_SITES,
   buildMultiSiteScalingSpec,
@@ -107,6 +108,7 @@ const spec = buildMultiSiteScalingSpec();
 const sourcePaths = [
   'browser/workspace/qualification/multi-site-scaling.js',
   'browser/workspace/qualification/multi-site-scaling-site.js',
+  'browser/workspace/qualification/budget-ledger.js',
   'browser/workspace/src/client/trace-dag.js',
   'browser/workspace/src/client/trace-graph-dp.js',
   'browser/workspace/src/client/workflow-agent.js',
@@ -121,11 +123,12 @@ const STOCK_TOOLS = Object.freeze({
   observe: 'Refresh current scoped page observation. Input: {}.',
   act: 'Execute one UI action on the current observation. Input: {kind: fill|select|click, handle: string, slot?: string}.',
   call_helper: 'Invoke a persisted helper slice [startStep, endStep). Input: {helperId: string, startStep: integer, endStep: integer}.',
-  finish: 'Verify outcome and save helper. Input: {summary: string}.',
+  save_note: 'Append a concise reusable note to persistentNotes for later overlapping tasks. Input: {note: string}.',
+  finish: 'Verify outcome and save helper. Input: {summary: string, note?: string}.',
   ask_human: 'Stop safely on ambiguous or lookalike target. Input: {reason: string}.',
 });
 const STOCK_SYSTEM = 'Complete the bounded UI task to its review screen without final submission. '
-  + 'Use reusableHelpers via call_helper when a saved prefix or suffix matches; stop with ask_human on duplicate or lookalike controls.';
+  + 'Use reusableHelpers via call_helper and persistentNotes when a saved prefix or suffix matches; stop with ask_human on duplicate or lookalike controls.';
 
 const frozen = {
   schema: 'fawn.multi-site-scaling/v1',
@@ -146,7 +149,17 @@ const server = await startMultiSiteScalingServer();
 const calls = [];
 const rows = [];
 const safetyRows = [];
-let spentUpperUsd = 0;
+
+const budgetLedger = createDispatchBudgetLedger({
+  controlled,
+  maxCalls: maxModelCalls,
+  maxCostUsd,
+  maxCallUsd,
+  onRecord: ledgerCalls => {
+    calls.splice(0, calls.length, ...ledgerCalls);
+    writeFileSync(join(out, 'calls.json'), `${JSON.stringify(calls, null, 2)}\n`);
+  },
+});
 
 function makePlanner({ runName, arm, site, task, isStock }) {
   const provider = controlled
@@ -159,32 +172,12 @@ function makePlanner({ runName, arm, site, task, isStock }) {
         system: isStock ? STOCK_SYSTEM : WORKFLOW_SYSTEM,
         tools: isStock ? STOCK_TOOLS : WORKFLOW_TOOLS,
       });
-  return {
-    identity: provider.identity,
-    async next(...args) {
-      if (!controlled && calls.length + 1 > maxModelCalls) throw Error(`Model call ceiling reached (${maxModelCalls})`);
-      if (!controlled && spentUpperUsd + maxCallUsd > maxCostUsd) throw Error(`Spend ceiling reached ($${maxCostUsd})`);
-      if (!controlled) spentUpperUsd += maxCallUsd;
-      const t0 = performance.now();
-      const rec = { callIndex: calls.length + 1, run: runName, arm, taskId: task.taskId, status: 'pending' };
-      calls.push(rec);
-      try {
-        const res = await provider.next(...args);
-        rec.status = 'completed';
-        rec.usage = res.usage ?? null;
-        return res;
-      } catch (err) {
-        rec.status = 'failed';
-        rec.error = err.message;
-        throw err;
-      } finally {
-        rec.elapsedMs = Number((performance.now() - t0).toFixed(3));
-        if (!controlled && Number.isFinite(rec.usage?.costUsd)) {
-          spentUpperUsd += rec.usage.costUsd - maxCallUsd;
-        }
-      }
-    },
-  };
+  return budgetLedger.wrapPlanner({
+    provider,
+    arm,
+    runName,
+    itemId: task.taskId,
+  });
 }
 
 async function readPageAccount(page, expectedOrigin) {
@@ -413,7 +406,9 @@ async function runStockHelperTask({ orderName, tasksSeen, task, stockDir, addedW
   const profileDir = join(out, orderName, arm, sessionId, 'profile');
   mkdirSync(profileDir, { recursive: true, mode: 0o700 });
   const helpersPath = join(stockDir, 'helpers.json');
+  const notesPath = join(stockDir, 'notes.json');
   const helpers = existsSync(helpersPath) ? JSON.parse(readFileSync(helpersPath, 'utf8')) : {};
+  const notes = existsSync(notesPath) ? JSON.parse(readFileSync(notesPath, 'utf8')) : [];
   const allowedSet = new Set([
     ...task.disclosure.fields.map(f => canonicalJson(f.locator)),
     ...task.disclosure.intermediateClicks.map(loc => canonicalJson(loc)),
@@ -477,18 +472,24 @@ async function runStockHelperTask({ orderName, tasksSeen, task, stockDir, addedW
     const helperLookupMs = Number((performance.now() - lookupStart).toFixed(4));
 
     if (!refusalCode && exactHelper && task.fawnMode === 'reuse') {
+      let helperStoppedEarly = false;
       for (const st of exactHelper.steps) {
         const snap = await takeScoped();
         const matches = snap.elements.filter(e => canonicalJson(structuralLocator(e)) === canonicalJson(st.locator));
         if (matches.length !== 1) {
           if (matches.length > 1) refusalCode = 'ambiguous-locator';
+          helperStoppedEarly = true;
+          break;
+        }
+        if (st.kind !== 'click' && !Object.hasOwn(task.inputs, st.slot)) {
+          helperStoppedEarly = true;
           break;
         }
         const rec = await dispatchStep(matches[0], st.kind, st.slot);
         executedSteps.push(rec);
         reusedActions += 1;
       }
-      if (!refusalCode) {
+      if (!refusalCode && !helperStoppedEarly) {
         const check = await task.verify(page, task.inputs, server, sessionId);
         if (check.completed) completedByAuto = true;
       }
@@ -503,6 +504,7 @@ async function runStockHelperTask({ orderName, tasksSeen, task, stockDir, addedW
           task: task.taskPrompt,
           goal: task.goal,
           inputs: task.inputs,
+          persistentNotes: notes,
           reusableHelpers: reusableHelpersView,
           lastResult,
           observation: {
@@ -513,6 +515,16 @@ async function runStockHelperTask({ orderName, tasksSeen, task, stockDir, addedW
           },
         });
         novelPlannerCalls += 1;
+
+        if (proposal.tool === 'save_note') {
+          const noteText = String(proposal.input?.note ?? '').trim().slice(0, 400);
+          if (noteText) {
+            notes.push({ taskId: task.taskId, siteId: task.siteId, goal: task.goal, note: noteText });
+            writeFileSync(notesPath, `${JSON.stringify(notes, null, 2)}\n`);
+          }
+          lastResult = { status: 'note-saved' };
+          continue;
+        }
 
         if (proposal.tool === 'ask_human') {
           refusalCode = proposal.input?.reason ?? 'asked-human';
@@ -567,6 +579,11 @@ async function runStockHelperTask({ orderName, tasksSeen, task, stockDir, addedW
               steps: executedSteps,
             };
             writeFileSync(helpersPath, `${JSON.stringify(helpers, null, 2)}\n`);
+            const noteText = String(proposal.input?.note ?? `${task.taskId}:${task.startScreen}->${task.goal}(${task.gateMode})`).trim().slice(0, 400);
+            if (noteText) {
+              notes.push({ taskId: task.taskId, siteId: task.siteId, goal: task.goal, note: noteText });
+              writeFileSync(notesPath, `${JSON.stringify(notes, null, 2)}\n`);
+            }
           }
           break;
         }
@@ -715,14 +732,17 @@ async function runScriptFloorTask({ orderName, tasksSeen, task }) {
       };
     }
 
+    const site = siteById.get(task.siteId);
     if (task.startScreen === 'search') {
-      await page.locator('#s-query').fill(task.inputs.searchQuery);
-      await page.locator('#s-filter').selectOption(task.inputs.filterChoice);
+      for (const f of site.entryFields) {
+        if (f.kind === 'select') await page.locator(`#${f.id}`).selectOption(String(task.inputs[f.slot]));
+        else await page.locator(`#${f.id}`).fill(String(task.inputs[f.slot]));
+      }
       await page.locator('#s-run').click();
       await page.locator('#open-brief').click();
       await page.waitForLoadState('load');
     } else if (task.startScreen === 'queue') {
-      await page.locator('#q-select').selectOption(task.inputs.queueChoice);
+      await page.locator('#q-select').selectOption(String(task.inputs.queueChoice));
       await page.locator('#q-open').click();
       await page.waitForLoadState('load');
     }
@@ -730,7 +750,10 @@ async function runScriptFloorTask({ orderName, tasksSeen, task }) {
       if (task.goal === 'secondary-export') {
         await page.locator('#go-secondary').click();
         await page.waitForLoadState('load');
-        await page.locator('#sec-code').fill(task.inputs.secondaryCode);
+        for (const f of site.secondaryFields) {
+          if (f.kind === 'select') await page.locator(`#${f.id}`).selectOption(String(task.inputs[f.slot]));
+          else await page.locator(`#${f.id}`).fill(String(task.inputs[f.slot]));
+        }
         await page.locator('#sec-btn').click();
         await page.waitForLoadState('load');
       } else {
@@ -740,12 +763,14 @@ async function runScriptFloorTask({ orderName, tasksSeen, task }) {
           await page.locator('#gate-v1').click();
         } else {
           unpatchedBrokeOnDrift = true;
-          await page.locator('#gate-v2-sel').selectOption({ value: task.inputs.gateChoice });
+          await page.locator('#gate-v2-sel').selectOption({ value: String(task.inputs.gateChoice) });
           await page.locator('#gate-v2-btn').click();
         }
         await page.waitForLoadState('load');
-        await page.locator('#pf-val').fill(task.inputs.primaryValue);
-        await page.locator('#pf-sel').selectOption(task.inputs.primarySelect);
+        for (const f of site.primaryFields) {
+          if (f.kind === 'select') await page.locator(`#${f.id}`).selectOption(String(task.inputs[f.slot]));
+          else await page.locator(`#${f.id}`).fill(String(task.inputs[f.slot]));
+        }
         await page.locator('#pf-review').click();
         await page.waitForLoadState('load');
       }
@@ -912,6 +937,13 @@ const summary = {
   arms: selectedArms,
   totalDynamicSiteVisits: server.getTotalVisits(),
   totalModelCalls: calls.length,
+  budgetLedger: budgetLedger.snapshot(),
+  authoringAndRepairEffortContext: {
+    pilotScriptFloorInitialSloc: 72,
+    pilotScriptFloorGateV2RepairPatchSloc: 11,
+    stockReusablePartsHarnessSloc: 461,
+    note: 'Script floor execution speed requires human authoring + manual selector/gate repair per site; reported as context alongside symmetric teaching, repair, and replay phase accounting.',
+  },
   gates,
   allGatesPassed,
   armSummaries,

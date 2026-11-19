@@ -256,12 +256,12 @@ class WorkspaceService {
     return this.#clock();
   }
 
-  #probe(workspaceId, pageId = MAIN_PAGE, command = null) {
+  #probe(workspaceId, pageId = MAIN_PAGE, command = null, knownUrl = null) {
     // The resource being probed owns the page identity, including reconciliation of an
     // earlier action. A caller's omitted/different pageId cannot select another tab's grant.
     const readCommand = command ? { ...command, pageId } : null;
     const url = async () => {
-      const value = await this.#bounded(this.#adapter.probeUrl(workspaceId, pageId));
+      const value = knownUrl ?? await this.#bounded(this.#adapter.probeUrl(workspaceId, pageId));
       if (readCommand) readGrant(this.#workspace(workspaceId), readCommand, value, this.#nowMs());
       return value;
     };
@@ -542,7 +542,7 @@ class WorkspaceService {
     }
     const live = { url: snapshot.url, regions: snapshot.regionDigests };
     checkDispatchAuthority(pageView(workspace, request.pageId), request, this.#nowMs(), live);
-    const probe = this.#probe(workspaceId, request.pageId, request);
+    const probe = this.#probe(workspaceId, request.pageId, request, snapshot.url);
     let targetDigest = null;
     if (request.target.selector) {
       const element = await probe.element(request.target.selector);
@@ -572,12 +572,15 @@ class WorkspaceService {
   }
 
   async #dispatchOne(workspaceId, actionId) {
+    const dispatchT0 = performance.now();
+    let dispatchCheckMs = 0;
     const workspace = this.#workspace(workspaceId);
     const runtime = this.#runtimeFor(workspaceId);
     const begun = await runtime.mutex.run(async () => {
       const action = workspace.actions.get(actionId);
       if (action.status !== ACTION_STATUS.QUEUED) return { settled: this.#describe(workspace, actionId) };
       let checks;
+      const checkT0 = performance.now();
       try {
         await this.#page(workspaceId);
         checks = await this.#checkLiveDispatch(workspace, action);
@@ -590,6 +593,8 @@ class WorkspaceService {
           detail: error.message,
         });
         return { settled: this.#describe(workspace, actionId) };
+      } finally {
+        dispatchCheckMs = Number((performance.now() - checkT0).toFixed(3));
       }
       this.#append(RECORD_TYPES.ACTION_DISPATCH_STARTED, {
         workspaceId,
@@ -605,6 +610,7 @@ class WorkspaceService {
     const outcome = await this.#performEffect(workspaceId, begun.action.request);
     return runtime.mutex.run(async () => {
       let postObservationVersion = null;
+      const postSnapT0 = performance.now();
       try {
         const current = pageView(workspace, begun.action.request.pageId);
         const request = begun.action.request;
@@ -618,6 +624,17 @@ class WorkspaceService {
       } catch (error) {
         outcome.evidence = { ...outcome.evidence, postObservationError: error.message };
       }
+      const postSnapshotMs = Number((performance.now() - postSnapT0).toFixed(3));
+      outcome.evidence = {
+        ...outcome.evidence,
+        dispatchProfileMs: {
+          dispatchCheckMs,
+          browserExecuteMs: outcome.evidence?.effectExecuteMs ?? 0,
+          valueSettleMs: outcome.evidence?.valueSettleElapsedMs ?? 0,
+          postSnapshotMs,
+          totalDispatchMs: Number((performance.now() - dispatchT0).toFixed(3)),
+        },
+      };
       this.#append(RECORD_TYPES.ACTION_OUTCOME, {
         workspaceId,
         actionId,
@@ -632,6 +649,7 @@ class WorkspaceService {
 
   async #performEffect(workspaceId, request) {
     let effect;
+    const execT0 = performance.now();
     try {
       const uploadFiles = request.kind === 'upload'
         ? this.#uploads.resolve(this.#workspace(workspaceId).grants.get(request.grantId), request.params.fileIds) : null;
@@ -640,18 +658,19 @@ class WorkspaceService {
       return {
         outcome: OUTCOMES.UNKNOWN,
         basis: error.isTimeout ? 'effect-timeout' : 'effect-exception',
-        evidence: { message: error.message },
+        evidence: { message: error.message, effectExecuteMs: Number((performance.now() - execT0).toFixed(3)) },
       };
     }
+    const effectExecuteMs = Number((performance.now() - execT0).toFixed(3));
     this.#hooks.afterEffect?.(request);
     if (request.kind === 'upload') {
-      const attached = await this.#awaitValue(workspaceId, request, effect);
+      const attached = await this.#awaitValue(workspaceId, request, effect, effectExecuteMs);
       if (attached.outcome !== OUTCOMES.COMPLETED || !request.completion?.completedWhen?.length) return attached;
     }
     const completion = request.completion;
-    if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request);
-    if (VALUE_CONDITIONS[request.kind]) return this.#awaitValue(workspaceId, request, effect);
-    return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect } };
+    if (completion?.completedWhen?.length) return this.#awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs);
+    if (VALUE_CONDITIONS[request.kind]) return this.#awaitValue(workspaceId, request, effect, effectExecuteMs);
+    return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect, effectExecuteMs, valueSettleElapsedMs: 0 } };
   }
 
   /**
@@ -660,7 +679,8 @@ class WorkspaceService {
    * caught. Never shown: value-unverified. Shown, then lost: value-reverted. Both stay unknown.
    * Waits count poll intervals rather than clock time, so an injected clock cannot stall them.
    */
-  async #awaitValue(workspaceId, request, effect) {
+  async #awaitValue(workspaceId, request, effect, effectExecuteMs = 0) {
+    const settleT0 = performance.now();
     const conditions = request.kind === 'upload'
       ? [{ kind: 'input-files-equal', selector: request.target.selector,
         files: effect.files.map(({ name, byteLength }) => ({ name, byteLength })) }]
@@ -673,18 +693,27 @@ class WorkspaceService {
       await pause();
       check = await evaluateConditions(conditions, probe);
     }
-    if (!check.allEstablished) return { outcome: OUTCOMES.UNKNOWN, basis: 'value-unverified', evidence: { effect, check } };
-    for (let heldMs = 0; heldMs < valueSettleMs; heldMs += completionPollMs) {
-      await pause();
+    if (!check.allEstablished) {
+      return { outcome: OUTCOMES.UNKNOWN, basis: 'value-unverified', evidence: { effect, check, effectExecuteMs, valueSettleElapsedMs: Number((performance.now() - settleT0).toFixed(3)) } };
+    }
+    const settleIntervals = valueSettleMs >= completionPollMs * 2
+      ? [Math.floor(valueSettleMs / 2), valueSettleMs - Math.floor(valueSettleMs / 2)]
+      : [valueSettleMs];
+    for (const waitMs of settleIntervals) {
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
       const recheck = await evaluateConditions(conditions, probe);
       if (!recheck.allEstablished) {
-        return { outcome: OUTCOMES.UNKNOWN, basis: 'value-reverted', evidence: { effect, check, recheck } };
+        return { outcome: OUTCOMES.UNKNOWN, basis: 'value-reverted', evidence: { effect, check, recheck, effectExecuteMs, valueSettleElapsedMs: Number((performance.now() - settleT0).toFixed(3)) } };
       }
     }
-    return { outcome: OUTCOMES.COMPLETED, basis: KIND_COMPLETION_BASIS[request.kind], evidence: { effect, check } };
+    return {
+      outcome: OUTCOMES.COMPLETED,
+      basis: KIND_COMPLETION_BASIS[request.kind],
+      evidence: { effect, check, effectExecuteMs, valueSettleElapsedMs: Number((performance.now() - settleT0).toFixed(3)) },
+    };
   }
 
-  async #awaitCompletion(workspaceId, completion, effect, request) {
+  async #awaitCompletion(workspaceId, completion, effect, request, effectExecuteMs = 0) {
     const probe = this.#probe(workspaceId, request.pageId, request);
     const deadline = this.#nowMs() + this.#config.dispatch.completionTimeoutMs;
     let last = null;

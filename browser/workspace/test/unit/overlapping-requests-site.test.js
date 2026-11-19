@@ -203,6 +203,18 @@ assert.equal(
   'stock-win',
 );
 
+// 5b. Fewer calls on Fawn WITH worse wall-clock time AND higher USD classifies as economic loss (stock-win), NOT tie!
+const economicLoss = evaluateOverlappingPilotVerdict({
+  controlled: false,
+  gates: allPassGates,
+  fawnSummary: armFixture(22, 0.92, [68.0, 69.1, 67.8]),
+  stockSummary: armFixture(30, 0.64, [52.0, 51.5, 52.2]),
+  latencyClaimSpec: fasterSpec,
+});
+assert.equal(economicLoss.verdict, 'stock-win');
+assert.equal(economicLoss.claimScope, 'economic-loss-worse-time-and-higher-cost');
+assert.ok(economicLoss.outcomeBuckets);
+
 // 6. Any failed safety/correctness prerequisite forces invalid-or-unsafe
 assert.equal(
   evaluateOverlappingPilotVerdict({

@@ -1,7 +1,7 @@
 {
   "$schema": "fawn-workspace-service.schema.json",
   "schemaVersion": 5,
-  "configVersion": "2026-11-09-workspace-service-v5",
+  "configVersion": "2026-11-19-workspace-service-v5-settle40",
   "protocolVersion": 4,
   "contractPath": "docs/fawn-workspace-contract.md",
   "journal": {
@@ -22,7 +22,7 @@
     "actionTimeoutMs": 15000,
     "completionTimeoutMs": 10000,
     "completionPollMs": 10,
-    "valueSettleMs": 300
+    "valueSettleMs": 40
   },
   "browser": {
     "engine": "chromium",

@@ -12,7 +12,7 @@ import { createPlaywrightAdapter } from '../../src/adapters/playwright-adapter.j
 import { createCdpAdapter } from '../../src/adapters/cdp-adapter.js';
 
 // Each popup opens 50 ms after its click, as many widget libraries do. `revert` puts its text
-// back 100 ms after a choice (late hydration); `elsewhere` shows its choice beside an empty input.
+// back 15 ms after a choice (late hydration); `elsewhere` shows its choice beside an empty input.
 const PAGE = `<!doctype html><title>Choices</title>
 <select id="native"><option value="">Pick</option><option value="y">Yes</option><option value="n">No</option></select>
 <div id="sponsor-box"><div id="sponsor" role="combobox" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="sponsor-list">Choose</div>
@@ -39,7 +39,7 @@ function wire(id, { revertAfterMs = null, showIn = null } = {}) {
   });
 }
 wire('sponsor');
-wire('revert', { revertAfterMs: 100 });
+wire('revert', { revertAfterMs: 15 });
 wire('elsewhere', { showIn: 'elsewhere-shown' });
 </script>`;
 

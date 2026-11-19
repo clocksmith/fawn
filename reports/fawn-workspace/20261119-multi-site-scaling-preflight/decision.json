@@ -1,0 +1,198 @@
+{
+  "schema": "fawn.multi-site-scaling-preflight-decision/v2",
+  "recordedOn": "2026-11-19",
+  "controlledPreflightOnly": true,
+  "liveAdvantageClaimed": false,
+  "paidPilotSpendHeld": true,
+  "doeGpuClaimed": false,
+  "graphMachineryFrozen": true,
+  "retainedPriorPreflight": "reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json",
+  "adjudicationRecord": "reports/fawn-workspace/20261119-multi-site-scaling-preflight/adjudication.json",
+  "suite": {
+    "harness": "browser/workspace/qualification/multi-site-scaling.js",
+    "siteModule": "browser/workspace/qualification/multi-site-scaling-site.js",
+    "budgetLedger": "browser/workspace/qualification/budget-ledger.js",
+    "dynamicRowAndLookalikeUnitTest": "browser/workspace/test/unit/dynamic-rows-and-lookalikes.test.js",
+    "publicReadOnlyTransferHarness": "browser/workspace/qualification/public-readonly-transfer.js",
+    "reploidPr6ReadOnlySpec": "browser/workspace/qualification/specs/reploid-pr6-readonly.json",
+    "sites": [
+      {
+        "siteId": "procurement",
+        "reviewContainer": "dl",
+        "searchControls": ["input[type=search]", "select"],
+        "detailControls": ["input[type=text]", "select"]
+      },
+      {
+        "siteId": "helpdesk",
+        "reviewContainer": "section",
+        "searchControls": ["input[type=search]"],
+        "detailControls": ["input[type=text]", "select", "textarea"]
+      },
+      {
+        "siteId": "inventory",
+        "reviewContainer": "table",
+        "searchControls": ["input[type=text]"],
+        "detailControls": ["input[type=text]", "select", "input[type=text]"]
+      },
+      {
+        "siteId": "compliance",
+        "reviewContainer": "article",
+        "searchControls": ["select", "input[type=search]"],
+        "detailControls": ["select", "textarea"]
+      }
+    ],
+    "tasksPerOrder": 28,
+    "safetyProbesPerOrder": 4,
+    "orders": [
+      "forward",
+      "mirrored"
+    ],
+    "arms": [
+      "fawn-graph",
+      "stock-reusable-parts",
+      "fresh-planning",
+      "stock-script"
+    ],
+    "totalEpisodesExecuted": 256,
+    "totalDynamicSiteVisits": 992
+  },
+  "gates": {
+    "allTaskRunsCompleted": true,
+    "allSafetyProbesRefusedSafely": true,
+    "zeroFinalSubmissions": true,
+    "zeroWrongBranchOrDuplicateEffects": true,
+    "zeroRejectedSiteWrites": true,
+    "fawnCallsFallAfterTeaching": true,
+    "fawnDpLookupUnderFiveMs": true
+  },
+  "armSummaries": {
+    "fawn-graph": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 78,
+      "meanCallsEarly1To8": 5.5,
+      "meanCallsMiddle9To20": 2.17,
+      "meanCallsLate21To28": 1.0,
+      "meanVerifiedSecondsPerTask": 1.063,
+      "maxDpLookupMs": 0.8917,
+      "finalActiveGraphsBytes": 25896,
+      "finalBytesPerAddedWorkflow": 1295,
+      "finalStoreNodes": 70,
+      "finalStoreEdges": 70,
+      "unpatchedDriftBreakagesPerOrder": 0
+    },
+    "stock-reusable-parts": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 110,
+      "meanCallsEarly1To8": 5.5,
+      "meanCallsMiddle9To20": 4.17,
+      "meanCallsLate21To28": 2.0,
+      "meanVerifiedSecondsPerTask": 0.689,
+      "maxDpLookupMs": 0.1318,
+      "finalActiveGraphsBytes": 29308,
+      "finalBytesPerAddedWorkflow": 1465,
+      "finalStoreNodes": 20,
+      "finalStoreEdges": 134,
+      "unpatchedDriftBreakagesPerOrder": 0
+    },
+    "fresh-planning": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 238,
+      "meanCallsEarly1To8": 5.5,
+      "meanCallsMiddle9To20": 8.83,
+      "meanCallsLate21To28": 11.0,
+      "meanVerifiedSecondsPerTask": 1.117,
+      "maxDpLookupMs": 0,
+      "finalActiveGraphsBytes": 0,
+      "finalBytesPerAddedWorkflow": 0,
+      "finalStoreNodes": 0,
+      "finalStoreEdges": 0,
+      "unpatchedDriftBreakagesPerOrder": 0
+    },
+    "stock-script": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 0,
+      "meanCallsEarly1To8": 0,
+      "meanCallsMiddle9To20": 0,
+      "meanCallsLate21To28": 0,
+      "meanVerifiedSecondsPerTask": 0.652,
+      "maxDpLookupMs": 0,
+      "finalActiveGraphsBytes": 0,
+      "finalBytesPerAddedWorkflow": 0,
+      "finalStoreNodes": 0,
+      "finalStoreEdges": 0,
+      "unpatchedDriftBreakagesPerOrder": 8
+    }
+  },
+  "pairedPilotThreeRepeatRehearsal": {
+    "harness": "browser/workspace/qualification/overlapping-requests-reuse.js",
+    "armSchedule": "paired",
+    "repeats": 3,
+    "allGatesPassed": true,
+    "allLegitimateLookalikesCompleted": true,
+    "fawnMeanCalls": 22,
+    "stockMeanCalls": 30,
+    "fawnVerifiedSecondsByRepeat": [7.763, 8.46, 7.258],
+    "stockVerifiedSecondsByRepeat": [6.208, 6.076, 4.614],
+    "fawnMeanVerifiedSeconds": 7.827,
+    "stockMeanVerifiedSeconds": 5.633,
+    "meanVerifiedSecondsDelta": 2.194,
+    "hotPathStepProfileMs": {
+      "profiledActionsCount": 225,
+      "meanDispatchCheckMs": 5.128,
+      "meanBrowserExecuteMs": 25.724,
+      "meanValueSettleMs": 26.361,
+      "meanPostSnapshotMs": 5.482,
+      "meanTotalDispatchMs": 63.364,
+      "breakEvenSecondsPerSavedCall": 0.274
+    },
+    "outcomeBuckets": {
+      "fawnCompletions": 21,
+      "stockCompletions": 21,
+      "fawnSafeStops": 6,
+      "stockSafeStops": 3,
+      "fawnWrongBranchActions": 0,
+      "stockWrongBranchActions": 0,
+      "fawnDuplicateEffects": 0,
+      "stockDuplicateEffects": 0,
+      "fawnSubmissions": 0,
+      "stockSubmissions": 0,
+      "legitimateLookalikeCompletionsPerArm": 3
+    }
+  },
+  "reploidPr6ReadOnlyTransfer": {
+    "harness": "browser/workspace/qualification/public-readonly-transfer.js",
+    "spec": "browser/workspace/qualification/specs/reploid-pr6-readonly.json",
+    "entryUrl": "https://github.com/clocksmith/reploid/pull/6",
+    "mergeCommit": "7df3c3b634a477cf908d526f4ed4367e760dda16",
+    "shortMergeCommit": "7df3c3b63",
+    "changedFiles": [
+      "README.md",
+      "docs/open-mesh-architecture.md"
+    ],
+    "budgetCeilingsEnforced": {
+      "maxCalls": 20,
+      "maxCostUsd": 1.0,
+      "maxCallUsd": 0.15
+    },
+    "allCompleted": true,
+    "serverWriteHits": 0,
+    "zeroDispatchedWrites": true,
+    "zeroBlockedWrites": true,
+    "learnCalls": 2,
+    "transferReuseCalls": [0, 0],
+    "transferReuseCachedSteps": [1, 1]
+  },
+  "claimBoundary": "Zero-model controlled preflight across 4 structurally distinct site architectures (dl, section, table, article) with per-visit changing list rows, mirrored task orders, fair Stock hAB/persistentNotes parity, and zero 90 s timeout defects, plus live read-only GitHub PR #6 (7df3c3b63) transfer under enforced budget caps. Establishes deterministic harness readiness, sub-millisecond Bellman DP lookup (0.89 ms max at 70 nodes), bounded storage (1,295 bytes per added workflow), and a 0.274 s/call pilot break-even threshold. Establishes no live LLM speed or cost advantage; the $8 Sonnet pilot remains held pending explicit owner authorization."
+}
