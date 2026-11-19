@@ -2028,6 +2028,10 @@
     {
       "schema": "config/release-scoreboard.schema.json",
       "data": "config/release-scoreboard.json"
+    },
+    {
+      "schema": "config/webgpu-graphics-proof-campaigns.schema.json",
+      "data": "config/webgpu-graphics-proof-campaigns.json"
     }
   ],
   "globTargets": [

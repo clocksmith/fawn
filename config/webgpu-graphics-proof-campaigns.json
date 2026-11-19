@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "2026-11-18-c2-offline-comparator-v1",
+  "contractId": "doe-webgpu-graphics-and-backend-proofs-v1",
+  "status": "frozen-offline-comparator-contract",
+  "strategyAuthorityPath": "config/doe-product-strategy.json",
+  "thesisAuthorityPath": "docs/thesis.md",
+  "methodologyThresholdsPath": "config/benchmark-methodology-thresholds.json",
+  "integratedComparisonPath": "config/fawn-doe-integrated-comparison.json",
+  "nonConfoundingBoundary": {
+    "workspaceEvidenceQualifiesDoe": false,
+    "kernelWinQualifiesPageRendering": false,
+    "forbidCrossBackendAveraging": true,
+    "forbidMicrobenchmarkSubstitutionOnApplicationLoss": true
+  },
+  "comparatorControls": {
+    "requireSourceMatchedDawn": true,
+    "requireIdenticalValidationState": true,
+    "requireIdenticalCachePolicy": true,
+    "requireIdenticalWarmupPolicy": true,
+    "reportColdSetupSeparately": true,
+    "allowFallbackToDawn": false,
+    "minAaRunsPerBackend": 2,
+    "maxAaP50DriftRatio": 1.05,
+    "requiredTimingPhases": [
+      "coldSetupMs",
+      "commandPreparationMs",
+      "cpuVisibleCompletionMs",
+      "displayedPresentationMs"
+    ],
+    "requiredResourceMetrics": [
+      "cpuTimeMs",
+      "processRssBytes",
+      "gpuAllocatedBytes",
+      "failOrSkipCount"
+    ],
+    "forbiddenPresentationSubstitutes": [
+      "request_animation_frame_interval_only",
+      "offscreen_readback_without_displayed_canvas",
+      "internal_gpu_timestamp_without_end_to_end_delivery"
+    ]
+  },
+  "backends": [
+    {
+      "backendId": "amd-vulkan",
+      "proofOrder": 1,
+      "inheritsPriorBackend": false,
+      "dependsOnFrozenBackendId": null,
+      "requiresFairnessAuditAboveSuspiciousRatio": true,
+      "tailRegressionObligations": []
+    },
+    {
+      "backendId": "apple-metal",
+      "proofOrder": 2,
+      "inheritsPriorBackend": false,
+      "dependsOnFrozenBackendId": "amd-vulkan",
+      "requiresFairnessAuditAboveSuspiciousRatio": true,
+      "tailRegressionObligations": [
+        {
+          "obligationId": "onnx-runtime-metal-tail-p95-p99",
+          "workloadSurface": "bench/external-projects/onnx-webgpu-substitution",
+          "requiredPercentiles": [
+            "p95Percent",
+            "p99Percent"
+          ],
+          "requiresRetainedAdverseRun": true,
+          "allowMeanToHideTailLoss": false,
+          "resolutionRule": "Inspect p95 and p99 tail latency, retain the adverse Metal run intact, and either fix the regression on current code or publish the exact unqualified scope without pooling into Vulkan."
+        }
+      ]
+    }
+  ],
+  "workloads": [
+    {
+      "workloadId": "doppler_complete_generation",
+      "family": "inference_compute",
+      "sourceContractPath": "bench/external-projects/doppler-generation/complete-generation-v2.json",
+      "requiresUnchangedApplication": true,
+      "requiresDisplayedCanvasPresentation": false,
+      "minimumWinRatioP50": 1.25,
+      "minimumWinRatioP95": 1.25,
+      "oracle": {
+        "oracleKind": "exact_tokens_and_text",
+        "referencePath": "bench/external-projects/doppler-generation/reference.py",
+        "rule": "Exact prompt token IDs, generated token IDs, decoded text and stop reason against the independent CPU reference on every run."
+      }
+    },
+    {
+      "workloadId": "three_webgpu_fog_scene",
+      "family": "three_webgpu_scene",
+      "sourceContractPath": "bench/external-projects/three-webgpu-screen/screen.json",
+      "requiresUnchangedApplication": true,
+      "requiresDisplayedCanvasPresentation": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "deviceScaleFactor": 1
+      },
+      "minimumWinRatioP50": 1.10,
+      "minimumWinRatioP95": 1.10,
+      "oracle": {
+        "oracleKind": "pinned_frame_rgba_tolerance",
+        "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
+        "maxChannelMae": 1.0,
+        "maxChannelP99": 4.0,
+        "rule": "Deterministic n/60 animation clock at frames 30, 90 and 180 with unmasked displayed-canvas captures verified against independent PNG decoding."
+      }
+    },
+    {
+      "workloadId": "image_filter_pipeline_2d",
+      "family": "image_filter_2d",
+      "requiresUnchangedApplication": true,
+      "requiresDisplayedCanvasPresentation": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "deviceScaleFactor": 1
+      },
+      "minimumWinRatioP50": 1.10,
+      "minimumWinRatioP95": 1.10,
+      "oracle": {
+        "oracleKind": "pinned_frame_rgba_tolerance",
+        "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
+        "maxChannelMae": 1.0,
+        "maxChannelP99": 2.0,
+        "rule": "Multi-pass 2D convolution and color-grade pipeline checked against an independent CPU RGBA reference after displayed canvas presentation."
+      }
+    },
+    {
+      "workloadId": "particles_fluids_simulation",
+      "family": "particles_or_fluids",
+      "requiresUnchangedApplication": true,
+      "requiresDisplayedCanvasPresentation": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "deviceScaleFactor": 1
+      },
+      "minimumWinRatioP50": 1.10,
+      "minimumWinRatioP95": 1.10,
+      "oracle": {
+        "oracleKind": "step_state_and_displayed_rgba",
+        "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
+        "maxChannelMae": 1.5,
+        "maxChannelP99": 4.0,
+        "rule": "Fixed-seed compute step plus rendered particle/fluid frame checked against an independent step-conservation and displayed-pixel oracle."
+      }
+    },
+    {
+      "workloadId": "texture_upload_canvas_presentation",
+      "family": "texture_upload_presentation",
+      "requiresUnchangedApplication": true,
+      "requiresDisplayedCanvasPresentation": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "deviceScaleFactor": 1
+      },
+      "minimumWinRatioP50": 1.10,
+      "minimumWinRatioP95": 1.10,
+      "oracle": {
+        "oracleKind": "pinned_frame_rgba_tolerance",
+        "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
+        "maxChannelMae": 0.0,
+        "maxChannelP99": 0.0,
+        "rule": "Staged RGBA texture upload rendered to a displayed canvas; requires queue completion plus exact compositor pixel verification."
+      }
+    }
+  ],
+  "chromiumOwnershipGate": {
+    "requiredLifecycleStages": [
+      "device_creation",
+      "shader_compilation",
+      "submission",
+      "mapped_readback",
+      "canvas_presentation",
+      "destruction"
+    ],
+    "disabledDoeNegativeControlMustFail": true,
+    "allowSilentDawnFallback": false,
+    "maintainabilityAuthorityPath": "browser/chromium/acceptance.md",
+    "threeWayArmsInOrder": [
+      "stock-chromium-with-dawn",
+      "fawn-workspace-with-dawn",
+      "fawn-workspace-with-doe"
+    ]
+  }
+}

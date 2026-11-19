@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Doe Unchanged WebGPU Compute, Graphics, Metal Tail and Chromium Ownership Campaign Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "catalogVersion",
+    "contractId",
+    "status",
+    "strategyAuthorityPath",
+    "thesisAuthorityPath",
+    "methodologyThresholdsPath",
+    "integratedComparisonPath",
+    "nonConfoundingBoundary",
+    "comparatorControls",
+    "backends",
+    "workloads",
+    "chromiumOwnershipGate"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "catalogVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contractId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["frozen-offline-comparator-contract"]
+    },
+    "strategyAuthorityPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "thesisAuthorityPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "methodologyThresholdsPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "integratedComparisonPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonConfoundingBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspaceEvidenceQualifiesDoe",
+        "kernelWinQualifiesPageRendering",
+        "forbidCrossBackendAveraging",
+        "forbidMicrobenchmarkSubstitutionOnApplicationLoss"
+      ],
+      "properties": {
+        "workspaceEvidenceQualifiesDoe": { "type": "boolean", "const": false },
+        "kernelWinQualifiesPageRendering": { "type": "boolean", "const": false },
+        "forbidCrossBackendAveraging": { "type": "boolean", "const": true },
+        "forbidMicrobenchmarkSubstitutionOnApplicationLoss": { "type": "boolean", "const": true }
+      }
+    },
+    "comparatorControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requireSourceMatchedDawn",
+        "requireIdenticalValidationState",
+        "requireIdenticalCachePolicy",
+        "requireIdenticalWarmupPolicy",
+        "reportColdSetupSeparately",
+        "allowFallbackToDawn",
+        "minAaRunsPerBackend",
+        "maxAaP50DriftRatio",
+        "requiredTimingPhases",
+        "requiredResourceMetrics",
+        "forbiddenPresentationSubstitutes"
+      ],
+      "properties": {
+        "requireSourceMatchedDawn": { "type": "boolean", "const": true },
+        "requireIdenticalValidationState": { "type": "boolean", "const": true },
+        "requireIdenticalCachePolicy": { "type": "boolean", "const": true },
+        "requireIdenticalWarmupPolicy": { "type": "boolean", "const": true },
+        "reportColdSetupSeparately": { "type": "boolean", "const": true },
+        "allowFallbackToDawn": { "type": "boolean", "const": false },
+        "minAaRunsPerBackend": { "type": "integer", "minimum": 2 },
+        "maxAaP50DriftRatio": { "type": "number", "minimum": 1.0, "maximum": 1.2 },
+        "requiredTimingPhases": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "coldSetupMs",
+              "commandPreparationMs",
+              "cpuVisibleCompletionMs",
+              "displayedPresentationMs"
+            ]
+          }
+        },
+        "requiredResourceMetrics": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "string",
+            "enum": [
+              "cpuTimeMs",
+              "processRssBytes",
+              "gpuAllocatedBytes",
+              "failOrSkipCount"
+            ]
+          }
+        },
+        "forbiddenPresentationSubstitutes": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "enum": [
+              "request_animation_frame_interval_only",
+              "offscreen_readback_without_displayed_canvas",
+              "internal_gpu_timestamp_without_end_to_end_delivery"
+            ]
+          }
+        }
+      }
+    },
+    "backends": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "backendId",
+          "proofOrder",
+          "inheritsPriorBackend",
+          "dependsOnFrozenBackendId",
+          "requiresFairnessAuditAboveSuspiciousRatio",
+          "tailRegressionObligations"
+        ],
+        "properties": {
+          "backendId": {
+            "type": "string",
+            "enum": ["amd-vulkan", "apple-metal"]
+          },
+          "proofOrder": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "inheritsPriorBackend": {
+            "type": "boolean",
+            "const": false
+          },
+          "dependsOnFrozenBackendId": {
+            "type": ["string", "null"]
+          },
+          "requiresFairnessAuditAboveSuspiciousRatio": {
+            "type": "boolean",
+            "const": true
+          },
+          "tailRegressionObligations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "obligationId",
+                "workloadSurface",
+                "requiredPercentiles",
+                "requiresRetainedAdverseRun",
+                "allowMeanToHideTailLoss",
+                "resolutionRule"
+              ],
+              "properties": {
+                "obligationId": { "type": "string", "minLength": 1 },
+                "workloadSurface": { "type": "string", "minLength": 1 },
+                "requiredPercentiles": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": { "type": "string", "enum": ["p95Percent", "p99Percent"] }
+                },
+                "requiresRetainedAdverseRun": { "type": "boolean", "const": true },
+                "allowMeanToHideTailLoss": { "type": "boolean", "const": false },
+                "resolutionRule": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "workloads": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "workloadId",
+          "family",
+          "requiresUnchangedApplication",
+          "requiresDisplayedCanvasPresentation",
+          "minimumWinRatioP50",
+          "minimumWinRatioP95",
+          "oracle"
+        ],
+        "properties": {
+          "workloadId": {
+            "type": "string",
+            "enum": [
+              "doppler_complete_generation",
+              "three_webgpu_fog_scene",
+              "image_filter_pipeline_2d",
+              "particles_fluids_simulation",
+              "texture_upload_canvas_presentation"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "inference_compute",
+              "three_webgpu_scene",
+              "image_filter_2d",
+              "particles_or_fluids",
+              "texture_upload_presentation"
+            ]
+          },
+          "sourceContractPath": { "type": "string", "minLength": 1 },
+          "requiresUnchangedApplication": { "type": "boolean", "const": true },
+          "requiresDisplayedCanvasPresentation": { "type": "boolean" },
+          "viewport": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "deviceScaleFactor"],
+            "properties": {
+              "width": { "type": "integer", "minimum": 64 },
+              "height": { "type": "integer", "minimum": 64 },
+              "deviceScaleFactor": { "type": "number", "minimum": 1 }
+            }
+          },
+          "minimumWinRatioP50": { "type": "number", "minimum": 1.0 },
+          "minimumWinRatioP95": { "type": "number", "minimum": 1.0 },
+          "oracle": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["oracleKind", "referencePath", "rule"],
+            "properties": {
+              "oracleKind": {
+                "type": "string",
+                "enum": [
+                  "exact_tokens_and_text",
+                  "pinned_frame_rgba_tolerance",
+                  "step_state_and_displayed_rgba"
+                ]
+              },
+              "referencePath": { "type": "string", "minLength": 1 },
+              "maxChannelMae": { "type": "number", "minimum": 0 },
+              "maxChannelP99": { "type": "number", "minimum": 0 },
+              "rule": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "chromiumOwnershipGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredLifecycleStages",
+        "disabledDoeNegativeControlMustFail",
+        "allowSilentDawnFallback",
+        "maintainabilityAuthorityPath",
+        "threeWayArmsInOrder"
+      ],
+      "properties": {
+        "requiredLifecycleStages": {
+          "type": "array",
+          "minItems": 6,
+          "items": {
+            "type": "string",
+            "enum": [
+              "device_creation",
+              "shader_compilation",
+              "submission",
+              "mapped_readback",
+              "canvas_presentation",
+              "destruction"
+            ]
+          }
+        },
+        "disabledDoeNegativeControlMustFail": { "type": "boolean", "const": true },
+        "allowSilentDawnFallback": { "type": "boolean", "const": false },
+        "maintainabilityAuthorityPath": { "type": "string", "minLength": 1 },
+        "threeWayArmsInOrder": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "stock-chromium-with-dawn",
+              "fawn-workspace-with-dawn",
+              "fawn-workspace-with-doe"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
