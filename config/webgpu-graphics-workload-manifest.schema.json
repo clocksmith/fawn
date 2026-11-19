@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinned Third-Party WebGPU Graphics Workload Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "workloadId",
+    "family",
+    "comparisonClass",
+    "upstreamRepository",
+    "upstreamCommit",
+    "license",
+    "immutableSourceFiles",
+    "buildSteps",
+    "servedRoot",
+    "entryHtmlPath",
+    "canvasSelector",
+    "viewport",
+    "captureFrames",
+    "launchPolicy",
+    "pinnedModuleRoutes"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "workloadId": {
+      "type": "string",
+      "enum": [
+        "three_webgpu_fog_scene",
+        "image_filter_pipeline_2d",
+        "particles_fluids_simulation",
+        "texture_upload_canvas_presentation"
+      ]
+    },
+    "family": {
+      "type": "string",
+      "enum": [
+        "three_webgpu_scene",
+        "image_filter_2d",
+        "particles_or_fluids",
+        "texture_upload_presentation"
+      ]
+    },
+    "comparisonClass": {
+      "type": "string",
+      "const": "unchanged-application-replacement"
+    },
+    "upstreamRepository": {
+      "type": "string",
+      "pattern": "^https://github\\.com/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"
+    },
+    "upstreamCommit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "dependencyManifestPath": {
+      "type": ["string", "null"]
+    },
+    "dependencyManifestSha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "path", "sha256", "bytes"],
+      "properties": {
+        "identifier": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "immutableSourceFiles": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "bytes"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "bytes": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "buildSteps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "argv", "cwdRel", "timeoutSeconds"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "argv": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "cwdRel": { "type": "string", "minLength": 1 },
+          "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 1800 }
+        }
+      }
+    },
+    "servedRoot": { "type": "string", "minLength": 1 },
+    "entryHtmlPath": { "type": "string", "pattern": "^/" },
+    "canvasSelector": { "type": "string", "minLength": 1 },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "deviceScaleFactor"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 64 },
+        "height": { "type": "integer", "minimum": 64 },
+        "deviceScaleFactor": { "type": "number", "const": 1 }
+      }
+    },
+    "captureFrames": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warmupFrames", "sampleFrames", "pinnedFrameNumbers", "deterministicClockHz"],
+      "properties": {
+        "warmupFrames": { "type": "integer", "minimum": 1 },
+        "sampleFrames": { "type": "integer", "minimum": 30 },
+        "pinnedFrameNumbers": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "deterministicClockHz": { "type": "integer", "const": 60 }
+      }
+    },
+    "launchPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headless",
+        "sandbox",
+        "displayedSurfaceRequired",
+        "commonBrowserArgs",
+        "platformBrowserArgs",
+        "forbiddenBrowserArgs"
+      ],
+      "properties": {
+        "headless": { "type": "boolean", "const": false },
+        "sandbox": { "type": "string", "const": "enabled" },
+        "displayedSurfaceRequired": { "type": "boolean", "const": true },
+        "commonBrowserArgs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "platformBrowserArgs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["linux", "darwin"],
+          "properties": {
+            "linux": { "type": "array", "items": { "type": "string" } },
+            "darwin": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "forbiddenBrowserArgs": {
+          "type": "array",
+          "minItems": 4,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "pinnedModuleRoutes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "interceptUrl",
+          "upstreamRepository",
+          "upstreamCommit",
+          "upstreamPath",
+          "sha256",
+          "bytes",
+          "licenseIdentifier",
+          "contentType"
+        ],
+        "properties": {
+          "interceptUrl": { "type": "string", "pattern": "^https://" },
+          "upstreamRepository": { "type": "string", "pattern": "^https://github\\.com/" },
+          "upstreamCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "upstreamPath": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "licenseIdentifier": { "type": "string", "minLength": 1 },
+          "contentType": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

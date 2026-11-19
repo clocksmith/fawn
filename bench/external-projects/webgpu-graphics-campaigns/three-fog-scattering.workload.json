@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "workloadId": "three_webgpu_fog_scene",
+  "family": "three_webgpu_scene",
+  "comparisonClass": "unchanged-application-replacement",
+  "upstreamRepository": "https://github.com/mrdoob/three.js",
+  "upstreamCommit": "3d3a92e467aafd6749eb06f732a5f42e6d117fe4",
+  "dependencyManifestPath": "reports/browser-compiler/20261004/three-screen/dependencies.json",
+  "dependencyManifestSha256": "e0c161efa894f97d20fe7adab688c0ba9152d36457acff29da34a0c2d18b916e",
+  "license": {
+    "identifier": "MIT",
+    "path": "LICENSE",
+    "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+    "bytes": 1081
+  },
+  "immutableSourceFiles": [
+    {
+      "path": "LICENSE",
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+      "bytes": 1081
+    },
+    {
+      "path": "examples/webgpu_custom_fog_scattering.html",
+      "sha256": "f70cfa61732d2d82ab0a2cb4c4bdaaa0c39da26d806cae5caa90c5195a7016b2",
+      "bytes": 8243
+    },
+    {
+      "path": "build/three.webgpu.js",
+      "sha256": "48a21c08b44276973cc992563d8e15707ef1a457f375084439975a14f094cecf",
+      "bytes": 1297689
+    },
+    {
+      "path": "build/three.tsl.js",
+      "sha256": "b2262f58aa71930d1e7765c18cbea8a6055d91eb9527207d740d91de08bb76c4",
+      "bytes": 1031018
+    },
+    {
+      "path": "examples/jsm/tsl/display/GaussianBlurNode.js",
+      "sha256": "7da1d6c70f4af9f601d6a7714fbcc43330fb1d03c8ce73d15554c1d4657c7c7a",
+      "bytes": 11001
+    }
+  ],
+  "buildSteps": [],
+  "servedRoot": ".",
+  "entryHtmlPath": "/examples/webgpu_custom_fog_scattering.html",
+  "canvasSelector": "canvas",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "deviceScaleFactor": 1
+  },
+  "captureFrames": {
+    "warmupFrames": 6,
+    "sampleFrames": 180,
+    "pinnedFrameNumbers": [30, 90, 180],
+    "deterministicClockHz": 60
+  },
+  "launchPolicy": {
+    "headless": false,
+    "sandbox": "enabled",
+    "displayedSurfaceRequired": true,
+    "commonBrowserArgs": [
+      "--enable-unsafe-webgpu",
+      "--ignore-gpu-blocklist"
+    ],
+    "platformBrowserArgs": {
+      "linux": [
+        "--use-angle=vulkan",
+        "--enable-features=Vulkan"
+      ],
+      "darwin": [
+        "--use-angle=metal"
+      ]
+    },
+    "forbiddenBrowserArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-vulkan-surface",
+      "--headless",
+      "--headless=new"
+    ]
+  },
+  "pinnedModuleRoutes": []
+}

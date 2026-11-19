@@ -1,12 +1,15 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026-11-18-c2-offline-comparator-v1",
+  "catalogVersion": "2026-11-19-c2-pinned-third-party-harnesses-v2",
   "contractId": "doe-webgpu-graphics-and-backend-proofs-v1",
   "status": "frozen-offline-comparator-contract",
   "strategyAuthorityPath": "config/doe-product-strategy.json",
   "thesisAuthorityPath": "docs/thesis.md",
   "methodologyThresholdsPath": "config/benchmark-methodology-thresholds.json",
   "integratedComparisonPath": "config/fawn-doe-integrated-comparison.json",
+  "dopplerReceiptProducerPath": "bench/external-projects/doppler-generation/produce_c2_receipt.py",
+  "preparationToolPath": "bench/external-projects/webgpu-graphics-campaigns/prepare_sources.py",
+  "captureHarnessPath": "bench/external-projects/webgpu-graphics-campaigns/capture_campaign.mjs",
   "nonConfoundingBoundary": {
     "workspaceEvidenceQualifiesDoe": false,
     "kernelWinQualifiesPageRendering": false,
@@ -20,7 +23,7 @@
     "requireIdenticalWarmupPolicy": true,
     "reportColdSetupSeparately": true,
     "allowFallbackToDawn": false,
-    "minAaRunsPerBackend": 2,
+    "minAaRunsPerBackend": 8,
     "maxAaP50DriftRatio": 1.05,
     "requiredTimingPhases": [
       "coldSetupMs",
@@ -65,7 +68,7 @@
           ],
           "requiresRetainedAdverseRun": true,
           "allowMeanToHideTailLoss": false,
-          "resolutionRule": "Inspect p95 and p99 tail latency, retain the adverse Metal run intact, and either fix the regression on current code or publish the exact unqualified scope without pooling into Vulkan."
+          "resolutionRule": "Inspect p95 and p99 tail latency from raw latency samples, retain the adverse Metal run intact on disk, and either fix the regression on current code or publish the exact unqualified scope without pooling into Vulkan."
         }
       ]
     }
@@ -88,7 +91,7 @@
     {
       "workloadId": "three_webgpu_fog_scene",
       "family": "three_webgpu_scene",
-      "sourceContractPath": "bench/external-projects/three-webgpu-screen/screen.json",
+      "sourceContractPath": "bench/external-projects/webgpu-graphics-campaigns/three-fog-scattering.workload.json",
       "requiresUnchangedApplication": true,
       "requiresDisplayedCanvasPresentation": true,
       "viewport": {
@@ -103,12 +106,13 @@
         "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
         "maxChannelMae": 1.0,
         "maxChannelP99": 4.0,
-        "rule": "Deterministic n/60 animation clock at frames 30, 90 and 180 with unmasked displayed-canvas captures verified against independent PNG decoding."
+        "rule": "Unchanged mrdoob/three.js examples/webgpu_custom_fog_scattering.html under visible sandboxed browser with deterministic n/60 clock at frames 30, 90 and 180 verified by decoding actual PNG captures."
       }
     },
     {
       "workloadId": "image_filter_pipeline_2d",
       "family": "image_filter_2d",
+      "sourceContractPath": "bench/external-projects/webgpu-graphics-campaigns/webgpu-samples-image-blur.workload.json",
       "requiresUnchangedApplication": true,
       "requiresDisplayedCanvasPresentation": true,
       "viewport": {
@@ -123,12 +127,13 @@
         "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
         "maxChannelMae": 1.0,
         "maxChannelP99": 2.0,
-        "rule": "Multi-pass 2D convolution and color-grade pipeline checked against an independent CPU RGBA reference after displayed canvas presentation."
+        "rule": "Unchanged webgpu/webgpu-samples sample/imageBlur multi-pass compute + fullscreen quad pipeline checked via decoded displayed-canvas PNG RGBA bytes at frames 30, 90 and 180."
       }
     },
     {
       "workloadId": "particles_fluids_simulation",
       "family": "particles_or_fluids",
+      "sourceContractPath": "bench/external-projects/webgpu-graphics-campaigns/splash-mls-mpm-fluid.workload.json",
       "requiresUnchangedApplication": true,
       "requiresDisplayedCanvasPresentation": true,
       "viewport": {
@@ -143,12 +148,13 @@
         "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
         "maxChannelMae": 1.5,
         "maxChannelP99": 4.0,
-        "rule": "Fixed-seed compute step plus rendered particle/fluid frame checked against an independent step-conservation and displayed-pixel oracle."
+        "rule": "Unchanged matsuoka-601/Splash MLS-MPM 3D fluid simulation and screen-space fluid render checked via decoded displayed-canvas PNG RGBA bytes at frames 30, 90 and 180."
       }
     },
     {
       "workloadId": "texture_upload_canvas_presentation",
       "family": "texture_upload_presentation",
+      "sourceContractPath": "bench/external-projects/webgpu-graphics-campaigns/webgpu-utils-2d-array.workload.json",
       "requiresUnchangedApplication": true,
       "requiresDisplayedCanvasPresentation": true,
       "viewport": {
@@ -161,9 +167,9 @@
       "oracle": {
         "oracleKind": "pinned_frame_rgba_tolerance",
         "referencePath": "browser/workspace/test/support/gpu-presentation-oracle.js",
-        "maxChannelMae": 0.0,
-        "maxChannelP99": 0.0,
-        "rule": "Staged RGBA texture upload rendered to a displayed canvas; requires queue completion plus exact compositor pixel verification."
+        "maxChannelMae": 1.0,
+        "maxChannelP99": 2.0,
+        "rule": "Unchanged greggman/webgpu-utils examples/2d-array.html texture-array upload, mipmap generation and displayed canvas presentation checked via decoded PNG RGBA bytes at frames 30, 90 and 180."
       }
     }
   ],

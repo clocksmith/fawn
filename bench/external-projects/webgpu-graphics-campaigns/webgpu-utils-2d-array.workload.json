@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "workloadId": "texture_upload_canvas_presentation",
+  "family": "texture_upload_presentation",
+  "comparisonClass": "unchanged-application-replacement",
+  "upstreamRepository": "https://github.com/greggman/webgpu-utils",
+  "upstreamCommit": "e6552a1b6797b3c88d27faa688cd8888837c9b28",
+  "dependencyManifestPath": null,
+  "dependencyManifestSha256": null,
+  "license": {
+    "identifier": "MIT",
+    "path": "LICENSE.md",
+    "sha256": "7bc231a071455bad3c539565385904ea572c0e3ad18713f29a8f88f8d4eefebc",
+    "bytes": 1070
+  },
+  "immutableSourceFiles": [
+    {
+      "path": "LICENSE.md",
+      "sha256": "7bc231a071455bad3c539565385904ea572c0e3ad18713f29a8f88f8d4eefebc",
+      "bytes": 1070
+    },
+    {
+      "path": "package.json",
+      "sha256": "0d4bb2549bed3d09d13eb67d5b65a23d4fb8aca5901e74bba8844c28af9fab4e",
+      "bytes": 2091
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "7eec8ef8507dda2f7d09bf0bb1a5d043a7dd80b07a4a2c74b88b04206a5fa7c8",
+      "bytes": 193703
+    },
+    {
+      "path": "examples/2d-array.html",
+      "sha256": "876a5b9ac1527b5b607afe86ac82c08e80583bdfc2ea15f07dfd878591d23397",
+      "bytes": 493
+    },
+    {
+      "path": "examples/2d-array.js",
+      "sha256": "d2a2697824b137fb382d3cad4e333c8354507ec1e46f06d080081e4e65c371f0",
+      "bytes": 9192
+    }
+  ],
+  "buildSteps": [
+    {
+      "id": "npm-ci",
+      "argv": ["npm", "ci", "--ignore-scripts"],
+      "cwdRel": ".",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "rollup-make",
+      "argv": ["npm", "run", "make"],
+      "cwdRel": ".",
+      "timeoutSeconds": 300
+    }
+  ],
+  "servedRoot": ".",
+  "entryHtmlPath": "/examples/2d-array.html",
+  "canvasSelector": "canvas",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "deviceScaleFactor": 1
+  },
+  "captureFrames": {
+    "warmupFrames": 6,
+    "sampleFrames": 180,
+    "pinnedFrameNumbers": [30, 90, 180],
+    "deterministicClockHz": 60
+  },
+  "launchPolicy": {
+    "headless": false,
+    "sandbox": "enabled",
+    "displayedSurfaceRequired": true,
+    "commonBrowserArgs": [
+      "--enable-unsafe-webgpu",
+      "--ignore-gpu-blocklist"
+    ],
+    "platformBrowserArgs": {
+      "linux": [
+        "--use-angle=vulkan",
+        "--enable-features=Vulkan"
+      ],
+      "darwin": [
+        "--use-angle=metal"
+      ]
+    },
+    "forbiddenBrowserArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-vulkan-surface",
+      "--headless",
+      "--headless=new"
+    ]
+  },
+  "pinnedModuleRoutes": [
+    {
+      "interceptUrl": "https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.js",
+      "upstreamRepository": "https://github.com/greggman/wgpu-matrix",
+      "upstreamCommit": "3dba9013e3575c844c18a5bdb85981cd76c9a123",
+      "upstreamPath": "dist/2.x/wgpu-matrix.module.js",
+      "sha256": "4d4f55634e690adae836ca5eb24ae4e5821f19cfd8aa15def5ad49f777b2aea2",
+      "bytes": 172126,
+      "licenseIdentifier": "MIT",
+      "contentType": "application/javascript; charset=utf-8"
+    }
+  ]
+}

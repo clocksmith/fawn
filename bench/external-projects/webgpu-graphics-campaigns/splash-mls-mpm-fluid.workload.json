@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "workloadId": "particles_fluids_simulation",
+  "family": "particles_or_fluids",
+  "comparisonClass": "unchanged-application-replacement",
+  "upstreamRepository": "https://github.com/matsuoka-601/Splash",
+  "upstreamCommit": "3df5d621e6f153d7269037cbd8606bd83796f3fd",
+  "dependencyManifestPath": null,
+  "dependencyManifestSha256": null,
+  "license": {
+    "identifier": "MIT",
+    "path": "LICENSE",
+    "sha256": "7f265ec09ad9301c68f559b816866b1d4c826a958d25e8e214c5e3a28735a64e",
+    "bytes": 1069
+  },
+  "immutableSourceFiles": [
+    {
+      "path": "LICENSE",
+      "sha256": "7f265ec09ad9301c68f559b816866b1d4c826a958d25e8e214c5e3a28735a64e",
+      "bytes": 1069
+    },
+    {
+      "path": "package.json",
+      "sha256": "970066b019e961b5d46e7f79b7b8db2044d03574f34877765f8a5d99cb673343",
+      "bytes": 342
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "69fbc522c9aa918e377615f31eba21c180dba067670fc24c842792bb78dd017f",
+      "bytes": 38359
+    },
+    {
+      "path": "index.html",
+      "sha256": "b951946d2e59d01eb1fa20583d8d6a9fdf625a9d76888b3468c221ffb6adc23f",
+      "bytes": 2513
+    },
+    {
+      "path": "main.ts",
+      "sha256": "c103b9c946eccfe4d2b79fff2a92334b4f43b7902aaf4e0791b0a61e77133bb2",
+      "bytes": 12446
+    }
+  ],
+  "buildSteps": [
+    {
+      "id": "npm-ci",
+      "argv": ["npm", "ci", "--ignore-scripts"],
+      "cwdRel": ".",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "vite-build",
+      "argv": ["npm", "run", "build"],
+      "cwdRel": ".",
+      "timeoutSeconds": 300
+    }
+  ],
+  "servedRoot": "dist",
+  "entryHtmlPath": "/index.html",
+  "canvasSelector": "#fluidCanvas",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "deviceScaleFactor": 1
+  },
+  "captureFrames": {
+    "warmupFrames": 6,
+    "sampleFrames": 180,
+    "pinnedFrameNumbers": [30, 90, 180],
+    "deterministicClockHz": 60
+  },
+  "launchPolicy": {
+    "headless": false,
+    "sandbox": "enabled",
+    "displayedSurfaceRequired": true,
+    "commonBrowserArgs": [
+      "--enable-unsafe-webgpu",
+      "--ignore-gpu-blocklist"
+    ],
+    "platformBrowserArgs": {
+      "linux": [
+        "--use-angle=vulkan",
+        "--enable-features=Vulkan"
+      ],
+      "darwin": [
+        "--use-angle=metal"
+      ]
+    },
+    "forbiddenBrowserArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-vulkan-surface",
+      "--headless",
+      "--headless=new"
+    ]
+  },
+  "pinnedModuleRoutes": []
+}

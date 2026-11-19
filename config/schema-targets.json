@@ -2078,6 +2078,10 @@
       "allowEmpty": true
     },
     {
+      "schema": "config/webgpu-graphics-workload-manifest.schema.json",
+      "glob": "bench/external-projects/webgpu-graphics-campaigns/*.workload.json"
+    },
+    {
       "schema": "config/external-project-preparation-receipt.schema.json",
       "glob": "bench/out/external-projects/*/*/preparation.json",
       "allowEmpty": true

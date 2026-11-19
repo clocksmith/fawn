@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "workloadId": "image_filter_pipeline_2d",
+  "family": "image_filter_2d",
+  "comparisonClass": "unchanged-application-replacement",
+  "upstreamRepository": "https://github.com/webgpu/webgpu-samples",
+  "upstreamCommit": "e040ec1a20dbbe01afed30c812e825b2639cfe5b",
+  "dependencyManifestPath": null,
+  "dependencyManifestSha256": null,
+  "license": {
+    "identifier": "BSD-3-Clause",
+    "path": "LICENSE.txt",
+    "sha256": "fa0167eceb69ca740a694e9984024c6e50399a0e1ebf913ba74e9c78f344e8d2",
+    "bytes": 1511
+  },
+  "immutableSourceFiles": [
+    {
+      "path": "LICENSE.txt",
+      "sha256": "fa0167eceb69ca740a694e9984024c6e50399a0e1ebf913ba74e9c78f344e8d2",
+      "bytes": 1511
+    },
+    {
+      "path": "package.json",
+      "sha256": "51ad5872ba89d0ffb785f503123cd8f59354cf778f755dcb433cbaee0d3e13d2",
+      "bytes": 1919
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "3224324789160ed49ed94d936c67494b4a3966ce36918f186d1bf4e457766316",
+      "bytes": 173464
+    },
+    {
+      "path": "sample/imageBlur/index.html",
+      "sha256": "dc9aa17104aa11f858457c505d3c89774aa4cceae01948dcad15e5824e172a38",
+      "bytes": 1567
+    },
+    {
+      "path": "sample/imageBlur/main.ts",
+      "sha256": "fc0198dce5ce5c725244947b949ba80b22acf4c27eadffffccf6ff33fb237db1",
+      "bytes": 6369
+    },
+    {
+      "path": "sample/imageBlur/blur.wgsl",
+      "sha256": "f0391eb96adda60b61398fceb97b40034585d7ae1455dc2db954cf27b8c1c907",
+      "bytes": 2678
+    },
+    {
+      "path": "shaders/fullscreenTexturedQuad.wgsl",
+      "sha256": "bf707a522205cef94daddfe9db07a0fe8044b29c4066d31d3f331d8bec5432c1",
+      "bytes": 854
+    }
+  ],
+  "buildSteps": [
+    {
+      "id": "npm-ci",
+      "argv": ["npm", "ci", "--ignore-scripts"],
+      "cwdRel": ".",
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "build-samples",
+      "argv": ["npm", "run", "build"],
+      "cwdRel": ".",
+      "timeoutSeconds": 300
+    }
+  ],
+  "servedRoot": "out",
+  "entryHtmlPath": "/sample/imageBlur/index.html",
+  "canvasSelector": "canvas",
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "deviceScaleFactor": 1
+  },
+  "captureFrames": {
+    "warmupFrames": 6,
+    "sampleFrames": 180,
+    "pinnedFrameNumbers": [30, 90, 180],
+    "deterministicClockHz": 60
+  },
+  "launchPolicy": {
+    "headless": false,
+    "sandbox": "enabled",
+    "displayedSurfaceRequired": true,
+    "commonBrowserArgs": [
+      "--enable-unsafe-webgpu",
+      "--ignore-gpu-blocklist"
+    ],
+    "platformBrowserArgs": {
+      "linux": [
+        "--use-angle=vulkan",
+        "--enable-features=Vulkan"
+      ],
+      "darwin": [
+        "--use-angle=metal"
+      ]
+    },
+    "forbiddenBrowserArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-vulkan-surface",
+      "--headless",
+      "--headless=new"
+    ]
+  },
+  "pinnedModuleRoutes": []
+}

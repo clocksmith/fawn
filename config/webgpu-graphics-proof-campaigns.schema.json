@@ -12,6 +12,9 @@
     "thesisAuthorityPath",
     "methodologyThresholdsPath",
     "integratedComparisonPath",
+    "dopplerReceiptProducerPath",
+    "preparationToolPath",
+    "captureHarnessPath",
     "nonConfoundingBoundary",
     "comparatorControls",
     "backends",
@@ -48,6 +51,18 @@
       "minLength": 1
     },
     "integratedComparisonPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dopplerReceiptProducerPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "preparationToolPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "captureHarnessPath": {
       "type": "string",
       "minLength": 1
     },
@@ -90,7 +105,7 @@
         "requireIdenticalWarmupPolicy": { "type": "boolean", "const": true },
         "reportColdSetupSeparately": { "type": "boolean", "const": true },
         "allowFallbackToDawn": { "type": "boolean", "const": false },
-        "minAaRunsPerBackend": { "type": "integer", "minimum": 2 },
+        "minAaRunsPerBackend": { "type": "integer", "minimum": 8 },
         "maxAaP50DriftRatio": { "type": "number", "minimum": 1.0, "maximum": 1.2 },
         "requiredTimingPhases": {
           "type": "array",
@@ -205,6 +220,7 @@
         "required": [
           "workloadId",
           "family",
+          "sourceContractPath",
           "requiresUnchangedApplication",
           "requiresDisplayedCanvasPresentation",
           "minimumWinRatioP50",
