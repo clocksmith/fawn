@@ -1,0 +1,122 @@
+{
+  "schema": "fawn.multi-site-scaling-preflight-decision/v1",
+  "recordedOn": "2026-11-18",
+  "controlledPreflightOnly": true,
+  "liveAdvantageClaimed": false,
+  "doeGpuClaimed": false,
+  "graphMachineryFrozen": true,
+  "suite": {
+    "harness": "browser/workspace/qualification/multi-site-scaling.js",
+    "siteModule": "browser/workspace/qualification/multi-site-scaling-site.js",
+    "dynamicRowAndLookalikeUnitTest": "browser/workspace/test/unit/dynamic-rows-and-lookalikes.test.js",
+    "publicReadOnlyTransferHarness": "browser/workspace/qualification/public-readonly-transfer.js",
+    "sites": [
+      "procurement",
+      "helpdesk",
+      "inventory",
+      "compliance"
+    ],
+    "tasksPerOrder": 28,
+    "safetyProbesPerOrder": 4,
+    "orders": [
+      "forward",
+      "mirrored"
+    ],
+    "arms": [
+      "fawn-graph",
+      "stock-reusable-parts",
+      "fresh-planning",
+      "stock-script"
+    ],
+    "totalEpisodesExecuted": 256
+  },
+  "gates": {
+    "allTaskRunsCompleted": true,
+    "allSafetyProbesRefusedSafely": true,
+    "zeroFinalSubmissions": true,
+    "zeroWrongBranchOrDuplicateEffects": true,
+    "zeroRejectedSiteWrites": true,
+    "fawnCallsFallAfterTeaching": true,
+    "fawnDpLookupUnderFiveMs": true
+  },
+  "armSummaries": {
+    "fawn-graph": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 76,
+      "meanCallsEarly1To8": 5.5,
+      "meanCallsMiddle9To20": 2.0,
+      "meanCallsLate21To28": 1.0,
+      "meanVerifiedSecondsPerTask": 2.202,
+      "maxDpLookupMs": 0.5799,
+      "finalActiveGraphsBytes": 25152,
+      "finalBytesPerAddedWorkflow": 1258,
+      "finalStoreNodes": 68,
+      "finalStoreEdges": 68,
+      "unpatchedDriftBreakagesPerOrder": 0
+    },
+    "stock-reusable-parts": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 120,
+      "meanCallsEarly1To8": 5.5,
+      "meanCallsMiddle9To20": 5.0,
+      "meanCallsLate21To28": 2.0,
+      "meanVerifiedSecondsPerTask": 13.507,
+      "maxDpLookupMs": 0.1811,
+      "finalActiveGraphsBytes": 28932,
+      "finalBytesPerAddedWorkflow": 1447,
+      "finalStoreNodes": 20,
+      "finalStoreEdges": 132,
+      "unpatchedDriftBreakagesPerOrder": 0
+    },
+    "fresh-planning": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 236,
+      "meanCallsEarly1To8": 5.5,
+      "meanCallsMiddle9To20": 8.67,
+      "meanCallsLate21To28": 11.0,
+      "meanVerifiedSecondsPerTask": 2.085,
+      "maxDpLookupMs": 0,
+      "finalActiveGraphsBytes": 0,
+      "finalBytesPerAddedWorkflow": 0,
+      "finalStoreNodes": 0,
+      "finalStoreEdges": 0,
+      "unpatchedDriftBreakagesPerOrder": 0
+    },
+    "stock-script": {
+      "taskRuns": 56,
+      "completions": 56,
+      "safetyRuns": 8,
+      "safeRefusals": 8,
+      "totalCallsPerOrder": 0,
+      "meanCallsEarly1To8": 0,
+      "meanCallsMiddle9To20": 0,
+      "meanCallsLate21To28": 0,
+      "meanVerifiedSecondsPerTask": 0.624,
+      "maxDpLookupMs": 0,
+      "finalActiveGraphsBytes": 0,
+      "finalBytesPerAddedWorkflow": 0,
+      "finalStoreNodes": 0,
+      "finalStoreEdges": 0,
+      "unpatchedDriftBreakagesPerOrder": 8
+    }
+  },
+  "publicReadOnlyTransferPreflight": {
+    "harness": "browser/workspace/qualification/public-readonly-transfer.js",
+    "allCompleted": true,
+    "serverWriteHits": 0,
+    "zeroBlockedWrites": true,
+    "learnCalls": 4,
+    "transferReuseCalls": [0, 0],
+    "transferReuseCachedSteps": [3, 3]
+  },
+  "claimBoundary": "Zero-model controlled preflight across 4 sites with per-visit changing list rows, mirrored task orders, and 4 lookalike/ambiguity traps. Establishes deterministic harness readiness, sub-millisecond Bellman DP lookup (0.58 ms max at 68 nodes), and bounded storage (1,258 bytes per added workflow). Establishes no live LLM speed or cost advantage until an owner-approved paid run passes predeclared gates."
+}

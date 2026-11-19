@@ -918,3 +918,182 @@ export function resolveOverlappingArmSchedule({
     perArmCeilings,
   };
 }
+
+export function classifyOverlappingRequestPhase(requestId, isRefusalCase = false) {
+  if (isRefusalCase || requestId === 'R8_lookalike_refusal') return 'refusal';
+  if (requestId === 'R1_teach_ab' || requestId === 'R2_teach_bc') return 'teaching';
+  if (requestId === 'R3_heldout_compose_ac' || requestId === 'R7_post_repair_variant') return 'replay';
+  return 'repair';
+}
+
+export function resolveOverlappingLatencyClaim({
+  latencyClaim,
+  nonInferiorMarginRatio,
+  tieEpsilonSeconds,
+  tieEpsilonUsd,
+  controlled,
+} = {}) {
+  if (!controlled && !latencyClaim) {
+    throw Error(
+      'Paid runs require an explicit --latency-claim <faster|non-inferior> predeclared before launch',
+    );
+  }
+  const mode = latencyClaim ?? 'faster';
+  if (mode !== 'faster' && mode !== 'non-inferior') {
+    throw Error(`Unsupported --latency-claim: ${mode} (expected faster or non-inferior)`);
+  }
+  const marginRatio = nonInferiorMarginRatio === undefined || nonInferiorMarginRatio === null
+    ? 1.05
+    : Number(nonInferiorMarginRatio);
+  if (!Number.isFinite(marginRatio) || marginRatio < 1 || marginRatio > 1.25) {
+    throw Error('--non-inferior-margin-ratio must be a finite number in [1.0, 1.25]');
+  }
+  const secEps = tieEpsilonSeconds === undefined || tieEpsilonSeconds === null
+    ? 0.25
+    : Number(tieEpsilonSeconds);
+  const usdEps = tieEpsilonUsd === undefined || tieEpsilonUsd === null
+    ? 0.005
+    : Number(tieEpsilonUsd);
+  if (!Number.isFinite(secEps) || secEps < 0 || !Number.isFinite(usdEps) || usdEps < 0) {
+    throw Error('Tie epsilons must be non-negative finite numbers');
+  }
+  return {
+    mode,
+    nonInferiorMarginRatio: mode === 'non-inferior' ? Number(marginRatio.toFixed(4)) : null,
+    tieEpsilonSeconds: Number(secEps.toFixed(4)),
+    tieEpsilonUsd: Number(usdEps.toFixed(6)),
+    pilotScopeNote: '3 repeats constitute a bounded pilot, not a definitive estimate of a narrow advantage; $8 cap is a hard ceiling, not spend authorization.',
+  };
+}
+
+export function evaluateOverlappingPilotVerdict({
+  controlled,
+  gates,
+  fawnSummary,
+  stockSummary,
+  latencyClaimSpec,
+}) {
+  const prerequisitesPassed = Boolean(
+    gates?.allTaskRunsCompleted
+      && gates?.allLookalikeRefusalsSafe
+      && gates?.allAmbiguousProbesStoppedSafely
+      && gates?.fawnComposedHeldoutACZeroCalls
+      && gates?.fawnRepairedChangedMiddleAndPersisted
+      && gates?.fawnReusedRepairAfterRestartZeroCalls
+      && gates?.stockExercisedReusableHelpers
+      && gates?.zeroWrongBranchActions
+      && gates?.zeroDuplicateEffects
+      && gates?.zeroFinalSubmissions
+      && gates?.sourceUnchanged
+      && gates?.zeroRejectedSiteWrites,
+  );
+  if (!prerequisitesPassed) {
+    return {
+      verdict: 'invalid-or-unsafe',
+      claimScope: 'none-failed-safety-or-correctness-prerequisite',
+      prerequisitesPassed: false,
+      latencyGatePassed: false,
+      callsGatePassed: false,
+      usdGatePassed: false,
+      pairedRepeatLatencyWins: 0,
+      pairedRepeatsCompared: 0,
+    };
+  }
+
+  const fawnByRep = new Map((fawnSummary?.byRepeat ?? []).map(r => [r.repeat, r]));
+  const stockByRep = new Map((stockSummary?.byRepeat ?? []).map(r => [r.repeat, r]));
+  const sharedRepeats = [...fawnByRep.keys()].filter(rep => stockByRep.has(rep)).sort((a, b) => a - b);
+
+  let pairedRepeatLatencyWins = 0;
+  let pairedRepeatLatencyLosses = 0;
+  let pairedRepeatLatencyTies = 0;
+  for (const rep of sharedRepeats) {
+    const deltaSec = fawnByRep.get(rep).totalVerifiedSeconds - stockByRep.get(rep).totalVerifiedSeconds;
+    if (deltaSec < -latencyClaimSpec.tieEpsilonSeconds) pairedRepeatLatencyWins += 1;
+    else if (deltaSec > latencyClaimSpec.tieEpsilonSeconds) pairedRepeatLatencyLosses += 1;
+    else pairedRepeatLatencyTies += 1;
+  }
+
+  const meanSecDelta = Number(
+    (fawnSummary.meanVerifiedSecondsPerRepeat - stockSummary.meanVerifiedSecondsPerRepeat).toFixed(3),
+  );
+  const meanCallsDelta = Number(
+    (fawnSummary.meanNovelCallsPerRepeat - stockSummary.meanNovelCallsPerRepeat).toFixed(2),
+  );
+  const hasMeasuredUsd = !controlled
+    && Number.isFinite(fawnSummary.meanMeasuredCostUsdPerRepeat)
+    && Number.isFinite(stockSummary.meanMeasuredCostUsdPerRepeat);
+  const meanUsdDelta = hasMeasuredUsd
+    ? Number((fawnSummary.meanMeasuredCostUsdPerRepeat - stockSummary.meanMeasuredCostUsdPerRepeat).toFixed(6))
+    : null;
+
+  const callsGatePassed = meanCallsDelta < 0;
+  const stockCallsAdvantage = meanCallsDelta > 0;
+  const usdGatePassed = controlled
+    ? null
+    : Boolean(hasMeasuredUsd && meanUsdDelta < -latencyClaimSpec.tieEpsilonUsd);
+  const stockUsdAdvantage = !controlled && hasMeasuredUsd && meanUsdDelta > latencyClaimSpec.tieEpsilonUsd;
+
+  let latencyGatePassed = false;
+  let stockLatencyAdvantage = false;
+  if (latencyClaimSpec.mode === 'faster') {
+    const majorityWins = sharedRepeats.length > 0
+      && pairedRepeatLatencyWins > Math.floor(sharedRepeats.length / 2);
+    latencyGatePassed = meanSecDelta < -latencyClaimSpec.tieEpsilonSeconds && majorityWins;
+    stockLatencyAdvantage = meanSecDelta > latencyClaimSpec.tieEpsilonSeconds
+      && pairedRepeatLatencyLosses > Math.floor(sharedRepeats.length / 2);
+  } else {
+    const allowedMax = stockSummary.meanVerifiedSecondsPerRepeat * latencyClaimSpec.nonInferiorMarginRatio;
+    latencyGatePassed = fawnSummary.meanVerifiedSecondsPerRepeat <= allowedMax;
+    stockLatencyAdvantage = fawnSummary.meanVerifiedSecondsPerRepeat > allowedMax;
+  }
+
+  if (controlled) {
+    return {
+      verdict: 'controlled-preflight-only',
+      claimScope: 'zero-live-model-calls-no-speed-or-cost-advantage-claimed',
+      prerequisitesPassed: true,
+      latencyClaimMode: latencyClaimSpec.mode,
+      callsGatePassed,
+      latencyGatePassedIfLive: latencyGatePassed,
+      usdGatePassed: null,
+      meanVerifiedSecondsDelta: meanSecDelta,
+      meanCallsDelta,
+      meanUsdDelta: null,
+      pairedRepeatLatencyWins,
+      pairedRepeatLatencyLosses,
+      pairedRepeatLatencyTies,
+      pairedRepeatsCompared: sharedRepeats.length,
+    };
+  }
+
+  let verdict = 'tie';
+  let claimScope = 'narrow-to-proven-exact-reuse-and-report-repair-as-controlled';
+  if (!hasMeasuredUsd) {
+    verdict = 'invalid-or-unsafe';
+    claimScope = 'missing-measured-usd-accounting';
+  } else if (callsGatePassed && usdGatePassed && latencyGatePassed) {
+    verdict = 'fawn-win';
+    claimScope = 'tested-overlapping-procurement-workflow-family-only';
+  } else if (stockCallsAdvantage && (stockUsdAdvantage || stockLatencyAdvantage)) {
+    verdict = 'stock-win';
+    claimScope = 'narrow-to-proven-exact-reuse-and-report-repair-as-controlled';
+  }
+
+  return {
+    verdict,
+    claimScope,
+    prerequisitesPassed: true,
+    latencyClaimMode: latencyClaimSpec.mode,
+    latencyGatePassed,
+    callsGatePassed,
+    usdGatePassed,
+    meanVerifiedSecondsDelta: meanSecDelta,
+    meanCallsDelta,
+    meanUsdDelta,
+    pairedRepeatLatencyWins,
+    pairedRepeatLatencyLosses,
+    pairedRepeatLatencyTies,
+    pairedRepeatsCompared: sharedRepeats.length,
+  };
+}

@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import {
   EXPECTED_ACCOUNT_SCOPE,
   buildOverlappingRequestsSpec,
+  classifyOverlappingRequestPhase,
   computeShippingQuote,
+  evaluateOverlappingPilotVerdict,
   resolveItemBySearch,
   resolveItemByShortlist,
   resolveOverlappingArmSchedule,
+  resolveOverlappingLatencyClaim,
   startOverlappingRequestsServer,
 } from '../../qualification/overlapping-requests-site.js';
 
@@ -98,4 +101,118 @@ try {
   await server.close();
 }
 
-console.log('ok: overlapping-request suite R1..R8, lookalike account scope, ambiguous gate and wrong-branch counters');
+// Phase classification separates teaching, replay, repair and refusal
+assert.equal(classifyOverlappingRequestPhase('R1_teach_ab'), 'teaching');
+assert.equal(classifyOverlappingRequestPhase('R2_teach_bc'), 'teaching');
+assert.equal(classifyOverlappingRequestPhase('R3_heldout_compose_ac'), 'replay');
+assert.equal(classifyOverlappingRequestPhase('R7_post_repair_variant'), 'replay');
+assert.equal(classifyOverlappingRequestPhase('R4_shared_prefix_new_tail'), 'repair');
+assert.equal(classifyOverlappingRequestPhase('R5_new_entry_shared_suffix'), 'repair');
+assert.equal(classifyOverlappingRequestPhase('R6_changed_middle_repair'), 'repair');
+assert.equal(classifyOverlappingRequestPhase('R8_lookalike_refusal', true), 'refusal');
+
+// Paid runs must predeclare --latency-claim explicitly before launch
+assert.throws(
+  () => resolveOverlappingLatencyClaim({ latencyClaim: null, controlled: false }),
+  /Paid runs require an explicit --latency-claim/,
+);
+assert.throws(
+  () => resolveOverlappingLatencyClaim({ latencyClaim: 'non-inferior', nonInferiorMarginRatio: 0.95, controlled: false }),
+  /--non-inferior-margin-ratio/,
+);
+const fasterSpec = resolveOverlappingLatencyClaim({ latencyClaim: 'faster', controlled: false });
+const nonInferiorSpec = resolveOverlappingLatencyClaim({
+  latencyClaim: 'non-inferior',
+  nonInferiorMarginRatio: 1.05,
+  controlled: false,
+});
+
+const allPassGates = {
+  allTaskRunsCompleted: true,
+  allLookalikeRefusalsSafe: true,
+  allAmbiguousProbesStoppedSafely: true,
+  fawnComposedHeldoutACZeroCalls: true,
+  fawnRepairedChangedMiddleAndPersisted: true,
+  fawnReusedRepairAfterRestartZeroCalls: true,
+  stockExercisedReusableHelpers: true,
+  zeroWrongBranchActions: true,
+  zeroDuplicateEffects: true,
+  zeroFinalSubmissions: true,
+  sourceUnchanged: true,
+  zeroRejectedSiteWrites: true,
+};
+const armFixture = (calls, usd, secsByRep) => ({
+  meanNovelCallsPerRepeat: calls,
+  meanMeasuredCostUsdPerRepeat: usd,
+  meanVerifiedSecondsPerRepeat: Number((secsByRep.reduce((a, b) => a + b, 0) / secsByRep.length).toFixed(3)),
+  byRepeat: secsByRep.map((s, idx) => ({ repeat: idx + 1, totalVerifiedSeconds: s })),
+});
+
+// 1. Controlled preflight claims no live speed or cost advantage
+assert.equal(
+  evaluateOverlappingPilotVerdict({
+    controlled: true,
+    gates: allPassGates,
+    fawnSummary: armFixture(22, 0, [9.1, 9.2, 9.0]),
+    stockSummary: armFixture(30, 0, [10.4, 10.5, 10.6]),
+    latencyClaimSpec: resolveOverlappingLatencyClaim({ controlled: true }),
+  }).verdict,
+  'controlled-preflight-only',
+);
+
+// 2. Live win under --latency-claim faster requires lower calls, USD, and paired wall-clock majority
+const liveWin = evaluateOverlappingPilotVerdict({
+  controlled: false,
+  gates: allPassGates,
+  fawnSummary: armFixture(22, 0.52, [48.1, 49.0, 47.4]),
+  stockSummary: armFixture(30, 0.78, [64.2, 63.8, 65.1]),
+  latencyClaimSpec: fasterSpec,
+});
+assert.equal(liveWin.verdict, 'fawn-win');
+assert.equal(liveWin.pairedRepeatLatencyWins, 3);
+
+// 3. Fewer calls/USD but slower wall-clock under --latency-claim faster classifies as tie, never a win
+const slowerUnderFasterClaim = evaluateOverlappingPilotVerdict({
+  controlled: false,
+  gates: allPassGates,
+  fawnSummary: armFixture(22, 0.52, [66.0, 65.5, 66.2]),
+  stockSummary: armFixture(30, 0.78, [64.2, 63.8, 65.1]),
+  latencyClaimSpec: fasterSpec,
+});
+assert.equal(slowerUnderFasterClaim.verdict, 'tie');
+
+// 4. Same 2.7% slower run passes only if non-inferior (1.05x) was predeclared before launch
+const nonInferiorWin = evaluateOverlappingPilotVerdict({
+  controlled: false,
+  gates: allPassGates,
+  fawnSummary: armFixture(22, 0.52, [66.0, 65.5, 66.2]),
+  stockSummary: armFixture(30, 0.78, [64.2, 63.8, 65.1]),
+  latencyClaimSpec: nonInferiorSpec,
+});
+assert.equal(nonInferiorWin.verdict, 'fawn-win');
+
+// 5. Stock winning calls and USD classifies as stock-win
+assert.equal(
+  evaluateOverlappingPilotVerdict({
+    controlled: false,
+    gates: allPassGates,
+    fawnSummary: armFixture(26, 0.71, [58.0, 58.5, 59.0]),
+    stockSummary: armFixture(20, 0.54, [52.0, 51.5, 52.2]),
+    latencyClaimSpec: fasterSpec,
+  }).verdict,
+  'stock-win',
+);
+
+// 6. Any failed safety/correctness prerequisite forces invalid-or-unsafe
+assert.equal(
+  evaluateOverlappingPilotVerdict({
+    controlled: false,
+    gates: { ...allPassGates, allLookalikeRefusalsSafe: false },
+    fawnSummary: armFixture(22, 0.52, [48.1, 49.0, 47.4]),
+    stockSummary: armFixture(30, 0.78, [64.2, 63.8, 65.1]),
+    latencyClaimSpec: fasterSpec,
+  }).verdict,
+  'invalid-or-unsafe',
+);
+
+console.log('ok: overlapping-request suite R1..R8, predeclared pilot gates, phase classification, tie/loss verdicts and safety stops');

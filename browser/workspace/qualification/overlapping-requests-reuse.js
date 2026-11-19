@@ -29,14 +29,19 @@ import { canonicalJson, sha256Hex } from '../src/journal.js';
 import {
   EXPECTED_ACCOUNT_SCOPE,
   buildOverlappingRequestsSpec,
+  classifyOverlappingRequestPhase,
   createControlledOverlappingPlanner,
+  evaluateOverlappingPilotVerdict,
   resolveOverlappingArmSchedule,
+  resolveOverlappingLatencyClaim,
   startOverlappingRequestsServer,
 } from './overlapping-requests-site.js';
 
 const USAGE = [
   'Usage: node browser/workspace/qualification/overlapping-requests-reuse.js',
   '  --out .tmp/DIR [--arm-schedule paired|paired-plus-fresh-1|all-three]',
+  '  [--latency-claim faster|non-inferior] [--non-inferior-margin-ratio 1.05]',
+  '  [--tie-epsilon-seconds 0.25] [--tie-epsilon-usd 0.005]',
   '  [--repeats 3] [--max-calls 240] [--max-cost-usd 8] [--max-call-usd 0.15] [--controlled]',
 ].join('\n');
 
@@ -46,7 +51,18 @@ if (rawArgs.includes('--help')) {
   process.exit(0);
 }
 
-const VALUE_FLAGS = new Set(['--out', '--arm-schedule', '--repeats', '--max-calls', '--max-cost-usd', '--max-call-usd']);
+const VALUE_FLAGS = new Set([
+  '--out',
+  '--arm-schedule',
+  '--latency-claim',
+  '--non-inferior-margin-ratio',
+  '--tie-epsilon-seconds',
+  '--tie-epsilon-usd',
+  '--repeats',
+  '--max-calls',
+  '--max-cost-usd',
+  '--max-call-usd',
+]);
 const BOOL_FLAGS = new Set(['--controlled']);
 const parsedFlags = new Map();
 for (let i = 0; i < rawArgs.length; i += 1) {
@@ -88,6 +104,13 @@ const armSchedulePlan = resolveOverlappingArmSchedule({
   controlled,
   maxModelCalls,
   maxCostUsd,
+});
+const latencyClaimSpec = resolveOverlappingLatencyClaim({
+  latencyClaim: parsedFlags.get('--latency-claim') ?? null,
+  nonInferiorMarginRatio: parsedFlags.get('--non-inferior-margin-ratio') ?? null,
+  tieEpsilonSeconds: parsedFlags.get('--tie-epsilon-seconds') ?? null,
+  tieEpsilonUsd: parsedFlags.get('--tie-epsilon-usd') ?? null,
+  controlled,
 });
 if (existsSync(join(out, 'frozen.json'))) {
   throw Error(`Refusing to overwrite existing trial directory: ${out}`);
@@ -156,6 +179,7 @@ const frozen = {
   controlled,
   repeats,
   armSchedule: armSchedulePlan,
+  latencyClaim: latencyClaimSpec,
   ceilings,
   sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   sourceDirty: Boolean(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim()),
@@ -166,6 +190,7 @@ const frozen = {
   requests: spec.requests.map(r => ({
     requestId: r.requestId,
     requestType: r.requestType,
+    phaseCategory: classifyOverlappingRequestPhase(r.requestId, r.isRefusalCase),
     isRefusalCase: r.isRefusalCase,
     fawnMode: r.fawnMode,
     goal: r.goal,
@@ -177,7 +202,7 @@ const frozen = {
     predictedFawn: r.predictedFawn,
     inputsByRepeat: r.inputsByRepeat.slice(0, repeats),
   })),
-  claimBoundary: 'Evaluates goal-aware TraceDag state sharing, held-out A->C edge composition, shared-prefix/new-tail, new-entry/shared-suffix, mid-path repair persistence across restart, and unsafe lookalike-account refusal against capable stock (parameterized helpers + preconditions + persistent notes + outcome check) and optional fresh planning across cold-store repeats on local fixtures. Stock Chrome in all arms; authenticated live-site trial kept separate.',
+  claimBoundary: 'Evaluates goal-aware TraceDag state sharing, held-out A->C edge composition, shared-prefix/new-tail, new-entry/shared-suffix, mid-path repair persistence across restart, and unsafe lookalike-account refusal against capable stock (parameterized helpers + preconditions + persistent notes + outcome check) and optional fresh planning across cold-store repeats on local fixtures. Stock Chrome in all arms; 3 repeats constitute a bounded pilot; $8 cap is an unapproved ceiling unless explicitly authorized.',
 };
 writeFileSync(join(out, 'frozen.json'), `${JSON.stringify(frozen, null, 2)}\n`);
 console.log(JSON.stringify({
@@ -408,6 +433,13 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
       : null;
 
     const runCalls = calls.filter(c => c.run === workspaceId);
+    const failedCallCount = runCalls.filter(c => c.status === 'failed').length;
+    const invEntries = invStore.get(workspaceId)?.activity ?? [];
+    const replanEvents = Array.isArray(invEntries)
+      ? invEntries.filter(a => a.event === 'needs-replan' || a.code === 'stale-observation').length
+      : 0;
+    const retryCount = failedCallCount + replanEvents;
+    const phaseCategory = classifyOverlappingRequestPhase(request.requestId, request.isRefusalCase);
     const measuredCostUsd = controlled
       ? 0
       : (runCalls.every(c => Number.isFinite(c.usage?.costUsd))
@@ -430,6 +462,7 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
       arm,
       requestId: request.requestId,
       requestType: request.requestType,
+      phaseCategory,
       isRefusalCase: request.isRefusalCase,
       goal: request.goal,
       previouslySeenSegments: request.previouslySeenSegments,
@@ -444,6 +477,7 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
       helperReusedActions: 0,
       expectedTotalActions: request.expectedTotalActions,
       novelPlannerCalls: result?.modelCalls ?? 0,
+      retryCount,
       measuredCostUsd,
       repairLocation: result?.askedForHelp ?? (fallbacks[0] ? { afterPrefixSteps: fallbacks[0].atStep, reason: fallbacks[0].reason, pathname: fallbacks[0].pathname } : null),
       cacheHitReasons: [...new Set(cacheHits.map(h => h.acceptedWhy))],
@@ -470,11 +504,13 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
     return row;
   } catch (error) {
     const stats = server.getSessionStats(workspaceId);
+    const runCalls = calls.filter(c => c.run === workspaceId);
     row = {
       repeat,
       arm,
       requestId: request.requestId,
       requestType: request.requestType,
+      phaseCategory: classifyOverlappingRequestPhase(request.requestId, request.isRefusalCase),
       isRefusalCase: request.isRefusalCase,
       goal: request.goal,
       previouslySeenSegments: request.previouslySeenSegments,
@@ -487,7 +523,8 @@ async function runWorkspaceArm({ repeat, arm, request, workflowDir }) {
       reconvergedSuffixActions: 0,
       helperReusedActions: 0,
       expectedTotalActions: request.expectedTotalActions,
-      novelPlannerCalls: calls.filter(c => c.run === workspaceId).length,
+      novelPlannerCalls: runCalls.length,
+      retryCount: runCalls.filter(c => c.status === 'failed').length,
       measuredCostUsd: null,
       repairLocation: null,
       cacheHitReasons: [],
@@ -703,6 +740,7 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
       traceEvents.push({ phase: 'fallback', atStep: 0, ...repairLocation });
     }
 
+    let stockRetryTurns = 0;
     if (!refusalCode && !completedByAutoHelper) {
       const entryLabels = initialEntryLabels;
       const planner = makePlanner({ runName: sessionId, arm, request, isStock: true });
@@ -711,6 +749,9 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
 
       await measurePhase(phases, 'plannerActiveMs', async () => {
         for (let turn = 0; turn < ceilings.maxTurnsPerRun; turn += 1) {
+          if (lastResult && ['invalid-helper-slice', 'invalid-handle', 'outcome-check-incomplete'].includes(lastResult.status)) {
+            stockRetryTurns += 1;
+          }
           const scoped = await takeScopedSnapshot();
           const reusableHelpersView = Object.values(helpers).map(h => ({
             helperId: h.helperId,
@@ -883,6 +924,8 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
     const verifiedResultMs = performance.now() - started;
 
     const runCalls = calls.filter(c => c.run === sessionId);
+    const retryCount = runCalls.filter(c => c.status === 'failed').length + stockRetryTurns;
+    const phaseCategory = classifyOverlappingRequestPhase(request.requestId, request.isRefusalCase);
     const measuredCostUsd = controlled
       ? 0
       : (runCalls.every(c => Number.isFinite(c.usage?.costUsd))
@@ -901,6 +944,7 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
       arm,
       requestId: request.requestId,
       requestType: request.requestType,
+      phaseCategory,
       isRefusalCase: request.isRefusalCase,
       goal: request.goal,
       previouslySeenSegments: request.previouslySeenSegments,
@@ -916,6 +960,7 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
       helperCallsExercised,
       expectedTotalActions: request.expectedTotalActions,
       novelPlannerCalls,
+      retryCount,
       measuredCostUsd,
       repairLocation,
       cacheHitReasons: [...new Set(cacheHits.map(h => h.acceptedWhy))],
@@ -942,11 +987,13 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
     return row;
   } catch (error) {
     const stats = server.getSessionStats(sessionId);
+    const runCalls = calls.filter(c => c.run === sessionId);
     row = {
       repeat,
       arm,
       requestId: request.requestId,
       requestType: request.requestType,
+      phaseCategory: classifyOverlappingRequestPhase(request.requestId, request.isRefusalCase),
       isRefusalCase: request.isRefusalCase,
       goal: request.goal,
       previouslySeenSegments: request.previouslySeenSegments,
@@ -960,7 +1007,8 @@ async function runStockReusableParts({ repeat, request, stockMemoryDir }) {
       helperReusedActions,
       helperCallsExercised,
       expectedTotalActions: request.expectedTotalActions,
-      novelPlannerCalls: calls.filter(c => c.run === sessionId).length,
+      novelPlannerCalls: runCalls.length,
+      retryCount: runCalls.filter(c => c.status === 'failed').length + stockRetryTurns,
       measuredCostUsd: null,
       repairLocation,
       cacheHitReasons: [],
@@ -1237,6 +1285,21 @@ const rejectedWrites = server.getRejectedWrites();
 const taskRows = rows.filter(r => !r.isRefusalCase);
 const refusalRows = rows.filter(r => r.isRefusalCase);
 
+function summarizePhaseSlice(sliceRows) {
+  return {
+    runs: sliceRows.length,
+    completions: sliceRows.filter(r => r.completed).length,
+    reusedActions: sliceRows.reduce((s, r) => s + r.reusedActions, 0),
+    novelPlannerCalls: sliceRows.reduce((s, r) => s + r.novelPlannerCalls, 0),
+    retries: sliceRows.reduce((s, r) => s + (r.retryCount ?? 0), 0),
+    verifiedSeconds: Number((sliceRows.reduce((s, r) => s + r.timeUntilVerifiedMs, 0) / 1000).toFixed(3)),
+    endToEndSeconds: Number((sliceRows.reduce((s, r) => s + r.timingMs.totalMs, 0) / 1000).toFixed(3)),
+    measuredCostUsd: sliceRows.length && sliceRows.every(r => Number.isFinite(r.measuredCostUsd))
+      ? Number(sliceRows.reduce((s, r) => s + r.measuredCostUsd, 0).toFixed(6))
+      : null,
+  };
+}
+
 function summarizeArm(arm) {
   const tSub = taskRows.filter(r => r.arm === arm);
   const rSub = refusalRows.filter(r => r.arm === arm);
@@ -1246,13 +1309,18 @@ function summarizeArm(arm) {
   const byRepeat = [];
   for (const repeat of scheduledRepeats) {
     const repTasks = tSub.filter(r => r.repeat === repeat);
+    const repRefusals = rSub.filter(r => r.repeat === repeat);
     const postTeach = repTasks.filter(r => !['R1_teach_ab', 'R2_teach_bc'].includes(r.requestId));
+    const teachingSlice = summarizePhaseSlice(repTasks.filter(r => r.phaseCategory === 'teaching'));
+    const repairSlice = summarizePhaseSlice(repTasks.filter(r => r.phaseCategory === 'repair'));
+    const replaySlice = summarizePhaseSlice(repTasks.filter(r => r.phaseCategory === 'replay'));
     byRepeat.push({
       repeat,
       taskRuns: repTasks.length,
       taskCompletions: repTasks.filter(r => r.completed).length,
       reusedActions: repTasks.reduce((s, r) => s + r.reusedActions, 0),
       novelPlannerCalls: repTasks.reduce((s, r) => s + r.novelPlannerCalls, 0),
+      retries: repTasks.reduce((s, r) => s + (r.retryCount ?? 0), 0),
       postTeachingPlannerCalls: postTeach.reduce((s, r) => s + r.novelPlannerCalls, 0),
       totalVerifiedSeconds: Number((repTasks.reduce((s, r) => s + r.timeUntilVerifiedMs, 0) / 1000).toFixed(3)),
       totalEndToEndSeconds: Number((repTasks.reduce((s, r) => s + r.timingMs.totalMs, 0) / 1000).toFixed(3)),
@@ -1265,18 +1333,50 @@ function summarizeArm(arm) {
       measuredCostUsd: repTasks.every(r => Number.isFinite(r.measuredCostUsd))
         ? Number(repTasks.reduce((s, r) => s + r.measuredCostUsd, 0).toFixed(6))
         : null,
+      accountingByPhase: {
+        teaching: teachingSlice,
+        repair: repairSlice,
+        replay: replaySlice,
+        refusal: {
+          runs: repRefusals.length,
+          safeRefusals: repRefusals.filter(r => r.refusedSafely).length,
+          retries: repRefusals.reduce((s, r) => s + (r.retryCount ?? 0), 0),
+          attemptedActionsBeforeRefusal: repRefusals.reduce(
+            (s, r) => s + (r.attemptedActionsBeforeRefusal?.length ?? 0),
+            0,
+          ),
+        },
+        totalRepeatedUse: summarizePhaseSlice(repTasks),
+      },
     });
   }
+  const campaignPhaseAccounting = {
+    teaching: summarizePhaseSlice(tSub.filter(r => r.phaseCategory === 'teaching')),
+    repair: summarizePhaseSlice(tSub.filter(r => r.phaseCategory === 'repair')),
+    replay: summarizePhaseSlice(tSub.filter(r => r.phaseCategory === 'replay')),
+    refusal: {
+      runs: rSub.length,
+      safeRefusals: rSub.filter(r => r.refusedSafely).length,
+      retries: rSub.reduce((s, r) => s + (r.retryCount ?? 0), 0),
+      attemptedActionsBeforeRefusal: rSub.reduce(
+        (s, r) => s + (r.attemptedActionsBeforeRefusal?.length ?? 0),
+        0,
+      ),
+    },
+    totalRepeatedUse: summarizePhaseSlice(tSub),
+  };
   return {
     scheduledRepeats,
     taskRunsTotal: tSub.length,
     taskCompletionsTotal: tSub.filter(r => r.completed).length,
     refusalRunsTotal: rSub.length,
     safeRefusalsTotal: rSub.filter(r => r.refusedSafely).length,
+    retriesTotal: tSub.reduce((s, r) => s + (r.retryCount ?? 0), 0) + rSub.reduce((s, r) => s + (r.retryCount ?? 0), 0),
     wrongBranchActionsTotal: tSub.reduce((s, r) => s + r.wrongBranchActions, 0) + rSub.reduce((s, r) => s + r.wrongBranchActions, 0),
     duplicateEffectsTotal: tSub.reduce((s, r) => s + r.duplicateTerminalEffects, 0),
     submissionsTotal: tSub.reduce((s, r) => s + r.submissions, 0) + rSub.reduce((s, r) => s + r.submissions, 0),
     meanNovelCallsPerRepeat: Number(mean(byRepeat.map(x => x.novelPlannerCalls)).toFixed(2)),
+    meanRetriesPerRepeat: Number(mean(byRepeat.map(x => x.retries)).toFixed(2)),
     meanReusedActionsPerRepeat: Number(mean(byRepeat.map(x => x.reusedActions)).toFixed(2)),
     meanVerifiedSecondsPerRepeat: Number(mean(byRepeat.map(x => x.totalVerifiedSeconds)).toFixed(3)),
     sdVerifiedSecondsPerRepeat: Number(stddev(byRepeat.map(x => x.totalVerifiedSeconds)).toFixed(3)),
@@ -1285,6 +1385,7 @@ function summarizeArm(arm) {
     meanMeasuredCostUsdPerRepeat: byRepeat.length && byRepeat.every(x => Number.isFinite(x.measuredCostUsd))
       ? Number(mean(byRepeat.map(x => x.measuredCostUsd)).toFixed(6))
       : null,
+    accountingByPhase: campaignPhaseAccounting,
     byRepeat,
   };
 }
@@ -1341,18 +1442,33 @@ const allGatesPassed = Object.values(gates).every(Boolean);
 const fawnSummary = summarizeArm('fawn-graph');
 const stockSummary = summarizeArm('stock-reusable-parts');
 const freshSummary = summarizeArm('fresh-planning');
+const pilotVerdict = evaluateOverlappingPilotVerdict({
+  controlled,
+  gates,
+  fawnSummary,
+  stockSummary,
+  latencyClaimSpec,
+});
 
 // Primary head-to-head comparison across all repeats (including learning R1..R2 and repair R4..R6)
 const primaryComparison = {
   armsCompared: ['fawn-graph', 'stock-reusable-parts'],
   repeats,
+  latencyClaim: latencyClaimSpec,
+  pilotVerdict,
   correctness: {
     fawnTaskCompletions: `${fawnSummary.taskCompletionsTotal}/${fawnSummary.taskRunsTotal}`,
     stockTaskCompletions: `${stockSummary.taskCompletionsTotal}/${stockSummary.taskRunsTotal}`,
     fawnSafeRefusals: `${fawnSummary.safeRefusalsTotal}/${fawnSummary.refusalRunsTotal}`,
     stockSafeRefusals: `${stockSummary.safeRefusalsTotal}/${stockSummary.refusalRunsTotal}`,
+    fawnRetriesTotal: fawnSummary.retriesTotal,
+    stockRetriesTotal: stockSummary.retriesTotal,
     fawnWrongOrDuplicateEffects: fawnSummary.wrongBranchActionsTotal + fawnSummary.duplicateEffectsTotal + fawnSummary.submissionsTotal,
     stockWrongOrDuplicateEffects: stockSummary.wrongBranchActionsTotal + stockSummary.duplicateEffectsTotal + stockSummary.submissionsTotal,
+  },
+  accountingByPhase: {
+    fawnGraph: fawnSummary.accountingByPhase,
+    stockReusableParts: stockSummary.accountingByPhase,
   },
   plannerCostIncludingLearningAndRepair: {
     fawnCallsByRepeat: fawnSummary.byRepeat.map(r => r.novelPlannerCalls),
@@ -1384,6 +1500,7 @@ const summary = {
   controlled,
   repeats,
   armSchedule: armSchedulePlan,
+  latencyClaim: latencyClaimSpec,
   ceilings,
   totalModelCalls: calls.length,
   measuredTotalCostUsd: controlled
@@ -1395,6 +1512,7 @@ const summary = {
   browserVersions: [...new Set(rows.map(r => r.browserVersion).filter(Boolean))],
   gates,
   allGatesPassed,
+  pilotVerdict,
   primaryComparison,
   arms: {
     'fawn-graph': fawnSummary,

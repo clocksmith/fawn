@@ -131,7 +131,21 @@ and no speed or model-cost claim is made before an approved paid run
 `72` SLOC hand-written `R1..R8` script reaches `4.200 s` verified at `0` calls
 after a `+11` SLOC manual `Gate_v2` patch, while `461`-SLOC `stock-reusable-parts`
 spends `30` vs `22` planner calls/repeat and `17` vs `9` post-teaching calls for
-the same `44/45` reused actions).
+the same `44/45` reused actions). With `TraceDag` machinery frozen,
+[`overlapping-requests-reuse.js`](../../browser/workspace/qualification/overlapping-requests-reuse.js)
+and [`overlapping-requests-approval.md`](../../browser/workspace/qualification/overlapping-requests-approval.md)
+now predeclare paired latency/cost/tie rules (`--latency-claim faster|non-inferior`)
+and separate teaching, repair, replay, retry and refusal accounting (`$0` spend
+authorized), [`dynamic-rows-and-lookalikes.test.js`](../../browser/workspace/test/unit/dynamic-rows-and-lookalikes.test.js)
+verifies dynamic-row matching alongside six lookalike/ambiguity refusals, and a
+`256`-episode [four-site mirrored scaling preflight](../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json)
+([`multi-site-scaling.js`](../../browser/workspace/qualification/multi-site-scaling.js),
+[curve](../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/scaling-curve.json),
+[`public-readonly-transfer.js`](../../browser/workspace/qualification/public-readonly-transfer.js))
+recorded `224/224` controlled completions and `32/32` safe refusals across
+visit-varying lists (`76` vs `120` vs `236` simulated calls/order, `0.58 ms` max
+DP lookup, `1,258` bytes per added workflow; no live LLM speed or cost claim
+is made before an approved live run).
 
 Investigation memory now follows source changes. The client re-reads every
 saved repository source on resume or on request, saves a changed file as the

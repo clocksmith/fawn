@@ -268,3 +268,32 @@ node browser/workspace/qualification/overlapping-requests-reuse.js --arm-schedul
   harness code and spends `30` vs `22` total planner calls per repeat (`17` vs `9`
   post-teaching calls across `R3..R7` to stitch `call_helper` slices for the same
   `44/45` reused actions).
+
+## Dynamic-row audit, mirrored multi-site scaling, and read-only transfer (`0` paid calls)
+
+- [`dynamic-rows-and-lookalikes.test.js`](../test/unit/dynamic-rows-and-lookalikes.test.js)
+  documents that unscoped `structuralOutlineHash` changes when interactive list-row
+  links vary across visits, and deterministically verifies that scoped workflow
+  observations (`scopeWorkflowObservation` and `createFieldGroupScope`) preserve
+  `0`-call replay and held-out `A -> C` composition across changing result lists
+  while refusing six lookalike/ambiguity classes (`accountScope` mismatch, altered
+  control policy, waiver-gate substitution, duplicate target buttons, disabled
+  controls, and cross-goal zero-control leaves) with `0` dispatched actions.
+- [`multi-site-scaling.js`](./multi-site-scaling.js) and
+  [`multi-site-scaling-site.js`](./multi-site-scaling-site.js) run `28` overlapping
+  tasks plus `4` site-specific lookalike/ambiguity traps across `4` sandbox sites
+  (`procurement`, `helpdesk`, `inventory`, `compliance`) with changing search/list
+  rows on every visit, mirrored task orders (`forward` and `mirrored`), and equal
+  learning opportunities across `fawn-graph`, `stock-reusable-parts`,
+  `fresh-planning`, and `stock-script` ([controlled preflight receipt](../../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json),
+  [scaling curve](../../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/scaling-curve.json)):
+  `224/224` task runs and `32/32` safety refusals passed (`0` submissions, `0`
+  wrong-branch or duplicate effects), `fawn-graph` controlled calls fell from
+  `5.50`/task (`1..8`) to `2.00`/task (`9..20`) and `1.00`/task (`21..28`) (`76`
+  total/order vs `120` on `stock-reusable-parts` and `236` on `fresh-planning`),
+  max Bellman DP lookup stayed at `0.58 ms` across `68` nodes, and active store
+  size settled at `25,152` bytes (`1,258` bytes per added workflow).
+- [`public-readonly-transfer.js`](./public-readonly-transfer.js) enforces a
+  client-side non-`GET`/`HEAD` route abort guard and same-origin read-only spec
+  validator (`0` blocked or server write hits, `0` transfer-reuse calls in
+  controlled preflight), ready for an owner-selected public site.
