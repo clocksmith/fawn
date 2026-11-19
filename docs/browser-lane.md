@@ -7,21 +7,24 @@ Doe's central objective is Chromium GPU execution under the
 wins lead to page WebGPU ownership, then separately selected wider GPU paths;
 [maintainability](../browser/chromium/acceptance.md#maintainability-acceptance)
 is mandatory and measured throughout. Stock Chromium+Dawn versus forced-Doe
-Chromium isolates the provider with ordinary applications unchanged. Fawn
-workspace treatment has separate acceptance and cannot stand in for that proof.
+Chromium (**Fawn**) isolates the provider with ordinary applications unchanged.
+**Blitzen** (the durable workspace layer in `browser/workspace/`, formerly "Fawn
+Workspace") has separate acceptance above stock Chrome and cannot stand in for
+that proof.
 
-Fawn provides durable browser workspaces ([thesis](thesis.md)).
+**Blitzen** provides durable browser workspaces ([thesis](thesis.md)).
 The [workspace contract](fawn-workspace-contract.md) governs its shared
-observation, action, and recovery service above stock Chromium/CDP/Playwright.
+observation, action, and recovery service above stock Chrome/Chromium/CDP/Playwright.
 The service has passed scoped behavioral qualification and shows complete-task
 value over Playwright agent tooling only on its frozen differentiation suite;
 release qualification is not established. `fawnWorkspace` in
-[the strategy contract](../config/doe-product-strategy.json) binds its acceptance
-steps to admitted evidence; native runtime wins are not prerequisites.
+[the strategy contract](../config/doe-product-strategy.json) (historical key
+retained for frozen evidence bindings) binds its acceptance steps to admitted
+evidence; native runtime wins are not prerequisites.
 
-[Proof 3](thesis.md#three-proofs) selects the forced-Doe Chromium path for one
-integrated comparison: stock Chromium with Dawn, the Fawn workspace with Dawn, and
-the Fawn workspace with Doe, on identical browser and agent workloads, under
+[Proof 3](thesis.md#three-proofs) selects the forced-Doe Chromium path (**Fawn**) for one
+integrated comparison: stock Chromium with Dawn, **Blitzen** with Dawn, and
+**Blitzen** on **Fawn** with **Doe**, on identical browser and agent workloads, under
 [the integrated comparison contract](../config/fawn-doe-integrated-comparison.json). Adopting
 Chromium hooks or browser-runtime integration still requires measured benefits
 that justify their compatibility and maintenance costs. Preserve WebGPU behavior through validation and
@@ -77,9 +80,9 @@ comparison uses the same stock browser and runtime for the shared-service
 treatment and a competent Chromium/Playwright baseline. Legacy receipts retain
 their original meaning; neither shell gains nor GPU recovery qualify the service.
 
-In these retained lanes, `Fawn` names the legacy modified-Chromium shell build
-used by the matrix, not Fawn's durable workspace service above stock Chromium.
-The four distinct operational lanes are:
+In these retained lanes, `Fawn` names the modified-Chromium browser build
+(`Fawn.app`), distinct from **Blitzen** (`browser/workspace/`, the durable
+workspace service above stock Chrome). The four distinct operational lanes are:
 
 - **Lane A:** Stock Chromium + Playwright + Dawn
 - **Lane B:** Fawn + Playwright + Dawn

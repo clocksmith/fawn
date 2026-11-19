@@ -198,7 +198,7 @@ export async function runWorkflow({ dag, mode, service, owner, pageId, intent, t
         reconvergedTerminal = false;
         return { tool: 'finish', input: { summary: 'Reconverged onto verified workflow suffix' } };
       }
-      if (!planner) throw Error('Configure FAWN_MODEL and the planner API credential before learning or repairing a workflow');
+      if (!planner) throw Error('Configure BLITZEN_MODEL (or FAWN_MODEL) and the planner API credential before learning or repairing a workflow');
       modelCalls++;
       return planner.next(...args);
     } };

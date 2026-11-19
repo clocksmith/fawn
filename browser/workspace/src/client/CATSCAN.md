@@ -1,6 +1,6 @@
-# CATSCAN: Workspace product client
+# CATSCAN: Blitzen product client
 
-Parent: [Fawn workspace](../../CATSCAN.md)
+Parent: [Blitzen workspace](../../CATSCAN.md)
 
 ## Target
 
@@ -28,7 +28,7 @@ Outputs:
 ## Invariants
 
 - Service dispatches browser effects exclusively.
-- Default: pinned Fawn. Explicit stock Chromium selection; no fallback.
+- Default: stock Google Chrome. Explicit Fawn selection requires a hash-pinned profile with no fallback.
 - Delegation inherits no grants or record disclosure.
 - Restart restores human ownership without replay.
 - Takeover stops future work. Dispatched effects persist. Uncertainty forbids retries.

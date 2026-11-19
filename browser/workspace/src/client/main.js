@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Product surface on a pinned Fawn build; stock Chromium requires explicit comparison selection.
+// Blitzen durable browser workspace above stock Chrome by default; Fawn builds remain explicit and hash-pinned.
 import { readFile } from 'node:fs/promises';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -23,16 +23,18 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
     if (!Number.isSafeInteger(config[field]) || config[field] < (field === 'port' ? 0 : 1)) throw Error(`Invalid client config ${field}`);
   }
   if (!Number.isFinite(config.cliMaxBudgetUsd) || config.cliMaxBudgetUsd <= 0) throw Error('Invalid CLI planner budget');
-  if (process.env.FAWN_PLANNER && !['claude-cli', 'anthropic'].includes(process.env.FAWN_PLANNER)) throw Error('Unknown planner selection');
+  const plannerEnv = process.env.BLITZEN_PLANNER ?? process.env.FAWN_PLANNER;
+  const modelEnv = process.env.BLITZEN_MODEL ?? process.env.FAWN_MODEL;
+  if (plannerEnv && !['claude-cli', 'anthropic'].includes(plannerEnv)) throw Error('Unknown planner selection');
   if (config.host !== '127.0.0.1') throw Error('Workspace control service only listens on loopback');
-  const directory = resolve(stateDir ?? process.env.FAWN_WORKSPACE_STATE_DIR ?? join(homedir(), '.local/state/fawn-workspace'));
+  const directory = resolve(stateDir ?? process.env.BLITZEN_STATE_DIR ?? process.env.FAWN_WORKSPACE_STATE_DIR ?? join(homedir(), '.local/state/blitzen'));
   const serviceConfig = loadClientServiceConfig({ directory, headless,
-    browserConfig: browserConfig ?? process.env.FAWN_BROWSER_CONFIG,
-    browserChannel: browserChannel ?? process.env.FAWN_BROWSER_CHANNEL });
+    browserConfig: browserConfig ?? process.env.BLITZEN_BROWSER_CONFIG ?? process.env.FAWN_BROWSER_CONFIG,
+    browserChannel: browserChannel ?? process.env.BLITZEN_BROWSER_CHANNEL ?? process.env.FAWN_BROWSER_CHANNEL });
   mkdirSync(directory, { recursive: true, mode: 0o700 }); chmodSync(directory, 0o700);
-  const planner = suppliedPlanner ?? (process.env.FAWN_PLANNER === 'claude-cli' ? createCliPlanner({
-    executable: process.env.FAWN_CLAUDE_BIN ?? 'claude', model: process.env.FAWN_MODEL, directory: join(directory, 'planner'), config
-  }) : createPlanner({ model: process.env.FAWN_MODEL, endpoint: config.modelEndpoint,
+  const planner = suppliedPlanner ?? (plannerEnv === 'claude-cli' ? createCliPlanner({
+    executable: process.env.BLITZEN_CLAUDE_BIN ?? process.env.FAWN_CLAUDE_BIN ?? 'claude', model: modelEnv, directory: join(directory, 'planner'), config
+  }) : createPlanner({ model: modelEnv, endpoint: config.modelEndpoint,
     apiKey: process.env[config.apiKeyEnvironment], maxOutputTokens: config.maxOutputTokens, timeoutMs: config.modelTimeoutMs }));
   const factory = { playwright: createPlaywrightAdapter, cdp: createCdpAdapter }[adapter];
   if (!factory) throw Error('Choose playwright or cdp');
@@ -54,10 +56,10 @@ export async function openWorkspaceApp({ stateDir, port, headless = false, adapt
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), value = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
   if (args.includes('--help')) {
-    console.log('Usage: npm --prefix browser/workspace start -- [--browser-config PATH | --browser-channel chrome|chromium|chromium-headless-shell] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
-    console.log('Default: pinned Fawn from <state-dir>/browser-profile.json. FAWN_BROWSER_CONFIG selects another profile; FAWN_BROWSER_CHANNEL explicitly selects a comparison browser. No fallback or automatic agent run.');
+    console.log('Usage: npm --prefix browser/workspace start -- [--browser-channel chrome|chromium|chromium-headless-shell|fawn] [--browser-config PATH] [--workflow-module PATH] [--state-dir PATH] [--port NUMBER] [--adapter playwright|cdp] [--headless]');
+    console.log('Default: installed Google Chrome (--browser-channel chrome) under ~/.local/state/blitzen. Pass --browser-channel fawn or --browser-config PATH (or BLITZEN_BROWSER_CONFIG) to require a hash-pinned Fawn browser build without fallback.');
   } else {
-    const workflowModulePath = value('--workflow-module') ?? process.env.FAWN_WORKFLOW_MODULE;
+    const workflowModulePath = value('--workflow-module') ?? process.env.BLITZEN_WORKFLOW_MODULE ?? process.env.FAWN_WORKFLOW_MODULE;
     const loadedWorkflow = workflowModulePath ? await import(pathToFileURL(resolve(workflowModulePath)).href) : null;
     const workflowConfig = typeof loadedWorkflow?.createWorkflowConfig === 'function'
       ? await loadedWorkflow.createWorkflowConfig() : (loadedWorkflow ?? {});
@@ -66,7 +68,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       workflowPersistence: workflowConfig.workflowPersistence ?? null,
       workflowTasks: workflowConfig.workflowTasks ?? new Map(),
       browserConfig: value('--browser-config'), browserChannel: value('--browser-channel') });
-    console.log(`Fawn workspace (${app.browser.channel}, ${app.browser.fawnBuild?.runtime.mode ?? 'stock provider'}): ${app.loginUrl}`);
+    console.log(`Blitzen workspace (${app.browser.channel}, ${app.browser.fawnBuild?.runtime.mode ?? 'stock provider'}): ${app.loginUrl}`);
     console.log('Start with human control. Model calls occur only after an explicit delegation.');
     let closing = false;
     const close = async () => { if (closing) return; closing = true; try { await app.close(); process.exitCode = 0; } catch (error) { console.error(error.message); process.exitCode = 1; } };

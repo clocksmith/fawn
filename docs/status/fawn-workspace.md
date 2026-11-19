@@ -1,9 +1,17 @@
-# Fawn durable workspace
+# Blitzen durable workspace
+
+(**Naming boundary:** **Blitzen** (`browser/workspace/`, `@doe/blitzen`, formerly
+"Fawn Workspace") is the browser-agnostic durable workspace and workflow-memory
+layer above stock Chrome; **Fawn** names the custom Chromium browser build and
+**Doe** names the WebGPU runtime. Historical paths (`docs/status/fawn-workspace.md`,
+`reports/fawn-workspace/...`) and strategy keys (`fawnWorkspace`) are retained so
+frozen evidence hashes remain valid.)
 
 The [workspace contract](../fawn-workspace-contract.md) owns authority,
 observation/action binding and recovery. The [product client](../../browser/workspace/README.md#human-workspace-client)
 adds explicit delegation, human takeover, scoped multi-page access and connected
-investigation records above stock Chromium. Planning remains outside the trusted
+investigation records above stock Google Chrome by default (with optional
+hash-pinned Fawn browser selection). Planning remains outside the trusted
 dispatcher. Restart returns control to the human without starting model calls.
 
 Protocol 4 gives pages separate identities and permissions. Legacy journals and

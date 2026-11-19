@@ -1,5 +1,5 @@
 const $ = selector => document.querySelector(selector);
-let projectId = localStorage.getItem('fawn-project') || '', pageId = 'main', current = null, pollMs = 1500, timer;
+let projectId = localStorage.getItem('blitzen-project') || localStorage.getItem('fawn-project') || '', pageId = 'main', current = null, pollMs = 1500, timer;
 const selectedPages = new Set(['main']);
 let artifactsIdentity = '', workflowsIdentity = '', workflowModePinned = false, latestWorkflows = [], workflowBlocked = false;
 function notice(text) { $('#notice').textContent = text; $('#notice').hidden = !text; }
@@ -12,9 +12,10 @@ async function command(operation, input = {}) {
   notice(''); return result;
 }
 function node(tag, text, className) { const element = document.createElement(tag); if (text != null) element.textContent = text; if (className) element.className = className; return element; }
-function button(text, action, className) { const element = node('button', text, className); element.type = 'button'; element.addEventListener('click', () => act(action)); return element; }
+function button(text, action, className) { const element = node('button', text, className); element.type = 'button'; eventListener(element, action); return element; }
+function eventListener(element, action) { element.addEventListener('click', () => act(action)); }
 async function act(action) { try { await action(); await refresh(); } catch (error) { notice(error.message); } }
-function choose(id) { projectId = id; pageId = 'main'; selectedPages.clear(); selectedPages.add('main'); artifactsIdentity = ''; workflowsIdentity = ''; workflowModePinned = false; localStorage.setItem('fawn-project', id); }
+function choose(id) { projectId = id; pageId = 'main'; selectedPages.clear(); selectedPages.add('main'); artifactsIdentity = ''; workflowsIdentity = ''; workflowModePinned = false; localStorage.setItem('blitzen-project', id); localStorage.setItem('fawn-project', id); }
 function renderWorkflowFields(workflow) {
   const existing = Object.fromEntries([...$('#workflow-fields').querySelectorAll('[data-slot]')].map(input => [input.dataset.slot, input.value]));
   $('#workflow-fields').replaceChildren(...(workflow?.fields ?? []).map(field => {

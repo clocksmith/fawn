@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Fawn workspace test runner: unit tests by default; `--browser` adds real-Chromium workflows.
+// Blitzen workspace test runner: unit tests by default; `--browser` adds real-Chromium workflows.
 //
 // Each file runs in its own process with a time limit so a stuck browser cannot hang the run.
 
@@ -16,7 +16,10 @@ if (channelIndex !== -1 && (!browserChannel || browserChannel.startsWith('--')))
   throw new Error('--browser-channel requires a channel');
 }
 const env = { ...process.env,
-  ...(browserChannel ? { FAWN_WORKSPACE_TEST_BROWSER_CHANNEL: browserChannel } : {}) };
+  ...(browserChannel ? {
+    BLITZEN_TEST_BROWSER_CHANNEL: browserChannel,
+    FAWN_WORKSPACE_TEST_BROWSER_CHANNEL: browserChannel,
+  } : {}) };
 
 const suites = process.argv.includes('--browser') ? [SUITES.unit, SUITES.browser] : [SUITES.unit];
 let failures = 0;

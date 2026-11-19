@@ -229,7 +229,7 @@ export class WorkspaceController {
         }
       }
       const planner = definition.planner ?? this.planner;
-      if (!planner && mode !== 'reuse') throw Error('Configure FAWN_MODEL and the planner API credential before delegating');
+      if (!planner && mode !== 'reuse') throw Error('Configure BLITZEN_MODEL (or FAWN_MODEL) and the planner API credential before delegating');
       if (this.active.has(id)) throw Error('The prior agent has not settled');
       const before = await this.service.inspect(this.admin(id));
       if (!before.pages.some(value => value.pageId === pageId && !value.closed)) throw Error('Select an open page');
@@ -285,7 +285,7 @@ export class WorkspaceController {
     // An omitted contract on resume keeps the trusted prior delegation contract. Explicit null clears it.
     const priorContract = resume ? this.store.get(id).activity.findLast(event => event.event === 'delegated')?.requiredCompletion : null;
     const contract = completionContract(requiredCompletion === undefined ? priorContract ?? null : requiredCompletion);
-    if (!this.planner) throw Error('Configure FAWN_MODEL and the planner API credential before delegating');
+    if (!this.planner) throw Error('Configure BLITZEN_MODEL (or FAWN_MODEL) and the planner API credential before delegating');
     if (!Array.isArray(pageIds) || !pageIds.length || !Array.isArray(origins) || !origins.length) throw Error('Select pages and exact origins');
     if (!Array.isArray(actionKinds) || !actionKinds.length || typeof task !== 'string' || !task.trim()) throw Error('Select actions and provide a bounded task');
     if (this.active.has(id)) throw Error('The prior agent has not settled; take over and wait before resuming');

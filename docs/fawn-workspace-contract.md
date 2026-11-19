@@ -1,7 +1,13 @@
-# Fawn durable workspace contract
+# Blitzen durable workspace contract
 
-Status: **shared service implemented in [`browser/workspace`](../browser/workspace/README.md);
-behavioral gates frozen; see [status](status/fawn-workspace.md) for admitted evidence**.
+Status: **shared service (`@doe/blitzen`, formerly "Fawn Workspace") implemented in
+[`browser/workspace`](../browser/workspace/README.md); behavioral gates frozen; see
+[status](status/fawn-workspace.md) for admitted evidence**.
+(**Naming boundary:** **Doe** is the WebGPU runtime, **Fawn** is the custom
+Chromium browser build, and **Blitzen** is this browser-agnostic workspace layer
+running on stock Chrome by default. Historical file paths and the `fawnWorkspace`
+key in [the strategy contract](../config/doe-product-strategy.json) are retained
+so frozen evidence bindings stay intact.)
 This contract owns prospective shared-service behavior and acceptance.
 [Goals](../GOALS.md) own product intent, [the thesis](thesis.md) owns rationale,
 and `fawnWorkspace` in [the strategy contract](../config/doe-product-strategy.json)

@@ -34,7 +34,7 @@ if (existsSync(out)) throw Error('Output exists; preserve every prior attempt');
 const contractBytes = readFileSync(new URL('./contract.json', import.meta.url));
 const contract = JSON.parse(contractBytes);
 const config = loadClientServiceConfig({ directory: join(homedir(), '.local/state/fawn-workspace'),
-  browserConfig: option('--browser-config'), headless: true });
+  browserChannel: 'fawn', browserConfig: option('--browser-config'), headless: true });
 const scriptConfig = loadServiceConfig(undefined, { browserChannel: 'chrome', headless: true });
 mkdirSync(out, { recursive: true, mode: 0o700 });
 const currentSources = () => ({ runtime: treeDigest('browser/workspace/src'), harness: treeDigest('browser/workspace/qualification/shopping') });

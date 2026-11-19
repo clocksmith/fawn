@@ -1,14 +1,21 @@
-# Fawn workspace service
+# Blitzen workspace service
 
-The shared observation, action and recovery service above stock Chromium.
-This is Fawn's workspace owner inside
-[clocksmith/fawn](https://github.com/clocksmith/fawn). Doe, developed in the same
-repository, owns the independently usable native WebGPU runtime and WGSL compiler.
+The browser-agnostic shared observation, action, workflow-memory and recovery
+service above stock Chrome/Chromium (`@doe/blitzen`, formerly "Fawn Workspace").
+Inside [clocksmith/fawn](https://github.com/clocksmith/fawn), three layers have
+distinct names and acceptance boundaries:
+- **Doe** owns the native WebGPU runtime and WGSL compiler (`Dawn -> Doe`).
+- **Fawn** owns the custom Chromium browser build (`Fawn.app`).
+- **Blitzen** (`browser/workspace/`) owns durable browser workspaces, workflow
+  reuse/repair (`TraceDag`), and investigation handoff above stock Chrome by
+  default, with optional hash-pinned `Fawn` browser integration.
+
 The service is JavaScript: an end-to-end C GPU route means selecting Doe's C
-compiler/runtime in the browser, not rewriting workspace or Chromium code in C.
+compiler/runtime in the Fawn browser, not rewriting Blitzen or Chromium code in C.
 [The workspace contract](../../docs/fawn-workspace-contract.md) owns requirements
 and acceptance; [status](../../docs/status/fawn-workspace.md) records what is
-established. Its behavior is qualified on the frozen case set for a recorded
+established (retaining historical `fawn-workspace` filenames and `fawnWorkspace`
+strategy keys so frozen evidence hashes stay intact). Its behavior is qualified on the frozen case set for a recorded
 commit, browser binary and host. It shows complete-task value over Playwright
 agent tooling only on the frozen differentiation suite, and none over competent
 scripted automation. Development tests are not the behavioral gates.
@@ -394,24 +401,23 @@ POSIX signal on Windows.
 
 ## Human workspace client
 
-Normal launches use the Fawn browser, with a pinned executable and dependency
-profile at `~/.local/state/fawn-workspace/browser-profile.json`. Create that
-private profile for the installed build with
-[`qualification/create-browser-profile.js`](qualification/create-browser-profile.js).
-Select the actual executable image (on macOS, `Contents/MacOS/Chromium-real`),
-the explicit `doe-c` or `dawn` runtime, and the build's dependency files, including
-the macOS Chromium framework and the Doe compiler library when applicable.
-See [explicit C browser integration](#explicit-c-browser-integration) for the profile contract.
-Missing or changed artifacts stop startup; the client never falls back to Chrome.
+Normal launches of **Blitzen** use installed Google Chrome (`--browser-channel chrome`) by default,
+storing workspace state under `~/.local/state/blitzen`. To run Blitzen against a
+hash-pinned **Fawn** browser build instead (`--browser-channel fawn` or
+`--browser-config`), create a private profile with
+[`qualification/create-browser-profile.js`](qualification/create-browser-profile.js)
+selecting the actual executable image (on macOS, `Contents/MacOS/Chromium-real`),
+the explicit `doe-c` or `dawn` runtime, and the build's dependency files. When
+`fawn` or `--browser-config` is requested, missing or changed artifacts stop
+startup with zero fallback to Chrome.
 
 ```bash
+# Default: launch Blitzen on installed Google Chrome:
 npm --prefix browser/workspace start
-# Use another pinned Fawn installation:
-npm --prefix browser/workspace start -- --browser-config /absolute/browser-profile.json
-# Stock Chrome is an explicit control, not the product default:
-npm --prefix browser/workspace start -- --browser-channel chrome
 # Optional explicit planner configuration:
-FAWN_MODEL=<selected-model> ANTHROPIC_API_KEY=<credential> npm --prefix browser/workspace start
+BLITZEN_MODEL=<selected-model> ANTHROPIC_API_KEY=<credential> npm --prefix browser/workspace start
+# Explicit hash-pinned Fawn browser build (no fallback):
+npm --prefix browser/workspace start -- --browser-config /absolute/browser-profile.json
 ```
 
 Open the private loopback login link printed by the command. The browser remains
@@ -439,13 +445,16 @@ that they were never dispatched and the error is correctable. Rejected proposals
 and corrections consume the ordinary request budget. Unknown effects, denied
 authority and service failures still stop the run; they are not automatic retries.
 
-State defaults to `~/.local/state/fawn-workspace`; use `--state-dir` to select
-another directory. Admin credentials stay in its private `client-credentials.json`.
+State defaults to `~/.local/state/blitzen` (`BLITZEN_STATE_DIR`; legacy
+`FAWN_WORKSPACE_STATE_DIR` is also accepted); use `--state-dir` to select another
+directory. Admin credentials stay in its private `client-credentials.json`.
 `--port`, `--adapter playwright|cdp` and `--headless` select local presentation.
-`FAWN_BROWSER_CONFIG` selects a Fawn profile; `FAWN_BROWSER_CHANNEL` explicitly
-selects a stock comparison browser. A profile and a stock channel cannot be
-combined. Browser selection does not change workspace authority. The planner is disabled
-unless both model and credential are configured. No model runs on startup.
+`BLITZEN_BROWSER_CHANNEL` (`chrome` default; `chromium`, `chromium-headless-shell`,
+or `fawn`) selects a browser channel, while `BLITZEN_BROWSER_CONFIG` selects a
+pinned Fawn profile (`FAWN_BROWSER_*` aliases remain supported). A Fawn profile
+and a stock channel cannot be combined. Browser selection does not change
+workspace authority. The planner is disabled unless both model and credential are
+configured. No model runs on startup.
 
 Protocol 4 adds page identity and opt-in scoped read grants. Earlier journals replay
 with main-page compatibility. Restored tabs open blank with an explicit Reopen
@@ -462,7 +471,7 @@ With an already authenticated Claude Code installation, select the planner-only
 CLI port instead of an API key:
 
 ```bash
-FAWN_PLANNER=claude-cli npm --prefix browser/workspace start
+BLITZEN_PLANNER=claude-cli npm --prefix browser/workspace start
 ```
 
 The CLI port disables built-in tools, MCP, plugins/project discovery and session

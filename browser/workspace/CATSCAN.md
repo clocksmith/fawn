@@ -1,10 +1,10 @@
-# CATSCAN: Fawn workspace
+# CATSCAN: Blitzen workspace
 
 Parent: [Browser](../CATSCAN.md)
 
 ## Target
 
-Workspace observation, actions and recovery.
+Browser-agnostic durable workspace observation, actions, workflow memory and recovery.
 
 ## Authority
 

@@ -7,15 +7,17 @@ owns enforceable invariants, component charters assign authority, and artifacts
 establish current results. The commercial plan and the ordered roadmap are
 maintained in the owner's private strategy repository, not here.
 
-Doe aims to become Chromium's superior GPU execution foundation. The
-[acceptance hierarchy](../GOALS.md#acceptance-hierarchy) requires unchanged
+Doe aims to become Chromium's superior GPU execution foundation (`Dawn -> Doe`).
+The [acceptance hierarchy](../GOALS.md#acceptance-hierarchy) requires unchanged
 WebGPU application wins, page WebGPU ownership, measured expansion into wider
-GPU paths, and maintainability. Fawn provides durable browser workspaces;
+GPU paths, and maintainability. **Fawn** is the custom Chromium browser build
+integrating Doe, and **Blitzen** (`browser/workspace/`, formerly "Fawn Workspace")
+provides browser-agnostic durable workspaces above stock Chrome by default;
 DoeLab tests improvements and DoeProof records evidence.
 
 ## Independent results
 
-Fawn's shared workspace service runs above stock Chromium with narrow
+Blitzen's shared workspace service runs above stock Chrome/Chromium with narrow
 CDP/Playwright adapters, persists ownership generations, rejects stale commands,
 and retains completed, failed, or unknown outcomes across restart, consistently
 across the research, form-submission and export workflows; task-specific logic

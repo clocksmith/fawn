@@ -33,10 +33,10 @@ export async function startWorkspaceServer({ controller, config, port = config.p
         const value = await body(req, config.maxBodyBytes);
         if (!equal(value.token, bootstrap)) return send(401, { error: 'Open the login link printed by the local service' });
         const session = randomBytes(32).toString('base64url'); sessions.add(session);
-        res.setHeader('set-cookie', `fawn_session=${session}; HttpOnly; SameSite=Strict; Path=/`);
+        res.setHeader('set-cookie', `blitzen_session=${session}; HttpOnly; SameSite=Strict; Path=/`);
         return send(200, { ready: true });
       }
-      const session = req.headers.cookie?.split(';').map(value => value.trim()).find(value => value.startsWith('fawn_session='))?.slice('fawn_session='.length);
+      const session = req.headers.cookie?.split(';').map(value => value.trim()).find(value => value.startsWith('blitzen_session='))?.slice('blitzen_session='.length);
       if (!sessions.has(session)) return send(401, { error: 'Open the login link printed by the local service' });
       if (req.method === 'GET' && url.pathname === '/api/status') return send(200, await controller.status(url.searchParams.get('project')));
       if (req.method !== 'POST' || url.pathname !== '/api/command') return send(404, { error: 'Unknown workspace route' });
