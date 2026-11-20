@@ -10,6 +10,7 @@
     "compare": "node qualification/compare.js",
     "differentiate": "node qualification/differentiate.js",
     "start": "node src/client/main.js",
+    "handoff": "node src/client/handoff-cli.js",
     "start:registry": "node src/client/workflow-registry-main.js"
   },
   "dependencies": {

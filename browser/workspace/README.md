@@ -590,6 +590,50 @@ field-trace reuse with fresh product/quote checks and separately authorized orde
 submission. Its local merchant oracle and scripted control test completion,
 repeatability and recovery. It has no live Best Buy adapter or Cerebras comparator.
 
+### Move a learned routine to another workspace
+
+In `browser/workspace`, set `BLITZEN_LOGIN_URL` privately to the login link
+printed by the local Blitzen service. Take human control of the investigation.
+Export selected evidence references and, optionally, a learned template.
+
+```sh
+npm run --silent handoff -- export "$SOURCE_PROJECT" handoff.json --evidence "$EVIDENCE_ID" --routine "$TEMPLATE"
+```
+
+Repeat `--evidence ID` for each saved observation, or pass `--no-evidence`.
+The new file contains evidence hashes and revisions, an optional routine graph
+and opaque references to outstanding source actions. URLs, page contents,
+screenshots, typed values, account credentials, grants and workflow keys stay
+in the originating workspace. Exchange the file through a channel you trust.
+Its digest checks contents. Sender authentication belongs to the exchange channel.
+
+With the recipient service's own login link and an existing investigation:
+
+```sh
+DIGEST=$(npm run --silent handoff -- import "$RECIPIENT_PROJECT" handoff.json)
+npm run --silent handoff -- read "$RECIPIENT_PROJECT" "$DIGEST"
+npm run --silent handoff -- use "$RECIPIENT_PROJECT" "$DIGEST" --template "$TEMPLATE" --page main --inputs recipient-inputs.json
+```
+
+Import saves a reviewable snapshot across restarts. Running it is a separate
+human command. It requires a matching locally installed `--workflow-module`
+with the same task source hashes and trusted disclosure and review definitions.
+Its `verifyReadOnlyHandoffStep({ service, owner, pageId, step })` must independently
+confirm the current recipient page and that this specific field only filters
+local results. A fill can otherwise trigger site-side effects. As with the
+account verifier, inspect current page identity without replacing the outstanding
+observation used for dispatch.
+
+Execution supports a single unambiguous sequence of fill/select steps, fresh
+recipient inputs and a new recipient grant restricted to the page, origin and
+required action kinds. The local verifier checks the result and the grant
+expires or is revoked. Branches, clicks and repairs are available for inspection.
+Graphs incorporating edits from outside the exporting investigation lack the
+provenance for this export. An outstanding action stays with its source account.
+Resolve it there and export a new snapshot before using the routine. Evidence
+references let the recipient identify separately shared material; they cannot
+open the source browser or retrieve its saved contents.
+
 The optional [trace session prototype](trace-dag.md) records completed
 parameterized paths and replays them through the service without planner calls,
 stopping at an unknown branch or the pre-submit boundary. It is a programmatic

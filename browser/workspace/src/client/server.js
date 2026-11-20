@@ -56,6 +56,13 @@ export async function startWorkspaceServer({ controller, config, port = config.p
         },
         delegate: () => controller.delegate(projectId, input), takeOver: () => controller.takeOver(projectId),
         note: () => controller.humanNote(projectId, input.text), handoff: () => controller.handoff(projectId, input),
+        exportHandoff: () => controller.exportHandoff(projectId, input),
+        importHandoff: () => controller.importHandoff(projectId, input),
+        useHandoff: async () => {
+          const { runId, done } = await controller.useHandoff(projectId, input);
+          const result = await done; return { runId, completed: result.completed, detail: result.detail, modelCalls: result.modelCalls };
+        },
+        readHandoff: () => controller.readHandoff(projectId, input.digest),
         revoke: () => controller.revoke(projectId, input), check: () => controller.check(projectId, input),
         decide: async () => {
           await controller.check(projectId, input);

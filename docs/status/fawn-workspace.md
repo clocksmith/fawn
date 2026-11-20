@@ -133,7 +133,7 @@ cases and `3` ambiguous-target probes across `fawn-graph`, `stock-reusable-parts
 `A->C` composition on `R3`, `5+5`-step mid-path repair persistence on `R6`, and
 `12`-step zero-call post-restart replay on `R7`), all `9` lookalike refusals and
 `3` ambiguous probes stopped with zero pre-refusal actions or duplicate effects,
-and no speed or model-cost claim is made before an approved paid run
+and the subsequent live comparison covers this workflow family
 ([approval spec](../../browser/workspace/qualification/overlapping-requests-approval.md),
 [authoring-cost receipt](../../reports/fawn-workspace/20261118-overlapping-requests-approval/authoring-cost-summary.json):
 `72` SLOC hand-written `R1..R8` script reaches `4.200 s` verified at `0` calls
@@ -150,7 +150,10 @@ safe-stop outcome buckets, require `6/6` zero-call completions on legitimate
 lookalike page redesigns (`R9_legitimate_lookalike_redesign`), and cut 3-repeat
 `$0` `fawn-graph` verified time from `20.588 s` down to `7.827 s` vs `5.633 s` on
 `stock-reusable-parts` (`40 ms` bounded `valueSettleMs`, `63.36 ms`/action mean,
-`0.274 s/call` break-even; `$8` live Sonnet pilot held pending owner go-ahead).
+`0.274 s/call` break-even).
+
+The live Sonnet comparison on stock Chrome met the predeclared composition gate for this workflow family. Both arms completed 21 of 21 tasks. Including teaching and repair, Blitzen took 56.670 seconds and 22 calls per seven-task repeat, versus 80.654 seconds and 35.33 calls for reusable helpers. Blitzen won all three paired repeats, with mean model usage of $0.1453 versus $0.3958. All six wrong-account refusals preceded any action, all three ambiguous targets stopped safely, and all six legitimate redesigns completed with zero calls. The result covers one fixture family. [Source, measured costs, and paired results](../../reports/fawn-workspace/20261120-overlapping-requests-live/decision.json)
+
 Adjudicating the retained `256`-episode
 [`20261118` scaling preflight](../../reports/fawn-workspace/20261118-multi-site-scaling-preflight/decision.json)
 ([adjudication](../../reports/fawn-workspace/20261119-multi-site-scaling-preflight/adjudication.json),
