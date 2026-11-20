@@ -110,7 +110,7 @@ export function createResidentCanvasReader(surfaceId, gpuTileDigest) {
     const sampleLabel = commandLabel ? commandLabel + 'sample-' + (++sampleNumber) : '';
     const base = !fullRead && previous?.region === region && previous.width === width && previous.height === height
       && previous.tileSize === tileSize ? previous : null;
-    let texture, errorScopesOpen = true;
+    let texture, errorScopesOpen = true, frameReadComplete = false;
     gpu.pushErrorScope('out-of-memory');
     gpu.pushErrorScope('validation');
     function collectErrors() {
@@ -138,15 +138,18 @@ export function createResidentCanvasReader(surfaceId, gpuTileDigest) {
       const [validation, memory] = await collectErrors();
       if (validation || memory || gpu !== device) throw Error(validation?.message ?? memory?.message ?? 'Canvas GPU device lost');
       if (gpu !== device || disposed) throw Error('Canvas reader scope ended');
+      // A successful mask map depends on the comparison and its frame import.
+      // The first observation, which has no mask, awaited the queue above.
+      frameReadComplete = true;
       previous?.texture.destroy();
       previous = { region, width, height, tileSize, texture, hashes: result.hashes };
       texture = null;
       return { ...result, ...(sampleLabel && dirty ? { diffCommandLabel: sampleLabel + '/diff' } : {}),
         frameHostCopyBytes: frameTransport === 'rgba-upload' ? width * height * 4 : 0, externalTextureCopyBytes: width * height * 4, gpuMaskReadbackBytes: dirty?.byteLength ?? 0, comparedOnGpu: Boolean(dirty) };
     } finally {
-      // The compositor releases its VideoFrame immediately upon return. Even a
-      // later validation failure must wait for work already submitted with it.
-      if (frameTransport === 'external-texture') await gpu.queue.onSubmittedWorkDone().catch(() => {});
+      // An unsuccessful observation may still have submitted work with the
+      // VideoFrame. Wait before letting its owner close it on this path.
+      if (frameTransport === 'external-texture' && !frameReadComplete) await gpu.queue.onSubmittedWorkDone().catch(() => {});
       texture?.destroy();
       if (errorScopesOpen) await collectErrors().catch(() => {});
     }

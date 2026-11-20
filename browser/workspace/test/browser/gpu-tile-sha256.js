@@ -13,6 +13,7 @@ import { playwrightLaunchOptions } from '../../src/browser-launch.js';
 const root = mkdtempSync(join(tmpdir(), 'blitzen-tile-digest-'));
 const files = new Map(['resident-canvas', 'gpu-tile-sha256'].map(name =>
   ['/' + name + '.js', readFileSync(new URL('../../src/adapters/' + name + '.js', import.meta.url))]));
+files.set('/frame-queue.js', readFileSync(new URL('../support/resident-frame-queue.js', import.meta.url)));
 const server = createServer((req, res) => {
   if (files.has(req.url)) { res.setHeader('Content-Type', 'text/javascript'); res.end(files.get(req.url)); }
   else { res.setHeader('Content-Type', 'text/html'); res.end('<title>Blitzen digest qualification</title>'); }
@@ -85,7 +86,22 @@ try {
       gpuMappedBytes:right.mappedReadbackBytes,maskBytes:right.gpuMaskReadbackBytes,
       jobUploadBytes:right.digestJobUploadBytes,passes:right.digestComputePasses,alphaCount});
   }
-  console.log(JSON.stringify({cases: report, exact:true, hardwareQualified:false}));
+  const queue = await page.evaluate(async () => {
+    const { sampleFrameQueue } = await import('/frame-queue.js');
+    const { createResidentCanvasReader } = await import('/resident-canvas.js');
+    return sampleFrameQueue(createResidentCanvasReader);
+  });
+  assert.deepEqual([queue.first.waits, queue.retained.waits, queue.changed.waits], [1, 0, 0]);
+  assert.deepEqual([queue.first.rehashed, queue.retained.rehashed, queue.changed.rehashed], [2, 0, 1]);
+  const red = Buffer.alloc(64 * 64 * 4, Buffer.from([255, 0, 0, 255]));
+  const tileHash = pixels => createHash('sha256').update(pixels).digest('hex');
+  const solid = tileHash(red);
+  Buffer.from([0, 255, 0, 255]).copy(red, 4 * (21 * 64 + 100 - 64));
+  assert.deepEqual(queue.first.hashes, [solid, solid]);
+  assert.deepEqual(queue.retained.hashes, [solid, solid]);
+  assert.deepEqual(queue.changed.hashes, [solid, tileHash(red)]);
+  assert.deepEqual(queue.onError, { waits: 1, rejectedBeforeDrain: false, error: 'fixture mask map failed' });
+  console.log(JSON.stringify({cases: report, exact:true, queue, hardwareQualified:false}));
 } finally {
   await context?.close();
   await new Promise(resolve=>server.close(resolve)); rmSync(root,{recursive:true,force:true});
