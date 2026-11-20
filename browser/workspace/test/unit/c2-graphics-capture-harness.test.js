@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   buildCaptureCampaignPlan,
+  launchGraphicsContext,
   resolveGraphicsLaunchArgs,
   startLocalStaticWorkloadServer,
 } from '../../../../bench/external-projects/webgpu-graphics-campaigns/capture_campaign.mjs';
@@ -30,6 +31,26 @@ assert.throws(
   () => resolveGraphicsLaunchArgs(threeManifest, 'amd-vulkan', ['--disable-vulkan-surface']),
   /forbidden browser launch argument/,
 );
+
+// Driver defaults are added after the manifest check. A forbidden effective
+// switch must close the fresh browser before any page can load the app.
+let closed = false;
+const mockDriver = {
+  async launchPersistentContext(_profile, options) {
+    assert.equal(options.chromiumSandbox, true);
+    assert.equal(options.headless, false);
+    return {
+      pages: () => [{}],
+      newCDPSession: async () => ({
+        send: async () => ({ arguments: ['chrome', '--no-sandbox'] }),
+        detach: async () => {},
+      }),
+      close: async () => { closed = true; },
+    };
+  },
+};
+await assert.rejects(launchGraphicsContext(mockDriver, 'profile', threeManifest, {}), /--no-sandbox/);
+assert.equal(closed, true);
 
 const srv = await startLocalStaticWorkloadServer(join(root, 'bench/external-projects/webgpu-graphics-campaigns'));
 try {

@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,13 +52,17 @@ export function resolveGraphicsLaunchArgs(manifest, backendId, extraArgs = []) {
   const platKey = backendId === 'amd-vulkan' ? 'linux' : backendId === 'apple-metal' ? 'darwin' : null;
   if (!platKey) throw Error(`Unsupported backendId: ${backendId}`);
   const combined = [...lp.commonBrowserArgs, ...(lp.platformBrowserArgs[platKey] ?? []), ...extraArgs];
-  for (const arg of combined) {
+  assertGraphicsSwitches(manifest, combined);
+  return combined;
+}
+
+function assertGraphicsSwitches(manifest, args) {
+  for (const arg of args) {
     const flagName = arg.split('=')[0];
-    if (FORBIDDEN_FLAGS.has(arg) || FORBIDDEN_FLAGS.has(flagName) || lp.forbiddenBrowserArgs.includes(arg)) {
+    if (FORBIDDEN_FLAGS.has(arg) || FORBIDDEN_FLAGS.has(flagName) || manifest.launchPolicy.forbiddenBrowserArgs.includes(arg)) {
       throw Error(`${manifest.workloadId}: forbidden browser launch argument ${arg}`);
     }
   }
-  return combined;
 }
 
 export function buildDeterministicObserverInitScript({ clockHz = 60, pinnedFrames = [30, 90, 180] }) {
@@ -227,6 +232,29 @@ export function buildCaptureCampaignPlan({ repoRoot, backendId, dawnBrowserPath,
   };
 }
 
+// The driver adds its own switches after the manifest is checked. Inspect the
+// browser's effective invocation before the workload is allowed to navigate.
+export async function launchGraphicsContext(chromium, profileDir, manifest, options) {
+  const context = await chromium.launchPersistentContext(profileDir, {
+    ...options, headless: false, chromiumSandbox: true,
+    ignoreDefaultArgs: ['--enable-unsafe-swiftshader'],
+  });
+  try {
+    const page = context.pages()[0] ?? await context.newPage();
+    const session = await context.newCDPSession(page);
+    try {
+      const { arguments: args } = await session.send('Browser.getBrowserCommandLine');
+      assertGraphicsSwitches(manifest, args);
+    } finally {
+      await session.detach();
+    }
+    return context;
+  } catch (error) {
+    await context.close();
+    throw error;
+  }
+}
+
 async function captureSingleGraphicsProcess({
   playwrightChromium,
   executablePath,
@@ -245,9 +273,8 @@ async function captureSingleGraphicsProcess({
   const tCold0 = performance.now();
   let context;
   try {
-    context = await playwrightChromium.launchPersistentContext(profileDir, {
+    context = await launchGraphicsContext(playwrightChromium, profileDir, manifest, {
       executablePath,
-      headless: false,
       args: browserArgs,
       viewport: { width: manifest.viewport.width, height: manifest.viewport.height },
       deviceScaleFactor: manifest.viewport.deviceScaleFactor,
@@ -377,7 +404,8 @@ async function runCli() {
       + '--dawn-browser <path> --doe-browser <path> --doe-library <path> --dawn-revision <sha> --out <dir> (or use --plan-only)',
     );
   }
-  const { chromium } = await import('playwright-core');
+  const requireWorkspace = createRequire(new URL('../../../browser/workspace/package.json', import.meta.url));
+  const { chromium } = requireWorkspace('playwright-core');
   const prep = JSON.parse(readFileSync(resolve(root, prepPath), 'utf8'));
   const outDir = resolve(root, outRel);
   mkdirSync(outDir, { recursive: true, mode: 0o700 });
