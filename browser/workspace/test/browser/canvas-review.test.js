@@ -13,6 +13,7 @@ import { assertSolidPixels } from '../support/gpu-presentation-oracle.js';
 
 const canvasBackend = process.env.BLITZEN_TEST_CANVAS_BACKEND ?? 'cpu';
 const compositor = process.env.BLITZEN_REVIEW_COMPOSITOR_TRANSPORT;
+const sandboxedSoftware = process.env.BLITZEN_RESIDENT_SANDBOXED_SOFTWARE === '1';
 const frameTracePrefix = process.env.BLITZEN_RESIDENT_FRAME_TRACE_PREFIX;
 const useCompositor = typeof compositor === 'string' && compositor.length > 0;
 if (useCompositor && process.env.BLITZEN_TEST_ELEMENT_CAPTURE !== '1') throw Error('Visible, authorized compositor capture required');
@@ -142,7 +143,7 @@ const attempts = [];
 let applicationHttpRequests = 0;
 // The grant only covers the review controls and the canvas. Every route keeps
 // those roots identifiable, including the authoritative GET after a lost reply.
-const layout = controls => `<!doctype html><main id="controls">${controls}</main>
+const layout = controls => `<!doctype html>${sandboxedSoftware ? '<title>Blitzen ephemeral compositor fixture</title>' : ''}<main id="controls">${controls}</main>
   <canvas id="cell" style="isolation:isolate" width="8" height="8"></canvas><aside>Outside the review grant</aside>`;
 let current = { job: 'A', revision: 1 };
 const key = ({ job, revision }) => `${job}-r${revision}`;
@@ -195,7 +196,7 @@ try {
   const config = { ...baseConfig, observation: { ...baseConfig.observation, canvasBackend } };
   service = await WorkspaceService.open({ stateDir: join(root, 'service'), config,
     createAdapter: options => {
-      adapter = createPlaywrightAdapter({ ...options, requireSandbox: process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
+      adapter = createPlaywrightAdapter({ ...options, requireSandbox: sandboxedSoftware || process.env.BLITZEN_RESIDENT_PHYSICAL === '1',
         captureAttribution: Boolean(process.env.BLITZEN_CAPTURE_RUN_DIRECTORY), frameImportEvidence: Boolean(frameTracePrefix) });
       const snapshot = adapter.snapshot.bind(adapter);
       adapter.snapshot = async (...args) => {
@@ -349,7 +350,7 @@ try {
     try {
       const { targetInfo } = await sessionCdp.send('Target.getTargetInfo');
       const version = await sessionCdp.send('Browser.getVersion');
-      let browserPid, gpuProcessPid;
+      let browserPid, gpuProcessPid, softwareSandbox;
       if (process.env.BLITZEN_RESIDENT_OBSERVE_BROWSER_PID === '1') {
         const control = await page.context().browser().newBrowserCDPSession();
         try {
@@ -359,6 +360,16 @@ try {
           browserPid = roots[0].id;
           const gpuProcesses = processInfo.filter(row => row.type.toLowerCase() === 'gpu');
           if (gpuProcesses.length === 1) gpuProcessPid = gpuProcesses[0].id;
+          if (sandboxedSoftware) {
+            const { gpu } = await control.send('SystemInfo.getInfo');
+            const flags = (await control.send('Browser.getBrowserCommandLine')).arguments;
+            const restricted = /^--(?:no-sandbox|disable-(?:gpu|setuid|namespace|seccomp-filter)-sandbox|in-process-gpu|single-process|auto-accept-this-tab-capture|auto-select-desktop-capture-source|use-fake-ui-for-media-stream)(?:=|$)/;
+            if (gpu.auxAttributes?.sandboxed !== true || !gpuProcessPid || flags.some(flag => restricted.test(flag))) {
+              throw Error('Software diagnostic requires the browser GPU sandbox and an ordinary capture chooser');
+            }
+            softwareSandbox = { gpuSandboxed: true, gpuProcessPid, renderer: gpu.auxAttributes.glRenderer,
+              devices: gpu.devices.map(({ vendorString, deviceString }) => ({ vendorString, deviceString })) };
+          }
         } finally { await control.detach(); }
       }
       if (process.env.BLITZEN_RESIDENT_PHYSICAL === '1') {
@@ -377,7 +388,7 @@ try {
       }
       const gpu = (await adapter.compositor.control(entry, 'adapterInfo')).result?.value ?? null;
       checkpoint({ phase: 'ready', targetId: targetInfo.targetId, surfaceId: session, browser: version, browserPid, gpuProcessPid,
-        ...(frameScope ? { frameImportScope: frameScope } : {}), gpu, commandLabel: null,
+        ...(frameScope ? { frameImportScope: frameScope } : {}), ...(softwareSandbox ? { softwareSandbox } : {}), gpu, commandLabel: null,
         selection: config.browser.fawnBuild ?? { channel: config.browser.channel } });
     } finally { await sessionCdp.detach(); }
     const barrier = process.env.BLITZEN_RESIDENT_BARRIER_FILE;
