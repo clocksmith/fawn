@@ -812,6 +812,9 @@ must see its unique scoped submission complete on Doe. The ordinary web API
 gains no privileges or methods. These extra flushes, witnesses, tracing and
 the GDB observer change timings. Four-arm reporting excludes this diagnostic.
 
+For the ordinary submission path, the [native Vulkan command check](qualification/native-command-witness.md)
+binds the queue result to the original compute command. Its standalone controls run on software Vulkan.
+
 The fixture's CDP session writes `.trace.json`, `.complete.json` and
 `.scope.json` prior to dispatch, then verifies the actual application outcome.
 Pass `--scope-request "$PREFIX.scope.json"` in addition to the correlation

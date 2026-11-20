@@ -1,0 +1,252 @@
+diff --git a/runtime/c/backends/vulkan/include/doe_vk.h b/runtime/c/backends/vulkan/include/doe_vk.h
+index 32ae642..4fe2d9c 100644
+--- a/runtime/c/backends/vulkan/include/doe_vk.h
++++ b/runtime/c/backends/vulkan/include/doe_vk.h
+@@ -363,6 +363,8 @@ doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
+ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error);
+ doe_vk_status doe_vk_commands_wait(doe_vk_commands *commands,
+     uint64_t timeout_ns, doe_vk_error *error);
++/* Diagnostic read under the ordinary device mutex; never polls or waits. */
++bool doe_vk_commands_witnessed_fence(const doe_vk_commands *commands);
+ doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error);
+ /* Establish queue idleness after an uncertain submission failure. This has no
+  * timeout and may block. The original submission failure remains a failure. */
+diff --git a/runtime/c/backends/vulkan/src/commands.c b/runtime/c/backends/vulkan/src/commands.c
+index e347671..de3df9a 100644
+--- a/runtime/c/backends/vulkan/src/commands.c
++++ b/runtime/c/backends/vulkan/src/commands.c
+@@ -274,6 +274,7 @@ static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error
+         .signalSemaphoreCount = signal_count,
+         .pSignalSemaphores = signal_count ? signals : NULL
+     };
++    commands->witnessed_submit_fence = false;
+     commands->state = DOE_VK_SUBMITTED;
+     commands->committed = false;
+     doe_vk_status status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, context->timeline ? 0 : commands->fence), "vkQueueSubmit", error);
+@@ -419,6 +420,7 @@ doe_vk_status doe_vk_commands_wait(doe_vk_commands *commands,
+     status = doe_vk_result(context, doe_vk_command_wait_raw(commands, timeout_ns, false),
+         context->timeline ? "vkWaitSemaphores" : "vkWaitForFences", error);
+     if (status == DOE_VK_OK) {
++        if (commands->state == DOE_VK_SUBMITTED) commands->witnessed_submit_fence = true;
+         if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
+         complete(commands, status, error);
+         if (status != DOE_VK_OK) *error = commands->failure;
+@@ -430,6 +432,11 @@ doe_vk_status doe_vk_commands_wait(doe_vk_commands *commands,
+     return status;
+ }
+ 
++bool doe_vk_commands_witnessed_fence(const doe_vk_commands *commands)
++{
++    return commands != NULL && commands->witnessed_submit_fence;
++}
++
+ doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error) {
+     doe_vk_error local_error = {0};
+     if (error == NULL) error = &local_error;
+@@ -439,6 +446,7 @@ doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *erro
+     status = doe_vk_result(context, doe_vk_command_wait_raw(commands, 0, true),
+         context->timeline ? "vkGetSemaphoreCounterValue" : "vkGetFenceStatus", error);
+     if (status == DOE_VK_OK) {
++        if (commands->state == DOE_VK_SUBMITTED) commands->witnessed_submit_fence = true;
+         if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
+         complete(commands, status, error);
+         if (status != DOE_VK_OK) *error = commands->failure;
+diff --git a/runtime/c/backends/vulkan/src/internal.h b/runtime/c/backends/vulkan/src/internal.h
+index bdd6a6a..09d7329 100644
+--- a/runtime/c/backends/vulkan/src/internal.h
++++ b/runtime/c/backends/vulkan/src/internal.h
+@@ -187,6 +187,7 @@ struct doe_vk_commands {
+     /* Fence-only waiters (hold/unhold). They keep the fence, pool and struct,
+      * never the recorded uses, which the last reference releases at once. */
+     uint32_t fence_holders;
++    bool witnessed_submit_fence;
+     doe_vk_error failure;
+     bool uses_active;
+     /* The queue accepted (or refused) the latest submission: its texture and
+diff --git a/runtime/c/native/EXTENSION_SYMBOLS.txt b/runtime/c/native/EXTENSION_SYMBOLS.txt
+index a44cfe4..702493d 100644
+--- a/runtime/c/native/EXTENSION_SYMBOLS.txt
++++ b/runtime/c/native/EXTENSION_SYMBOLS.txt
+@@ -32,3 +32,4 @@ doeNativeGetLastErrorLine
+ doeNativeQueueSyncInfo
+ doeNativeShaderModuleGetBindings
+ doeNativeShaderModuleGetBindingsForEntryPoint
++doeNativeVulkanCommandWitnessV1
+diff --git a/runtime/c/native/include/doe_native_queue.h b/runtime/c/native/include/doe_native_queue.h
+index 65317f9..96b45fc 100644
+--- a/runtime/c/native/include/doe_native_queue.h
++++ b/runtime/c/native/include/doe_native_queue.h
+@@ -29,6 +29,11 @@ enum {
+     DOE_NATIVE_QUEUE_SYNC_DEFERRED_SUBMISSIONS = 1u << 3,
+ };
+ DOE_NATIVE_EXTENSION uint32_t doeNativeQueueSyncInfo(WGPUQueue queue);
++/* Qualification-only overlay. 0 unavailable, 1 armed, 2 accepted,
++ * 3 confirmed by its Vulkan fence, 4 failed or missing direct compute.
++ * Caller keeps both handles alive. This reads state without device progress. */
++DOE_NATIVE_EXTENSION uint32_t doeNativeVulkanCommandWitnessV1(
++    WGPUQueue queue, WGPUCommandBuffer command, uint32_t arm, uint64_t *serial);
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/runtime/c/native/src/queue.c b/runtime/c/native/src/queue.c
+index a3fbf4d..dea1067 100644
+--- a/runtime/c/native/src/queue.c
++++ b/runtime/c/native/src/queue.c
+@@ -113,6 +113,9 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
+         case DOE_COMMAND_DISPATCH:
+         case DOE_COMMAND_DISPATCH_INDIRECT:
+             status = record_dispatch(native, record);
++            if (status == DOE_VK_OK && record->kind == DOE_COMMAND_DISPATCH &&
++                record->value.dispatch.x && record->value.dispatch.y && record->value.dispatch.z)
++                doe_resource_commands_encoded_vulkan_dispatch(commands);
+             break;
+         default:
+             return DOE_VK_UNSUPPORTED;
+@@ -190,6 +193,9 @@ static native_queue_settlement settle_pending(native_device *device, bool poll)
+         /* A terminal render fence does not retire presentation. Poll the same
+          * backend frame before release, including discard after enqueue failure. */
+         if (pending->frame) (void)doe_vk_surface_retire_frame(pending->frame, 0, NULL);
++        bool observed_vulkan = pending->native.kind == WGPUBackendType_Vulkan && !pending->replay;
++        bool witnessed = observed_vulkan && failure.status == NATIVE_OK &&
++            doe_vk_commands_witnessed_fence(pending->native.value.vulkan);
+         native_result released = native_command_release(&pending->native);
+         if (result.failure.status == NATIVE_OK && failure.status != NATIVE_OK) {
+             result.failure = failure;
+@@ -206,6 +212,10 @@ static native_queue_settlement settle_pending(native_device *device, bool poll)
+             continue;
+         }
+         if (released != NATIVE_OK) abort();
++        if (observed_vulkan) {
++            for (size_t i = 0; i < pending->count; ++i)
++                doe_resource_commands_finished_vulkan(pending->resources[i], pending->serial, witnessed);
++        }
+         *cursor = pending->next;
+         native_async_submission_settled(device, pending->serial, failure);
+         if (failure.status != NATIVE_OK) {
+@@ -424,6 +434,10 @@ static native_failure submit_pending(native_device *device, native_pending *pend
+     }
+     link_pending(device, pending);
+     native_failure failure = native_command_submit(&pending->native);
++    if (failure.status == NATIVE_OK && pending->native.kind == WGPUBackendType_Vulkan && !pending->replay) {
++        for (size_t i = 0; i < pending->count; ++i)
++            doe_resource_commands_accepted_vulkan(pending->resources[i], pending->serial);
++    }
+     if (failure.status == NATIVE_OK && access_waits) {
+         doe_mtl_status accepted = doe_mtl_command_submission_status(pending->native.value.metal);
+         failure = accepted == DOE_MTL_BUSY ? native_failure_status(NATIVE_UNKNOWN) :
+@@ -698,6 +712,20 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
+     native_device_release(device);
+ }
+ 
++uint32_t doeNativeVulkanCommandWitnessV1(WGPUQueue queue, WGPUCommandBuffer command, uint32_t arm, uint64_t *serial)
++{
++    if (!serial) return DOE_WITNESS_UNAVAILABLE;
++    *serial = 0;
++    native_device *device = (native_device *)queue;
++    doe_resource_commands *commands = (doe_resource_commands *)command;
++    if (!device || !commands || arm > 1 || device->backend.kind != WGPUBackendType_Vulkan ||
++        doe_resource_commands_device(commands) != device) return DOE_WITNESS_UNAVAILABLE;
++    native_lock(device);
++    uint32_t state = doe_resource_commands_observe_vulkan(commands, arm != 0, serial);
++    native_unlock(device);
++    return state;
++}
++
+ uint32_t doeNativeQueueSyncInfo(WGPUQueue handle)
+ {
+     native_device *device = (native_device *)handle;
+diff --git a/runtime/c/resources/include/doe_resources.h b/runtime/c/resources/include/doe_resources.h
+index ec6a7cd..0cc2ffe 100644
+--- a/runtime/c/resources/include/doe_resources.h
++++ b/runtime/c/resources/include/doe_resources.h
+@@ -622,6 +622,20 @@ void *doe_resource_bind_group_device(const doe_resource_bind_group *group);
+ void *doe_resource_pipeline_device(const doe_resource_pipeline *pipeline);
+ void *doe_resource_encoder_device(const doe_resource_encoder *encoder);
+ void *doe_resource_commands_device(const doe_resource_commands *commands);
++
++/* Private diagnostic overlay. The native device mutex guards these calls.
++ * Arm once on a freshly encoded ordinary command; recording precedes admission,
++ * and only an observed submit-specific fence can confirm an accepted serial. */
++typedef enum doe_resource_vulkan_witness_state {
++    DOE_WITNESS_UNAVAILABLE = 0, DOE_WITNESS_ARMED = 1, DOE_WITNESS_ACCEPTED = 2,
++    DOE_WITNESS_CONFIRMED = 3, DOE_WITNESS_FAILED = 4
++} doe_resource_vulkan_witness_state;
++doe_resource_vulkan_witness_state doe_resource_commands_observe_vulkan(
++    doe_resource_commands *commands, bool arm, uint64_t *serial);
++void doe_resource_commands_encoded_vulkan_dispatch(doe_resource_commands *commands);
++void doe_resource_commands_accepted_vulkan(doe_resource_commands *commands, uint64_t serial);
++void doe_resource_commands_finished_vulkan(doe_resource_commands *commands, uint64_t serial, bool witnessed);
++
+ void *doe_resource_compute_pass_device(const doe_resource_compute_pass *pass);
+ WGPUBufferMapState doe_resource_buffer_map_state(const doe_resource_buffer *buffer);
+ WGPUMapMode doe_resource_buffer_map_mode(const doe_resource_buffer *buffer);
+diff --git a/runtime/c/resources/src/commands.c b/runtime/c/resources/src/commands.c
+index 036de5b..44ded1b 100644
+--- a/runtime/c/resources/src/commands.c
++++ b/runtime/c/resources/src/commands.c
+@@ -394,6 +394,9 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
+     if (!commands) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
+     resource_init(&commands->base, &encoder->base.config, (doe_resource_native){0});
+     atomic_init(&commands->submission_state, 0);
++    commands->vulkan_witness = DOE_WITNESS_UNAVAILABLE;
++    commands->witnessed_dispatch = false;
++    commands->witnessed_serial = 0;
+     commands->pass_timestamps = encoder->pass_timestamps;
+     commands->count = encoder->count;
+     commands->capacity = encoder->capacity;
+@@ -527,6 +530,40 @@ doe_resource_status doe_resource_commands_validate_submission(const doe_resource
+     return validate_all(commands);
+ }
+ 
++doe_resource_vulkan_witness_state doe_resource_commands_observe_vulkan(
++    doe_resource_commands *commands, bool arm, uint64_t *serial)
++{
++    *serial = 0;
++    unsigned state = atomic_load_explicit(&commands->submission_state, memory_order_acquire);
++    if (arm) {
++        if (state != 0 || commands->vulkan_witness != DOE_WITNESS_UNAVAILABLE)
++            return DOE_WITNESS_UNAVAILABLE;
++        commands->vulkan_witness = DOE_WITNESS_ARMED;
++    } else if (commands->vulkan_witness == DOE_WITNESS_ARMED && state > 1) {
++        return DOE_WITNESS_FAILED;
++    }
++    *serial = commands->witnessed_serial;
++    return commands->vulkan_witness;
++}
++
++void doe_resource_commands_encoded_vulkan_dispatch(doe_resource_commands *commands)
++{
++    if (commands->vulkan_witness == DOE_WITNESS_ARMED) commands->witnessed_dispatch = true;
++}
++
++void doe_resource_commands_accepted_vulkan(doe_resource_commands *commands, uint64_t serial)
++{
++    if (commands->vulkan_witness != DOE_WITNESS_ARMED || !commands->witnessed_dispatch || !serial) return;
++    commands->witnessed_serial = serial;
++    commands->vulkan_witness = DOE_WITNESS_ACCEPTED;
++}
++
++void doe_resource_commands_finished_vulkan(doe_resource_commands *commands, uint64_t serial, bool witnessed)
++{
++    if (commands->vulkan_witness != DOE_WITNESS_ACCEPTED || commands->witnessed_serial != serial) return;
++    commands->vulkan_witness = witnessed ? DOE_WITNESS_CONFIRMED : DOE_WITNESS_FAILED;
++}
++
+ doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands)
+ {
+     if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+diff --git a/runtime/c/resources/src/internal.h b/runtime/c/resources/src/internal.h
+index d82da5d..381ebdb 100644
+--- a/runtime/c/resources/src/internal.h
++++ b/runtime/c/resources/src/internal.h
+@@ -98,6 +98,10 @@ struct doe_resource_encoder {
+ struct doe_resource_commands {
+     resource_base base;
+     atomic_uint submission_state;
++    /* Private Chromium diagnostic, serialized by the caller's device mutex. */
++    doe_resource_vulkan_witness_state vulkan_witness;
++    bool witnessed_dispatch;
++    uint64_t witnessed_serial;
+     bool pass_timestamps;
+     size_t count, capacity;
+     doe_resource_command *commands;
