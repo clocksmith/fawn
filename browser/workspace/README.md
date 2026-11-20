@@ -857,7 +857,7 @@ with one verified effect can pass. Every result excludes timing and hardware
 performance qualification. The timeout includes preflight and the chooser.
 
 **Qualify compositor digest modes.** From `browser/workspace`, run
-`node test/browser/gpu-tile-sha256.test.js` on a WebGPU-enabled stock browser
+`node test/browser/gpu-tile-sha256.js` on a WebGPU-enabled stock browser
 to check both readers against packed-row Node SHA-256. To compare through a
 verified write, give the private fixture a fresh output directory and approve
 its restricted share once for each browser. The comparison checks the exact

@@ -166,7 +166,14 @@ try {
       const outcome = await ack.result;
       assert.equal(outcome.outcome, 'completed', JSON.stringify(outcome));
       assert.equal(await evaluate(() => document.querySelector('#ack').textContent), 'done');
-      assert.equal(nativeHelper ? lastMetric.nativeHashedBytes : lastMetric.tilePixelReadbackBytes, width * height * 4, 'dispatch independently checked every rendered pixel');
+      if (config.observation.compositorDigest === 'webgpu') {
+        assert.equal(lastMetric.tilePixelReadbackBytes, 0);
+        assert.equal(lastMetric.rehashedTiles, lastTileHashes.length, 'dispatch rehashes every authorized tile');
+        assert.equal(lastMetric.digestReadbackBytes, lastTileHashes.length * 32);
+      } else {
+        assert.equal(nativeHelper ? lastMetric.nativeHashedBytes : lastMetric.tilePixelReadbackBytes,
+          width * height * 4, 'dispatch independently checked every rendered pixel');
+      }
       assert.equal(await evaluate(() => typeof globalThis.__blitzenSurface), 'undefined', 'the page cannot access the private capture handle');
       const receipt = {
         clock: 'fresh-permitted-observation-through-confirmed-click-effect', transport, adapter: name, applicationHttpRequests: pageRequests - firstRequest,
